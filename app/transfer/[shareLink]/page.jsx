@@ -191,7 +191,10 @@ export default function TransferPage() {
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ duration: Date.now() - startTime }),
+            body: JSON.stringify({
+              duration: Date.now() - startTime,
+              isLastFile: true,
+            }),
           }
         ).catch(() => {}); // Fire and forget
       }
@@ -353,8 +356,11 @@ export default function TransferPage() {
 
       // Marquer les téléchargements comme terminés
       const duration = Date.now() - startTime;
-      for (const downloadInfo of authData.downloads) {
+      const totalFiles = authData.downloads.length;
+      for (let i = 0; i < totalFiles; i++) {
+        const downloadInfo = authData.downloads[i];
         if (downloadInfo.downloadEventId) {
+          const isLastFile = i === totalFiles - 1;
           fetch(
             `${apiUrl}api/transfers/download-event/${downloadInfo.downloadEventId}/complete`,
             {
@@ -362,7 +368,7 @@ export default function TransferPage() {
               headers: {
                 "Content-Type": "application/json",
               },
-              body: JSON.stringify({ duration }),
+              body: JSON.stringify({ duration, isLastFile }),
             }
           ).catch(() => {}); // Fire and forget
         }
@@ -581,11 +587,11 @@ export default function TransferPage() {
           />
         </div>
         <Image
-          src="/fondTransfer.png"
+          src="/Compresse001.png"
           alt="Newbi Transfer"
-          width={650}
-          height={650}
-          className="object-contain"
+          width={750}
+          height={750}
+          className="object-contain -translate-x-40"
           priority
         />
       </div>

@@ -2,32 +2,30 @@
 
 import { useState, useEffect } from "react";
 
+/**
+ * Hook pour gérer la connexion bancaire
+ * Supporte GoCardless (par défaut) et Bridge (legacy)
+ */
 export function useBankingConnection(workspaceId) {
   const [isConnected, setIsConnected] = useState(false);
   const [accountsCount, setAccountsCount] = useState(0);
-  const [bridgeUserExists, setBridgeUserExists] = useState(false);
   const [hasAccounts, setHasAccounts] = useState(false);
+  const [provider, setProvider] = useState(null);
+  const [institutions, setInstitutions] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingInstitutions, setIsLoadingInstitutions] = useState(false);
   const [error, setError] = useState(null);
 
+  /**
+   * Vérifie le statut de connexion bancaire
+   */
   const checkConnectionStatus = async () => {
     if (!workspaceId) return;
 
-    // 🚫 DÉSACTIVÉ TEMPORAIREMENT - Vérification du statut bancaire
     try {
       setIsLoading(true);
       setError(null);
 
-      // Simulation d'un délai pour l'UX
-      await new Promise(resolve => setTimeout(resolve, 300));
-
-      // Pas de connexion bancaire pour l'instant
-      setIsConnected(false);
-      setAccountsCount(0);
-      setBridgeUserExists(false);
-      setHasAccounts(false);
-
-      /* CODE ORIGINAL COMMENTÉ :
       const response = await fetch("/api/banking-connect/status", {
         headers: {
           "x-workspace-id": workspaceId,
@@ -38,45 +36,83 @@ export function useBankingConnection(workspaceId) {
         const data = await response.json();
         setIsConnected(data.isConnected);
         setAccountsCount(data.accountsCount || 0);
-        setBridgeUserExists(data.bridgeUserExists || false);
         setHasAccounts(data.hasAccounts || false);
+        setProvider(data.provider);
       } else {
         throw new Error("Erreur lors de la vérification du statut");
       }
-      */
     } catch (err) {
-      // En cas d'erreur, on ignore et on met des valeurs par défaut
-      console.warn("⚠️ Erreur vérification statut bancaire (ignorée):", err.message);
+      console.warn("⚠️ Erreur vérification statut bancaire:", err.message);
       setIsConnected(false);
       setAccountsCount(0);
-      setBridgeUserExists(false);
       setHasAccounts(false);
-      setError(null); // On n'affiche plus l'erreur
+      setProvider(null);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const connectBank = async () => {
-    if (!workspaceId) return;
+  /**
+   * Récupère la liste des institutions bancaires disponibles
+   * @param {string} country - Code pays ISO (FR, DE, ES, etc.)
+   */
+  const fetchInstitutions = async (country = "FR") => {
+    try {
+      setIsLoadingInstitutions(true);
+      setError(null);
 
-    // 🚫 DÉSACTIVÉ TEMPORAIREMENT - Connexion bancaire
-    setError("Intégration bancaire temporairement désactivée");
-    return;
+      const response = await fetch(
+        `/api/banking-connect/gocardless/institutions?country=${country}`
+      );
 
-    /* CODE ORIGINAL COMMENTÉ :
+      if (response.ok) {
+        const data = await response.json();
+        setInstitutions(data.institutions || []);
+        return data.institutions;
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Erreur récupération institutions");
+      }
+    } catch (err) {
+      setError(err.message);
+      console.error("Erreur récupération institutions:", err);
+      return [];
+    } finally {
+      setIsLoadingInstitutions(false);
+    }
+  };
+
+  /**
+   * Connecte un compte bancaire via GoCardless
+   * @param {string} institutionId - ID de l'institution bancaire
+   */
+  const connectBank = async (institutionId) => {
+    if (!workspaceId) {
+      setError("Workspace non défini");
+      return;
+    }
+
+    if (!institutionId) {
+      setError("Veuillez sélectionner une banque");
+      return;
+    }
+
     try {
       setIsLoading(true);
       setError(null);
 
-      const response = await fetch("/api/banking-connect/bridge/connect", {
-        headers: {
-          "x-workspace-id": workspaceId,
-        },
-      });
+      const response = await fetch(
+        `/api/banking-connect/gocardless/connect?institutionId=${institutionId}`,
+        {
+          headers: {
+            "x-workspace-id": workspaceId,
+          },
+        }
+      );
 
       if (response.ok) {
         const data = await response.json();
+        // Rediriger vers la page de connexion de la banque
         window.location.href = data.connectUrl;
       } else {
         const errorData = await response.json();
@@ -88,16 +124,15 @@ export function useBankingConnection(workspaceId) {
     } finally {
       setIsLoading(false);
     }
-    */
   };
 
-  const disconnectBank = async () => {
-    if (!workspaceId) return;
+  /**
+   * Déconnecte le compte bancaire
+   * @param {string} providerToDisconnect - Provider spécifique à déconnecter (optionnel)
+   */
+  const disconnectBank = async (providerToDisconnect = null) => {
+    if (!workspaceId) return false;
 
-    // 🚫 DÉSACTIVÉ TEMPORAIREMENT - Déconnexion bancaire
-    return false;
-
-    /* CODE ORIGINAL COMMENTÉ :
     try {
       setIsLoading(true);
       setError(null);
@@ -108,11 +143,14 @@ export function useBankingConnection(workspaceId) {
           "Content-Type": "application/json",
           "x-workspace-id": workspaceId,
         },
+        body: JSON.stringify({ provider: providerToDisconnect }),
       });
 
       if (response.ok) {
         setIsConnected(false);
         setAccountsCount(0);
+        setHasAccounts(false);
+        setProvider(null);
         return true;
       } else {
         const errorData = await response.json();
@@ -125,7 +163,6 @@ export function useBankingConnection(workspaceId) {
     } finally {
       setIsLoading(false);
     }
-    */
   };
 
   // Vérifier le statut au chargement
@@ -134,14 +171,19 @@ export function useBankingConnection(workspaceId) {
   }, [workspaceId]);
 
   return {
+    // État
     isConnected,
     accountsCount,
-    bridgeUserExists,
     hasAccounts,
+    provider,
+    institutions,
     isLoading,
+    isLoadingInstitutions,
     error,
+    // Actions
     connectBank,
     disconnectBank,
+    fetchInstitutions,
     refreshStatus: checkConnectionStatus,
   };
 }

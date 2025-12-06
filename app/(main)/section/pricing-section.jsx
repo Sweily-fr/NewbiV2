@@ -34,32 +34,32 @@ export default function PricingSection() {
       name: "Utilisateurs",
       description: "Nombre d'utilisateurs inclus",
       freelance: "1 utilisateur",
-      pme: "10 utilisateurs",
-      entreprise: "25 utilisateurs",
+      pme: "Jusqu'à 10 utilisateurs",
+      entreprise: "Jusqu'à 25 utilisateurs",
       type: "text",
     },
     {
       name: "Création d'organisation",
       description: "Créez et gérez votre organisation",
-      freelance: true,
-      pme: true,
-      entreprise: true,
-      type: "check",
+      freelance: "Illimité",
+      pme: "Illimité",
+      entreprise: "Illimité",
+      type: "text",
     },
     {
       name: "Utilisateur comptable gratuit",
       description: "Ajoutez un comptable sans frais supplémentaires",
-      freelance: "1",
-      pme: "1",
-      entreprise: "1",
+      freelance: "1 comptable",
+      pme: "3 comptables",
+      entreprise: "5 comptables",
       type: "text",
     },
     {
       name: "Utilisateurs supplémentaires",
       description: "Au-delà de votre limite d'utilisateurs",
-      freelance: "7,49€ TTC",
-      pme: "7,49€ TTC",
-      entreprise: "7,49€ TTC",
+      freelance: "-",
+      pme: "7,49€ TTC/utilisateur supplémentaire",
+      entreprise: "7,49€ TTC/utilisateur supplémentaire",
       type: "text",
     },
     {
@@ -71,20 +71,28 @@ export default function PricingSection() {
       type: "check",
     },
     {
-      name: "OCR des reçus",
-      description: "Numérisez automatiquement vos reçus",
-      freelance: true,
+      name: "Relance automatique impayés",
+      description: "Automatisez vos relances de factures impayées",
+      freelance: "-",
       pme: true,
       entreprise: true,
-      type: "check",
+      type: "mixed",
     },
     {
-      name: "Connexion bancaire",
-      description: "Synchronisez vos comptes bancaires",
-      freelance: true,
+      name: "OCR des reçus",
+      description: "Numérisez automatiquement vos dépenses",
+      freelance: "20 reçus par mois",
       pme: true,
       entreprise: true,
-      type: "check",
+      type: "mixed",
+    },
+    {
+      name: "Connexion bancaire (à venir)",
+      description: "Synchronisez vos comptes bancaires",
+      freelance: "Synchroniser un compte bancaire",
+      pme: "Synchroniser jusqu'à 3 comptes bancaires",
+      entreprise: "Synchroniser jusqu'à 5 comptes bancaires",
+      type: "text",
     },
     {
       name: "Gestion de trésorerie",
@@ -95,7 +103,7 @@ export default function PricingSection() {
       type: "check",
     },
     {
-      name: "Gestion de projets",
+      name: "Gestion des projets",
       description: "Organisez vos projets avec des tableaux Kanban",
       freelance: true,
       pme: true,
@@ -104,18 +112,18 @@ export default function PricingSection() {
     },
     {
       name: "Signature de mail",
-      description: "Créez des signatures professionnelles",
-      freelance: true,
-      pme: true,
-      entreprise: true,
-      type: "check",
+      description: "Créez des signatures de mail professionnelles",
+      freelance: "Une signature",
+      pme: "Jusqu'à 10 signatures",
+      entreprise: "Jusqu'à 25 signatures",
+      type: "text",
     },
     {
       name: "Transfert de fichier",
       description: "Partagez vos fichiers en toute sécurité",
-      freelance: "5 Go",
-      pme: "5 Go",
-      entreprise: "5 Go",
+      freelance: "Envoyé jusqu'à 5Go",
+      pme: "Envoyé jusqu'à 15Go",
+      entreprise: "Envoyé jusqu'à 15Go",
       type: "text",
     },
     {
@@ -137,18 +145,18 @@ export default function PricingSection() {
     {
       name: "Support prioritaire",
       description: "Assistance prioritaire par email",
-      freelance: true,
+      freelance: "-",
       pme: true,
       entreprise: true,
-      type: "check",
+      type: "mixed",
     },
     {
-      name: "API Access",
+      name: "API access (à venir)",
       description: "Accédez à notre API pour vos intégrations",
-      freelance: true,
+      freelance: "-",
       pme: true,
       entreprise: true,
-      type: "check",
+      type: "mixed",
     },
   ];
 
@@ -451,43 +459,39 @@ export default function PricingSection() {
               <div className="bg-muted/50"></div>
 
               {/* Boucle sur les fonctionnalités */}
-              {features.map((feature, index) => (
-                <React.Fragment key={index}>
-                  <div className="px-3 lg:px-6 col-span-3 lg:col-span-1 py-4">
-                    <p className="text-sm font-medium">{feature.name}</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {feature.description}
+              {features.map((feature, index) => {
+                // Fonction pour afficher la valeur selon le type
+                const renderValue = (value) => {
+                  if (value === true) {
+                    return <Check className="w-4 h-4 text-primary" />;
+                  }
+                  return (
+                    <p className="text-muted-foreground text-sm text-center">
+                      {value}
                     </p>
-                  </div>
-                  <div className="px-3 py-1 md:px-6 md:py-4 flex justify-center">
-                    {feature.type === "check" ? (
-                      <Check className="w-4 h-4 text-primary" />
-                    ) : (
-                      <p className="text-muted-foreground text-sm">
-                        {feature.freelance}
+                  );
+                };
+
+                return (
+                  <React.Fragment key={index}>
+                    <div className="px-3 lg:px-6 col-span-3 lg:col-span-1 py-4">
+                      <p className="text-sm font-medium">{feature.name}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {feature.description}
                       </p>
-                    )}
-                  </div>
-                  <div className="px-3 py-1 md:px-6 md:py-4 flex justify-center">
-                    {feature.type === "check" ? (
-                      <Check className="w-4 h-4 text-primary" />
-                    ) : (
-                      <p className="text-muted-foreground text-sm">
-                        {feature.pme}
-                      </p>
-                    )}
-                  </div>
-                  <div className="px-3 py-1 md:px-6 md:py-4 flex justify-center">
-                    {feature.type === "check" ? (
-                      <Check className="w-4 h-4 text-primary" />
-                    ) : (
-                      <p className="text-muted-foreground text-sm">
-                        {feature.entreprise}
-                      </p>
-                    )}
-                  </div>
-                </React.Fragment>
-              ))}
+                    </div>
+                    <div className="px-3 py-1 md:px-6 md:py-4 flex justify-center items-center">
+                      {renderValue(feature.freelance)}
+                    </div>
+                    <div className="px-3 py-1 md:px-6 md:py-4 flex justify-center items-center">
+                      {renderValue(feature.pme)}
+                    </div>
+                    <div className="px-3 py-1 md:px-6 md:py-4 flex justify-center items-center">
+                      {renderValue(feature.entreprise)}
+                    </div>
+                  </React.Fragment>
+                );
+              })}
             </div>
           </div>
         </div>

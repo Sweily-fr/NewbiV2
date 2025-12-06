@@ -7,48 +7,89 @@ import {
   CardTitle,
 } from "@/src/components/ui/card";
 import { Button } from "@/src/components/ui/button";
-import { Building2, Landmark } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/src/components/ui/dialog";
+import { Input } from "@/src/components/ui/input";
+import { ScrollArea } from "@/src/components/ui/scroll-area";
+import { Building2, Landmark, Search, LoaderCircle } from "lucide-react";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
+import { useBankingConnection } from "@/src/hooks/useBankingConnection";
 import { useState, useEffect, useMemo } from "react";
 
-export default function BankBalanceCard({ 
-  className, 
-  expenses = [], 
-  invoices = [], 
-  totalIncome = 0, 
-  totalExpenses = 0, 
-  isLoading = false 
+export default function BankBalanceCard({
+  className,
+  expenses = [],
+  invoices = [],
+  totalIncome = 0,
+  totalExpenses = 0,
+  isLoading = false,
 }) {
   const { workspaceId } = useWorkspace();
+  const {
+    isConnected,
+    accountsCount,
+    hasAccounts,
+    isLoading: bankingLoading,
+    isLoadingInstitutions,
+    institutions,
+    error: bankingError,
+    connectBank,
+    fetchInstitutions,
+  } = useBankingConnection(workspaceId);
+
   const [accounts, setAccounts] = useState([]);
   const [bankLoading, setBankLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Modal de sélection de banque
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedInstitution, setSelectedInstitution] = useState(null);
+  const [isConnecting, setIsConnecting] = useState(false);
+
+  // Charger les institutions quand le modal s'ouvre
+  useEffect(() => {
+    if (isModalOpen && institutions.length === 0) {
+      fetchInstitutions("FR");
+    }
+  }, [isModalOpen]);
+
+  // Filtrer les institutions par recherche
+  const filteredInstitutions = institutions.filter((inst) =>
+    inst.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const handleOpenModal = () => {
+    setIsModalOpen(true);
+  };
+
+  const handleSelectInstitution = async (institution) => {
+    setSelectedInstitution(institution);
+    setIsConnecting(true);
+    await connectBank(institution.id);
+    setIsConnecting(false);
+  };
+
   const fetchAccounts = async () => {
     if (!workspaceId) return;
 
-    // 🚫 DÉSACTIVÉ TEMPORAIREMENT - Récupération des comptes bancaires
-    // Pour éviter les erreurs sur le dashboard
     try {
       setBankLoading(true);
 
-      // Pas de délai si les données du dashboard viennent du cache
-      if (!isLoading) {
-        // Données en cache, pas de délai
+      // Si pas connecté, pas de comptes à récupérer
+      if (!isConnected) {
         setAccounts([]);
         setError(null);
         setBankLoading(false);
         return;
       }
 
-      // Simulation d'un délai pour l'UX seulement si pas de cache
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      // Pas de comptes bancaires pour l'instant
-      setAccounts([]);
-      setError(null);
-
-      /* CODE ORIGINAL COMMENTÉ :
+      // Récupérer les comptes depuis l'API
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000"}/banking/accounts`,
         {
@@ -65,14 +106,12 @@ export default function BankBalanceCard({
         const data = await response.json();
         setAccounts(data.accounts || []);
       } else {
-        throw new Error("Erreur lors de la récupération des comptes");
+        setAccounts([]);
       }
-      */
     } catch (err) {
-      // En cas d'erreur, on affiche quand même le dashboard sans comptes
-      console.warn("⚠️ Erreur récupération comptes (ignorée):", err.message);
+      console.warn("⚠️ Erreur récupération comptes:", err.message);
       setAccounts([]);
-      setError(null); // On n'affiche plus l'erreur
+      setError(null);
     } finally {
       setBankLoading(false);
     }
@@ -80,7 +119,7 @@ export default function BankBalanceCard({
 
   useEffect(() => {
     fetchAccounts();
-  }, [workspaceId, isLoading]);
+  }, [workspaceId, isConnected]);
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat("fr-FR", {
@@ -163,15 +202,105 @@ export default function BankBalanceCard({
           {/* Spacer pour pousser le bouton vers le bas */}
           <div className="flex-1"></div>
 
-          {/* Bouton de gestion - Désactivé temporairement */}
+          {/* Bouton de connexion bancaire */}
           <Button
             variant="outline"
             className="w-full font-normal mt-auto"
-            disabled
+            onClick={handleOpenModal}
+            disabled={bankingLoading}
           >
-            Connexion bancaire (bientôt disponible)
+            {bankingLoading ? (
+              <LoaderCircle className="h-4 w-4 animate-spin mr-2" />
+            ) : (
+              <Landmark className="h-4 w-4 mr-2" />
+            )}
+            Connecter un compte bancaire
           </Button>
         </CardContent>
+
+        {/* Modal de sélection de banque */}
+        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Connecter votre banque</DialogTitle>
+              <DialogDescription>
+                Sélectionnez votre banque pour synchroniser vos comptes
+              </DialogDescription>
+            </DialogHeader>
+
+            {/* Barre de recherche */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Rechercher une banque..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+
+            {/* Liste des banques */}
+            <ScrollArea className="h-[300px] pr-4">
+              {isLoadingInstitutions ? (
+                <div className="flex items-center justify-center py-8">
+                  <LoaderCircle className="h-6 w-6 animate-spin text-muted-foreground" />
+                  <span className="ml-2 text-sm text-muted-foreground">
+                    Chargement des banques...
+                  </span>
+                </div>
+              ) : filteredInstitutions.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  {searchQuery
+                    ? "Aucune banque trouvée"
+                    : "Aucune banque disponible"}
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {filteredInstitutions.map((institution) => (
+                    <button
+                      key={institution.id}
+                      onClick={() => handleSelectInstitution(institution)}
+                      disabled={isConnecting}
+                      className="w-full flex items-center gap-3 p-3 rounded-lg border hover:bg-accent hover:border-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {institution.logo ? (
+                        <img
+                          src={institution.logo}
+                          alt={institution.name}
+                          className="h-8 w-8 object-contain rounded"
+                        />
+                      ) : (
+                        <div className="h-8 w-8 rounded bg-muted flex items-center justify-center">
+                          <Building2 className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                      )}
+                      <div className="flex-1 text-left">
+                        <p className="text-sm font-medium">
+                          {institution.name}
+                        </p>
+                        {institution.bic && (
+                          <p className="text-xs text-muted-foreground">
+                            {institution.bic}
+                          </p>
+                        )}
+                      </div>
+                      {isConnecting &&
+                        selectedInstitution?.id === institution.id && (
+                          <LoaderCircle className="h-4 w-4 animate-spin" />
+                        )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </ScrollArea>
+
+            {bankingError && (
+              <p className="text-sm text-destructive text-center">
+                {bankingError}
+              </p>
+            )}
+          </DialogContent>
+        </Dialog>
       </Card>
     );
   }
@@ -224,13 +353,15 @@ export default function BankBalanceCard({
           ))}
         </div>
 
-        {/* Bouton de gestion - Désactivé temporairement */}
+        {/* Bouton de gestion des comptes */}
         <Button
           variant="outline"
-          className="w-full font-normal mt-auto"
+          className="w-full font-normal mt-auto text-green-600 border-green-200 bg-green-50"
           disabled
         >
-          Connexion bancaire (bientôt disponible)
+          <Landmark className="h-4 w-4 mr-2" />
+          {accountsCount} compte{accountsCount > 1 ? "s" : ""} connecté
+          {accountsCount > 1 ? "s" : ""}
         </Button>
       </CardContent>
     </Card>
