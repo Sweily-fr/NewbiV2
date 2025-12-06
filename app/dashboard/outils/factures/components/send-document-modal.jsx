@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import { X, LoaderCircle, Send, Eye } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
-import { toast } from "@/src/components/ui/sonner";
+import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,6 +25,7 @@ import {
 import { useEmailSettings, useUpdateEmailSettings } from "@/src/graphql/emailQueries";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { generatePDFFromElement } from "@/src/utils/generatePDF";
+import { toast } from "sonner";
 
 const DOCUMENT_LABELS = {
   invoice: { singular: "facture", article: "la", title: "Envoyer la facture" },

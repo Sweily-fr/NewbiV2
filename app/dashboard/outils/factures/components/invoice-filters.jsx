@@ -26,6 +26,10 @@ import {
   INVOICE_STATUS_LABELS,
   INVOICE_STATUS_COLORS,
 } from "@/src/graphql/invoiceQueries";
+import {
+  IMPORTED_INVOICE_STATUS_LABELS,
+  IMPORTED_INVOICE_STATUS_COLORS,
+} from "@/src/graphql/importedInvoiceQueries";
 
 export default function InvoiceFilters({
   statusFilter,
@@ -389,6 +393,30 @@ export default function InvoiceFilters({
                   variant="outline"
                   className={cn(
                     INVOICE_STATUS_COLORS[value] || "bg-gray-100"
+                  )}
+                >
+                  {label}
+                </Badge>
+              </div>
+            ))}
+            <DropdownMenuSeparator />
+            <div className="px-2 py-1 text-xs text-muted-foreground font-medium">
+              Factures importées
+            </div>
+            {Object.entries(IMPORTED_INVOICE_STATUS_LABELS).map(([value, label]) => (
+              <div
+                key={`imported-${value}`}
+                className="flex items-center px-2 py-1.5 cursor-pointer hover:bg-accent rounded-sm text-sm"
+                onClick={() => toggleStatus(value)}
+              >
+                <Checkbox
+                  checked={selectedStatuses.includes(value)}
+                  className="mr-2 pointer-events-none"
+                />
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    IMPORTED_INVOICE_STATUS_COLORS[value] || "bg-gray-100"
                   )}
                 >
                   {label}
