@@ -25,7 +25,7 @@ export const useExpenses = (filters = {}) => {
     variables: {
       workspaceId,
       page: 1,
-      limit: 20,
+      limit: 50,
       ...filters,
     },
     fetchPolicy: "cache-and-network",
@@ -79,7 +79,7 @@ export const useDeleteExpense = () => {
     refetchQueries: [
       {
         query: GET_EXPENSES,
-        variables: { workspaceId, page: 1, limit: 20 },
+        variables: { workspaceId, page: 1, limit: 50 },
       },
     ],
     awaitRefetchQueries: false,
@@ -126,7 +126,7 @@ export const useCreateExpense = () => {
     refetchQueries: [
       {
         query: GET_EXPENSES,
-        variables: { workspaceId, page: 1, limit: 20 },
+        variables: { workspaceId, page: 1, limit: 50 },
       },
     ],
     awaitRefetchQueries: false,
@@ -249,7 +249,7 @@ export const useUpdateExpense = () => {
     refetchQueries: [
       {
         query: GET_EXPENSES,
-        variables: { workspaceId, page: 1, limit: 20 },
+        variables: { workspaceId, page: 1, limit: 50 },
       },
     ],
     awaitRefetchQueries: false,

@@ -645,6 +645,14 @@ export default function TableClients({ handleAddUser, selectedClients = new Set(
                   <TableRow
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
+                    className="cursor-pointer"
+                    onClick={(e) => {
+                      // Ne pas ouvrir le modal si on clique sur la checkbox ou le menu d'actions
+                      if (e.target.closest('[role="checkbox"]') || e.target.closest('button') || e.target.closest('[role="menuitem"]')) {
+                        return;
+                      }
+                      handleEditClient(row.original);
+                    }}
                   >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell key={cell.id} className="last:py-0">
@@ -974,7 +982,14 @@ export default function TableClients({ handleAddUser, selectedClients = new Set(
                   <TableRow
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
-                    className="border-b border-gray-100 dark:border-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                    className="border-b border-gray-100 dark:border-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer"
+                    onClick={(e) => {
+                      // Ne pas ouvrir le modal si on clique sur la checkbox ou le menu d'actions
+                      if (e.target.closest('[role="checkbox"]') || e.target.closest('button') || e.target.closest('[role="menuitem"]')) {
+                        return;
+                      }
+                      handleEditClient(row.original);
+                    }}
                   >
                     {row
                       .getVisibleCells()

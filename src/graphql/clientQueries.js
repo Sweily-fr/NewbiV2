@@ -232,7 +232,7 @@ export const useClients = (options = {}) => {
   const {
     workspaceId = contextWorkspaceId,
     page = 1,
-    limit = 10,
+    limit = 50,
     search = "",
   } = options;
 

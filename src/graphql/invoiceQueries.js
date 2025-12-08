@@ -407,10 +407,10 @@ export const useInvoices = () => {
     error: workspaceError,
   } = useRequiredWorkspace();
 
-  // Configuration de la pagination
+  // Configuration de la pagination - Charger toutes les factures pour combiner avec les importées
   const [pagination, setPagination] = useState({
     pageIndex: 0,
-    pageSize: 20, // Réduit la taille de la page initiale
+    pageSize: 50, // Pagination côté client avec 50 éléments par page
   });
 
   // Configuration du tri et des filtres

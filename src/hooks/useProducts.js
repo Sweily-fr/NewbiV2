@@ -4,7 +4,7 @@ import { GET_PRODUCTS, GET_PRODUCT } from '../graphql/queries/products';
 import { toast } from '@/src/components/ui/sonner';
 import { useRequiredWorkspace } from '@/src/hooks/useWorkspace';
 
-export const useProducts = (page = 1, limit = 10, search = '', category = '') => {
+export const useProducts = (page = 1, limit = 50, search = '', category = '') => {
   const { workspaceId, loading: workspaceLoading, error: workspaceError } = useRequiredWorkspace();
 
   const { data, loading: queryLoading, error: queryError, refetch } = useQuery(GET_PRODUCTS, {

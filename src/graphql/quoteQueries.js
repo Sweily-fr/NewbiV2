@@ -334,7 +334,7 @@ export const useQuotes = (filters = {}) => {
     error: workspaceError,
   } = useRequiredWorkspace();
   const [page, setPage] = useState(1);
-  const limit = 10;
+  const limit = 50;
 
   const { data, loading, error, fetchMore, refetch } = useQuery(GET_QUOTES, {
     variables: {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import * as React from "react";
 import { Button } from "@/src/components/ui/button";
 import { Textarea } from "@/src/components/ui/textarea";
@@ -20,6 +20,10 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useSession } from "@/src/lib/auth-client";
 import { useAddClientNote, useUpdateClientNote, useDeleteClientNote } from "@/src/graphql/clientQueries";
+import InvoiceSidebar from "@/app/dashboard/outils/factures/components/invoice-sidebar";
+import InvoiceMobileFullscreen from "@/app/dashboard/outils/factures/components/invoice-mobile-fullscreen";
+import QuoteSidebar from "@/app/dashboard/outils/devis/components/quote-sidebar";
+import QuoteMobileFullscreen from "@/app/dashboard/outils/devis/components/quote-mobile-fullscreen";
 
 const ClientActivity = ({ 
   client, 
@@ -36,7 +40,42 @@ const ClientActivity = ({
   const [editingContent, setEditingContent] = useState("");
   const [noteToDelete, setNoteToDelete] = useState(null);
   const [showAllActivities, setShowAllActivities] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState(null);
+  const [selectedQuote, setSelectedQuote] = useState(null);
+  const [isInvoiceSidebarOpen, setIsInvoiceSidebarOpen] = useState(false);
+  const [isQuoteSidebarOpen, setIsQuoteSidebarOpen] = useState(false);
+  const [isInvoiceMobileFullscreenOpen, setIsInvoiceMobileFullscreenOpen] = useState(false);
+  const [isQuoteMobileFullscreenOpen, setIsQuoteMobileFullscreenOpen] = useState(false);
   const { data: session } = useSession();
+
+  // Détecter si on est sur mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  const handleViewDocument = (docType, docId) => {
+    if (docType === 'invoice') {
+      setSelectedInvoice({ id: docId });
+      if (isMobile) {
+        setIsInvoiceMobileFullscreenOpen(true);
+      } else {
+        setIsInvoiceSidebarOpen(true);
+      }
+    } else if (docType === 'quote') {
+      setSelectedQuote({ id: docId });
+      if (isMobile) {
+        setIsQuoteMobileFullscreenOpen(true);
+      } else {
+        setIsQuoteSidebarOpen(true);
+      }
+    }
+  };
 
   const { addNote, loading: addingNote } = useAddClientNote(workspaceId);
   const { updateNote, loading: updatingNote } = useUpdateClientNote(workspaceId);
@@ -153,6 +192,8 @@ const ClientActivity = ({
       note_added: "💬",
       note_updated: "✏️",
       note_deleted: "🗑️",
+      document_email_sent: "📧",
+      invoice_reminder_sent: "🔔",
     };
 
     let text = activity.description || "a effectué une action";
@@ -422,10 +463,7 @@ const ClientActivity = ({
                                             onClick={() => {
                                               const docType = display.metadata.documentType;
                                               const docId = display.metadata.documentId;
-                                              const path = docType === 'invoice' 
-                                                ? `/dashboard/outils/factures?id=${docId}` 
-                                                : `/dashboard/outils/devis?id=${docId}`;
-                                              window.location.href = path;
+                                              handleViewDocument(docType, docId);
                                             }}
                                           >
                                             <ExternalLink className="h-3 w-3 mr-1" />
@@ -688,6 +726,50 @@ const ClientActivity = ({
           </div>
         </div>
       </Tabs>
+
+      {/* Sidebar pour desktop - Facture */}
+      <InvoiceSidebar
+        invoice={selectedInvoice}
+        isOpen={isInvoiceSidebarOpen}
+        onClose={() => {
+          setIsInvoiceSidebarOpen(false);
+          setSelectedInvoice(null);
+        }}
+      />
+
+      {/* Fullscreen pour mobile - Facture */}
+      {isInvoiceMobileFullscreenOpen && selectedInvoice && (
+        <InvoiceMobileFullscreen
+          invoice={selectedInvoice}
+          isOpen={isInvoiceMobileFullscreenOpen}
+          onClose={() => {
+            setIsInvoiceMobileFullscreenOpen(false);
+            setSelectedInvoice(null);
+          }}
+        />
+      )}
+
+      {/* Sidebar pour desktop - Devis */}
+      <QuoteSidebar
+        quote={selectedQuote}
+        isOpen={isQuoteSidebarOpen}
+        onClose={() => {
+          setIsQuoteSidebarOpen(false);
+          setSelectedQuote(null);
+        }}
+      />
+
+      {/* Fullscreen pour mobile - Devis */}
+      {isQuoteMobileFullscreenOpen && selectedQuote && (
+        <QuoteMobileFullscreen
+          quote={selectedQuote}
+          isOpen={isQuoteMobileFullscreenOpen}
+          onClose={() => {
+            setIsQuoteMobileFullscreenOpen(false);
+            setSelectedQuote(null);
+          }}
+        />
+      )}
     </div>
   );
 };

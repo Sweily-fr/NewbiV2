@@ -172,7 +172,14 @@ const dateFilterFn = (row, columnId, filterValue) => {
   return true;
 };
 
-export function useInvoiceTable({ data = [], onRefetch, onRefetchImported, reminderEnabled = false, onOpenReminderSettings, excludedClientIds = [] }) {
+export function useInvoiceTable({ 
+  data = [], 
+  onRefetch, 
+  onRefetchImported, 
+  reminderEnabled = false, 
+  onOpenReminderSettings, 
+  excludedClientIds = [],
+}) {
   const [globalFilter, setGlobalFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState([]);
   const [clientFilter, setClientFilter] = useState([]);
@@ -567,7 +574,7 @@ export function useInvoiceTable({ data = [], onRefetch, onRefetchImported, remin
   const table = useReactTable({
     data,
     columns,
-    // Enable client-side filtering and sorting
+    // Pagination côté client (toutes les données sont chargées)
     manualPagination: false,
     manualFiltering: false,
     manualSorting: false,
@@ -602,7 +609,7 @@ export function useInvoiceTable({ data = [], onRefetch, onRefetchImported, remin
     },
     initialState: {
       pagination: {
-        pageSize: 10,
+        pageSize: 50,
       },
     },
   });
