@@ -12,6 +12,12 @@ import { Button } from "@/src/components/ui/button";
 import { Progress } from "@/src/components/ui/progress";
 import { ScrollArea } from "@/src/components/ui/scroll-area";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/src/components/ui/tooltip";
+import {
   Upload,
   FileText,
   X,
@@ -284,7 +290,7 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl overflow-hidden">
         <DialogHeader>
           <DialogTitle>Importer des factures</DialogTitle>
           <DialogDescription>
@@ -294,7 +300,7 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
 
         {/* Phase: Sélection des fichiers */}
         {phase === PHASE.SELECT && (
-          <div className="space-y-4">
+          <div className="space-y-4 overflow-hidden">
             {/* Drop zone */}
             <div
               className={cn(
@@ -337,31 +343,40 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
                     Tout supprimer
                   </Button>
                 </div>
-                <ScrollArea className="h-[200px] rounded-md border">
-                  <div className="p-2 space-y-1">
-                    {files.map((file, index) => (
-                      <div
-                        key={`${file.name}-${index}`}
-                        className="flex items-center gap-2 p-2 rounded hover:bg-muted/50 group"
-                      >
-                        <FileText className="h-4 w-4 text-red-500 flex-shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm truncate">{file.name}</p>
-                        </div>
-                        <span className="text-xs text-muted-foreground">
-                          {formatFileSize(file.size)}
-                        </span>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={(e) => { e.stopPropagation(); removeFile(index); }}
+                <ScrollArea className="h-[200px] rounded-md border overflow-hidden">
+                  <TooltipProvider delayDuration={300}>
+                    <div className="p-2 space-y-1 overflow-hidden">
+                      {files.map((file, index) => (
+                        <div
+                          key={`${file.name}-${index}`}
+                          className="flex items-center gap-2 p-2 rounded hover:bg-muted/50 group overflow-hidden"
                         >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
+                          <FileText className="h-4 w-4 text-red-500 flex-shrink-0" />
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="flex-1 min-w-0 overflow-hidden cursor-default">
+                                <p className="text-sm truncate max-w-full">{file.name}</p>
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-[400px] break-all">
+                              <p>{file.name}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                          <span className="text-xs text-muted-foreground flex-shrink-0">
+                            {formatFileSize(file.size)}
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                            onClick={(e) => { e.stopPropagation(); removeFile(index); }}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </TooltipProvider>
                 </ScrollArea>
               </div>
             )}
@@ -405,12 +420,12 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
             </div>
 
             {/* Liste compacte des fichiers en cours */}
-            <ScrollArea className="h-[120px] rounded-md border">
-              <div className="p-2 space-y-1">
+            <ScrollArea className="h-[120px] rounded-md border overflow-hidden">
+              <div className="p-2 space-y-1 overflow-hidden">
                 {files.map((file, index) => (
                   <div
                     key={`${file.name}-${index}`}
-                    className="flex items-center gap-2 px-2 py-1 text-sm"
+                    className="flex items-center gap-2 px-2 py-1 text-sm overflow-hidden"
                   >
                     {uploadStatus[index] === "uploading" && (
                       <Loader2 className="h-3 w-3 animate-spin flex-shrink-0" style={{ color: '#5b50FF' }} />
@@ -424,7 +439,7 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
                     {!uploadStatus[index] && (
                       <div className="h-3 w-3 rounded-full border border-muted-foreground/30 flex-shrink-0" />
                     )}
-                    <span className="truncate text-muted-foreground">{file.name}</span>
+                    <span className="truncate text-muted-foreground flex-1 min-w-0" title={file.name}>{file.name}</span>
                   </div>
                 ))}
               </div>
