@@ -11,10 +11,9 @@ export async function GET(request) {
       );
     }
 
-    const backendUrl =
-      process.env.BACKEND_URL ||
-      process.env.BACKEND_API_URL ||
-      "http://localhost:4000";
+    const backendUrl = (
+      process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
+    ).replace(/\/$/, "");
 
     const response = await fetch(`${backendUrl}/reconciliation/suggestions`, {
       method: "GET",

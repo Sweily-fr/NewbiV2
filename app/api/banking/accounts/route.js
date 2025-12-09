@@ -14,10 +14,9 @@ export async function GET(request) {
     }
 
     // URL du backend
-    const backendUrl =
-      process.env.BACKEND_URL ||
-      process.env.BACKEND_API_URL ||
-      "http://localhost:4000";
+    const backendUrl = (
+      process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
+    ).replace(/\/$/, "");
 
     // Faire la requête vers le backend
     const response = await fetch(`${backendUrl}/banking/accounts`, {

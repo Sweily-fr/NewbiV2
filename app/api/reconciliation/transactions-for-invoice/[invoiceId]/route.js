@@ -12,10 +12,9 @@ export async function GET(request, { params }) {
       );
     }
 
-    const backendUrl =
-      process.env.BACKEND_URL ||
-      process.env.BACKEND_API_URL ||
-      "http://localhost:4000";
+    const backendUrl = (
+      process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
+    ).replace(/\/$/, "");
 
     const response = await fetch(
       `${backendUrl}/reconciliation/transactions-for-invoice/${invoiceId}`,
