@@ -43,7 +43,10 @@ export function PermissionButton({
   const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+    
     const checkPermission = async () => {
+      if (!isMounted) return;
       setIsChecking(true);
 
       try {
@@ -62,17 +65,28 @@ export function PermissionButton({
           access = true;
         }
 
-        setHasAccess(access);
+        if (isMounted) {
+          setHasAccess(access);
+        }
       } catch (error) {
         console.error("Error checking permission:", error);
-        setHasAccess(false);
+        if (isMounted) {
+          setHasAccess(false);
+        }
       } finally {
-        setIsChecking(false);
+        if (isMounted) {
+          setIsChecking(false);
+        }
       }
     };
 
     checkPermission();
-  }, [resource, action, roles, hasPermission, hasRole]);
+    
+    return () => {
+      isMounted = false;
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resource, action, JSON.stringify(roles)]);
 
   // Masquer le bouton si pas d'accès et hideIfNoAccess = true
   if (!isChecking && !hasAccess && hideIfNoAccess) {
