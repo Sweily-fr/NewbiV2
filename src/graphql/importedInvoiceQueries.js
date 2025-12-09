@@ -251,7 +251,8 @@ export const PAYMENT_METHOD_LABELS = {
 
 // Hooks
 export function useImportedInvoices(workspaceId, options = {}) {
-  const { page = 1, limit = 50, filters = {} } = options;
+  // Limite élevée pour charger toutes les factures (pagination côté client)
+  const { page = 1, limit = 1000, filters = {} } = options;
   
   const { data, loading, error, refetch } = useQuery(GET_IMPORTED_INVOICES, {
     variables: { workspaceId, page, limit, filters },
