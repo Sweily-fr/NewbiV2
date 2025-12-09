@@ -1,10 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  LoaderCircle,
-  ExternalLink,
-} from "lucide-react";
+import { LoaderCircle, ExternalLink } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { Separator } from "@/src/components/ui/separator";
@@ -19,6 +16,33 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import CategorySearchSelect from "./category-search-select";
+
+/**
+ * Convertit une date française (DD/MM/YY ou DD/MM/YYYY) en format ISO (YYYY-MM-DD)
+ * pour les inputs de type date
+ */
+const frenchDateToISO = (dateStr) => {
+  if (!dateStr) return "";
+
+  // Si déjà en format ISO
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+    return dateStr;
+  }
+
+  // Format français DD/MM/YY ou DD/MM/YYYY
+  const match = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+  if (match) {
+    const day = match[1].padStart(2, "0");
+    const month = match[2].padStart(2, "0");
+    let year = match[3];
+    if (year.length === 2) {
+      year = `20${year}`;
+    }
+    return `${year}-${month}-${day}`;
+  }
+
+  return dateStr;
+};
 
 /**
  * Composant pour afficher et éditer les résultats OCR avec analyse financière
@@ -50,6 +74,11 @@ export default function OcrEditableDisplay({
   // Initialiser les données éditables
   useEffect(() => {
     if (financialAnalysis && !editedData) {
+      // Convertir les dates françaises en ISO pour les inputs
+      const rawDate =
+        financialAnalysis.transaction_data?.transaction_date || "";
+      const rawDueDate = financialAnalysis.transaction_data?.due_date || "";
+
       setEditedData({
         document_type:
           financialAnalysis.document_analysis?.document_type || "receipt",
@@ -57,9 +86,8 @@ export default function OcrEditableDisplay({
         currency: financialAnalysis.transaction_data?.currency || "EUR",
         tax_amount: financialAnalysis.transaction_data?.tax_amount || 0,
         tax_rate: financialAnalysis.transaction_data?.tax_rate || 20,
-        transaction_date:
-          financialAnalysis.transaction_data?.transaction_date || "",
-        due_date: financialAnalysis.transaction_data?.due_date || "",
+        transaction_date: frenchDateToISO(rawDate),
+        due_date: frenchDateToISO(rawDueDate),
         vendor_name: financialAnalysis.transaction_data?.vendor_name || "",
         document_number:
           financialAnalysis.transaction_data?.document_number || "",
@@ -91,7 +119,7 @@ export default function OcrEditableDisplay({
     };
 
     setIsEditing(false);
-    
+
     // Utiliser le callback personnalisé si fourni, sinon appeler onValidate
     if (onSave) {
       onSave(updatedFinancialAnalysis);
@@ -101,7 +129,10 @@ export default function OcrEditableDisplay({
   };
 
   const handleCancel = () => {
-    // Réinitialiser les données
+    // Réinitialiser les données avec conversion des dates
+    const rawDate = financialAnalysis.transaction_data?.transaction_date || "";
+    const rawDueDate = financialAnalysis.transaction_data?.due_date || "";
+
     setEditedData({
       document_type:
         financialAnalysis.document_analysis?.document_type || "receipt",
@@ -109,9 +140,8 @@ export default function OcrEditableDisplay({
       currency: financialAnalysis.transaction_data?.currency || "EUR",
       tax_amount: financialAnalysis.transaction_data?.tax_amount || 0,
       tax_rate: financialAnalysis.transaction_data?.tax_rate || 20,
-      transaction_date:
-        financialAnalysis.transaction_data?.transaction_date || "",
-      due_date: financialAnalysis.transaction_data?.due_date || "",
+      transaction_date: frenchDateToISO(rawDate),
+      due_date: frenchDateToISO(rawDueDate),
       vendor_name: financialAnalysis.transaction_data?.vendor_name || "",
       document_number:
         financialAnalysis.transaction_data?.document_number || "",
@@ -124,7 +154,7 @@ export default function OcrEditableDisplay({
       type: financialAnalysis.transaction_data?.type || "expense",
     });
     setIsEditing(false);
-    
+
     // Appeler le callback personnalisé si fourni
     if (onCancel) {
       onCancel();
@@ -144,11 +174,11 @@ export default function OcrEditableDisplay({
     try {
       const date = new Date(dateString);
       if (isNaN(date.getTime())) return dateString;
-      
-      const day = String(date.getDate()).padStart(2, '0');
-      const month = String(date.getMonth() + 1).padStart(2, '0');
+
+      const day = String(date.getDate()).padStart(2, "0");
+      const month = String(date.getMonth() + 1).padStart(2, "0");
       const year = String(date.getFullYear()).slice(-2);
-      
+
       return `${day}/${month}/${year}`;
     } catch (error) {
       return dateString;
@@ -165,7 +195,10 @@ export default function OcrEditableDisplay({
       <div className="py-2">
         <div className="flex items-center justify-between mb-4">
           <span className="text-sm font-normal">Type de document</span>
-          <Badge variant="outline" className="text-xs font-normal px-2.5 py-0.5 border-[#5a50ff]/20 bg-[#5a50ff]/5 text-[#5a50ff] dark:border-[#5a50ff]/30 dark:bg-[#5a50ff]/10 dark:text-[#8b85ff]">
+          <Badge
+            variant="outline"
+            className="text-xs font-normal px-2.5 py-0.5 border-[#5a50ff]/20 bg-[#5a50ff]/5 text-[#5a50ff] dark:border-[#5a50ff]/30 dark:bg-[#5a50ff]/10 dark:text-[#8b85ff]"
+          >
             Transaction OCR
           </Badge>
         </div>
@@ -201,19 +234,19 @@ export default function OcrEditableDisplay({
         {/* Preview de l'image OCR */}
         {imageUrl && (
           <div className="mt-4">
-            <div 
+            <div
               className="border-input relative flex h-48 w-full items-center justify-center overflow-hidden rounded-md border bg-muted/30 cursor-pointer hover:border-primary transition-colors group"
-              onClick={() => window.open(imageUrl, '_blank')}
+              onClick={() => window.open(imageUrl, "_blank")}
               role="button"
               tabIndex={0}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
+                if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
-                  window.open(imageUrl, '_blank');
+                  window.open(imageUrl, "_blank");
                 }
               }}
             >
-              {imageUrl.toLowerCase().endsWith('.pdf') ? (
+              {imageUrl.toLowerCase().endsWith(".pdf") ? (
                 <iframe
                   src={imageUrl}
                   className="h-full w-full pointer-events-none"
@@ -245,9 +278,7 @@ export default function OcrEditableDisplay({
       {/* Informations financières */}
       <div className="py-2 space-y-4">
         <div className="mb-4">
-          <span className="text-sm font-normal">
-            Informations financières
-          </span>
+          <span className="text-sm font-normal">Informations financières</span>
         </div>
         <div className="space-y-4">
           {/* Montant */}
@@ -298,9 +329,7 @@ export default function OcrEditableDisplay({
             <Input
               type="date"
               value={editedData.transaction_date}
-              onChange={(e) =>
-                updateField("transaction_date", e.target.value)
-              }
+              onChange={(e) => updateField("transaction_date", e.target.value)}
               className="w-56"
               lang="fr-FR"
             />
@@ -366,9 +395,7 @@ export default function OcrEditableDisplay({
             {isEditing ? (
               <Select
                 value={editedData.payment_method}
-                onValueChange={(value) =>
-                  updateField("payment_method", value)
-                }
+                onValueChange={(value) => updateField("payment_method", value)}
               >
                 <SelectTrigger className="w-56">
                   <SelectValue />
@@ -421,7 +448,6 @@ export default function OcrEditableDisplay({
           )}
         </div>
       </div>
-
     </div>
   );
 }

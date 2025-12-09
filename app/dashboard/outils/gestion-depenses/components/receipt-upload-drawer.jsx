@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import {
   Drawer,
   DrawerClose,
@@ -25,17 +25,22 @@ import {
   XIcon,
   Info,
   CheckCircleIcon,
+  CheckIcon,
   AlertCircleIcon,
   LoaderCircle,
   PlusIcon,
+  Landmark,
+  Link2,
 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import { useDocumentUpload } from "@/src/hooks/useDocumentUpload";
 import { useOcr } from "@/src/hooks/useOcr";
 import { useExpense } from "@/src/hooks/useExpense";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
+import { useAutoReconcile } from "@/src/hooks/useAutoReconcile";
 import { Callout } from "@/src/components/ui/callout";
 import OcrEditableDisplay from "./ocr-editable-display";
+import { Badge } from "@/src/components/ui/badge";
 
 export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
   const [isDragging, setIsDragging] = useState(false);
@@ -67,6 +72,20 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
   // Hook pour les dépenses
   const { createExpenseFromOcrData, isCreatingExpense, expenseError } =
     useExpense();
+
+  // Hook pour le rapprochement automatique
+  const {
+    findMatchingTransaction,
+    autoReconcile,
+    isSearching,
+    isReconciling,
+    matchResult,
+    reset: resetReconcile,
+  } = useAutoReconcile();
+
+  // État pour le mode de rapprochement
+  const [reconcileMode, setReconcileMode] = useState("auto"); // "auto" | "manual" | "new"
+  const [selectedTransactionId, setSelectedTransactionId] = useState(null);
 
   // Gestion du drag & drop
   const handleDragOver = useCallback((e) => {
@@ -166,61 +185,153 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
     }
   }, [uploadResult, selectedFile, processDocumentFromUrl]);
 
-  // Fonction pour valider les données OCR avec analyse financière
+  // Chercher des correspondances après l'OCR
+  const searchMatches = useCallback(
+    async (financialAnalysis) => {
+      let analysis = financialAnalysis;
+      if (typeof analysis === "string") {
+        try {
+          analysis = JSON.parse(analysis);
+        } catch (e) {
+          console.warn("⚠️ Impossible de parser financialAnalysis");
+          return;
+        }
+      }
+
+      const transactionData = analysis?.transaction_data || {};
+      const amount = parseFloat(transactionData.amount) || 0;
+      // La date peut être dans transaction_date ou date
+      const rawDate = transactionData.transaction_date || transactionData.date;
+      const vendor = transactionData.vendor_name;
+
+      // Convertir la date française DD/MM/YY en ISO YYYY-MM-DD
+      let date = rawDate;
+      if (rawDate) {
+        const frenchMatch = rawDate.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+        if (frenchMatch) {
+          const day = frenchMatch[1].padStart(2, "0");
+          const month = frenchMatch[2].padStart(2, "0");
+          let year = frenchMatch[3];
+          if (year.length === 2) year = `20${year}`;
+          date = `${year}-${month}-${day}`;
+        }
+      }
+
+      console.log("🔍 Recherche correspondance:", {
+        amount,
+        rawDate,
+        date,
+        vendor,
+        transactionData,
+      });
+
+      if (amount > 0) {
+        await findMatchingTransaction({ amount, date, vendor });
+      }
+    },
+    [findMatchingTransaction]
+  );
+
+  // Déclencher automatiquement la recherche de correspondances après l'OCR
+  useEffect(() => {
+    if (ocrResult?.financialAnalysis) {
+      searchMatches(ocrResult.financialAnalysis);
+    }
+  }, [ocrResult?.financialAnalysis, searchMatches]);
+
+  // Fonction pour valider les données OCR avec rapprochement automatique
   const handleValidateOcr = useCallback(
     async (financialAnalysis) => {
-      if (ocrResult && selectedFile && uploadResult) {
+      if (ocrResult && selectedFile) {
         try {
-          // Préparer les données pour la création de dépense
-          const ocrData = {
-            ...ocrResult,
-            financialAnalysis: financialAnalysis,
-          };
-
-          const fileData = {
-            cloudflareUrl: uploadResult.url,
-            fileName: selectedFile.name,
-            fileSize: selectedFile.size,
-            mimeType: selectedFile.type,
-          };
-
-          // Créer la dépense en base de données
-          const createdExpense = await createExpenseFromOcrData(
-            ocrData,
-            fileData
-          );
-
-          // Notifier le parent si nécessaire
-          if (onUploadSuccess) {
-            const enrichedData = {
-              fileName: selectedFile.name,
-              fileSize: selectedFile.size,
-              fileType: selectedFile.type,
-              cloudflareUrl: uploadResult.url,
-              ocrData: ocrResult,
-              financialAnalysis: financialAnalysis,
-              createdExpense: createdExpense,
-            };
-            onUploadSuccess(enrichedData);
+          // Préparer les données OCR
+          let analysis = financialAnalysis;
+          if (typeof analysis === "string") {
+            try {
+              analysis = JSON.parse(analysis);
+            } catch (e) {
+              analysis = null;
+            }
           }
 
-          // Fermer le drawer
-          handleClose();
+          const transactionData = analysis?.transaction_data || {};
+
+          // Convertir la date française DD/MM/YY en ISO YYYY-MM-DD
+          const rawDate =
+            transactionData.transaction_date || transactionData.date;
+          let isoDate = rawDate;
+          if (rawDate) {
+            const frenchMatch = rawDate.match(
+              /^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/
+            );
+            if (frenchMatch) {
+              const day = frenchMatch[1].padStart(2, "0");
+              const month = frenchMatch[2].padStart(2, "0");
+              let year = frenchMatch[3];
+              if (year.length === 2) year = `20${year}`;
+              isoDate = `${year}-${month}-${day}`;
+            }
+          }
+
+          const ocrData = {
+            amount: parseFloat(transactionData.amount) || 0,
+            date: isoDate,
+            vendor: transactionData.vendor_name,
+            merchant: transactionData.vendor_name,
+            category: transactionData.category,
+            currency: transactionData.currency || "EUR",
+          };
+
+          // Utiliser le rapprochement automatique
+          const result = await autoReconcile(
+            selectedFile,
+            ocrData,
+            selectedTransactionId
+          );
+
+          if (result?.success) {
+            // Notifier le parent
+            if (onUploadSuccess) {
+              onUploadSuccess({
+                fileName: selectedFile.name,
+                fileSize: selectedFile.size,
+                fileType: selectedFile.type,
+                action: result.action,
+                transactionId: result.transactionId,
+                expenseId: result.expenseId,
+                matchedTransaction: result.matchedTransaction,
+              });
+            }
+
+            // Fermer le drawer
+            handleClose();
+          }
         } catch (error) {
-          console.error("❌ Erreur lors de la création de la dépense:", error);
-          // L'erreur sera affichée via expenseError
+          console.error("❌ Erreur lors du rapprochement:", error);
         }
       }
     },
     [
       ocrResult,
       selectedFile,
-      uploadResult,
-      createExpenseFromOcrData,
+      autoReconcile,
+      selectedTransactionId,
       onUploadSuccess,
       handleClose,
     ]
   );
+
+  // Sélectionner une transaction pour le rapprochement manuel
+  const handleSelectTransaction = useCallback((transactionId) => {
+    setSelectedTransactionId(transactionId);
+    setReconcileMode("manual");
+  }, []);
+
+  // Créer une nouvelle dépense (sans rapprochement)
+  const handleCreateNewExpense = useCallback(() => {
+    setSelectedTransactionId(null);
+    setReconcileMode("new");
+  }, []);
 
   // Formatage de la taille du fichier
   const formatFileSize = (bytes) => {
@@ -264,8 +375,8 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
             </DrawerClose>
           </div>
           <DrawerDescription className="text-xs text-muted-foreground m-0 p-0">
-            Uploadez une photo ou un PDF de votre reçu pour créer
-            automatiquement une dépense
+            Scannez votre reçu pour le rattacher à une transaction bancaire ou
+            créer une nouvelle dépense
           </DrawerDescription>
         </DrawerHeader>
 
@@ -398,14 +509,139 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
 
           {/* Résultats OCR */}
           {ocrResult && (
-            <OcrEditableDisplay
-              ocrResult={ocrResult}
-              onValidate={handleValidateOcr}
-              isCreatingExpense={isCreatingExpense}
-              imageUrl={uploadResult?.url}
-              isEditing={isEditing}
-              setIsEditing={setIsEditing}
-            />
+            <>
+              <OcrEditableDisplay
+                ocrResult={ocrResult}
+                onValidate={handleValidateOcr}
+                isCreatingExpense={isCreatingExpense || isReconciling}
+                imageUrl={uploadResult?.url}
+                isEditing={isEditing}
+                setIsEditing={setIsEditing}
+              />
+
+              {/* Section Rapprochement Automatique */}
+              {matchResult && matchResult.allMatches?.length > 0 && (
+                <div className="mt-4 p-4 border rounded-lg bg-muted/30">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Link2 className="h-4 w-4 text-primary" />
+                    <h4 className="font-medium text-sm">
+                      Transactions bancaires correspondantes
+                    </h4>
+                    <Badge variant="secondary" className="text-xs">
+                      {matchResult.allMatches.length} trouvée(s)
+                    </Badge>
+                  </div>
+
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Sélectionnez une transaction pour y attacher ce
+                    justificatif, ou créez une nouvelle dépense.
+                  </p>
+
+                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                    {matchResult.allMatches.map((match) => (
+                      <div
+                        key={match.id}
+                        onClick={() => handleSelectTransaction(match.id)}
+                        className={cn(
+                          "flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-colors",
+                          selectedTransactionId === match.id
+                            ? "border-primary bg-primary/5 ring-1 ring-primary"
+                            : "hover:bg-muted/50"
+                        )}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={cn(
+                              "h-8 w-8 rounded-full flex items-center justify-center",
+                              selectedTransactionId === match.id
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-muted"
+                            )}
+                          >
+                            {selectedTransactionId === match.id ? (
+                              <CheckIcon className="h-4 w-4" />
+                            ) : (
+                              <Landmark className="h-4 w-4 text-muted-foreground" />
+                            )}
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium">
+                              {match.vendor || match.description}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {match.date
+                                ? new Date(match.date).toLocaleDateString(
+                                    "fr-FR"
+                                  )
+                                : "Date inconnue"}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-medium">
+                            {Math.abs(match.amount).toLocaleString("fr-FR", {
+                              style: "currency",
+                              currency: "EUR",
+                            })}
+                          </p>
+                          <Badge
+                            variant={
+                              match.confidence === "high"
+                                ? "default"
+                                : match.confidence === "medium"
+                                  ? "secondary"
+                                  : "outline"
+                            }
+                            className="text-xs"
+                          >
+                            {match.confidence === "high"
+                              ? "Forte"
+                              : match.confidence === "medium"
+                                ? "Moyenne"
+                                : "Faible"}
+                          </Badge>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-3 pt-3 border-t">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleCreateNewExpense}
+                      className="w-full text-muted-foreground"
+                    >
+                      <PlusIcon className="h-4 w-4 mr-2" />
+                      Créer une nouvelle dépense (sans rapprochement)
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Message si aucune correspondance */}
+              {matchResult && matchResult.allMatches?.length === 0 && (
+                <Callout type="info" noMargin className="mt-4">
+                  <div>
+                    <h4 className="font-normal text-sm">
+                      Aucune transaction correspondante
+                    </h4>
+                    <p className="text-xs">
+                      Aucune transaction bancaire ne correspond à ce montant.
+                      Une nouvelle dépense sera créée.
+                    </p>
+                  </div>
+                </Callout>
+              )}
+
+              {/* Indicateur de recherche */}
+              {isSearching && (
+                <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
+                  <LoaderCircle className="h-4 w-4 animate-spin" />
+                  Recherche de transactions correspondantes...
+                </div>
+              )}
+            </>
           )}
         </div>
 
@@ -458,7 +694,9 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
                     Annuler
                   </Button>
                   <Button
-                    onClick={() => handleValidateOcr(ocrResult?.financialAnalysis)}
+                    onClick={() =>
+                      handleValidateOcr(ocrResult?.financialAnalysis)
+                    }
                     disabled={isCreatingExpense}
                     className="bg-primary hover:bg-primary/90 cursor-pointer font-normal"
                   >
@@ -489,31 +727,26 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
                       Modifier
                     </Button>
                   </div>
-                  <ButtonGroup>
-                    <Button
-                      onClick={() => handleValidateOcr(ocrResult?.financialAnalysis)}
-                      disabled={isCreatingExpense}
-                      className="cursor-pointer font-normal bg-black text-white hover:bg-black/90 dark:bg-popover dark:text-popover-foreground dark:hover:bg-popover/90"
-                    >
-                      {isCreatingExpense ? (
-                        <>
-                          <LoaderCircle className="h-4 w-4 mr-2 animate-spin" />
-                          Création...
-                        </>
-                      ) : (
-                        "Valider la dépense"
-                      )}
-                    </Button>
-                    <ButtonGroupSeparator />
-                    <Button
-                      size="icon"
-                      onClick={() => handleValidateOcr(ocrResult?.financialAnalysis)}
-                      disabled={isCreatingExpense}
-                      className="cursor-pointer bg-black text-white hover:bg-black/90 dark:bg-popover dark:text-popover-foreground dark:hover:bg-popover/90"
-                    >
-                      <PlusIcon size={16} aria-hidden="true" />
-                    </Button>
-                  </ButtonGroup>
+                  <Button
+                    onClick={() =>
+                      handleValidateOcr(ocrResult?.financialAnalysis)
+                    }
+                    disabled={isCreatingExpense || isReconciling}
+                    className="cursor-pointer font-normal bg-black text-white hover:bg-black/90 dark:bg-popover dark:text-popover-foreground dark:hover:bg-popover/90"
+                  >
+                    {isCreatingExpense || isReconciling ? (
+                      <>
+                        <LoaderCircle className="h-4 w-4 mr-2 animate-spin" />
+                        {selectedTransactionId ? "Liaison..." : "Création..."}
+                      </>
+                    ) : selectedTransactionId ? (
+                      "Lier le justificatif"
+                    ) : matchResult?.allMatches?.length > 0 ? (
+                      "Créer une dépense"
+                    ) : (
+                      "Valider la dépense"
+                    )}
+                  </Button>
                 </>
               )}
             </div>

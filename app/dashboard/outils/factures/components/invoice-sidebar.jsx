@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   X,
   Eye,
@@ -18,6 +18,9 @@ import {
   Percent,
   Receipt,
   Plus,
+  Landmark,
+  Link2,
+  Unlink,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
@@ -43,6 +46,8 @@ import { toast } from "@/src/components/ui/sonner";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import UniversalPDFDownloaderWithFacturX from "@/src/components/pdf/UniversalPDFDownloaderWithFacturX";
 import CreditNoteMobileFullscreen from "./credit-note-mobile-fullscreen";
+import { useReconciliation } from "@/src/hooks/useReconciliation";
+import { ScrollArea } from "@/src/components/ui/scroll-area";
 
 export default function InvoiceSidebar({
   isOpen,
@@ -53,7 +58,8 @@ export default function InvoiceSidebar({
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [selectedCreditNote, setSelectedCreditNote] = useState(null);
   const [isCreditNotePreviewOpen, setIsCreditNotePreviewOpen] = useState(false);
-  const [isCreditNoteMobileFullscreen, setIsCreditNoteMobileFullscreen] = useState(false);
+  const [isCreditNoteMobileFullscreen, setIsCreditNoteMobileFullscreen] =
+    useState(false);
   const [showMobileDetails, setShowMobileDetails] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -75,14 +81,99 @@ export default function InvoiceSidebar({
     error: invoiceError,
   } = useInvoice(initialInvoice?.id);
 
+  // Hook de rapprochement bancaire
+  const { fetchTransactionsForInvoice, linkTransaction, unlinkTransaction } =
+    useReconciliation();
+  const [availableTransactions, setAvailableTransactions] = useState([]);
+  const [loadingTransactions, setLoadingTransactions] = useState(false);
+  const [showTransactionPicker, setShowTransactionPicker] = useState(false);
+  const [linkingTransaction, setLinkingTransaction] = useState(false);
+
+  // Charger les transactions disponibles pour cette facture
+  const loadAvailableTransactions = useCallback(async () => {
+    if (!initialInvoice?.id) return;
+
+    setLoadingTransactions(true);
+    try {
+      const { transactions } = await fetchTransactionsForInvoice(
+        initialInvoice.id
+      );
+      setAvailableTransactions(transactions);
+    } catch (err) {
+      console.error("Erreur chargement transactions:", err);
+    } finally {
+      setLoadingTransactions(false);
+    }
+  }, [initialInvoice?.id, fetchTransactionsForInvoice]);
+
+  // Charger automatiquement les transactions suggérées quand le drawer s'ouvre
+  useEffect(() => {
+    if (
+      isOpen &&
+      initialInvoice?.id &&
+      initialInvoice?.status === INVOICE_STATUS.PENDING &&
+      !initialInvoice?.linkedTransactionId
+    ) {
+      loadAvailableTransactions();
+    }
+  }, [
+    isOpen,
+    initialInvoice?.id,
+    initialInvoice?.status,
+    initialInvoice?.linkedTransactionId,
+    loadAvailableTransactions,
+  ]);
+
+  // Filtrer les transactions avec un bon score de correspondance
+  const suggestedTransactions = availableTransactions.filter(
+    (tx) => tx.score >= 80
+  );
+
+  // Lier une transaction à cette facture
+  const handleLinkTransaction = async (transactionId) => {
+    setLinkingTransaction(true);
+    try {
+      const result = await linkTransaction(transactionId, initialInvoice.id);
+      if (result.success) {
+        toast.success("Paiement bancaire rattaché avec succès");
+        setShowTransactionPicker(false);
+        if (onRefetch) onRefetch();
+      } else {
+        toast.error(result.error || "Erreur lors du rattachement");
+      }
+    } catch (err) {
+      toast.error("Erreur lors du rattachement");
+    } finally {
+      setLinkingTransaction(false);
+    }
+  };
+
+  // Délier la transaction de cette facture
+  const handleUnlinkTransaction = async () => {
+    setLinkingTransaction(true);
+    try {
+      const result = await unlinkTransaction(null, initialInvoice.id);
+      if (result.success) {
+        toast.success("Paiement bancaire détaché");
+        if (onRefetch) onRefetch();
+      } else {
+        toast.error(result.error || "Erreur lors du détachement");
+      }
+    } catch (err) {
+      toast.error("Erreur lors du détachement");
+    } finally {
+      setLinkingTransaction(false);
+    }
+  };
+
   // Détecter si on est sur mobile
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
     };
     checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
   // Réinitialiser showMobileDetails quand la sidebar se ferme
@@ -146,7 +237,7 @@ export default function InvoiceSidebar({
     } catch (error) {
       // L'erreur est gérée par errorLink dans apolloClient.js
       // qui affiche automatiquement le message du backend
-      console.error('Erreur lors du changement de statut:', error);
+      console.error("Erreur lors du changement de statut:", error);
     }
   };
 
@@ -205,7 +296,7 @@ export default function InvoiceSidebar({
 
       {/* PDF Preview Section */}
       <div
-        className={`fixed inset-y-0 left-0 md:right-[35%] right-0 z-50 transform transition-transform duration-300 ease-in-out ${
+        className={`fixed inset-y-0 left-0 md:right-[40%] right-0 z-50 transform transition-transform duration-300 ease-in-out ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -214,7 +305,7 @@ export default function InvoiceSidebar({
             <UniversalPreviewPDF data={invoice} type="invoice" />
           </div>
         </div>
-        
+
         {/* Bouton flottant pour ouvrir les détails sur mobile */}
         <Button
           onClick={() => setShowMobileDetails(true)}
@@ -227,40 +318,42 @@ export default function InvoiceSidebar({
 
       {/* Main Sidebar - Hidden on mobile by default, shown in modal */}
       <div
-        className={`fixed inset-y-0 right-0 z-50 md:w-[35%] w-full bg-background border-l shadow-lg transform transition-transform duration-300 ease-in-out flex flex-col ${
-          isOpen ? (showMobileDetails ? "translate-x-0" : "md:translate-x-0 translate-x-full") : "translate-x-full"
+        className={`fixed inset-y-0 right-0 z-50 md:w-[40%] w-full bg-background border-l shadow-lg transform transition-transform duration-300 ease-in-out flex flex-col ${
+          isOpen
+            ? showMobileDetails
+              ? "translate-x-0"
+              : "md:translate-x-0 translate-x-full"
+            : "translate-x-full"
         }`}
       >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
-          <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-3">
             <h2 className="font-normal text-lg">
               Facture {invoice.number || "Brouillon"}
             </h2>
-            <div className="flex items-center gap-2">
-              <span
-                className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                  invoice.status === 'DRAFT'
-                    ? 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100'
-                    : invoice.status === 'PENDING'
-                    ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100'
-                    : invoice.status === 'PAID'
-                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100'
-                    : invoice.status === 'OVERDUE'
-                    ? 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-100'
-                    : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100'
-                }`}
-              >
-                {INVOICE_STATUS_LABELS[invoice.status] || invoice.status}
-              </span>
-            </div>
+            <span
+              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                invoice.status === "DRAFT"
+                  ? "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100"
+                  : invoice.status === "PENDING"
+                    ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100"
+                    : invoice.status === "PAID"
+                      ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"
+                      : invoice.status === "OVERDUE"
+                        ? "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-100"
+                        : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100"
+              }`}
+            >
+              {INVOICE_STATUS_LABELS[invoice.status] || invoice.status}
+            </span>
           </div>
           <div className="flex items-center gap-2">
             {/* Bouton PDF - masqué pour les brouillons */}
             {invoice.status !== INVOICE_STATUS.DRAFT && (
-              <UniversalPDFDownloaderWithFacturX 
-                data={invoice} 
-                type="invoice" 
+              <UniversalPDFDownloaderWithFacturX
+                data={invoice}
+                type="invoice"
                 enableFacturX={true}
               />
             )}
@@ -286,9 +379,67 @@ export default function InvoiceSidebar({
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6 space-y-8">
+          {/* Section Suggestion de Rattachement - Affichée en haut si suggestions disponibles */}
+          {invoice.status === INVOICE_STATUS.PENDING &&
+            !invoice.linkedTransactionId &&
+            suggestedTransactions.length > 0 && (
+              <div className="p-4 rounded-lg bg-[#5a50ff]/10 border border-[#5a50ff]/30 space-y-3">
+                <div className="flex items-center gap-2">
+                  <Landmark className="h-5 w-5 text-[#5a50ff]" />
+                  <div>
+                    <h3 className="font-medium text-[#5a50ff]">
+                      Paiement détecté
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      {suggestedTransactions.length === 1
+                        ? "Une transaction correspond à cette facture"
+                        : `${suggestedTransactions.length} transactions correspondent à cette facture`}
+                    </p>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  {suggestedTransactions.slice(0, 3).map((tx) => (
+                    <div
+                      key={tx._id}
+                      className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-lg border"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium">
+                          +{formatCurrency(tx.amount)}
+                        </div>
+                        <div className="text-xs text-muted-foreground truncate">
+                          {tx.description}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {formatDate(tx.date)}
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        className="ml-2 bg-[#5a50ff] hover:bg-[#4a40ef] text-white"
+                        onClick={() => handleLinkTransaction(tx._id)}
+                        disabled={linkingTransaction}
+                      >
+                        {linkingTransaction ? (
+                          <LoaderCircle className="h-3 w-3 animate-spin" />
+                        ) : (
+                          <>
+                            <Link2 className="h-3 w-3 mr-1" />
+                            Rattacher
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
           {/* Client Info */}
           <div className="space-y-2.5">
-            <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Client</h3>
+            <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Client
+            </h3>
             {invoice.client ? (
               <div className="space-y-1.5">
                 <div>
@@ -328,15 +479,15 @@ export default function InvoiceSidebar({
                 )}
               </div>
             ) : (
-              <p className="text-muted-foreground">
-                Aucun client sélectionné
-              </p>
+              <p className="text-muted-foreground">Aucun client sélectionné</p>
             )}
           </div>
 
           {/* Dates */}
           <div className="space-y-2.5">
-            <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Dates</h3>
+            <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Dates
+            </h3>
             <div className="space-y-1.5">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Date d'émission</span>
@@ -348,7 +499,9 @@ export default function InvoiceSidebar({
               </div>
               {invoice.paymentDate && (
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Date de paiement</span>
+                  <span className="text-muted-foreground">
+                    Date de paiement
+                  </span>
                   <span>{formatDate(invoice.paymentDate)}</span>
                 </div>
               )}
@@ -357,7 +510,9 @@ export default function InvoiceSidebar({
 
           {/* Articles */}
           <div className="space-y-2.5">
-            <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Articles</h3>
+            <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Articles
+            </h3>
             <div className="space-y-1.5">
               {invoice.items && invoice.items.length > 0 ? (
                 invoice.items.map((item, index) => (
@@ -379,7 +534,9 @@ export default function InvoiceSidebar({
 
           {/* Totals */}
           <div className="space-y-2.5">
-            <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Totaux</h3>
+            <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Totaux
+            </h3>
             <div className="space-y-1.5">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Sous-total HT</span>
@@ -395,9 +552,11 @@ export default function InvoiceSidebar({
                 <span className="text-muted-foreground">Total HT</span>
                 <span>
                   {formatCurrency(
-                    invoice.finalTotalHT !== undefined && invoice.finalTotalHT !== null
+                    invoice.finalTotalHT !== undefined &&
+                      invoice.finalTotalHT !== null
                       ? invoice.finalTotalHT
-                      : invoice.totalHT !== undefined && invoice.totalHT !== null
+                      : invoice.totalHT !== undefined &&
+                          invoice.totalHT !== null
                         ? invoice.totalHT
                         : 0
                   )}
@@ -412,152 +571,190 @@ export default function InvoiceSidebar({
                     </span>
                   ) : (
                     formatCurrency(
-                      invoice.finalTotalVAT !== undefined && invoice.finalTotalVAT !== null
+                      invoice.finalTotalVAT !== undefined &&
+                        invoice.finalTotalVAT !== null
                         ? invoice.finalTotalVAT
-                        : invoice.totalVAT !== undefined && invoice.totalVAT !== null
+                        : invoice.totalVAT !== undefined &&
+                            invoice.totalVAT !== null
                           ? invoice.totalVAT
                           : 0
                     )
                   )}
                 </span>
               </div>
-              
+
               {/* Escompte (avant Total TTC) */}
               {(() => {
                 const escompteValue = parseFloat(invoice.escompte) || 0;
                 if (escompteValue <= 0) return null;
-                
-                const totalTTC = invoice.finalTotalTTC !== undefined && invoice.finalTotalTTC !== null
-                  ? invoice.finalTotalTTC
-                  : invoice.totalTTC !== undefined && invoice.totalTTC !== null
-                    ? invoice.totalTTC
-                    : 0;
-                const totalHT = totalTTC - (invoice.finalTotalVAT || invoice.totalVAT || 0);
+
+                const totalTTC =
+                  invoice.finalTotalTTC !== undefined &&
+                  invoice.finalTotalTTC !== null
+                    ? invoice.finalTotalTTC
+                    : invoice.totalTTC !== undefined &&
+                        invoice.totalTTC !== null
+                      ? invoice.totalTTC
+                      : 0;
+                const totalHT =
+                  totalTTC - (invoice.finalTotalVAT || invoice.totalVAT || 0);
                 const escompteAmount = (totalHT * escompteValue) / 100;
-                
+
                 return (
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Escompte sur HT ({escompteValue}%)</span>
+                    <span className="text-muted-foreground">
+                      Escompte sur HT ({escompteValue}%)
+                    </span>
                     <span>-{formatCurrency(escompteAmount)}</span>
                   </div>
                 );
               })()}
-              
+
               {/* TVA après escompte */}
               {(() => {
                 const escompteValue = parseFloat(invoice.escompte) || 0;
                 if (escompteValue <= 0 || invoice.isReverseCharge) return null;
-                
-                const totalTTC = invoice.finalTotalTTC !== undefined && invoice.finalTotalTTC !== null
-                  ? invoice.finalTotalTTC
-                  : invoice.totalTTC !== undefined && invoice.totalTTC !== null
-                    ? invoice.totalTTC
-                    : 0;
-                const totalHT = totalTTC - (invoice.finalTotalVAT || invoice.totalVAT || 0);
+
+                const totalTTC =
+                  invoice.finalTotalTTC !== undefined &&
+                  invoice.finalTotalTTC !== null
+                    ? invoice.finalTotalTTC
+                    : invoice.totalTTC !== undefined &&
+                        invoice.totalTTC !== null
+                      ? invoice.totalTTC
+                      : 0;
+                const totalHT =
+                  totalTTC - (invoice.finalTotalVAT || invoice.totalVAT || 0);
                 const totalVAT = invoice.finalTotalVAT || invoice.totalVAT || 0;
                 const escompteAmount = (totalHT * escompteValue) / 100;
                 const htAfterEscompte = totalHT - escompteAmount;
                 const tvaAfterEscompte = (htAfterEscompte / totalHT) * totalVAT;
-                
+
                 return (
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">TVA après escompte</span>
+                    <span className="text-muted-foreground">
+                      TVA après escompte
+                    </span>
                     <span>{formatCurrency(tvaAfterEscompte)}</span>
                   </div>
                 );
               })()}
-              
+
               <div className="flex justify-between font-medium">
                 <span>Total TTC</span>
                 <span>
                   {(() => {
                     const escompteValue = parseFloat(invoice.escompte) || 0;
-                    const totalTTC = invoice.finalTotalTTC !== undefined && invoice.finalTotalTTC !== null
-                      ? invoice.finalTotalTTC
-                      : invoice.totalTTC !== undefined && invoice.totalTTC !== null
-                        ? invoice.totalTTC
-                        : 0;
-                    
+                    const totalTTC =
+                      invoice.finalTotalTTC !== undefined &&
+                      invoice.finalTotalTTC !== null
+                        ? invoice.finalTotalTTC
+                        : invoice.totalTTC !== undefined &&
+                            invoice.totalTTC !== null
+                          ? invoice.totalTTC
+                          : 0;
+
                     // Si escompte, afficher le TTC après escompte
                     if (escompteValue > 0) {
-                      const totalHT = totalTTC - (invoice.finalTotalVAT || invoice.totalVAT || 0);
-                      const totalVAT = invoice.finalTotalVAT || invoice.totalVAT || 0;
+                      const totalHT =
+                        totalTTC -
+                        (invoice.finalTotalVAT || invoice.totalVAT || 0);
+                      const totalVAT =
+                        invoice.finalTotalVAT || invoice.totalVAT || 0;
                       const escompteAmount = (totalHT * escompteValue) / 100;
                       const htAfterEscompte = totalHT - escompteAmount;
-                      const tvaAfterEscompte = invoice.isReverseCharge ? 0 : (htAfterEscompte / totalHT) * totalVAT;
+                      const tvaAfterEscompte = invoice.isReverseCharge
+                        ? 0
+                        : (htAfterEscompte / totalHT) * totalVAT;
                       return formatCurrency(htAfterEscompte + tvaAfterEscompte);
                     }
-                    
+
                     return formatCurrency(totalTTC);
                   })()}
                 </span>
               </div>
-              
+
               {/* Retenue de garantie (après Total TTC) */}
               {(() => {
                 const retenueValue = parseFloat(invoice.retenueGarantie) || 0;
                 if (retenueValue <= 0) return null;
-                
+
                 const escompteValue = parseFloat(invoice.escompte) || 0;
-                const totalTTC = invoice.finalTotalTTC !== undefined && invoice.finalTotalTTC !== null
-                  ? invoice.finalTotalTTC
-                  : invoice.totalTTC !== undefined && invoice.totalTTC !== null
-                    ? invoice.totalTTC
-                    : 0;
-                
+                const totalTTC =
+                  invoice.finalTotalTTC !== undefined &&
+                  invoice.finalTotalTTC !== null
+                    ? invoice.finalTotalTTC
+                    : invoice.totalTTC !== undefined &&
+                        invoice.totalTTC !== null
+                      ? invoice.totalTTC
+                      : 0;
+
                 // Calculer la base pour la retenue (TTC ou TTC après escompte)
                 let baseAmount = totalTTC;
                 if (escompteValue > 0) {
-                  const totalHT = totalTTC - (invoice.finalTotalVAT || invoice.totalVAT || 0);
-                  const totalVAT = invoice.finalTotalVAT || invoice.totalVAT || 0;
+                  const totalHT =
+                    totalTTC - (invoice.finalTotalVAT || invoice.totalVAT || 0);
+                  const totalVAT =
+                    invoice.finalTotalVAT || invoice.totalVAT || 0;
                   const escompteAmount = (totalHT * escompteValue) / 100;
                   const htAfterEscompte = totalHT - escompteAmount;
-                  const tvaAfterEscompte = invoice.isReverseCharge ? 0 : (htAfterEscompte / totalHT) * totalVAT;
+                  const tvaAfterEscompte = invoice.isReverseCharge
+                    ? 0
+                    : (htAfterEscompte / totalHT) * totalVAT;
                   baseAmount = htAfterEscompte + tvaAfterEscompte;
                 }
-                
+
                 const retenueAmount = (baseAmount * retenueValue) / 100;
-                
+
                 return (
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Retenue de garantie ({retenueValue}%)</span>
+                    <span className="text-muted-foreground">
+                      Retenue de garantie ({retenueValue}%)
+                    </span>
                     <span>-{formatCurrency(retenueAmount)}</span>
                   </div>
                 );
               })()}
-              
+
               {/* Net à payer */}
               {(() => {
                 const retenueValue = parseFloat(invoice.retenueGarantie) || 0;
                 const escompteValue = parseFloat(invoice.escompte) || 0;
-                
+
                 if (retenueValue <= 0 && escompteValue <= 0) return null;
-                
-                const totalTTC = invoice.finalTotalTTC !== undefined && invoice.finalTotalTTC !== null
-                  ? invoice.finalTotalTTC
-                  : invoice.totalTTC !== undefined && invoice.totalTTC !== null
-                    ? invoice.totalTTC
-                    : 0;
-                
+
+                const totalTTC =
+                  invoice.finalTotalTTC !== undefined &&
+                  invoice.finalTotalTTC !== null
+                    ? invoice.finalTotalTTC
+                    : invoice.totalTTC !== undefined &&
+                        invoice.totalTTC !== null
+                      ? invoice.totalTTC
+                      : 0;
+
                 // Calculer le net à payer
                 let finalAmount = totalTTC;
-                
+
                 // Appliquer l'escompte sur HT
                 if (escompteValue > 0) {
-                  const totalHT = totalTTC - (invoice.finalTotalVAT || invoice.totalVAT || 0);
-                  const totalVAT = invoice.finalTotalVAT || invoice.totalVAT || 0;
+                  const totalHT =
+                    totalTTC - (invoice.finalTotalVAT || invoice.totalVAT || 0);
+                  const totalVAT =
+                    invoice.finalTotalVAT || invoice.totalVAT || 0;
                   const escompteAmount = (totalHT * escompteValue) / 100;
                   const htAfterEscompte = totalHT - escompteAmount;
-                  const tvaAfterEscompte = invoice.isReverseCharge ? 0 : (htAfterEscompte / totalHT) * totalVAT;
+                  const tvaAfterEscompte = invoice.isReverseCharge
+                    ? 0
+                    : (htAfterEscompte / totalHT) * totalVAT;
                   finalAmount = htAfterEscompte + tvaAfterEscompte;
                 }
-                
+
                 // Appliquer la retenue sur TTC
                 if (retenueValue > 0) {
                   const retenueAmount = (finalAmount * retenueValue) / 100;
                   finalAmount = finalAmount - retenueAmount;
                 }
-                
+
                 return (
                   <div className="flex justify-between font-bold text-base pt-2 border-t">
                     <span>Net à payer</span>
@@ -673,7 +870,154 @@ export default function InvoiceSidebar({
             )}
           </div>
 
-          {/* <Separator /> */}
+          {/* Section Paiement Bancaire - Affichée uniquement si paiement rattaché ou si pas de suggestions en haut */}
+          {invoice.linkedTransactionId && (
+            <>
+              <Separator />
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Landmark className="h-4 w-4 text-muted-foreground" />
+                  <h3 className="font-medium">Paiement bancaire</h3>
+                </div>
+                <div className="p-3 border rounded-lg bg-green-50 dark:bg-green-900/20">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                      <span className="text-sm font-medium text-green-700 dark:text-green-400">
+                        Paiement rattaché
+                      </span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleUnlinkTransaction}
+                      disabled={linkingTransaction}
+                      className="h-7 px-2 text-xs text-muted-foreground hover:text-destructive"
+                    >
+                      {linkingTransaction ? (
+                        <LoaderCircle className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <Unlink className="h-3 w-3" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Section Paiement Bancaire - Pour factures en attente sans suggestions */}
+          {invoice.status === INVOICE_STATUS.PENDING &&
+            !invoice.linkedTransactionId &&
+            suggestedTransactions.length === 0 && (
+              <>
+                <Separator />
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Landmark className="h-4 w-4 text-muted-foreground" />
+                      <h3 className="font-medium">Paiement bancaire</h3>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowTransactionPicker(true)}
+                      disabled={linkingTransaction}
+                      className="h-7 px-2 text-xs"
+                    >
+                      <Link2 className="h-3 w-3 mr-1" />
+                      Rattacher
+                    </Button>
+                  </div>
+
+                  {loadingTransactions ? (
+                    <div className="flex items-center justify-center py-4">
+                      <LoaderCircle className="h-4 w-4 animate-spin" />
+                    </div>
+                  ) : (
+                    <div className="text-center py-4 text-sm text-muted-foreground">
+                      <Landmark className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                      <p>Aucun paiement rattaché</p>
+                      <p className="text-xs mt-1">
+                        Rattachez une transaction bancaire pour marquer la
+                        facture comme payée
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Sélecteur de transaction */}
+                  {showTransactionPicker && (
+                    <div className="border rounded-lg p-3 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">
+                          Sélectionner une transaction
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setShowTransactionPicker(false)}
+                          className="h-6 w-6 p-0"
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+
+                      {loadingTransactions ? (
+                        <div className="flex items-center justify-center py-4">
+                          <LoaderCircle className="h-4 w-4 animate-spin" />
+                        </div>
+                      ) : availableTransactions.length > 0 ? (
+                        <ScrollArea className="h-[200px]">
+                          <div className="space-y-2">
+                            {availableTransactions.map((tx) => (
+                              <div
+                                key={tx._id}
+                                className={`p-2 border rounded cursor-pointer hover:bg-muted/50 transition-colors ${
+                                  tx.score >= 80
+                                    ? "border-[#5a50ff]/30 bg-[#5a50ff]/5"
+                                    : ""
+                                }`}
+                                onClick={() => handleLinkTransaction(tx._id)}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="text-sm font-medium truncate">
+                                      {formatCurrency(tx.amount)}
+                                    </div>
+                                    <div className="text-xs text-muted-foreground truncate">
+                                      {tx.description}
+                                    </div>
+                                    <div className="text-xs text-muted-foreground">
+                                      {formatDate(tx.date)}
+                                    </div>
+                                  </div>
+                                  {tx.score >= 80 && (
+                                    <Badge
+                                      variant="outline"
+                                      className="text-xs bg-[#5a50ff]/10 text-[#5a50ff] border-[#5a50ff]/30"
+                                    >
+                                      Correspondance
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </ScrollArea>
+                      ) : (
+                        <div className="text-center py-4 text-sm text-muted-foreground">
+                          <p>Aucune transaction disponible</p>
+                          <p className="text-xs mt-1">
+                            Connectez un compte bancaire pour voir les
+                            transactions
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
 
           {/* Preview Thumbnail */}
           {/* <div className="space-y-3">
@@ -694,51 +1038,48 @@ export default function InvoiceSidebar({
 
         {/* Action Buttons */}
         <div className="border-t p-6 space-y-3">
-          {/* Primary Actions */}
-          <div className="flex gap-2">
-            {invoice.status === INVOICE_STATUS.DRAFT && (
+          {/* Draft Actions */}
+          {invoice.status === INVOICE_STATUS.DRAFT && (
+            <div className="flex gap-2">
               <Button
                 variant="outline"
-                size="sm"
                 onClick={handleEdit}
+                disabled={isLoading}
                 className="flex-1"
               >
                 <Pencil className="h-4 w-4 mr-2" />
                 Éditer
               </Button>
-            )}
-          </div>
-
-          {/* Status Actions */}
-          {invoice.status === INVOICE_STATUS.DRAFT && (
-            <Button
-              onClick={handleCreateInvoice}
-              disabled={isLoading}
-              className="w-full"
-            >
-              <FileText className="h-4 w-4 mr-2" />
-              Créer la facture
-            </Button>
+              <Button
+                onClick={handleCreateInvoice}
+                disabled={isLoading}
+                className="flex-1"
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                Créer la facture
+              </Button>
+            </div>
           )}
 
+          {/* Pending Actions */}
           {invoice.status === INVOICE_STATUS.PENDING && (
-            <div className="flex flex-col space-y-2">
-              <Button
-                onClick={handleMarkAsPaid}
-                disabled={isLoading}
-                className="w-full"
-              >
-                <CheckCircle className="h-4 w-4 mr-2" />
-                Marquer comme payée
-              </Button>
+            <div className="flex gap-2">
               <Button
                 variant="outline"
                 onClick={handleCancel}
                 disabled={isLoading}
-                className="w-full"
+                className="flex-1 font-normal"
               >
                 <XCircle className="h-4 w-4 mr-2" />
                 Annuler la facture
+              </Button>
+              <Button
+                onClick={handleMarkAsPaid}
+                disabled={isLoading}
+                className="flex-1 font-normal"
+              >
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Marquer comme payée
               </Button>
             </div>
           )}

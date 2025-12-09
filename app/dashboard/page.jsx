@@ -58,8 +58,8 @@ import { useDashboardData } from "@/src/hooks/useDashboardData";
 import { useState, useEffect, useMemo } from "react";
 import { useInvoices } from "@/src/graphql/invoiceQueries";
 import {
-  processInvoicesForCharts,
-  processExpensesForCharts,
+  processIncomeForCharts,
+  processExpensesWithBankForCharts,
   getIncomeChartConfig,
   getExpenseChartConfig,
 } from "@/src/utils/chartDataProcessors";
@@ -80,12 +80,60 @@ function DashboardContent() {
     totalIncome,
     totalExpenses,
     transactions,
+    bankBalance,
     isLoading,
     isInitialized,
     formatCurrency,
     refreshData,
     cacheInfo,
   } = useDashboardData();
+
+  const { workspaceId } = useWorkspace();
+
+  // Gérer le retour de Bridge Connect (sync automatique des comptes bancaires)
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const isFromBridge = urlParams.has("item_id") || urlParams.has("status");
+
+    if (isFromBridge && workspaceId) {
+      console.log(
+        "🏦 Retour de Bridge détecté, synchronisation des comptes..."
+      );
+
+      const syncBankAccounts = async () => {
+        try {
+          // Lancer la sync complète (comptes + transactions) via le proxy Next.js
+          const response = await fetch("/api/banking-sync/full", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-workspace-id": workspaceId,
+            },
+            body: JSON.stringify({ limit: 100 }),
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            console.log("✅ Sync bancaire terminée:", data);
+            // Rafraîchir les données du dashboard
+            refreshData();
+          } else {
+            console.error("❌ Erreur sync bancaire:", await response.text());
+          }
+
+          // Nettoyer l'URL des paramètres Bridge
+          const cleanUrl = window.location.pathname;
+          window.history.replaceState({}, "", cleanUrl);
+        } catch (error) {
+          console.error("❌ Erreur lors de la sync bancaire:", error);
+        }
+      };
+
+      // Attendre un peu pour que Bridge finalise
+      const timer = setTimeout(syncBankAccounts, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [workspaceId, refreshData]);
 
   // Gérer le retour de Stripe Connect
   useEffect(() => {
@@ -136,14 +184,15 @@ function DashboardContent() {
     }
   }, [session?.user?.id, checkAndUpdateAccountStatus, refetchStatus]);
 
-  // Données pour les graphiques
+  // Données pour les graphiques (incluant les transactions bancaires)
   const incomeChartData = useMemo(
-    () => (paidInvoices ? processInvoicesForCharts(paidInvoices) : []),
-    [paidInvoices]
+    () => processIncomeForCharts(paidInvoices || [], transactions || []),
+    [paidInvoices, transactions]
   );
   const expenseChartData = useMemo(
-    () => (paidExpenses ? processExpensesForCharts(paidExpenses) : []),
-    [paidExpenses]
+    () =>
+      processExpensesWithBankForCharts(paidExpenses || [], transactions || []),
+    [paidExpenses, transactions]
   );
 
   // Debug pour vérifier l'état du cache
@@ -301,20 +350,19 @@ function DashboardContent() {
             isLoading={isLoading}
           />
           <UnifiedTransactions
-            limit={5}
+            limit={4}
             className="shadow-xs w-full md:w-1/2"
             expenses={paidExpenses}
             invoices={paidInvoices}
             isLoading={isLoading}
           />
         </div>
-        {/* Graphique de trésorerie - Pleine largeur */}
+        {/* Graphique de trésorerie - Pleine largeur (MODE BANCAIRE PUR) */}
         <div className="w-full">
           <TreasuryChart
-            expenses={paidExpenses}
-            invoices={paidInvoices}
+            bankTransactions={transactions}
             className="shadow-xs"
-            initialBalance={0}
+            initialBalance={bankBalance || 0}
           />
         </div>
         <div className="flex flex-col md:flex-row gap-4 md:gap-6 w-full">
@@ -338,14 +386,16 @@ function DashboardContent() {
           />
         </div>
 
-        {/* Graphiques de répartition par catégorie */}
+        {/* Graphiques de répartition par catégorie (MODE BANCAIRE PUR) */}
         <div className="flex flex-col md:flex-row gap-4 md:gap-6 w-full">
           <IncomeCategoryChart
             invoices={paidInvoices}
+            bankTransactions={transactions}
             className="shadow-xs w-full md:w-1/2"
           />
           <ExpenseCategoryChart
             expenses={paidExpenses}
+            bankTransactions={transactions}
             className="shadow-xs w-full md:w-1/2"
           />
         </div>

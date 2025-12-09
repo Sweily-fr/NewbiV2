@@ -25,6 +25,11 @@ import { SubscriptionSuccessModal } from "@/src/components/subscription-success-
 import { SettingsModal } from "@/src/components/settings-modal";
 import { OrgActivationHandler } from "@/src/components/org-activation-handler";
 import { StripeConnectUrlHandler } from "@/src/components/stripe-connect-url-handler";
+import { ReconciliationToastProvider } from "@/src/components/reconciliation/ReconciliationToast";
+import {
+  ToastProvider,
+  ToastManagerInitializer,
+} from "@/src/components/ui/toast-manager";
 
 // Composant interne qui utilise le contexte
 function DashboardContent({ children }) {
@@ -179,7 +184,7 @@ function DashboardContent({ children }) {
       />
 
       {/* Bouton de test pour le modal (à retirer en production) */}
-      {process.env.NODE_ENV === "development" && (
+      {/* {process.env.NODE_ENV === "development" && (
         <button
           onClick={() => {
             window.history.pushState(
@@ -193,7 +198,7 @@ function DashboardContent({ children }) {
         >
           Test Modal Success
         </button>
-      )}
+      )} */}
     </SidebarProvider>
   );
 }
@@ -205,7 +210,12 @@ export default function DashboardLayout({ children }) {
   // Wrapper avec le provider de layout optimisé
   const content = (
     <DashboardLayoutProvider>
-      <DashboardContent>{children}</DashboardContent>
+      <ToastProvider>
+        <ToastManagerInitializer />
+        <ReconciliationToastProvider>
+          <DashboardContent>{children}</DashboardContent>
+        </ReconciliationToastProvider>
+      </ToastProvider>
     </DashboardLayoutProvider>
   );
 

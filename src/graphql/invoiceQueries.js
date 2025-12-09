@@ -29,6 +29,7 @@ export const INVOICE_FRAGMENT = gql`
     finalTotalTTC
     discountAmount
     stripeInvoiceId
+    linkedTransactionId
     showBankDetails
     clientPositionRight
     isReverseCharge
@@ -513,7 +514,8 @@ export const useInvoices = () => {
       invoices: invoicesData?.invoices?.invoices || [],
       totalCount: invoicesData?.invoices?.totalCount || 0,
       hasNextPage: invoicesData?.invoices?.hasNextPage || false,
-      loading: (workspaceLoading && !workspaceId) || (queryLoading && !invoicesData),
+      loading:
+        (workspaceLoading && !workspaceId) || (queryLoading && !invoicesData),
       error: workspaceError || queryError,
       pagination: {
         ...pagination,
@@ -682,12 +684,12 @@ export const useCreateInvoice = () => {
       const result = await createInvoiceMutation({
         variables: { workspaceId, input },
       });
-      
+
       // Vérifier si la mutation a retourné des erreurs
       if (result.errors && result.errors.length > 0) {
         throw new Error(result.errors[0].message);
       }
-      
+
       return result?.data?.createInvoice;
     } catch (error) {
       // Re-lancer l'erreur pour qu'elle soit capturée par le composant
@@ -725,19 +727,21 @@ export const useUpdateInvoice = () => {
       const result = await updateInvoiceMutation({
         variables: { id, workspaceId, input },
       });
-      
+
       // Vérifier s'il y a des erreurs GraphQL
       if (result.errors) {
         console.error("GraphQL errors:", result.errors);
-        throw new Error(result.errors.map(e => e.message).join(", "));
+        throw new Error(result.errors.map((e) => e.message).join(", "));
       }
-      
+
       // Vérifier si data est null
       if (!result.data || !result.data.updateInvoice) {
         console.error("Update failed - no data returned:", result);
-        throw new Error("La mise à jour de la facture a échoué - aucune donnée retournée");
+        throw new Error(
+          "La mise à jour de la facture a échoué - aucune donnée retournée"
+        );
       }
-      
+
       return result?.data?.updateInvoice;
     } catch (error) {
       throw error;
@@ -755,7 +759,7 @@ export const useDeleteInvoice = () => {
 
   const [deleteInvoiceMutation, { loading }] = useMutation(DELETE_INVOICE, {
     onError: (error) => {
-      handleMutationError(error, 'delete', 'invoice');
+      handleMutationError(error, "delete", "invoice");
     },
   });
 
@@ -768,14 +772,14 @@ export const useDeleteInvoice = () => {
       await deleteInvoiceMutation({
         variables: { id, workspaceId },
       });
-      
+
       // Invalider le cache des factures
       client.refetchQueries({
         include: [GET_INVOICES, GET_INVOICE_STATS],
       });
-      
+
       // Toast désactivé ici - géré dans les composants (invoice-row-actions, etc.)
-      
+
       return true;
     } catch (error) {
       throw error;
@@ -788,13 +792,13 @@ export const useDeleteInvoice = () => {
 // Hook pour envoyer une facture par email
 export const useSendInvoice = () => {
   const { handleMutationError } = useErrorHandler();
-  
+
   const [sendInvoiceMutation, { loading }] = useMutation(SEND_INVOICE, {
     onCompleted: () => {
       toast.success("Facture envoyée avec succès");
     },
     onError: (error) => {
-      handleMutationError(error, 'send', 'invoice');
+      handleMutationError(error, "send", "invoice");
     },
   });
 
@@ -846,12 +850,12 @@ export const useMarkInvoiceAsPaid = () => {
       const result = await markAsPaidMutation({
         variables: { id, workspaceId, paymentDate },
       });
-      
+
       // Vérifier si la mutation a retourné des erreurs
       if (result.errors && result.errors.length > 0) {
         throw new Error(result.errors[0].message);
       }
-      
+
       return result?.data?.markInvoiceAsPaid;
     } catch (error) {
       // Re-lancer l'erreur pour qu'elle soit capturée par le composant
@@ -899,12 +903,12 @@ export const useChangeInvoiceStatus = () => {
       const result = await changeStatusMutation({
         variables: { id, workspaceId, status },
       });
-      
+
       // Vérifier si la mutation a retourné des erreurs
       if (result.errors && result.errors.length > 0) {
         throw new Error(result.errors[0].message);
       }
-      
+
       return result?.data?.changeInvoiceStatus;
     } catch (error) {
       // Re-lancer l'erreur pour qu'elle soit capturée par le composant
@@ -1130,23 +1134,29 @@ export const useCheckInvoiceNumber = () => {
           fetchPolicy: "network-only", // Toujours vérifier avec le serveur
         });
 
-        console.log('[checkInvoiceNumber] Toutes les factures:', data?.invoices?.invoices?.map(inv => `${inv.prefix}${inv.number}`));
-        console.log('[checkInvoiceNumber] Recherche:', { prefix: invoicePrefix, number: invoiceNumber });
-        console.log('[checkInvoiceNumber] ExcludeId:', excludeId);
+        console.log(
+          "[checkInvoiceNumber] Toutes les factures:",
+          data?.invoices?.invoices?.map((inv) => `${inv.prefix}${inv.number}`)
+        );
+        console.log("[checkInvoiceNumber] Recherche:", {
+          prefix: invoicePrefix,
+          number: invoiceNumber,
+        });
+        console.log("[checkInvoiceNumber] ExcludeId:", excludeId);
 
         if (data?.invoices?.invoices) {
           // Chercher une facture avec le même préfixe ET le même numéro (en excluant l'ID actuel si fourni)
-          const existingInvoice = data.invoices.invoices.find(
-            (invoice) => {
-              const matchesNumber = invoice.number === invoiceNumber;
-              const matchesPrefix = invoice.prefix === invoicePrefix;
-              const notExcluded = !excludeId || invoice.id !== excludeId;
-              console.log(`[checkInvoiceNumber] Comparaison: "${invoice.prefix}${invoice.number}" === "${invoicePrefix}${invoiceNumber}" ? prefix:${matchesPrefix}, number:${matchesNumber}, notExcluded: ${notExcluded}`);
-              return matchesNumber && matchesPrefix && notExcluded;
-            }
-          );
+          const existingInvoice = data.invoices.invoices.find((invoice) => {
+            const matchesNumber = invoice.number === invoiceNumber;
+            const matchesPrefix = invoice.prefix === invoicePrefix;
+            const notExcluded = !excludeId || invoice.id !== excludeId;
+            console.log(
+              `[checkInvoiceNumber] Comparaison: "${invoice.prefix}${invoice.number}" === "${invoicePrefix}${invoiceNumber}" ? prefix:${matchesPrefix}, number:${matchesNumber}, notExcluded: ${notExcluded}`
+            );
+            return matchesNumber && matchesPrefix && notExcluded;
+          });
 
-          console.log('[checkInvoiceNumber] Facture trouvée:', existingInvoice);
+          console.log("[checkInvoiceNumber] Facture trouvée:", existingInvoice);
 
           return {
             exists: !!existingInvoice,

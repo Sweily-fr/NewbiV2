@@ -1,36 +1,52 @@
 "use client";
 import { ChartAreaInteractive } from "@/src/components/chart-area-interactive";
-import { ChartRadarGridCircle } from "@/src/components/chart-radar-grid-circle";
-import { ChartBarMultiple } from "@/src/components/ui/bar-charts";
 import TransactionTable from "./components/table";
 import { ExpenseCategoryChart } from "./components/expense-category-chart";
-import { useState, useMemo, useEffect } from "react";
+import { useMemo } from "react";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
 import { useExpenses } from "@/src/hooks/useExpenses";
+import { useUnifiedExpenses } from "@/src/hooks/useUnifiedExpenses";
 import {
-  processExpensesForCharts,
+  processExpensesWithBankForCharts,
   getExpenseChartConfig,
 } from "@/src/utils/chartDataProcessors";
-import { useApolloClient } from "@apollo/client";
-import { Button } from "@/src/components/ui/button";
-import { RefreshCw } from "lucide-react";
+import { Building2, PenLine, AlertCircle } from "lucide-react";
 import { useSearchParams } from "next/navigation";
+import { Badge } from "@/src/components/ui/badge";
+import { useDashboardData } from "@/src/hooks/useDashboardData";
 
 function GestionDepensesContent() {
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const client = useApolloClient();
   const searchParams = useSearchParams();
 
-  // Récupération des dépenses depuis l'API
+  // Récupération des transactions bancaires pour les graphiques
+  const { transactions: bankTransactions, isLoading: bankLoading } =
+    useDashboardData();
+
+  // Récupération des dépenses unifiées (bancaires + manuelles)
   const {
-    expenses,
-    loading: expensesLoading,
-    error: expensesError,
-    refetch: refetchExpenses,
+    expenses: unifiedExpenses,
+    stats: unifiedStats,
+    loading: unifiedLoading,
+    error: unifiedError,
+    refetch: refetchUnified,
+  } = useUnifiedExpenses();
+
+  // Fallback sur les dépenses classiques si pas de données unifiées
+  const {
+    expenses: legacyExpenses,
+    loading: legacyLoading,
+    error: legacyError,
+    refetch: refetchLegacy,
   } = useExpenses();
 
-  const loading = expensesLoading;
-  const error = expensesError;
+  // Utiliser les dépenses unifiées si disponibles, sinon les dépenses classiques
+  const expenses =
+    unifiedExpenses.length > 0 ? unifiedExpenses : legacyExpenses;
+  const loading = unifiedLoading || legacyLoading || bankLoading;
+  const error = unifiedError || legacyError;
+  const refetchExpenses = async () => {
+    await Promise.all([refetchUnified(), refetchLegacy()]);
+  };
 
   // Local formatCurrency function
   const formatCurrency = (amount) => {
@@ -46,38 +62,29 @@ function GestionDepensesContent() {
     return expenses.filter((expense) => expense.status === "PAID");
   }, [expenses]);
 
-  // Calcul du total des dépenses - MÉMORISÉ
+  // Calcul du total des dépenses - Utiliser les transactions bancaires négatives
   const totalExpenses = useMemo(() => {
+    // Priorité aux transactions bancaires si disponibles
+    if (bankTransactions && bankTransactions.length > 0) {
+      return bankTransactions
+        .filter((t) => t.amount < 0)
+        .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+    }
+    // Fallback sur les dépenses manuelles
     return paidExpenses.reduce(
       (sum, expense) => sum + (expense.amount || 0),
       0
     );
-  }, [paidExpenses]);
+  }, [bankTransactions, paidExpenses]);
 
-  // Utiliser les fonctions utilitaires pour les données de graphique
+  // Utiliser les fonctions utilitaires pour les données de graphique (MODE BANCAIRE PUR)
   const expenseChartData = useMemo(
-    () => processExpensesForCharts(paidExpenses),
-    [paidExpenses]
+    () =>
+      processExpensesWithBankForCharts(paidExpenses, bankTransactions || []),
+    [paidExpenses, bankTransactions]
   );
 
-  // Fonction pour ouvrir le dialogue depuis le bouton dans TableUser
-  const handleOpenInviteDialog = () => {
-    setDialogOpen(true);
-  };
-
-  // Fonction pour rafraîchir les données et vider le cache
-  const handleRefreshData = async () => {
-    try {
-      // Vider le cache Apollo Client
-      await client.clearStore();
-      // Refetch les données
-      await refetchExpenses();
-    } catch (error) {
-      console.error("Erreur lors du rafraîchissement:", error);
-    }
-  };
-
-  // Utiliser la configuration importée
+  // Configuration du graphique
   const expenseChartConfig = getExpenseChartConfig();
 
   return (
@@ -92,16 +99,35 @@ function GestionDepensesContent() {
               Gérer vos dépenses en toute simplicité avec la lecture OCR de vos
               reçus
             </p>
+            {/* Statistiques unifiées */}
+            {unifiedStats && (
+              <div className="flex items-center gap-3 mt-3">
+                <Badge
+                  variant="outline"
+                  className="flex items-center gap-1.5 text-xs font-normal"
+                >
+                  <Building2 size={12} className="text-blue-500" />
+                  {unifiedStats.bankTransactionsCount} bancaires
+                </Badge>
+                <Badge
+                  variant="outline"
+                  className="flex items-center gap-1.5 text-xs font-normal"
+                >
+                  <PenLine size={12} className="text-orange-500" />
+                  {unifiedStats.manualExpensesCount} manuelles
+                </Badge>
+                {unifiedStats.withoutReceiptCount > 0 && (
+                  <Badge
+                    variant="outline"
+                    className="flex items-center gap-1.5 text-xs font-normal text-amber-600 border-amber-300"
+                  >
+                    <AlertCircle size={12} className="text-amber-500" />
+                    {unifiedStats.withoutReceiptCount} sans justificatif
+                  </Badge>
+                )}
+              </div>
+            )}
           </div>
-          {/* <Button 
-            onClick={handleRefreshData}
-            variant="outline"
-            size="sm"
-            className="flex items-center gap-2 font-normal"
-          >
-            <RefreshCw className="h-4 w-4" />
-            Actualiser les données
-          </Button> */}
         </div>
 
         {/* Graphiques des dépenses */}
@@ -119,8 +145,12 @@ function GestionDepensesContent() {
             hideMobileCurve={true}
           />
 
-          {/* Graphique en donut - Répartition par catégorie */}
-          <ExpenseCategoryChart expenses={expenses} className="shadow-xs" />
+          {/* Graphique en donut - Répartition par catégorie (MODE BANCAIRE PUR) */}
+          <ExpenseCategoryChart
+            expenses={expenses}
+            bankTransactions={bankTransactions || []}
+            className="shadow-xs"
+          />
         </div>
 
         {/* Tableau */}
