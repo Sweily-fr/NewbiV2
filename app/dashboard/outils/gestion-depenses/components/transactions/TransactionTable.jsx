@@ -152,7 +152,9 @@ export default function TransactionTable({
   // Ouvrir automatiquement la sidebar si initialTransactionId est fourni
   useEffect(() => {
     if (initialTransactionId && expensesProp.length > 0) {
-      const transaction = expensesProp.find((exp) => exp.id === initialTransactionId);
+      const transaction = expensesProp.find(
+        (exp) => exp.id === initialTransactionId
+      );
       if (transaction) {
         if (openOcr) {
           // Ouvrir la sidebar d'édition pour voir les données OCR
@@ -207,12 +209,32 @@ export default function TransactionTable({
     refetchExpenses();
   }, [refetchExpenses]);
 
+  // Fonction utilitaire pour formater les dates de manière sécurisée
+  const safeFormatDate = (dateValue) => {
+    if (!dateValue) return new Date().toISOString().split("T")[0];
+
+    // Si c'est déjà une string au format YYYY-MM-DD
+    if (typeof dateValue === "string" && /^\d{4}-\d{2}-\d{2}/.test(dateValue)) {
+      return dateValue.split("T")[0];
+    }
+
+    // Essayer de parser la date
+    try {
+      const date = new Date(dateValue);
+      if (isNaN(date.getTime())) {
+        console.warn("Date invalide:", dateValue);
+        return new Date().toISOString().split("T")[0];
+      }
+      return date.toISOString().split("T")[0];
+    } catch (error) {
+      console.warn("Erreur de parsing de date:", dateValue, error);
+      return new Date().toISOString().split("T")[0];
+    }
+  };
+
   const transactions = useMemo(() => {
     const expenseTransactions = expenses.map((expense) => {
-      const formattedDate =
-        typeof expense.date === "string"
-          ? expense.date
-          : new Date(expense.date).toISOString().split("T")[0];
+      const formattedDate = safeFormatDate(expense.date);
 
       return {
         id: expense.id,
@@ -248,9 +270,16 @@ export default function TransactionTable({
         ocrMetadata: expense.ocrMetadata || null,
         createdAt: expense.createdAt,
         updatedAt: expense.updatedAt,
-        source: "expense",
+        // Préserver la source originale (BANK, MANUAL, OCR) ou le type (BANK_TRANSACTION, MANUAL_EXPENSE)
+        source: expense.source || expense.type || "MANUAL",
+        // Indicateurs pour la vue unifiée
+        hasReceipt:
+          expense.hasReceipt || (expense.files && expense.files.length > 0),
+        receiptRequired: expense.receiptRequired !== false,
         expenseType: expense.expenseType || "ORGANIZATION",
         assignedMember: expense.assignedMember || null,
+        // Données originales de la transaction bancaire si disponibles
+        originalTransaction: expense.originalTransaction || null,
       };
     });
 
@@ -278,14 +307,8 @@ export default function TransactionTable({
     }
 
     return allTransactions.sort((a, b) => {
-      const dateA =
-        typeof a.date === "string"
-          ? a.date
-          : new Date(a.date).toISOString().split("T")[0];
-      const dateB =
-        typeof b.date === "string"
-          ? b.date
-          : new Date(b.date).toISOString().split("T")[0];
+      const dateA = safeFormatDate(a.date);
+      const dateB = safeFormatDate(b.date);
       return dateB.localeCompare(dateA);
     });
   }, [expenses, expenseTypeFilter, assignedMemberFilter]);
@@ -563,6 +586,48 @@ export default function TransactionTable({
     }
   };
 
+  // Attacher un reçu à une transaction bancaire (upload direct sur Cloudflare)
+  const handleAttachReceipt = async (transaction, file) => {
+    try {
+      // Récupérer l'ID de la transaction originale (pour les transactions bancaires)
+      const transactionId =
+        transaction.originalTransaction?.id || transaction.id;
+
+      console.log(
+        "📎 [ATTACH RECEIPT] Upload direct vers Cloudflare pour transaction:",
+        transactionId
+      );
+
+      // Upload direct via la nouvelle API
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("workspaceId", workspaceId);
+
+      const response = await fetch(
+        `/api/unified-expenses/${transactionId}/receipt`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Erreur lors de l'upload");
+      }
+
+      console.log(
+        "✅ [ATTACH RECEIPT] Receipt uploaded successfully:",
+        data.receiptFile?.url
+      );
+      refetch();
+    } catch (error) {
+      console.error("❌ [ATTACH RECEIPT] Error:", error);
+      throw error;
+    }
+  };
+
   const handleSaveTransaction = async (updatedTransaction) => {
     if (!editingTransaction) return;
 
@@ -757,6 +822,8 @@ export default function TransactionTable({
         onOpenChange={handleCloseDetailDrawer}
         onEdit={handleEditFromDrawer}
         onDelete={handleDeleteFromDrawer}
+        onAttachReceipt={handleAttachReceipt}
+        onRefresh={refetch}
       />
 
       <AddTransactionDrawer

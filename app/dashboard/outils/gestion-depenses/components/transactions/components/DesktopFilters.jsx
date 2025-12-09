@@ -245,7 +245,10 @@ export function DesktopFilters({
                 .filter((column) => column.getCanHide())
                 .map((column) => {
                   // Utiliser le label meta ou le header de la colonne
-                  const label = column.columnDef.meta?.label || column.columnDef.header || column.id;
+                  const label =
+                    column.columnDef.meta?.label ||
+                    column.columnDef.header ||
+                    column.id;
                   return (
                     <DropdownMenuCheckboxItem
                       key={column.id}
@@ -348,9 +351,7 @@ export function DesktopFilters({
       <DropdownMenu>
         <ButtonGroup>
           <DropdownMenuTrigger asChild>
-            <Button
-              className="cursor-pointer font-normal bg-black text-white hover:bg-black/90 dark:bg-popover dark:text-popover-foreground dark:hover:bg-popover/90"
-            >
+            <Button className="cursor-pointer font-normal bg-black text-white hover:bg-black/90 dark:bg-popover dark:text-popover-foreground dark:hover:bg-popover/90">
               Nouvelle dépense
             </Button>
           </DropdownMenuTrigger>
@@ -366,13 +367,20 @@ export function DesktopFilters({
         </ButtonGroup>
         <DropdownMenuContent align="end" className="[--radius:1rem]">
           <DropdownMenuGroup>
-            <DropdownMenuItem onClick={() => setIsAddTransactionDrawerOpen(true)}>
+            <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+              Créer une dépense
+            </DropdownMenuLabel>
+            <DropdownMenuItem
+              onClick={() => setIsAddTransactionDrawerOpen(true)}
+            >
               <Edit3Icon size={16} />
-              Ajouter manuellement
+              Saisie manuelle
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setIsReceiptUploadDrawerOpen(true)}>
+            <DropdownMenuItem
+              onClick={() => setIsReceiptUploadDrawerOpen(true)}
+            >
               <Upload size={16} />
-              Ajouter avec OCR
+              Scanner un reçu (OCR)
             </DropdownMenuItem>
           </DropdownMenuGroup>
         </DropdownMenuContent>

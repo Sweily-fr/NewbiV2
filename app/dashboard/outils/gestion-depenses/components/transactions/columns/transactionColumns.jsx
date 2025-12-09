@@ -1,27 +1,25 @@
 import { Checkbox } from "@/src/components/ui/checkbox";
-import { Badge } from "@/src/components/ui/badge";
 import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/src/components/ui/avatar";
-import {
-  TrendingUp,
-  TrendingDown,
-  ArrowDownIcon,
   CreditCardIcon,
   BanknoteIcon,
   FileTextIcon,
-  ImageIcon,
   Paperclip,
+  PenLine,
+  Landmark,
 } from "lucide-react";
-import { cn } from "@/src/lib/utils";
 import { formatDateToFrench } from "@/src/utils/dateFormatter";
+import { findBank } from "@/lib/banks-config";
 import { RowActions } from "../components/RowActions";
 import { multiColumnFilterFn } from "../filters/multiColumnFilterFn";
 import { findMerchant } from "@/lib/merchants-config";
 import { MerchantLogo } from "../../merchant-logo";
 import { getCategoryConfig } from "@/lib/category-icons-config";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/src/components/ui/tooltip";
 
 export const columns = [
   {
@@ -56,7 +54,7 @@ export const columns = [
       const description = row.getValue("description");
       const vendor = row.original.vendor;
       const merchant = findMerchant(vendor || description || "");
-      
+
       return (
         <div className="flex items-center gap-3">
           <MerchantLogo
@@ -64,7 +62,10 @@ export const columns = [
             fallbackText={vendor || description}
             size="sm"
           />
-          <div className="font-normal truncate max-w-[200px]" title={vendor || description}>
+          <div
+            className="font-normal truncate max-w-[200px]"
+            title={vendor || description}
+          >
             {merchant?.name || vendor || description || "Transaction"}
           </div>
         </div>
@@ -80,7 +81,7 @@ export const columns = [
     meta: {
       label: "Montant",
     },
-    cell: ({ row}) => {
+    cell: ({ row }) => {
       const amount = row.getValue("amount");
       const type = row.original.type;
       return (
@@ -175,25 +176,125 @@ export const columns = [
     size: 150,
   },
   {
+    header: "Source",
+    accessorKey: "source",
+    meta: {
+      label: "Source",
+    },
+    cell: ({ row }) => {
+      const source = row.original.source || row.original.type;
+      const isBank = source === "BANK" || source === "BANK_TRANSACTION";
+      const isManual = source === "MANUAL" || source === "MANUAL_EXPENSE";
+      const isOcr = source === "OCR";
+
+      // Récupérer le nom de la banque depuis les données de la transaction
+      const bankName =
+        row.original.originalTransaction?.fromAccount?.bankName ||
+        row.original.originalTransaction?.provider ||
+        row.original.bankName ||
+        "";
+      const bank = findBank(bankName);
+
+      if (isBank) {
+        return (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-2">
+                  {bank?.logo ? (
+                    <img
+                      src={bank.logo}
+                      alt={bank.name}
+                      className="h-5 w-5 rounded-full object-cover"
+                      onError={(e) => {
+                        e.target.style.display = "none";
+                        e.target.nextSibling.style.display = "flex";
+                      }}
+                    />
+                  ) : null}
+                  <div
+                    className="h-5 w-5 rounded-full bg-muted items-center justify-center"
+                    style={{ display: bank?.logo ? "none" : "flex" }}
+                  >
+                    <Landmark size={12} className="text-muted-foreground" />
+                  </div>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                {bank?.name || "Transaction bancaire"}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        );
+      }
+
+      if (isOcr) {
+        return (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-1.5">
+                  <FileTextIcon size={14} className="text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground">OCR</span>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>Dépense créée par scan OCR</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        );
+      }
+
+      // Manuel
+      return (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex items-center gap-1.5">
+                <PenLine size={14} className="text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">Manuel</span>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>Dépense saisie manuellement</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      );
+    },
+    size: 80,
+  },
+  {
     header: "Justificatif",
-    accessorKey: "attachment",
+    accessorKey: "hasReceipt",
     meta: {
       label: "Justificatif",
     },
     cell: ({ row }) => {
       const files = row.original.files || [];
-      const attachmentCount = files.length;
-      
+      const hasReceipt = row.original.hasReceipt || files.length > 0;
+      const filesCount = files.length > 0 ? files.length : hasReceipt ? 1 : 0;
+
       return (
-        <div className="flex items-center gap-1.5">
-          <Paperclip size={16} className="text-muted-foreground" />
-          <span className="text-sm font-normal text-muted-foreground">
-            {attachmentCount}
-          </span>
-        </div>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex items-center gap-1.5">
+                <Paperclip size={14} className="text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">
+                  {filesCount > 0 ? filesCount : "-"}
+                </span>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              {filesCount > 1
+                ? `${filesCount} justificatifs attachés`
+                : filesCount === 1
+                  ? "1 justificatif attaché"
+                  : "Aucun justificatif"}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       );
     },
-    size: 100,
+    size: 90,
   },
   {
     id: "actions",

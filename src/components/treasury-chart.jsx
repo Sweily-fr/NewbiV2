@@ -63,6 +63,7 @@ const chartConfig = {
 export function TreasuryChart({
   expenses = [],
   invoices = [],
+  bankTransactions = [],
   className = "",
   initialBalance = 0,
 }) {
@@ -73,35 +74,48 @@ export function TreasuryChart({
   // Obtenir le label de la période sélectionnée
   const getTimeRangeLabel = () => {
     switch (timeRange) {
-      case "30d": return "Dernier mois";
-      case "90d": return "Derniers 3 mois";
-      case "365d": return "Dernière année";
-      case "custom": return "Période personnalisée";
-      default: return "Derniers 3 mois";
+      case "30d":
+        return "Dernier mois";
+      case "90d":
+        return "Derniers 3 mois";
+      case "365d":
+        return "Dernière année";
+      case "custom":
+        return "Période personnalisée";
+      default:
+        return "Derniers 3 mois";
     }
   };
 
   console.log("📊 [TREASURY] Props reçues:", {
     expensesCount: expenses.length,
     invoicesCount: invoices.length,
+    bankTransactionsCount: bankTransactions.length,
     initialBalance,
+    // Debug: afficher les 3 premières transactions pour voir le format
+    sampleTransactions: bankTransactions.slice(0, 3).map((t) => ({
+      date: t.date,
+      amount: t.amount,
+      description: t.description,
+      dateType: typeof t.date,
+    })),
   });
 
-  // Calculer les données de trésorerie par jour (comme les autres graphiques)
+  // Calculer les données de trésorerie par jour
+  // Le solde actuel (initialBalance) est le point d'arrivée, on calcule en arrière
   const treasuryData = useMemo(() => {
     const now = new Date();
     const chartData = [];
-    let cumulativeTreasury = initialBalance;
 
     // Déterminer la période
     let startDate, endDate;
-    
+
     if (timeRange === "custom") {
-      // Période personnalisée
-      startDate = customStartDate ? new Date(customStartDate) : new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+      startDate = customStartDate
+        ? new Date(customStartDate)
+        : new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
       endDate = customEndDate ? new Date(customEndDate) : now;
     } else {
-      // Périodes prédéfinies
       const daysMap = {
         "30d": 30,
         "90d": 90,
@@ -114,73 +128,64 @@ export function TreasuryChart({
       endDate = now;
     }
 
-    // Calculer le nombre de jours entre les deux dates
     const daysDiff = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
 
-    // Générer les données pour la période sélectionnée
+    // Fonction pour extraire la date d'une transaction
+    const getTransactionDate = (transaction) => {
+      const rawDate =
+        transaction.date || transaction.processedAt || transaction.createdAt;
+      if (!rawDate) return null;
+      const d = new Date(rawDate);
+      return isNaN(d.getTime()) ? null : d;
+    };
+
+    // Calculer d'abord les mouvements par jour
+    const dailyMovements = [];
     for (let i = 0; i <= daysDiff; i++) {
       const date = new Date(startDate);
       date.setDate(date.getDate() + i);
       const dateStr = date.toISOString().split("T")[0];
 
-      // Filtrer les factures pour ce jour
-      const dayInvoices = invoices.filter((invoice) => {
-        if (!invoice.issueDate || invoice.status !== "COMPLETED") return false;
-
-        let invoiceDate;
-        if (typeof invoice.issueDate === "string") {
-          const timestamp = parseInt(invoice.issueDate);
-          invoiceDate = new Date(timestamp);
-        } else if (typeof invoice.issueDate === "number") {
-          invoiceDate = new Date(invoice.issueDate);
-        } else {
-          invoiceDate = new Date(invoice.issueDate);
-        }
-
-        if (isNaN(invoiceDate.getTime())) return false;
-        return invoiceDate.toISOString().split("T")[0] === dateStr;
+      const dayBankTransactions = bankTransactions.filter((t) => {
+        const tDate = getTransactionDate(t);
+        return tDate && tDate.toISOString().split("T")[0] === dateStr;
       });
 
-      // Filtrer les dépenses pour ce jour
-      const dayExpenses = expenses.filter((expense) => {
-        if (!expense.date || expense.status !== "PAID") return false;
-
-        let expenseDate;
-        if (typeof expense.date === "string") {
-          const timestamp = parseInt(expense.date);
-          if (!isNaN(timestamp) && timestamp > 1000000000000) {
-            expenseDate = new Date(timestamp);
-          } else {
-            expenseDate = new Date(expense.date);
-          }
-        } else if (typeof expense.date === "number") {
-          expenseDate = new Date(expense.date);
-        } else {
-          expenseDate = new Date(expense.date);
-        }
-
-        if (isNaN(expenseDate.getTime())) return false;
-        return expenseDate.toISOString().split("T")[0] === dateStr;
-      });
-
-      // Calculer les montants du jour
-      const dayIncome = dayInvoices.reduce(
-        (sum, invoice) => sum + (invoice.finalTotalTTC || 0),
-        0
-      );
-      const dayExpensesAmount = dayExpenses.reduce(
-        (sum, expense) => sum + (expense.amount || 0),
-        0
+      const dayIncome = dayBankTransactions
+        .filter((t) => t.amount > 0)
+        .reduce((sum, t) => sum + t.amount, 0);
+      const dayExpenses = Math.abs(
+        dayBankTransactions
+          .filter((t) => t.amount < 0)
+          .reduce((sum, t) => sum + t.amount, 0)
       );
 
-      // Mettre à jour la trésorerie cumulée
-      cumulativeTreasury += dayIncome - dayExpensesAmount;
-
-      chartData.push({
+      dailyMovements.push({
         date: dateStr,
         income: dayIncome,
-        expenses: dayExpensesAmount,
-        treasury: cumulativeTreasury,
+        expenses: dayExpenses,
+        netMovement: dayIncome - dayExpenses,
+      });
+    }
+
+    // Calculer la trésorerie en partant du solde actuel et en remontant
+    // Le dernier jour = solde actuel, puis on soustrait les mouvements pour remonter
+    let treasury = initialBalance;
+
+    // Parcourir en sens inverse pour calculer le solde de départ
+    for (let i = dailyMovements.length - 1; i >= 0; i--) {
+      dailyMovements[i].treasury = treasury;
+      // Remonter dans le temps = soustraire le mouvement net du jour
+      treasury -= dailyMovements[i].netMovement;
+    }
+
+    // Maintenant dailyMovements contient les bonnes valeurs de trésorerie
+    for (const day of dailyMovements) {
+      chartData.push({
+        date: day.date,
+        income: day.income,
+        expenses: day.expenses,
+        treasury: day.treasury,
       });
     }
 
@@ -195,15 +200,21 @@ export function TreasuryChart({
     });
 
     return chartData;
-  }, [expenses, invoices, initialBalance, timeRange, customStartDate, customEndDate]);
+  }, [
+    bankTransactions,
+    initialBalance,
+    timeRange,
+    customStartDate,
+    customEndDate,
+  ]);
 
-  // Calculer la consommation de trésorerie (différence entre début et fin)
+  // Calculer la variation de trésorerie (différence entre fin et début de période)
   const treasuryConsumption = useMemo(() => {
     if (treasuryData.length === 0) return 0;
-    const firstMonth = treasuryData[0].treasury;
-    const lastMonth = treasuryData[treasuryData.length - 1].treasury;
-    return lastMonth - initialBalance;
-  }, [treasuryData, initialBalance]);
+    const firstDay = treasuryData[0].treasury;
+    const lastDay = treasuryData[treasuryData.length - 1].treasury;
+    return lastDay - firstDay;
+  }, [treasuryData]);
 
   const formatCurrency = (value) => {
     return new Intl.NumberFormat("fr-FR", {
@@ -231,25 +242,33 @@ export function TreasuryChart({
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="h-8 text-xs border-none shadow-none">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 text-xs border-none shadow-none"
+            >
               {getTimeRangeLabel()}
-              <ChevronRight className="-me-1 opacity-60 rotate-90" size={14} aria-hidden="true" />
+              <ChevronRight
+                className="-me-1 opacity-60 rotate-90"
+                size={14}
+                aria-hidden="true"
+              />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="rounded-xl">
-            <DropdownMenuItem 
+            <DropdownMenuItem
               className="rounded-lg text-xs"
               onClick={() => setTimeRange("365d")}
             >
               Dernière année
             </DropdownMenuItem>
-            <DropdownMenuItem 
+            <DropdownMenuItem
               className="rounded-lg text-xs"
               onClick={() => setTimeRange("90d")}
             >
               Derniers 3 mois
             </DropdownMenuItem>
-            <DropdownMenuItem 
+            <DropdownMenuItem
               className="rounded-lg text-xs"
               onClick={() => setTimeRange("30d")}
             >
@@ -267,7 +286,9 @@ export function TreasuryChart({
                         Date de début
                       </Label>
                       <DatePicker
-                        value={customStartDate ? parseDate(customStartDate) : null}
+                        value={
+                          customStartDate ? parseDate(customStartDate) : null
+                        }
                         onChange={(date) => {
                           if (date) {
                             setCustomStartDate(date.toString());
@@ -294,9 +315,7 @@ export function TreasuryChart({
                       </DatePicker>
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-xs font-medium">
-                        Date de fin
-                      </Label>
+                      <Label className="text-xs font-medium">Date de fin</Label>
                       <DatePicker
                         value={customEndDate ? parseDate(customEndDate) : null}
                         onChange={(date) => {

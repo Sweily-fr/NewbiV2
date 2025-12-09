@@ -42,24 +42,14 @@ export default function UnifiedTransactions({
     try {
       setBankLoading(true);
 
-      // Si les données du dashboard viennent du cache, pas besoin d'attendre l'API bancaire
-      if (!isLoading) {
-        setBankTransactions([]);
-        setBankLoading(false);
-        return;
-      }
-
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000"}/banking/transactions`,
-        {
-          method: "GET",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-            "x-workspace-id": workspaceId,
-          },
-        }
-      );
+      // Récupérer les transactions bancaires depuis la BDD via le proxy Next.js
+      const response = await fetch("/api/banking/transactions?limit=50", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "x-workspace-id": workspaceId,
+        },
+      });
 
       if (response.ok) {
         const data = await response.json();
@@ -70,6 +60,10 @@ export default function UnifiedTransactions({
       }
     } catch (err) {
       // Ignorer les erreurs bancaires pour l'instant
+      console.warn(
+        "⚠️ Erreur récupération transactions bancaires:",
+        err.message
+      );
       setBankTransactions([]);
     } finally {
       setBankLoading(false);
@@ -195,11 +189,12 @@ export default function UnifiedTransactions({
   };
 
   const getTransactionIcon = (transaction) => {
+    // Toutes les icônes sont noires/grises car le fond est gris quand pas de logo
     if (transaction.type === "bank") {
       return transaction.subtype === "credit" ? (
-        <ArrowDownLeft className="h-4 w-4 text-green-500" />
+        <ArrowDownLeft className="h-4 w-4" />
       ) : (
-        <ArrowUpRight className="h-4 w-4 text-red-500" />
+        <ArrowUpRight className="h-4 w-4" />
       );
     } else if (transaction.type === "expense") {
       return <Euro className="h-3 w-3" />;
@@ -208,7 +203,7 @@ export default function UnifiedTransactions({
     } else if (transaction.type === "invoice") {
       return <FileMinus2 className="h-3.5 w-3.5" />;
     }
-    return <CreditCard className="h-4 w-4 text-gray-500" />;
+    return <CreditCard className="h-4 w-4" />;
   };
 
   const getTransactionColor = (transaction) => {
@@ -351,8 +346,10 @@ export default function UnifiedTransactions({
                       size="sm"
                     />
                   ) : (
-                    <div className="w-7 h-7 bg-[#5b4fff]/15 dark:bg-[#5b4fff]/25 rounded-full flex items-center justify-center">
-                      {getTransactionIcon(transaction)}
+                    <div className="w-7 h-7 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
+                      <span className="text-gray-600 dark:text-gray-400">
+                        {getTransactionIcon(transaction)}
+                      </span>
                     </div>
                   )}
                   <div>

@@ -32,7 +32,7 @@ export const PROCESS_DOCUMENT_OCR_FROM_URL = gql`
     $cloudflareUrl: String!
     $fileName: String!
     $mimeType: String!
-    $fileSize: Int
+    $fileSize: Float
     $workspaceId: String!
     $options: OcrOptions
   ) {

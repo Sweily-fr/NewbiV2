@@ -4,6 +4,7 @@ import { TrendingUp, ChevronRight, CalendarIcon } from "lucide-react";
 import { Label, Pie, PieChart, Sector } from "recharts";
 import { useMemo, useState } from "react";
 import { useIsMobile } from "@/src/hooks/use-mobile";
+import { aggregateByCategory } from "@/lib/bank-categories-config";
 
 import {
   Card,
@@ -106,7 +107,11 @@ const chartConfig = {
   },
 };
 
-export function IncomeCategoryChart({ invoices = [], className }) {
+export function IncomeCategoryChart({
+  invoices = [],
+  bankTransactions = [],
+  className,
+}) {
   const isMobile = useIsMobile();
   const [timeRange, setTimeRange] = useState("90d"); // 30d, 90d, 365d, custom
   const [customStartDate, setCustomStartDate] = useState("");
@@ -207,13 +212,15 @@ export function IncomeCategoryChart({ invoices = [], className }) {
   }, [invoices, timeRange, customStartDate, customEndDate]);
 
   // Calculer les données du graphique par catégorie
+  // MODE BANCAIRE PUR : Utiliser les transactions bancaires positives
   const chartData = useMemo(() => {
-    console.log("📊 [IncomeCategoryChart] Calcul des données");
     console.log(
-      "📊 [IncomeCategoryChart] Nombre de factures reçues:",
-      invoices?.length || 0
+      "📊 [IncomeCategoryChart] Calcul des données - MODE BANCAIRE PUR"
     );
-    console.log("📊 [IncomeCategoryChart] Factures:", invoices);
+    console.log(
+      "📊 [IncomeCategoryChart] Transactions bancaires:",
+      bankTransactions?.length || 0
+    );
 
     // Déterminer la période
     const now = new Date();
@@ -236,67 +243,39 @@ export function IncomeCategoryChart({ invoices = [], className }) {
       endDate = now;
     }
 
-    // Filtrer les factures payées (COMPLETED) et dans la période sélectionnée
-    const paidInvoices = invoices.filter((invoice) => {
-      if (invoice.status !== "COMPLETED") return false;
+    // Filtrer les transactions bancaires positives (entrées) dans la période
+    const incomeTransactions = bankTransactions.filter((transaction) => {
+      if (transaction.amount <= 0) return false;
 
-      // Vérifier la date
-      const invoiceDate = invoice.issueDate || invoice.createdAt;
-      if (!invoiceDate) return false;
+      const rawDate =
+        transaction.date || transaction.processedAt || transaction.createdAt;
+      if (!rawDate) return false;
 
-      let parsedDate;
-      if (typeof invoiceDate === "string") {
-        const timestamp = parseInt(invoiceDate);
-        if (!isNaN(timestamp) && timestamp > 1000000000000) {
-          parsedDate = new Date(timestamp);
-        } else {
-          parsedDate = new Date(invoiceDate);
-        }
-      } else if (typeof invoiceDate === "number") {
-        parsedDate = new Date(invoiceDate);
-      } else {
-        parsedDate = new Date(invoiceDate);
-      }
+      const transactionDate = new Date(rawDate);
+      if (isNaN(transactionDate.getTime())) return false;
 
-      if (isNaN(parsedDate.getTime())) return false;
-
-      return parsedDate >= startDate && parsedDate <= endDate;
+      return transactionDate >= startDate && transactionDate <= endDate;
     });
 
     console.log(
-      "📊 [IncomeCategoryChart] Factures COMPLETED filtrées:",
-      paidInvoices.length
+      "📊 [IncomeCategoryChart] Transactions entrées filtrées:",
+      incomeTransactions.length
     );
-    console.log("📊 [IncomeCategoryChart] Période:", { startDate, endDate });
-    console.log("📊 [IncomeCategoryChart] Factures filtrées:", paidInvoices);
 
-    // Grouper par catégorie
-    // ⚠️ IMPORTANT : Les factures n'ont pas de champ "category" dans le schéma
-    // Pour l'instant, on groupe toutes les factures dans "SERVICES"
-    // TODO: Ajouter un champ "category" au modèle Invoice
-    const categoryTotals = paidInvoices.reduce((acc, invoice) => {
-      const category = invoice.category || "SERVICES"; // Par défaut SERVICES
-      if (!acc[category]) {
-        acc[category] = 0;
-      }
-      // Utiliser finalTotalTTC au lieu de totalAmount
-      acc[category] += invoice.finalTotalTTC || invoice.totalTTC || 0;
-      return acc;
-    }, {});
+    // Agréger par catégorie en utilisant la fonction de bank-categories-config
+    const categoryData = aggregateByCategory(incomeTransactions, true);
 
     // Convertir en format pour le graphique
-    const result = Object.entries(categoryTotals)
-      .map(([category, amount]) => ({
-        category,
-        amount: Math.round(amount * 100) / 100, // Arrondir à 2 décimales
-        label: categoryLabels[category] || category,
-        fill: chartConfig[category]?.color || "hsl(var(--chart-1))",
-      }))
-      .sort((a, b) => b.amount - a.amount); // Trier par montant décroissant
+    const result = categoryData.map((cat) => ({
+      category: cat.name,
+      amount: Math.round(cat.amount * 100) / 100,
+      label: cat.name,
+      fill: cat.color,
+    }));
 
     console.log("📊 [IncomeCategoryChart] Données du graphique:", result);
     return result;
-  }, [invoices, timeRange, customStartDate, customEndDate]);
+  }, [bankTransactions, timeRange, customStartDate, customEndDate]);
 
   // Calculer le total et la catégorie principale
   const totalAmount = useMemo(() => {
@@ -324,25 +303,33 @@ export function IncomeCategoryChart({ invoices = [], className }) {
   const TimeRangeSelect = () => (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" className="h-8 text-xs border-none shadow-none">
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-8 text-xs border-none shadow-none"
+        >
           {getTimeRangeLabel()}
-          <ChevronRight className="-me-1 opacity-60 rotate-90" size={14} aria-hidden="true" />
+          <ChevronRight
+            className="-me-1 opacity-60 rotate-90"
+            size={14}
+            aria-hidden="true"
+          />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="rounded-xl">
-        <DropdownMenuItem 
+        <DropdownMenuItem
           className="rounded-lg text-xs"
           onClick={() => setTimeRange("30d")}
         >
           Dernier mois
         </DropdownMenuItem>
-        <DropdownMenuItem 
+        <DropdownMenuItem
           className="rounded-lg text-xs"
           onClick={() => setTimeRange("90d")}
         >
           Derniers 3 mois
         </DropdownMenuItem>
-        <DropdownMenuItem 
+        <DropdownMenuItem
           className="rounded-lg text-xs"
           onClick={() => setTimeRange("365d")}
         >
@@ -428,7 +415,7 @@ export function IncomeCategoryChart({ invoices = [], className }) {
   // Si pas de données, afficher un message avec le filtre
   if (chartData.length === 0) {
     return (
-      <Card className={`@container/card flex flex-col ${className || ''}`}>
+      <Card className={`@container/card flex flex-col ${className || ""}`}>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
           <div className="flex flex-col gap-1">
             <CardTitle className="font-normal text-base">
@@ -450,7 +437,7 @@ export function IncomeCategoryChart({ invoices = [], className }) {
   }
 
   return (
-    <Card className={`@container/card flex flex-col ${className || ''}`}>
+    <Card className={`@container/card flex flex-col ${className || ""}`}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
         <div className="flex flex-col gap-1">
           <CardTitle className="font-normal text-base">
@@ -554,7 +541,9 @@ export function IncomeCategoryChart({ invoices = [], className }) {
           {!isMobile && (
             <div className="flex-1 space-y-3">
               {chartData.slice(0, 5).map((item, index) => {
-                const percentage = ((item.amount / totalAmount) * 100).toFixed(1);
+                const percentage = ((item.amount / totalAmount) * 100).toFixed(
+                  1
+                );
                 return (
                   <div key={item.category} className="flex items-center gap-3">
                     <div

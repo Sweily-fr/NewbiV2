@@ -4,6 +4,7 @@ import { TrendingUp, ChevronRight, CalendarIcon } from "lucide-react";
 import { Label, Pie, PieChart, Sector } from "recharts";
 import { useMemo, useState } from "react";
 import { useIsMobile } from "@/src/hooks/use-mobile";
+import { aggregateByCategory } from "@/lib/bank-categories-config";
 
 import {
   Card,
@@ -137,20 +138,35 @@ const chartConfig = {
   },
 };
 
-export function ExpenseCategoryChart({ expenses = [], className }) {
+export function ExpenseCategoryChart({
+  expenses = [],
+  bankTransactions = [],
+  className,
+}) {
   const isMobile = useIsMobile();
   const [timeRange, setTimeRange] = useState("90d"); // 30d, 90d, 365d, custom
   const [customStartDate, setCustomStartDate] = useState("");
   const [customEndDate, setCustomEndDate] = useState("");
 
   // Calculer les données du graphique par catégorie
+  // MODE BANCAIRE PUR : Utiliser les transactions bancaires négatives
   const chartData = useMemo(() => {
+    console.log(
+      "📊 [ExpenseCategoryChart] Calcul des données - MODE BANCAIRE PUR"
+    );
+    console.log(
+      "📊 [ExpenseCategoryChart] Transactions bancaires:",
+      bankTransactions?.length || 0
+    );
+
     // Déterminer la période
     const now = new Date();
     let startDate, endDate;
-    
+
     if (timeRange === "custom") {
-      startDate = customStartDate ? new Date(customStartDate) : new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+      startDate = customStartDate
+        ? new Date(customStartDate)
+        : new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
       endDate = customEndDate ? new Date(customEndDate) : now;
     } else {
       const daysMap = {
@@ -164,52 +180,39 @@ export function ExpenseCategoryChart({ expenses = [], className }) {
       endDate = now;
     }
 
-    // Filtrer les dépenses payées et dans la période sélectionnée
-    const paidExpenses = expenses.filter((expense) => {
-      if (expense.status !== "PAID") return false;
+    // Filtrer les transactions bancaires négatives (sorties) dans la période
+    const expenseTransactions = bankTransactions.filter((transaction) => {
+      if (transaction.amount >= 0) return false;
 
-      // Vérifier la date
-      if (!expense.date) return false;
+      const rawDate =
+        transaction.date || transaction.processedAt || transaction.createdAt;
+      if (!rawDate) return false;
 
-      let expenseDate;
-      if (typeof expense.date === "string") {
-        const timestamp = parseInt(expense.date);
-        if (!isNaN(timestamp) && timestamp > 1000000000000) {
-          expenseDate = new Date(timestamp);
-        } else {
-          expenseDate = new Date(expense.date);
-        }
-      } else if (typeof expense.date === "number") {
-        expenseDate = new Date(expense.date);
-      } else {
-        expenseDate = new Date(expense.date);
-      }
+      const transactionDate = new Date(rawDate);
+      if (isNaN(transactionDate.getTime())) return false;
 
-      if (isNaN(expenseDate.getTime())) return false;
-
-      return expenseDate >= startDate && expenseDate <= endDate;
+      return transactionDate >= startDate && transactionDate <= endDate;
     });
 
-    // Grouper par catégorie
-    const categoryTotals = paidExpenses.reduce((acc, expense) => {
-      const category = expense.category || "OTHER";
-      if (!acc[category]) {
-        acc[category] = 0;
-      }
-      acc[category] += expense.amount || 0;
-      return acc;
-    }, {});
+    console.log(
+      "📊 [ExpenseCategoryChart] Transactions sorties filtrées:",
+      expenseTransactions.length
+    );
+
+    // Agréger par catégorie en utilisant la fonction de bank-categories-config
+    const categoryData = aggregateByCategory(expenseTransactions, false);
 
     // Convertir en format pour le graphique
-    return Object.entries(categoryTotals)
-      .map(([category, amount]) => ({
-        category,
-        amount: Math.round(amount * 100) / 100, // Arrondir à 2 décimales
-        label: categoryLabels[category] || category,
-        fill: chartConfig[category]?.color || "hsl(var(--chart-1))",
-      }))
-      .sort((a, b) => b.amount - a.amount); // Trier par montant décroissant
-  }, [expenses, timeRange, customStartDate, customEndDate]);
+    const result = categoryData.map((cat) => ({
+      category: cat.name,
+      amount: Math.round(cat.amount * 100) / 100,
+      label: cat.name,
+      fill: cat.color,
+    }));
+
+    console.log("📊 [ExpenseCategoryChart] Données du graphique:", result);
+    return result;
+  }, [bankTransactions, timeRange, customStartDate, customEndDate]);
 
   // Calculer le total et la catégorie principale
   const totalAmount = useMemo(() => {
@@ -229,9 +232,11 @@ export function ExpenseCategoryChart({ expenses = [], className }) {
   const dateRange = useMemo(() => {
     const now = new Date();
     let startDate, endDate;
-    
+
     if (timeRange === "custom") {
-      startDate = customStartDate ? new Date(customStartDate) : new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+      startDate = customStartDate
+        ? new Date(customStartDate)
+        : new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
       endDate = customEndDate ? new Date(customEndDate) : now;
     } else {
       const daysMap = {
@@ -270,11 +275,16 @@ export function ExpenseCategoryChart({ expenses = [], className }) {
   // Obtenir le label de la période sélectionnée
   const getTimeRangeLabel = () => {
     switch (timeRange) {
-      case "30d": return "Dernier mois";
-      case "90d": return "Derniers 3 mois";
-      case "365d": return "Dernière année";
-      case "custom": return "Période personnalisée";
-      default: return "Derniers 3 mois";
+      case "30d":
+        return "Dernier mois";
+      case "90d":
+        return "Derniers 3 mois";
+      case "365d":
+        return "Dernière année";
+      case "custom":
+        return "Période personnalisée";
+      default:
+        return "Derniers 3 mois";
     }
   };
 
@@ -282,25 +292,33 @@ export function ExpenseCategoryChart({ expenses = [], className }) {
   const TimeRangeSelect = () => (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="sm" className="h-8 text-xs border-none shadow-none">
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-8 text-xs border-none shadow-none"
+        >
           {getTimeRangeLabel()}
-          <ChevronRight className="-me-1 opacity-60 rotate-90" size={14} aria-hidden="true" />
+          <ChevronRight
+            className="-me-1 opacity-60 rotate-90"
+            size={14}
+            aria-hidden="true"
+          />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="rounded-xl">
-        <DropdownMenuItem 
+        <DropdownMenuItem
           className="rounded-lg text-xs"
           onClick={() => setTimeRange("30d")}
         >
           Dernier mois
         </DropdownMenuItem>
-        <DropdownMenuItem 
+        <DropdownMenuItem
           className="rounded-lg text-xs"
           onClick={() => setTimeRange("90d")}
         >
           Derniers 3 mois
         </DropdownMenuItem>
-        <DropdownMenuItem 
+        <DropdownMenuItem
           className="rounded-lg text-xs"
           onClick={() => setTimeRange("365d")}
         >
@@ -386,7 +404,7 @@ export function ExpenseCategoryChart({ expenses = [], className }) {
   // Si pas de données, afficher un message avec le filtre
   if (chartData.length === 0) {
     return (
-      <Card className={`@container/card flex flex-col ${className || ''}`}>
+      <Card className={`@container/card flex flex-col ${className || ""}`}>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
           <div className="flex flex-col gap-1">
             <CardTitle className="font-normal text-base">
@@ -408,7 +426,7 @@ export function ExpenseCategoryChart({ expenses = [], className }) {
   }
 
   return (
-    <Card className={`@container/card flex flex-col ${className || ''}`}>
+    <Card className={`@container/card flex flex-col ${className || ""}`}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
         <div className="flex flex-col gap-1">
           <CardTitle className="font-normal text-base">
@@ -512,7 +530,9 @@ export function ExpenseCategoryChart({ expenses = [], className }) {
           {!isMobile && (
             <div className="flex-1 space-y-3">
               {chartData.slice(0, 5).map((item, index) => {
-                const percentage = ((item.amount / totalAmount) * 100).toFixed(1);
+                const percentage = ((item.amount / totalAmount) * 100).toFixed(
+                  1
+                );
                 return (
                   <div key={item.category} className="flex items-center gap-3">
                     <div
