@@ -51,11 +51,28 @@ const paymentMethodIcons = {
 };
 
 const paymentMethodLabels = {
-  CARD: "Carte bancaire",
-  CREDIT_CARD: "Carte bancaire",
-  CASH: "Espèces",
+  CARD: "Paiement par carte",
+  CREDIT_CARD: "Paiement par carte",
+  CASH: "Paiement en espèces",
+  TRANSFER: "Virement bancaire",
+  BANK_TRANSFER: "Virement bancaire",
+  CHECK: "Paiement par chèque",
+  DIRECT_DEBIT: "Prélèvement",
+  SEPA_DEBIT: "Prélèvement SEPA",
+  PRELEVEMENT: "Prélèvement",
+};
+
+// Labels pour le titre du drawer
+const transactionTypeLabels = {
+  CARD: "Paiement par carte",
+  CREDIT_CARD: "Paiement par carte",
+  CASH: "Paiement en espèces",
   TRANSFER: "Virement",
+  BANK_TRANSFER: "Virement",
   CHECK: "Chèque",
+  DIRECT_DEBIT: "Prélèvement",
+  SEPA_DEBIT: "Prélèvement SEPA",
+  PRELEVEMENT: "Prélèvement",
 };
 
 const statusLabels = {
@@ -82,11 +99,55 @@ export function TransactionDetailDrawer({
 
   // Déterminer si c'est une transaction bancaire sans justificatif
   const isBankTransaction =
-    transaction.source === "BANK" || transaction.type === "BANK_TRANSACTION";
+    transaction.source === "BANK" ||
+    transaction.source === "BANK_TRANSACTION" ||
+    transaction.type === "BANK_TRANSACTION";
   const hasReceipt =
     transaction.hasReceipt ||
     (transaction.files && transaction.files.length > 0);
   const needsReceipt = isBankTransaction && !hasReceipt;
+
+  // Déterminer si la transaction est modifiable (seulement les manuelles)
+  const isEditable = !isBankTransaction;
+
+  // Déterminer le titre du drawer basé sur le type de paiement
+  const getDrawerTitle = () => {
+    // Vérifier d'abord le paymentMethod
+    if (
+      transaction.paymentMethod &&
+      transactionTypeLabels[transaction.paymentMethod]
+    ) {
+      return transactionTypeLabels[transaction.paymentMethod];
+    }
+    // Vérifier le type de transaction
+    if (transaction.operationType) {
+      if (
+        transaction.operationType.toLowerCase().includes("card") ||
+        transaction.operationType.toLowerCase().includes("carte")
+      ) {
+        return "Paiement par carte";
+      }
+      if (
+        transaction.operationType.toLowerCase().includes("transfer") ||
+        transaction.operationType.toLowerCase().includes("virement")
+      ) {
+        return "Virement";
+      }
+      if (
+        transaction.operationType.toLowerCase().includes("debit") ||
+        transaction.operationType.toLowerCase().includes("prelevement") ||
+        transaction.operationType.toLowerCase().includes("prélèvement")
+      ) {
+        return "Prélèvement";
+      }
+    }
+    // Si c'est une transaction bancaire
+    if (isBankTransaction) {
+      return "Transaction bancaire";
+    }
+    // Par défaut pour les transactions manuelles
+    return "Transaction manuelle";
+  };
 
   // Gérer l'upload de fichier
   const handleFileUpload = async (file) => {
@@ -194,9 +255,16 @@ export function TransactionDetailDrawer({
       >
         {/* Header */}
         <DrawerHeader className="flex flex-row items-center justify-between px-6 py-4 border-b space-y-0">
-          <DrawerTitle className="text-base font-medium">
-            Détails de la dépense
-          </DrawerTitle>
+          <div className="flex items-center gap-2">
+            <DrawerTitle className="text-base font-medium">
+              {getDrawerTitle()}
+            </DrawerTitle>
+            {isBankTransaction && (
+              <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400">
+                Bancaire
+              </span>
+            )}
+          </div>
           <DrawerClose asChild>
             <Button variant="ghost" size="icon" className="h-8 w-8">
               <X className="h-4 w-4" />
@@ -314,12 +382,27 @@ export function TransactionDetailDrawer({
                     Statut
                   </span>
                 </div>
-                <Badge
-                  variant="outline"
-                  className="font-normal border-[#5A50FF]/20 bg-[#5A50FF]/5 text-[#5A50FF]"
-                >
-                  {statusLabels[transaction.status] || transaction.status}
-                </Badge>
+                {transaction.status === "PAID" ? (
+                  <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400">
+                    <CheckCircle2 className="w-3 h-3" />
+                    {statusLabels[transaction.status] || "Payée"}
+                  </span>
+                ) : transaction.status === "PENDING" ? (
+                  <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-[#5a50ff]/10 text-[#5a50ff] dark:bg-[#5a50ff]/20 dark:text-[#5a50ff]">
+                    <AlertCircle className="w-3 h-3" />
+                    {statusLabels[transaction.status] || "En attente"}
+                  </span>
+                ) : transaction.status === "CANCELLED" ? (
+                  <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400">
+                    <AlertCircle className="w-3 h-3" />
+                    {statusLabels[transaction.status] || "Annulée"}
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-gray-50 text-gray-600 dark:bg-gray-900/20 dark:text-gray-400">
+                    <FileText className="w-3 h-3" />
+                    {statusLabels[transaction.status] || "Brouillon"}
+                  </span>
+                )}
               </div>
 
               {/* Source (Banque/Manuel/OCR) */}
@@ -331,12 +414,10 @@ export function TransactionDetailDrawer({
                       Source
                     </span>
                   </div>
-                  <Badge
-                    variant="outline"
-                    className="font-normal text-blue-600 border-blue-200 bg-blue-50"
-                  >
+                  <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400">
+                    <Building2 className="w-3 h-3" />
                     Banque
-                  </Badge>
+                  </span>
                 </div>
               )}
 
@@ -383,28 +464,22 @@ export function TransactionDetailDrawer({
                   Justificatif
                 </p>
                 {hasReceipt ? (
-                  <Badge
-                    variant="outline"
-                    className="font-normal text-green-600 border-green-200 bg-green-50"
-                  >
-                    <CheckCircle2 className="h-3 w-3 mr-1" />
+                  <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400">
+                    <CheckCircle2 className="w-3 h-3" />
                     Attaché
-                  </Badge>
+                  </span>
                 ) : (
-                  <Badge
-                    variant="outline"
-                    className="font-normal text-amber-600 border-amber-200 bg-amber-50"
-                  >
-                    <AlertCircle className="h-3 w-3 mr-1" />
+                  <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400">
+                    <AlertCircle className="w-3 h-3" />
                     Manquant
-                  </Badge>
+                  </span>
                 )}
               </div>
 
               {/* Zone d'upload si pas de justificatif */}
               {!hasReceipt && (
                 <div
-                  className={`relative border-2 border-dashed rounded-lg p-6 transition-colors cursor-pointer ${
+                  className={`relative border-1 border-dashed rounded-lg p-6 transition-colors cursor-pointer ${
                     dragActive
                       ? "border-[#5A50FF] bg-[#5A50FF]/5"
                       : "border-muted-foreground/25 hover:border-[#5A50FF]/50 hover:bg-muted/30"
@@ -511,8 +586,8 @@ export function TransactionDetailDrawer({
                             </span>
                             {file.ocrProcessed && (
                               <Badge
-                                variant="outline"
-                                className="text-xs font-normal border-green-200 bg-green-50 text-green-700"
+                                variant="ocr"
+                                className="text-xs font-normal"
                               >
                                 OCR
                               </Badge>
@@ -572,14 +647,14 @@ export function TransactionDetailDrawer({
                           Confiance
                         </span>
                         <Badge
-                          variant="outline"
-                          className={`text-xs font-normal ${
+                          variant={
                             transaction.ocrMetadata.confidenceScore > 0.8
-                              ? "border-green-200 bg-green-50 text-green-700"
+                              ? "success"
                               : transaction.ocrMetadata.confidenceScore > 0.6
-                                ? "border-yellow-200 bg-yellow-50 text-yellow-700"
-                                : "border-red-200 bg-red-50 text-red-700"
-                          }`}
+                                ? "warning"
+                                : "error"
+                          }
+                          className="text-xs font-normal"
                         >
                           {Math.round(
                             transaction.ocrMetadata.confidenceScore * 100
@@ -636,24 +711,32 @@ export function TransactionDetailDrawer({
 
         {/* Footer */}
         <DrawerFooter className="border-t px-6 py-4">
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              className="flex-1 font-normal"
-              onClick={() => onEdit?.(transaction)}
-            >
-              <Edit className="h-4 w-4 mr-2" />
-              Modifier
-            </Button>
-            <Button
-              variant="outline"
-              className="flex-1 font-normal text-red-600 hover:text-red-700 hover:bg-red-50"
-              onClick={() => onDelete?.(transaction)}
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Supprimer
-            </Button>
-          </div>
+          {isEditable ? (
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="flex-1 font-normal"
+                onClick={() => onEdit?.(transaction)}
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                Modifier
+              </Button>
+              <Button
+                variant="outline"
+                className="flex-1 font-normal text-red-600 hover:text-red-700 hover:bg-red-50"
+                onClick={() => onDelete?.(transaction)}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Supprimer
+              </Button>
+            </div>
+          ) : (
+            <div className="text-center">
+              <p className="text-sm text-muted-foreground">
+                Les transactions bancaires ne peuvent pas être modifiées
+              </p>
+            </div>
+          )}
         </DrawerFooter>
       </DrawerContent>
     </Drawer>

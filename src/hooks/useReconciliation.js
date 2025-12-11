@@ -1,44 +1,96 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useWorkspace } from "./useWorkspace";
+
+// Cache global pour éviter les appels répétés entre composants
+const suggestionsCache = {
+  data: null,
+  workspaceId: null,
+  timestamp: 0,
+};
+
+// TTL du cache en millisecondes (2 minutes)
+const CACHE_TTL = 2 * 60 * 1000;
+
+// Délai minimum entre deux appels API (5 secondes)
+const MIN_FETCH_INTERVAL = 5 * 1000;
 
 /**
  * Hook pour gérer le rapprochement factures/transactions bancaires
  */
 export function useReconciliation() {
   const { workspaceId } = useWorkspace();
-  const [suggestions, setSuggestions] = useState([]);
+  const [suggestions, setSuggestions] = useState(suggestionsCache.data || []);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const lastFetchRef = useRef(0);
+  const isFetchingRef = useRef(false);
 
-  // Récupérer les suggestions de rapprochement
-  const fetchSuggestions = useCallback(async () => {
-    if (!workspaceId) return;
+  // Récupérer les suggestions de rapprochement avec cache
+  const fetchSuggestions = useCallback(
+    async (forceRefresh = false) => {
+      if (!workspaceId) return;
 
-    setLoading(true);
-    setError(null);
+      const now = Date.now();
 
-    try {
-      const response = await fetch("/api/reconciliation/suggestions", {
-        headers: {
-          "x-workspace-id": workspaceId,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Erreur lors de la récupération des suggestions");
+      // Vérifier si on a des données en cache valides
+      if (
+        !forceRefresh &&
+        suggestionsCache.data &&
+        suggestionsCache.workspaceId === workspaceId &&
+        now - suggestionsCache.timestamp < CACHE_TTL
+      ) {
+        // Utiliser le cache
+        setSuggestions(suggestionsCache.data);
+        return;
       }
 
-      const data = await response.json();
-      setSuggestions(data.suggestions || []);
-    } catch (err) {
-      console.error("Erreur fetchSuggestions:", err);
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  }, [workspaceId]);
+      // Éviter les appels trop fréquents
+      if (!forceRefresh && now - lastFetchRef.current < MIN_FETCH_INTERVAL) {
+        return;
+      }
+
+      // Éviter les appels concurrents
+      if (isFetchingRef.current) {
+        return;
+      }
+
+      isFetchingRef.current = true;
+      lastFetchRef.current = now;
+      setLoading(true);
+      setError(null);
+
+      try {
+        const response = await fetch("/api/reconciliation/suggestions", {
+          headers: {
+            "x-workspace-id": workspaceId,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error("Erreur lors de la récupération des suggestions");
+        }
+
+        const data = await response.json();
+        const newSuggestions = data.suggestions || [];
+
+        // Mettre à jour le cache
+        suggestionsCache.data = newSuggestions;
+        suggestionsCache.workspaceId = workspaceId;
+        suggestionsCache.timestamp = Date.now();
+
+        setSuggestions(newSuggestions);
+      } catch (err) {
+        console.error("Erreur fetchSuggestions:", err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+        isFetchingRef.current = false;
+      }
+    },
+    [workspaceId]
+  );
 
   // Récupérer les transactions pour une facture spécifique
   const fetchTransactionsForInvoice = useCallback(
@@ -94,8 +146,8 @@ export function useReconciliation() {
           throw new Error(data.error || "Erreur lors du rapprochement");
         }
 
-        // Rafraîchir les suggestions
-        await fetchSuggestions();
+        // Rafraîchir les suggestions (forcer le refresh après une action)
+        await fetchSuggestions(true);
 
         return { success: true, data };
       } catch (err) {
@@ -127,8 +179,8 @@ export function useReconciliation() {
           throw new Error(data.error || "Erreur lors de la déliaison");
         }
 
-        // Rafraîchir les suggestions
-        await fetchSuggestions();
+        // Rafraîchir les suggestions (forcer le refresh après une action)
+        await fetchSuggestions(true);
 
         return { success: true, data };
       } catch (err) {
@@ -139,12 +191,13 @@ export function useReconciliation() {
     [workspaceId, fetchSuggestions]
   );
 
-  // Charger les suggestions au montage
+  // Charger les suggestions au montage (une seule fois grâce au cache)
   useEffect(() => {
     if (workspaceId) {
       fetchSuggestions();
     }
-  }, [workspaceId, fetchSuggestions]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [workspaceId]);
 
   return {
     suggestions,

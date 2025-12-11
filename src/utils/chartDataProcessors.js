@@ -1,5 +1,5 @@
 // Utilitaires pour traiter les données des graphiques
-// Évite la duplication de code entre dashboard et gestion-depenses
+// Évite la duplication de code entre dashboard et transactions
 
 export const processInvoicesForCharts = (paidInvoices) => {
   const now = new Date();

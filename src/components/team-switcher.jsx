@@ -120,7 +120,8 @@ import {
 } from "@/src/components/ui/sidebar";
 
 export function TeamSwitcher() {
-  const { isMobile } = useSidebar();
+  const { isMobile, state } = useSidebar();
+  const isCollapsed = state === "collapsed";
   const { isActive, refreshSubscription: refreshDashboardSubscription } =
     useSubscription();
   const router = useRouter();
@@ -252,7 +253,7 @@ export function TeamSwitcher() {
       // 2. Nettoyer le cache Apollo pour l'ancienne organisation
       if (oldWorkspaceId) {
         console.log("🗑️ Nettoyage du cache Apollo...");
-        
+
         // Évict les queries spécifiques à l'ancienne organisation
         apolloClient.cache.evict({
           id: "ROOT_QUERY",
@@ -270,14 +271,16 @@ export function TeamSwitcher() {
           id: "ROOT_QUERY",
           fieldName: "getExpenses",
         });
-        
+
         // Garbage collection pour nettoyer les références orphelines
         apolloClient.cache.gc();
         console.log("✅ Cache Apollo nettoyé");
       }
 
       // 3. Notification de succès
-      const newOrg = sortedOrganizations.find(org => org.id === organizationId);
+      const newOrg = sortedOrganizations.find(
+        (org) => org.id === organizationId
+      );
       const orgName = newOrg?.name || "l'organisation";
       toast.success(`Vous êtes sur l'espace ${orgName}`);
 
@@ -295,12 +298,22 @@ export function TeamSwitcher() {
     return (
       <SidebarMenu>
         <SidebarMenuItem>
-          <SidebarMenuButton size="lg" disabled>
-            <img src="/newbi.svg" alt="NewBi Logo" className="size-8" />
-            <div className="grid flex-1 text-left text-sm leading-tight">
-              <span className="truncate font-medium">...</span>
-              <span className="truncate text-xs">-</span>
-            </div>
+          <SidebarMenuButton
+            size="lg"
+            disabled
+            className={isCollapsed ? "justify-center" : ""}
+          >
+            <img
+              src="/newbi.svg"
+              alt="NewBi Logo"
+              className={isCollapsed ? "size-8" : "size-8"}
+            />
+            {!isCollapsed && (
+              <div className="grid flex-1 text-left text-sm leading-tight">
+                <span className="truncate font-medium">...</span>
+                <span className="truncate text-xs">-</span>
+              </div>
+            )}
           </SidebarMenuButton>
         </SidebarMenuItem>
       </SidebarMenu>
@@ -312,12 +325,24 @@ export function TeamSwitcher() {
     return (
       <SidebarMenu>
         <SidebarMenuItem>
-          <SidebarMenuButton size="lg" disabled>
-            <img src="/newbi.svg" alt="NewBi Logo" className="size-8" />
-            <div className="grid flex-1 text-left text-sm leading-tight">
-              <span className="truncate font-medium">Aucune organisation</span>
-              <span className="truncate text-xs">-</span>
-            </div>
+          <SidebarMenuButton
+            size="lg"
+            disabled
+            className={isCollapsed ? "justify-center" : ""}
+          >
+            <img
+              src="/newbi.svg"
+              alt="NewBi Logo"
+              className={isCollapsed ? "size-8" : "size-8"}
+            />
+            {!isCollapsed && (
+              <div className="grid flex-1 text-left text-sm leading-tight">
+                <span className="truncate font-medium">
+                  Aucune organisation
+                </span>
+                <span className="truncate text-xs">-</span>
+              </div>
+            )}
           </SidebarMenuButton>
         </SidebarMenuItem>
       </SidebarMenu>
@@ -335,19 +360,27 @@ export function TeamSwitcher() {
             <DropdownMenuTrigger asChild>
               <SidebarMenuButton
                 size="lg"
-                className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground cursor-pointer"
+                className={`data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground cursor-pointer ${isCollapsed ? "justify-center" : ""}`}
               >
-                <img src="/newbi.svg" alt="NewBi Logo" className="size-7" />
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium text-sm">
-                    {currentOrganization.name}
-                  </span>
-                  <span className="truncate text-xs">
-                    {sortedOrganizations.length} organisation
-                    {sortedOrganizations.length > 1 ? "s" : ""}
-                  </span>
-                </div>
-                <ChevronsUpDown className="ml-auto" />
+                <img
+                  src="/newbi.svg"
+                  alt="NewBi Logo"
+                  className={isCollapsed ? "size-8" : "size-7"}
+                />
+                {!isCollapsed && (
+                  <>
+                    <div className="grid flex-1 text-left text-sm leading-tight">
+                      <span className="truncate font-medium text-sm">
+                        {currentOrganization.name}
+                      </span>
+                      <span className="truncate text-xs">
+                        {sortedOrganizations.length} organisation
+                        {sortedOrganizations.length > 1 ? "s" : ""}
+                      </span>
+                    </div>
+                    <ChevronsUpDown className="ml-auto" />
+                  </>
+                )}
               </SidebarMenuButton>
             </DropdownMenuTrigger>
             <DropdownMenuContent

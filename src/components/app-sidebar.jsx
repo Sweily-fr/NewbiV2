@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import {
   IconCamera,
   IconChartBar,
@@ -35,6 +36,7 @@ import {
   Search,
   MessageCircleQuestionMark,
   Inbox,
+  Landmark,
 } from "lucide-react";
 
 import { NavDocuments } from "@/src/components/nav-documents";
@@ -84,45 +86,20 @@ const data = {
       icon: CircleGauge,
     },
     {
+      title: "Transactions",
+      url: "/dashboard/outils/transactions",
+      icon: Landmark,
+    },
+    {
       title: "Boîte de réception",
       url: "#",
       icon: Inbox,
       action: "openNotifications", // Action spéciale pour ouvrir le modal
     },
-    // {
-    //   title: "Intégrations",
-    //   url: "/dashboard/automatisation",
-    //   icon: IconRobot,
-    // },
-    // {
-    //   title: "Collaborateurs",
-    //   url: "/dashboard/collaborateurs",
-    //   icon: IconUsers,
-    // },
-    // {
-    //   title: "Analytics",
-    //   url: "/dashboard/analytics",
-    //   icon: IconChartBar,
-    // },
     {
       title: "Calendrier",
       url: "/dashboard/calendar",
       icon: Calendar,
-    },
-    // {
-    //   title: "Favoris",
-    //   url: "/dashboard/favoris",
-    //   icon: IconHeart,
-    // },
-    {
-      title: "Clients (CRM)",
-      url: "/dashboard/clients",
-      icon: Users,
-    },
-    {
-      title: "Catalogues",
-      url: "/dashboard/catalogues",
-      icon: FileMinus,
     },
   ],
   navClouds: [
@@ -199,7 +176,12 @@ const data = {
   ],
 };
 
-export function AppSidebar({ onCommunityClick, onOpenNotifications, ...props }) {
+export function AppSidebar({
+  onCommunityClick,
+  onOpenNotifications,
+  ...props
+}) {
+  const pathname = usePathname();
   const { session } = useUser();
   const {
     isLoading: subscriptionLoading,
@@ -210,31 +192,49 @@ export function AppSidebar({ onCommunityClick, onOpenNotifications, ...props }) 
   const [notificationCount, setNotificationCount] = React.useState(0);
   const { listInvitations } = useOrganizationInvitations();
 
+  // Déterminer si on est sur une page d'outil qui nécessite la sidebar masquée
+  const isToolPage =
+    pathname?.includes("/dashboard/outils/") &&
+    (pathname?.includes("/new") ||
+      pathname?.includes("/nouveau") ||
+      pathname?.includes("/edit") ||
+      pathname?.includes("/editer") ||
+      pathname?.includes("/view") ||
+      pathname?.includes("/avoir/"));
+
+  // Utiliser offcanvas pour les pages d'outils, icon pour les autres
+  const collapsibleMode = isToolPage ? "offcanvas" : "icon";
+
   // Récupérer le nombre de notifications
   React.useEffect(() => {
     const fetchNotifications = async () => {
       try {
         // Récupérer les invitations reçues
-        const { data: receivedInvitations } = await authClient.organization.listUserInvitations();
-        const pendingReceived = receivedInvitations?.filter(inv => inv.status === "pending") || [];
-        
+        const { data: receivedInvitations } =
+          await authClient.organization.listUserInvitations();
+        const pendingReceived =
+          receivedInvitations?.filter((inv) => inv.status === "pending") || [];
+
         // Récupérer les invitations envoyées
         const sentResult = await listInvitations();
-        const pendingSent = sentResult.success 
-          ? (sentResult.data?.filter(inv => inv.status === "pending") || [])
+        const pendingSent = sentResult.success
+          ? sentResult.data?.filter((inv) => inv.status === "pending") || []
           : [];
-        
+
         // Total des notifications
         const total = pendingReceived.length + pendingSent.length;
         setNotificationCount(total);
       } catch (error) {
-        console.error("Erreur lors de la récupération des notifications:", error);
+        console.error(
+          "Erreur lors de la récupération des notifications:",
+          error
+        );
       }
     };
 
     if (session?.user) {
       fetchNotifications();
-      
+
       // Rafraîchir toutes les 30 secondes
       const interval = setInterval(fetchNotifications, 30000);
       return () => clearInterval(interval);
@@ -282,16 +282,24 @@ export function AppSidebar({ onCommunityClick, onOpenNotifications, ...props }) 
   let isLoading = false;
 
   return (
-    <Sidebar collapsible="offcanvas" {...props}>
+    <Sidebar collapsible={collapsibleMode} {...props}>
       <SidebarHeader>
         <TeamSwitcher />
       </SidebarHeader>
       <SidebarContent className="mt-1">
         {session?.user && !subscriptionLoading ? (
           <>
-            <NavMain items={data.navMain} onOpenNotifications={onOpenNotifications} notificationCount={notificationCount} />
+            <NavMain
+              items={data.navMain}
+              onOpenNotifications={onOpenNotifications}
+              notificationCount={notificationCount}
+            />
             <NavDocuments items={data.documents} />
-            <NavSecondary items={data.navSecondary} onCommunityClick={onCommunityClick} className="mt-auto" />
+            <NavSecondary
+              items={data.navSecondary}
+              onCommunityClick={onCommunityClick}
+              className="mt-auto"
+            />
           </>
         ) : (
           <>

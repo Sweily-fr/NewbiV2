@@ -3,40 +3,57 @@ import { useExpenses } from "@/src/hooks/useExpenses";
 import { useInvoices } from "@/src/graphql/invoiceQueries";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 
-// Hook pour récupérer les comptes bancaires et leur solde
+// Hook pour récupérer les comptes bancaires et leur solde (avec cache backend Redis)
 const useBankAccounts = (workspaceId) => {
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [fromCache, setFromCache] = useState(false);
 
-  const fetchAccounts = useCallback(async () => {
-    if (!workspaceId) {
-      setLoading(false);
-      return;
-    }
-
-    try {
-      setLoading(true);
-      const response = await fetch("/api/banking/accounts", {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "x-workspace-id": workspaceId,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setAccounts(data.accounts || []);
-      } else {
-        setAccounts([]);
+  const fetchAccounts = useCallback(
+    async (skipCache = false) => {
+      if (!workspaceId) {
+        setLoading(false);
+        return;
       }
-    } catch (err) {
-      console.warn("⚠️ Erreur récupération comptes bancaires:", err.message);
-      setAccounts([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [workspaceId]);
+
+      try {
+        setLoading(true);
+        const url = skipCache
+          ? "/api/banking/accounts?skipCache=true"
+          : "/api/banking/accounts";
+
+        const response = await fetch(url, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "x-workspace-id": workspaceId,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setAccounts(data.accounts || []);
+          setFromCache(data.fromCache || false);
+
+          if (data.fromCache) {
+            console.log("🎯 [useBankAccounts] Cache HIT backend Redis");
+          } else {
+            console.log("📊 [useBankAccounts] Données fraîches depuis BDD");
+          }
+        } else {
+          setAccounts([]);
+          setFromCache(false);
+        }
+      } catch (err) {
+        console.warn("⚠️ Erreur récupération comptes bancaires:", err.message);
+        setAccounts([]);
+        setFromCache(false);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [workspaceId]
+  );
 
   useEffect(() => {
     fetchAccounts();
@@ -48,63 +65,69 @@ const useBankAccounts = (workspaceId) => {
     0
   );
 
-  return { accounts, totalBalance, loading, refetch: fetchAccounts };
+  return { accounts, totalBalance, loading, fromCache, refetch: fetchAccounts };
 };
 
-// Hook pour récupérer les transactions bancaires
+// Hook pour récupérer les transactions bancaires (avec cache backend Redis)
 const useBankTransactions = (workspaceId) => {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [fromCache, setFromCache] = useState(false);
 
-  const fetchTransactions = useCallback(async () => {
-    if (!workspaceId) {
-      setLoading(false);
-      return;
-    }
-
-    try {
-      setLoading(true);
-      const response = await fetch("/api/banking/transactions?limit=500", {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "x-workspace-id": workspaceId,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setTransactions(data.transactions || []);
-      } else {
-        setTransactions([]);
+  const fetchTransactions = useCallback(
+    async (skipCache = false) => {
+      if (!workspaceId) {
+        setLoading(false);
+        return;
       }
-    } catch (err) {
-      console.warn(
-        "⚠️ Erreur récupération transactions bancaires:",
-        err.message
-      );
-      setTransactions([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [workspaceId]);
+
+      try {
+        setLoading(true);
+        const url = skipCache
+          ? "/api/banking/transactions?limit=500&skipCache=true"
+          : "/api/banking/transactions?limit=500";
+
+        const response = await fetch(url, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "x-workspace-id": workspaceId,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setTransactions(data.transactions || []);
+          setFromCache(data.fromCache || false);
+
+          if (data.fromCache) {
+            console.log("🎯 [useBankTransactions] Cache HIT backend Redis");
+          } else {
+            console.log("📊 [useBankTransactions] Données fraîches depuis BDD");
+          }
+        } else {
+          setTransactions([]);
+          setFromCache(false);
+        }
+      } catch (err) {
+        console.warn(
+          "⚠️ Erreur récupération transactions bancaires:",
+          err.message
+        );
+        setTransactions([]);
+        setFromCache(false);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [workspaceId]
+  );
 
   useEffect(() => {
     fetchTransactions();
   }, [fetchTransactions]);
 
-  // Debug: log les transactions récupérées
-  console.log("🏦 [useBankTransactions] Transactions récupérées:", {
-    count: transactions.length,
-    sample: transactions.slice(0, 3).map((t) => ({
-      date: t.date,
-      amount: t.amount,
-      processedAt: t.processedAt,
-      createdAt: t.createdAt,
-    })),
-  });
-
-  return { transactions, loading, refetch: fetchTransactions };
+  return { transactions, loading, fromCache, refetch: fetchTransactions };
 };
 
 // Durée de vie du cache : 2 minutes pour les données financières (plus fréquent)
@@ -171,18 +194,20 @@ export function useDashboardData() {
     refetch: refetchInvoices,
   } = useInvoices();
 
-  // Hook pour les comptes bancaires (solde)
+  // Hook pour les comptes bancaires (solde) - avec info cache backend
   const {
     accounts: bankAccounts,
     totalBalance: bankBalance,
     loading: accountsLoading,
+    fromCache: accountsFromCache,
     refetch: refetchBankAccounts,
   } = useBankAccounts(workspaceId);
 
-  // Hook pour les transactions bancaires
+  // Hook pour les transactions bancaires - avec info cache backend
   const {
     transactions: bankTransactions,
     loading: bankLoading,
+    fromCache: transactionsFromCache,
     refetch: refetchBankTransactions,
   } = useBankTransactions(workspaceId);
 
@@ -342,35 +367,73 @@ export function useDashboardData() {
     saveToCache,
   ]);
 
-  // Fonction pour forcer le rafraîchissement
+  // Fonction pour forcer le rafraîchissement (invalide cache backend + frontend)
   const refreshData = async () => {
     console.log("📊 Dashboard: Rafraîchissement forcé des données");
     setIsLoading(true);
 
     try {
-      // Supprimer le cache
+      // Supprimer le cache frontend
       localStorage.removeItem(CACHE_KEY);
+      setCachedData(null);
+
+      // Invalider le cache backend Redis
+      if (workspaceId) {
+        try {
+          await fetch("/api/banking/cache", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-workspace-id": workspaceId,
+            },
+          });
+          console.log("🗑️ Cache backend Redis invalidé");
+        } catch (err) {
+          console.warn("⚠️ Erreur invalidation cache backend:", err.message);
+        }
+      }
 
       // Refetch des données (factures, dépenses, comptes et transactions bancaires)
+      // Utiliser skipCache=true pour forcer la récupération depuis la BDD
       await Promise.all([
         refetchExpenses?.(),
         refetchInvoices?.(),
-        refetchBankAccounts?.(),
-        refetchBankTransactions?.(),
+        refetchBankAccounts?.(true), // skipCache=true
+        refetchBankTransactions?.(true), // skipCache=true
       ]);
 
       console.log("📊 Dashboard: Données rafraîchies avec succès");
     } catch (error) {
       console.error("📊 Dashboard: Erreur lors du rafraîchissement:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Fonction pour invalider le cache
-  const invalidateCache = () => {
+  // Fonction pour invalider le cache (frontend + backend)
+  const invalidateCache = async () => {
     console.log("📊 Dashboard: Invalidation du cache");
+
+    // Invalider le cache frontend
     localStorage.removeItem(CACHE_KEY);
     setCachedData(null);
     setLastUpdate(null);
+
+    // Invalider le cache backend Redis
+    if (workspaceId) {
+      try {
+        await fetch("/api/banking/cache", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-workspace-id": workspaceId,
+          },
+        });
+        console.log("🗑️ Cache backend Redis invalidé");
+      } catch (err) {
+        console.warn("⚠️ Erreur invalidation cache backend:", err.message);
+      }
+    }
   };
 
   // Utiliser les données en cache si disponibles, sinon les données fraîches
@@ -394,11 +457,16 @@ export function useDashboardData() {
     refreshData,
     invalidateCache,
 
-    // Métadonnées du cache
+    // Métadonnées du cache (frontend + backend)
     cacheInfo: {
       lastUpdate,
       isFromCache: !!cachedData,
       cacheKey: CACHE_KEY,
+      // Informations sur le cache backend Redis
+      backendCache: {
+        accountsFromCache,
+        transactionsFromCache,
+      },
     },
 
     // Fonction utilitaire pour formater les devises

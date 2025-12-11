@@ -50,7 +50,7 @@ import BankingConnectButton from "@/src/components/banking/BankingConnectButton"
 import BankBalanceCard from "@/src/components/banking/BankBalanceCard";
 import UnifiedTransactions from "@/src/components/banking/UnifiedTransactions";
 import { TreasuryChart } from "@/src/components/treasury-chart";
-import { ExpenseCategoryChart } from "@/app/dashboard/outils/gestion-depenses/components/expense-category-chart";
+import { ExpenseCategoryChart } from "@/app/dashboard/outils/transactions/components/expense-category-chart";
 import { IncomeCategoryChart } from "@/app/dashboard/components/income-category-chart";
 
 import { DashboardSkeleton } from "@/src/components/dashboard-skeleton";
@@ -80,6 +80,7 @@ function DashboardContent() {
     totalIncome,
     totalExpenses,
     transactions,
+    bankAccounts,
     bankBalance,
     isLoading,
     isInitialized,
@@ -270,7 +271,7 @@ function DashboardContent() {
                 asChild
               >
                 <a
-                  href="/dashboard/outils/gestion-depenses"
+                  href="/dashboard/outils/transactions"
                   className="flex items-center gap-1 lg:gap-2 justify-center"
                 >
                   <CloudUpload className="w-4 h-4" />
@@ -300,7 +301,7 @@ function DashboardContent() {
                 asChild
               >
                 <a
-                  href="/dashboard/outils/gestion-depenses"
+                  href="/dashboard/outils/transactions"
                   className="flex items-center gap-1 lg:gap-2 justify-center"
                 >
                   <Download className="w-4 h-4" />
@@ -347,6 +348,8 @@ function DashboardContent() {
             invoices={paidInvoices}
             totalIncome={totalIncome}
             totalExpenses={totalExpenses}
+            bankAccounts={bankAccounts}
+            bankBalance={bankBalance}
             isLoading={isLoading}
           />
           <UnifiedTransactions

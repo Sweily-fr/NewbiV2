@@ -83,7 +83,7 @@ export default function ModernQuoteEditor({
   // Détecter les changements d'organisation pour les modes edit/view
   useOrganizationChange({
     resourceId: quoteId,
-    resourceExists: mode === "create" ? true : (!!loadedQuote && !quoteError),
+    resourceExists: mode === "create" ? true : !!loadedQuote && !quoteError,
     listUrl: "/dashboard/outils/devis",
     enabled: mode !== "create" && !loading,
   });
@@ -140,7 +140,7 @@ export default function ModernQuoteEditor({
   // Handler personnalisé pour afficher la modal d'envoi après création
   const handleSubmitWithEmail = async () => {
     const result = await onSubmit();
-    
+
     if (result?.success && result?.quote) {
       // Stocker les données du devis créé
       setCreatedQuoteData({
@@ -148,7 +148,10 @@ export default function ModernQuoteEditor({
         number: `${result.quote.prefix || "D"}-${result.quote.number}`,
         clientName: result.quote.client?.name,
         clientEmail: result.quote.client?.email,
-        totalAmount: new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(result.quote.finalTotalTTC || 0),
+        totalAmount: new Intl.NumberFormat("fr-FR", {
+          style: "currency",
+          currency: "EUR",
+        }).format(result.quote.finalTotalTTC || 0),
         companyName: result.quote.companyInfo?.name,
         issueDate: formatDate(result.quote.issueDate),
         redirectUrl: result.redirectUrl,
@@ -239,7 +242,7 @@ export default function ModernQuoteEditor({
                         onClick={handleSettingsClick}
                         className="h-8 w-8 p-0"
                       >
-                        <Settings size={20} style={{ color: '#5b50FF' }} />
+                        <Settings size={20} />
                       </Button>
                     )}
                   </>
@@ -275,53 +278,53 @@ export default function ModernQuoteEditor({
                   <ValidationCallout errors={validationErrors} />
                 </div>
               )}
-              
+
               <div className="flex-1 min-h-0">
-              <FormProvider {...form}>
-                {showSettings ? (
-                  <QuoteSettingsView
-                    formData={formData}
-                    setFormData={setFormData}
-                    onCancel={() => setShowSettings(false)}
-                    onCloseAttempt={setCloseSettingsHandler}
-                    onSave={async () => {
-                      try {
-                        // Sauvegarder les paramètres dans l'organisation
-                        await saveSettingsToOrganization();
-                        setShowSettings(false);
-                        toast.success(
-                          "Paramètres sauvegardés dans l'organisation"
-                        );
-                      } catch (error) {
-                        toast.error(
-                          "Erreur lors de la sauvegarde des paramètres"
-                        );
-                      }
-                    }}
-                    canEdit={!isReadOnly}
-                  />
-                ) : (
-                  <EnhancedQuoteForm
-                    mode={mode}
-                    quoteId={quoteId}
-                    formData={formData}
-                    loading={loading}
-                    saving={saving}
-                    onSave={onSave}
-                    onSubmit={handleSubmitWithEmail}
-                    setFormData={setFormData}
-                    canEdit={!isReadOnly}
-                    nextQuoteNumber={nextQuoteNumber}
-                    validateQuoteNumber={validateQuoteNumber}
-                    hasExistingQuotes={hasExistingQuotes}
-                    validationErrors={validationErrors}
-                    setValidationErrors={setValidationErrors}
-                    currentStep={currentStep}
-                    onStepChange={setCurrentStep}
-                    onEditClient={() => setShowEditClient(true)}
-                  />
-                )}
-              </FormProvider>
+                <FormProvider {...form}>
+                  {showSettings ? (
+                    <QuoteSettingsView
+                      formData={formData}
+                      setFormData={setFormData}
+                      onCancel={() => setShowSettings(false)}
+                      onCloseAttempt={setCloseSettingsHandler}
+                      onSave={async () => {
+                        try {
+                          // Sauvegarder les paramètres dans l'organisation
+                          await saveSettingsToOrganization();
+                          setShowSettings(false);
+                          toast.success(
+                            "Paramètres sauvegardés dans l'organisation"
+                          );
+                        } catch (error) {
+                          toast.error(
+                            "Erreur lors de la sauvegarde des paramètres"
+                          );
+                        }
+                      }}
+                      canEdit={!isReadOnly}
+                    />
+                  ) : (
+                    <EnhancedQuoteForm
+                      mode={mode}
+                      quoteId={quoteId}
+                      formData={formData}
+                      loading={loading}
+                      saving={saving}
+                      onSave={onSave}
+                      onSubmit={handleSubmitWithEmail}
+                      setFormData={setFormData}
+                      canEdit={!isReadOnly}
+                      nextQuoteNumber={nextQuoteNumber}
+                      validateQuoteNumber={validateQuoteNumber}
+                      hasExistingQuotes={hasExistingQuotes}
+                      validationErrors={validationErrors}
+                      setValidationErrors={setValidationErrors}
+                      currentStep={currentStep}
+                      onStepChange={setCurrentStep}
+                      onEditClient={() => setShowEditClient(true)}
+                    />
+                  )}
+                </FormProvider>
               </div>
             </div>
           </div>
@@ -342,7 +345,7 @@ export default function ModernQuoteEditor({
           </div>
         </div>
       </div>
-      
+
       {/* Modal d'édition du client */}
       {formData.client && (
         <ClientsModal
@@ -352,7 +355,7 @@ export default function ModernQuoteEditor({
           onSave={handleClientUpdated}
         />
       )}
-      
+
       {/* Modal d'envoi par email */}
       {createdQuoteData && (
         <SendDocumentModal
@@ -367,7 +370,11 @@ export default function ModernQuoteEditor({
           companyName={createdQuoteData.companyName}
           issueDate={createdQuoteData.issueDate}
           onSent={handleEmailModalClose}
-          onClose={() => router.push(createdQuoteData.redirectUrl || "/dashboard/outils/devis")}
+          onClose={() =>
+            router.push(
+              createdQuoteData.redirectUrl || "/dashboard/outils/devis"
+            )
+          }
           pdfRef={pdfRef}
         />
       )}

@@ -28,23 +28,37 @@ import { toast } from "@/src/components/ui/sonner";
 import { findBank } from "@/lib/banks-config";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 
+/**
+ * Récupère le token JWT depuis localStorage (même pattern qu'Apollo Client)
+ */
+const getAuthToken = () => {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem("bearer_token");
+};
+
 export default function BankBalanceCard({
   className,
   expenses = [],
   invoices = [],
   totalIncome = 0,
   totalExpenses = 0,
+  bankAccounts: propBankAccounts,
+  bankBalance: propBankBalance,
   isLoading = false,
 }) {
   const { workspaceId } = useWorkspace();
   const { subscription } = useSubscription();
 
-  const [accounts, setAccounts] = useState([]);
-  const [bankLoading, setBankLoading] = useState(true);
+  // Utiliser les props si disponibles, sinon état local
+  const [localAccounts, setLocalAccounts] = useState([]);
+  const [bankLoading, setBankLoading] = useState(!propBankAccounts);
   const [error, setError] = useState(null);
-  const [accountsCount, setAccountsCount] = useState(0);
   const [isConnecting, setIsConnecting] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
+
+  // Utiliser les comptes passés en props ou les comptes locaux
+  const accounts = propBankAccounts || localAccounts;
+  const accountsCount = accounts.length;
 
   // Modal de sélection de banque
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -68,24 +82,32 @@ export default function BankBalanceCard({
     if (!workspaceId) return;
 
     try {
+      const token = getAuthToken();
       const response = await fetch("/api/banking-connect/status", {
         headers: {
           "x-workspace-id": workspaceId,
+          ...(token && { Authorization: `Bearer ${token}` }),
         },
       });
 
       if (response.ok) {
         const data = await response.json();
         setIsConnected(data.isConnected || false);
-        setAccountsCount(data.accountsCount || 0);
       }
     } catch (err) {
       console.warn("⚠️ Erreur vérification statut bancaire:", err.message);
     }
   };
 
-  // Récupérer les comptes bancaires
+  // Récupérer les comptes bancaires (seulement si pas passés en props)
   const fetchAccounts = async () => {
+    // Si les comptes sont passés en props, ne pas refetch
+    if (propBankAccounts) {
+      setBankLoading(false);
+      setIsConnected(propBankAccounts.length > 0);
+      return;
+    }
+
     if (!workspaceId) return;
 
     try {
@@ -106,30 +128,41 @@ export default function BankBalanceCard({
       if (response.ok) {
         const data = await response.json();
         const accountsList = data.accounts || [];
-        setAccounts(accountsList);
-        setAccountsCount(accountsList.length || 0);
+        setLocalAccounts(accountsList);
         setIsConnected(accountsList.length > 0);
       } else {
-        setAccounts([]);
+        setLocalAccounts([]);
       }
     } catch (err) {
       console.warn("⚠️ Erreur récupération comptes:", err.message);
-      setAccounts([]);
+      setLocalAccounts([]);
     } finally {
       setBankLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchAccounts();
-  }, [workspaceId]);
+    // Si les comptes sont passés en props, mettre à jour l'état de connexion
+    if (propBankAccounts) {
+      setBankLoading(false);
+      setIsConnected(propBankAccounts.length > 0);
+    } else {
+      fetchAccounts();
+    }
+  }, [workspaceId, propBankAccounts]);
 
   // Récupérer la liste des banques
   const fetchInstitutions = async () => {
     try {
       setIsLoadingInstitutions(true);
+      const token = getAuthToken();
       const response = await fetch(
-        "/api/banking-connect/bridge/institutions?country=FR"
+        "/api/banking-connect/bridge/institutions?country=FR",
+        {
+          headers: {
+            ...(token && { Authorization: `Bearer ${token}` }),
+          },
+        }
       );
 
       if (response.ok) {
@@ -185,11 +218,13 @@ export default function BankBalanceCard({
       setIsConnecting(true);
 
       // Passer le provider_id pour pré-sélectionner la banque dans Bridge Connect
+      const token = getAuthToken();
       const response = await fetch(
         `/api/banking-connect/bridge/connect?providerId=${bank.id}`,
         {
           headers: {
             "x-workspace-id": workspaceId,
+            ...(token && { Authorization: `Bearer ${token}` }),
           },
         }
       );
@@ -219,11 +254,11 @@ export default function BankBalanceCard({
     }).format(amount || 0);
   };
 
-  // Calculer le solde bancaire
-  const bankBalance = accounts.reduce(
-    (sum, account) => sum + (account.balance || 0),
-    0
-  );
+  // Calculer le solde bancaire (utiliser la prop si disponible)
+  const bankBalance =
+    propBankBalance !== undefined
+      ? propBankBalance
+      : accounts.reduce((sum, account) => sum + (account.balance || 0), 0);
 
   // Calculer le solde total incluant toutes les transactions
   const totalBalance = useMemo(() => {

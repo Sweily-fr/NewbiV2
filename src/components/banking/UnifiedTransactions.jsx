@@ -21,7 +21,7 @@ import { useRouter } from "next/navigation";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { useState, useEffect, useMemo } from "react";
 import { findMerchant } from "@/lib/merchants-config";
-import { MerchantLogo } from "@/app/dashboard/outils/gestion-depenses/components/merchant-logo";
+import { MerchantLogo } from "@/app/dashboard/outils/transactions/components/merchant-logo";
 
 export default function UnifiedTransactions({
   limit = 5,
@@ -289,7 +289,7 @@ export default function UnifiedTransactions({
     // Naviguer vers la page de gestion des dépenses avec l'ID de la transaction
     if (transaction.type === "expense" || transaction.type === "income") {
       router.push(
-        `/dashboard/outils/gestion-depenses?transactionId=${transaction.id}`
+        `/dashboard/outils/transactions?transactionId=${transaction.id}`
       );
     }
   };
@@ -299,7 +299,7 @@ export default function UnifiedTransactions({
     // Naviguer vers la page de gestion des dépenses avec l'ID de la transaction et le flag OCR
     if (transaction.type === "expense" || transaction.type === "income") {
       router.push(
-        `/dashboard/outils/gestion-depenses?transactionId=${transaction.id}&openOcr=true`
+        `/dashboard/outils/transactions?transactionId=${transaction.id}&openOcr=true`
       );
     }
   };
@@ -395,7 +395,7 @@ export default function UnifiedTransactions({
           <Button
             variant="ghost"
             className="w-full font-normal text-sm"
-            onClick={() => router.push("/dashboard/outils/gestion-depenses")}
+            onClick={() => router.push("/dashboard/outils/transactions")}
           >
             Voir toutes les transactions
           </Button>

@@ -8,7 +8,7 @@ import { Switch } from "@/src/components/ui/switch";
 
 export default function AutoReminderForm({ isSmtpConfigured = true }) {
   const { register, watch, setValue } = useFormContext();
-  
+
   const enabled = watch("enabled");
   const useCustomSender = watch("useCustomSender");
 
@@ -18,11 +18,11 @@ export default function AutoReminderForm({ isSmtpConfigured = true }) {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div className="space-y-0.5">
-            <Label htmlFor="enabled" className="text-base font-medium">
+            <Label htmlFor="enabled" className="text-base font-normal">
               Activer les relances automatiques
             </Label>
             <p className="text-sm text-muted-foreground">
-              {isSmtpConfigured 
+              {isSmtpConfigured
                 ? "Les emails de relance seront envoyés automatiquement"
                 : "Configuration SMTP requise pour activer les relances"}
             </p>
@@ -42,15 +42,16 @@ export default function AutoReminderForm({ isSmtpConfigured = true }) {
       {/* Configuration des délais */}
       <div className="space-y-4">
         <div>
-          <h3 className="text-base font-medium mb-2">Délais de relance</h3>
+          <h3 className="text-base font-normal mb-2">Délais de relance</h3>
           <p className="text-sm text-muted-foreground mb-3">
-            Définissez le nombre de jours après la date d'échéance pour envoyer les relances
+            Définissez le nombre de jours après la date d'échéance pour envoyer
+            les relances
           </p>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="firstReminderDays">
+            <Label className="font-normal" htmlFor="firstReminderDays">
               Première relance (jours)
             </Label>
             <Input
@@ -66,7 +67,7 @@ export default function AutoReminderForm({ isSmtpConfigured = true }) {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="secondReminderDays">
+            <Label className="font-normal" htmlFor="secondReminderDays">
               Deuxième relance (jours)
             </Label>
             <Input
@@ -83,9 +84,7 @@ export default function AutoReminderForm({ isSmtpConfigured = true }) {
         </div>
 
         <div className="space-y-2">
-          <Label>
-            Heure d'envoi des relances
-          </Label>
+          <Label className="font-normal">Heure d'envoi des relances</Label>
           <div className="flex items-center gap-2 w-24">
             <Input
               type="number"
@@ -114,7 +113,7 @@ export default function AutoReminderForm({ isSmtpConfigured = true }) {
       {/* Configuration de l'email expéditeur */}
       <div className="space-y-4">
         <div>
-          <h3 className="text-base font-medium mb-2">Email expéditeur</h3>
+          <h3 className="text-base font-normal mb-2">Email expéditeur</h3>
           <p className="text-sm text-muted-foreground mb-3">
             Configurez l'email qui apparaîtra comme expéditeur des relances
           </p>
@@ -123,13 +122,13 @@ export default function AutoReminderForm({ isSmtpConfigured = true }) {
         {/* Info box */}
         <div className="p-3 bg-[#5b50ff]/10 border border-[#5b50ff]/20 rounded-lg">
           <p className="text-xs text-[#5b50ff]">
-            Nous utilisons notre serveur d'envoi pour garantir la délivrabilité. 
+            Nous utilisons notre serveur d'envoi pour garantir la délivrabilité.
             Vos emails seront envoyés avec votre adresse.
           </p>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="fromEmail">
+          <Label htmlFor="fromEmail" className="font-normal">
             Email expéditeur <span className="text-red-500">*</span>
           </Label>
           <Input
@@ -145,7 +144,7 @@ export default function AutoReminderForm({ isSmtpConfigured = true }) {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="fromName">
+          <Label htmlFor="fromName" className="font-normal">
             Nom de l'expéditeur (optionnel)
           </Label>
           <Input
@@ -160,7 +159,7 @@ export default function AutoReminderForm({ isSmtpConfigured = true }) {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="replyTo">
+          <Label htmlFor="replyTo" className="font-normal">
             Email de réponse (optionnel)
           </Label>
           <Input
@@ -181,14 +180,17 @@ export default function AutoReminderForm({ isSmtpConfigured = true }) {
       {/* Configuration du contenu de l'email */}
       <div className="space-y-4">
         <div>
-          <h3 className="text-base font-medium mb-2">Contenu de l'email</h3>
+          <h3 className="text-base font-normal mb-2">Contenu de l'email</h3>
           <p className="text-sm text-muted-foreground mb-3">
-            Variables disponibles: {"{invoiceNumber}"}, {"{clientName}"}, {"{totalAmount}"}, {"{dueDate}"}, {"{companyName}"}
+            Variables disponibles: {"{invoiceNumber}"}, {"{clientName}"},{" "}
+            {"{totalAmount}"}, {"{dueDate}"}, {"{companyName}"}
           </p>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="emailSubject">Objet de l'email</Label>
+          <Label htmlFor="emailSubject" className="font-normal">
+            Objet de l'email
+          </Label>
           <Input
             id="emailSubject"
             placeholder="Rappel de paiement - Facture {invoiceNumber}"
@@ -198,7 +200,9 @@ export default function AutoReminderForm({ isSmtpConfigured = true }) {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="emailBody">Corps de l'email</Label>
+          <Label htmlFor="emailBody" className="font-normal">
+            Corps de l'email
+          </Label>
           <Textarea
             id="emailBody"
             rows={12}

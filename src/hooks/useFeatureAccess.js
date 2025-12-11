@@ -49,7 +49,7 @@ export function useFeatureAccess(featureName) {
       requiresCompanyInfo: true,
       requiresPaidSubscription: false,
     },
-    "gestion-depenses": {
+    transactions: {
       requiresPro: true,
       requiresCompanyInfo: false,
       requiresPaidSubscription: false,

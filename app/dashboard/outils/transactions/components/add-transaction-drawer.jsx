@@ -44,6 +44,7 @@ import { Textarea } from "@/src/components/ui/textarea";
 import { Badge } from "@/src/components/ui/badge";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Separator } from "@/src/components/ui/separator";
+import { Tabs, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
 import {
   Avatar,
   AvatarFallback,
@@ -77,6 +78,7 @@ export function AddTransactionDrawer({
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [uploadedFileUrl, setUploadedFileUrl] = useState(null);
+  const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef(null);
 
   // Hook pour l'upload vers Cloudflare
@@ -131,8 +133,12 @@ export function AddTransactionDrawer({
       // Formater la date pour l'input date (format YYYY-MM-DD)
       let formattedDate = "";
       if (transaction.date) {
-        console.log("🔄 [DRAWER EDIT] Date brute:", transaction.date, typeof transaction.date);
-        
+        console.log(
+          "🔄 [DRAWER EDIT] Date brute:",
+          transaction.date,
+          typeof transaction.date
+        );
+
         // Cas 1: Objet MongoDB avec $date
         if (typeof transaction.date === "object" && transaction.date.$date) {
           const parsedDate = new Date(transaction.date.$date);
@@ -175,7 +181,7 @@ export function AddTransactionDrawer({
             formattedDate = dateObj.toISOString().split("T")[0];
           }
         }
-        
+
         console.log("🔄 [DRAWER EDIT] Date formatée:", formattedDate);
       }
 
@@ -251,7 +257,7 @@ export function AddTransactionDrawer({
     e.preventDefault();
 
     onSubmit(formData);
-    
+
     // Réinitialiser le formulaire après soumission
     setFormData({
       type: "EXPENSE",
@@ -275,6 +281,10 @@ export function AddTransactionDrawer({
     console.log(`🔄 [DRAWER] Changement de ${field}:`, value);
     setFormData((prev) => {
       const newData = { ...prev, [field]: value };
+      // Réinitialiser la catégorie quand le type change (EXPENSE <-> INCOME)
+      if (field === "type" && prev.type !== value) {
+        newData.category = "";
+      }
       console.log(`📝 [DRAWER] FormData mis à jour:`, newData);
       return newData;
     });
@@ -372,15 +382,15 @@ export function AddTransactionDrawer({
 
         <div className="flex-1 overflow-y-auto">
           <div className="px-6 space-y-4 pb-2 pt-6 md:pb-4">
-            {/* Type de document */}
+            {/* Type de transaction : Dépense ou Revenu */}
             <div className="flex items-center justify-between py-2">
               <span className="text-sm font-normal">Type de transaction</span>
-              <Badge
-                variant="outline"
-                className="text-xs font-normal px-2.5 py-0.5 border-[#5a50ff]/20 bg-[#5a50ff]/5 text-[#5a50ff] dark:border-[#5a50ff]/30 dark:bg-[#5a50ff]/10 dark:text-[#8b85ff]"
-              >
-                Transaction manuelle
-              </Badge>
+              <Tabs value={formData.type} onValueChange={handleChange("type")}>
+                <TabsList>
+                  <TabsTrigger value="EXPENSE">Dépense</TabsTrigger>
+                  <TabsTrigger value="INCOME">Revenu</TabsTrigger>
+                </TabsList>
+              </Tabs>
             </div>
             <Separator />
 
@@ -392,87 +402,94 @@ export function AddTransactionDrawer({
                 </span>
               </div>
               <div className="space-y-4">
-                {/* Type de dépense */}
-                <div className="flex items-center justify-between">
-                  <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
-                    Type de dépense
-                  </Label>
-                  <Select
-                    value={formData.expenseType}
-                    onValueChange={handleChange("expenseType")}
-                  >
-                    <SelectTrigger className="w-56">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="ORGANIZATION">
-                        Dépense de l'organisation
-                      </SelectItem>
-                      <SelectItem value="EXPENSE_REPORT">
-                        Note de frais
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Sélecteur de membre (uniquement pour les notes de frais) */}
-                {formData.expenseType === "EXPENSE_REPORT" && (
+                {/* Type de dépense (uniquement pour les dépenses) */}
+                {formData.type === "EXPENSE" && (
                   <div className="flex items-center justify-between">
                     <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
-                      Assigné à
+                      Type de dépense
                     </Label>
                     <Select
-                      value={formData.assignedMember?.userId || ""}
-                      onValueChange={(userId) => {
-                        const member = organizationMembers.find(
-                          (m) => m.userId === userId
-                        );
-                        handleChange("assignedMember")(member || null);
-                      }}
+                      value={formData.expenseType}
+                      onValueChange={handleChange("expenseType")}
                     >
                       <SelectTrigger className="w-56">
-                        {formData.assignedMember ? (
-                          <div className="flex items-center gap-2">
-                            <Avatar className="h-6 w-6">
-                              <AvatarImage
-                                src={formData.assignedMember.image}
-                                alt={formData.assignedMember.name}
-                              />
-                              <AvatarFallback className="text-xs">
-                                {formData.assignedMember.name
-                                  ?.charAt(0)
-                                  ?.toUpperCase() || "?"}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span className="truncate">
-                              {formData.assignedMember.name}
-                            </span>
-                          </div>
-                        ) : (
-                          <SelectValue placeholder="Sélectionner un membre" />
-                        )}
+                        <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {organizationMembers.map((member) => (
-                          <SelectItem key={member.userId} value={member.userId}>
-                            <div className="flex items-center gap-2">
-                              <Avatar className="h-6 w-6">
-                                <AvatarImage
-                                  src={member.image}
-                                  alt={member.name}
-                                />
-                                <AvatarFallback className="text-xs">
-                                  {member.name?.charAt(0)?.toUpperCase() || "?"}
-                                </AvatarFallback>
-                              </Avatar>
-                              <span>{member.name}</span>
-                            </div>
-                          </SelectItem>
-                        ))}
+                        <SelectItem value="ORGANIZATION">
+                          Dépense de l'organisation
+                        </SelectItem>
+                        <SelectItem value="EXPENSE_REPORT">
+                          Note de frais
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                 )}
+
+                {/* Sélecteur de membre (uniquement pour les notes de frais) */}
+                {formData.type === "EXPENSE" &&
+                  formData.expenseType === "EXPENSE_REPORT" && (
+                    <div className="flex items-center justify-between">
+                      <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
+                        Assigné à
+                      </Label>
+                      <Select
+                        value={formData.assignedMember?.userId || ""}
+                        onValueChange={(userId) => {
+                          const member = organizationMembers.find(
+                            (m) => m.userId === userId
+                          );
+                          handleChange("assignedMember")(member || null);
+                        }}
+                      >
+                        <SelectTrigger className="w-56">
+                          {formData.assignedMember ? (
+                            <div className="flex items-center gap-2">
+                              <Avatar className="h-6 w-6">
+                                <AvatarImage
+                                  src={formData.assignedMember.image}
+                                  alt={formData.assignedMember.name}
+                                />
+                                <AvatarFallback className="text-xs">
+                                  {formData.assignedMember.name
+                                    ?.charAt(0)
+                                    ?.toUpperCase() || "?"}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span className="truncate">
+                                {formData.assignedMember.name}
+                              </span>
+                            </div>
+                          ) : (
+                            <SelectValue placeholder="Sélectionner un membre" />
+                          )}
+                        </SelectTrigger>
+                        <SelectContent>
+                          {organizationMembers.map((member) => (
+                            <SelectItem
+                              key={member.userId}
+                              value={member.userId}
+                            >
+                              <div className="flex items-center gap-2">
+                                <Avatar className="h-6 w-6">
+                                  <AvatarImage
+                                    src={member.image}
+                                    alt={member.name}
+                                  />
+                                  <AvatarFallback className="text-xs">
+                                    {member.name?.charAt(0)?.toUpperCase() ||
+                                      "?"}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <span>{member.name}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
 
                 {/* Montant */}
                 <div className="flex items-center justify-between">
@@ -541,19 +558,29 @@ export function AddTransactionDrawer({
             </div>
             <Separator />
 
-            {/* Fournisseur */}
+            {/* Fournisseur / Client */}
             <div className="py-2 space-y-4">
               <div className="mb-4">
-                <span className="text-sm font-normal">Fournisseur</span>
+                <span className="text-sm font-normal">
+                  {formData.type === "INCOME"
+                    ? "Source du revenu"
+                    : "Fournisseur"}
+                </span>
               </div>
               <div className="flex items-center justify-between">
                 <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
-                  Nom du fournisseur
+                  {formData.type === "INCOME"
+                    ? "Client / Source"
+                    : "Nom du fournisseur"}
                 </Label>
                 <Input
                   value={formData.vendor || ""}
                   onChange={(e) => handleChange("vendor")(e.target.value)}
-                  placeholder="Nom du fournisseur"
+                  placeholder={
+                    formData.type === "INCOME"
+                      ? "Nom du client ou source"
+                      : "Nom du fournisseur"
+                  }
                   className="w-56"
                 />
               </div>
@@ -573,6 +600,7 @@ export function AddTransactionDrawer({
                   <CategorySearchSelect
                     value={formData.category}
                     onValueChange={handleChange("category")}
+                    type={formData.type}
                   />
                 </div>
 
@@ -618,10 +646,11 @@ export function AddTransactionDrawer({
             </div>
 
             {/* Upload d'image de reçu */}
-            <div className="py-2 space-y-4">
-              <div className="mb-4">
-                <span className="text-sm font-normal">Reçu (optionnel)</span>
-              </div>
+            <Separator />
+            <div className="space-y-3">
+              <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+                Justificatif
+              </p>
 
               {previewUrl ? (
                 <div className="space-y-3">
@@ -702,46 +731,79 @@ export function AddTransactionDrawer({
                   </p>
                 </div>
               ) : (
-                <div className="flex flex-col gap-2">
+                <div
+                  className={`relative border-1 border-dashed rounded-lg p-6 transition-colors cursor-pointer ${
+                    dragActive
+                      ? "border-[#5A50FF] bg-[#5A50FF]/5"
+                      : "border-muted-foreground/25 hover:border-[#5A50FF]/50 hover:bg-muted/30"
+                  }`}
+                  onDragEnter={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setDragActive(true);
+                  }}
+                  onDragLeave={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setDragActive(false);
+                  }}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setDragActive(false);
+                    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                      handleFileSelect({
+                        target: { files: e.dataTransfer.files },
+                      });
+                    }
+                  }}
+                  onClick={() => fileInputRef.current?.click()}
+                >
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept="image/*,application/pdf"
+                    accept="image/jpeg,image/png,image/webp,application/pdf"
                     onChange={handleFileSelect}
-                    className="sr-only"
+                    className="hidden"
                     id="receipt-upload"
                     aria-label="Upload receipt file"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="w-full cursor-pointer"
                     disabled={isUploadingReceipt}
-                  >
+                  />
+                  <div className="flex flex-col items-center gap-2 text-center">
                     {isUploadingReceipt ? (
                       <>
-                        <LoaderCircle className="h-4 w-4 mr-2 animate-spin" />
-                        Upload en cours...
+                        <LoaderCircle className="h-8 w-8 text-[#5A50FF] animate-spin" />
+                        <p className="text-sm font-normal text-muted-foreground">
+                          Upload en cours...
+                        </p>
                       </>
                     ) : (
                       <>
-                        <Upload className="h-4 w-4 mr-2" />
-                        Ajouter un reçu
+                        <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
+                          <Upload className="h-6 w-6 text-muted-foreground" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">
+                            Glissez votre reçu ici
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            ou cliquez pour sélectionner (JPG, PNG, PDF - max 10
+                            Mo)
+                          </p>
+                        </div>
                       </>
                     )}
-                  </Button>
-                  {uploadReceiptError && (
-                    <p className="text-xs text-red-600 text-center">
-                      Erreur: {uploadReceiptError}
-                    </p>
-                  )}
-                  {!uploadReceiptError && (
-                    <p className="text-xs text-muted-foreground text-center">
-                      Image ou PDF • Max 10MB
-                    </p>
-                  )}
+                  </div>
                 </div>
+              )}
+              {uploadReceiptError && (
+                <p className="text-xs text-red-600 text-center">
+                  Erreur: {uploadReceiptError}
+                </p>
               )}
             </div>
           </div>

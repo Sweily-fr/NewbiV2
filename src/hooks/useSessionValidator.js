@@ -17,14 +17,12 @@ export function useSessionValidator() {
   const checkSession = async () => {
     // Éviter les vérifications multiples simultanées
     if (checkingRef.current) {
-      console.log("⏭️ [SESSION-VALIDATOR] Vérification déjà en cours, skip");
       return;
     }
 
-    // Throttle : ne pas vérifier plus d'une fois toutes les 5 secondes
+    // Throttle : ne pas vérifier plus d'une fois toutes les 30 secondes
     const now = Date.now();
-    if (now - lastCheckRef.current < 5000) {
-      console.log("⏭️ [SESSION-VALIDATOR] Vérification trop récente, skip");
+    if (now - lastCheckRef.current < 30000) {
       return;
     }
 
@@ -32,20 +30,15 @@ export function useSessionValidator() {
       checkingRef.current = true;
       lastCheckRef.current = now;
 
-      console.log("🔍 [SESSION-VALIDATOR] Vérification de la session côté serveur...");
-
       // Vérifier la session côté serveur (MongoDB)
       const response = await fetch("/api/auth/validate-session", {
         method: "GET",
         credentials: "include",
       });
 
-      console.log("📊 [SESSION-VALIDATOR] Réponse API:", response.status);
-
       if (!response.ok || response.status === 401) {
-        console.log("❌ [SESSION-VALIDATOR] Session invalide ou révoquée");
         toast.error("Votre session a expiré. Veuillez vous reconnecter.");
-        
+
         // Déconnecter proprement
         await authClient.signOut({
           fetchOptions: {
@@ -60,12 +53,9 @@ export function useSessionValidator() {
         });
       } else {
         const data = await response.json();
-        if (data.valid) {
-          console.log("✅ [SESSION-VALIDATOR] Session valide");
-        } else {
-          console.log("❌ [SESSION-VALIDATOR] Session non valide selon le serveur");
+        if (!data.valid) {
           toast.error("Votre session a expiré. Veuillez vous reconnecter.");
-          
+
           await authClient.signOut({
             fetchOptions: {
               onSuccess: () => {
@@ -79,7 +69,10 @@ export function useSessionValidator() {
         }
       }
     } catch (error) {
-      console.error("❌ [SESSION-VALIDATOR] Erreur lors de la vérification:", error);
+      console.error(
+        "❌ [SESSION-VALIDATOR] Erreur lors de la vérification:",
+        error
+      );
       // Ne pas rediriger en cas d'erreur réseau temporaire
     } finally {
       checkingRef.current = false;
@@ -87,33 +80,27 @@ export function useSessionValidator() {
   };
 
   useEffect(() => {
-    console.log("🎯 [SESSION-VALIDATOR] Hook initialisé");
-
-    // Vérifier au focus de la fenêtre
+    // Vérifier au focus de la fenêtre (throttlé par lastCheckRef)
     const handleFocus = () => {
-      console.log("👁️ [SESSION-VALIDATOR] Fenêtre focus - vérification session");
       checkSession();
     };
 
-    // Vérifier au retour de visibilité
+    // Vérifier au retour de visibilité (throttlé par lastCheckRef)
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
-        console.log("👁️ [SESSION-VALIDATOR] Page visible - vérification session");
         checkSession();
       }
     };
 
-    // Vérification périodique toutes les 10 secondes (pour détecter rapidement les révocations)
+    // Vérification périodique toutes les 2 minutes (suffisant pour détecter les révocations)
     const interval = setInterval(() => {
-      console.log("⏰ [SESSION-VALIDATOR] Vérification périodique");
       checkSession();
-    }, 10000); // 10 secondes
+    }, 120000); // 2 minutes
 
-    // Vérification initiale après 1 seconde
+    // Vérification initiale après 2 secondes
     const initialCheck = setTimeout(() => {
-      console.log("🚀 [SESSION-VALIDATOR] Vérification initiale");
       checkSession();
-    }, 1000);
+    }, 2000);
 
     // Ajouter les event listeners
     window.addEventListener("focus", handleFocus);
@@ -121,7 +108,6 @@ export function useSessionValidator() {
 
     // Cleanup
     return () => {
-      console.log("🧹 [SESSION-VALIDATOR] Nettoyage");
       clearInterval(interval);
       clearTimeout(initialCheck);
       window.removeEventListener("focus", handleFocus);

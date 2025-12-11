@@ -7,7 +7,10 @@ import { Button } from "@/src/components/ui/button";
 import InvoiceSettingsView from "./invoice-settings-view";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import { toast } from "@/src/components/ui/sonner";
-import { updateOrganization, getActiveOrganization } from "@/src/lib/organization-client";
+import {
+  updateOrganization,
+  getActiveOrganization,
+} from "@/src/lib/organization-client";
 
 // Données de démonstration pour la preview
 const getDemoInvoiceData = (formData, organization) => {
@@ -17,7 +20,8 @@ const getDemoInvoiceData = (formData, organization) => {
   const headerNotes = formData?.headerNotes || "";
   const footerNotes = formData?.footerNotes || "";
   const termsAndConditions = formData?.termsAndConditions || "";
-  const showBankDetails = formData?.showBankDetails !== undefined ? formData?.showBankDetails : false;
+  const showBankDetails =
+    formData?.showBankDetails !== undefined ? formData?.showBankDetails : false;
   const primaryColor = formData?.primaryColor || "#5b4fff";
   const clientPositionRight = formData?.clientPositionRight || false;
 
@@ -125,11 +129,12 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
           setIsLoading(true);
           const org = await getActiveOrganization();
           setOrganization(org);
-          
+
           console.log("📋 Chargement des paramètres de l'organisation:", {
             headerNotes: org?.invoiceHeaderNotes || org?.documentHeaderNotes,
             footerNotes: org?.invoiceFooterNotes || org?.documentFooterNotes,
-            termsAndConditions: org?.invoiceTermsAndConditions || org?.documentTermsAndConditions,
+            termsAndConditions:
+              org?.invoiceTermsAndConditions || org?.documentTermsAndConditions,
             showBankDetails: org?.showBankDetails,
             primaryColor: org?.documentHeaderBgColor,
             bankDetails: {
@@ -138,7 +143,7 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
               bankName: org?.bankName,
             },
           });
-          
+
           // Préparer les valeurs initiales depuis l'organisation (même structure que l'éditeur)
           const formValues = {
             invoiceSettings: {},
@@ -153,16 +158,21 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
               bic: org?.bankBic || "",
               bankName: org?.bankName || "",
             },
-            headerNotes: org?.invoiceHeaderNotes || org?.documentHeaderNotes || "",
-            footerNotes: org?.invoiceFooterNotes || org?.documentFooterNotes || "",
-            termsAndConditions: org?.invoiceTermsAndConditions || org?.documentTermsAndConditions || "",
+            headerNotes:
+              org?.invoiceHeaderNotes || org?.documentHeaderNotes || "",
+            footerNotes:
+              org?.invoiceFooterNotes || org?.documentFooterNotes || "",
+            termsAndConditions:
+              org?.invoiceTermsAndConditions ||
+              org?.documentTermsAndConditions ||
+              "",
             showBankDetails: org?.showBankDetails || false,
             primaryColor: org?.documentHeaderBgColor || "#5b4fff",
             clientPositionRight: org?.invoiceClientPositionRight || false,
           };
-          
+
           console.log("📝 Valeurs initiales du formulaire:", formValues);
-          
+
           setInitialValues(formValues);
           setDebouncedFormData(formValues);
           setIsLoading(false);
@@ -171,7 +181,7 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
           setIsLoading(false);
         }
       };
-      
+
       loadOrganization();
     } else {
       // Réinitialiser l'état quand le modal se ferme
@@ -221,26 +231,26 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
     try {
       setIsSaving(true);
       const formValues = form.getValues();
-      
+
       if (!organization?.id) {
         toast.error("Aucune organisation active");
         setIsSaving(false);
         return;
       }
-      
+
       // Préparer les données pour la mise à jour (même structure que l'éditeur)
       const updateData = {
         // Notes et conditions spécifiques aux factures
         invoiceHeaderNotes: formValues.headerNotes,
         invoiceFooterNotes: formValues.footerNotes,
         invoiceTermsAndConditions: formValues.termsAndConditions,
-        
+
         // Couleur du document
         documentHeaderBgColor: formValues.primaryColor,
-        
+
         // Position du client dans le PDF (factures)
         invoiceClientPositionRight: formValues.clientPositionRight || false,
-        
+
         // Coordonnées bancaires
         bankIban: formValues.bankDetails?.iban || "",
         bankBic: formValues.bankDetails?.bic || "",
@@ -248,11 +258,14 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
         showBankDetails: formValues.showBankDetails,
       };
 
-      console.log("💾 Sauvegarde des paramètres pour l'organisation:", organization.id);
+      console.log(
+        "💾 Sauvegarde des paramètres pour l'organisation:",
+        organization.id
+      );
       console.log("💾 Données à sauvegarder:", updateData);
 
       await updateOrganization(organization.id, updateData);
-      
+
       toast.success("Paramètres enregistrés avec succès");
       onOpenChange(false);
     } catch (error) {
@@ -265,7 +278,9 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
 
   if (!open) return null;
 
-  const demoData = debouncedFormData ? getDemoInvoiceData(debouncedFormData, organization) : null;
+  const demoData = debouncedFormData
+    ? getDemoInvoiceData(debouncedFormData, organization)
+    : null;
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-background">
@@ -275,7 +290,7 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
           <div className="max-w-2xl mx-auto flex flex-col w-full h-full">
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold">Paramètres des factures</h2>
+              <h2 className="text-lg font-normal">Paramètres des factures</h2>
               <Button
                 variant="ghost"
                 size="sm"

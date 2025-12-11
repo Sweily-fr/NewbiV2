@@ -23,12 +23,21 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/src/components/ui/popover";
-import { CalendarIcon, Download, FileSpreadsheet, FileText } from "lucide-react";
+import {
+  CalendarIcon,
+  Download,
+  FileSpreadsheet,
+  FileText,
+} from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/src/lib/utils";
 import * as XLSX from "xlsx";
-import { Avatar, AvatarFallback, AvatarImage } from "@/src/components/ui/avatar";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/src/components/ui/avatar";
 
 export function ExportDialog({ open, onOpenChange, transactions, members }) {
   const [exportType, setExportType] = useState("excel");
@@ -66,39 +75,50 @@ export function ExportDialog({ open, onOpenChange, transactions, members }) {
         try {
           // Convertir la date de la transaction en Date
           let transactionDate;
-          if (typeof t.date === 'string') {
+          if (typeof t.date === "string") {
             // Si c'est un timestamp en millisecondes (string)
             if (t.date.match(/^\d+$/)) {
               transactionDate = new Date(parseInt(t.date));
             } else {
               transactionDate = new Date(t.date);
             }
-          } else if (typeof t.date === 'number') {
+          } else if (typeof t.date === "number") {
             transactionDate = new Date(t.date);
           } else {
             transactionDate = new Date(t.date);
           }
-          
+
           // Extraire la date locale (YYYY-MM-DD) de la transaction
-          const transactionDateStr = transactionDate.toLocaleDateString('en-CA'); // Format YYYY-MM-DD
+          const transactionDateStr =
+            transactionDate.toLocaleDateString("en-CA"); // Format YYYY-MM-DD
           const transactionDateOnly = new Date(transactionDateStr);
-          
+
           // Extraire la date locale du calendrier
           const fromDate = new Date(dateRange.from);
-          const fromDateStr = fromDate.toLocaleDateString('en-CA');
+          const fromDateStr = fromDate.toLocaleDateString("en-CA");
           const fromDateOnly = new Date(fromDateStr);
-          
+
           if (dateRange.to) {
             const toDate = new Date(dateRange.to);
-            const toDateStr = toDate.toLocaleDateString('en-CA');
+            const toDateStr = toDate.toLocaleDateString("en-CA");
             const toDateOnly = new Date(toDateStr);
-            
-            return transactionDateOnly >= fromDateOnly && transactionDateOnly <= toDateOnly;
+
+            return (
+              transactionDateOnly >= fromDateOnly &&
+              transactionDateOnly <= toDateOnly
+            );
           }
-          
+
           return transactionDateOnly >= fromDateOnly;
         } catch (error) {
-          console.error('Erreur filtrage date:', error, 'dateRange:', dateRange, 't.date:', t.date);
+          console.error(
+            "Erreur filtrage date:",
+            error,
+            "dateRange:",
+            dateRange,
+            "t.date:",
+            t.date
+          );
           return true;
         }
       });
@@ -116,11 +136,11 @@ export function ExportDialog({ open, onOpenChange, transactions, members }) {
       let formattedDate = "";
       try {
         let dateObj;
-        
-        if (typeof transaction.date === 'string') {
+
+        if (typeof transaction.date === "string") {
           // Si c'est une string au format YYYY-MM-DD, utiliser directement
           if (transaction.date.match(/^\d{4}-\d{2}-\d{2}$/)) {
-            formattedDate = transaction.date.split('-').reverse().join('/');
+            formattedDate = transaction.date.split("-").reverse().join("/");
           } else if (transaction.date.match(/^\d+$/)) {
             // Si c'est un timestamp en millisecondes
             dateObj = new Date(parseInt(transaction.date));
@@ -136,9 +156,11 @@ export function ExportDialog({ open, onOpenChange, transactions, members }) {
           }
         } else if (transaction.date instanceof Date) {
           if (!isNaN(transaction.date.getTime())) {
-            formattedDate = format(transaction.date, "dd/MM/yyyy", { locale: fr });
+            formattedDate = format(transaction.date, "dd/MM/yyyy", {
+              locale: fr,
+            });
           }
-        } else if (typeof transaction.date === 'number') {
+        } else if (typeof transaction.date === "number") {
           // Timestamp en millisecondes
           dateObj = new Date(transaction.date);
           if (!isNaN(dateObj.getTime())) {
@@ -154,7 +176,7 @@ export function ExportDialog({ open, onOpenChange, transactions, members }) {
           }
         }
       } catch (error) {
-        console.error('Erreur formatage date:', transaction.date, error);
+        console.error("Erreur formatage date:", transaction.date, error);
         formattedDate = transaction.date ? String(transaction.date) : "";
       }
 
@@ -169,8 +191,8 @@ export function ExportDialog({ open, onOpenChange, transactions, members }) {
           transaction.expenseType === "EXPENSE_REPORT"
             ? "Note de frais"
             : transaction.expenseType === "ORGANIZATION"
-            ? "Organisation"
-            : "",
+              ? "Organisation"
+              : "",
         "Membre assigné": transaction.assignedMember?.name || "",
         Fournisseur: transaction.vendor || "",
         "Moyen de paiement": transaction.paymentMethod || "",
@@ -193,7 +215,7 @@ export function ExportDialog({ open, onOpenChange, transactions, members }) {
       { wch: 30 }, // Description
       { wch: 15 }, // Catégorie
       { wch: 10 }, // Montant
-      { wch: 8 },  // Devise
+      { wch: 8 }, // Devise
       { wch: 10 }, // Type
       { wch: 18 }, // Type de dépense
       { wch: 20 }, // Membre assigné
@@ -211,31 +233,43 @@ export function ExportDialog({ open, onOpenChange, transactions, members }) {
   // Export CSV
   const exportToCSV = () => {
     const data = prepareExportData();
-    
+
     // Créer l'en-tête
     const headers = Object.keys(data[0] || {});
     const csvContent = [
       headers.join(";"),
       ...data.map((row) =>
-        headers.map((header) => {
-          const value = row[header];
-          // Échapper les guillemets et entourer de guillemets si nécessaire
-          if (typeof value === "string" && (value.includes(";") || value.includes('"') || value.includes("\n"))) {
-            return `"${value.replace(/"/g, '""')}"`;
-          }
-          return value;
-        }).join(";")
+        headers
+          .map((header) => {
+            const value = row[header];
+            // Échapper les guillemets et entourer de guillemets si nécessaire
+            if (
+              typeof value === "string" &&
+              (value.includes(";") ||
+                value.includes('"') ||
+                value.includes("\n"))
+            ) {
+              return `"${value.replace(/"/g, '""')}"`;
+            }
+            return value;
+          })
+          .join(";")
       ),
     ].join("\n");
 
     // Créer le blob avec BOM pour Excel
     const BOM = "\uFEFF";
-    const blob = new Blob([BOM + csvContent], { type: "text/csv;charset=utf-8;" });
+    const blob = new Blob([BOM + csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
-    
+
     link.setAttribute("href", url);
-    link.setAttribute("download", `depenses_${format(new Date(), "yyyy-MM-dd_HH-mm")}.csv`);
+    link.setAttribute(
+      "download",
+      `depenses_${format(new Date(), "yyyy-MM-dd_HH-mm")}.csv`
+    );
     link.style.visibility = "hidden";
     document.body.appendChild(link);
     link.click();
@@ -291,13 +325,18 @@ export function ExportDialog({ open, onOpenChange, transactions, members }) {
           {/* Type de dépense */}
           <div className="space-y-2">
             <Label>Type de dépense</Label>
-            <Select value={expenseTypeFilter} onValueChange={setExpenseTypeFilter}>
+            <Select
+              value={expenseTypeFilter}
+              onValueChange={setExpenseTypeFilter}
+            >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Toutes les dépenses</SelectItem>
-                <SelectItem value="ORGANIZATION">Dépenses de l'organisation</SelectItem>
+                <SelectItem value="ORGANIZATION">
+                  Dépenses de l'organisation
+                </SelectItem>
                 <SelectItem value="EXPENSE_REPORT">Notes de frais</SelectItem>
               </SelectContent>
             </Select>
@@ -348,7 +387,10 @@ export function ExportDialog({ open, onOpenChange, transactions, members }) {
                     {dateRange?.from ? (
                       dateRange?.to ? (
                         <>
-                          {format(dateRange.from, "dd MMM yyyy", { locale: fr })} -{" "}
+                          {format(dateRange.from, "dd MMM yyyy", {
+                            locale: fr,
+                          })}{" "}
+                          -{" "}
                           {format(dateRange.to, "dd MMM yyyy", { locale: fr })}
                         </>
                       ) : (
@@ -375,7 +417,9 @@ export function ExportDialog({ open, onOpenChange, transactions, members }) {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setDateRange({ from: undefined, to: undefined })}
+                  onClick={() =>
+                    setDateRange({ from: undefined, to: undefined })
+                  }
                   className="h-8"
                 >
                   Réinitialiser les dates
@@ -387,7 +431,9 @@ export function ExportDialog({ open, onOpenChange, transactions, members }) {
           {/* Compteur de transactions filtrées */}
           <div className="rounded-lg bg-muted p-3 text-sm">
             <p className="text-muted-foreground">
-              <span className="font-semibold text-foreground">{filteredCount}</span>{" "}
+              <span className="font-semibold text-foreground">
+                {filteredCount}
+              </span>{" "}
               {filteredCount > 1 ? "transactions" : "transaction"} à exporter
             </p>
           </div>

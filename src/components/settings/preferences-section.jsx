@@ -171,8 +171,8 @@ export function PreferencesSection() {
       isPro: true,
     },
     {
-      name: "Dépenses",
-      url: "/dashboard/outils/gestion-depenses",
+      name: "Transactions",
+      url: "/dashboard/outils/transactions",
       icon: IconCreditCard,
       iconName: "IconCreditCard",
       isPro: true,

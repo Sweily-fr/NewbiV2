@@ -40,48 +40,54 @@ export default function ClientFilters({
   // Gérer le toggle d'un type
   const toggleType = (type) => {
     const newTypes = selectedTypes.includes(type)
-      ? selectedTypes.filter(t => t !== type)
+      ? selectedTypes.filter((t) => t !== type)
       : [...selectedTypes, type];
-    
+
     setSelectedTypes(newTypes);
-    
-    // Mettre à jour le filtre de la table
-    table
-      .getColumn("type")
-      ?.setFilterValue(newTypes.length ? newTypes : undefined);
+
+    // Mettre à jour le filtre de la table si disponible
+    if (table) {
+      table
+        .getColumn("type")
+        ?.setFilterValue(newTypes.length ? newTypes : undefined);
+    }
   };
 
   // Tout sélectionner / tout désélectionner les types
-  const allTypesSelected = selectedTypes.length === Object.keys(CLIENT_TYPE_LABELS).length;
-  
+  const allTypesSelected =
+    selectedTypes.length === Object.keys(CLIENT_TYPE_LABELS).length;
+
   const toggleAllTypes = () => {
     const newTypes = allTypesSelected ? [] : Object.keys(CLIENT_TYPE_LABELS);
     setSelectedTypes(newTypes);
-    
-    // Mettre à jour le filtre de la table
-    table
-      .getColumn("type")
-      ?.setFilterValue(newTypes.length ? newTypes : undefined);
+
+    // Mettre à jour le filtre de la table si disponible
+    if (table) {
+      table
+        .getColumn("type")
+        ?.setFilterValue(newTypes.length ? newTypes : undefined);
+    }
   };
 
-  // Obtenir les colonnes cachables
+  // Obtenir les colonnes cachables (seulement si table est disponible)
   const hideableColumns = useMemo(() => {
+    if (!table) return [];
     return table
       .getAllColumns()
       .filter(
         (column) =>
-          typeof column.accessorFn !== "undefined" &&
-          column.getCanHide()
+          typeof column.accessorFn !== "undefined" && column.getCanHide()
       );
   }, [table]);
 
   // Calculer le nombre de colonnes visibles
-  const visibleColumnsCount = hideableColumns.filter((column) => 
+  const visibleColumnsCount = hideableColumns.filter((column) =>
     column.getIsVisible()
   ).length;
 
   // Vérifier si toutes les colonnes sont visibles
-  const allColumnsVisible = hideableColumns.length > 0 && 
+  const allColumnsVisible =
+    hideableColumns.length > 0 &&
     hideableColumns.every((column) => column.getIsVisible());
 
   // Traductions des colonnes
@@ -115,7 +121,9 @@ export default function ClientFilters({
         <DropdownMenuItem
           onClick={() => {
             setSelectedTypes([]);
-            table.getColumn("type")?.setFilterValue(undefined);
+            if (table) {
+              table.getColumn("type")?.setFilterValue(undefined);
+            }
           }}
           className="cursor-pointer"
         >
@@ -137,7 +145,7 @@ export default function ClientFilters({
           </DropdownMenuSubTrigger>
           <DropdownMenuSubContent className="w-[250px]">
             {/* Checkbox Tout sélectionner */}
-            <div 
+            <div
               className="flex items-center px-2 py-1.5 cursor-pointer hover:bg-accent rounded-sm text-sm"
               onClick={toggleAllTypes}
             >
@@ -158,55 +166,55 @@ export default function ClientFilters({
                   checked={selectedTypes.includes(value)}
                   className="mr-2 pointer-events-none"
                 />
-                <Badge variant="outline">
-                  {label}
-                </Badge>
+                <Badge variant="outline">{label}</Badge>
               </div>
             ))}
           </DropdownMenuSubContent>
         </DropdownMenuSub>
 
-        <DropdownMenuSeparator />
-
-        {/* Column Visibility - Nested Dropdown */}
-        <DropdownMenuSub>
-          <DropdownMenuSubTrigger className="whitespace-nowrap">
-            Colonnes visibles
-            <Badge variant="secondary" className="ml-auto">
-              {visibleColumnsCount}
-            </Badge>
-          </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent className="w-[250px] max-h-[400px] overflow-y-auto">
-            {/* Checkbox Tout sélectionner */}
-            <div 
-              className="flex items-center px-2 py-1.5 cursor-pointer hover:bg-accent rounded-sm text-sm"
-              onClick={() => {
-                table.toggleAllColumnsVisible(!allColumnsVisible);
-              }}
-            >
-              <Checkbox
-                checked={allColumnsVisible}
-                className="mr-2 pointer-events-none"
-              />
-              <span>Tout sélectionner</span>
-            </div>
+        {table && hideableColumns.length > 0 && (
+          <>
             <DropdownMenuSeparator />
-            
-            {hideableColumns.map((column) => (
-              <div
-                key={column.id}
-                className="flex items-center px-2 py-1.5 cursor-pointer hover:bg-accent rounded-sm text-sm"
-                onClick={() => column.toggleVisibility()}
-              >
-                <Checkbox
-                  checked={column.getIsVisible()}
-                  className="mr-2 pointer-events-none"
-                />
-                <span>{columnTranslations[column.id] || column.id}</span>
-              </div>
-            ))}
-          </DropdownMenuSubContent>
-        </DropdownMenuSub>
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger className="whitespace-nowrap">
+                Colonnes visibles
+                <Badge variant="secondary" className="ml-auto">
+                  {visibleColumnsCount}
+                </Badge>
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent className="w-[250px] max-h-[400px] overflow-y-auto">
+                {/* Checkbox Tout sélectionner */}
+                <div
+                  className="flex items-center px-2 py-1.5 cursor-pointer hover:bg-accent rounded-sm text-sm"
+                  onClick={() => {
+                    table.toggleAllColumnsVisible(!allColumnsVisible);
+                  }}
+                >
+                  <Checkbox
+                    checked={allColumnsVisible}
+                    className="mr-2 pointer-events-none"
+                  />
+                  <span>Tout sélectionner</span>
+                </div>
+                <DropdownMenuSeparator />
+
+                {hideableColumns.map((column) => (
+                  <div
+                    key={column.id}
+                    className="flex items-center px-2 py-1.5 cursor-pointer hover:bg-accent rounded-sm text-sm"
+                    onClick={() => column.toggleVisibility()}
+                  >
+                    <Checkbox
+                      checked={column.getIsVisible()}
+                      className="mr-2 pointer-events-none"
+                    />
+                    <span>{columnTranslations[column.id] || column.id}</span>
+                  </div>
+                ))}
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+          </>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

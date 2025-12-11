@@ -291,6 +291,11 @@
   }
 }
 
+/* Lucide icons - strokeWidth global à 1.5 */
+.lucide {
+  stroke-width: 1.5;
+}
+
 /* Support pour Safari iOS et safe-area-inset */
 @supports (padding: max(0px)) {
   body {

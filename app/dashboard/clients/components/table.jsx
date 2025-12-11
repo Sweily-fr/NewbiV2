@@ -36,6 +36,8 @@ import {
   PlusIcon,
   Search,
   TrashIcon,
+  Building2,
+  User,
 } from "lucide-react";
 
 import { cn } from "@/src/lib/utils";
@@ -52,7 +54,10 @@ import {
 } from "@/src/components/ui/alert-dialog";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
-import { ButtonGroup, ButtonGroupSeparator } from "@/src/components/ui/button-group";
+import {
+  ButtonGroup,
+  ButtonGroupSeparator,
+} from "@/src/components/ui/button-group";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import {
   DropdownMenu,
@@ -100,9 +105,11 @@ import { Skeleton } from "@/src/components/ui/skeleton";
 // Le composant est exporté par défaut, pas en named export
 import { useClients, useDeleteClient } from "@/src/hooks/useClients";
 import { useClientListsByClient } from "@/src/hooks/useClientLists";
+import { useInvoices } from "@/src/graphql/invoiceQueries";
 import { toast } from "@/src/components/ui/sonner";
 import ClientsModal from "./clients-modal";
 import ClientFilters from "./client-filters";
+import { FileText } from "lucide-react";
 // Custom filter function for multi-column searching
 const multiColumnFilterFn = (row, columnId, filterValue) => {
   const searchableRowContent =
@@ -117,13 +124,23 @@ const typeFilterFn = (row, columnId, filterValue) => {
   return filterValue.includes(type);
 };
 
-const columns = (selectedClients, onSelectClient, onSelectAll, allClients) => [
+const columns = (
+  selectedClients,
+  onSelectClient,
+  onSelectAll,
+  allClients,
+  invoiceCountByClient = {}
+) => [
   {
     id: "select",
     header: () => {
-      const allSelected = allClients?.length > 0 && allClients.every(client => selectedClients.has(client.id));
-      const someSelected = allClients?.some(client => selectedClients.has(client.id)) && !allSelected;
-      
+      const allSelected =
+        allClients?.length > 0 &&
+        allClients.every((client) => selectedClients.has(client.id));
+      const someSelected =
+        allClients?.some((client) => selectedClients.has(client.id)) &&
+        !allSelected;
+
       return (
         <Checkbox
           checked={allSelected || (someSelected && "indeterminate")}
@@ -175,19 +192,67 @@ const columns = (selectedClients, onSelectClient, onSelectAll, allClients) => [
     accessorKey: "type",
     cell: ({ row }) => {
       const type = row.getValue("type");
-      const colorClass =
-        type === "COMPANY"
-          ? "bg-purple-100 text-purple-800 border-purple-200"
-          : "bg-green-100 text-green-800 border-green-200";
+
+      // Configuration des badges par type (style identique aux factures)
+      const getTypeConfig = () => {
+        switch (type) {
+          case "COMPANY":
+            return {
+              icon: <Building2 className="w-3 h-3" />,
+              label: "Entreprise",
+              className:
+                "bg-[#5a50ff]/10 text-[#5a50ff] dark:bg-[#5a50ff]/20 dark:text-[#5a50ff]",
+            };
+          case "INDIVIDUAL":
+          default:
+            return {
+              icon: <User className="w-3 h-3" />,
+              label: "Particulier",
+              className:
+                "bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400",
+            };
+        }
+      };
+
+      const config = getTypeConfig();
 
       return (
-        <Badge className={cn("font-normal", colorClass)}>
-          {type === "INDIVIDUAL" ? "Particulier" : "Entreprise"}
-        </Badge>
+        <span
+          className={cn(
+            "inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium",
+            config.className
+          )}
+        >
+          {config.icon}
+          {config.label}
+        </span>
       );
     },
     size: 120,
     filterFn: typeFilterFn,
+  },
+  {
+    header: "Factures",
+    id: "invoiceCount",
+    cell: ({ row }) => {
+      const clientId = row.original.id;
+      const count = invoiceCountByClient[clientId] || 0;
+
+      return (
+        <span
+          className={cn(
+            "inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium",
+            count > 0
+              ? "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400"
+              : "bg-gray-50 text-gray-500 dark:bg-gray-900/20 dark:text-gray-400"
+          )}
+        >
+          <FileText className="w-3 h-3" />
+          {count}
+        </span>
+      );
+    },
+    size: 100,
   },
   {
     header: "Adresse",
@@ -222,14 +287,33 @@ const columns = (selectedClients, onSelectClient, onSelectAll, allClients) => [
       const handleEditClient = table.options.meta?.handleEditClient;
       const onSelectList = table.options.meta?.onSelectList;
       const workspaceId = table.options.meta?.workspaceId;
-      return <RowActions row={row} onEdit={handleEditClient} onSelectList={onSelectList} workspaceId={workspaceId} />;
+      return (
+        <RowActions
+          row={row}
+          onEdit={handleEditClient}
+          onSelectList={onSelectList}
+          workspaceId={workspaceId}
+        />
+      );
     },
     size: 60,
     enableHiding: false,
   },
 ];
 
-export default function TableClients({ handleAddUser, selectedClients = new Set(), onSelectClient, onSelectAll, clients: clientsProp, useProvidedClients = false, onSelectList, workspaceId }) {
+export default function TableClients({
+  handleAddUser,
+  selectedClients = new Set(),
+  onSelectClient,
+  onSelectAll,
+  clients: clientsProp,
+  useProvidedClients = false,
+  onSelectList,
+  workspaceId,
+  externalGlobalFilter = "",
+  externalSelectedTypes = [],
+  hideSearchBar = false,
+}) {
   const id = useId();
   const [columnFilters, setColumnFilters] = useState([]);
   const [columnVisibility, setColumnVisibility] = useState({});
@@ -238,13 +322,23 @@ export default function TableClients({ handleAddUser, selectedClients = new Set(
     pageSize: 10,
   });
   const inputRef = useRef(null);
-  const [globalFilter, setGlobalFilter] = useState("");
+  const [internalGlobalFilter, setInternalGlobalFilter] = useState("");
   const [editingClient, setEditingClient] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
+  // Utiliser le filtre externe si hideSearchBar est true, sinon utiliser le filtre interne
+  const globalFilter = hideSearchBar
+    ? externalGlobalFilter
+    : internalGlobalFilter;
+  const setGlobalFilter = setInternalGlobalFilter;
+
   // Utilisation du hook pour récupérer les clients ou utilisation des clients passés en props
-  const hookResult = useClients(pagination.pageIndex + 1, pagination.pageSize, globalFilter);
-  
+  const hookResult = useClients(
+    pagination.pageIndex + 1,
+    pagination.pageSize,
+    globalFilter
+  );
+
   const {
     clients: hookClients,
     totalItems: hookTotalItems,
@@ -256,8 +350,10 @@ export default function TableClients({ handleAddUser, selectedClients = new Set(
   } = hookResult;
 
   // Utiliser les clients passés en props si disponibles
-  const clients = useProvidedClients ? (clientsProp || []) : hookClients;
-  const totalItems = useProvidedClients ? (clientsProp?.length || 0) : hookTotalItems;
+  const clients = useProvidedClients ? clientsProp || [] : hookClients;
+  const totalItems = useProvidedClients
+    ? clientsProp?.length || 0
+    : hookTotalItems;
   const currentPage = useProvidedClients ? 1 : hookCurrentPage;
   const totalPages = useProvidedClients ? 1 : hookTotalPages;
   const loading = useProvidedClients ? false : hookLoading;
@@ -265,6 +361,23 @@ export default function TableClients({ handleAddUser, selectedClients = new Set(
   const refetch = useProvidedClients ? () => {} : hookRefetch;
 
   const { deleteClient } = useDeleteClient();
+
+  // Récupérer les factures pour calculer le nombre par client
+  const { invoices } = useInvoices();
+
+  // Calculer le nombre de factures par client
+  const invoiceCountByClient = useMemo(() => {
+    const counts = {};
+    if (invoices && invoices.length > 0) {
+      invoices.forEach((invoice) => {
+        const clientId = invoice.client?.id;
+        if (clientId) {
+          counts[clientId] = (counts[clientId] || 0) + 1;
+        }
+      });
+    }
+    return counts;
+  }, [invoices]);
 
   const [sorting, setSorting] = useState([
     {
@@ -320,31 +433,40 @@ export default function TableClients({ handleAddUser, selectedClients = new Set(
     handleCloseEditModal();
   };
 
-  const handleSelectAll = useCallback((checked) => {
-    // Utiliser onSelectAll si disponible, sinon fallback sur onSelectClient
-    if (onSelectAll) {
-      onSelectAll(checked, clients);
-    } else {
-      // Fallback: appeler onSelectClient pour chaque client (moins optimal)
-      if (checked) {
-        clients.forEach(client => {
-          if (!selectedClients.has(client.id)) {
-            onSelectClient?.(client.id);
-          }
-        });
+  const handleSelectAll = useCallback(
+    (checked) => {
+      // Utiliser onSelectAll si disponible, sinon fallback sur onSelectClient
+      if (onSelectAll) {
+        onSelectAll(checked, clients);
       } else {
-        clients.forEach(client => {
-          if (selectedClients.has(client.id)) {
-            onSelectClient?.(client.id);
-          }
-        });
+        // Fallback: appeler onSelectClient pour chaque client (moins optimal)
+        if (checked) {
+          clients.forEach((client) => {
+            if (!selectedClients.has(client.id)) {
+              onSelectClient?.(client.id);
+            }
+          });
+        } else {
+          clients.forEach((client) => {
+            if (selectedClients.has(client.id)) {
+              onSelectClient?.(client.id);
+            }
+          });
+        }
       }
-    }
-  }, [clients, selectedClients, onSelectClient, onSelectAll]);
+    },
+    [clients, selectedClients, onSelectClient, onSelectAll]
+  );
 
   const table = useReactTable({
     data: clients,
-    columns: columns(selectedClients, onSelectClient, handleSelectAll, clients),
+    columns: columns(
+      selectedClients,
+      onSelectClient,
+      handleSelectAll,
+      clients,
+      invoiceCountByClient
+    ),
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     onSortingChange: setSorting,
@@ -418,51 +540,99 @@ export default function TableClients({ handleAddUser, selectedClients = new Set(
   };
 
   return (
-    <>
+    <div className="flex flex-col flex-1 min-h-0">
       {/* Desktop Layout */}
-      <div className="hidden md:block space-y-4">
-        {/* Filters */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            {/* Button Group with Search, Type, and Columns */}
-            <ButtonGroup>
-              {/* Filter by name or email */}
-              <div className="relative flex-1">
-                <Input
-                  id={`${id}-input`}
-                  ref={inputRef}
-                  className={cn(
-                    "peer min-w-60 ps-9 rounded-r-none",
-                    Boolean(table.getColumn("name")?.getFilterValue()) && "pe-9"
-                  )}
-                  value={globalFilter}
-                  onChange={(e) => {
-                    setGlobalFilter(e.target.value);
-                    table.getColumn("name")?.setFilterValue(e.target.value);
-                  }}
-                  placeholder="Filtrer par nom ou email..."
-                  type="text"
-                  aria-label="Filter by name or email"
-                />
-                <div className="text-muted-foreground/80 pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3 peer-disabled:opacity-50">
-                  <Search size={16} aria-hidden="true" />
-                </div>
-                {Boolean(globalFilter) && (
-                  <button
-                    className="text-muted-foreground/80 hover:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 absolute inset-y-0 end-0 flex h-full w-9 items-center justify-center transition-[color,box-shadow] outline-none focus:z-10 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
-                    aria-label="Clear filter"
-                    onClick={() => {
-                      setGlobalFilter("");
-                      table.getColumn("name")?.setFilterValue("");
-                      if (inputRef.current) {
-                        inputRef.current.focus();
-                      }
-                    }}
-                  >
-                    <CircleXIcon size={16} aria-hidden="true" />
-                  </button>
+      <div className="hidden md:flex md:flex-col flex-1 min-h-0">
+        {/* Filters - Fixe en haut - Caché si hideSearchBar */}
+        {!hideSearchBar && (
+          <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-4 flex-shrink-0">
+            {/* Search */}
+            <div className="relative max-w-md">
+              <Input
+                id={`${id}-input`}
+                ref={inputRef}
+                className={cn(
+                  "w-full sm:w-[490px] lg:w-[490px] ps-9",
+                  Boolean(table.getColumn("name")?.getFilterValue()) && "pe-9"
                 )}
+                value={globalFilter}
+                onChange={(e) => {
+                  setGlobalFilter(e.target.value);
+                  table.getColumn("name")?.setFilterValue(e.target.value);
+                }}
+                placeholder="Recherchez par nom, email ou SIRET..."
+                type="text"
+                aria-label="Filter by name or email"
+              />
+              <div className="text-muted-foreground/80 pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3 peer-disabled:opacity-50">
+                <Search size={16} aria-hidden="true" />
               </div>
+              {Boolean(globalFilter) && (
+                <button
+                  className="text-muted-foreground/80 hover:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 absolute inset-y-0 end-0 flex h-full w-9 items-center justify-center transition-[color,box-shadow] outline-none focus:z-10 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
+                  aria-label="Clear filter"
+                  onClick={() => {
+                    setGlobalFilter("");
+                    table.getColumn("name")?.setFilterValue("");
+                    if (inputRef.current) {
+                      inputRef.current.focus();
+                    }
+                  }}
+                >
+                  <CircleXIcon size={16} aria-hidden="true" />
+                </button>
+              )}
+            </div>
+
+            {/* Actions à droite */}
+            <div className="flex items-center gap-2">
+              {/* Delete button - shown when rows are selected */}
+              {selectedClients.size > 0 && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="destructive"
+                      data-mobile-delete-trigger
+                      className="cursor-pointer font-normal"
+                    >
+                      <TrashIcon className="mr-2 h-4 w-4" />
+                      Supprimer ({selectedClients.size})
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <div className="flex flex-col gap-2 max-sm:items-center sm:flex-row sm:gap-4">
+                      <div
+                        className="flex size-9 shrink-0 items-center justify-center rounded-full border"
+                        aria-hidden="true"
+                      >
+                        <CircleAlertIcon className="opacity-80" size={16} />
+                      </div>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>
+                          Êtes-vous absolument sûr ?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Cette action ne peut pas être annulée. Cela supprimera
+                          définitivement {selectedClients.size}{" "}
+                          {selectedClients.size === 1
+                            ? "client sélectionné"
+                            : "clients sélectionnés"}
+                          .
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                    </div>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Annuler</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleDeleteRows}
+                        variant="destructive"
+                      >
+                        Supprimer
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
 
               {/* Filters Button */}
               <ClientFilters
@@ -470,88 +640,23 @@ export default function TableClients({ handleAddUser, selectedClients = new Set(
                 setSelectedTypes={setSelectedTypes}
                 table={table}
               />
-            </ButtonGroup>
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-            {/* Delete button - shown when rows are selected */}
-            {selectedClients.size > 0 && (
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    variant="destructive"
-                    data-mobile-delete-trigger
-                    className="cursor-pointer font-normal"
-                  >
-                    <TrashIcon className="mr-2 h-4 w-4" />
-                    Supprimer ({selectedClients.size})
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <div className="flex flex-col gap-2 max-sm:items-center sm:flex-row sm:gap-4">
-                    <div
-                      className="flex size-9 shrink-0 items-center justify-center rounded-full border"
-                      aria-hidden="true"
-                    >
-                      <CircleAlertIcon className="opacity-80" size={16} />
-                    </div>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>
-                        Êtes-vous absolument sûr ?
-                      </AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Cette action ne peut pas être annulée. Cela supprimera
-                        définitivement {selectedClients.size}{" "}
-                        {selectedClients.size === 1
-                          ? "client sélectionné"
-                          : "clients sélectionnés"}
-                        .
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                  </div>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Annuler</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={handleDeleteRows}
-                      variant="destructive"
-                    >
-                      Supprimer
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            )}
-            {/* Add user button group */}
-            <ButtonGroup>
-              <Button
-                className="cursor-pointer font-normal bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
-                onClick={handleAddUser}
-              >
-                Ajouter un contact
-              </Button>
-              <ButtonGroupSeparator />
-              <Button
-                className="cursor-pointer bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
-                size="icon"
-                onClick={handleAddUser}
-              >
-                <PlusIcon size={16} aria-hidden="true" />
-              </Button>
-            </ButtonGroup>
-          </div>
-        </div>
+        )}
 
-        {/* Table */}
-        <div className="bg-background overflow-hidden rounded-md border">
-          <Table className="table-fixed">
-            <TableHeader>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id} className="hover:bg-transparent">
-                  {headerGroup.headers.map((header) => {
-                    return (
-                      <TableHead
+        {/* Table - Desktop style avec header fixe et body scrollable */}
+        <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+          {/* Header fixe */}
+          <div className="flex-shrink-0 border-b border-gray-200 dark:border-gray-800">
+            <table className="w-full table-fixed">
+              <thead>
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <tr key={headerGroup.id}>
+                    {headerGroup.headers.map((header, index, arr) => (
+                      <th
                         key={header.id}
                         style={{ width: `${header.getSize()}px` }}
-                        className="h-11 font-normal"
+                        className={`h-10 p-2 text-left align-middle font-normal text-xs text-muted-foreground ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
                       >
                         {header.isPlaceholder ? null : header.column.getCanSort() ? (
                           <div
@@ -561,7 +666,6 @@ export default function TableClients({ handleAddUser, selectedClients = new Set(
                             )}
                             onClick={header.column.getToggleSortingHandler()}
                             onKeyDown={(e) => {
-                              // Enhanced keyboard handling for sorting
                               if (
                                 header.column.getCanSort() &&
                                 (e.key === "Enter" || e.key === " ")
@@ -601,196 +705,202 @@ export default function TableClients({ handleAddUser, selectedClients = new Set(
                             header.getContext()
                           )
                         )}
-                      </TableHead>
-                    );
-                  })}
-                </TableRow>
-              ))}
-            </TableHeader>
-            <TableBody>
-              {loading ? (
-                // Skeleton loading state
-                Array.from({ length: pagination.pageSize }).map((_, index) => (
-                  <TableRow key={`skeleton-${index}`}>
-                    <TableCell>
-                      <Skeleton className="h-4 w-4 rounded" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-4 w-32" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-4 w-40" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-5 w-20 rounded-full" />
-                    </TableCell>
-                    <TableCell>
-                      <div className="space-y-1">
-                        <Skeleton className="h-3 w-24" />
-                        <Skeleton className="h-3 w-16" />
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-4 w-28" />
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex justify-end">
-                        <Skeleton className="h-8 w-8 rounded" />
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : table.getRowModel().rows?.length ? (
-                table.getRowModel().rows.map((row) => (
-                  <TableRow
-                    key={row.id}
-                    data-state={row.getIsSelected() && "selected"}
-                    className="cursor-pointer"
-                    onClick={(e) => {
-                      // Ne pas ouvrir le modal si on clique sur la checkbox ou le menu d'actions
-                      if (e.target.closest('[role="checkbox"]') || e.target.closest('button') || e.target.closest('[role="menuitem"]')) {
-                        return;
-                      }
-                      handleEditClient(row.original);
-                    }}
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id} className="last:py-0">
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )}
-                      </TableCell>
+                      </th>
                     ))}
-                  </TableRow>
-                ))
-              ) : error ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={columns.length}
-                    className="h-24 text-center text-red-500"
-                  >
-                    <div className="flex flex-col items-center gap-2">
-                      <span>Erreur lors du chargement des clients</span>
-                      <button
-                        onClick={handleRefresh}
-                        className="text-blue-600 hover:text-blue-800 underline"
+                  </tr>
+                ))}
+              </thead>
+            </table>
+          </div>
+          {/* Body scrollable */}
+          <div className="flex-1 overflow-auto">
+            <table className="w-full table-fixed">
+              <tbody>
+                {loading ? (
+                  // Skeleton loading state
+                  Array.from({ length: pagination.pageSize }).map(
+                    (_, index) => (
+                      <tr
+                        key={`skeleton-${index}`}
+                        className="border-b hover:bg-muted/50"
                       >
-                        Réessayer
-                      </button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                <TableRow>
-                  <TableCell
-                    colSpan={columns(selectedClients, onSelectClient, handleSelectAll, clients).length}
-                    className="h-24 text-center"
-                  >
-                    Aucun contact trouvé.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+                        <td style={{ width: 28 }} className="p-2 pl-4 sm:pl-6">
+                          <Skeleton className="h-4 w-4 rounded" />
+                        </td>
+                        <td style={{ width: 200 }} className="p-2">
+                          <Skeleton className="h-4 w-32" />
+                        </td>
+                        <td style={{ width: 220 }} className="p-2">
+                          <Skeleton className="h-4 w-40" />
+                        </td>
+                        <td style={{ width: 120 }} className="p-2">
+                          <Skeleton className="h-5 w-20 rounded-full" />
+                        </td>
+                        <td style={{ width: 100 }} className="p-2">
+                          <Skeleton className="h-5 w-12 rounded-full" />
+                        </td>
+                        <td style={{ width: 150 }} className="p-2">
+                          <div className="space-y-1">
+                            <Skeleton className="h-3 w-24" />
+                            <Skeleton className="h-3 w-16" />
+                          </div>
+                        </td>
+                        <td style={{ width: 140 }} className="p-2">
+                          <Skeleton className="h-4 w-28" />
+                        </td>
+                        <td style={{ width: 60 }} className="p-2 pr-4 sm:pr-6">
+                          <div className="flex justify-end">
+                            <Skeleton className="h-8 w-8 rounded" />
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  )
+                ) : table.getRowModel().rows?.length ? (
+                  table.getRowModel().rows.map((row) => (
+                    <tr
+                      key={row.id}
+                      data-state={row.getIsSelected() && "selected"}
+                      className="border-b hover:bg-muted/50 data-[state=selected]:bg-muted cursor-pointer transition-colors"
+                      onClick={(e) => {
+                        // Ne pas ouvrir le modal si on clique sur la checkbox ou le menu d'actions
+                        if (
+                          e.target.closest('[role="checkbox"]') ||
+                          e.target.closest("button") ||
+                          e.target.closest('[role="menuitem"]')
+                        ) {
+                          return;
+                        }
+                        handleEditClient(row.original);
+                      }}
+                    >
+                      {row.getVisibleCells().map((cell, index, arr) => (
+                        <td
+                          key={cell.id}
+                          style={{ width: cell.column.getSize() }}
+                          className={`p-2 align-middle text-sm ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
+                        >
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext()
+                          )}
+                        </td>
+                      ))}
+                    </tr>
+                  ))
+                ) : error ? (
+                  <tr>
+                    <td
+                      colSpan={8}
+                      className="h-24 text-center text-red-500 p-2"
+                    >
+                      <div className="flex flex-col items-center gap-2">
+                        <span>Erreur lors du chargement des clients</span>
+                        <button
+                          onClick={handleRefresh}
+                          className="text-blue-600 hover:text-blue-800 underline"
+                        >
+                          Réessayer
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  <tr>
+                    <td colSpan={8} className="h-24 text-center p-2">
+                      Aucun contact trouvé.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
 
-        {/* Pagination */}
-        <div className="flex items-center justify-between gap-8">
-          {/* Results per page */}
-          <div className="flex items-center gap-3">
-            <Label htmlFor={id} className="max-sm:sr-only font-normal">
-              Lignes par page
-            </Label>
-            <Select
-              value={table.getState().pagination.pageSize.toString()}
-              onValueChange={(value) => {
-                table.setPageSize(Number(value));
-              }}
-            >
-              <SelectTrigger id={id} className="w-fit whitespace-nowrap">
-                <SelectValue placeholder="Select number of results" />
-              </SelectTrigger>
-              <SelectContent className="[&_*[role=option]]:ps-2 [&_*[role=option]]:pe-8 [&_*[role=option]>span]:start-auto [&_*[role=option]>span]:end-2">
-                {[5, 10, 25, 50].map((pageSize) => (
-                  <SelectItem key={pageSize} value={pageSize.toString()}>
-                    {pageSize}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        {/* Pagination - Fixe en bas sur desktop */}
+        <div className="flex items-center justify-between px-4 sm:px-6 py-2 border-t border-gray-200 dark:border-gray-800 bg-background flex-shrink-0">
+          <div className="flex-1 text-xs font-normal text-muted-foreground">
+            {pagination.pageIndex * pagination.pageSize + 1}-
+            {Math.min(
+              (pagination.pageIndex + 1) * pagination.pageSize,
+              totalItems || 0
+            )}{" "}
+            sur {totalItems || 0}
           </div>
-          {/* Page number information */}
-          <div className="text-muted-foreground flex grow justify-end text-sm whitespace-nowrap">
-            <p
-              className="text-muted-foreground text-sm whitespace-nowrap"
-              aria-live="polite"
-            >
-              <span className="text-foreground">
-                {pagination.pageIndex * pagination.pageSize + 1}-
-                {Math.min(
-                  (pagination.pageIndex + 1) * pagination.pageSize,
-                  totalItems || 0
-                )}
-              </span>{" "}
-              sur <span className="text-foreground">{totalItems || 0}</span>
-            </p>
-          </div>
-
-          {/* Pagination buttons */}
-          <div>
+          <div className="flex items-center space-x-4 lg:space-x-6">
+            <div className="flex items-center gap-1.5">
+              <p className="whitespace-nowrap text-xs font-normal">
+                Lignes par page
+              </p>
+              <Select
+                value={table.getState().pagination.pageSize.toString()}
+                onValueChange={(value) => {
+                  table.setPageSize(Number(value));
+                }}
+              >
+                <SelectTrigger className="h-7 w-[60px] text-xs">
+                  <SelectValue placeholder="Select number of results" />
+                </SelectTrigger>
+                <SelectContent side="top">
+                  {[5, 10, 25, 50].map((pageSize) => (
+                    <SelectItem key={pageSize} value={pageSize.toString()}>
+                      {pageSize}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center whitespace-nowrap text-xs font-normal">
+              Page {pagination.pageIndex + 1} sur {totalPages || 1}
+            </div>
             <Pagination>
               <PaginationContent>
-                {/* First page button */}
                 <PaginationItem>
                   <Button
                     size="icon"
-                    variant="outline"
-                    className="disabled:pointer-events-none disabled:opacity-50"
+                    variant="ghost"
+                    className="h-7 w-7 disabled:pointer-events-none disabled:opacity-50"
                     onClick={() => table.firstPage()}
                     disabled={!table.getCanPreviousPage()}
                     aria-label="Go to first page"
                   >
-                    <ChevronFirstIcon size={16} aria-hidden="true" />
+                    <ChevronFirstIcon size={14} aria-hidden="true" />
                   </Button>
                 </PaginationItem>
-                {/* Previous page button */}
                 <PaginationItem>
                   <Button
                     size="icon"
-                    variant="outline"
-                    className="disabled:pointer-events-none disabled:opacity-50"
+                    variant="ghost"
+                    className="h-7 w-7 disabled:pointer-events-none disabled:opacity-50"
                     onClick={() => table.previousPage()}
                     disabled={!table.getCanPreviousPage()}
                     aria-label="Go to previous page"
                   >
-                    <ChevronLeftIcon size={16} aria-hidden="true" />
+                    <ChevronLeftIcon size={14} aria-hidden="true" />
                   </Button>
                 </PaginationItem>
-                {/* Next page button */}
                 <PaginationItem>
                   <Button
                     size="icon"
-                    variant="outline"
-                    className="disabled:pointer-events-none disabled:opacity-50"
+                    variant="ghost"
+                    className="h-7 w-7 disabled:pointer-events-none disabled:opacity-50"
                     onClick={() => table.nextPage()}
                     disabled={!table.getCanNextPage()}
                     aria-label="Go to next page"
                   >
-                    <ChevronRightIcon size={16} aria-hidden="true" />
+                    <ChevronRightIcon size={14} aria-hidden="true" />
                   </Button>
                 </PaginationItem>
-                {/* Last page button */}
                 <PaginationItem>
                   <Button
                     size="icon"
-                    variant="outline"
-                    className="disabled:pointer-events-none disabled:opacity-50"
+                    variant="ghost"
+                    className="h-7 w-7 disabled:pointer-events-none disabled:opacity-50"
                     onClick={() => table.lastPage()}
                     disabled={!table.getCanNextPage()}
                     aria-label="Go to last page"
                   >
-                    <ChevronLastIcon size={16} aria-hidden="true" />
+                    <ChevronLastIcon size={14} aria-hidden="true" />
                   </Button>
                 </PaginationItem>
               </PaginationContent>
@@ -877,7 +987,9 @@ export default function TableClients({ handleAddUser, selectedClients = new Set(
                 }}
               >
                 <TrashIcon className="h-4 w-4" />
-                <span className="hidden sm:inline ml-1">({selectedClients.size})</span>
+                <span className="hidden sm:inline ml-1">
+                  ({selectedClients.size})
+                </span>
                 <span className="sm:hidden ml-1">{selectedClients.size}</span>
               </Button>
             )}
@@ -985,7 +1097,11 @@ export default function TableClients({ handleAddUser, selectedClients = new Set(
                     className="border-b border-gray-100 dark:border-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer"
                     onClick={(e) => {
                       // Ne pas ouvrir le modal si on clique sur la checkbox ou le menu d'actions
-                      if (e.target.closest('[role="checkbox"]') || e.target.closest('button') || e.target.closest('[role="menuitem"]')) {
+                      if (
+                        e.target.closest('[role="checkbox"]') ||
+                        e.target.closest("button") ||
+                        e.target.closest('[role="menuitem"]')
+                      ) {
                         return;
                       }
                       handleEditClient(row.original);
@@ -1001,7 +1117,10 @@ export default function TableClients({ handleAddUser, selectedClients = new Set(
                           cell.column.id === "actions"
                       )
                       .map((cell) => (
-                        <TableCell key={cell.id} className="py-3 px-3 sm:px-4 text-xs sm:text-sm">
+                        <TableCell
+                          key={cell.id}
+                          className="py-3 px-3 sm:px-4 text-xs sm:text-sm"
+                        >
                           {flexRender(
                             cell.column.columnDef.cell,
                             cell.getContext()
@@ -1046,7 +1165,7 @@ export default function TableClients({ handleAddUser, selectedClients = new Set(
         onOpenChange={setIsEditModalOpen}
         onSave={handleSaveClient}
       />
-    </>
+    </div>
   );
 }
 
@@ -1054,7 +1173,7 @@ function RowActions({ row, onEdit, onSelectList, workspaceId }) {
   const client = row.original;
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const { deleteClient } = useDeleteClient();
-  const { lists } = useClientListsByClient(workspaceId || '', client.id);
+  const { lists } = useClientListsByClient(workspaceId || "", client.id);
 
   const handleEdit = useCallback(() => {
     if (onEdit) {
@@ -1150,7 +1269,7 @@ function RowActions({ row, onEdit, onSelectList, workspaceId }) {
               <DropdownMenuShortcut>⌘C</DropdownMenuShortcut>
             </DropdownMenuItem>
           </DropdownMenuGroup>
-          
+
           {/* Listes liées */}
           {lists && lists.length > 0 && (
             <>
@@ -1177,7 +1296,7 @@ function RowActions({ row, onEdit, onSelectList, workspaceId }) {
               </DropdownMenuSub>
             </>
           )}
-          
+
           <DropdownMenuSeparator />
           <DropdownMenuItem
             className="text-destructive focus:text-destructive"

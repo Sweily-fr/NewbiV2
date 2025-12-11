@@ -60,12 +60,12 @@ import { Callout } from "@/src/components/ui/callout";
 
 // Textes explicatifs pour chaque outil
 const toolDescriptions = {
-  "Factures": {
+  Factures: {
     title: "Outil de Facturation",
     description:
       "Créez des factures professionnelles en quelques clics. Gérez vos clients, ajoutez vos produits/services, calculez automatiquement les taxes et suivez les paiements. Exportez vos factures en PDF et envoyez-les directement par email à vos clients.",
   },
-  "Devis": {
+  Devis: {
     title: "Générateur de Devis",
     description:
       "Élaborez des devis détaillés et attractifs pour vos prospects. Personnalisez vos offres, ajustez les prix, incluez des conditions spéciales et convertissez facilement vos devis acceptés en factures.",
@@ -142,10 +142,10 @@ const cards = [
     category: "financier",
   },
   {
-    title: "Gérer mes dépenses",
-    subtitle: "Créez et gérez simplement toutes vos dépenses d'entreprise.",
+    title: "Transactions",
+    subtitle: "Gérez toutes vos transactions financières en un seul endroit.",
     icon: <IconReceipt size={15} />,
-    href: "/dashboard/outils/gestion-depenses",
+    href: "/dashboard/outils/transactions",
     status: "available",
     bgIconColor: "#5B4FFF",
     Image: "/images/utils/Gestion_depenses.png",

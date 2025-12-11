@@ -54,15 +54,20 @@ const validateBIC = (value) => {
 // Fonction de formatage de l'IBAN avec espaces
 const formatIban = (iban) => {
   if (!iban) return "";
-  
+
   // Supprimer tous les espaces existants et convertir en majuscules
-  const cleanIban = iban.replace(/\s/g, '').toUpperCase();
-  
+  const cleanIban = iban.replace(/\s/g, "").toUpperCase();
+
   // Ajouter un espace tous les 4 caractères
-  return cleanIban.replace(/(.{4})/g, '$1 ').trim();
+  return cleanIban.replace(/(.{4})/g, "$1 ").trim();
 };
 
-export default function InvoiceSettingsView({ canEdit, onCancel, onSave, onCloseAttempt }) {
+export default function InvoiceSettingsView({
+  canEdit,
+  onCancel,
+  onSave,
+  onCloseAttempt,
+}) {
   const {
     watch,
     setValue,
@@ -83,12 +88,12 @@ export default function InvoiceSettingsView({ canEdit, onCancel, onSave, onClose
   const handleBankDetailsSuccess = async () => {
     // La mise à jour se fera via l'écouteur d'événement ci-dessous
   };
-  
+
   // Écouter l'événement personnalisé émis par BankDetailsDialog
   useEffect(() => {
     const handleOrganizationUpdated = (event) => {
       const { bankName, bankIban, bankBic } = event.detail;
-      
+
       if (bankIban || bankBic || bankName) {
         // Mettre à jour les données bancaires dans le formulaire
         setValue("bankDetails.iban", bankIban || "", {
@@ -100,26 +105,29 @@ export default function InvoiceSettingsView({ canEdit, onCancel, onSave, onClose
         setValue("bankDetails.bankName", bankName || "", {
           shouldDirty: true,
         });
-        
+
         // Mettre à jour userBankDetails pour que la checkbox soit visible
         setValue("userBankDetails", {
           iban: bankIban || "",
           bic: bankBic || "",
           bankName: bankName || "",
         });
-        
+
         // Cocher automatiquement la checkbox pour afficher les coordonnées bancaires
         setValue("showBankDetails", true, {
           shouldDirty: true,
         });
       }
     };
-    
+
     window.addEventListener("organizationUpdated", handleOrganizationUpdated);
-    
+
     // Nettoyer l'écouteur au démontage
     return () => {
-      window.removeEventListener("organizationUpdated", handleOrganizationUpdated);
+      window.removeEventListener(
+        "organizationUpdated",
+        handleOrganizationUpdated
+      );
     };
   }, [setValue]);
 
@@ -152,8 +160,10 @@ export default function InvoiceSettingsView({ canEdit, onCancel, onSave, onClose
 
     const hasChanges =
       data.appearance?.textColor !== initialValuesRef.current.textColor ||
-      data.appearance?.headerTextColor !== initialValuesRef.current.headerTextColor ||
-      data.appearance?.headerBgColor !== initialValuesRef.current.headerBgColor ||
+      data.appearance?.headerTextColor !==
+        initialValuesRef.current.headerTextColor ||
+      data.appearance?.headerBgColor !==
+        initialValuesRef.current.headerBgColor ||
       data.headerNotes !== initialValuesRef.current.headerNotes ||
       data.footerNotes !== initialValuesRef.current.footerNotes ||
       data.termsAndConditions !== initialValuesRef.current.termsAndConditions ||
@@ -174,14 +184,32 @@ export default function InvoiceSettingsView({ canEdit, onCancel, onSave, onClose
   const handleConfirmCancel = () => {
     // Restaurer les valeurs initiales avec fallback sur les valeurs par défaut
     if (initialValuesRef.current) {
-      setValue("appearance.textColor", initialValuesRef.current.textColor || "#000000");
-      setValue("appearance.headerTextColor", initialValuesRef.current.headerTextColor || "#ffffff");
-      setValue("appearance.headerBgColor", initialValuesRef.current.headerBgColor || "#5b50FF");
+      setValue(
+        "appearance.textColor",
+        initialValuesRef.current.textColor || "#000000"
+      );
+      setValue(
+        "appearance.headerTextColor",
+        initialValuesRef.current.headerTextColor || "#ffffff"
+      );
+      setValue(
+        "appearance.headerBgColor",
+        initialValuesRef.current.headerBgColor || "#5b50FF"
+      );
       setValue("headerNotes", initialValuesRef.current.headerNotes || "");
       setValue("footerNotes", initialValuesRef.current.footerNotes || "");
-      setValue("termsAndConditions", initialValuesRef.current.termsAndConditions || "");
-      setValue("showBankDetails", initialValuesRef.current.showBankDetails || false);
-      setValue("clientPositionRight", initialValuesRef.current.clientPositionRight || false);
+      setValue(
+        "termsAndConditions",
+        initialValuesRef.current.termsAndConditions || ""
+      );
+      setValue(
+        "showBankDetails",
+        initialValuesRef.current.showBankDetails || false
+      );
+      setValue(
+        "clientPositionRight",
+        initialValuesRef.current.clientPositionRight || false
+      );
     }
     setShowConfirmDialog(false);
     onCancel();
@@ -254,22 +282,34 @@ export default function InvoiceSettingsView({ canEdit, onCancel, onSave, onClose
           {Object.keys(errors).length > 0 && (
             <Alert variant="destructive">
               <AlertDescription>
-                <div className="font-medium mb-2">Veuillez corriger les erreurs suivantes :</div>
+                <div className="font-medium mb-2">
+                  Veuillez corriger les erreurs suivantes :
+                </div>
                 <ul className="list-disc list-inside space-y-1">
                   {errors.headerNotes && (
-                    <li className="text-sm">Notes d'en-tête : {errors.headerNotes.message}</li>
+                    <li className="text-sm">
+                      Notes d'en-tête : {errors.headerNotes.message}
+                    </li>
                   )}
                   {errors.footerNotes && (
-                    <li className="text-sm">Notes de bas de page : {errors.footerNotes.message}</li>
+                    <li className="text-sm">
+                      Notes de bas de page : {errors.footerNotes.message}
+                    </li>
                   )}
                   {errors.termsAndConditions && (
-                    <li className="text-sm">Conditions générales : {errors.termsAndConditions.message}</li>
+                    <li className="text-sm">
+                      Conditions générales : {errors.termsAndConditions.message}
+                    </li>
                   )}
                   {errors.bankDetails?.iban && (
-                    <li className="text-sm">IBAN : {errors.bankDetails.iban.message}</li>
+                    <li className="text-sm">
+                      IBAN : {errors.bankDetails.iban.message}
+                    </li>
                   )}
                   {errors.bankDetails?.bic && (
-                    <li className="text-sm">BIC/SWIFT : {errors.bankDetails.bic.message}</li>
+                    <li className="text-sm">
+                      BIC/SWIFT : {errors.bankDetails.bic.message}
+                    </li>
                   )}
                 </ul>
               </AlertDescription>
@@ -459,26 +499,36 @@ export default function InvoiceSettingsView({ canEdit, onCancel, onSave, onClose
             </CardHeader>
             <CardContent className="space-y-4 p-0">
               <p className="text-sm text-muted-foreground">
-                Choisissez où afficher les informations du client dans vos factures
+                Choisissez où afficher les informations du client dans vos
+                factures
               </p>
               <div className="grid grid-cols-2 gap-3">
                 {/* Option Centre */}
                 <button
                   type="button"
-                  onClick={() => setValue("clientPositionRight", false, { shouldDirty: true })}
+                  onClick={() =>
+                    setValue("clientPositionRight", false, {
+                      shouldDirty: true,
+                    })
+                  }
                   disabled={!canEdit}
                   className={`
-                    relative flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all
-                    ${!data.clientPositionRight 
-                      ? 'border-primary bg-primary/5 shadow-sm' 
-                      : 'border-border bg-background hover:border-primary/50'
+                    relative flex flex-col items-center gap-2 p-4 rounded-lg border-1 transition-all
+                    ${
+                      !data.clientPositionRight
+                        ? "border-primary bg-primary/5 shadow-sm"
+                        : "border-border bg-background hover:border-primary/50"
                     }
-                    ${!canEdit ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                    ${!canEdit ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
                   `}
                 >
-                  <AlignLeft className={`h-6 w-6 ${!data.clientPositionRight ? 'text-primary' : 'text-muted-foreground'}`} />
+                  <AlignLeft
+                    className={`h-6 w-6 ${!data.clientPositionRight ? "text-primary" : "text-muted-foreground"}`}
+                  />
                   <div className="text-center">
-                    <div className={`text-sm font-medium ${!data.clientPositionRight ? 'text-primary' : 'text-foreground'}`}>
+                    <div
+                      className={`text-sm font-medium ${!data.clientPositionRight ? "text-primary" : "text-foreground"}`}
+                    >
                       Au centre
                     </div>
                     <div className="text-xs text-muted-foreground mt-0.5">
@@ -495,20 +545,27 @@ export default function InvoiceSettingsView({ canEdit, onCancel, onSave, onClose
                 {/* Option Droite */}
                 <button
                   type="button"
-                  onClick={() => setValue("clientPositionRight", true, { shouldDirty: true })}
+                  onClick={() =>
+                    setValue("clientPositionRight", true, { shouldDirty: true })
+                  }
                   disabled={!canEdit}
                   className={`
-                    relative flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all
-                    ${data.clientPositionRight 
-                      ? 'border-primary bg-primary/5 shadow-sm' 
-                      : 'border-border bg-background hover:border-primary/50'
+                    relative flex flex-col items-center gap-2 p-4 rounded-lg border-1 transition-all
+                    ${
+                      data.clientPositionRight
+                        ? "border-primary bg-primary/5 shadow-sm"
+                        : "border-border bg-background hover:border-primary/50"
                     }
-                    ${!canEdit ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                    ${!canEdit ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
                   `}
                 >
-                  <AlignRight className={`h-6 w-6 ${data.clientPositionRight ? 'text-primary' : 'text-muted-foreground'}`} />
+                  <AlignRight
+                    className={`h-6 w-6 ${data.clientPositionRight ? "text-primary" : "text-muted-foreground"}`}
+                  />
                   <div className="text-center">
-                    <div className={`text-sm font-medium ${data.clientPositionRight ? 'text-primary' : 'text-foreground'}`}>
+                    <div
+                      className={`text-sm font-medium ${data.clientPositionRight ? "text-primary" : "text-foreground"}`}
+                    >
                       À droite
                     </div>
                     <div className="text-xs text-muted-foreground mt-0.5">
@@ -542,7 +599,9 @@ export default function InvoiceSettingsView({ canEdit, onCancel, onSave, onClose
                   </Label>
                   <SuggestionDropdown
                     suggestions={documentSuggestions.headerNotes}
-                    onSelect={(value) => setValue("headerNotes", value, { shouldDirty: true })}
+                    onSelect={(value) =>
+                      setValue("headerNotes", value, { shouldDirty: true })
+                    }
                     label="Suggestions"
                   />
                 </div>
@@ -578,7 +637,9 @@ export default function InvoiceSettingsView({ canEdit, onCancel, onSave, onClose
                   </Label>
                   <SuggestionDropdown
                     suggestions={documentSuggestions.footerNotes}
-                    onSelect={(value) => setValue("footerNotes", value, { shouldDirty: true })}
+                    onSelect={(value) =>
+                      setValue("footerNotes", value, { shouldDirty: true })
+                    }
                     label="Suggestions"
                   />
                 </div>
@@ -613,7 +674,11 @@ export default function InvoiceSettingsView({ canEdit, onCancel, onSave, onClose
                   </Label>
                   <SuggestionDropdown
                     suggestions={documentSuggestions.termsAndConditions}
-                    onSelect={(value) => setValue("termsAndConditions", value, { shouldDirty: true })}
+                    onSelect={(value) =>
+                      setValue("termsAndConditions", value, {
+                        shouldDirty: true,
+                      })
+                    }
                     label="Suggestions"
                   />
                 </div>
@@ -656,7 +721,11 @@ export default function InvoiceSettingsView({ canEdit, onCancel, onSave, onClose
           >
             Annuler
           </Button>
-          <Button onClick={handleSaveClick} disabled={!canEdit} className="font-normal">
+          <Button
+            onClick={handleSaveClick}
+            disabled={!canEdit}
+            className="font-normal"
+          >
             Enregistrer les modifications
           </Button>
         </div>
@@ -668,7 +737,8 @@ export default function InvoiceSettingsView({ canEdit, onCancel, onSave, onClose
           <AlertDialogHeader>
             <AlertDialogTitle>Modifications non sauvegardées</AlertDialogTitle>
             <AlertDialogDescription>
-              Vous avez des modifications non sauvegardées. Si vous quittez maintenant, ces modifications seront perdues.
+              Vous avez des modifications non sauvegardées. Si vous quittez
+              maintenant, ces modifications seront perdues.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

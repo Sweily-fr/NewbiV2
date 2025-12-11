@@ -18,6 +18,11 @@ import {
   SidebarGroupContent,
   useSidebar,
 } from "@/src/components/ui/sidebar";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/src/components/ui/tooltip";
 
 import {
   IconDots,
@@ -39,35 +44,30 @@ import {
 // Composant pour le menu Paramètres avec dropdown
 function SettingsDropdownMenu() {
   const { isActive } = useSubscription();
+  const { isMobile, state } = useSidebar();
+  const isCollapsed = state === "collapsed";
   const [open, setOpen] = useState(false);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [settingsInitialTab, setSettingsInitialTab] = useState("preferences");
 
   return (
     <SidebarMenuItem key={"settings"}>
-      <SidebarMenuButton
-        className="mb-1 cursor-pointer"
-        onClick={() => setOpen(true)}
-      >
-        <Settings />
-        <span className="">Paramètres</span>
-      </SidebarMenuButton>
-
       <DropdownMenu open={open} onOpenChange={setOpen}>
         <DropdownMenuTrigger asChild>
-          <SidebarMenuAction
-            showOnHover
-            className="data-[state=open]:bg-accent rounded-sm"
+          <SidebarMenuButton
+            className="mb-1 cursor-pointer"
+            tooltip="Paramètres"
           >
-            <IconDots />
-            <span className="sr-only">Plus</span>
-          </SidebarMenuAction>
+            <Settings />
+            <span className="">Paramètres</span>
+          </SidebarMenuButton>
         </DropdownMenuTrigger>
 
         <DropdownMenuContent
           className="w-[200px] rounded-lg"
-          side="bottom"
+          side={isMobile ? "bottom" : "right"}
           align="start"
+          sideOffset={8}
         >
           <DropdownMenuItem
             className="cursor-pointer"
@@ -150,10 +150,10 @@ export function NavSecondary({ items, onCommunityClick, ...props }) {
             // Vérifier si c'est l'item Communauté et si l'utilisateur a un plan Pro
             const isCommunity = item.title === "Communauté";
             const hasAccess = !isCommunity || isActive();
-            
+
             return (
               <SidebarMenuItem key={item.title}>
-                <SidebarMenuButton 
+                <SidebarMenuButton
                   asChild={hasAccess}
                   disabled={!hasAccess}
                   className={cn(!hasAccess && "opacity-60 cursor-not-allowed")}
@@ -165,7 +165,9 @@ export function NavSecondary({ items, onCommunityClick, ...props }) {
                         if (item.title === "Recherche") {
                           e.preventDefault();
                           // Déclencher l'événement personnalisé pour ouvrir la recherche
-                          window.dispatchEvent(new Event("open-search-command"));
+                          window.dispatchEvent(
+                            new Event("open-search-command")
+                          );
                         } else if (item.title === "Communauté") {
                           e.preventDefault();
                           // Ouvrir la sidebar communautaire

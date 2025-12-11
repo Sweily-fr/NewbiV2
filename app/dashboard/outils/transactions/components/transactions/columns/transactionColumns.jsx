@@ -83,10 +83,14 @@ export const columns = [
     },
     cell: ({ row }) => {
       const amount = row.getValue("amount");
-      const type = row.original.type;
+      // Déterminer si c'est une entrée basé sur le montant (positif = entrée, négatif = sortie)
+      const isIncome = amount > 0;
       return (
-        <div className="font-normal text-left">
-          {type === "INCOME" ? "+" : "-"}
+        <div
+          className="font-normal text-left"
+          style={{ color: isIncome && "#0E7A3E" }}
+        >
+          {isIncome ? "+" : ""}
           {amount.toFixed(2)} €
         </div>
       );

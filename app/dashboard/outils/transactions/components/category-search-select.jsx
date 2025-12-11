@@ -1,10 +1,10 @@
-"use client"
+"use client";
 
-import { useId, useState } from "react"
-import { CheckIcon, ChevronDownIcon } from "lucide-react"
+import { useId, useState } from "react";
+import { CheckIcon, ChevronDownIcon } from "lucide-react";
 
-import { cn } from "@/src/lib/utils"
-import { Button } from "@/src/components/ui/button"
+import { cn } from "@/src/lib/utils";
+import { Button } from "@/src/components/ui/button";
 import {
   Command,
   CommandEmpty,
@@ -12,22 +12,22 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from "@/src/components/ui/command"
-import { Label } from "@/src/components/ui/label"
+} from "@/src/components/ui/command";
+import { Label } from "@/src/components/ui/label";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/src/components/ui/popover"
+} from "@/src/components/ui/popover";
 
 // Liste étendue de catégories de dépenses professionnelles
-const categories = [
+const expenseCategories = [
   // Fournitures et équipement
   { value: "bureau", label: "Fournitures de bureau" },
   { value: "materiel", label: "Matériel informatique" },
   { value: "mobilier", label: "Mobilier" },
   { value: "equipement", label: "Équipement professionnel" },
-  
+
   // Transport et déplacements
   { value: "transport", label: "Transport" },
   { value: "carburant", label: "Carburant" },
@@ -37,12 +37,12 @@ const categories = [
   { value: "train", label: "Train" },
   { value: "avion", label: "Avion" },
   { value: "location_vehicule", label: "Location de véhicule" },
-  
+
   // Repas et hébergement
   { value: "repas", label: "Repas d'affaires" },
   { value: "restaurant", label: "Restaurant" },
   { value: "hotel", label: "Hébergement / Hôtel" },
-  
+
   // Communication et marketing
   { value: "marketing", label: "Marketing" },
   { value: "publicite", label: "Publicité" },
@@ -51,13 +51,13 @@ const categories = [
   { value: "internet", label: "Internet" },
   { value: "site_web", label: "Site web" },
   { value: "reseaux_sociaux", label: "Réseaux sociaux" },
-  
+
   // Formation et développement
   { value: "formation", label: "Formation" },
   { value: "conference", label: "Conférence / Séminaire" },
   { value: "livres", label: "Livres et documentation" },
   { value: "abonnement", label: "Abonnements professionnels" },
-  
+
   // Services professionnels
   { value: "comptabilite", label: "Comptabilité" },
   { value: "juridique", label: "Services juridiques" },
@@ -65,44 +65,88 @@ const categories = [
   { value: "banque", label: "Frais bancaires" },
   { value: "conseil", label: "Conseil" },
   { value: "sous_traitance", label: "Sous-traitance" },
-  
+
   // Locaux et charges
   { value: "loyer", label: "Loyer" },
   { value: "electricite", label: "Électricité" },
   { value: "eau", label: "Eau" },
   { value: "chauffage", label: "Chauffage" },
   { value: "entretien", label: "Entretien et réparations" },
-  
+
   // Logiciels et outils
   { value: "logiciel", label: "Logiciels" },
   { value: "saas", label: "SaaS / Abonnements cloud" },
   { value: "licence", label: "Licences" },
-  
+
   // Ressources humaines
   { value: "salaire", label: "Salaires" },
   { value: "charges_sociales", label: "Charges sociales" },
   { value: "recrutement", label: "Recrutement" },
-  
+
   // Fiscalité
   { value: "impots_taxes", label: "Impôts et taxes" },
   { value: "tva", label: "TVA" },
   { value: "avoirs_remboursement", label: "Avoirs / Remboursement" },
-  
+
   // Autres
   { value: "cadeaux", label: "Cadeaux clients" },
   { value: "representation", label: "Frais de représentation" },
   { value: "poste", label: "Frais postaux" },
   { value: "impression", label: "Impression" },
   { value: "autre", label: "Autre" },
-]
+];
 
-export default function CategorySearchSelect({ value, onValueChange, label, className }) {
-  const id = useId()
-  const [open, setOpen] = useState(false)
+// Liste des catégories de revenus
+const incomeCategories = [
+  // Ventes et services
+  { value: "ventes", label: "Ventes de produits" },
+  { value: "services", label: "Prestations de services" },
+  { value: "honoraires", label: "Honoraires" },
+  { value: "commissions", label: "Commissions" },
+  { value: "consulting", label: "Consulting" },
+
+  // Revenus récurrents
+  { value: "abonnements_revenus", label: "Abonnements" },
+  { value: "licences_revenus", label: "Licences" },
+  { value: "royalties", label: "Royalties" },
+  { value: "loyers_revenus", label: "Loyers perçus" },
+
+  // Revenus financiers
+  { value: "interets", label: "Intérêts" },
+  { value: "dividendes", label: "Dividendes" },
+  { value: "plus_values", label: "Plus-values" },
+
+  // Autres revenus
+  { value: "subventions", label: "Subventions" },
+  { value: "remboursements_revenus", label: "Remboursements" },
+  { value: "indemnites", label: "Indemnités" },
+  { value: "cadeaux_recus", label: "Cadeaux reçus" },
+  { value: "autre_revenu", label: "Autre revenu" },
+];
+
+export default function CategorySearchSelect({
+  value,
+  onValueChange,
+  label,
+  className,
+  type = "EXPENSE",
+}) {
+  const id = useId();
+  const [open, setOpen] = useState(false);
+
+  // Sélectionner les catégories en fonction du type de transaction
+  const categories = type === "INCOME" ? incomeCategories : expenseCategories;
 
   return (
     <div className={cn("space-y-2", className)}>
-      {label && <Label htmlFor={id} className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">{label}</Label>}
+      {label && (
+        <Label
+          htmlFor={id}
+          className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide"
+        >
+          {label}
+        </Label>
+      )}
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
@@ -114,8 +158,7 @@ export default function CategorySearchSelect({ value, onValueChange, label, clas
           >
             <span className={cn("truncate", !value && "text-muted-foreground")}>
               {value
-                ? categories.find((category) => category.value === value)
-                    ?.label
+                ? categories.find((category) => category.value === value)?.label
                 : "Sélectionner une catégorie"}
             </span>
             <ChevronDownIcon
@@ -140,8 +183,8 @@ export default function CategorySearchSelect({ value, onValueChange, label, clas
                     value={category.value}
                     keywords={[category.label]}
                     onSelect={(currentValue) => {
-                      onValueChange(currentValue === value ? "" : currentValue)
-                      setOpen(false)
+                      onValueChange(currentValue === value ? "" : currentValue);
+                      setOpen(false);
                     }}
                   >
                     {category.label}
@@ -156,5 +199,5 @@ export default function CategorySearchSelect({ value, onValueChange, label, clas
         </PopoverContent>
       </Popover>
     </div>
-  )
+  );
 }

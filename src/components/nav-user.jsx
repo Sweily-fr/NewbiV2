@@ -47,7 +47,8 @@ import { SettingsModal } from "./settings-modal";
 import { useTheme } from "@/src/components/theme-provider";
 
 export function NavUser({ user }) {
-  const { isMobile } = useSidebar();
+  const { isMobile, state } = useSidebar();
+  const isCollapsed = state === "collapsed";
   const { isActive } = useSubscription();
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [settingsInitialTab, setSettingsInitialTab] = useState("user-info");
@@ -123,9 +124,11 @@ export function NavUser({ user }) {
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
               size="lg"
-              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground cursor-pointer"
+              className={`data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground cursor-pointer ${isCollapsed ? "justify-center overflow-visible" : ""}`}
             >
-              <div className="relative">
+              <div
+                className={`relative ${isCollapsed ? "overflow-visible" : ""}`}
+              >
                 <Avatar className="h-8 w-8 rounded-lg">
                   {profileImage ? (
                     <AvatarImage
@@ -140,7 +143,7 @@ export function NavUser({ user }) {
                   )}
                 </Avatar>
                 {isActive() && (
-                  <span className="absolute -end-1.5 -top-1.5">
+                  <span className="absolute -end-1.5 -top-1.5 z-10">
                     <span className="sr-only">Abonnement actif</span>
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -165,13 +168,17 @@ export function NavUser({ user }) {
                   </span>
                 )}
               </div>
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">{user.name}</span>
-                <span className="text-muted-foreground truncate text-xs">
-                  {user.email}
-                </span>
-              </div>
-              <IconDotsVertical className="ml-auto size-4" />
+              {!isCollapsed && (
+                <>
+                  <div className="grid flex-1 text-left text-sm leading-tight">
+                    <span className="truncate font-medium">{user.name}</span>
+                    <span className="text-muted-foreground truncate text-xs">
+                      {user.email}
+                    </span>
+                  </div>
+                  <IconDotsVertical className="ml-auto size-4" />
+                </>
+              )}
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
