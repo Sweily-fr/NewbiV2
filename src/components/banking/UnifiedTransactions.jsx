@@ -23,6 +23,12 @@ import { useState, useEffect, useMemo } from "react";
 import { findMerchant } from "@/lib/merchants-config";
 import { MerchantLogo } from "@/app/dashboard/outils/transactions/components/merchant-logo";
 
+// Fonction utilitaire pour récupérer le token JWT
+const getAuthToken = () => {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem("bearer_token");
+};
+
 export default function UnifiedTransactions({
   limit = 5,
   className,
@@ -43,11 +49,13 @@ export default function UnifiedTransactions({
       setBankLoading(true);
 
       // Récupérer les transactions bancaires depuis la BDD via le proxy Next.js
+      const token = getAuthToken();
       const response = await fetch("/api/banking/transactions?limit=50", {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
           "x-workspace-id": workspaceId,
+          ...(token && { Authorization: `Bearer ${token}` }),
         },
       });
 

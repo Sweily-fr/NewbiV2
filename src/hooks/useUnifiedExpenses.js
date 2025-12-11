@@ -2,6 +2,12 @@ import { useState, useEffect, useCallback } from "react";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { toast } from "@/src/components/ui/sonner";
 
+// Fonction utilitaire pour récupérer le token JWT
+const getAuthToken = () => {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem("bearer_token");
+};
+
 /**
  * Hook pour récupérer les dépenses unifiées (transactions bancaires + dépenses manuelles)
  */
@@ -35,11 +41,13 @@ export const useUnifiedExpenses = (filters = {}) => {
       if (filters.endDate) params.set("endDate", filters.endDate);
       if (filters.category) params.set("category", filters.category);
 
+      const token = getAuthToken();
       const response = await fetch(
         `/api/unified-expenses?${params.toString()}`,
         {
           headers: {
             "x-workspace-id": workspaceId,
+            ...(token && { Authorization: `Bearer ${token}` }),
           },
         }
       );
@@ -106,10 +114,12 @@ export const useLinkExpenseToTransaction = () => {
   const linkExpense = async (transactionId, expenseId) => {
     setLoading(true);
     try {
+      const token = getAuthToken();
       const response = await fetch("/api/unified-expenses/link", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          ...(token && { Authorization: `Bearer ${token}` }),
         },
         body: JSON.stringify({ transactionId, expenseId }),
       });
@@ -143,10 +153,12 @@ export const useUnlinkExpenseFromTransaction = () => {
   const unlinkExpense = async (transactionId) => {
     setLoading(true);
     try {
+      const token = getAuthToken();
       const response = await fetch("/api/unified-expenses/unlink", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          ...(token && { Authorization: `Bearer ${token}` }),
         },
         body: JSON.stringify({ transactionId }),
       });
@@ -180,12 +192,14 @@ export const useUpdateTransactionCategory = () => {
   const updateCategory = async (transactionId, category) => {
     setLoading(true);
     try {
+      const token = getAuthToken();
       const response = await fetch(
         `/api/unified-expenses/${transactionId}/category`,
         {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
+            ...(token && { Authorization: `Bearer ${token}` }),
           },
           body: JSON.stringify({ category }),
         }

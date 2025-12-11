@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
 
 const BACKEND_URL = (
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
@@ -11,11 +10,14 @@ const BACKEND_URL = (
  */
 export async function POST(request) {
   try {
-    const cookieStore = await cookies();
-    const allCookies = cookieStore.getAll();
-    const cookieHeader = allCookies
-      .map((c) => `${c.name}=${c.value}`)
-      .join("; ");
+    const authHeader = request.headers.get("authorization");
+
+    if (!authHeader) {
+      return NextResponse.json(
+        { error: "Non authentifié - Token manquant" },
+        { status: 401 }
+      );
+    }
 
     // Récupérer le FormData de la requête
     const incomingFormData = await request.formData();
@@ -48,7 +50,7 @@ export async function POST(request) {
       {
         method: "POST",
         headers: {
-          Cookie: cookieHeader,
+          Authorization: authHeader,
         },
         body: backendFormData,
       }

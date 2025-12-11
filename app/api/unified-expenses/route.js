@@ -3,7 +3,15 @@ import { NextResponse } from "next/server";
 export async function GET(request) {
   try {
     const workspaceId = request.headers.get("x-workspace-id");
+    const authHeader = request.headers.get("authorization");
     const { searchParams } = new URL(request.url);
+
+    if (!authHeader) {
+      return NextResponse.json(
+        { error: "Non authentifié - Token manquant" },
+        { status: 401 }
+      );
+    }
 
     if (!workspaceId) {
       return NextResponse.json(
@@ -36,7 +44,7 @@ export async function GET(request) {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          Cookie: request.headers.get("cookie") || "",
+          Authorization: authHeader,
         },
       }
     );

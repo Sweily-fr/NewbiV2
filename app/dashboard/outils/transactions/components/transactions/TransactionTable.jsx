@@ -34,6 +34,7 @@ import { useActiveOrganization } from "@/src/lib/organization-client";
 import { useSession } from "@/src/lib/auth-client";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { usePromoteTemporaryFile } from "@/src/hooks/usePromoteTemporaryFile";
+
 import { columns } from "./columns/transactionColumns";
 import { multiColumnFilterFn } from "./filters/multiColumnFilterFn";
 import { mapCategoryToEnum, mapPaymentMethodToEnum } from "./utils/mappers";
@@ -100,6 +101,12 @@ import {
   PopoverTrigger,
 } from "@/src/components/ui/popover";
 import { Label } from "@/src/components/ui/label";
+
+// Fonction utilitaire pour récupérer le token JWT
+const getAuthToken = () => {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem("bearer_token");
+};
 
 export default function TransactionTable({
   expenses: expensesProp = [],
@@ -743,10 +750,14 @@ export default function TransactionTable({
       formData.append("file", file);
       formData.append("workspaceId", workspaceId);
 
+      const token = getAuthToken();
       const response = await fetch(
         `/api/unified-expenses/${transactionId}/receipt`,
         {
           method: "POST",
+          headers: {
+            ...(token && { Authorization: `Bearer ${token}` }),
+          },
           body: formData,
         }
       );

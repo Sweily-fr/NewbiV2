@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
 
 const BACKEND_URL = (
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
@@ -11,12 +10,16 @@ const BACKEND_URL = (
  */
 export async function POST(request, { params }) {
   try {
+    const authHeader = request.headers.get("authorization");
+
+    if (!authHeader) {
+      return NextResponse.json(
+        { error: "Non authentifié - Token manquant" },
+        { status: 401 }
+      );
+    }
+
     const { id } = await params;
-    const cookieStore = await cookies();
-    const allCookies = cookieStore.getAll();
-    const cookieHeader = allCookies
-      .map((c) => `${c.name}=${c.value}`)
-      .join("; ");
 
     // Récupérer le FormData de la requête
     const formData = await request.formData();
@@ -27,7 +30,7 @@ export async function POST(request, { params }) {
       {
         method: "POST",
         headers: {
-          Cookie: cookieHeader,
+          Authorization: authHeader,
         },
         body: formData,
       }
@@ -58,19 +61,23 @@ export async function POST(request, { params }) {
  */
 export async function DELETE(request, { params }) {
   try {
+    const authHeader = request.headers.get("authorization");
+
+    if (!authHeader) {
+      return NextResponse.json(
+        { error: "Non authentifié - Token manquant" },
+        { status: 401 }
+      );
+    }
+
     const { id } = await params;
-    const cookieStore = await cookies();
-    const allCookies = cookieStore.getAll();
-    const cookieHeader = allCookies
-      .map((c) => `${c.name}=${c.value}`)
-      .join("; ");
 
     const response = await fetch(
       `${BACKEND_URL}/unified-expenses/${id}/receipt`,
       {
         method: "DELETE",
         headers: {
-          Cookie: cookieHeader,
+          Authorization: authHeader,
         },
       }
     );

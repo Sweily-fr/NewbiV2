@@ -3,6 +3,12 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useWorkspace } from "./useWorkspace";
 
+// Fonction utilitaire pour récupérer le token JWT
+const getAuthToken = () => {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem("bearer_token");
+};
+
 // Cache global pour éviter les appels répétés entre composants
 const suggestionsCache = {
   data: null,
@@ -62,9 +68,11 @@ export function useReconciliation() {
       setError(null);
 
       try {
+        const token = getAuthToken();
         const response = await fetch("/api/reconciliation/suggestions", {
           headers: {
             "x-workspace-id": workspaceId,
+            ...(token && { Authorization: `Bearer ${token}` }),
           },
         });
 
@@ -99,11 +107,13 @@ export function useReconciliation() {
         return { transactions: [], invoiceAmount: 0 };
 
       try {
+        const token = getAuthToken();
         const response = await fetch(
           `/api/reconciliation/transactions-for-invoice/${invoiceId}`,
           {
             headers: {
               "x-workspace-id": workspaceId,
+              ...(token && { Authorization: `Bearer ${token}` }),
             },
           }
         );
@@ -131,11 +141,13 @@ export function useReconciliation() {
       if (!workspaceId) return { success: false };
 
       try {
+        const token = getAuthToken();
         const response = await fetch("/api/reconciliation/link", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             "x-workspace-id": workspaceId,
+            ...(token && { Authorization: `Bearer ${token}` }),
           },
           body: JSON.stringify({ transactionId, invoiceId }),
         });
@@ -164,11 +176,13 @@ export function useReconciliation() {
       if (!workspaceId) return { success: false };
 
       try {
+        const token = getAuthToken();
         const response = await fetch("/api/reconciliation/unlink", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             "x-workspace-id": workspaceId,
+            ...(token && { Authorization: `Bearer ${token}` }),
           },
           body: JSON.stringify({ transactionId, invoiceId }),
         });

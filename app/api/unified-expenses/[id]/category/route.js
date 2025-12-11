@@ -2,6 +2,15 @@ import { NextResponse } from "next/server";
 
 export async function PUT(request, { params }) {
   try {
+    const authHeader = request.headers.get("authorization");
+
+    if (!authHeader) {
+      return NextResponse.json(
+        { error: "Non authentifié - Token manquant" },
+        { status: 401 }
+      );
+    }
+
     const { id } = params;
     const body = await request.json();
 
@@ -15,7 +24,7 @@ export async function PUT(request, { params }) {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Cookie: request.headers.get("cookie") || "",
+          Authorization: authHeader,
         },
         body: JSON.stringify(body),
       }

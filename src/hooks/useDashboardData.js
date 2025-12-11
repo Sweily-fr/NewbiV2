@@ -3,6 +3,12 @@ import { useExpenses } from "@/src/hooks/useExpenses";
 import { useInvoices } from "@/src/graphql/invoiceQueries";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 
+// Fonction utilitaire pour récupérer le token JWT
+const getAuthToken = () => {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem("bearer_token");
+};
+
 // Hook pour récupérer les comptes bancaires et leur solde (avec cache backend Redis)
 const useBankAccounts = (workspaceId) => {
   const [accounts, setAccounts] = useState([]);
@@ -22,11 +28,13 @@ const useBankAccounts = (workspaceId) => {
           ? "/api/banking/accounts?skipCache=true"
           : "/api/banking/accounts";
 
+        const token = getAuthToken();
         const response = await fetch(url, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
             "x-workspace-id": workspaceId,
+            ...(token && { Authorization: `Bearer ${token}` }),
           },
         });
 
@@ -87,11 +95,13 @@ const useBankTransactions = (workspaceId) => {
           ? "/api/banking/transactions?limit=500&skipCache=true"
           : "/api/banking/transactions?limit=500";
 
+        const token = getAuthToken();
         const response = await fetch(url, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
             "x-workspace-id": workspaceId,
+            ...(token && { Authorization: `Bearer ${token}` }),
           },
         });
 
@@ -380,11 +390,13 @@ export function useDashboardData() {
       // Invalider le cache backend Redis
       if (workspaceId) {
         try {
+          const token = getAuthToken();
           await fetch("/api/banking/cache", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
               "x-workspace-id": workspaceId,
+              ...(token && { Authorization: `Bearer ${token}` }),
             },
           });
           console.log("🗑️ Cache backend Redis invalidé");
@@ -422,11 +434,13 @@ export function useDashboardData() {
     // Invalider le cache backend Redis
     if (workspaceId) {
       try {
+        const token = getAuthToken();
         await fetch("/api/banking/cache", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             "x-workspace-id": workspaceId,
+            ...(token && { Authorization: `Bearer ${token}` }),
           },
         });
         console.log("🗑️ Cache backend Redis invalidé");
