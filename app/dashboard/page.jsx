@@ -103,12 +103,16 @@ function DashboardContent() {
 
       const syncBankAccounts = async () => {
         try {
+          // Récupérer le JWT depuis localStorage (même pattern qu'Apollo Client)
+          const token = localStorage.getItem("bearer_token");
+
           // Lancer la sync complète (comptes + transactions) via le proxy Next.js
           const response = await fetch("/api/banking-sync/full", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
               "x-workspace-id": workspaceId,
+              ...(token && { Authorization: `Bearer ${token}` }),
             },
             body: JSON.stringify({ limit: 100 }),
           });

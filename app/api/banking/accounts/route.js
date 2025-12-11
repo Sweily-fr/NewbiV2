@@ -5,6 +5,14 @@ export async function GET(request) {
     const workspaceId =
       request.headers.get("x-workspace-id") ||
       request.nextUrl.searchParams.get("workspaceId");
+    const authHeader = request.headers.get("authorization");
+
+    if (!authHeader) {
+      return NextResponse.json(
+        { error: "Non authentifié - Token manquant" },
+        { status: 401 }
+      );
+    }
 
     if (!workspaceId) {
       return NextResponse.json(
@@ -24,7 +32,7 @@ export async function GET(request) {
       headers: {
         "Content-Type": "application/json",
         "x-workspace-id": workspaceId,
-        Cookie: request.headers.get("cookie") || "",
+        Authorization: authHeader,
       },
     });
 
