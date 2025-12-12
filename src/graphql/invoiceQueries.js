@@ -418,7 +418,7 @@ export const useInvoices = () => {
   const [sorting, setSorting] = useState([{ id: "issueDate", desc: true }]);
   const [filters, setFilters] = useState([]);
 
-  // Options de requête sans cache
+  // Options de requête avec cache-first
   const {
     data: invoicesData,
     loading: queryLoading,
@@ -440,7 +440,8 @@ export const useInvoices = () => {
         {}
       ),
     },
-    fetchPolicy: "cache-and-network",
+    fetchPolicy: "cache-first",
+    nextFetchPolicy: "cache-first",
     errorPolicy: "all",
     notifyOnNetworkStatusChange: true,
     skip: !workspaceId, // Ne pas exécuter la query sans workspaceId

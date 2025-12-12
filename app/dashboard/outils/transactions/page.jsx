@@ -2,8 +2,6 @@
 import { Suspense, useMemo, useState } from "react";
 import TransactionTable from "./components/table";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
-import { useExpenses } from "@/src/hooks/useExpenses";
-import { useUnifiedExpenses } from "@/src/hooks/useUnifiedExpenses";
 import { useSearchParams } from "next/navigation";
 import { useDashboardData } from "@/src/hooks/useDashboardData";
 import { Button } from "@/src/components/ui/button";
@@ -45,38 +43,45 @@ function GestionDepensesContent() {
   const [triggerAddOcr, setTriggerAddOcr] = useState(false);
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
 
-  // Récupération des transactions bancaires et du solde
+  // Récupération des transactions (bancaires + manuelles) depuis la collection transactions
   const {
-    transactions: bankTransactions,
+    transactions,
     bankBalance,
     isLoading: bankLoading,
+    refreshData,
   } = useDashboardData();
 
-  // Récupération des dépenses unifiées (bancaires + manuelles)
-  const {
-    expenses: unifiedExpenses,
-    stats: unifiedStats,
-    loading: unifiedLoading,
-    error: unifiedError,
-    refetch: refetchUnified,
-  } = useUnifiedExpenses();
+  // Transformer les transactions pour le format attendu par le tableau
+  const expenses = (transactions || []).map((tx) => ({
+    id: tx.id,
+    type: tx.amount > 0 ? "INCOME" : "BANK_TRANSACTION",
+    source: tx.provider === "manual" ? "MANUAL" : "BANK",
+    title: tx.description,
+    description: tx.description,
+    amount: tx.amount,
+    currency: tx.currency,
+    date: tx.processedAt || tx.date || tx.createdAt,
+    category: tx.expenseCategory || tx.metadata?.category || "OTHER",
+    vendor: tx.metadata?.vendor || null,
+    hasReceipt: !!tx.receiptFile?.url,
+    receiptRequired: tx.amount < 0 && !tx.receiptFile?.url,
+    status: tx.status === "completed" ? "PAID" : tx.status?.toUpperCase(),
+    paymentMethod: tx.type === "debit" ? "CARD" : "BANK_TRANSFER",
+    bankName: tx.metadata?.bankName || null,
+    provider: tx.provider,
+    originalTransaction: {
+      id: tx.id,
+      externalId: tx.externalId,
+      provider: tx.provider,
+      fromAccount: tx.fromAccount,
+    },
+    createdAt: tx.createdAt,
+    updatedAt: tx.updatedAt,
+  }));
 
-  // Fallback sur les dépenses classiques si pas de données unifiées
-  const {
-    expenses: legacyExpenses,
-    loading: legacyLoading,
-    error: legacyError,
-    refetch: refetchLegacy,
-  } = useExpenses();
-
-  // Utiliser les dépenses unifiées si disponibles, sinon les dépenses classiques
-  const expenses =
-    unifiedExpenses.length > 0 ? unifiedExpenses : legacyExpenses;
-  const loading = unifiedLoading || legacyLoading || bankLoading;
-  const error = unifiedError || legacyError;
-  const refetchExpenses = async () => {
-    await Promise.all([refetchUnified(), refetchLegacy()]);
-  };
+  const loading = bankLoading;
+  const error = null;
+  const refetchExpenses = refreshData;
 
   // Formater les montants
   const formatAmount = (amount) => {

@@ -344,7 +344,8 @@ export const useQuotes = (filters = {}) => {
       limit,
     },
     skip: !workspaceId,
-    fetchPolicy: "network-only",
+    fetchPolicy: "cache-first",
+    nextFetchPolicy: "cache-first",
     errorPolicy: "all",
   });
 
@@ -430,7 +431,8 @@ export const useQuoteStats = () => {
 
   return {
     stats: data?.quoteStats,
-    loading: (workspaceLoading && !workspaceId) || (loading && !data?.quoteStats),
+    loading:
+      (workspaceLoading && !workspaceId) || (loading && !data?.quoteStats),
     error: error || workspaceError,
     refetch,
   };
@@ -489,7 +491,7 @@ export const useCreateQuote = () => {
       });
     },
     onError: (error) => {
-      handleMutationError(error, 'create', 'quote');
+      handleMutationError(error, "create", "quote");
     },
   });
 
@@ -565,15 +567,15 @@ export const useDeleteQuote = () => {
       await deleteQuoteMutation({
         variables: { id },
       });
-      
+
       // Invalider le cache
       client.refetchQueries({
         include: [GET_QUOTES, GET_QUOTE_STATS],
       });
-      
+
       // Toast désactivé ici - géré dans les composants (quote-row-actions, etc.)
       // Le paramètre silent est conservé pour compatibilité mais n'est plus utilisé
-      
+
       return true;
     } catch (error) {
       throw error;
@@ -707,23 +709,29 @@ export const useCheckQuoteNumber = () => {
           fetchPolicy: "network-only", // Toujours vérifier avec le serveur
         });
 
-        console.log('[checkQuoteNumber] Tous les devis:', data?.quotes?.quotes?.map(q => `${q.prefix}${q.number}`));
-        console.log('[checkQuoteNumber] Recherche:', { prefix: quotePrefix, number: quoteNumber });
-        console.log('[checkQuoteNumber] ExcludeId:', excludeId);
+        console.log(
+          "[checkQuoteNumber] Tous les devis:",
+          data?.quotes?.quotes?.map((q) => `${q.prefix}${q.number}`)
+        );
+        console.log("[checkQuoteNumber] Recherche:", {
+          prefix: quotePrefix,
+          number: quoteNumber,
+        });
+        console.log("[checkQuoteNumber] ExcludeId:", excludeId);
 
         if (data?.quotes?.quotes) {
           // Chercher un devis avec le même préfixe ET le même numéro (en excluant l'ID actuel si fourni)
-          const existingQuote = data.quotes.quotes.find(
-            (quote) => {
-              const matchesNumber = quote.number === quoteNumber;
-              const matchesPrefix = quote.prefix === quotePrefix;
-              const notExcluded = !excludeId || quote.id !== excludeId;
-              console.log(`[checkQuoteNumber] Comparaison: "${quote.prefix}${quote.number}" === "${quotePrefix}${quoteNumber}" ? prefix:${matchesPrefix}, number:${matchesNumber}, notExcluded: ${notExcluded}`);
-              return matchesNumber && matchesPrefix && notExcluded;
-            }
-          );
+          const existingQuote = data.quotes.quotes.find((quote) => {
+            const matchesNumber = quote.number === quoteNumber;
+            const matchesPrefix = quote.prefix === quotePrefix;
+            const notExcluded = !excludeId || quote.id !== excludeId;
+            console.log(
+              `[checkQuoteNumber] Comparaison: "${quote.prefix}${quote.number}" === "${quotePrefix}${quoteNumber}" ? prefix:${matchesPrefix}, number:${matchesNumber}, notExcluded: ${notExcluded}`
+            );
+            return matchesNumber && matchesPrefix && notExcluded;
+          });
 
-          console.log('[checkQuoteNumber] Devis trouvé:', existingQuote);
+          console.log("[checkQuoteNumber] Devis trouvé:", existingQuote);
 
           return {
             exists: !!existingQuote,
@@ -733,7 +741,10 @@ export const useCheckQuoteNumber = () => {
 
         return { exists: false, quote: null };
       } catch (error) {
-        console.error("Erreur lors de la vérification du numéro de devis:", error);
+        console.error(
+          "Erreur lors de la vérification du numéro de devis:",
+          error
+        );
         return { exists: false, quote: null };
       }
     },

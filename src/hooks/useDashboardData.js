@@ -1,486 +1,217 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
-import { useExpenses } from "@/src/hooks/useExpenses";
+import { useMemo, useEffect, useRef, useCallback } from "react";
+import { useQuery } from "@apollo/client";
 import { useInvoices } from "@/src/graphql/invoiceQueries";
-import { useWorkspace } from "@/src/hooks/useWorkspace";
+import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
+import {
+  GET_BANKING_ACCOUNTS,
+  GET_TRANSACTIONS,
+} from "@/src/graphql/queries/banking";
 
-// Fonction utilitaire pour récupérer le token JWT
-const getAuthToken = () => {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem("bearer_token");
-};
+// Durée de validité du cache (5 minutes)
+const CACHE_TTL = 5 * 60 * 1000;
 
-// Hook pour récupérer les comptes bancaires et leur solde (avec cache backend Redis)
-const useBankAccounts = (workspaceId) => {
-  const [accounts, setAccounts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [fromCache, setFromCache] = useState(false);
-
-  const fetchAccounts = useCallback(
-    async (skipCache = false) => {
-      if (!workspaceId) {
-        setLoading(false);
-        return;
-      }
-
-      try {
-        setLoading(true);
-        const url = skipCache
-          ? "/api/banking/accounts?skipCache=true"
-          : "/api/banking/accounts";
-
-        const token = getAuthToken();
-        const response = await fetch(url, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            "x-workspace-id": workspaceId,
-            ...(token && { Authorization: `Bearer ${token}` }),
-          },
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          setAccounts(data.accounts || []);
-          setFromCache(data.fromCache || false);
-
-          if (data.fromCache) {
-            console.log("🎯 [useBankAccounts] Cache HIT backend Redis");
-          } else {
-            console.log("📊 [useBankAccounts] Données fraîches depuis BDD");
-          }
-        } else {
-          setAccounts([]);
-          setFromCache(false);
-        }
-      } catch (err) {
-        console.warn("⚠️ Erreur récupération comptes bancaires:", err.message);
-        setAccounts([]);
-        setFromCache(false);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [workspaceId]
-  );
-
-  useEffect(() => {
-    fetchAccounts();
-  }, [fetchAccounts]);
-
-  // Calculer le solde total
-  const totalBalance = accounts.reduce(
-    (sum, account) => sum + (account.balance || 0),
-    0
-  );
-
-  return { accounts, totalBalance, loading, fromCache, refetch: fetchAccounts };
-};
-
-// Hook pour récupérer les transactions bancaires (avec cache backend Redis)
-const useBankTransactions = (workspaceId) => {
-  const [transactions, setTransactions] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [fromCache, setFromCache] = useState(false);
-
-  const fetchTransactions = useCallback(
-    async (skipCache = false) => {
-      if (!workspaceId) {
-        setLoading(false);
-        return;
-      }
-
-      try {
-        setLoading(true);
-        const url = skipCache
-          ? "/api/banking/transactions?limit=500&skipCache=true"
-          : "/api/banking/transactions?limit=500";
-
-        const token = getAuthToken();
-        const response = await fetch(url, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            "x-workspace-id": workspaceId,
-            ...(token && { Authorization: `Bearer ${token}` }),
-          },
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          setTransactions(data.transactions || []);
-          setFromCache(data.fromCache || false);
-
-          if (data.fromCache) {
-            console.log("🎯 [useBankTransactions] Cache HIT backend Redis");
-          } else {
-            console.log("📊 [useBankTransactions] Données fraîches depuis BDD");
-          }
-        } else {
-          setTransactions([]);
-          setFromCache(false);
-        }
-      } catch (err) {
-        console.warn(
-          "⚠️ Erreur récupération transactions bancaires:",
-          err.message
-        );
-        setTransactions([]);
-        setFromCache(false);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [workspaceId]
-  );
-
-  useEffect(() => {
-    fetchTransactions();
-  }, [fetchTransactions]);
-
-  return { transactions, loading, fromCache, refetch: fetchTransactions };
-};
-
-// Durée de vie du cache : 2 minutes pour les données financières (plus fréquent)
-const CACHE_DURATION = 2 * 60 * 1000; // 2 minutes
-
-// Fonction pour vérifier si le cache est valide (en dehors du composant pour éviter les re-renders)
-const isCacheValid = (cacheData) => {
-  if (!cacheData || !cacheData.timestamp) return false;
-  const now = Date.now();
-  return now - cacheData.timestamp < CACHE_DURATION;
-};
+// Clé pour stocker le timestamp du dernier fetch
+const CACHE_KEY = "dashboard_last_fetch";
 
 /**
- * Hook de cache intelligent pour les données du dashboard
- * Utilise le même système de cache que les autres pages
+ * Hook pour les données du dashboard utilisant GraphQL
+ * Utilise cache-first pour éviter les rechargements inutiles
+ * Rafraîchit automatiquement après CACHE_TTL
  */
 export function useDashboardData() {
-  const { workspaceId } = useWorkspace();
-  const CACHE_KEY = `dashboard-data-${workspaceId}`;
+  // Récupérer le workspaceId actuel
+  const { workspaceId } = useRequiredWorkspace();
+  const lastFetchRef = useRef(null);
+  const hasInitialFetch = useRef(false);
 
-  // Initialisation synchrone du cache pour affichage instantané
-  const [cachedData, setCachedData] = useState(() => {
-    if (typeof window === "undefined" || !workspaceId) return null;
+  // Vérifier si le cache est encore valide
+  const isCacheValid = useCallback(() => {
+    if (typeof window === "undefined") return false;
+    const lastFetch = localStorage.getItem(`${CACHE_KEY}_${workspaceId}`);
+    if (!lastFetch) return false;
+    return Date.now() - parseInt(lastFetch, 10) < CACHE_TTL;
+  }, [workspaceId]);
 
-    try {
-      const cached = localStorage.getItem(CACHE_KEY);
-      if (cached) {
-        const parsedCache = JSON.parse(cached);
-        if (isCacheValid(parsedCache)) {
-          console.log("📊 Dashboard: Cache initialisé de façon synchrone");
-          return parsedCache;
-        } else {
-          localStorage.removeItem(CACHE_KEY);
-        }
-      }
-    } catch (error) {
-      console.error(
-        "📊 Dashboard: Erreur lors de l'initialisation du cache:",
-        error
+  // Marquer le cache comme mis à jour
+  const updateCacheTimestamp = useCallback(() => {
+    if (typeof window !== "undefined" && workspaceId) {
+      localStorage.setItem(
+        `${CACHE_KEY}_${workspaceId}`,
+        Date.now().toString()
       );
-      localStorage.removeItem(CACHE_KEY);
+      lastFetchRef.current = Date.now();
     }
-    return null;
-  });
+  }, [workspaceId]);
 
-  // États de cache
-  const [isLoading, setIsLoading] = useState(!cachedData);
-  const [isInitialized, setIsInitialized] = useState(!!cachedData);
-  const [lastUpdate, setLastUpdate] = useState(
-    cachedData ? new Date(cachedData.timestamp) : null
-  );
-  const [hasCheckedCache, setHasCheckedCache] = useState(!!cachedData);
-
-  // Hooks pour récupérer les données
-  const {
-    expenses,
-    loading: expensesLoading,
-    refetch: refetchExpenses,
-  } = useExpenses();
-
+  // Hook GraphQL pour les factures
   const {
     invoices,
     loading: invoicesLoading,
     refetch: refetchInvoices,
   } = useInvoices();
 
-  // Hook pour les comptes bancaires (solde) - avec info cache backend
+  // Hook GraphQL pour les comptes bancaires - cache-first
   const {
-    accounts: bankAccounts,
-    totalBalance: bankBalance,
+    data: accountsData,
     loading: accountsLoading,
-    fromCache: accountsFromCache,
     refetch: refetchBankAccounts,
-  } = useBankAccounts(workspaceId);
+  } = useQuery(GET_BANKING_ACCOUNTS, {
+    variables: { workspaceId },
+    fetchPolicy: "cache-first",
+    nextFetchPolicy: "cache-first",
+    skip: !workspaceId,
+  });
 
-  // Hook pour les transactions bancaires - avec info cache backend
+  // Hook GraphQL pour les transactions - cache-first
   const {
-    transactions: bankTransactions,
+    data: transactionsData,
     loading: bankLoading,
-    fromCache: transactionsFromCache,
     refetch: refetchBankTransactions,
-  } = useBankTransactions(workspaceId);
+  } = useQuery(GET_TRANSACTIONS, {
+    variables: { workspaceId, limit: 5000 },
+    fetchPolicy: "cache-first",
+    nextFetchPolicy: "cache-first",
+    skip: !workspaceId,
+  });
 
-  // Fonction pour charger depuis le cache
-  const loadFromCache = useCallback(() => {
-    try {
-      const cached = localStorage.getItem(CACHE_KEY);
-      if (cached) {
-        const parsedCache = JSON.parse(cached);
-        if (isCacheValid(parsedCache)) {
-          console.log("📊 Dashboard: Données chargées depuis le cache");
-          return parsedCache;
-        } else {
-          console.log("📊 Dashboard: Cache expiré, suppression");
-          localStorage.removeItem(CACHE_KEY);
-        }
+  // Rafraîchir les données si le cache est expiré
+  useEffect(() => {
+    if (!workspaceId) return;
+
+    // Premier chargement ou cache expiré
+    if (!hasInitialFetch.current || !isCacheValid()) {
+      hasInitialFetch.current = true;
+
+      // Rafraîchir en arrière-plan si on a des données en cache
+      const hasCache =
+        accountsData?.bankingAccounts || transactionsData?.transactions;
+
+      if (hasCache && !isCacheValid()) {
+        // Rafraîchir silencieusement en arrière-plan
+        Promise.all([
+          refetchBankAccounts?.(),
+          refetchBankTransactions?.(),
+          refetchInvoices?.(),
+        ]).then(() => {
+          updateCacheTimestamp();
+        });
+      } else if (!hasCache) {
+        // Premier chargement, marquer le timestamp
+        updateCacheTimestamp();
       }
-    } catch (error) {
-      console.error("📊 Dashboard: Erreur lors du chargement du cache:", error);
-      localStorage.removeItem(CACHE_KEY);
     }
-    return null;
-  }, [CACHE_KEY]);
+  }, [
+    workspaceId,
+    isCacheValid,
+    updateCacheTimestamp,
+    accountsData,
+    transactionsData,
+    refetchBankAccounts,
+    refetchBankTransactions,
+    refetchInvoices,
+  ]);
 
-  // Fonction pour sauvegarder en cache
-  const saveToCache = useCallback(
-    (data) => {
-      try {
-        const cacheData = {
-          ...data,
-          timestamp: Date.now(),
-          workspaceId,
-        };
-        localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
-        console.log("📊 Dashboard: Données sauvegardées en cache");
-      } catch (error) {
-        console.error(
-          "📊 Dashboard: Erreur lors de la sauvegarde du cache:",
-          error
-        );
-      }
-    },
-    [CACHE_KEY, workspaceId]
-  );
+  // Extraire les données
+  const bankAccounts = accountsData?.bankingAccounts || [];
+  const bankTransactions = transactionsData?.transactions || [];
 
-  // Fonction pour traiter et calculer les données
-  // MODE BANCAIRE PUR : Seules les transactions bancaires sont utilisées pour les flux financiers
-  const processData = useMemo(() => {
-    if (!expenses || !invoices) return null;
+  // Calculer le solde total
+  const bankBalance = useMemo(() => {
+    return bankAccounts.reduce(
+      (sum, account) => sum + (account.balance?.current || 0),
+      0
+    );
+  }, [bankAccounts]);
 
-    // Filtrer les factures payées (pour référence, pas pour les calculs de flux)
-    const paidInvoices = invoices.filter(
+  // Traiter et calculer les données
+  const processedData = useMemo(() => {
+    // Filtrer les factures payées
+    const paidInvoices = (invoices || []).filter(
       (invoice) => invoice.status === "COMPLETED"
     );
 
-    // Filtrer les dépenses payées (pour référence, pas pour les calculs de flux)
-    const paidExpenses = expenses.filter(
-      (expense) => expense.status === "PAID"
-    );
-
-    // MODE BANCAIRE PUR : Séparer les transactions bancaires en entrées et sorties
+    // Séparer les transactions en entrées et sorties
     const bankIncome = bankTransactions.filter((t) => t.amount > 0);
-    const bankExpenses = bankTransactions.filter((t) => t.amount < 0);
+    const bankExpensesFiltered = bankTransactions.filter((t) => t.amount < 0);
 
-    // MODE BANCAIRE PUR : Totaux basés uniquement sur les transactions bancaires
+    // Les dépenses payées sont maintenant les transactions avec montant négatif
+    const paidExpenses = bankExpensesFiltered;
+
+    // Totaux basés sur les transactions bancaires
     const totalIncome = bankIncome.reduce((sum, t) => sum + (t.amount || 0), 0);
-
     const totalExpenses = Math.abs(
-      bankExpenses.reduce((sum, t) => sum + (t.amount || 0), 0)
+      bankExpensesFiltered.reduce((sum, t) => sum + (t.amount || 0), 0)
     );
 
-    // Données pour les graphiques - MODE BANCAIRE PUR
-    const dashboardData = {
-      expenses,
-      invoices,
+    return {
+      expenses: bankTransactions,
+      invoices: invoices || [],
       paidInvoices,
       paidExpenses,
       bankTransactions,
       bankIncome,
-      bankExpenses,
+      bankExpenses: bankExpensesFiltered,
       bankAccounts,
       bankBalance,
       totalIncome,
       totalExpenses,
       transactions: bankTransactions,
-      // Flag pour indiquer si des données bancaires sont disponibles
       hasBankData: bankTransactions.length > 0,
     };
+  }, [invoices, bankTransactions, bankAccounts, bankBalance]);
 
-    return dashboardData;
-  }, [expenses, invoices, bankTransactions, bankAccounts, bankBalance]);
-
-  // Chargement initial depuis le cache - SYNCHRONE pour affichage instantané
-  useEffect(() => {
-    if (typeof window === "undefined" || hasCheckedCache) return;
-
-    const cached = loadFromCache();
-    if (cached) {
-      console.log("📊 Dashboard: Cache trouvé, affichage instantané");
-      setCachedData(cached);
-      setLastUpdate(new Date(cached.timestamp));
-      setIsInitialized(true);
-      setIsLoading(false);
-    } else {
-      console.log("📊 Dashboard: Pas de cache, chargement depuis API");
-      setIsLoading(true);
-    }
-    setHasCheckedCache(true);
-  }, [loadFromCache, hasCheckedCache]);
-
-  // Mise à jour du cache quand les données changent
-  useEffect(() => {
-    if (
-      !expensesLoading &&
-      !invoicesLoading &&
-      !bankLoading &&
-      !accountsLoading &&
-      processData &&
-      workspaceId
-    ) {
-      const newData = processData;
-
-      // Vérifier si les données ont changé
-      const hasChanged =
-        !cachedData ||
-        JSON.stringify(newData.expenses) !==
-          JSON.stringify(cachedData.expenses) ||
-        JSON.stringify(newData.invoices) !==
-          JSON.stringify(cachedData.invoices) ||
-        JSON.stringify(newData.bankTransactions) !==
-          JSON.stringify(cachedData.bankTransactions);
-
-      if (hasChanged) {
-        console.log(
-          "📊 Dashboard: Nouvelles données détectées, mise à jour du cache"
-        );
-        setCachedData(newData);
-        saveToCache(newData);
-        setLastUpdate(new Date());
-      }
-
-      setIsInitialized(true);
-      setIsLoading(false);
-    }
+  // Fonction pour forcer le rafraîchissement
+  const refreshData = useCallback(async () => {
+    console.log("📊 Dashboard: Rafraîchissement des données via GraphQL");
+    await Promise.all([
+      refetchInvoices?.(),
+      refetchBankAccounts?.(),
+      refetchBankTransactions?.(),
+    ]);
+    updateCacheTimestamp();
   }, [
-    expenses,
-    invoices,
-    bankTransactions,
-    bankAccounts,
-    expensesLoading,
-    invoicesLoading,
-    bankLoading,
-    accountsLoading,
-    processData,
-    workspaceId,
-    cachedData,
-    saveToCache,
+    refetchInvoices,
+    refetchBankAccounts,
+    refetchBankTransactions,
+    updateCacheTimestamp,
   ]);
 
-  // Fonction pour forcer le rafraîchissement (invalide cache backend + frontend)
-  const refreshData = async () => {
-    console.log("📊 Dashboard: Rafraîchissement forcé des données");
-    setIsLoading(true);
-
-    try {
-      // Supprimer le cache frontend
-      localStorage.removeItem(CACHE_KEY);
-      setCachedData(null);
-
-      // Invalider le cache backend Redis
-      if (workspaceId) {
-        try {
-          const token = getAuthToken();
-          await fetch("/api/banking/cache", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "x-workspace-id": workspaceId,
-              ...(token && { Authorization: `Bearer ${token}` }),
-            },
-          });
-          console.log("🗑️ Cache backend Redis invalidé");
-        } catch (err) {
-          console.warn("⚠️ Erreur invalidation cache backend:", err.message);
-        }
-      }
-
-      // Refetch des données (factures, dépenses, comptes et transactions bancaires)
-      // Utiliser skipCache=true pour forcer la récupération depuis la BDD
-      await Promise.all([
-        refetchExpenses?.(),
-        refetchInvoices?.(),
-        refetchBankAccounts?.(true), // skipCache=true
-        refetchBankTransactions?.(true), // skipCache=true
-      ]);
-
-      console.log("📊 Dashboard: Données rafraîchies avec succès");
-    } catch (error) {
-      console.error("📊 Dashboard: Erreur lors du rafraîchissement:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Fonction pour invalider le cache (frontend + backend)
-  const invalidateCache = async () => {
+  // Fonction pour invalider le cache
+  const invalidateCache = useCallback(() => {
     console.log("📊 Dashboard: Invalidation du cache");
-
-    // Invalider le cache frontend
-    localStorage.removeItem(CACHE_KEY);
-    setCachedData(null);
-    setLastUpdate(null);
-
-    // Invalider le cache backend Redis
-    if (workspaceId) {
-      try {
-        const token = getAuthToken();
-        await fetch("/api/banking/cache", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-workspace-id": workspaceId,
-            ...(token && { Authorization: `Bearer ${token}` }),
-          },
-        });
-        console.log("🗑️ Cache backend Redis invalidé");
-      } catch (err) {
-        console.warn("⚠️ Erreur invalidation cache backend:", err.message);
-      }
+    if (typeof window !== "undefined" && workspaceId) {
+      localStorage.removeItem(`${CACHE_KEY}_${workspaceId}`);
     }
-  };
+    refreshData();
+  }, [workspaceId, refreshData]);
 
-  // Utiliser les données en cache si disponibles, sinon les données fraîches
-  const currentData = cachedData || processData;
+  const isLoading = invoicesLoading || bankLoading || accountsLoading;
+
+  // Calculer si les données viennent du cache
+  const isFromCache = useMemo(() => {
+    return isCacheValid() && !isLoading;
+  }, [isCacheValid, isLoading]);
 
   return {
     // Données
-    ...currentData,
+    ...processedData,
 
-    // États de chargement - Si on a des données en cache, pas de loading
-    isLoading: cachedData
-      ? false
-      : isLoading ||
-        expensesLoading ||
-        invoicesLoading ||
-        bankLoading ||
-        accountsLoading,
-    isInitialized: cachedData ? true : isInitialized,
+    // États de chargement
+    isLoading,
+    isInitialized: !isLoading,
 
-    // Fonctions de gestion du cache
+    // Fonctions de gestion
     refreshData,
     invalidateCache,
 
-    // Métadonnées du cache (frontend + backend)
+    // Métadonnées
     cacheInfo: {
-      lastUpdate,
-      isFromCache: !!cachedData,
-      cacheKey: CACHE_KEY,
-      // Informations sur le cache backend Redis
-      backendCache: {
-        accountsFromCache,
-        transactionsFromCache,
-      },
+      lastUpdate: lastFetchRef.current
+        ? new Date(lastFetchRef.current)
+        : new Date(),
+      isFromCache,
+      cacheKey: `${CACHE_KEY}_${workspaceId}`,
+      ttl: CACHE_TTL,
     },
 
     // Fonction utilitaire pour formater les devises

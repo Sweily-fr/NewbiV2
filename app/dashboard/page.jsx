@@ -44,11 +44,10 @@ import { useUser } from "@/src/lib/auth/hooks";
 import { authClient } from "@/src/lib/auth-client";
 import { redirect } from "next/navigation";
 // Financial stats and bridge hooks removed
-import { useExpenses } from "@/src/hooks/useExpenses";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import BankingConnectButton from "@/src/components/banking/BankingConnectButton";
 import BankBalanceCard from "@/src/components/banking/BankBalanceCard";
-import UnifiedTransactions from "@/src/components/banking/UnifiedTransactions";
+import RecentTransactionsCard from "@/src/components/banking/RecentTransactionsCard";
 import { TreasuryChart } from "@/src/components/treasury-chart";
 import { ExpenseCategoryChart } from "@/app/dashboard/outils/transactions/components/expense-category-chart";
 import { IncomeCategoryChart } from "@/app/dashboard/components/income-category-chart";
@@ -356,11 +355,10 @@ function DashboardContent() {
             bankBalance={bankBalance}
             isLoading={isLoading}
           />
-          <UnifiedTransactions
-            limit={4}
+          <RecentTransactionsCard
             className="shadow-xs w-full md:w-1/2"
-            expenses={paidExpenses}
-            invoices={paidInvoices}
+            transactions={transactions}
+            limit={5}
             isLoading={isLoading}
           />
         </div>

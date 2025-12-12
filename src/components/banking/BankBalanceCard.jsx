@@ -471,7 +471,7 @@ export default function BankBalanceCard({
           <div className="-space-x-2 flex">
             {uniqueBanks.slice(0, 4).map((bank, index) => (
               <Avatar
-                key={bank.id}
+                key={bank.id || `bank-${index}`}
                 className="h-7 w-7 ring-2 ring-background bg-white"
               >
                 {bank.logo ? (
@@ -507,19 +507,25 @@ export default function BankBalanceCard({
 
         {/* Liste des comptes */}
         <div className="space-y-4 flex-1">
-          {accounts.slice(0, 4).map((account) => (
+          {accounts.slice(0, 4).map((account, index) => (
             <div
-              key={account._id}
+              key={account.id || account._id || `account-${index}`}
               className="flex items-center justify-between"
             >
               <div className="flex items-center space-x-3">
                 <Landmark className="h-4 w-4" />
                 <span className="text-sm font-normal truncate max-w-[180px]">
-                  {account.name}
+                  {account.bankName || account.name || "Compte bancaire"}
                 </span>
               </div>
               <span className="text-sm font-medium">
-                {formatCurrency(account.balance)}
+                {formatCurrency(
+                  typeof account.balance === "object"
+                    ? account.balance?.current ||
+                        account.balance?.available ||
+                        0
+                    : account.balance || 0
+                )}
               </span>
             </div>
           ))}
