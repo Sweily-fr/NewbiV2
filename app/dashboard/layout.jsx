@@ -97,19 +97,49 @@ function DashboardContent({ children }) {
       pathname.includes("/view") ||
       pathname.includes("/avoir/"));
 
-  // État pour contrôler l'ouverture de la sidebar
-  const [sidebarOpen, setSidebarOpen] = useState(!isToolPage);
+  // Clé localStorage pour persister l'état de la sidebar
+  const SIDEBAR_STORAGE_KEY = "sidebar_collapsed";
 
-  // Mettre à jour l'état de la sidebar quand le pathname change
+  // Lire l'état initial depuis localStorage (false = rétrécie par défaut)
+  const getInitialSidebarState = () => {
+    if (typeof window === "undefined") return false;
+    const stored = localStorage.getItem(SIDEBAR_STORAGE_KEY);
+    // Si pas de valeur stockée, retourner false (rétrécie par défaut)
+    if (stored === null) return false;
+    return stored === "true";
+  };
+
+  // État pour contrôler l'ouverture de la sidebar
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Charger l'état depuis localStorage après hydratation
   useEffect(() => {
-    setSidebarOpen(!isToolPage);
+    if (isHydrated && !isToolPage) {
+      const storedState = getInitialSidebarState();
+      setSidebarOpen(storedState);
+    }
+  }, [isHydrated, isToolPage]);
+
+  // Sauvegarder l'état dans localStorage à chaque changement
+  const handleSidebarChange = (open) => {
+    setSidebarOpen(open);
+    if (typeof window !== "undefined" && !isToolPage) {
+      localStorage.setItem(SIDEBAR_STORAGE_KEY, String(open));
+    }
+  };
+
+  // Forcer la sidebar fermée sur les pages d'outils
+  useEffect(() => {
+    if (isToolPage) {
+      setSidebarOpen(false);
+    }
   }, [isToolPage]);
 
   // Désactiver complètement le banner - remplacé par le compteur dans le header
   const showTrialBanner = false;
 
   return (
-    <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>
+    <SidebarProvider open={sidebarOpen} onOpenChange={handleSidebarChange}>
       <AppSidebar
         variant="inset"
         onCommunityClick={() => {

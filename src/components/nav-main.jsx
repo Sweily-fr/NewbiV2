@@ -62,7 +62,7 @@ export function NavMain({ items, onOpenNotifications, notificationCount = 0 }) {
   const userRole = getUserRole();
 
   // Définir les onglets qui nécessitent un abonnement Pro (inclut la période d'essai)
-  const proTabs = ["Tableau de bord", "Clients", "Catalogues"];
+  const proTabs = ["Tableau de bord", "Clients", "Catalogues", "Transactions"];
 
   // Définir les onglets qui nécessitent un abonnement Pro PAYANT (pas de trial)
   const paidProTabs = [];
@@ -72,18 +72,22 @@ export function NavMain({ items, onOpenNotifications, notificationCount = 0 }) {
     {
       title: "Factures clients",
       url: "/dashboard/outils/factures",
+      isPro: true,
     },
     {
       title: "Devis",
       url: "/dashboard/outils/devis",
+      isPro: true,
     },
     {
       title: "Liste client (CRM)",
       url: "/dashboard/clients",
+      isPro: true,
     },
     {
       title: "Catalogues",
       url: "/dashboard/catalogues",
+      isPro: true,
     },
   ];
 
@@ -93,16 +97,19 @@ export function NavMain({ items, onOpenNotifications, notificationCount = 0 }) {
       title: "Signature de mail",
       url: "/dashboard/outils/signatures-mail",
       icon: IconMail,
+      isPro: false,
     },
     {
-      title: "Kanban",
+      title: "Projets",
       url: "/dashboard/outils/kanban",
       icon: IconLayoutKanban,
+      isPro: false,
     },
     {
       title: "Transfert de fichier",
       url: "/dashboard/outils/transferts-fichiers",
       icon: IconFileUpload,
+      isPro: true,
     },
   ];
 
@@ -203,18 +210,33 @@ export function NavMain({ items, onOpenNotifications, notificationCount = 0 }) {
                       const isSubActive =
                         pathname === subItem.url ||
                         pathname?.startsWith(subItem.url + "/");
+                      const hasSubAccess = !subItem.isPro || isActive();
                       return (
-                        <DropdownMenuItem key={subItem.title} asChild>
-                          <Link
-                            href={subItem.url}
-                            onClick={handleLinkClick}
-                            className={cn(
-                              "cursor-pointer",
-                              isSubActive && "bg-accent font-medium"
-                            )}
-                          >
-                            {subItem.title}
-                          </Link>
+                        <DropdownMenuItem
+                          key={subItem.title}
+                          asChild={hasSubAccess}
+                          disabled={!hasSubAccess}
+                          className={cn(
+                            !hasSubAccess && "opacity-60 cursor-not-allowed"
+                          )}
+                        >
+                          {hasSubAccess ? (
+                            <Link
+                              href={subItem.url}
+                              onClick={handleLinkClick}
+                              className={cn(
+                                "cursor-pointer",
+                                isSubActive && "bg-accent font-medium"
+                              )}
+                            >
+                              {subItem.title}
+                            </Link>
+                          ) : (
+                            <div className="flex items-center justify-between w-full">
+                              <span>{subItem.title}</span>
+                              <Crown className="w-3 h-3 text-[#5b4fff]" />
+                            </div>
+                          )}
                         </DropdownMenuItem>
                       );
                     })}
@@ -271,22 +293,37 @@ export function NavMain({ items, onOpenNotifications, notificationCount = 0 }) {
                         const isSubActive =
                           pathname === subItem.url ||
                           pathname?.startsWith(subItem.url + "/");
+                        const hasSubAccess = !subItem.isPro || isActive();
                         return (
                           <SidebarMenuSubItem key={subItem.title}>
                             <SidebarMenuSubButton
-                              asChild
-                              isActive={isSubActive}
+                              asChild={hasSubAccess}
+                              isActive={isSubActive && hasSubAccess}
+                              className={cn(
+                                !hasSubAccess && "opacity-60 cursor-not-allowed"
+                              )}
                             >
-                              <Link
-                                href={subItem.url}
-                                onClick={handleLinkClick}
-                                className={cn(
-                                  isSubActive &&
-                                    "bg-[#F0F0F0] dark:bg-sidebar-accent text-sidebar-foreground font-medium"
-                                )}
-                              >
-                                <span className="text-sm">{subItem.title}</span>
-                              </Link>
+                              {hasSubAccess ? (
+                                <Link
+                                  href={subItem.url}
+                                  onClick={handleLinkClick}
+                                  className={cn(
+                                    isSubActive &&
+                                      "bg-[#F0F0F0] dark:bg-sidebar-accent text-sidebar-foreground font-medium"
+                                  )}
+                                >
+                                  <span className="text-sm">
+                                    {subItem.title}
+                                  </span>
+                                </Link>
+                              ) : (
+                                <div className="flex items-center justify-between w-full">
+                                  <span className="text-sm">
+                                    {subItem.title}
+                                  </span>
+                                  <Crown className="w-3 h-3 text-[#5b4fff]" />
+                                </div>
+                              )}
                             </SidebarMenuSubButton>
                           </SidebarMenuSubItem>
                         );
@@ -331,43 +368,84 @@ export function NavMain({ items, onOpenNotifications, notificationCount = 0 }) {
                       align="start"
                       className="min-w-[180px]"
                     >
-                      <DropdownMenuItem asChild>
-                        <Link
-                          href="/dashboard/outils/factures/new"
-                          onClick={handleLinkClick}
-                          className="cursor-pointer font-normal flex justify-between w-full"
-                        >
-                          <span>Nouvelle facture</span>
-                          <Plus className="h-4 w-4" />
-                        </Link>
+                      <DropdownMenuItem
+                        asChild={isActive()}
+                        disabled={!isActive()}
+                        className={cn(
+                          !isActive() && "opacity-60 cursor-not-allowed"
+                        )}
+                      >
+                        {isActive() ? (
+                          <Link
+                            href="/dashboard/outils/factures/new"
+                            onClick={handleLinkClick}
+                            className="cursor-pointer font-normal flex justify-between w-full"
+                          >
+                            <span>Nouvelle facture</span>
+                            <Plus className="h-4 w-4" />
+                          </Link>
+                        ) : (
+                          <div className="flex items-center justify-between w-full">
+                            <span>Nouvelle facture</span>
+                            <Crown className="w-3 h-3 text-[#5b4fff]" />
+                          </div>
+                        )}
                       </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link
-                          href="/dashboard/outils/devis/new"
-                          onClick={handleLinkClick}
-                          className="cursor-pointer font-normal flex justify-between w-full"
-                        >
-                          <span>Nouveau devis</span>
-                          <Plus className="h-4 w-4" />
-                        </Link>
+                      <DropdownMenuItem
+                        asChild={isActive()}
+                        disabled={!isActive()}
+                        className={cn(
+                          !isActive() && "opacity-60 cursor-not-allowed"
+                        )}
+                      >
+                        {isActive() ? (
+                          <Link
+                            href="/dashboard/outils/devis/new"
+                            onClick={handleLinkClick}
+                            className="cursor-pointer font-normal flex justify-between w-full"
+                          >
+                            <span>Nouveau devis</span>
+                            <Plus className="h-4 w-4" />
+                          </Link>
+                        ) : (
+                          <div className="flex items-center justify-between w-full">
+                            <span>Nouveau devis</span>
+                            <Crown className="w-3 h-3 text-[#5b4fff]" />
+                          </div>
+                        )}
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       {ventesItems.map((subItem) => {
                         const isSubActive =
                           pathname === subItem.url ||
                           pathname?.startsWith(subItem.url + "/");
+                        const hasSubAccess = !subItem.isPro || isActive();
                         return (
-                          <DropdownMenuItem key={subItem.title} asChild>
-                            <Link
-                              href={subItem.url}
-                              onClick={handleLinkClick}
-                              className={cn(
-                                "cursor-pointer",
-                                isSubActive && "bg-accent font-medium"
-                              )}
-                            >
-                              {subItem.title}
-                            </Link>
+                          <DropdownMenuItem
+                            key={subItem.title}
+                            asChild={hasSubAccess}
+                            disabled={!hasSubAccess}
+                            className={cn(
+                              !hasSubAccess && "opacity-60 cursor-not-allowed"
+                            )}
+                          >
+                            {hasSubAccess ? (
+                              <Link
+                                href={subItem.url}
+                                onClick={handleLinkClick}
+                                className={cn(
+                                  "cursor-pointer",
+                                  isSubActive && "bg-accent font-medium"
+                                )}
+                              >
+                                {subItem.title}
+                              </Link>
+                            ) : (
+                              <div className="flex items-center justify-between w-full">
+                                <span>{subItem.title}</span>
+                                <Crown className="w-3 h-3 text-[#5b4fff]" />
+                              </div>
+                            )}
                           </DropdownMenuItem>
                         );
                       })}
@@ -422,24 +500,38 @@ export function NavMain({ items, onOpenNotifications, notificationCount = 0 }) {
                           const isSubActive =
                             pathname === subItem.url ||
                             pathname?.startsWith(subItem.url + "/");
+                          const hasSubAccess = !subItem.isPro || isActive();
                           return (
                             <SidebarMenuSubItem key={subItem.title}>
                               <SidebarMenuSubButton
-                                asChild
-                                isActive={isSubActive}
+                                asChild={hasSubAccess}
+                                isActive={isSubActive && hasSubAccess}
+                                className={cn(
+                                  !hasSubAccess &&
+                                    "opacity-60 cursor-not-allowed"
+                                )}
                               >
-                                <Link
-                                  href={subItem.url}
-                                  onClick={handleLinkClick}
-                                  className={cn(
-                                    isSubActive &&
-                                      "bg-[#F0F0F0] dark:bg-sidebar-accent text-sidebar-foreground font-medium"
-                                  )}
-                                >
-                                  <span className="text-sm">
-                                    {subItem.title}
-                                  </span>
-                                </Link>
+                                {hasSubAccess ? (
+                                  <Link
+                                    href={subItem.url}
+                                    onClick={handleLinkClick}
+                                    className={cn(
+                                      isSubActive &&
+                                        "bg-[#F0F0F0] dark:bg-sidebar-accent text-sidebar-foreground font-medium"
+                                    )}
+                                  >
+                                    <span className="text-sm">
+                                      {subItem.title}
+                                    </span>
+                                  </Link>
+                                ) : (
+                                  <div className="flex items-center justify-between w-full">
+                                    <span className="text-sm">
+                                      {subItem.title}
+                                    </span>
+                                    <Crown className="w-3 h-3 text-[#5b4fff]" />
+                                  </div>
+                                )}
                               </SidebarMenuSubButton>
                             </SidebarMenuSubItem>
                           );

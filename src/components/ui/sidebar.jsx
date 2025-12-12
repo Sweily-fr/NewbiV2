@@ -309,7 +309,7 @@ function SidebarHeader({ className, ...props }) {
     <div
       data-slot="sidebar-header"
       data-sidebar="header"
-      className={cn("flex flex-col gap-2 p-2", className)}
+      className={cn("flex flex-col gap-2 p-2 ml-0.45", className)}
       {...props}
     />
   );
@@ -493,6 +493,7 @@ function SidebarMenuButton({
         side="right"
         align="center"
         hidden={state !== "collapsed" || isMobile}
+        className="bg-[#202020] text-white border-none"
         {...tooltip}
       />
     </Tooltip>

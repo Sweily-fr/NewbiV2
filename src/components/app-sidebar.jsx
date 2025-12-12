@@ -53,6 +53,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/src/components/ui/sidebar";
 import { getCurrentUser } from "../lib/auth/api";
 import { useUser } from "../lib/auth/hooks";
@@ -192,6 +193,10 @@ export function AppSidebar({
   const [notificationCount, setNotificationCount] = React.useState(0);
   const { listInvitations } = useOrganizationInvitations();
 
+  // Récupérer l'état de la sidebar pour adapter les skeletons
+  const { state: sidebarState } = useSidebar();
+  const isCollapsed = sidebarState === "collapsed";
+
   // Déterminer si on est sur une page d'outil qui nécessite la sidebar masquée
   const isToolPage =
     pathname?.includes("/dashboard/outils/") &&
@@ -304,38 +309,67 @@ export function AppSidebar({
         ) : (
           <>
             {/* NavMain Skeleton */}
-            <div className="px-2 py-2">
+            <div className={isCollapsed ? "px-1 py-2" : "px-2 py-2"}>
               <div className="space-y-2">
                 {[1, 2, 3, 4].map((i) => (
                   <div
                     key={i}
-                    className="flex w-full items-center gap-2 px-2 py-1.5"
+                    className={
+                      isCollapsed
+                        ? "flex justify-center py-1.5"
+                        : "flex w-full items-center gap-2 px-2 py-1.5"
+                    }
                   >
-                    <Skeleton className="h-8 w-full bg-[#EBEBEB] dark:bg-[#292929] rounded-sm" />
+                    <Skeleton
+                      className={
+                        isCollapsed
+                          ? "h-8 w-8 bg-[#EBEBEB] dark:bg-[#292929] rounded-sm"
+                          : "h-8 w-full bg-[#EBEBEB] dark:bg-[#292929] rounded-sm"
+                      }
+                    />
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* NavDocuments Skeleton */}
-            <div className="px-4 py-6">
-              <Skeleton className="h-5 w-16 mb-2 bg-[#EBEBEB] dark:bg-[#292929] rounded-sm" />
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 py-1.5">
-                  <Skeleton className="h-8 w-full bg-[#EBEBEB] dark:bg-[#292929] rounded-sm" />
-                </div>
-                <div className="flex items-center gap-2 py-1.5">
-                  <Skeleton className="h-8 w-full bg-[#EBEBEB] dark:bg-[#292929] rounded-sm" />
+            {/* NavDocuments Skeleton - Masqué en mode rétréci */}
+            {!isCollapsed && (
+              <div className="px-4 py-6">
+                <Skeleton className="h-5 w-16 mb-2 bg-[#EBEBEB] dark:bg-[#292929] rounded-sm" />
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 py-1.5">
+                    <Skeleton className="h-8 w-full bg-[#EBEBEB] dark:bg-[#292929] rounded-sm" />
+                  </div>
+                  <div className="flex items-center gap-2 py-1.5">
+                    <Skeleton className="h-8 w-full bg-[#EBEBEB] dark:bg-[#292929] rounded-sm" />
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* NavSecondary Skeleton */}
-            <div className="px-2 py-2 mt-auto">
+            <div
+              className={
+                isCollapsed ? "px-1 py-2 mt-auto" : "px-2 py-2 mt-auto"
+              }
+            >
               <div className="space-y-2">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="flex items-center gap-2 px-2 py-1.5">
-                    <Skeleton className="h-8 w-full bg-[#EBEBEB] dark:bg-[#292929] rounded-sm" />
+                  <div
+                    key={i}
+                    className={
+                      isCollapsed
+                        ? "flex justify-center py-1.5"
+                        : "flex items-center gap-2 px-2 py-1.5"
+                    }
+                  >
+                    <Skeleton
+                      className={
+                        isCollapsed
+                          ? "h-8 w-8 bg-[#EBEBEB] dark:bg-[#292929] rounded-sm"
+                          : "h-8 w-full bg-[#EBEBEB] dark:bg-[#292929] rounded-sm"
+                      }
+                    />
                   </div>
                 ))}
               </div>
@@ -347,19 +381,29 @@ export function AppSidebar({
         {session?.user && !subscriptionLoading ? (
           <SidebarTrialCard />
         ) : (
-          <div className="mb-2 px-2">
-            <Skeleton className="h-16 w-full bg-[#EBEBEB] dark:bg-[#292929] rounded-md" />
-          </div>
+          !isCollapsed && (
+            <div className="mb-2 px-2">
+              <Skeleton className="h-16 w-full bg-[#EBEBEB] dark:bg-[#292929] rounded-md" />
+            </div>
+          )
         )}
         {session?.user && !subscriptionLoading ? (
           <NavUser user={session.user} />
         ) : (
-          <div className="flex items-center gap-2 px-2 py-1.5">
+          <div
+            className={
+              isCollapsed
+                ? "flex justify-center py-1.5"
+                : "flex items-center gap-2 px-2 py-1.5"
+            }
+          >
             <Skeleton className="h-8 w-8 rounded-full bg-[#EBEBEB] dark:bg-[#292929]" />
-            <div className="flex-1">
-              <Skeleton className="h-4 w-24 mb-1 bg-[#EBEBEB] dark:bg-[#292929] rounded-sm" />
-              <Skeleton className="h-3 w-32 bg-[#EBEBEB] dark:bg-[#292929] rounded-sm" />
-            </div>
+            {!isCollapsed && (
+              <div className="flex-1">
+                <Skeleton className="h-4 w-24 mb-1 bg-[#EBEBEB] dark:bg-[#292929] rounded-sm" />
+                <Skeleton className="h-3 w-32 bg-[#EBEBEB] dark:bg-[#292929] rounded-sm" />
+              </div>
+            )}
           </div>
         )}
       </SidebarFooter>

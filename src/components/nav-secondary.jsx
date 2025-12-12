@@ -156,6 +156,7 @@ export function NavSecondary({ items, onCommunityClick, ...props }) {
                 <SidebarMenuButton
                   asChild={hasAccess}
                   disabled={!hasAccess}
+                  tooltip={item.title}
                   className={cn(!hasAccess && "opacity-60 cursor-not-allowed")}
                 >
                   {hasAccess ? (
@@ -184,7 +185,7 @@ export function NavSecondary({ items, onCommunityClick, ...props }) {
                   ) : (
                     <div className="flex items-center justify-between w-full">
                       <div className="flex items-center gap-2">
-                        <item.icon />
+                        <item.icon className="h-4 w-4" />
                         <span className="">{item.title}</span>
                       </div>
                       <Crown className="w-3 h-3 text-[#5b4fff]" />
