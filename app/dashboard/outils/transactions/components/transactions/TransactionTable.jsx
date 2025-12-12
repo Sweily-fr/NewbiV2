@@ -230,13 +230,13 @@ export default function TransactionTable({
   useEffect(() => {
     const fetchMembers = async () => {
       if (!activeOrg?.id) {
-        console.log("⏳ [DEPENSES] En attente de l'organisation...");
+        console.log("⏳ [DEPENSES] En attente de l'organisation......");
         return;
       }
 
       try {
         setLoadingMembers(true);
-        console.log("🔍 [DEPENSES] Organisation chargée:", activeOrg.id);
+        console.log("[DEPENSES] Organisation chargée:", activeOrg.id);
 
         const result = await getAllCollaborators();
 
