@@ -149,8 +149,6 @@ export default function InvoiceTable({
   const excludedClientIds =
     reminderSettingsData?.getInvoiceReminderSettings?.excludedClientIds || [];
 
-  console.log("📋 [InvoiceTable] excludedClientIds:", excludedClientIds);
-
   // État pour le dropdown d'export (pour le trigger depuis le header)
   const [isExportDropdownOpen, setIsExportDropdownOpen] = useState(false);
 

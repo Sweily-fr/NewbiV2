@@ -12,12 +12,6 @@ import { Button } from "@/src/components/ui/button";
 import { Progress } from "@/src/components/ui/progress";
 import { ScrollArea } from "@/src/components/ui/scroll-area";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/src/components/ui/tooltip";
-import {
   Upload,
   FileText,
   X,
@@ -344,39 +338,33 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
                   </Button>
                 </div>
                 <ScrollArea className="h-[200px] rounded-md border overflow-hidden">
-                  <TooltipProvider delayDuration={300}>
-                    <div className="p-2 space-y-1 overflow-hidden">
-                      {files.map((file, index) => (
-                        <div
-                          key={`${file.name}-${index}`}
-                          className="flex items-center gap-2 p-2 rounded hover:bg-muted/50 group overflow-hidden"
+                  <div className="p-2 space-y-1 overflow-hidden">
+                    {files.map((file, index) => (
+                      <div
+                        key={`${file.name}-${index}`}
+                        className="flex items-center gap-2 p-2 rounded hover:bg-muted/50 group overflow-hidden"
+                      >
+                        <FileText className="h-4 w-4 text-red-500 flex-shrink-0" />
+                        <div 
+                          className="flex-1 min-w-0 overflow-hidden cursor-default"
+                          title={file.name}
                         >
-                          <FileText className="h-4 w-4 text-red-500 flex-shrink-0" />
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div className="flex-1 min-w-0 overflow-hidden cursor-default">
-                                <p className="text-sm truncate max-w-full">{file.name}</p>
-                              </div>
-                            </TooltipTrigger>
-                            <TooltipContent side="top" className="max-w-[400px] break-all">
-                              <p>{file.name}</p>
-                            </TooltipContent>
-                          </Tooltip>
-                          <span className="text-xs text-muted-foreground flex-shrink-0">
-                            {formatFileSize(file.size)}
-                          </span>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
-                            onClick={(e) => { e.stopPropagation(); removeFile(index); }}
-                          >
-                            <X className="h-3 w-3" />
-                          </Button>
+                          <p className="text-sm truncate max-w-full">{file.name}</p>
                         </div>
-                      ))}
-                    </div>
-                  </TooltipProvider>
+                        <span className="text-xs text-muted-foreground flex-shrink-0">
+                          {formatFileSize(file.size)}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                          onClick={(e) => { e.stopPropagation(); removeFile(index); }}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
                 </ScrollArea>
               </div>
             )}

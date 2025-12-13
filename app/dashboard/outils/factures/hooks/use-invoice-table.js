@@ -650,13 +650,6 @@ export function useInvoiceTable({
               (excludedId) => String(excludedId) === String(clientId)
             );
 
-          // Debug log
-          if (row.original.status === "PENDING") {
-            console.log(
-              `🔍 Facture ${row.original.number}: clientId=${clientId}, isExcluded=${isClientExcluded}`
-            );
-          }
-
           return (
             <InvoiceRowActions
               row={row}

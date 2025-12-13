@@ -99,7 +99,6 @@ export function useDashboardLayoutSimple() {
             setSubscription(cachedSubscription);
             setIsLoading(false);
             setIsInitialized(true);
-            console.log("✅ Subscription chargée depuis le cache:", organizationId);
             return;
           }
         }

@@ -28,15 +28,6 @@ export const useStripeConnect = (organizationId) => {
 
   // Note: Le cache est maintenant vidé globalement lors de la déconnexion dans nav-user.jsx
 
-  // Debug pour identifier les problèmes de cache
-  console.log("🔍 useStripeConnect Debug:", {
-    organizationId,
-    hasData: !!stripeStatusData,
-    accountId: stripeStatusData?.myStripeConnectAccount?.accountId,
-    loading: statusLoading,
-    timestamp: new Date().toISOString(),
-  });
-
   // Mutations
   const [createStripeAccount] = useMutation(CREATE_STRIPE_CONNECT_ACCOUNT);
   const [generateOnboardingLink] = useMutation(GENERATE_STRIPE_ONBOARDING_LINK);

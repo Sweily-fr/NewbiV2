@@ -145,43 +145,28 @@ const authLink = setContext(async (_, { headers }) => {
     // 1. Vérifier d'abord le JWT stocké dans localStorage
     const storedToken = localStorage.getItem("bearer_token");
     if (storedToken && !isTokenExpired(storedToken)) {
-      console.log("✅ [Apollo] JWT valide trouvé dans localStorage");
       jwtToken = storedToken;
     } else if (storedToken) {
-      console.log("⚠️ [Apollo] JWT expiré dans localStorage, suppression");
       localStorage.removeItem("bearer_token");
     }
 
     // 2. Si pas de JWT valide, récupérer un nouveau via getSession
     if (!jwtToken) {
-      console.log("🔄 [Apollo] Récupération nouveau JWT via getSession...");
       const session = await authClient.getSession({
         fetchOptions: {
           onSuccess: (ctx) => {
             const jwt = ctx.response.headers.get("set-auth-jwt");
             if (jwt && !isTokenExpired(jwt)) {
               jwtToken = jwt;
-              // ✅ CORRECTION: Stocker le JWT dans localStorage
+              // Stocker le JWT dans localStorage
               localStorage.setItem("bearer_token", jwt);
-              console.log("✅ [Apollo] Nouveau JWT récupéré et stocké");
-            } else if (jwt) {
-              console.warn("⚠️ [Apollo] JWT reçu mais déjà expiré");
             }
           },
-          onError: (ctx) => {
-            console.warn("⚠️ [Apollo] Erreur getSession:", ctx.error?.message);
-          },
+          onError: () => {},
         },
       });
 
       // Si on a une session mais pas de JWT, utiliser les cookies
-      if (session?.session && !jwtToken) {
-        console.log(
-          "ℹ️ [Apollo] Session active, utilisation des cookies httpOnly"
-        );
-      } else if (!session?.session && !jwtToken) {
-        console.error("❌ [Apollo] Pas de session ni de JWT disponible");
-      }
     }
 
     // 3. Récupérer l'organization ID et le rôle depuis localStorage (définis par le frontend)
