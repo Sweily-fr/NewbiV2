@@ -25,26 +25,38 @@ export function FeatureAccessBanner({ subscriptionInfo, onUpgrade }) {
       <Alert
         className={`mb-6 ${isExpiringSoon ? "border-orange-500 bg-orange-50 dark:bg-orange-950" : "border-blue-500 bg-blue-50 dark:bg-blue-950"}`}
       >
-        <Clock className={`h-4 w-4 ${isExpiringSoon ? "text-orange-600" : "text-blue-600"}`} />
-        <AlertTitle className={isExpiringSoon ? "text-orange-900 dark:text-orange-100" : "text-blue-900 dark:text-blue-100"}>
+        <Clock
+          className={`h-4 w-4 ${isExpiringSoon ? "text-orange-600" : "text-blue-600"}`}
+        />
+        <AlertTitle
+          className={
+            isExpiringSoon
+              ? "text-orange-900 dark:text-orange-100"
+              : "text-blue-900 dark:text-blue-100"
+          }
+        >
           {isExpiringSoon
             ? `Votre période d'essai expire dans ${daysRemaining} jour${daysRemaining > 1 ? "s" : ""}`
             : `Période d'essai : ${daysRemaining} jour${daysRemaining > 1 ? "s" : ""} restant${daysRemaining > 1 ? "s" : ""}`}
         </AlertTitle>
-        <AlertDescription className={`flex items-center justify-between ${isExpiringSoon ? "text-orange-800 dark:text-orange-200" : "text-blue-800 dark:text-blue-200"}`}>
+        <AlertDescription
+          className={`flex items-center justify-between ${isExpiringSoon ? "text-orange-800 dark:text-orange-200" : "text-blue-800 dark:text-blue-200"}`}
+        >
           <span>
-            Profitez de toutes les fonctionnalités Pro gratuitement pendant votre
-            essai.
+            Profitez de toutes les fonctionnalités Pro gratuitement pendant
+            votre essai.
           </span>
           <Button
             size="sm"
             variant={isExpiringSoon ? "default" : "outline"}
-            className={isExpiringSoon ? "bg-orange-600 hover:bg-orange-700" : ""}
+            className={
+              isExpiringSoon ? "bg-orange-600 hover:bg-orange-700" : ""
+            }
             onClick={() => {
               if (onUpgrade) {
                 onUpgrade();
               } else {
-                router.push("/dashboard/outils?pricing=true");
+                router.push("/dashboard?pricing=true");
               }
             }}
           >
@@ -74,7 +86,7 @@ export function FeatureAccessBanner({ subscriptionInfo, onUpgrade }) {
             if (onUpgrade) {
               onUpgrade();
             } else {
-              router.push("/dashboard/outils?pricing=true");
+              router.push("/dashboard?pricing=true");
             }
           }}
         >

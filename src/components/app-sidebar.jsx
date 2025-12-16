@@ -82,7 +82,7 @@ const data = {
   ],
   navMain: [
     {
-      title: "Tableau de bord",
+      title: "Dashboard",
       url: "/dashboard",
       icon: CircleGauge,
     },
@@ -91,11 +91,35 @@ const data = {
       url: "/dashboard/outils/transactions",
       icon: Landmark,
     },
+  ],
+  navVentes: [
+    {
+      title: "Factures clients",
+      url: "/dashboard/outils/factures",
+      isPro: true,
+    },
+    {
+      title: "Devis",
+      url: "/dashboard/outils/devis",
+      isPro: true,
+    },
+    {
+      title: "Liste client (CRM)",
+      url: "/dashboard/clients",
+      isPro: true,
+    },
+    {
+      title: "Catalogues",
+      url: "/dashboard/catalogues",
+      isPro: true,
+    },
+  ],
+  navAfterVentes: [
     {
       title: "Boîte de réception",
       url: "#",
       icon: Inbox,
-      action: "openNotifications", // Action spéciale pour ouvrir le modal
+      action: "openNotifications",
     },
     {
       title: "Calendrier",
@@ -103,52 +127,40 @@ const data = {
       icon: Calendar,
     },
   ],
-  navClouds: [
+  navProjets: [
     {
-      title: "Capture",
-      icon: IconCamera,
-      isActive: true,
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
+      title: "Kanban",
+      url: "/dashboard/outils/kanban",
+      isPro: false,
     },
     {
-      title: "Proposal",
-      icon: IconFileDescription,
-      url: "/dashboard/proposal",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
+      title: "Tâches",
+      url: "/dashboard/outils/taches",
+      isPro: false,
     },
     {
-      title: "Prompts",
-      icon: IconFileAi,
-      url: "/dashboard/prompts",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
+      title: "Timer",
+      url: "/dashboard/outils/timer",
+      isPro: false,
+    },
+  ],
+  navDocuments: [
+    {
+      title: "Transfert de fichiers",
+      url: "/dashboard/outils/transferts-fichiers",
+      isPro: true,
+    },
+    {
+      title: "Documents partagés",
+      url: "/dashboard/outils/documents-partages",
+      isPro: true,
+    },
+  ],
+  navCommunication: [
+    {
+      title: "Signature de mail",
+      url: "/dashboard/outils/signatures-mail",
+      isPro: false,
     },
   ],
   navSecondary: [
@@ -166,13 +178,6 @@ const data = {
       title: "Aide",
       url: "https://chat.whatsapp.com/FGLms8EYhpv1o5rkrnIldL",
       icon: MessageCircleQuestionMark,
-    },
-  ],
-  documents: [
-    {
-      name: "Factures",
-      url: "/dashboard/outils/factures",
-      icon: IconDatabase,
     },
   ],
 };
@@ -296,10 +301,14 @@ export function AppSidebar({
           <>
             <NavMain
               items={data.navMain}
+              navVentes={data.navVentes}
+              navAfterVentes={data.navAfterVentes}
+              navProjets={data.navProjets}
+              navDocuments={data.navDocuments}
+              navCommunication={data.navCommunication}
               onOpenNotifications={onOpenNotifications}
               notificationCount={notificationCount}
             />
-            <NavDocuments items={data.documents} />
             <NavSecondary
               items={data.navSecondary}
               onCommunityClick={onCommunityClick}

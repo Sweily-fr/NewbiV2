@@ -99,7 +99,7 @@ function Toast({ toast, onClose }) {
                     variant="outline"
                     className={cn(
                       "h-8 text-xs",
-                      isDarkBg && "border-gray-600 text-gray-700"
+                      isDarkBg && "border-gray-600 text-gray-700 dark:bg-white"
                     )}
                     onClick={toast.secondaryActionProps.onClick}
                   >
@@ -151,6 +151,7 @@ export function ToastProvider({ children }) {
       description: options.description,
       actionProps: options.actionProps,
       secondaryActionProps: options.secondaryActionProps,
+      dismissProps: options.dismissProps,
       timeout: options.timeout || 5000,
     };
 

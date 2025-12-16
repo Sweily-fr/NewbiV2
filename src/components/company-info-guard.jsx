@@ -97,7 +97,7 @@ export function CompanyInfoGuard({ children }) {
 
   const handleCancel = () => {
     setShowDialog(false);
-    router.push("/dashboard/outils");
+    router.push("/dashboard");
   };
 
   if (isLoading) {

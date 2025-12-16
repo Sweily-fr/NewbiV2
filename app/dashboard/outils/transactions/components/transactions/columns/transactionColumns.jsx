@@ -273,8 +273,17 @@ export const columns = [
     },
     cell: ({ row }) => {
       const files = row.original.files || [];
-      const hasReceipt = row.original.hasReceipt || files.length > 0;
-      const filesCount = files.length > 0 ? files.length : hasReceipt ? 1 : 0;
+      const receiptFile = row.original.receiptFile;
+      const hasReceipt =
+        row.original.hasReceipt || files.length > 0 || !!receiptFile?.url;
+      const filesCount =
+        files.length > 0
+          ? files.length
+          : receiptFile?.url
+            ? 1
+            : hasReceipt
+              ? 1
+              : 0;
 
       return (
         <TooltipProvider>

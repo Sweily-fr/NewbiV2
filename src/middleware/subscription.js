@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/src/lib/auth";
 
+// Routes qui nécessitent uniquement une authentification (pas d'abonnement requis)
+const AUTH_ONLY_ROUTES = ["/dashboard"];
+
 // Routes qui nécessitent un abonnement actif ou un essai valide
 const PROTECTED_ROUTES = [
-  "/dashboard",
   "/api/graphql",
   "/api/upload",
   "/api/bridge",
@@ -36,16 +38,32 @@ const EXCLUDED_ROUTES = [
 export async function subscriptionMiddleware(request) {
   const { pathname } = request.nextUrl;
 
+  // Vérifier si la route est exclue
+  const isExcludedRoute = EXCLUDED_ROUTES.some((route) =>
+    pathname.startsWith(route)
+  );
+
+  if (isExcludedRoute) {
+    return NextResponse.next();
+  }
+
+  // Vérifier si c'est une route PRO_ONLY (sous-pages du dashboard)
+  const isProOnlyRoute = PRO_ONLY_ROUTES.some((route) =>
+    pathname.startsWith(route)
+  );
+
+  // Vérifier si c'est une route qui nécessite uniquement une authentification
+  const isAuthOnlyRoute =
+    AUTH_ONLY_ROUTES.some((route) => pathname.startsWith(route)) &&
+    !isProOnlyRoute;
+
   // Vérifier si la route nécessite une vérification d'abonnement
   const isProtectedRoute = PROTECTED_ROUTES.some((route) =>
     pathname.startsWith(route)
   );
 
-  const isExcludedRoute = EXCLUDED_ROUTES.some((route) =>
-    pathname.startsWith(route)
-  );
-
-  if (!isProtectedRoute || isExcludedRoute) {
+  // Si ce n'est ni une route auth-only ni une route protégée ni une route pro-only, laisser passer
+  if (!isAuthOnlyRoute && !isProtectedRoute && !isProOnlyRoute) {
     return NextResponse.next();
   }
 
@@ -62,6 +80,11 @@ export async function subscriptionMiddleware(request) {
       console.log("[Middleware] Redirection vers /auth/login - Pas de session");
       // Rediriger vers la page de connexion si pas connecté
       return NextResponse.redirect(new URL("/auth/login", request.url));
+    }
+
+    // Pour les routes auth-only (comme /dashboard), autoriser l'accès si connecté
+    if (isAuthOnlyRoute && !isProOnlyRoute) {
+      return NextResponse.next();
     }
 
     const user = session.user;

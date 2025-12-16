@@ -61,7 +61,7 @@ export function ProRouteGuard({
           isSubscriptionDataLoaded
         ) {
           hasRedirectedRef.current = true;
-          router.replace("/dashboard/outils?access=restricted");
+          router.replace("/dashboard?access=restricted");
         } else if (accessGranted) {
           setHasAccess(true);
           hasRedirectedRef.current = false; // Reset pour permettre les futures redirections

@@ -47,7 +47,10 @@ export function FilePreviewDrawer({
   onClose,
   onDownload,
   onNavigate,
+  hasWatermark = false,
 }) {
+  // Vérifier si le téléchargement est bloqué (image avec filigrane)
+  const isDownloadBlocked = hasWatermark && isImage(file);
   const [viewMode, setViewMode] = useState("grid"); // "grid" ou "list"
 
   if (!file) return null;
@@ -163,13 +166,15 @@ export function FilePreviewDrawer({
                       alt={file.originalName}
                       className="max-w-full max-h-[500px] rounded-lg object-contain"
                     />
-                    {/* Bouton download sur l'image */}
-                    <button
-                      onClick={() => onDownload?.(file)}
-                      className="absolute bottom-4 right-4 w-10 h-10 bg-black/80 hover:bg-black rounded-full flex items-center justify-center transition-colors"
-                    >
-                      <Download className="w-5 h-5 text-white" />
-                    </button>
+                    {/* Bouton download sur l'image - masqué si filigrane */}
+                    {!isDownloadBlocked && (
+                      <button
+                        onClick={() => onDownload?.(file)}
+                        className="absolute bottom-4 right-4 w-10 h-10 bg-black/80 hover:bg-black rounded-full flex items-center justify-center transition-colors"
+                      >
+                        <Download className="w-5 h-5 text-white" />
+                      </button>
+                    )}
                   </div>
                 ) : isPdf(file) ? (
                   <iframe
@@ -220,28 +225,32 @@ export function FilePreviewDrawer({
                     {formatFileSize(file.size)}
                   </div>
                   <div className="col-span-2 flex justify-end">
-                    <button
-                      onClick={() => onDownload?.(file)}
-                      className="p-2 text-gray-400 hover:text-gray-800 transition-colors"
-                    >
-                      <Download className="w-5 h-5" />
-                    </button>
+                    {!isDownloadBlocked && (
+                      <button
+                        onClick={() => onDownload?.(file)}
+                        className="p-2 text-gray-400 hover:text-gray-800 transition-colors"
+                      >
+                        <Download className="w-5 h-5" />
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
             )}
           </div>
 
-          {/* Footer avec bouton Télécharger */}
-          <div className="px-8 py-4 border-t border-gray-100 flex justify-end">
-            <Button
-              onClick={() => onDownload?.(file)}
-              className="text-white rounded-lg px-6"
-            >
-              <Download className="w-4 h-4 mr-2" />
-              Télécharger
-            </Button>
-          </div>
+          {/* Footer avec bouton Télécharger - masqué si filigrane sur image */}
+          {!isDownloadBlocked && (
+            <div className="px-8 py-4 border-t border-gray-100 flex justify-end">
+              <Button
+                onClick={() => onDownload?.(file)}
+                className="text-white rounded-lg px-6"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Télécharger
+              </Button>
+            </div>
+          )}
         </div>
       </SheetContent>
     </Sheet>

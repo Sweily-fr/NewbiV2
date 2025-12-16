@@ -120,7 +120,7 @@ export default function ModernInvoiceEditor({
         resourceType="facture"
         resourceName="Cette facture"
         listUrl="/dashboard/outils/factures"
-        homeUrl="/dashboard/outils"
+        homeUrl="/dashboard"
       />
     );
   }

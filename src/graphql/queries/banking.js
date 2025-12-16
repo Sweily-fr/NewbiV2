@@ -98,6 +98,15 @@ export const GET_TRANSACTIONS = gql`
         provider
       }
       metadata
+      receiptFile {
+        url
+        key
+        filename
+        mimetype
+        size
+        uploadedAt
+      }
+      receiptRequired
       createdAt
       updatedAt
     }
@@ -128,6 +137,15 @@ export const GET_TRANSACTION = gql`
         provider
       }
       metadata
+      receiptFile {
+        url
+        key
+        filename
+        mimetype
+        size
+        uploadedAt
+      }
+      receiptRequired
       createdAt
       updatedAt
     }
@@ -204,6 +222,42 @@ export const SYNC_TRANSACTION_HISTORY = gql`
       description
       processedAt
       createdAt
+    }
+  }
+`;
+
+/**
+ * Upload de justificatif pour une transaction
+ */
+export const UPLOAD_TRANSACTION_RECEIPT = gql`
+  mutation UploadTransactionReceipt(
+    $transactionId: ID!
+    $workspaceId: ID!
+    $file: Upload!
+  ) {
+    uploadTransactionReceipt(
+      transactionId: $transactionId
+      workspaceId: $workspaceId
+      file: $file
+    ) {
+      success
+      message
+      receiptFile {
+        url
+        key
+        filename
+        mimetype
+        size
+        uploadedAt
+      }
+      transaction {
+        id
+        receiptFile {
+          url
+          filename
+        }
+        receiptRequired
+      }
     }
   }
 `;

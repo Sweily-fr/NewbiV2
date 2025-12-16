@@ -71,7 +71,7 @@ export default function OnboardingPage() {
       });
 
       toast.success("Bienvenue sur Newbi !");
-      router.push("/dashboard/outils");
+      router.push("/dashboard");
     } catch (error) {
       console.error("Erreur lors du skip:", error);
       toast.error("Une erreur est survenue");
@@ -122,7 +122,7 @@ export default function OnboardingPage() {
       }
 
       toast.success("Bienvenue sur Newbi !");
-      router.push("/dashboard/outils");
+      router.push("/dashboard");
     } catch (error) {
       console.error("Erreur lors de la complétion:", error);
       toast.error("Une erreur est survenue");

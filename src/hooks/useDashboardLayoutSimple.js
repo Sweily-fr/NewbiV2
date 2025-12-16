@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useSession } from "@/src/lib/auth-client";
 import { useTrial } from "@/src/hooks/useTrial";
 import { authClient } from "@/src/lib/auth-client";
+import { toast } from "@/src/components/ui/sonner";
 /**
  * Version simplifiée du hook dashboard layout sans cache pour éviter les boucles infinies
  * Version temporaire pendant que nous résolvons les problèmes de cache
@@ -16,7 +17,8 @@ export function useDashboardLayoutSimple() {
   // Données de session
   const { data: session, isPending: sessionLoading } = useSession();
   // Données d'organisation active (Better Auth)
-  const { data: activeOrganization, isPending: orgLoading } = authClient.useActiveOrganization();
+  const { data: activeOrganization, isPending: orgLoading } =
+    authClient.useActiveOrganization();
   // Données de trial
   const trial = useTrial();
 
@@ -69,29 +71,42 @@ export function useDashboardLayoutSimple() {
   useEffect(() => {
     if (!isHydrated) return;
 
-    // Vérifier si on revient de Stripe (invalider le cache)
+    // Vérifier si on revient de Stripe ou d'une résiliation (invalider le cache)
     // Utilisation sécurisée pour éviter les erreurs SSR
-    const hasStripeSession = typeof window !== 'undefined' 
-      ? new URLSearchParams(window.location.search).get("session_id")
-      : null;
+    const urlParams =
+      typeof window !== "undefined"
+        ? new URLSearchParams(window.location.search)
+        : null;
+    const hasStripeSession = urlParams?.get("session_id");
+    const hasCancelSuccess = urlParams?.get("cancel_success") === "true";
+    const hasSubscriptionSuccess =
+      urlParams?.get("subscription_success") === "true";
 
     // Essayer de charger depuis le cache local d'abord
     // Utiliser activeOrganization.id en priorité, sinon session.activeOrganizationId
-    const organizationId = activeOrganization?.id || session?.session?.activeOrganizationId;
-    const cacheKey = organizationId
-      ? `subscription-${organizationId}`
-      : null;
+    const organizationId =
+      activeOrganization?.id || session?.session?.activeOrganizationId;
+    const cacheKey = organizationId ? `subscription-${organizationId}` : null;
 
     if (cacheKey) {
-      // Si on revient de Stripe, vider le cache pour forcer le rechargement
-      if (hasStripeSession) {
+      // Si on revient de Stripe, d'une résiliation ou d'un nouvel abonnement, vider le cache pour forcer le rechargement
+      if (hasStripeSession || hasCancelSuccess || hasSubscriptionSuccess) {
         localStorage.removeItem(cacheKey);
+        console.log(
+          "🗑️ Cache d'abonnement invalidé (retour Stripe/résiliation/nouvel abonnement)"
+        );
       }
 
-      // Cache intelligent : 5 minutes + invalidation après paiement
+      // Cache intelligent : 5 minutes + invalidation après paiement/résiliation
       try {
         const cached = localStorage.getItem(cacheKey);
-        if (cached && !hasStripeSession) { // ← Ne pas utiliser le cache si on revient de Stripe
+        if (
+          cached &&
+          !hasStripeSession &&
+          !hasCancelSuccess &&
+          !hasSubscriptionSuccess
+        ) {
+          // ← Ne pas utiliser le cache si on revient de Stripe, résiliation ou nouvel abonnement
           const { data: cachedSubscription, timestamp } = JSON.parse(cached);
           const isValid = Date.now() - timestamp < 5 * 60 * 1000; // 5 minutes (évite les flashs)
 
@@ -99,6 +114,13 @@ export function useDashboardLayoutSimple() {
             setSubscription(cachedSubscription);
             setIsLoading(false);
             setIsInitialized(true);
+<<<<<<< HEAD
+=======
+            console.log(
+              "✅ Subscription chargée depuis le cache:",
+              organizationId
+            );
+>>>>>>> sofiane-subscribe
             return;
           }
         }
@@ -126,6 +148,11 @@ export function useDashboardLayoutSimple() {
       try {
         setIsLoading(true);
 
+        console.log(
+          "🔍 [SUBSCRIPTION] Fetching for organizationId:",
+          organizationId
+        );
+
         const { data: subscriptions, error } =
           await authClient.subscription.list({
             query: {
@@ -133,15 +160,44 @@ export function useDashboardLayoutSimple() {
             },
           });
 
+        console.log("🔍 [SUBSCRIPTION] Result:", { subscriptions, error });
+
         if (!error) {
-          const activeSubscription = subscriptions?.find(
-            (sub) => sub.status === "active" || sub.status === "trialing"
+          // ✅ Trouver un abonnement actif OU un abonnement annulé mais encore dans la période payée
+          const activeSubscription = subscriptions?.find((sub) => {
+            // Abonnement actif ou en période d'essai
+            if (sub.status === "active" || sub.status === "trialing") {
+              return true;
+            }
+            // Abonnement annulé mais encore dans la période payée (prorata)
+            if (sub.status === "canceled" && sub.periodEnd) {
+              const periodEndDate = new Date(sub.periodEnd);
+              const now = new Date();
+              if (periodEndDate > now) {
+                console.log(
+                  "🔍 [SUBSCRIPTION] Abonnement annulé mais encore valide jusqu'au:",
+                  periodEndDate.toLocaleDateString("fr-FR")
+                );
+                return true;
+              }
+            }
+            return false;
+          });
+
+          console.log(
+            "🔍 [SUBSCRIPTION] Active subscription:",
+            activeSubscription
           );
 
           setSubscription(activeSubscription || null);
 
           // Sauvegarder en cache pour éviter les flashs futurs
-          if (cacheKey) {
+          // ⚠️ NE PAS mettre en cache si on revient de Stripe et qu'il n'y a pas d'abonnement
+          // (le webhook n'a peut-être pas encore créé l'abonnement)
+          const shouldCache =
+            activeSubscription ||
+            (!hasStripeSession && !hasSubscriptionSuccess);
+          if (cacheKey && shouldCache) {
             try {
               localStorage.setItem(
                 cacheKey,
@@ -164,7 +220,12 @@ export function useDashboardLayoutSimple() {
     };
 
     fetchSubscription();
-  }, [isHydrated, session?.session?.activeOrganizationId, activeOrganization?.id, orgLoading]);
+  }, [
+    isHydrated,
+    session?.session?.activeOrganizationId,
+    activeOrganization?.id,
+    orgLoading,
+  ]);
 
   // Polling automatique après retour de Stripe
   useEffect(() => {
@@ -175,20 +236,24 @@ export function useDashboardLayoutSimple() {
 
     if (!hasStripeSession) return;
 
-
     // Attendre que l'organisation soit disponible
     if (!session?.session?.activeOrganizationId) {
       return;
     }
 
+    console.log("🔄 [POLLING] Démarrage du polling après retour Stripe...");
 
     let attempts = 0;
-    const maxAttempts = 30; // 30 × 2s = 60 secondes max
-    let pollInterval;
+    const maxAttempts = 30; // 30 tentatives max
+    let pollTimeout;
+    let isPollingActive = true;
 
-    // Fonction de polling
+    // Fonction de polling avec intervalle progressif
     const checkSubscription = async () => {
+      if (!isPollingActive) return;
+
       attempts++;
+      console.log(`🔄 [POLLING] Tentative ${attempts}/${maxAttempts}...`);
 
       try {
         const { data: subscriptions, error } =
@@ -199,61 +264,208 @@ export function useDashboardLayoutSimple() {
           });
 
         if (error) {
-          console.error("❌ Erreur API:", error);
-          return;
-        }
-
-        const activeSubscription = subscriptions?.find(
-          (sub) => sub.status === "active" || sub.status === "trialing"
-        );
-
-        if (activeSubscription) {
-          clearInterval(pollInterval);
-
-          // Mettre à jour l'état
-          setSubscription(activeSubscription);
-
-          // Mettre à jour le cache
-          const cacheKey = `subscription-${session.session.activeOrganizationId}`;
-          localStorage.setItem(
-            cacheKey,
-            JSON.stringify({
-              data: activeSubscription,
-              timestamp: Date.now(),
-            })
+          console.error("❌ [POLLING] Erreur API:", error);
+        } else {
+          const activeSubscription = subscriptions?.find(
+            (sub) => sub.status === "active" || sub.status === "trialing"
           );
 
-          // Nettoyer l'URL
+          if (activeSubscription) {
+            isPollingActive = false;
+            console.log(
+              "✅ [POLLING] Abonnement trouvé!",
+              activeSubscription.plan
+            );
+
+            // Mettre à jour l'état
+            setSubscription(activeSubscription);
+
+            // Mettre à jour le cache
+            const cacheKey = `subscription-${session.session.activeOrganizationId}`;
+            localStorage.setItem(
+              cacheKey,
+              JSON.stringify({
+                data: activeSubscription,
+                timestamp: Date.now(),
+              })
+            );
+
+            // Nettoyer l'URL
+            window.history.replaceState(
+              {},
+              document.title,
+              window.location.pathname
+            );
+
+            // Afficher un toast de succès
+            toast.success("Abonnement activé avec succès !");
+
+            return; // Arrêter le polling
+          }
+        }
+
+        // Continuer le polling si pas encore trouvé
+        if (attempts < maxAttempts && isPollingActive) {
+          // Intervalle progressif : 500ms les 5 premières, puis 1s, puis 2s
+          const delay = attempts <= 5 ? 500 : attempts <= 15 ? 1000 : 2000;
+          pollTimeout = setTimeout(checkSubscription, delay);
+        } else if (attempts >= maxAttempts) {
+          console.warn(
+            "⚠️ [POLLING] Timeout - abonnement non trouvé après 30 tentatives"
+          );
+          // Nettoyer l'URL même en cas d'échec
           window.history.replaceState(
             {},
             document.title,
             window.location.pathname
           );
-
-          // Pas besoin de recharger - le système de cache et refetch gère la mise à jour
-          console.log("✅ Subscription mise à jour sans rechargement");
-        } else if (attempts >= maxAttempts) {
-
-          clearInterval(pollInterval);
         }
       } catch (error) {
-        console.error("❌ Erreur lors du polling:", error);
+        console.error("❌ [POLLING] Erreur:", error);
+        // Continuer le polling malgré l'erreur
+        if (attempts < maxAttempts && isPollingActive) {
+          pollTimeout = setTimeout(checkSubscription, 2000);
+        }
       }
     };
 
     // Première vérification immédiate
     checkSubscription();
 
-    // Puis polling toutes les 2 secondes
-    pollInterval = setInterval(checkSubscription, 2000);
-
     // Cleanup
     return () => {
-      if (pollInterval) {
-        clearInterval(pollInterval);
+      isPollingActive = false;
+      if (pollTimeout) {
+        clearTimeout(pollTimeout);
       }
     };
   }, [isHydrated, session?.session?.activeOrganizationId]);
+
+  // Synchronisation et mise à jour après résiliation d'abonnement
+  useEffect(() => {
+    if (!isHydrated) return;
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const hasCancelSuccess = urlParams.get("cancel_success") === "true";
+
+    if (!hasCancelSuccess) return;
+
+    // Attendre que l'organisation et l'abonnement soient disponibles
+    if (!session?.session?.activeOrganizationId) {
+      return;
+    }
+
+    console.log("🔄 Résiliation détectée, synchronisation avec Stripe...");
+
+    const syncAndUpdate = async () => {
+      try {
+        // D'abord, récupérer l'abonnement actuel pour avoir le stripeSubscriptionId
+        const { data: subscriptions, error: listError } =
+          await authClient.subscription.list({
+            query: {
+              referenceId: session.session.activeOrganizationId,
+            },
+          });
+
+        if (listError) {
+          console.error("❌ Erreur récupération abonnement:", listError);
+          return;
+        }
+
+        // Trouver l'abonnement (actif ou en cours d'annulation)
+        const currentSubscription = subscriptions?.find(
+          (sub) => sub.stripeSubscriptionId
+        );
+
+        if (currentSubscription?.stripeSubscriptionId) {
+          console.log(
+            "🔄 Synchronisation depuis Stripe:",
+            currentSubscription.stripeSubscriptionId
+          );
+
+          // Appeler l'API de synchronisation pour mettre à jour depuis Stripe
+          const syncResponse = await fetch("/api/sync-subscription-status", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              stripeSubscriptionId: currentSubscription.stripeSubscriptionId,
+              organizationId: session.session.activeOrganizationId,
+            }),
+          });
+
+          const syncData = await syncResponse.json();
+          console.log("✅ Synchronisation terminée:", syncData);
+
+          if (syncData.success) {
+            // Mettre à jour l'abonnement local avec les nouvelles données
+            const updatedSubscription = {
+              ...currentSubscription,
+              status: syncData.status,
+              cancelAtPeriodEnd: syncData.cancelAtPeriodEnd,
+              periodEnd: syncData.periodEnd,
+            };
+
+            setSubscription(updatedSubscription);
+
+            // Mettre à jour le cache
+            const cacheKey = `subscription-${session.session.activeOrganizationId}`;
+            localStorage.setItem(
+              cacheKey,
+              JSON.stringify({
+                data: updatedSubscription,
+                timestamp: Date.now(),
+              })
+            );
+          }
+        }
+
+        // Nettoyer l'URL
+        window.history.replaceState(
+          {},
+          document.title,
+          window.location.pathname
+        );
+
+        console.log("✅ Résiliation traitée, rechargement de la page...");
+
+        // Recharger la page pour mettre à jour l'interface
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
+      } catch (error) {
+        console.error("❌ Erreur lors de la synchronisation:", error);
+        // Nettoyer l'URL même en cas d'erreur
+        window.history.replaceState(
+          {},
+          document.title,
+          window.location.pathname
+        );
+        window.location.reload();
+      }
+    };
+
+    // Exécuter la synchronisation
+    syncAndUpdate();
+  }, [isHydrated, session?.session?.activeOrganizationId]);
+
+  // Afficher un toast de succès pour un nouvel abonnement (upgrade)
+  useEffect(() => {
+    if (!isHydrated) return;
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const hasSubscriptionSuccess =
+      urlParams.get("subscription_success") === "true";
+
+    if (hasSubscriptionSuccess) {
+      toast.success("Abonnement activé avec succès !", {
+        description:
+          "Vous avez maintenant accès à toutes les fonctionnalités Pro.",
+      });
+
+      // Nettoyer l'URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [isHydrated]);
 
   // Logique d'onboarding basée sur le champ hasSeenOnboarding du user
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
@@ -292,8 +504,8 @@ export function useDashboardLayoutSimple() {
       // Rafraîchir la session pour obtenir les nouvelles données
       await authClient.getSession({
         fetchOptions: {
-          cache: "no-store"
-        }
+          cache: "no-store",
+        },
       });
     } catch (error) {
       console.error("Erreur lors de la finalisation de l'onboarding:", error);
@@ -313,20 +525,33 @@ export function useDashboardLayoutSimple() {
   };
 
   const isActive = (requirePaidSubscription = false) => {
+    // Vérifier si l'abonnement est actif ou en période d'essai
     const hasActiveSubscription =
       subscription?.status === "active" || subscription?.status === "trialing";
 
-    // Si on exige un abonnement payant, ignorer la période d'essai
+    // ✅ Vérifier aussi si l'abonnement est annulé mais encore dans la période payée (prorata)
+    const hasCanceledButValidSubscription =
+      subscription?.status === "canceled" &&
+      subscription?.periodEnd &&
+      new Date(subscription.periodEnd) > new Date();
+
+    const hasValidSubscription =
+      hasActiveSubscription || hasCanceledButValidSubscription;
+
+    // Si on exige un abonnement payant, ignorer la période d'essai ET le trial
     if (requirePaidSubscription) {
-      return hasActiveSubscription;
+      // Pour un abonnement payant requis, on accepte active ou canceled avec période valide
+      return (
+        subscription?.status === "active" || hasCanceledButValidSubscription
+      );
     }
 
-    // Sinon, accepter aussi la période d'essai
-    if (!hasActiveSubscription) {
+    // Sinon, accepter aussi la période d'essai (trialing) et le trial de l'organisation
+    if (!hasValidSubscription) {
       return trial.hasPremiumAccess;
     }
 
-    return hasActiveSubscription;
+    return hasValidSubscription;
   };
 
   // Fonction de rafraîchissement simple
@@ -344,7 +569,7 @@ export function useDashboardLayoutSimple() {
 
       // Cache utilisateur
       localStorage.removeItem("user-cache");
-      
+
       // Ne PAS réinitialiser subscription à null - garder l'ancienne valeur pendant le chargement
       // Le useEffect se chargera de refetch automatiquement
       setIsLoading(true);
@@ -355,7 +580,8 @@ export function useDashboardLayoutSimple() {
   };
 
   // Utiliser activeOrganization de Better Auth en priorité, sinon fallback vers cache
-  const finalOrganization = activeOrganization || session?.user?.organization || cachedOrganization;
+  const finalOrganization =
+    activeOrganization || session?.user?.organization || cachedOrganization;
 
   return {
     // Données utilisateur (avec cache pour éviter les flashs)

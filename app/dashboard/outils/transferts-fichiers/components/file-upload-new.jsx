@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useFileTransferR2Multipart } from "../hooks/useFileTransferR2Multipart";
 import { useStripeConnect } from "@/src/hooks/useStripeConnect";
 import StripeConnectOnboarding from "@/src/components/stripe/StripeConnectOnboarding";
@@ -58,7 +58,9 @@ import {
   IconBell,
   IconLock,
   IconEye,
+  IconDroplet,
 } from "@tabler/icons-react";
+import { isImageFile, countImageFiles } from "../utils/watermark";
 
 // Format bytes utility function
 const formatBytes = (bytes, decimals = 2) => {
@@ -158,7 +160,16 @@ export default function FileUploadNew({
     passwordProtected: false,
     password: "",
     allowPreview: true,
+    // Options filigrane
+    applyWatermark: false,
+    watermarkText: "CONFIDENTIEL",
+    watermarkPosition: "diagonal", // 'center', 'bottom-right', 'diagonal', 'tile'
   });
+
+  // Compter le nombre d'images dans les fichiers sélectionnés
+  const imageCount = useMemo(() => {
+    return countImageFiles(selectedFiles);
+  }, [selectedFiles]);
 
   const [isDragging, setIsDragging] = useState(false);
   const [errors, setErrors] = useState([]);
@@ -761,7 +772,7 @@ export default function FileUploadNew({
                   <Label className="text-sm font-normal">
                     Demander un paiement
                   </Label>
-                  {!stripeConnected && (
+                  {!stripeConnected && !transferOptions.applyWatermark && (
                     <Button
                       variant="outline"
                       size="sm"
@@ -773,9 +784,11 @@ export default function FileUploadNew({
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {stripeConnected
-                    ? "Exiger un paiement avant le téléchargement"
-                    : "Connectez Stripe Connect pour activer les paiements"}
+                  {transferOptions.applyWatermark
+                    ? "Non disponible avec le filigrane activé"
+                    : stripeConnected
+                      ? "Exiger un paiement avant le téléchargement"
+                      : "Connectez Stripe Connect pour activer les paiements"}
                 </p>
               </div>
               <Switch
@@ -787,7 +800,7 @@ export default function FileUploadNew({
                   }
                   handleOptionChange("requirePayment", checked);
                 }}
-                disabled={!user}
+                disabled={!user || transferOptions.applyWatermark}
                 className="data-[state=checked]:bg-[#5a50ff] scale-75 cursor-pointer"
               />
             </div>
@@ -1001,6 +1014,98 @@ export default function FileUploadNew({
                 className="data-[state=checked]:bg-[#5a50ff] scale-75 cursor-pointer"
               />
             </div>
+          </div>
+
+          <Separator />
+
+          {/* Filigrane */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <IconDroplet className="size-4 text-muted-foreground" />
+              <Label className="text-sm font-normal">Filigrane</Label>
+              {imageCount > 0 && (
+                <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                  {imageCount} image{imageCount > 1 ? "s" : ""}
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <Label className="text-sm font-normal">
+                  Appliquer un filigrane
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Ajouter un filigrane sur les images avant l'envoi
+                </p>
+              </div>
+              <Switch
+                checked={transferOptions.applyWatermark}
+                onCheckedChange={(checked) => {
+                  handleOptionChange("applyWatermark", checked);
+                  // Désactiver le paiement si filigrane activé
+                  if (checked && transferOptions.requirePayment) {
+                    handleOptionChange("requirePayment", false);
+                    handleOptionChange("paymentAmount", 0);
+                  }
+                }}
+                disabled={imageCount === 0}
+                className="data-[state=checked]:bg-[#5a50ff] scale-75 cursor-pointer"
+              />
+            </div>
+
+            {transferOptions.applyWatermark && imageCount > 0 && (
+              <div className="space-y-3 pt-2">
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground">
+                    Texte du filigrane
+                  </Label>
+                  <Input
+                    type="text"
+                    placeholder="CONFIDENTIEL"
+                    value={transferOptions.watermarkText}
+                    onChange={(e) =>
+                      handleOptionChange("watermarkText", e.target.value)
+                    }
+                    className="h-9"
+                    maxLength={30}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground">
+                    Position
+                  </Label>
+                  <Select
+                    value={transferOptions.watermarkPosition}
+                    onValueChange={(value) =>
+                      handleOptionChange("watermarkPosition", value)
+                    }
+                  >
+                    <SelectTrigger className="h-9">
+                      <SelectValue placeholder="Position du filigrane" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="diagonal">
+                        Diagonale (centré)
+                      </SelectItem>
+                      <SelectItem value="center">Centre</SelectItem>
+                      <SelectItem value="bottom-right">Bas droite</SelectItem>
+                      <SelectItem value="tile">Mosaïque (répété)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Le filigrane sera appliqué sur {imageCount} image
+                  {imageCount > 1 ? "s" : ""}.
+                </p>
+              </div>
+            )}
+
+            {imageCount === 0 && selectedFiles.length > 0 && (
+              <p className="text-xs text-muted-foreground italic">
+                Aucune image détectée dans les fichiers sélectionnés.
+              </p>
+            )}
           </div>
 
           <Separator />

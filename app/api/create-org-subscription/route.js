@@ -103,8 +103,21 @@ export async function POST(request) {
       );
     }
 
-    // 4. Créer une session Stripe Checkout
+    // 4. Déterminer si c'est une nouvelle organisation ou un upgrade d'abonnement existant
+    const isNewOrganization = organizationData.type !== "existing";
+    const baseUrl =
+      process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "http://localhost:3000";
+
+    // URL de succès différente selon le cas
+    const successUrl = isNewOrganization
+      ? `${baseUrl}/dashboard?org_created=true&payment_success=true`
+      : `${baseUrl}/dashboard?subscription_success=true`;
+
     console.log(`🔄 [CREATE-SUB] Création session Stripe Checkout...`);
+    console.log(
+      `📋 [CREATE-SUB] Type: ${isNewOrganization ? "Nouvelle organisation" : "Upgrade abonnement existant"}`
+    );
+
     const checkoutSession = await stripe.checkout.sessions.create({
       customer: customerId,
       mode: "subscription",
@@ -115,20 +128,15 @@ export async function POST(request) {
           quantity: 1,
         },
       ],
-      // Ne pas appliquer de coupon pour éviter les erreurs si le coupon ne s'applique pas à tous les plans
-      // discounts: process.env.STRIPE_NEW_ORG_COUPON_ID
-      //   ? [{ coupon: process.env.STRIPE_NEW_ORG_COUPON_ID }]
-      //   : [],
-      success_url: `${process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "http://localhost:3000"}/dashboard?org_created=true&payment_success=true`,
-      cancel_url: `${process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "http://localhost:3000"}/dashboard`,
+      success_url: successUrl,
+      cancel_url: `${baseUrl}/dashboard`,
       billing_address_collection: "required",
       metadata: {
         userId: session.user.id,
-        // ✅ FIX : Toujours "true" pour une nouvelle organisation depuis le modal
-        isNewOrganization: "true",
+        isNewOrganization: isNewOrganization ? "true" : "false",
         // Stocker les données de l'organisation pour le webhook
-        orgName: organizationData.name,
-        orgType: organizationData.type, // "work" ou "personal"
+        orgName: organizationData.name || "",
+        orgType: organizationData.type || "",
         orgInvitedEmails: JSON.stringify(organizationData.invitedMembers || []),
         planName: planName,
         isAnnual: isAnnual ? "true" : "false",
@@ -137,10 +145,9 @@ export async function POST(request) {
       subscription_data: {
         metadata: {
           userId: session.user.id,
-          // ✅ FIX : Toujours "true" pour une nouvelle organisation depuis le modal
-          isNewOrganization: "true",
-          orgName: organizationData.name,
-          orgType: organizationData.type, // "work" ou "personal"
+          isNewOrganization: isNewOrganization ? "true" : "false",
+          orgName: organizationData.name || "",
+          orgType: organizationData.type || "",
           planName: planName,
           isAnnual: isAnnual ? "true" : "false",
           organizationId: session.session?.activeOrganizationId || "",

@@ -1,29 +1,35 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { Suspense, useState, useEffect, useMemo } from "react";
 import { RoleRouteGuard } from "@/src/components/rbac/RBACRouteGuard";
 import { Button } from "@/src/components/ui/button";
+import {
+  ButtonGroup,
+  ButtonGroupSeparator,
+} from "@/src/components/ui/button-group";
 import { Input } from "@/src/components/ui/input";
 import {
-  IconCopy,
-  IconExternalLink,
-  IconUpload,
-  IconList,
-  IconSearch,
-  IconPlus,
-} from "@tabler/icons-react";
-import {
+  Plus,
+  Settings,
+  Download,
+  Info,
+  Search,
   FileText,
   FileSpreadsheet,
   FileImage,
   File,
-  FolderPlus,
   X,
   Trash2,
-  CheckCircle,
   Link2,
   ExternalLink,
 } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/src/components/ui/tooltip";
+import { Skeleton } from "@/src/components/ui/skeleton";
 import { QrCode } from "@ark-ui/react/qr-code";
 import {
   Dialog,
@@ -41,51 +47,80 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/src/components/ui/alert-dialog";
+import { Tabs, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
 import { toast } from "@/src/components/ui/sonner";
 import TransferTable from "./components/transfer-table";
 import FileUploadNew from "./components/file-upload-new";
 import { useFileTransfer } from "./hooks/useFileTransfer";
 import { cn } from "@/src/lib/utils";
 
-// Filtres disponibles
-const FILTERS = [
-  { id: "all", label: "Voir tout" },
-  { id: "documents", label: "Documents" },
-  { id: "spreadsheets", label: "Tableurs" },
-  { id: "pdfs", label: "PDFs" },
-  { id: "images", label: "Images" },
-];
-
 function TransfertsContent() {
   const { transfers, transfersLoading, refetchTransfers, formatFileSize } =
     useFileTransfer();
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [transferLink, setTransferLink] = useState("");
-  const [activeTab, setActiveTab] = useState("list"); // "upload" ou "list"
-  const [activeFilter, setActiveFilter] = useState("all");
+  const [activeTab, setActiveTab] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [selectionState, setSelectionState] = useState(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
-  // Récupérer les fichiers récents (2 derniers transferts)
-  const recentTransfers = useMemo(() => {
-    if (!transfers || transfers.length === 0) return [];
-    return transfers
-      .filter((t) => t.status === "active")
-      .slice(0, 2)
-      .map((t) => ({
-        id: t.id,
-        name: t.files?.[0]?.originalName || "Fichier",
-        size: formatFileSize(
-          t.files?.reduce((acc, f) => acc + (f.size || 0), 0) || 0
-        ),
-        type: getFileExtension(t.files?.[0]?.originalName || ""),
-        shareLink: t.shareLink,
-        accessKey: t.accessKey,
-      }));
-  }, [transfers, formatFileSize]);
+  // Calculer les statistiques des transferts
+  const transferStats = useMemo(() => {
+    if (!transfers || transfers.length === 0) {
+      return {
+        totalTransfers: 0,
+        activeTransfers: 0,
+        downloadedTransfers: 0,
+        expiredTransfers: 0,
+        totalSize: 0,
+      };
+    }
+
+    let activeTransfers = 0;
+    let downloadedTransfers = 0;
+    let expiredTransfers = 0;
+    let totalSize = 0;
+
+    transfers.forEach((transfer) => {
+      const size =
+        transfer.files?.reduce((acc, f) => acc + (f.size || 0), 0) || 0;
+      totalSize += size;
+
+      if (transfer.status === "expired") {
+        expiredTransfers++;
+      } else if (transfer.downloadCount > 0) {
+        downloadedTransfers++;
+      } else {
+        activeTransfers++;
+      }
+    });
+
+    return {
+      totalTransfers: transfers.length,
+      activeTransfers,
+      downloadedTransfers,
+      expiredTransfers,
+      totalSize,
+    };
+  }, [transfers]);
+
+  // Compter les transferts par statut pour les tabs
+  const transferCounts = useMemo(() => {
+    const counts = {
+      all: transfers?.length || 0,
+      active: 0,
+      downloaded: 0,
+      expired: 0,
+    };
+    transfers?.forEach((t) => {
+      if (t.status === "expired") counts.expired++;
+      else if (t.downloadCount > 0) counts.downloaded++;
+      else counts.active++;
+    });
+    return counts;
+  }, [transfers]);
 
   // Vérifier si on revient d'une création de transfert
   useEffect(() => {
@@ -97,9 +132,6 @@ function TransfertsContent() {
       const fullLink = `${window.location.origin}/transfer/${shareLink}?key=${accessKey}`;
       setTransferLink(fullLink);
       setShowSuccessDialog(true);
-
-      // Changer vers l'onglet "Mes transferts"
-      setActiveTab("list");
 
       // Nettoyer l'URL
       const newUrl = window.location.pathname;
@@ -123,160 +155,261 @@ function TransfertsContent() {
     setShowSuccessDialog(true);
     setShowUploadModal(false);
 
-    // Changer d'onglet vers "Mes transferts"
-    setActiveTab("list");
-
     // Rafraîchir la liste des transferts
     refetchTransfers();
   };
 
-  // Obtenir l'extension du fichier
-  function getFileExtension(filename) {
-    if (!filename) return "";
-    const ext = filename.split(".").pop()?.toLowerCase() || "";
-    return ext;
-  }
-
-  // Obtenir l'icône selon le type de fichier
-  function getFileIcon(filename) {
-    const ext = getFileExtension(filename);
-    if (["doc", "docx", "txt", "rtf"].includes(ext)) {
-      return <FileText className="w-5 h-5 text-muted-foreground" />;
-    }
-    if (["xls", "xlsx", "csv"].includes(ext)) {
-      return <FileSpreadsheet className="w-5 h-5 text-muted-foreground" />;
-    }
-    if (["jpg", "jpeg", "png", "gif", "webp", "svg"].includes(ext)) {
-      return <FileImage className="w-5 h-5 text-muted-foreground" />;
-    }
-    return <File className="w-5 h-5 text-muted-foreground" />;
-  }
+  // Gérer le changement de tab
+  const handleTabChange = (value) => {
+    setActiveTab(value);
+  };
 
   return (
     <>
-      {/* Main Layout */}
-      <div className="space-y-6 p-4 sm:p-6">
+      {/* Desktop Layout - Full height avec scroll uniquement sur le tableau */}
+      <div className="hidden md:flex md:flex-col md:h-[calc(100vh-64px)] overflow-hidden">
         {/* Header */}
-        <div>
-          <h1 className="text-2xl font-medium mb-2">Mes transferts</h1>
-          <p className="text-muted-foreground text-sm">
-            Partagez des fichiers volumineux jusqu'à 5GB avec vos clients ou
-            collaborateurs
-          </p>
-        </div>
-
-        {/* Action Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {/* Nouveau transfert */}
-          <button
-            onClick={() => setShowUploadModal(true)}
-            className="relative p-4 rounded-xl border border-border hover:border-muted-foreground/30 transition-colors text-left cursor-pointer"
-          >
-            <IconPlus className="absolute top-4 right-4 w-4 h-4 text-muted-foreground" />
-            <div className="flex items-center justify-center w-10 h-10 rounded-lg border border-border bg-background mb-3">
-              <FileText className="w-5 h-5 text-muted-foreground" />
-            </div>
-            <span className="text-sm font-medium text-foreground">
-              Nouveau transfert
-            </span>
-          </button>
-        </div>
-
-        {/* File Explorer Section */}
-        <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <h2 className="text-base font-medium text-foreground">
-              Explorateur de fichiers
-            </h2>
+        <div className="flex items-start justify-between px-4 sm:px-6 pt-4 sm:pt-6">
+          <div>
+            <h1 className="text-2xl font-medium mb-2">
+              Transferts de fichiers
+            </h1>
           </div>
-
-          {/* Filters + Search */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            {/* Filter Tabs */}
-            <div className="flex items-center gap-1">
-              {FILTERS.map((filter) => (
-                <button
-                  key={filter.id}
-                  onClick={() => setActiveFilter(filter.id)}
-                  className={cn(
-                    "px-3 py-1.5 text-sm rounded-lg transition-colors cursor-pointer",
-                    activeFilter === filter.id
-                      ? "bg-[#5a50ff] text-background"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                  )}
+          <div className="flex gap-2">
+            {/* <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    onClick={() => refetchTransfers()}
+                  >
+                    <Download className="h-4 w-4" strokeWidth={1.5} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent
+                  side="bottom"
+                  className="bg-[#202020] text-white border-0"
                 >
-                  {filter.label}
-                </button>
-              ))}
+                  <p>Actualiser</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider> */}
+            <ButtonGroup>
+              <Button
+                onClick={() => setShowUploadModal(true)}
+                className="cursor-pointer font-normal bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
+              >
+                Nouveau transfert
+              </Button>
+              <ButtonGroupSeparator />
+              <Button
+                onClick={() => setShowUploadModal(true)}
+                size="icon"
+                className="cursor-pointer bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
+              >
+                <Plus size={16} aria-hidden="true" />
+              </Button>
+            </ButtonGroup>
+          </div>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="flex gap-3 px-4 sm:px-6 py-3">
+          {/* Transferts actifs + Téléchargés */}
+          <div className="bg-background border rounded-lg px-4 py-3 flex items-center gap-0">
+            {/* Transferts actifs */}
+            <div className="pr-4">
+              <div className="flex items-center gap-1.5 mb-1">
+                <span className="text-xs text-muted-foreground">
+                  En attente
+                </span>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent
+                      side="bottom"
+                      className="bg-[#202020] text-white border-0"
+                    >
+                      <p>Transferts en attente de téléchargement</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              <div className="flex items-baseline gap-1">
+                <span className="text-lg font-medium tracking-tight">
+                  {transfersLoading ? "..." : transferStats.activeTransfers}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  transfert(s)
+                </span>
+              </div>
             </div>
 
-            {/* Delete Button + Search */}
-            <div className="flex items-center gap-2">
-              {selectionState?.count > 0 && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowDeleteDialog(true)}
-                  disabled={selectionState?.isDeleting}
-                  className="text-destructive border-destructive/30 hover:bg-destructive/10 h-9"
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Supprimer ({selectionState.count})
-                </Button>
-              )}
-              <div className="relative w-full sm:w-64">
-                <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  type="text"
-                  placeholder="Rechercher vos fichier..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 h-9 border-border"
-                />
+            {/* Separator */}
+            <div className="w-px h-10 bg-border mx-4" />
+
+            {/* Téléchargés */}
+            <div className="pl-0">
+              <div className="flex items-center gap-1.5 mb-1">
+                <span className="text-xs text-muted-foreground">
+                  Téléchargés
+                </span>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent
+                      side="bottom"
+                      className="bg-[#202020] text-white border-0"
+                    >
+                      <p>Transferts téléchargés au moins une fois</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              <div className="flex items-baseline gap-1">
+                <span className="text-lg font-medium tracking-tight">
+                  {transfersLoading ? "..." : transferStats.downloadedTransfers}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  transfert(s)
+                </span>
               </div>
             </div>
           </div>
 
-          {/* Transfer Table */}
+          {/* Transferts expirés */}
+          <div className="bg-background border rounded-lg px-4 py-3">
+            <div className="flex items-center gap-1.5 mb-1">
+              <span className="text-xs text-muted-foreground">Expirés</span>
+              {transferStats.expiredTransfers > 0 && (
+                <span className="h-4 w-4 flex items-center justify-center rounded-full bg-red-100 text-red-500 text-[10px] font-medium">
+                  {transferStats.expiredTransfers}
+                </span>
+              )}
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="bottom"
+                    className="bg-[#202020] text-white border-0"
+                  >
+                    <p>Transferts dont la date d'expiration est dépassée</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+            <div className="flex items-baseline gap-1">
+              <span className="text-lg font-medium tracking-tight">
+                {transfersLoading ? "..." : transferStats.expiredTransfers}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                transfert(s)
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Table */}
+        <Suspense fallback={<TransferTableSkeleton />}>
           <TransferTable
             transfers={transfers}
             onRefresh={refetchTransfers}
             loading={transfersLoading}
             searchQuery={searchQuery}
-            activeFilter={activeFilter}
+            setSearchQuery={setSearchQuery}
+            activeTab={activeTab}
+            onTabChange={handleTabChange}
+            transferCounts={transferCounts}
             onSelectionChange={setSelectionState}
+            selectionState={selectionState}
+            onShowDeleteDialog={() => setShowDeleteDialog(true)}
           />
-
-          {/* Delete Confirmation Dialog */}
-          <AlertDialog
-            open={showDeleteDialog}
-            onOpenChange={setShowDeleteDialog}
-          >
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Êtes-vous sûr de vouloir supprimer{" "}
-                  {selectionState?.count || 0} transfert(s) ? Cette action est
-                  irréversible.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Annuler</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={() => {
-                    selectionState?.onDelete?.();
-                    setShowDeleteDialog(false);
-                  }}
-                  className="bg-destructive text-white hover:bg-destructive/90"
-                >
-                  Supprimer
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
+        </Suspense>
       </div>
+
+      {/* Mobile Layout */}
+      <div className="md:hidden">
+        {/* Header - Style mobile */}
+        <div className="px-4 py-6">
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="text-2xl font-medium mb-2">Transferts</h1>
+              <p className="text-muted-foreground text-sm">
+                Partagez des fichiers volumineux
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => refetchTransfers()}
+                className="gap-2"
+              >
+                <Download className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Table */}
+        <Suspense fallback={<TransferTableSkeleton />}>
+          <TransferTable
+            transfers={transfers}
+            onRefresh={refetchTransfers}
+            loading={transfersLoading}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            activeTab={activeTab}
+            onTabChange={handleTabChange}
+            transferCounts={transferCounts}
+            onSelectionChange={setSelectionState}
+            selectionState={selectionState}
+            onShowDeleteDialog={() => setShowDeleteDialog(true)}
+            isMobile={true}
+          />
+        </Suspense>
+
+        {/* Bouton flottant mobile */}
+        <Button
+          onClick={() => setShowUploadModal(true)}
+          className="fixed bottom-6 bg-[#5a50ff] right-6 h-14 w-14 rounded-full shadow-lg z-50 md:hidden"
+          size="icon"
+        >
+          <Plus className="h-6 w-6" />
+        </Button>
+      </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir supprimer {selectionState?.count || 0}{" "}
+              transfert(s) ? Cette action est irréversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                selectionState?.onDelete?.();
+                setShowDeleteDialog(false);
+              }}
+              className="bg-destructive text-white hover:bg-destructive/90"
+            >
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Upload Modal */}
       {showUploadModal && (
@@ -385,6 +518,69 @@ function TransfertsContent() {
           </div>
         </DialogContent>
       </Dialog>
+    </>
+  );
+}
+
+function TransferTableSkeleton() {
+  return (
+    <>
+      {/* Desktop Skeleton */}
+      <div className="hidden md:block space-y-4 p-4 sm:p-6">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-10 w-[300px]" />
+          <div className="flex gap-2">
+            <Skeleton className="h-10 w-[100px]" />
+            <Skeleton className="h-10 w-[100px]" />
+          </div>
+        </div>
+        <div className="rounded-md border">
+          <div className="p-4">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex items-center space-x-4 py-4">
+                <Skeleton className="h-4 w-4" />
+                <Skeleton className="h-4 w-[150px]" />
+                <Skeleton className="h-4 w-[200px]" />
+                <Skeleton className="h-4 w-[100px]" />
+                <Skeleton className="h-4 w-[80px]" />
+                <Skeleton className="h-4 w-[120px]" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile Skeleton */}
+      <div className="md:hidden">
+        {/* Header */}
+        <div className="px-4 py-6 space-y-2">
+          <Skeleton className="h-7 w-32" />
+          <Skeleton className="h-4 w-48" />
+        </div>
+
+        {/* Toolbar */}
+        <div className="px-4 py-3">
+          <Skeleton className="h-10 w-full" />
+        </div>
+
+        {/* Table rows */}
+        <div className="overflow-x-auto">
+          <div className="min-w-max">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="border-b border-gray-50 px-4 py-3">
+                <div className="flex items-center gap-4">
+                  <Skeleton className="h-4 w-4" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-3 w-32" />
+                  </div>
+                  <Skeleton className="h-6 w-16" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </>
   );
 }

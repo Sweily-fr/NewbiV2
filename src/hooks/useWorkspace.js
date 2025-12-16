@@ -52,8 +52,8 @@ export const useWorkspace = () => {
   // Stocker l'organizationId dans localStorage pour Apollo Client
   useEffect(() => {
     if (activeOrganization?.id) {
-      const currentStored = localStorage.getItem("active_organization_id");
-      if (currentStored !== activeOrganization.id) {
+      const currentStoredId = localStorage.getItem("active_organization_id");
+      if (currentStoredId !== activeOrganization.id) {
         localStorage.setItem("active_organization_id", activeOrganization.id);
       }
     } else {
@@ -62,25 +62,23 @@ export const useWorkspace = () => {
   }, [activeOrganization?.id]);
 
   // Stocker le userRole dans localStorage pour Apollo Client
-  // Utiliser des valeurs primitives stables comme dépendances
-  const userId = session?.user?.id;
-  const members = orgWithMembers?.members;
-  
   useEffect(() => {
-    if (members && userId) {
-      const member = members.find((m) => m.userId === userId);
+    if (orgWithMembers?.members && session?.user?.id) {
+      const member = orgWithMembers.members.find(
+        (m) => m.userId === session.user.id
+      );
       const userRole = member?.role?.toLowerCase() || null;
 
       if (userRole) {
-        const currentRole = localStorage.getItem("user_role");
-        if (currentRole !== userRole) {
+        const currentStoredRole = localStorage.getItem("user_role");
+        if (currentStoredRole !== userRole) {
           localStorage.setItem("user_role", userRole);
         }
       } else {
         localStorage.removeItem("user_role");
       }
     }
-  }, [members, userId]);
+  }, [orgWithMembers?.members, session?.user?.id]);
 
   return {
     workspaceId: activeOrganization?.id || null,

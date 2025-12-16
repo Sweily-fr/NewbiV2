@@ -426,13 +426,13 @@ const LoginForm = () => {
               );
 
               // Utiliser la page de démarrage préférée de l'utilisateur ou fallback
-              let redirectPath = "/dashboard/outils";
+              let redirectPath = "/dashboard";
 
               if (userRedirectPage && userRedirectPage !== "last-page") {
                 // Mapper les pages vers leurs vraies routes
                 const routeMap = {
                   dashboard: "/dashboard",
-                  outils: "/dashboard/outils",
+                  outils: "/dashboard",
                   kanban: "/dashboard/outils/kanban",
                   calendar: "/dashboard/calendar",
                   factures: "/dashboard/outils/factures",
@@ -454,16 +454,16 @@ const LoginForm = () => {
 
               router.push(redirectPath);
             } else {
-              // Pas d'organisation, rediriger vers /dashboard/outils par défaut
-              router.push("/dashboard/outils");
+              // Pas d'organisation, rediriger vers /dashboard par défaut
+              router.push("/dashboard");
             }
           } catch (error) {
             console.error(
               "Erreur lors de la vérification de l'abonnement:",
               error
             );
-            // En cas d'erreur, rediriger vers /dashboard/outils par défaut
-            router.push("/dashboard/outils");
+            // En cas d'erreur, rediriger vers /dashboard par défaut
+            router.push("/dashboard");
           }
         }
       },
@@ -662,13 +662,13 @@ const LoginForm = () => {
             );
 
             // Utiliser la page de démarrage préférée de l'utilisateur ou fallback
-            let redirectPath = "/dashboard/outils";
+            let redirectPath = "/dashboard";
 
             if (userRedirectPage && userRedirectPage !== "last-page") {
               // Mapper les pages vers leurs vraies routes
               const routeMap = {
                 dashboard: "/dashboard",
-                outils: "/dashboard/outils",
+                outils: "/dashboard",
                 kanban: "/dashboard/outils/kanban",
                 calendar: "/dashboard/calendar",
                 factures: "/dashboard/outils/factures",
@@ -690,16 +690,16 @@ const LoginForm = () => {
 
             router.push(redirectPath);
           } else {
-            // Pas d'organisation, rediriger vers /dashboard/outils par défaut
-            router.push("/dashboard/outils");
+            // Pas d'organisation, rediriger vers /dashboard par défaut
+            router.push("/dashboard");
           }
         } catch (error) {
           console.error(
             "Erreur lors de la vérification de l'abonnement:",
             error
           );
-          // En cas d'erreur, rediriger vers /dashboard/outils par défaut
-          router.push("/dashboard/outils");
+          // En cas d'erreur, rediriger vers /dashboard par défaut
+          router.push("/dashboard");
         }
       }
 

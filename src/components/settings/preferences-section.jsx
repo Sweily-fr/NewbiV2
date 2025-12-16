@@ -438,7 +438,6 @@ export function PreferencesSection() {
               </SelectTrigger>
               <SelectContent className="text-xs">
                 <SelectItem value="dashboard">Tableau de bord</SelectItem>
-                <SelectItem value="outils">Outils</SelectItem>
                 <SelectItem value="kanban">Kanban</SelectItem>
                 <SelectItem value="calendar">Calendrier</SelectItem>
                 <SelectItem value="factures">Factures</SelectItem>

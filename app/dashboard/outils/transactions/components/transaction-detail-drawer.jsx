@@ -18,6 +18,7 @@ import {
   CreditCard,
   Banknote,
   Building2,
+  Landmark,
   FileText,
   Download,
   Edit,
@@ -104,7 +105,8 @@ export function TransactionDetailDrawer({
     transaction.type === "BANK_TRANSACTION";
   const hasReceipt =
     transaction.hasReceipt ||
-    (transaction.files && transaction.files.length > 0);
+    (transaction.files && transaction.files.length > 0) ||
+    !!transaction.receiptFile?.url;
   const needsReceipt = isBankTransaction && !hasReceipt;
 
   // Déterminer si la transaction est modifiable (seulement les manuelles)
@@ -175,12 +177,12 @@ export function TransactionDetailDrawer({
     try {
       if (onAttachReceipt) {
         await onAttachReceipt(transaction, file);
-        toast.success("Justificatif attaché avec succès");
+        // Toast géré dans TransactionTable.handleAttachReceipt
         onRefresh?.();
       }
     } catch (error) {
       console.error("Erreur upload:", error);
-      toast.error("Erreur lors de l'upload du justificatif");
+      // Erreur déjà gérée dans TransactionTable.handleAttachReceipt
     } finally {
       setIsUploading(false);
     }
@@ -409,20 +411,20 @@ export function TransactionDetailDrawer({
               {isBankTransaction && (
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Building2 className="h-4 w-4 text-muted-foreground" />
+                    <Landmark className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm font-normal text-muted-foreground">
                       Source
                     </span>
                   </div>
                   <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400">
-                    <Building2 className="w-3 h-3" />
+                    <Landmark className="w-3 h-3" />
                     Banque
                   </span>
                 </div>
               )}
 
               {/* Type de dépense */}
-              {transaction.expenseType && (
+              {/* {transaction.expenseType && (
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Tag className="h-4 w-4 text-muted-foreground" />
@@ -436,7 +438,7 @@ export function TransactionDetailDrawer({
                       : "Personnel"}
                   </span>
                 </div>
-              )}
+              )} */}
 
               {/* Utilisateur créateur */}
               {transaction.createdBy && (
@@ -464,7 +466,7 @@ export function TransactionDetailDrawer({
                   Justificatif
                 </p>
                 {hasReceipt ? (
-                  <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400">
+                  <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-[#5A50FF]/50 text-[#5A50FF]/600 dark:bg-[#5A50FF]/20 dark:text-[#5A50FF]/400">
                     <CheckCircle2 className="w-3 h-3" />
                     Attaché
                   </span>
@@ -526,7 +528,83 @@ export function TransactionDetailDrawer({
                 </div>
               )}
 
-              {/* Afficher les fichiers existants */}
+              {/* Afficher le receiptFile (justificatif GraphQL) */}
+              {transaction.receiptFile?.url && (
+                <div className="space-y-2">
+                  {(() => {
+                    const file = transaction.receiptFile;
+                    const isImage = file.mimetype?.startsWith("image/");
+
+                    const formatFileSize = (bytes) => {
+                      if (!bytes) return "";
+                      if (bytes < 1024) return `${bytes} B`;
+                      if (bytes < 1024 * 1024)
+                        return `${Math.round(bytes / 1024)} KB`;
+                      return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+                    };
+
+                    const handleDownload = () => {
+                      const link = document.createElement("a");
+                      link.href = file.url;
+                      link.download = file.filename || "justificatif";
+                      link.target = "_blank";
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                    };
+
+                    const handleOpenFile = () => {
+                      window.open(file.url, "_blank");
+                    };
+
+                    return (
+                      <div
+                        className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30 hover:bg-muted/50 transition-colors group cursor-pointer"
+                        onClick={handleOpenFile}
+                      >
+                        <div className="flex-shrink-0">
+                          {isImage ? (
+                            <div className="w-10 h-10 rounded overflow-hidden bg-gray-100">
+                              <img
+                                src={file.url}
+                                alt={file.filename || "Justificatif"}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          ) : (
+                            <div className="w-10 h-10 rounded bg-gray-100 flex items-center justify-center">
+                              <FileText className="h-5 w-5 text-gray-600" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-normal truncate">
+                            {file.filename || "Justificatif"}
+                          </p>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground">
+                              {formatFileSize(file.size)}
+                            </span>
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDownload();
+                          }}
+                        >
+                          <Download className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
+
+              {/* Afficher les fichiers existants (ancien système) */}
               {transaction.files && transaction.files.length > 0 && (
                 <div className="space-y-2">
                   {transaction.files.map((file, index) => {
@@ -554,10 +632,15 @@ export function TransactionDetailDrawer({
                       document.body.removeChild(link);
                     };
 
+                    const handleOpenFile = () => {
+                      window.open(file.url, "_blank");
+                    };
+
                     return (
                       <div
                         key={file.id || index}
-                        className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30 hover:bg-muted/50 transition-colors group"
+                        className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30 hover:bg-muted/50 transition-colors group cursor-pointer"
+                        onClick={handleOpenFile}
                       >
                         <div className="flex-shrink-0">
                           {isImage ? (
@@ -598,7 +681,10 @@ export function TransactionDetailDrawer({
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={handleDownload}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDownload();
+                          }}
                         >
                           <Download className="h-4 w-4" />
                         </Button>

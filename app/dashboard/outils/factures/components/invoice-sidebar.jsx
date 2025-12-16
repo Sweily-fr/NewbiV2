@@ -509,7 +509,7 @@ export default function InvoiceSidebar({
                 <div className="space-y-2">
                   {suggestedTransactions.slice(0, 3).map((tx) => (
                     <div
-                      key={tx._id}
+                      key={tx.id}
                       className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-lg border"
                     >
                       <div className="flex-1 min-w-0">
@@ -526,7 +526,7 @@ export default function InvoiceSidebar({
                       <Button
                         size="sm"
                         className="ml-2 bg-[#5a50ff] hover:bg-[#4a40ef] text-white"
-                        onClick={() => handleLinkTransaction(tx._id)}
+                        onClick={() => handleLinkTransaction(tx.id)}
                         disabled={linkingTransaction}
                       >
                         {linkingTransaction ? (
@@ -1019,13 +1019,15 @@ export default function InvoiceSidebar({
                           <div className="space-y-2">
                             {availableTransactions.map((tx) => (
                               <div
-                                key={tx._id}
+                                key={tx.id || tx._id}
                                 className={`p-2 border rounded cursor-pointer hover:bg-muted/50 transition-colors ${
                                   tx.score >= 80
                                     ? "border-[#5a50ff]/30 bg-[#5a50ff]/5"
                                     : ""
                                 }`}
-                                onClick={() => handleLinkTransaction(tx._id)}
+                                onClick={() =>
+                                  handleLinkTransaction(tx.id || tx._id)
+                                }
                               >
                                 <div className="flex items-center justify-between">
                                   <div className="flex-1 min-w-0">

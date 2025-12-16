@@ -7,6 +7,7 @@ import {
   COMPLETE_MULTIPART_UPLOAD,
   CREATE_FILE_TRANSFER_WITH_IDS_R2,
 } from "../graphql/mutations";
+import { applyWatermarkToFiles } from "../utils/watermark";
 
 // 50 MB par part (optimal pour S3 Multipart)
 const OPTIMAL_PART_SIZE = 50 * 1024 * 1024;
@@ -302,9 +303,30 @@ export const useFileTransferR2Multipart = (refetchTransfers) => {
         // Générer un transferId unique
         const transferId = uuidv4();
 
+        // Appliquer le filigrane si l'option est activée
+        let filesToUpload = validFiles;
+        if (transferOptions.applyWatermark && transferOptions.watermarkText) {
+          console.log("🎨 Application du filigrane sur les images...");
+          try {
+            filesToUpload = await applyWatermarkToFiles(validFiles, {
+              text: transferOptions.watermarkText,
+              position: transferOptions.watermarkPosition || "diagonal",
+              opacity: 0.25,
+            });
+            console.log("✅ Filigrane appliqué avec succès");
+          } catch (watermarkError) {
+            console.error(
+              "⚠️ Erreur lors de l'application du filigrane:",
+              watermarkError
+            );
+            // Continuer avec les fichiers originaux en cas d'erreur
+            filesToUpload = validFiles;
+          }
+        }
+
         // Upload tous les fichiers en multipart natif vers R2
         const uploadedFileIds = await uploadMultipleFilesToR2(
-          validFiles,
+          filesToUpload,
           transferId
         );
 
@@ -327,6 +349,8 @@ export const useFileTransferR2Multipart = (refetchTransfers) => {
             transferOptions.notifyBeforeExpiry ||
               transferOptions.expiryReminderEnabled
           ),
+          // Option filigrane
+          hasWatermark: Boolean(transferOptions.applyWatermark),
         };
 
         // Créer le transfert avec les IDs des fichiers

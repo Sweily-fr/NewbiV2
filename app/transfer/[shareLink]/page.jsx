@@ -261,17 +261,52 @@ export default function TransferPage() {
       }
 
       // Calculer la taille totale et récupérer les fichiers
-      const files = transfer?.fileTransfer?.files || [];
+      const allFiles = transfer?.fileTransfer?.files || [];
+      const hasWatermark = transfer?.fileTransfer?.hasWatermark;
+
+      // Filtrer les fichiers téléchargeables (exclure les images si filigrane)
+      const files = hasWatermark
+        ? allFiles.filter((f) => {
+            const imageTypes = [
+              "image/jpeg",
+              "image/png",
+              "image/gif",
+              "image/webp",
+              "image/bmp",
+            ];
+            const ext = (f.originalName || "").split(".").pop()?.toLowerCase();
+            const imageExts = ["jpg", "jpeg", "png", "gif", "webp", "bmp"];
+            return !imageTypes.includes(f.mimeType) && !imageExts.includes(ext);
+          })
+        : allFiles;
+
+      // Si aucun fichier téléchargeable
+      if (files.length === 0) {
+        toast.error("Aucun fichier téléchargeable disponible.");
+        return;
+      }
+
       const totalSize = files.reduce((acc, f) => acc + (f.size || 0), 0);
+
+      // Filtrer les téléchargements autorisés pour exclure les images si filigrane
+      const downloadableFileIds = files.map((f) => f.fileId || f.id);
+      const filteredDownloads = authData.downloads.filter((d) =>
+        downloadableFileIds.includes(d.fileId)
+      );
+
+      if (filteredDownloads.length === 0) {
+        toast.error("Aucun fichier téléchargeable disponible.");
+        return;
+      }
 
       // Sur mobile, rediriger vers l'URL de téléchargement
       if (isMobile) {
         let downloadUrl;
 
-        if (authData.downloads.length === 1) {
-          downloadUrl = authData.downloads[0].downloadUrl;
+        if (filteredDownloads.length === 1) {
+          downloadUrl = filteredDownloads[0].downloadUrl;
         } else {
-          const fileIds = authData.downloads.map((d) => d.fileId).join(",");
+          const fileIds = filteredDownloads.map((d) => d.fileId).join(",");
           downloadUrl = `/api/transfer/download-all?shareLink=${shareLink}&accessKey=${accessKey}&transferId=${transfer?.fileTransfer?.id}&fileIds=${fileIds}`;
         }
 
@@ -287,8 +322,8 @@ export default function TransferPage() {
         // Desktop : télécharger les fichiers un par un avec progression globale
         let totalDownloaded = 0;
 
-        for (let i = 0; i < authData.downloads.length; i++) {
-          const downloadInfo = authData.downloads[i];
+        for (let i = 0; i < filteredDownloads.length; i++) {
+          const downloadInfo = filteredDownloads[i];
           const file = files.find(
             (f) => (f.fileId || f.id) === downloadInfo.fileId
           );
@@ -348,7 +383,7 @@ export default function TransferPage() {
           }
 
           // Petit délai entre les téléchargements pour éviter les blocages navigateur
-          if (i < authData.downloads.length - 1) {
+          if (i < filteredDownloads.length - 1) {
             await new Promise((resolve) => setTimeout(resolve, 300));
           }
         }
@@ -356,9 +391,9 @@ export default function TransferPage() {
 
       // Marquer les téléchargements comme terminés
       const duration = Date.now() - startTime;
-      const totalFiles = authData.downloads.length;
+      const totalFiles = filteredDownloads.length;
       for (let i = 0; i < totalFiles; i++) {
-        const downloadInfo = authData.downloads[i];
+        const downloadInfo = filteredDownloads[i];
         if (downloadInfo.downloadEventId) {
           const isLastFile = i === totalFiles - 1;
           fetch(
@@ -527,6 +562,20 @@ export default function TransferPage() {
     });
   };
 
+  // Vérifier si un fichier est une image
+  const isImageFile = (file) => {
+    const imageTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/gif",
+      "image/webp",
+      "image/bmp",
+    ];
+    const ext = (file.originalName || "").split(".").pop()?.toLowerCase();
+    const imageExts = ["jpg", "jpeg", "png", "gif", "webp", "bmp"];
+    return imageTypes.includes(file.mimeType) || imageExts.includes(ext);
+  };
+
   // Vérifier si un fichier peut être prévisualisé
   const canPreview = (file) => {
     if (!transfer?.fileTransfer?.allowPreview) return false;
@@ -542,6 +591,11 @@ export default function TransferPage() {
     return (
       previewableTypes.includes(file.mimeType) || previewableExts.includes(ext)
     );
+  };
+
+  // Vérifier si le téléchargement d'un fichier est bloqué (image avec filigrane)
+  const isDownloadBlocked = (file) => {
+    return transfer?.fileTransfer?.hasWatermark && isImageFile(file);
   };
 
   return (
@@ -562,6 +616,7 @@ export default function TransferPage() {
         onClose={() => setPreviewFile(null)}
         onDownload={downloadSingleFile}
         onNavigate={handlePreviewNavigate}
+        hasWatermark={transfer?.fileTransfer?.hasWatermark}
       />
 
       {/* Modal de paiement */}
@@ -743,45 +798,74 @@ export default function TransferPage() {
                             <Eye className="w-4 h-4" />
                           </button>
                         )}
-                        <button
-                          onClick={() =>
-                            downloadFile(
-                              file.id || file.fileId,
-                              file.originalName,
-                              file.size
-                            )
-                          }
-                          disabled={isDownloading}
-                          className={`p-2 transition-colors cursor-pointer ${
-                            isDownloading
-                              ? "text-gray-300 cursor-not-allowed"
-                              : "text-gray-400 hover:text-[#5a50ff]"
-                          }`}
-                        >
-                          <Download className="w-4 h-4" />
-                        </button>
+                        {!isDownloadBlocked(file) && (
+                          <button
+                            onClick={() =>
+                              downloadFile(
+                                file.id || file.fileId,
+                                file.originalName,
+                                file.size
+                              )
+                            }
+                            disabled={isDownloading}
+                            className={`p-2 transition-colors cursor-pointer ${
+                              isDownloading
+                                ? "text-gray-300 cursor-not-allowed"
+                                : "text-gray-400 hover:text-[#5a50ff]"
+                            }`}
+                          >
+                            <Download className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                     </div>
                   </li>
                 ))}
               </ul>
 
-              {/* Bouton télécharger */}
-              <div className="w-full px-5 py-5 text-center">
-                <Button
-                  onClick={downloadAllFiles}
-                  disabled={isDownloading}
-                  className="text-white px-10 w-full rounded-xl"
-                >
-                  {isDownloading ? (
-                    <LoaderCircle className="w-5 h-5 animate-spin" />
-                  ) : transfer?.fileTransfer?.files?.length > 1 ? (
-                    "Tout télécharger"
-                  ) : (
-                    "Télécharger"
-                  )}
-                </Button>
-              </div>
+              {/* Message filigrane */}
+              {transfer?.fileTransfer?.hasWatermark && (
+                <div className="w-full px-5 py-2">
+                  <p className="text-xs text-center text-amber-600 bg-amber-50 rounded-lg py-2 px-3">
+                    Les images de ce transfert sont protégées par un filigrane
+                    et ne peuvent pas être téléchargées.
+                  </p>
+                </div>
+              )}
+
+              {/* Bouton télécharger - masqué si filigrane et uniquement des images */}
+              {(() => {
+                const files = transfer?.fileTransfer?.files || [];
+                const hasWatermark = transfer?.fileTransfer?.hasWatermark;
+                const downloadableFiles = hasWatermark
+                  ? files.filter((f) => !isImageFile(f))
+                  : files;
+                const allBlocked =
+                  hasWatermark && downloadableFiles.length === 0;
+
+                // Ne pas afficher le bouton si tous les fichiers sont bloqués
+                if (allBlocked) {
+                  return null;
+                }
+
+                return (
+                  <div className="w-full px-5 py-5 text-center">
+                    <Button
+                      onClick={downloadAllFiles}
+                      disabled={isDownloading}
+                      className="text-white px-10 w-full rounded-xl"
+                    >
+                      {isDownloading ? (
+                        <LoaderCircle className="w-5 h-5 animate-spin" />
+                      ) : downloadableFiles.length > 1 ? (
+                        "Tout télécharger"
+                      ) : (
+                        "Télécharger"
+                      )}
+                    </Button>
+                  </div>
+                );
+              })()}
             </>
           )}
         </Card>

@@ -62,7 +62,7 @@ export function useDashboardData() {
     skip: !workspaceId,
   });
 
-  // Hook GraphQL pour les transactions - cache-first
+  // Hook GraphQL pour les transactions
   const {
     data: transactionsData,
     loading: bankLoading,
@@ -70,7 +70,6 @@ export function useDashboardData() {
   } = useQuery(GET_TRANSACTIONS, {
     variables: { workspaceId, limit: 5000 },
     fetchPolicy: "cache-first",
-    nextFetchPolicy: "cache-first",
     skip: !workspaceId,
   });
 
@@ -162,7 +161,6 @@ export function useDashboardData() {
 
   // Fonction pour forcer le rafraîchissement
   const refreshData = useCallback(async () => {
-    console.log("📊 Dashboard: Rafraîchissement des données via GraphQL");
     await Promise.all([
       refetchInvoices?.(),
       refetchBankAccounts?.(),
@@ -178,7 +176,6 @@ export function useDashboardData() {
 
   // Fonction pour invalider le cache
   const invalidateCache = useCallback(() => {
-    console.log("📊 Dashboard: Invalidation du cache");
     if (typeof window !== "undefined" && workspaceId) {
       localStorage.removeItem(`${CACHE_KEY}_${workspaceId}`);
     }

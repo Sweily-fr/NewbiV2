@@ -37,12 +37,33 @@ const saveIgnoredSuggestion = (transactionId) => {
  */
 export function ReconciliationToastProvider({ children }) {
   const router = useRouter();
-  const { suggestions, linkTransaction, fetchSuggestions } =
-    useReconciliation();
+  const {
+    suggestions,
+    linkTransaction,
+    refetch: fetchSuggestions,
+    loading,
+    error,
+  } = useReconciliation();
   const toastManager = useToastManager();
   const [shownSuggestions, setShownSuggestions] = useState(new Set());
   const [ignoredSuggestions, setIgnoredSuggestions] = useState(new Set());
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // Log pour debug
+  useEffect(() => {
+    if (process.env.NODE_ENV === "development") {
+      console.log("[RECONCILIATION-TOAST] État:", {
+        suggestionsCount: suggestions?.length || 0,
+        loading,
+        error: error?.message,
+        shownCount: shownSuggestions.size,
+        ignoredCount: ignoredSuggestions.size,
+      });
+      if (suggestions?.length > 0) {
+        console.log("[RECONCILIATION-TOAST] Suggestions:", suggestions);
+      }
+    }
+  }, [suggestions, loading, error, shownSuggestions, ignoredSuggestions]);
 
   // Charger les suggestions ignorées au montage
   useEffect(() => {
@@ -58,34 +79,16 @@ export function ReconciliationToastProvider({ children }) {
   };
 
   // Gérer le rattachement depuis le toast
+  // Note: Les toasts de succès/erreur sont gérés par le hook useLinkTransactionToInvoice (via sonner)
   const handleLink = useCallback(
     async (transactionId, invoiceId, toastId) => {
       setIsProcessing(true);
       toastManager.close(toastId);
       try {
-        const result = await linkTransaction(transactionId, invoiceId);
-        if (result.success) {
-          toastManager.add({
-            title: "Paiement rattaché",
-            description: "La facture a été marquée comme payée",
-            type: "success",
-            timeout: 4000,
-          });
-        } else {
-          toastManager.add({
-            title: "Erreur",
-            description: result.error || "Erreur lors du rattachement",
-            type: "error",
-            timeout: 5000,
-          });
-        }
+        await linkTransaction(transactionId, invoiceId);
+        // Le toast est géré par le hook useLinkTransactionToInvoice
       } catch (err) {
-        toastManager.add({
-          title: "Erreur",
-          description: "Erreur lors du rattachement",
-          type: "error",
-          timeout: 5000,
-        });
+        // L'erreur est gérée par le hook
       } finally {
         setIsProcessing(false);
       }
@@ -97,7 +100,7 @@ export function ReconciliationToastProvider({ children }) {
   const handleViewInvoice = useCallback(
     (invoiceId, toastId) => {
       toastManager.close(toastId);
-      router.push(`/dashboard/outils/factures?invoiceId=${invoiceId}`);
+      router.push(`/dashboard/outils/factures?id=${invoiceId}`);
     },
     [router, toastManager]
   );
@@ -121,8 +124,8 @@ export function ReconciliationToastProvider({ children }) {
     const newSuggestions = suggestions.filter(
       (s) =>
         s.confidence === "high" &&
-        !shownSuggestions.has(s.transaction._id) &&
-        !ignoredSuggestions.has(s.transaction._id) &&
+        !shownSuggestions.has(s.transaction.id) &&
+        !ignoredSuggestions.has(s.transaction.id) &&
         s.matchingInvoices.length > 0
     );
 
@@ -133,7 +136,7 @@ export function ReconciliationToastProvider({ children }) {
       const invoice = suggestion.matchingInvoices[0];
 
       // Marquer comme affiché
-      setShownSuggestions((prev) => new Set([...prev, transaction._id]));
+      setShownSuggestions((prev) => new Set([...prev, transaction.id]));
 
       // Utiliser le nouveau toastManager avec action
       const toastId = toastManager.add({
@@ -143,15 +146,15 @@ export function ReconciliationToastProvider({ children }) {
         timeout: 30000, // 30 secondes
         dismissProps: {
           children: "Ignorer",
-          onClick: () => handleIgnore(transaction._id, toastId),
+          onClick: () => handleIgnore(transaction.id, toastId),
         },
         secondaryActionProps: {
           children: "Voir",
-          onClick: () => handleViewInvoice(invoice._id, toastId),
+          onClick: () => handleViewInvoice(invoice.id, toastId),
         },
         actionProps: {
           children: "Rattacher",
-          onClick: () => handleLink(transaction._id, invoice._id, toastId),
+          onClick: () => handleLink(transaction.id, invoice.id, toastId),
         },
       });
     }
