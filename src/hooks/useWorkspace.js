@@ -49,33 +49,36 @@ export const useWorkspace = () => {
   // Utiliser l'organisation complète si disponible, sinon l'organisation active
   const orgWithMembers = fullOrganization || activeOrganization;
 
-  // Stocker l'organizationId et le userRole dans localStorage pour Apollo Client
+  // Stocker l'organizationId dans localStorage pour Apollo Client
   useEffect(() => {
     if (activeOrganization?.id) {
-      localStorage.setItem("active_organization_id", activeOrganization.id);
-      console.log(
-        "✅ [useWorkspace] Organization ID stocké:",
-        activeOrganization.id
-      );
+      const currentStoredId = localStorage.getItem("active_organization_id");
+      if (currentStoredId !== activeOrganization.id) {
+        localStorage.setItem("active_organization_id", activeOrganization.id);
+      }
     } else {
       localStorage.removeItem("active_organization_id");
     }
+  }, [activeOrganization?.id]);
 
-    // Récupérer le rôle directement depuis l'organisation avec membres
-    if (orgWithMembers && session?.user) {
-      const member = orgWithMembers.members?.find(
+  // Stocker le userRole dans localStorage pour Apollo Client
+  useEffect(() => {
+    if (orgWithMembers?.members && session?.user?.id) {
+      const member = orgWithMembers.members.find(
         (m) => m.userId === session.user.id
       );
       const userRole = member?.role?.toLowerCase() || null;
 
       if (userRole) {
-        localStorage.setItem("user_role", userRole);
-        console.log("✅ [useWorkspace] User role stocké:", userRole);
+        const currentStoredRole = localStorage.getItem("user_role");
+        if (currentStoredRole !== userRole) {
+          localStorage.setItem("user_role", userRole);
+        }
       } else {
         localStorage.removeItem("user_role");
       }
     }
-  }, [activeOrganization?.id, orgWithMembers, session?.user]);
+  }, [orgWithMembers?.members, session?.user?.id]);
 
   return {
     workspaceId: activeOrganization?.id || null,

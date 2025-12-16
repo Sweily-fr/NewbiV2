@@ -66,7 +66,7 @@ function SubscriptionSuccessModalContent() {
       };
     } else {
       return {
-        title: "Bienvenue dans Newbi Pro !",
+        title: "Bienvenue sur Newbi",
         description:
           "Vous rejoignez une communauté de professionnels qui utilisent Newbi pour développer leur activité.",
       };
@@ -102,7 +102,7 @@ function SubscriptionSuccessModalContent() {
           <img
             src={getAssetUrl("NewbiLogo.svg")}
             alt="Logo Newbi"
-            className="h-4 sm:h-5 w-16 sm:w-20"
+            className="h-4 sm:h-5 w-20 sm:w-20"
           />
         </div>
 
@@ -127,7 +127,7 @@ function SubscriptionSuccessModalContent() {
 
             {/* Titre et description */}
             <div className="space-y-2 sm:space-y-3">
-              <h2 className="text-xl sm:text-2xl font-medium text-gray-900 dark:text-white px-4">
+              <h2 className="text-2xl sm:text-3xl font-medium text-gray-900 dark:text-white px-4">
                 {content.title}
               </h2>
               <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 leading-relaxed px-4">
@@ -143,10 +143,7 @@ function SubscriptionSuccessModalContent() {
                     <Tooltip key={member.id}>
                       <TooltipTrigger asChild>
                         <Avatar className="h-8 w-8 ring-2 ring-background cursor-pointer">
-                          <AvatarImage
-                            src={member.image}
-                            alt={member.name}
-                          />
+                          <AvatarImage src={member.image} alt={member.name} />
                           <AvatarFallback className="text-xs bg-[#5b4fff] text-white">
                             {member.name[0].toUpperCase()}
                           </AvatarFallback>

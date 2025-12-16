@@ -55,7 +55,9 @@ import { IncomeCategoryChart } from "@/app/dashboard/components/income-category-
 import { DashboardSkeleton } from "@/src/components/dashboard-skeleton";
 import { useDashboardData } from "@/src/hooks/useDashboardData";
 import { useState, useEffect, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import { useInvoices } from "@/src/graphql/invoiceQueries";
+import { PricingModal } from "@/src/components/pricing-modal";
 import {
   processIncomeForCharts,
   processExpensesWithBankForCharts,
@@ -410,10 +412,30 @@ function DashboardContent() {
 }
 
 export default function Dashboard() {
-  // Le dashboard principal est accessible en mode Pro (trial ou payant)
+  const searchParams = useSearchParams();
+  const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
+
+  // Ouvrir le modal de pricing si les paramètres pricing=true ou access=restricted sont présents
+  useEffect(() => {
+    const showPricing = searchParams.get("pricing") === "true";
+    const accessRestricted = searchParams.get("access") === "restricted";
+
+    if (showPricing || accessRestricted) {
+      setIsPricingModalOpen(true);
+      // Nettoyer l'URL des paramètres
+      const cleanUrl = window.location.pathname;
+      window.history.replaceState({}, "", cleanUrl);
+    }
+  }, [searchParams]);
+
+  // Le dashboard principal est accessible sans abonnement
   return (
-    <ProRouteGuard pageName="Tableau de bord">
+    <>
       <DashboardContent />
-    </ProRouteGuard>
+      <PricingModal
+        isOpen={isPricingModalOpen}
+        onClose={() => setIsPricingModalOpen(false)}
+      />
+    </>
   );
 }

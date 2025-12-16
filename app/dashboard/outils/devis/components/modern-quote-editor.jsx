@@ -95,7 +95,7 @@ export default function ModernQuoteEditor({
         resourceType="devis"
         resourceName="Ce devis"
         listUrl="/dashboard/outils/devis"
-        homeUrl="/dashboard/outils"
+        homeUrl="/dashboard"
       />
     );
   }

@@ -117,6 +117,15 @@ export const stripePlugin = stripe({
       { user, session, referenceId, action },
       request
     ) => {
+      console.log(
+        "🔐 [AUTHORIZE] Action:",
+        action,
+        "User:",
+        user?.id,
+        "ReferenceId:",
+        referenceId
+      );
+
       // Vérifier si l'utilisateur a les permissions pour gérer les abonnements
       if (
         action === "upgrade-subscription" ||
@@ -139,14 +148,22 @@ export const stripePlugin = stripe({
             });
 
             const isOwner = member?.role === "owner";
+            console.log(
+              "🔐 [AUTHORIZE] Member found:",
+              member,
+              "isOwner:",
+              isOwner
+            );
 
             return isOwner;
           } catch (error) {
+            console.error("🔐 [AUTHORIZE] Error:", error);
             return false;
           }
         }
 
         // Fallback: autoriser temporairement si l'adapter ne fonctionne pas
+        console.log("🔐 [AUTHORIZE] Fallback: adapter not available, allowing");
         return true;
       }
 
@@ -418,15 +435,17 @@ export const stripePlugin = stripe({
                     currentPeriodStart: subscription.current_period_start
                       ? new Date(subscription.current_period_start * 1000)
                       : new Date(),
-                    updatedAt: new Date(),
                   };
 
-                  await mongoDb
-                    .collection("subscription")
-                    .insertOne(subscriptionData);
+                  // ✅ Utiliser l'adapter Better Auth pour créer l'abonnement
+                  // Cela génère automatiquement le champ `id` requis
+                  await adapter.create({
+                    model: "subscription",
+                    data: subscriptionData,
+                  });
 
                   console.log(
-                    `✅ [STRIPE WEBHOOK] Abonnement créé pour nouvelle org: ${referenceId}`
+                    `✅ [STRIPE WEBHOOK] Abonnement créé via adapter pour nouvelle org: ${referenceId}`
                   );
                 } else {
                   console.log(`✅ [STRIPE WEBHOOK] Abonnement existe déjà`);
@@ -590,28 +609,114 @@ export const stripePlugin = stripe({
             // Utiliser MongoDB directement au lieu de l'adapter
             const { mongoDb } = await import("./mongodb.js");
 
-            // Vérifier si l'abonnement existe déjà
-            const existingSub = await mongoDb
+            // Vérifier si l'abonnement existe déjà POUR CETTE ORGANISATION
+            const existingSubForOrg = await mongoDb
+              .collection("subscription")
+              .findOne({
+                referenceId: referenceId,
+              });
+
+            // Vérifier aussi si le stripeSubscriptionId existe (pour une autre org)
+            const existingSubByStripeId = await mongoDb
               .collection("subscription")
               .findOne({
                 stripeSubscriptionId: subscription.id,
               });
 
-            if (existingSub) {
+            console.log(`🔍 [STRIPE WEBHOOK] Recherche abonnement:`);
+            console.log(`   - referenceId: ${referenceId}`);
+            console.log(`   - stripeSubscriptionId: ${subscription.id}`);
+            console.log(
+              `   - Abonnement existant pour cette org: ${existingSubForOrg ? "OUI" : "NON"}`
+            );
+            console.log(
+              `   - Abonnement existant avec ce stripeId: ${existingSubByStripeId ? "OUI (org: " + existingSubByStripeId.referenceId + ")" : "NON"}`
+            );
+
+            if (
+              existingSubForOrg &&
+              existingSubForOrg.stripeSubscriptionId === subscription.id
+            ) {
+              // Même abonnement, même org -> mise à jour
               console.log(
-                `✅ [STRIPE WEBHOOK] Abonnement existe déjà, mise à jour`
+                `✅ [STRIPE WEBHOOK] Abonnement existe déjà pour cette org, mise à jour`
               );
               await mongoDb.collection("subscription").updateOne(
-                { stripeSubscriptionId: subscription.id },
+                {
+                  referenceId: referenceId,
+                  stripeSubscriptionId: subscription.id,
+                },
                 {
                   $set: {
                     status: subscription.status,
+                    plan:
+                      subscription.metadata?.planName || existingSubForOrg.plan,
                     currentPeriodStart: new Date(
                       subscription.current_period_start * 1000
                     ),
                     currentPeriodEnd: new Date(
                       subscription.current_period_end * 1000
                     ),
+                    periodStart: new Date(
+                      subscription.current_period_start * 1000
+                    ),
+                    periodEnd: new Date(subscription.current_period_end * 1000),
+                    updatedAt: new Date(),
+                  },
+                }
+              );
+
+              // ✅ Désactiver le trial si passage de trialing à active
+              if (
+                subscription.status === "active" &&
+                existingSubForOrg.status === "trialing"
+              ) {
+                try {
+                  const { ObjectId } = require("mongodb");
+                  await mongoDb.collection("organization").updateOne(
+                    { _id: new ObjectId(referenceId) },
+                    {
+                      $set: {
+                        isTrialActive: false,
+                        hasUsedTrial: true,
+                        updatedAt: new Date(),
+                      },
+                    }
+                  );
+                  console.log(
+                    `✅ [STRIPE WEBHOOK] Trial désactivé après upgrade pour l'organisation ${referenceId}`
+                  );
+                } catch (trialError) {
+                  console.warn(
+                    `⚠️ [STRIPE WEBHOOK] Erreur désactivation trial:`,
+                    trialError.message
+                  );
+                }
+              }
+            } else if (existingSubForOrg) {
+              // L'org a déjà un abonnement avec un autre stripeSubscriptionId -> remplacer
+              console.log(
+                `🔄 [STRIPE WEBHOOK] L'org a un ancien abonnement, remplacement par le nouveau`
+              );
+              await mongoDb.collection("subscription").updateOne(
+                { referenceId: referenceId },
+                {
+                  $set: {
+                    stripeSubscriptionId: subscription.id,
+                    stripeCustomerId: subscription.customer,
+                    status: subscription.status,
+                    plan:
+                      subscription.metadata?.planName || existingSubForOrg.plan,
+                    currentPeriodStart: new Date(
+                      subscription.current_period_start * 1000
+                    ),
+                    currentPeriodEnd: new Date(
+                      subscription.current_period_end * 1000
+                    ),
+                    periodStart: new Date(
+                      subscription.current_period_start * 1000
+                    ),
+                    periodEnd: new Date(subscription.current_period_end * 1000),
                     updatedAt: new Date(),
                   },
                 }
@@ -655,7 +760,6 @@ export const stripePlugin = stripe({
                 currentPeriodStart: subscription.current_period_start
                   ? new Date(subscription.current_period_start * 1000)
                   : new Date(),
-                updatedAt: new Date(),
               };
 
               console.log(
@@ -663,9 +767,50 @@ export const stripePlugin = stripe({
                 JSON.stringify(subscriptionData, null, 2)
               );
 
-              await mongoDb
-                .collection("subscription")
-                .insertOne(subscriptionData);
+              // ✅ Utiliser MongoDB directement pour créer l'abonnement
+              // Générer un ID unique pour Better Auth
+              const { ObjectId } = require("mongodb");
+              const newId = new ObjectId();
+
+              await mongoDb.collection("subscription").insertOne({
+                _id: newId,
+                id: newId.toString(), // Better Auth utilise ce champ comme identifiant
+                ...subscriptionData,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              });
+
+              console.log(
+                `✅ [STRIPE WEBHOOK] Abonnement créé avec id: ${newId.toString()}`
+              );
+
+              // ✅ Désactiver le trial de l'organisation si l'abonnement est actif (pas trialing)
+              if (subscription.status === "active" && referenceId) {
+                try {
+                  const orgUpdateResult = await mongoDb
+                    .collection("organization")
+                    .updateOne(
+                      { _id: new ObjectId(referenceId) },
+                      {
+                        $set: {
+                          isTrialActive: false,
+                          hasUsedTrial: true,
+                          updatedAt: new Date(),
+                        },
+                      }
+                    );
+                  if (orgUpdateResult.modifiedCount > 0) {
+                    console.log(
+                      `✅ [STRIPE WEBHOOK] Trial désactivé pour l'organisation ${referenceId}`
+                    );
+                  }
+                } catch (trialError) {
+                  console.warn(
+                    `⚠️ [STRIPE WEBHOOK] Erreur désactivation trial:`,
+                    trialError.message
+                  );
+                }
+              }
 
               // Envoyer l'email de bienvenue
               try {
@@ -765,6 +910,7 @@ export const stripePlugin = stripe({
                 updatedSub.current_period_start * 1000
               ),
               currentPeriodEnd: new Date(updatedSub.current_period_end * 1000),
+              cancelAtPeriodEnd: updatedSub.cancel_at_period_end || false,
               updatedAt: new Date(),
             };
 
@@ -776,6 +922,13 @@ export const stripePlugin = stripe({
               );
             }
 
+            // Log si résiliation programmée
+            if (updatedSub.cancel_at_period_end) {
+              console.log(
+                `🔔 [STRIPE WEBHOOK] Résiliation programmée pour la fin de période`
+              );
+            }
+
             await mongoDb
               .collection("subscription")
               .updateOne(
@@ -784,7 +937,7 @@ export const stripePlugin = stripe({
               );
 
             console.log(
-              `✅ [STRIPE WEBHOOK] Abonnement mis à jour avec succès${newPlan ? ` (plan: ${newPlan})` : ""}`
+              `✅ [STRIPE WEBHOOK] Abonnement mis à jour avec succès${newPlan ? ` (plan: ${newPlan})` : ""}${updatedSub.cancel_at_period_end ? " (résiliation programmée)" : ""}`
             );
           } catch (error) {
             console.error(
@@ -862,14 +1015,18 @@ export const stripePlugin = stripe({
           const deletedSub = event.data.object;
 
           try {
-            await adapter.update({
-              model: "subscription",
-              where: { stripeSubscriptionId: deletedSub.id },
-              data: {
-                status: "canceled",
-                updatedAt: new Date(),
-              },
-            });
+            // ✅ Utiliser MongoDB directement au lieu de l'adapter
+            const { mongoDb: mongoDbDelete } = await import("./mongodb.js");
+
+            await mongoDbDelete.collection("subscription").updateOne(
+              { stripeSubscriptionId: deletedSub.id },
+              {
+                $set: {
+                  status: "canceled",
+                  updatedAt: new Date(),
+                },
+              }
+            );
             console.log(`✅ [STRIPE WEBHOOK] Abonnement annulé avec succès`);
 
             // Envoyer l'email de confirmation d'annulation

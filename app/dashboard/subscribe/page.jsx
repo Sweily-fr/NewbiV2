@@ -122,12 +122,18 @@ export default function SubscribePage() {
         return;
       }
 
-      if (!subscription?.id) {
+      if (!subscription?.stripeSubscriptionId) {
         toast.error("Aucun abonnement actif trouvé");
         return;
       }
+
+      console.log(
+        "🔄 Résiliation de l'abonnement:",
+        subscription.stripeSubscriptionId
+      );
+
       const { data, error } = await authClient.subscription.cancel({
-        subscriptionId: subscription.id,
+        subscriptionId: subscription.stripeSubscriptionId,
         referenceId: sessionData.session.activeOrganizationId,
         returnUrl: `${window.location.origin}/dashboard/subscribe?cancel_success=true`,
       });

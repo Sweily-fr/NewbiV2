@@ -1,5 +1,6 @@
-import { useQuery, useMutation } from "@apollo/client";
+import { useQuery, useMutation, useApolloClient } from "@apollo/client";
 import { toast } from "@/src/components/ui/sonner";
+import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import {
   GET_RECONCILIATION_SUGGESTIONS,
   GET_TRANSACTIONS_FOR_INVOICE,
@@ -7,16 +8,22 @@ import {
   UNLINK_TRANSACTION_FROM_INVOICE,
   IGNORE_TRANSACTION,
 } from "@/src/graphql/queries/reconciliation";
+import { GET_INVOICES } from "@/src/graphql/invoiceQueries";
 
 /**
  * Hook pour récupérer les suggestions de rapprochement
  * Remplace useReconciliation.fetchSuggestions (REST)
  */
 export const useReconciliationSuggestions = () => {
+  const { workspaceId } = useRequiredWorkspace();
+
   const { data, loading, error, refetch } = useQuery(
     GET_RECONCILIATION_SUGGESTIONS,
     {
+      variables: { workspaceId },
       fetchPolicy: "cache-and-network",
+      skip: !workspaceId, // Ne pas exécuter tant que le workspace n'est pas disponible
+      pollInterval: 30000, // Rafraîchir toutes les 30 secondes
     }
   );
 
@@ -63,7 +70,7 @@ export const useTransactionsForInvoice = (invoiceId) => {
  */
 export const useLinkTransactionToInvoice = () => {
   const [linkMutation, { loading }] = useMutation(LINK_TRANSACTION_TO_INVOICE, {
-    refetchQueries: [GET_RECONCILIATION_SUGGESTIONS],
+    refetchQueries: [GET_RECONCILIATION_SUGGESTIONS, GET_INVOICES],
     onCompleted: (data) => {
       if (data.linkTransactionToInvoice.success) {
         toast.success("Rapprochement effectué avec succès");
@@ -106,7 +113,7 @@ export const useUnlinkTransactionFromInvoice = () => {
   const [unlinkMutation, { loading }] = useMutation(
     UNLINK_TRANSACTION_FROM_INVOICE,
     {
-      refetchQueries: [GET_RECONCILIATION_SUGGESTIONS],
+      refetchQueries: [GET_RECONCILIATION_SUGGESTIONS, GET_INVOICES],
       onCompleted: (data) => {
         if (data.unlinkTransactionFromInvoice.success) {
           toast.success("Déliaison effectuée avec succès");
@@ -182,6 +189,9 @@ export const useIgnoreTransaction = () => {
  * Remplace useReconciliation (REST)
  */
 export const useReconciliationGraphQL = () => {
+  const { workspaceId } = useRequiredWorkspace();
+  const client = useApolloClient();
+
   const {
     suggestions,
     unmatchedCount,
@@ -196,6 +206,30 @@ export const useReconciliationGraphQL = () => {
   const { unlinkTransaction, loading: unlinkLoading } =
     useUnlinkTransactionFromInvoice();
   const { ignoreTransaction, loading: ignoreLoading } = useIgnoreTransaction();
+
+  // Fonction pour récupérer les transactions pour une facture spécifique
+  // (utilisée par le drawer de facture)
+  const fetchTransactionsForInvoice = async (invoiceId) => {
+    try {
+      const { data } = await client.query({
+        query: GET_TRANSACTIONS_FOR_INVOICE,
+        variables: { invoiceId },
+        fetchPolicy: "network-only",
+      });
+
+      const result = data?.transactionsForInvoice;
+      return {
+        transactions: result?.transactions || [],
+        invoiceAmount: result?.invoiceAmount || 0,
+      };
+    } catch (error) {
+      console.error(
+        "[RECONCILIATION] Erreur fetchTransactionsForInvoice:",
+        error
+      );
+      return { transactions: [], invoiceAmount: 0 };
+    }
+  };
 
   return {
     // Données
@@ -215,5 +249,6 @@ export const useReconciliationGraphQL = () => {
     linkTransaction,
     unlinkTransaction,
     ignoreTransaction,
+    fetchTransactionsForInvoice,
   };
 };

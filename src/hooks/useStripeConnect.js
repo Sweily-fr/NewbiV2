@@ -164,7 +164,7 @@ export const useStripeConnect = (organizationId) => {
       if (!isOnboarded || !canReceivePayments) {
         try {
           // Retourner vers le dashboard avec le paramètre pour le modal de succès
-          const returnUrl = `${window.location.origin}/dashboard/outils?stripe_connect_success=true`;
+          const returnUrl = `${window.location.origin}/dashboard?stripe_connect_success=true`;
           const { data: linkData } = await generateOnboardingLink({
             variables: {
               accountId,

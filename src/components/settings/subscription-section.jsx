@@ -188,18 +188,30 @@ export function SubscriptionSection({
         return;
       }
 
-      if (!subscription?.id) {
+      if (!subscription?.stripeSubscriptionId) {
         toast.error("Aucun abonnement actif trouvé");
         return;
       }
+
+      console.log("🔄 Résiliation de l'abonnement:", {
+        subscriptionId: subscription.id, // ✅ Better Auth cherche par id interne, pas stripeSubscriptionId
+        stripeSubscriptionId: subscription.stripeSubscriptionId,
+        referenceId: sessionData.session.activeOrganizationId,
+        subscription: subscription,
+      });
+
       const { data, error } = await authClient.subscription.cancel({
-        subscriptionId: subscription.id,
+        subscriptionId: subscription.id, // ✅ Utiliser l'id interne Better Auth
         referenceId: sessionData.session.activeOrganizationId,
         returnUrl: `${window.location.origin}/dashboard/subscribe?cancel_success=true`,
       });
 
       if (error) {
-        console.error("Erreur lors de la résiliation:", error);
+        console.error(
+          "Erreur lors de la résiliation:",
+          error,
+          JSON.stringify(error, null, 2)
+        );
         toast.error(
           `Erreur lors de la résiliation: ${error.message || "Erreur inconnue"}`
         );
@@ -338,8 +350,14 @@ export function SubscriptionSection({
       <div className="space-y-4">
         {/* Section Forfait actif - Version compacte et épurée */}
         {isActive() && subscription && (
-          <div className="flex items-center justify-between py-2 px-3 bg-gray-50/50 dark:bg-[#252525]/30 rounded-md border border-gray-100 dark:border-[#313131]/50">
-            <div className="flex items-center gap-3">
+          <div
+            className={`flex items-center justify-between py-2 px-3 rounded-md border ${
+              subscription.cancelAtPeriodEnd
+                ? "bg-orange-50/50 dark:bg-orange-950/10 border-orange-200 dark:border-orange-900/30"
+                : "bg-gray-50/50 dark:bg-[#252525]/30 border-gray-100 dark:border-[#313131]/50"
+            }`}
+          >
+            <div className="flex items-center gap-3 flex-wrap">
               <div className="flex items-center gap-2">
                 <h3 className="text-sm font-medium">
                   {subscription?.plan === "freelance"
@@ -350,12 +368,21 @@ export function SubscriptionSection({
                         ? "Pack Entreprise"
                         : "Pack Pro"}
                 </h3>
-                <Badge
-                  variant="outline"
-                  className="text-[10px] px-1.5 py-0 h-4 border-[#5b50fe] text-[#5b50fe]"
-                >
-                  Actuel
-                </Badge>
+                {subscription.cancelAtPeriodEnd ? (
+                  <Badge
+                    variant="outline"
+                    className="text-[10px] px-1.5 py-0 h-4 border-orange-400 text-orange-600 dark:border-orange-600 dark:text-orange-400"
+                  >
+                    Résiliation programmée
+                  </Badge>
+                ) : (
+                  <Badge
+                    variant="outline"
+                    className="text-[10px] px-1.5 py-0 h-4 border-[#5b50fe] text-[#5b50fe]"
+                  >
+                    Actuel
+                  </Badge>
+                )}
               </div>
               <span className="text-xs text-gray-500">•</span>
               <p className="text-xs text-gray-500">
@@ -364,27 +391,31 @@ export function SubscriptionSection({
               </p>
               <span className="text-xs text-gray-500 hidden md:inline">•</span>
               <p className="text-xs text-gray-400 hidden md:block">
-                Prochain prélèvement : {formatDate(subscription.periodEnd)}
+                {subscription.cancelAtPeriodEnd
+                  ? `Fin d'accès : ${formatDate(subscription.periodEnd)}`
+                  : `Prochain prélèvement : ${formatDate(subscription.periodEnd)}`}
               </p>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20"
-              onClick={openCancelModal}
-              disabled={isLoading || !canManageSubscription}
-              title={
-                !canManageSubscription
-                  ? "Seul le propriétaire peut résilier l'abonnement"
-                  : ""
-              }
-            >
-              {isLoading ? (
-                <LoaderCircle className="h-3 w-3 animate-spin" />
-              ) : (
-                "Résilier"
-              )}
-            </Button>
+            {!subscription.cancelAtPeriodEnd && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20"
+                onClick={openCancelModal}
+                disabled={isLoading || !canManageSubscription}
+                title={
+                  !canManageSubscription
+                    ? "Seul le propriétaire peut résilier l'abonnement"
+                    : ""
+                }
+              >
+                {isLoading ? (
+                  <LoaderCircle className="h-3 w-3 animate-spin" />
+                ) : (
+                  "Résilier"
+                )}
+              </Button>
+            )}
           </div>
         )}
 

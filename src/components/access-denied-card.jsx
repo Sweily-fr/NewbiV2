@@ -15,7 +15,12 @@ import { useRouter } from "next/navigation";
 /**
  * Composant pour afficher un message d'accès refusé avec actions appropriées
  */
-export function AccessDeniedCard({ reason, featureName, onUpgrade, onSettings }) {
+export function AccessDeniedCard({
+  reason,
+  featureName,
+  onUpgrade,
+  onSettings,
+}) {
   const router = useRouter();
 
   const getContent = () => {
@@ -32,14 +37,14 @@ export function AccessDeniedCard({ reason, featureName, onUpgrade, onSettings })
               if (onUpgrade) {
                 onUpgrade();
               } else {
-                router.push("/dashboard/outils?pricing=true");
+                router.push("/dashboard?pricing=true");
               }
             },
           },
           secondaryAction: {
             label: "Retour aux outils",
             variant: "outline",
-            onClick: () => router.push("/dashboard/outils"),
+            onClick: () => router.push("/dashboard"),
           },
         };
 
@@ -55,14 +60,14 @@ export function AccessDeniedCard({ reason, featureName, onUpgrade, onSettings })
               if (onUpgrade) {
                 onUpgrade();
               } else {
-                router.push("/dashboard/outils?pricing=true");
+                router.push("/dashboard?pricing=true");
               }
             },
           },
           secondaryAction: {
             label: "Retour aux outils",
             variant: "outline",
-            onClick: () => router.push("/dashboard/outils"),
+            onClick: () => router.push("/dashboard"),
           },
         };
 
@@ -85,7 +90,7 @@ export function AccessDeniedCard({ reason, featureName, onUpgrade, onSettings })
           secondaryAction: {
             label: "Retour aux outils",
             variant: "outline",
-            onClick: () => router.push("/dashboard/outils"),
+            onClick: () => router.push("/dashboard"),
           },
         };
 
@@ -97,7 +102,7 @@ export function AccessDeniedCard({ reason, featureName, onUpgrade, onSettings })
           action: {
             label: "Retour aux outils",
             variant: "default",
-            onClick: () => router.push("/dashboard/outils"),
+            onClick: () => router.push("/dashboard"),
           },
           secondaryAction: null,
         };

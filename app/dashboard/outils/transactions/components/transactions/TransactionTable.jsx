@@ -29,6 +29,8 @@ import {
   useDeleteMultipleExpenses,
   useAddExpenseFile,
 } from "@/src/hooks/useExpenses";
+import { useMutation } from "@apollo/client";
+import { UPLOAD_TRANSACTION_RECEIPT } from "@/src/graphql/queries/banking";
 import { useOrganizationInvitations } from "@/src/hooks/useOrganizationInvitations";
 import { useActiveOrganization } from "@/src/lib/organization-client";
 import { useSession } from "@/src/lib/auth-client";
@@ -224,6 +226,9 @@ export default function TransactionTable({
   const { data: session } = useSession();
   const [organizationMembers, setOrganizationMembers] = useState([]);
   const [loadingMembers, setLoadingMembers] = useState(true);
+
+  // Mutation pour upload de justificatif
+  const [uploadReceiptMutation] = useMutation(UPLOAD_TRANSACTION_RECEIPT);
 
   const currentUser = session?.user;
 
@@ -733,7 +738,7 @@ export default function TransactionTable({
     }
   };
 
-  // Attacher un reçu à une transaction bancaire (upload direct sur Cloudflare)
+  // Attacher un reçu à une transaction bancaire (upload via GraphQL)
   const handleAttachReceipt = async (transaction, file) => {
     try {
       // Récupérer l'ID de la transaction originale (pour les transactions bancaires)
@@ -741,40 +746,44 @@ export default function TransactionTable({
         transaction.originalTransaction?.id || transaction.id;
 
       console.log(
-        "📎 [ATTACH RECEIPT] Upload direct vers Cloudflare pour transaction:",
+        "📎 [ATTACH RECEIPT] Upload via GraphQL pour transaction:",
         transactionId
       );
 
-      // Upload direct via la nouvelle API
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("workspaceId", workspaceId);
+      // Upload via mutation GraphQL
+      const { data } = await uploadReceiptMutation({
+        variables: {
+          transactionId,
+          workspaceId,
+          file,
+        },
+      });
 
-      const token = getAuthToken();
-      const response = await fetch(
-        `/api/unified-expenses/${transactionId}/receipt`,
-        {
-          method: "POST",
-          headers: {
-            ...(token && { Authorization: `Bearer ${token}` }),
-          },
-          body: formData,
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Erreur lors de l'upload");
+      if (!data?.uploadTransactionReceipt?.success) {
+        throw new Error(
+          data?.uploadTransactionReceipt?.message || "Erreur lors de l'upload"
+        );
       }
 
       console.log(
         "✅ [ATTACH RECEIPT] Receipt uploaded successfully:",
-        data.receiptFile?.url
+        data.uploadTransactionReceipt.receiptFile?.url
       );
+
+      // Mettre à jour selectedTransaction avec le receiptFile
+      if (selectedTransaction) {
+        setSelectedTransaction({
+          ...selectedTransaction,
+          receiptFile: data.uploadTransactionReceipt.receiptFile,
+          receiptRequired: false,
+        });
+      }
+
+      toast.success("Justificatif ajouté avec succès");
       refetch();
     } catch (error) {
       console.error("❌ [ATTACH RECEIPT] Error:", error);
+      toast.error(error.message || "Erreur lors de l'upload du justificatif");
       throw error;
     }
   };

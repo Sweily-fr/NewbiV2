@@ -64,6 +64,7 @@ function GestionDepensesContent() {
     category: tx.expenseCategory || tx.metadata?.category || "OTHER",
     vendor: tx.metadata?.vendor || null,
     hasReceipt: !!tx.receiptFile?.url,
+    receiptFile: tx.receiptFile, // Passer le receiptFile complet pour le drawer
     receiptRequired: tx.amount < 0 && !tx.receiptFile?.url,
     status: tx.status === "completed" ? "PAID" : tx.status?.toUpperCase(),
     paymentMethod: tx.type === "debit" ? "CARD" : "BANK_TRANSFER",

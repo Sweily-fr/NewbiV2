@@ -6,8 +6,8 @@ import { gql } from "@apollo/client";
  * Récupérer les suggestions de rapprochement
  */
 export const GET_RECONCILIATION_SUGGESTIONS = gql`
-  query GetReconciliationSuggestions {
-    reconciliationSuggestions {
+  query GetReconciliationSuggestions($workspaceId: ID!) {
+    reconciliationSuggestions(workspaceId: $workspaceId) {
       success
       suggestions {
         transaction {
