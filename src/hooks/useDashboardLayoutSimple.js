@@ -114,13 +114,10 @@ export function useDashboardLayoutSimple() {
             setSubscription(cachedSubscription);
             setIsLoading(false);
             setIsInitialized(true);
-<<<<<<< HEAD
-=======
             console.log(
               "✅ Subscription chargée depuis le cache:",
               organizationId
             );
->>>>>>> sofiane-subscribe
             return;
           }
         }
