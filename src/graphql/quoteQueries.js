@@ -255,6 +255,62 @@ export const GET_NEXT_QUOTE_NUMBER = gql`
   }
 `;
 
+export const GET_QUOTE_BY_NUMBER = gql`
+  query GetQuoteByNumber($workspaceId: ID!, $number: String!) {
+    quoteByNumber(workspaceId: $workspaceId, number: $number) {
+      id
+      prefix
+      number
+      finalTotalTTC
+      finalTotalHT
+      finalTotalVAT
+      items {
+        description
+        quantity
+        unitPrice
+        vatRate
+        unit
+        discount
+        discountType
+      }
+      client {
+        id
+        name
+        email
+        type
+        vatNumber
+        siret
+        address {
+          fullName
+          street
+          city
+          postalCode
+          country
+        }
+      }
+    }
+  }
+`;
+
+// Query pour rechercher les devis (pour la sélection de référence)
+export const SEARCH_QUOTES_FOR_REFERENCE = gql`
+  query SearchQuotesForReference($workspaceId: ID!, $search: String, $limit: Int) {
+    quotes(workspaceId: $workspaceId, search: $search, limit: $limit, status: COMPLETED) {
+      quotes {
+        id
+        prefix
+        number
+        issueDate
+        finalTotalTTC
+        client {
+          name
+        }
+      }
+      totalCount
+    }
+  }
+`;
+
 // ==================== MUTATIONS ====================
 
 export const CREATE_QUOTE = gql`

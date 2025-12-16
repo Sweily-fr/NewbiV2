@@ -9,6 +9,8 @@ export const INVOICE_FRAGMENT = gql`
     prefix
     purchaseOrderNumber
     isDeposit
+    invoiceType
+    situationNumber
     status
     issueDate
     dueDate
@@ -135,6 +137,8 @@ export const INVOICE_LIST_FRAGMENT = gql`
     prefix
     purchaseOrderNumber
     isDeposit
+    invoiceType
+    situationNumber
     status
     issueDate
     dueDate
@@ -260,6 +264,60 @@ export const GET_LAST_INVOICE_PREFIX = gql`
       invoices {
         prefix
       }
+    }
+  }
+`;
+
+export const GET_SITUATION_INVOICES_BY_QUOTE_REF = gql`
+  query GetSituationInvoicesByQuoteRef($workspaceId: ID!, $purchaseOrderNumber: String!) {
+    situationInvoicesByQuoteRef(workspaceId: $workspaceId, purchaseOrderNumber: $purchaseOrderNumber) {
+      id
+      number
+      prefix
+      invoiceType
+      situationNumber
+      purchaseOrderNumber
+      issueDate
+      createdAt
+      finalTotalTTC
+      items {
+        description
+        quantity
+        unitPrice
+        vatRate
+        unit
+        discount
+        discountType
+        progressPercentage
+      }
+      client {
+        id
+        name
+        email
+        type
+        vatNumber
+        siret
+        address {
+          fullName
+          street
+          city
+          postalCode
+          country
+        }
+      }
+    }
+  }
+`;
+
+// Query pour récupérer les références de situation uniques (pour la recherche)
+export const GET_SITUATION_REFERENCES = gql`
+  query GetSituationReferences($workspaceId: ID!, $search: String) {
+    situationReferences(workspaceId: $workspaceId, search: $search) {
+      reference
+      count
+      lastInvoiceDate
+      totalTTC
+      contractTotal
     }
   }
 `;

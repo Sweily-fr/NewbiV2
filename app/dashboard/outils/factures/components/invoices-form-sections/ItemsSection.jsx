@@ -92,6 +92,7 @@ export default function ItemsSection({
 
   // Observer les changements en temps réel pour tous les items
   const watchedItems = watch("items") || [];
+  const invoiceType = watch("invoiceType");
   
   // État pour gérer l'affichage des champs optionnels par article
   const [showProgress, setShowProgress] = useState({});
@@ -424,53 +425,58 @@ export default function ItemsSection({
                               <span className="h-4 w-4" aria-hidden="true"></span>
                             </div>
                             <div className="space-y-1">
-                              <QuantityInput
-                                id={`item-quantity-${index}`}
-                                {...register(`items.${index}.quantity`, {
-                                  valueAsNumber: true,
+                              <Controller
+                                name={`items.${index}.quantity`}
+                                rules={{
                                   required: "La quantité est requise",
                                   ...(isCreditNoteContext
                                     ? {}
                                     : {
                                         min: {
-                                          value: 0.01,
+                                          value: 0.5,
                                           message:
-                                            "La quantité doit être supérieure à 0",
+                                            "La quantité doit être au minimum de 0.5",
                                         },
                                       }),
-                                  onChange: (e) => {
-                                    const quantity =
-                                      parseFloat(e.target.value) || 0;
-                                    const unitPrice =
-                                      watch(`items.${index}.unitPrice`) || 0;
-                                    const discount =
-                                      watch(`items.${index}.discount`) || 0;
-                                    const discountType =
-                                      watch(`items.${index}.discountType`) ||
-                                      "percentage";
-                                    const progressPercentage =
-                                      watch(`items.${index}.progressPercentage`) || 100;
+                                }}
+                                render={({ field }) => (
+                                  <QuantityInput
+                                    id={`item-quantity-${index}`}
+                                    value={field.value}
+                                    onChange={(e) => {
+                                      const newQuantity = parseFloat(e.target.value) || 0.5;
+                                      field.onChange(newQuantity);
+                                      
+                                      // Recalculer le total
+                                      const unitPrice = watch(`items.${index}.unitPrice`) || 0;
+                                      const discount = watch(`items.${index}.discount`) || 0;
+                                      const discountType = watch(`items.${index}.discountType`) || "percentage";
+                                      const progressPercentage = watch(`items.${index}.progressPercentage`) || 100;
 
-                                    const total = calculateItemTotal(
-                                      quantity,
-                                      unitPrice,
-                                      discount,
-                                      discountType,
-                                      progressPercentage
-                                    );
-                                    setValue(`items.${index}.total`, total, {
-                                      shouldDirty: true,
-                                    });
-                                  },
-                                })}
-                                disabled={!canEdit}
-                                onFocus={() => markFieldAsEditing?.(index, "quantity")}
-                                onBlur={() => unmarkFieldAsEditing?.(index, "quantity")}
-                                className={`h-10 text-sm w-full ${
-                                  errors?.items?.[index]?.quantity || hasFieldError(index, "quantity")
-                                    ? "border-destructive focus-visible:ring-1 focus-visible:ring-destructive"
-                                    : ""
-                                }`}
+                                      const total = calculateItemTotal(
+                                        newQuantity,
+                                        unitPrice,
+                                        discount,
+                                        discountType,
+                                        progressPercentage
+                                      );
+                                      setValue(`items.${index}.total`, total, {
+                                        shouldDirty: true,
+                                      });
+                                    }}
+                                    onBlur={() => {
+                                      field.onBlur();
+                                      unmarkFieldAsEditing?.(index, "quantity");
+                                    }}
+                                    disabled={!canEdit}
+                                    onFocus={() => markFieldAsEditing?.(index, "quantity")}
+                                    className={`h-10 text-sm w-full ${
+                                      errors?.items?.[index]?.quantity || hasFieldError(index, "quantity")
+                                        ? "border-destructive focus-visible:ring-1 focus-visible:ring-destructive"
+                                        : ""
+                                    }`}
+                                  />
+                                )}
                               />
                               {errors?.items?.[index]?.quantity && (
                                 <p className="text-xs text-destructive">
@@ -686,8 +692,8 @@ export default function ItemsSection({
                           </div>
                         )}
 
-                        {/* Avancement - Affichage conditionnel */}
-                        {!showProgress[index] ? (
+                        {/* Avancement - Affichage conditionnel (uniquement pour les factures de situation) */}
+                        {invoiceType === "situation" && !showProgress[index] ? (
                           <div className="pt-2">
                             <button
                               type="button"
@@ -702,7 +708,7 @@ export default function ItemsSection({
                               + Facturer partiellement (%)
                             </button>
                           </div>
-                        ) : (
+                        ) : invoiceType === "situation" && showProgress[index] ? (
                           <div className="space-y-4">
                             <div className="flex items-center justify-between">
                               <span className="text-sm font-normal">Facturation partielle</span>
@@ -764,7 +770,7 @@ export default function ItemsSection({
                               </p>
                             )}
                           </div>
-                        )}
+                        ) : null}
 
                         {/* Remise sur l'article - Affichage conditionnel */}
                         {!showDiscount[index] ? (

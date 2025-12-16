@@ -60,7 +60,7 @@ export const QuantityInput = React.forwardRef(
         <Button
           type="button"
           onClick={handleDecrement}
-          disabled={disabled || (parseInt(displayValue) || 1) <= 1}
+          disabled={disabled || (parseFloat(displayValue) || min) <= min}
           className="-ms-px flex aspect-square h-[inherit] items-center justify-center rounded-none border border-input bg-background text-sm text-muted-foreground/80 transition-[color,box-shadow] hover:bg-accent hover:text-foreground disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
           size="sm"
         >

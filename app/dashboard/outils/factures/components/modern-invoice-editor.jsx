@@ -46,6 +46,8 @@ export default function ModernInvoiceEditor({
   const [debouncedFormData, setDebouncedFormData] = useState(null);
   const [showSendEmailModal, setShowSendEmailModal] = useState(false);
   const [createdInvoiceData, setCreatedInvoiceData] = useState(null);
+  const [previousSituationInvoices, setPreviousSituationInvoices] = useState([]);
+  const [contractTotalTTC, setContractTotalTTC] = useState(null);
   const pdfRef = useRef(null);
 
   // Récupérer l'organisation au chargement
@@ -359,6 +361,8 @@ export default function ModernInvoiceEditor({
                       onEditClient={() => setShowEditClient(true)}
                       markFieldAsEditing={markFieldAsEditing}
                       unmarkFieldAsEditing={unmarkFieldAsEditing}
+                      onPreviousSituationInvoicesChange={setPreviousSituationInvoices}
+                      onContractTotalChange={setContractTotalTTC}
                     />
                   )}
                 </FormProvider>
@@ -382,7 +386,7 @@ export default function ModernInvoiceEditor({
               </div>
             ) : debouncedFormData ? (
               <div ref={pdfRef}>
-                <UniversalPreviewPDF data={debouncedFormData} type="invoice" />
+                <UniversalPreviewPDF data={debouncedFormData} type="invoice" previousSituationInvoices={previousSituationInvoices} contractTotalTTC={contractTotalTTC} />
               </div>
             ) : null}
           </div>

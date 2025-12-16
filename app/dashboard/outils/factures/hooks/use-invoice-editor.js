@@ -1394,7 +1394,8 @@ export function useInvoiceEditor({
       const dataToTransform = {
         ...currentFormData,
         status: "PENDING", // Change status to pending when submitting
-        isDeposit: currentFormData.isDepositInvoice || false, // Mapping correct vers le champ backend
+        isDeposit: currentFormData.isDepositInvoice || currentFormData.invoiceType === "deposit", // Mapping correct vers le champ backend
+        invoiceType: currentFormData.invoiceType || "standard", // Type de facture
       };
 
       // Passer le statut précédent pour gérer automatiquement la date d'émission
@@ -1636,6 +1637,8 @@ function getInitialFormData(mode, initialData, session, organization) {
     customFields: [],
     paymentMethod: null,
     isDepositInvoice: false,
+    invoiceType: "standard",
+    situationNumber: 1,
     purchaseOrderNumber: "",
     // Récupérer les données bancaires si elles existent dans la facture
     showBankDetails: organization?.showBankDetails || false,
@@ -1818,6 +1821,8 @@ function transformInvoiceToFormData(invoice) {
     // Champs qui n'existent pas dans le schéma GraphQL - utiliser des valeurs par défaut
     paymentMethod: null,
     isDepositInvoice: invoice.isDeposit || false, // Mapper isDeposit vers isDepositInvoice pour le formulaire
+    invoiceType: invoice.invoiceType || (invoice.isDeposit ? "deposit" : "standard"), // Mapper invoiceType avec fallback sur isDeposit
+    situationNumber: invoice.situationNumber || 1,
     purchaseOrderNumber: invoice.purchaseOrderNumber || "",
     // Récupérer les données bancaires si elles existent dans la facture
     showBankDetails: invoice.showBankDetails || false,
@@ -2034,7 +2039,9 @@ function transformFormDataToInput(formData, previousStatus = null) {
         value: field.value,
       })) || [],
     purchaseOrderNumber: formData.purchaseOrderNumber || "",
-    isDeposit: formData.isDepositInvoice || false, // Mapping correct vers le champ backend
+    isDeposit: formData.isDepositInvoice || formData.invoiceType === "deposit", // Mapping correct vers le champ backend
+    invoiceType: formData.invoiceType || "standard", // Type de facture (standard, deposit, situation)
+    situationNumber: formData.situationNumber || 1, // Numéro de situation pour les factures de situation
     showBankDetails: shouldShowBankDetails,
     bankDetails: bankDetailsForInvoice,
     appearance: {

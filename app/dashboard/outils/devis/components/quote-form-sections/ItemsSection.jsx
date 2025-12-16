@@ -363,9 +363,9 @@ export default function ItemsSection({
                                 valueAsNumber: true,
                                 required: "La quantité est requise",
                                 min: {
-                                  value: 0.01,
+                                  value: 0.5,
                                   message:
-                                    "La quantité doit être supérieure à 0",
+                                    "La quantité doit être au minimum de 0.5",
                                 },
                                 onChange: (e) => {
                                   const quantity =

@@ -59,7 +59,7 @@ const applyOpacityToColor = (color, opacity) => {
   return color;
 };
 
-const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF = false }) => {
+const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF = false, previousSituationInvoices = [], contractTotalTTC = null }) => {
   const { data: session } = useSession();
   const { organization } = useWorkspace();
   const documentRef = useRef(null);
@@ -430,7 +430,10 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
     if (isCreditNote) {
       return "Avoir";
     }
-    if (data.isDepositInvoice) {
+    if (data.invoiceType === "situation") {
+      return "Facture de situation";
+    }
+    if (data.isDepositInvoice || data.invoiceType === "deposit") {
       return "Facture d'acompte";
     }
     if (data.status === "DRAFT") {
@@ -580,6 +583,16 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
                   </span>
                 </div>
               )}
+              {data.invoiceType === "situation" && (
+                <div className="flex justify-end" style={{ fontSize: "10px" }}>
+                  <span className="font-medium w-38 dark:text-[#0A0A0A] mr-2">
+                    Situation n°:
+                  </span>
+                  <span className="dark:text-[#0A0A0A] font-semibold">
+                    {String(data.situationNumber || 1).padStart(2, '0')}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -650,7 +663,7 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
             data.client?.phone ||
             data.client?.siret ||
             data.client?.vatNumber) && (
-            <div className={data.clientPositionRight ? "col-start-3" : ""}>
+            <div className={data.clientPositionRight ? "col-start-3 text-right" : ""}>
               <div
                 className="font-medium mb-2 dark:text-[#0A0A0A]"
                 style={{ fontSize: "10px" }}
@@ -790,50 +803,6 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
           </div>
         )}
 
-        {/* MONTANT DU MARCHÉ - Affiché si au moins un article a un avancement < 100% */}
-        {(() => {
-          // Vérifier si au moins un article a un avancement < 100%
-          const hasProgressItems = data.items?.some(
-            (item) => item.progressPercentage && item.progressPercentage < 100
-          );
-
-          if (!hasProgressItems || isCreditNote) return null;
-
-          // Calculer le montant total HT du marché (sans tenir compte de l'avancement)
-          const marketTotal = data.items.reduce((total, item) => {
-            const quantity = parseFloat(item.quantity) || 0;
-            const unitPrice = parseFloat(item.unitPrice) || 0;
-            let itemTotal = quantity * unitPrice;
-
-            // Appliquer la remise sur l'article si elle existe
-            const itemDiscount = parseFloat(item.discount) || 0;
-            if (itemDiscount > 0) {
-              if (item.discountType?.toUpperCase() === "PERCENTAGE") {
-                itemTotal = itemTotal * (1 - Math.min(itemDiscount, 100) / 100);
-              } else {
-                itemTotal = Math.max(0, itemTotal - itemDiscount);
-              }
-            }
-
-            return total + itemTotal;
-          }, 0);
-
-          return (
-            <div 
-              className="mb-3"
-              data-pdf-section="market-amount"
-            >
-              <div className="flex items-center gap-3">
-                <span className="font-normal text-[10px] dark:text-[#0A0A0A]">
-                  Montant du marché :
-                </span>
-                <span className="font-medium text-[11px] dark:text-[#0A0A0A]">
-                  {formatCurrency(marketTotal)}
-                </span>
-              </div>
-            </div>
-          );
-        })()}
 
         {/* TABLEAU DES ARTICLES */}
         <div className="mb-6" data-pdf-section="items">
@@ -1519,6 +1488,235 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
           </div>
         )}
       </div>
+
+      {/* PAGE RÉCAPITULATIF DE FACTURATION - Uniquement pour les factures de situation */}
+      {data.invoiceType === "situation" && (
+        <div 
+          className="w-full bg-white"
+          data-pdf-section="situation-recap"
+          data-page-break-before
+          style={{ pageBreakBefore: 'always' }}
+        >
+          {/* Contenu du récapitulatif */}
+          <div className={isMobile ? "px-6 py-6" : "px-14 py-10"}>
+            <h2 className="text-xl font-semibold mb-1 dark:text-[#0A0A0A]">
+              Récapitulatif de la facturation
+            </h2>
+            <div className="text-sm text-muted-foreground mb-6 dark:text-[#0A0A0A]">
+              {data.issueDate ? new Date(data.issueDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) : new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
+            </div>
+
+            {/* Tableau des factures de situation */}
+            <table className="w-full border-collapse text-xs mb-6">
+              <thead>
+                <tr 
+                  style={{ 
+                    backgroundColor: data.appearance?.headerBgColor || "#1d1d1b",
+                  }}
+                >
+                  <th 
+                    className="py-2 px-3 text-left text-[10px] font-medium"
+                    style={{ color: data.appearance?.headerTextColor || "#FFFFFF" }}
+                  >
+                    Avancement
+                  </th>
+                  <th 
+                    className="py-2 px-3 text-right text-[10px] font-medium"
+                    style={{ color: data.appearance?.headerTextColor || "#FFFFFF" }}
+                  >
+                    Total TTC
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {/* Factures de situation précédentes */}
+                {previousSituationInvoices.map((invoice, index) => (
+                  <tr key={invoice.id || index} className="border-b border-gray-200">
+                    <td className="py-3 px-3 dark:text-[#0A0A0A]">
+                      <div className="font-medium text-[11px]">
+                        Facture de situation {invoice.prefix ? `${invoice.prefix}-` : 'F-'}{invoice.number}
+                      </div>
+                      <div className="text-[10px] text-muted-foreground">
+                        Émise le {invoice.issueDate ? new Date(invoice.issueDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'} • {invoice.status === 'PAID' ? 'Payée' : invoice.status === 'SENT' ? 'Envoyée' : 'À encaisser'}
+                      </div>
+                    </td>
+                    <td className="py-3 px-3 text-right dark:text-[#0A0A0A] text-[11px]">
+                      {formatCurrency(invoice.finalTotalTTC || 0)}
+                    </td>
+                  </tr>
+                ))}
+                {/* Facture actuelle */}
+                <tr className="border-b border-gray-200">
+                  <td className="py-3 px-3 dark:text-[#0A0A0A]">
+                    <div className="font-medium text-[11px]">
+                      Facture de situation {data.prefix ? `${data.prefix}-` : 'F-'}{data.number || '000001'}
+                    </div>
+                    <div className="text-[10px] text-muted-foreground">
+                      Émise le {data.issueDate ? new Date(data.issueDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) : new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })} • À encaisser
+                    </div>
+                  </td>
+                  <td className="py-3 px-3 text-right dark:text-[#0A0A0A] text-[11px]">
+                    {formatCurrency(
+                      (() => {
+                        // Calculer le total TTC de la facture actuelle
+                        const totalHT = data.items?.reduce((sum, item) => {
+                          const quantity = parseFloat(item.quantity) || 0;
+                          const unitPrice = parseFloat(item.unitPrice) || 0;
+                          const progress = parseFloat(item.progressPercentage) || 100;
+                          let itemTotal = quantity * unitPrice * (progress / 100);
+                          const discount = parseFloat(item.discount) || 0;
+                          if (discount > 0) {
+                            if (item.discountType?.toUpperCase() === "PERCENTAGE") {
+                              itemTotal = itemTotal * (1 - Math.min(discount, 100) / 100);
+                            } else {
+                              itemTotal = Math.max(0, itemTotal - discount);
+                            }
+                          }
+                          return sum + itemTotal;
+                        }, 0) || 0;
+                        
+                        // Appliquer la remise globale
+                        let totalAfterDiscount = totalHT;
+                        const globalDiscount = parseFloat(data.discount) || 0;
+                        if (globalDiscount > 0) {
+                          if (data.discountType?.toUpperCase() === "PERCENTAGE") {
+                            totalAfterDiscount = totalHT * (1 - Math.min(globalDiscount, 100) / 100);
+                          } else {
+                            totalAfterDiscount = Math.max(0, totalHT - globalDiscount);
+                          }
+                        }
+                        
+                        // Calculer la TVA
+                        const totalTVA = data.items?.reduce((sum, item) => {
+                          const quantity = parseFloat(item.quantity) || 0;
+                          const unitPrice = parseFloat(item.unitPrice) || 0;
+                          const progress = parseFloat(item.progressPercentage) || 100;
+                          const vatRate = parseFloat(item.vatRate) || 0;
+                          let itemTotal = quantity * unitPrice * (progress / 100);
+                          const discount = parseFloat(item.discount) || 0;
+                          if (discount > 0) {
+                            if (item.discountType?.toUpperCase() === "PERCENTAGE") {
+                              itemTotal = itemTotal * (1 - Math.min(discount, 100) / 100);
+                            } else {
+                              itemTotal = Math.max(0, itemTotal - discount);
+                            }
+                          }
+                          // Appliquer la remise globale proportionnellement
+                          if (globalDiscount > 0 && totalHT > 0) {
+                            itemTotal = itemTotal * (totalAfterDiscount / totalHT);
+                          }
+                          return sum + (itemTotal * vatRate / 100);
+                        }, 0) || 0;
+                        
+                        return totalAfterDiscount + totalTVA;
+                      })()
+                    )}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            {/* Totaux récapitulatifs */}
+            <div className="flex justify-end">
+              <div className="w-72">
+                {(() => {
+                  // Utiliser le total du devis si disponible, sinon calculer à partir des articles
+                  let totalContratTTCValue = contractTotalTTC;
+                  
+                  if (!totalContratTTCValue) {
+                    // Fallback: Calculer le total du contrat (100% de tous les articles sans avancement)
+                    const totalContratHT = data.items?.reduce((sum, item) => {
+                      const quantity = parseFloat(item.quantity) || 0;
+                      const unitPrice = parseFloat(item.unitPrice) || 0;
+                      let itemTotal = quantity * unitPrice;
+                      const discount = parseFloat(item.discount) || 0;
+                      if (discount > 0) {
+                        if (item.discountType?.toUpperCase() === "PERCENTAGE") {
+                          itemTotal = itemTotal * (1 - Math.min(discount, 100) / 100);
+                        } else {
+                          itemTotal = Math.max(0, itemTotal - discount);
+                        }
+                      }
+                      return sum + itemTotal;
+                    }, 0) || 0;
+                    
+                    // Appliquer la remise globale
+                    let totalContratAfterDiscount = totalContratHT;
+                    const globalDiscount = parseFloat(data.discount) || 0;
+                    if (globalDiscount > 0) {
+                      if (data.discountType?.toUpperCase() === "PERCENTAGE") {
+                        totalContratAfterDiscount = totalContratHT * (1 - Math.min(globalDiscount, 100) / 100);
+                      } else {
+                        totalContratAfterDiscount = Math.max(0, totalContratHT - globalDiscount);
+                      }
+                    }
+                    
+                    // Calculer la TVA du contrat
+                    const totalContratTVA = data.items?.reduce((sum, item) => {
+                      const quantity = parseFloat(item.quantity) || 0;
+                      const unitPrice = parseFloat(item.unitPrice) || 0;
+                      const vatRate = parseFloat(item.vatRate) || 0;
+                      let itemTotal = quantity * unitPrice;
+                      const discount = parseFloat(item.discount) || 0;
+                      if (discount > 0) {
+                        if (item.discountType?.toUpperCase() === "PERCENTAGE") {
+                          itemTotal = itemTotal * (1 - Math.min(discount, 100) / 100);
+                        } else {
+                          itemTotal = Math.max(0, itemTotal - discount);
+                        }
+                      }
+                      if (globalDiscount > 0 && totalContratHT > 0) {
+                        itemTotal = itemTotal * (totalContratAfterDiscount / totalContratHT);
+                      }
+                      return sum + (itemTotal * vatRate / 100);
+                    }, 0) || 0;
+                    
+                    totalContratTTCValue = totalContratAfterDiscount + totalContratTVA;
+                  }
+                  
+                  // Montant facturé à ce jour (factures précédentes)
+                  const montantFacture = previousSituationInvoices.reduce((sum, inv) => sum + (parseFloat(inv.finalTotalTTC) || 0), 0);
+                  
+                  // Avancement cumulé
+                  const avancementCumule = totalContratTTCValue > 0 ? (montantFacture / totalContratTTCValue) * 100 : 0;
+                  
+                  // Solde à facturer
+                  const soldeAFacturer = totalContratTTCValue - montantFacture;
+                  
+                  return (
+                    <>
+                      <div className="flex justify-between py-2 text-[11px] dark:text-[#0A0A0A]">
+                        <span>Total du contrat (TTC)</span>
+                        <span className="font-medium">{formatCurrency(totalContratTTCValue)}</span>
+                      </div>
+                      <div className="flex justify-between py-2 text-[11px] dark:text-[#0A0A0A]">
+                        <span>Montant facturé à ce jour (TTC)</span>
+                        <span className="font-medium">{montantFacture > 0 ? `-${formatCurrency(montantFacture)}` : formatCurrency(0)}</span>
+                      </div>
+                      <div className="flex justify-between py-2 text-[11px] dark:text-[#0A0A0A]">
+                        <span>Avancement cumulé</span>
+                        <span className="font-medium">{avancementCumule.toFixed(0)} %</span>
+                      </div>
+                      <div 
+                        className="flex justify-between py-2 text-[11px] font-medium"
+                        style={{ 
+                          backgroundColor: data.appearance?.headerBgColor || "#1d1d1b",
+                          color: data.appearance?.headerTextColor || "#FFFFFF",
+                          margin: '0 -12px',
+                          padding: '8px 12px'
+                        }}
+                      >
+                        <span>Solde à facturer (TTC)</span>
+                        <span>{formatCurrency(soldeAFacturer)}</span>
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* FOOTER - DÉTAILS BANCAIRES */}
       <div 

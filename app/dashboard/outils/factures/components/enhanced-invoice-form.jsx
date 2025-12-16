@@ -272,6 +272,8 @@ export default function EnhancedInvoiceForm({
   onEditClient,
   markFieldAsEditing,
   unmarkFieldAsEditing,
+  onPreviousSituationInvoicesChange,
+  onContractTotalChange,
 }) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [activeField, setActiveField] = useState(null);
@@ -522,6 +524,8 @@ export default function EnhancedInvoiceForm({
               <InvoiceInfoSection 
                 canEdit={canEdit} 
                 validateInvoiceNumber={validateInvoiceNumber}
+                onPreviousSituationInvoicesChange={onPreviousSituationInvoicesChange}
+                onContractTotalChange={onContractTotalChange}
               />
 
               {/* Section 2: Sélection d'un client */}
