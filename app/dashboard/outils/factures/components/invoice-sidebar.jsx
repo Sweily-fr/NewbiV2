@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import {
   X,
   Eye,
@@ -46,7 +46,7 @@ import { toast } from "@/src/components/ui/sonner";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import UniversalPDFDownloaderWithFacturX from "@/src/components/pdf/UniversalPDFDownloaderWithFacturX";
 import CreditNoteMobileFullscreen from "./credit-note-mobile-fullscreen";
-import { useReconciliation } from "@/src/hooks/useReconciliation";
+import { useReconciliationForSidebar } from "@/src/hooks/useReconciliation";
 import { ScrollArea } from "@/src/components/ui/scroll-area";
 
 export default function InvoiceSidebar({
@@ -81,32 +81,58 @@ export default function InvoiceSidebar({
     error: invoiceError,
   } = useInvoice(initialInvoice?.id);
 
-  // Hook de rapprochement bancaire
+  // Hook de rapprochement bancaire - Version légère pour éviter les re-renders
   const { fetchTransactionsForInvoice, linkTransaction, unlinkTransaction } =
-    useReconciliation();
+    useReconciliationForSidebar();
   const [availableTransactions, setAvailableTransactions] = useState([]);
   const [loadingTransactions, setLoadingTransactions] = useState(false);
   const [showTransactionPicker, setShowTransactionPicker] = useState(false);
   const [linkingTransaction, setLinkingTransaction] = useState(false);
 
+  // Ref pour éviter les race conditions et les updates sur composant démonté
+  const isMountedRef = useRef(true);
+  const fetchAbortRef = useRef(null);
+
+  // Cleanup au démontage
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
   // Charger les transactions disponibles pour cette facture
+  // OPTIMISÉ: Utiliser useRef pour éviter les race conditions
   const loadAvailableTransactions = useCallback(async () => {
-    if (!initialInvoice?.id) return;
+    if (!initialInvoice?.id || !isMountedRef.current) return;
+
+    // Annuler la requête précédente si elle existe
+    if (fetchAbortRef.current) {
+      fetchAbortRef.current = false;
+    }
+    fetchAbortRef.current = true;
 
     setLoadingTransactions(true);
     try {
       const { transactions } = await fetchTransactionsForInvoice(
         initialInvoice.id
       );
-      setAvailableTransactions(transactions);
+      // Vérifier si le composant est toujours monté et si cette requête est toujours valide
+      if (isMountedRef.current && fetchAbortRef.current) {
+        setAvailableTransactions(transactions || []);
+      }
     } catch (err) {
-      console.error("Erreur chargement transactions:", err);
+      // Ignorer les erreurs silencieusement pour éviter les re-renders
+      console.error("[SIDEBAR] Erreur chargement transactions:", err);
     } finally {
-      setLoadingTransactions(false);
+      if (isMountedRef.current) {
+        setLoadingTransactions(false);
+      }
     }
   }, [initialInvoice?.id, fetchTransactionsForInvoice]);
 
   // Charger automatiquement les transactions suggérées quand le drawer s'ouvre
+  // OPTIMISÉ: Dépendances minimales pour éviter les re-renders
   useEffect(() => {
     if (
       isOpen &&
@@ -116,43 +142,50 @@ export default function InvoiceSidebar({
     ) {
       loadAvailableTransactions();
     }
-  }, [
-    isOpen,
-    initialInvoice?.id,
-    initialInvoice?.status,
-    initialInvoice?.linkedTransactionId,
-    loadAvailableTransactions,
-  ]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, initialInvoice?.id]);
 
   // Filtrer les transactions avec un bon score de correspondance
-  const suggestedTransactions = availableTransactions.filter(
-    (tx) => tx.score >= 80
+  const suggestedTransactions = useMemo(
+    () => availableTransactions.filter((tx) => tx.score >= 80),
+    [availableTransactions]
   );
 
   // Lier une transaction à cette facture
-  const handleLinkTransaction = async (transactionId) => {
-    setLinkingTransaction(true);
-    try {
-      const result = await linkTransaction(transactionId, initialInvoice.id);
-      if (result.success) {
-        toast.success("Paiement bancaire rattaché avec succès");
-        setShowTransactionPicker(false);
-        if (onRefetch) onRefetch();
-      } else {
-        toast.error(result.error || "Erreur lors du rattachement");
+  const handleLinkTransaction = useCallback(
+    async (transactionId) => {
+      if (!isMountedRef.current) return;
+      setLinkingTransaction(true);
+      try {
+        const result = await linkTransaction(transactionId, initialInvoice.id);
+        if (!isMountedRef.current) return;
+        if (result.success) {
+          toast.success("Paiement bancaire rattaché avec succès");
+          setShowTransactionPicker(false);
+          if (onRefetch) onRefetch();
+        } else {
+          toast.error(result.error || "Erreur lors du rattachement");
+        }
+      } catch (err) {
+        if (isMountedRef.current) {
+          toast.error("Erreur lors du rattachement");
+        }
+      } finally {
+        if (isMountedRef.current) {
+          setLinkingTransaction(false);
+        }
       }
-    } catch (err) {
-      toast.error("Erreur lors du rattachement");
-    } finally {
-      setLinkingTransaction(false);
-    }
-  };
+    },
+    [initialInvoice?.id, linkTransaction, onRefetch]
+  );
 
   // Délier la transaction de cette facture
-  const handleUnlinkTransaction = async () => {
+  const handleUnlinkTransaction = useCallback(async () => {
+    if (!isMountedRef.current) return;
     setLinkingTransaction(true);
     try {
       const result = await unlinkTransaction(null, initialInvoice.id);
+      if (!isMountedRef.current) return;
       if (result.success) {
         toast.success("Paiement bancaire détaché");
         if (onRefetch) onRefetch();
@@ -160,11 +193,15 @@ export default function InvoiceSidebar({
         toast.error(result.error || "Erreur lors du détachement");
       }
     } catch (err) {
-      toast.error("Erreur lors du détachement");
+      if (isMountedRef.current) {
+        toast.error("Erreur lors du détachement");
+      }
     } finally {
-      setLinkingTransaction(false);
+      if (isMountedRef.current) {
+        setLinkingTransaction(false);
+      }
     }
-  };
+  }, [initialInvoice?.id, unlinkTransaction, onRefetch]);
 
   // Détecter si on est sur mobile
   useEffect(() => {
@@ -232,7 +269,7 @@ export default function InvoiceSidebar({
       const progressPercentage = parseFloat(item.progressPercentage) || 100;
 
       let itemTotal = quantity * unitPrice;
-      
+
       // Application du pourcentage d'avancement
       itemTotal = itemTotal * (progressPercentage / 100);
 
@@ -241,7 +278,10 @@ export default function InvoiceSidebar({
       const itemDiscountType = item.discountType || "percentage";
 
       if (itemDiscount > 0) {
-        if (itemDiscountType === "PERCENTAGE" || itemDiscountType === "percentage") {
+        if (
+          itemDiscountType === "PERCENTAGE" ||
+          itemDiscountType === "percentage"
+        ) {
           itemTotal = itemTotal * (1 - Math.min(itemDiscount, 100) / 100);
         } else {
           itemTotal = Math.max(0, itemTotal - itemDiscount);
@@ -257,9 +297,13 @@ export default function InvoiceSidebar({
 
     if (invoiceData?.discount && invoiceData.discount > 0) {
       if (invoiceData.discountType?.toUpperCase() === "PERCENTAGE") {
-        globalDiscountAmount = (subtotalAfterItemDiscounts * invoiceData.discount) / 100;
+        globalDiscountAmount =
+          (subtotalAfterItemDiscounts * invoiceData.discount) / 100;
       } else {
-        globalDiscountAmount = Math.min(invoiceData.discount, subtotalAfterItemDiscounts);
+        globalDiscountAmount = Math.min(
+          invoiceData.discount,
+          subtotalAfterItemDiscounts
+        );
       }
       totalAfterDiscount = subtotalAfterItemDiscounts - globalDiscountAmount;
     }
@@ -269,10 +313,11 @@ export default function InvoiceSidebar({
       const quantity = parseFloat(item.quantity) || 0;
       const unitPrice = parseFloat(item.unitPrice) || 0;
       const progressPercentage = parseFloat(item.progressPercentage) || 100;
-      const vatRate = item.vatRate !== undefined ? parseFloat(item.vatRate) : 20;
+      const vatRate =
+        item.vatRate !== undefined ? parseFloat(item.vatRate) : 20;
 
       let itemSubtotal = quantity * unitPrice;
-      
+
       // Application du pourcentage d'avancement
       itemSubtotal = itemSubtotal * (progressPercentage / 100);
 
@@ -281,7 +326,10 @@ export default function InvoiceSidebar({
       const itemDiscountType = item.discountType;
 
       if (itemDiscount > 0) {
-        if (itemDiscountType?.toUpperCase() === "PERCENTAGE" || itemDiscountType === "percentage") {
+        if (
+          itemDiscountType?.toUpperCase() === "PERCENTAGE" ||
+          itemDiscountType === "percentage"
+        ) {
           itemSubtotal = itemSubtotal * (1 - Math.min(itemDiscount, 100) / 100);
         } else {
           itemSubtotal = Math.max(0, itemSubtotal - itemDiscount);
@@ -291,11 +339,17 @@ export default function InvoiceSidebar({
       // Application de la remise globale au prorata
       if (globalDiscountAmount > 0) {
         const itemRatio = itemSubtotal / (subtotalAfterItemDiscounts || 1);
-        itemSubtotal = Math.max(0, itemSubtotal - globalDiscountAmount * itemRatio);
+        itemSubtotal = Math.max(
+          0,
+          itemSubtotal - globalDiscountAmount * itemRatio
+        );
       }
 
       // Calcul de la TVA (0 si auto-liquidation)
-      const itemTax = (invoiceData?.isReverseCharge || vatRate === 0) ? 0 : itemSubtotal * (vatRate / 100);
+      const itemTax =
+        invoiceData?.isReverseCharge || vatRate === 0
+          ? 0
+          : itemSubtotal * (vatRate / 100);
       totalTax += itemTax;
     });
 
@@ -307,9 +361,10 @@ export default function InvoiceSidebar({
     if (shippingData?.billShipping && shippingData?.shippingAmountHT > 0) {
       shippingAmountHT = parseFloat(shippingData.shippingAmountHT) || 0;
       const shippingVatRate = parseFloat(shippingData.shippingVatRate) || 20;
-      shippingTax = (invoiceData?.isReverseCharge || shippingVatRate === 0) 
-        ? 0 
-        : shippingAmountHT * (shippingVatRate / 100);
+      shippingTax =
+        invoiceData?.isReverseCharge || shippingVatRate === 0
+          ? 0
+          : shippingAmountHT * (shippingVatRate / 100);
       totalTax += shippingTax;
     }
 
@@ -625,7 +680,8 @@ export default function InvoiceSidebar({
             <div className="space-y-1.5">
               {invoice.items && invoice.items.length > 0 ? (
                 invoice.items.map((item, index) => {
-                  const progressPercentage = parseFloat(item.progressPercentage) || 100;
+                  const progressPercentage =
+                    parseFloat(item.progressPercentage) || 100;
                   return (
                     <div key={index} className="text-sm">
                       <div className="font-medium">
@@ -662,7 +718,9 @@ export default function InvoiceSidebar({
               {calculatedTotals.discountAmount > 0 && (
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Remise</span>
-                  <span>-{formatCurrency(calculatedTotals.discountAmount)}</span>
+                  <span>
+                    -{formatCurrency(calculatedTotals.discountAmount)}
+                  </span>
                 </div>
               )}
               <div className="flex justify-between">
@@ -687,7 +745,8 @@ export default function InvoiceSidebar({
                 const escompteValue = parseFloat(invoice.escompte) || 0;
                 if (escompteValue <= 0) return null;
 
-                const escompteAmount = (calculatedTotals.totalHT * escompteValue) / 100;
+                const escompteAmount =
+                  (calculatedTotals.totalHT * escompteValue) / 100;
 
                 return (
                   <div className="flex justify-between text-sm">
@@ -704,11 +763,15 @@ export default function InvoiceSidebar({
                 const escompteValue = parseFloat(invoice.escompte) || 0;
                 if (escompteValue <= 0 || invoice.isReverseCharge) return null;
 
-                const escompteAmount = (calculatedTotals.totalHT * escompteValue) / 100;
-                const htAfterEscompte = calculatedTotals.totalHT - escompteAmount;
-                const tvaAfterEscompte = calculatedTotals.totalHT > 0 
-                  ? (htAfterEscompte / calculatedTotals.totalHT) * calculatedTotals.totalVAT 
-                  : 0;
+                const escompteAmount =
+                  (calculatedTotals.totalHT * escompteValue) / 100;
+                const htAfterEscompte =
+                  calculatedTotals.totalHT - escompteAmount;
+                const tvaAfterEscompte =
+                  calculatedTotals.totalHT > 0
+                    ? (htAfterEscompte / calculatedTotals.totalHT) *
+                      calculatedTotals.totalVAT
+                    : 0;
 
                 return (
                   <div className="flex justify-between text-sm">
@@ -728,12 +791,15 @@ export default function InvoiceSidebar({
 
                     // Si escompte, afficher le TTC après escompte
                     if (escompteValue > 0) {
-                      const escompteAmount = (calculatedTotals.totalHT * escompteValue) / 100;
-                      const htAfterEscompte = calculatedTotals.totalHT - escompteAmount;
+                      const escompteAmount =
+                        (calculatedTotals.totalHT * escompteValue) / 100;
+                      const htAfterEscompte =
+                        calculatedTotals.totalHT - escompteAmount;
                       const tvaAfterEscompte = invoice.isReverseCharge
                         ? 0
-                        : calculatedTotals.totalHT > 0 
-                          ? (htAfterEscompte / calculatedTotals.totalHT) * calculatedTotals.totalVAT 
+                        : calculatedTotals.totalHT > 0
+                          ? (htAfterEscompte / calculatedTotals.totalHT) *
+                            calculatedTotals.totalVAT
                           : 0;
                       return formatCurrency(htAfterEscompte + tvaAfterEscompte);
                     }
@@ -753,12 +819,15 @@ export default function InvoiceSidebar({
                 // Calculer la base pour la retenue (TTC ou TTC après escompte)
                 let baseAmount = calculatedTotals.totalTTC;
                 if (escompteValue > 0) {
-                  const escompteAmount = (calculatedTotals.totalHT * escompteValue) / 100;
-                  const htAfterEscompte = calculatedTotals.totalHT - escompteAmount;
+                  const escompteAmount =
+                    (calculatedTotals.totalHT * escompteValue) / 100;
+                  const htAfterEscompte =
+                    calculatedTotals.totalHT - escompteAmount;
                   const tvaAfterEscompte = invoice.isReverseCharge
                     ? 0
-                    : calculatedTotals.totalHT > 0 
-                      ? (htAfterEscompte / calculatedTotals.totalHT) * calculatedTotals.totalVAT 
+                    : calculatedTotals.totalHT > 0
+                      ? (htAfterEscompte / calculatedTotals.totalHT) *
+                        calculatedTotals.totalVAT
                       : 0;
                   baseAmount = htAfterEscompte + tvaAfterEscompte;
                 }
@@ -787,12 +856,15 @@ export default function InvoiceSidebar({
 
                 // Appliquer l'escompte sur HT
                 if (escompteValue > 0) {
-                  const escompteAmount = (calculatedTotals.totalHT * escompteValue) / 100;
-                  const htAfterEscompte = calculatedTotals.totalHT - escompteAmount;
+                  const escompteAmount =
+                    (calculatedTotals.totalHT * escompteValue) / 100;
+                  const htAfterEscompte =
+                    calculatedTotals.totalHT - escompteAmount;
                   const tvaAfterEscompte = invoice.isReverseCharge
                     ? 0
-                    : calculatedTotals.totalHT > 0 
-                      ? (htAfterEscompte / calculatedTotals.totalHT) * calculatedTotals.totalVAT 
+                    : calculatedTotals.totalHT > 0
+                      ? (htAfterEscompte / calculatedTotals.totalHT) *
+                        calculatedTotals.totalVAT
                       : 0;
                   finalAmount = htAfterEscompte + tvaAfterEscompte;
                 }
@@ -918,7 +990,7 @@ export default function InvoiceSidebar({
             )}
           </div>
 
-          {/* Section Paiement Bancaire - Affichée uniquement si paiement rattaché ou si pas de suggestions en haut */}
+          {/* Section Paiement Bancaire - Affichée uniquement si paiement rattaché */}
           {invoice.linkedTransactionId && (
             <>
               <Separator />

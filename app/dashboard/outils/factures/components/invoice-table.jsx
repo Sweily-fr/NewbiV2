@@ -212,6 +212,7 @@ export default function InvoiceTable({
     reminderEnabled,
     onOpenReminderSettings,
     excludedClientIds,
+    onOpenSidebar: setInvoiceToOpen, // Passer la fonction pour ouvrir la sidebar au niveau du tableau
   });
 
   // État pour les tabs de filtre rapide

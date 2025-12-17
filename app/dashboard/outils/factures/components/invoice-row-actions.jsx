@@ -36,14 +36,11 @@ import {
   useMarkInvoiceAsPaid,
   useChangeInvoiceStatus,
   useDeleteInvoice,
-  useInvoice,
   INVOICE_STATUS,
 } from "@/src/graphql/invoiceQueries";
-import { useCreditNotesByInvoice } from "@/src/graphql/creditNoteQueries";
-import { hasReachedCreditNoteLimit } from "@/src/utils/creditNoteUtils";
 import { toast } from "@/src/components/ui/sonner";
 import { usePermissions } from "@/src/hooks/usePermissions";
-import InvoiceSidebar from "./invoice-sidebar";
+// InvoiceSidebar est maintenant géré au niveau du tableau (InvoiceTable) pour éviter les re-renders
 import InvoiceMobileFullscreen from "./invoice-mobile-fullscreen";
 
 // Fonction utilitaire pour formater les dates
@@ -82,8 +79,9 @@ export default function InvoiceRowActions({
   showReminderIcon = false,
   isClientExcluded = false,
   onOpenReminderSettings,
+  onOpenSidebar, // Callback pour ouvrir la sidebar au niveau du tableau
 }) {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  // OPTIMISÉ: Suppression de isSidebarOpen - géré au niveau du tableau pour éviter les re-renders
   const [isMobileFullscreenOpen, setIsMobileFullscreenOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [canCreateCreditNote, setCanCreateCreditNote] = useState(false);
@@ -114,16 +112,8 @@ export default function InvoiceRowActions({
   // Ne pas récupérer les détails pour les factures importées
   const isImportedInvoice = invoice._type === "imported";
 
-  // Récupération de la facture complète avec tous ses détails (seulement pour les factures normales)
-  const { invoice: fullInvoice, loading: loadingFullInvoice } = useInvoice(
-    isImportedInvoice ? null : invoice.id
-  );
-
-  // Récupération des avoirs pour cette facture (seulement pour les factures normales)
-  const { creditNotes, loading: loadingCreditNotes } = useCreditNotesByInvoice(
-    isImportedInvoice ? null : invoice.id
-  );
-
+  // OPTIMISÉ: Suppression de useInvoice et useCreditNotesByInvoice pour éviter les re-renders
+  // Ces données sont récupérées dans la sidebar elle-même
   const { markAsPaid, loading: markingAsPaid } = useMarkInvoiceAsPaid();
   const { changeStatus, loading: changingStatus } = useChangeInvoiceStatus();
   const { deleteInvoice, loading: isDeleting } = useDeleteInvoice();
@@ -132,7 +122,10 @@ export default function InvoiceRowActions({
     if (isMobile) {
       setIsMobileFullscreenOpen(true);
     } else {
-      setIsSidebarOpen(true);
+      // Utiliser la callback du tableau pour ouvrir la sidebar
+      if (onOpenSidebar) {
+        onOpenSidebar(invoice);
+      }
     }
   };
 
@@ -184,13 +177,6 @@ export default function InvoiceRowActions({
   const handleCreateCreditNote = () => {
     router.push(`/dashboard/outils/factures/${invoice.id}/avoir/nouveau`);
   };
-
-  // Vérifier si la facture a atteint sa limite d'avoirs
-  const currentInvoice = fullInvoice || invoice;
-  const creditNoteLimitReached = hasReachedCreditNoteLimit(
-    currentInvoice,
-    creditNotes
-  );
 
   const isLoading = markingAsPaid || changingStatus || isDeleting;
 
@@ -246,7 +232,7 @@ export default function InvoiceRowActions({
                   <CheckCircle className="mr-2 h-4 w-4" />
                   Marquer comme payée
                 </DropdownMenuItem>
-                {!creditNoteLimitReached && canCreateCreditNote && (
+                {canCreateCreditNote && (
                   <DropdownMenuItem onClick={handleCreateCreditNote}>
                     <Receipt className="mr-2 h-4 w-4" />
                     Créer un avoir
@@ -256,7 +242,6 @@ export default function InvoiceRowActions({
             )}
 
             {invoice.status === INVOICE_STATUS.COMPLETED &&
-              !creditNoteLimitReached &&
               canCreateCreditNote && (
                 <DropdownMenuItem onClick={handleCreateCreditNote}>
                   <Receipt className="mr-2 h-4 w-4" />
@@ -265,7 +250,6 @@ export default function InvoiceRowActions({
               )}
 
             {invoice.status === INVOICE_STATUS.CANCELED &&
-              !creditNoteLimitReached &&
               canCreateCreditNote && (
                 <DropdownMenuItem onClick={handleCreateCreditNote}>
                   <Receipt className="mr-2 h-4 w-4" />
@@ -328,13 +312,7 @@ export default function InvoiceRowActions({
         </DropdownMenu>
       </div>
 
-      {/* Sidebar pour desktop */}
-      <InvoiceSidebar
-        invoice={invoice}
-        isOpen={isSidebarOpen}
-        onClose={() => setIsSidebarOpen(false)}
-        onRefetch={onRefetch}
-      />
+      {/* Sidebar pour desktop - DÉPLACÉE AU NIVEAU DU TABLEAU pour éviter les re-renders */}
 
       {/* Fullscreen pour mobile - Ne monter que si ouvert */}
       {isMobileFullscreenOpen && (

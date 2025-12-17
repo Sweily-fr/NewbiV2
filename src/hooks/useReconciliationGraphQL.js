@@ -258,3 +258,55 @@ export const useReconciliationGraphQL = () => {
     fetchTransactionsForInvoice,
   };
 };
+
+/**
+ * Hook léger pour les opérations de rapprochement dans la sidebar
+ * N'appelle PAS useReconciliationSuggestions pour éviter les re-renders
+ * causés par le pollInterval
+ */
+export const useReconciliationForSidebar = () => {
+  const client = useApolloClient();
+
+  const { linkTransaction, loading: linkLoading } =
+    useLinkTransactionToInvoice();
+  const { unlinkTransaction, loading: unlinkLoading } =
+    useUnlinkTransactionFromInvoice();
+
+  // Fonction pour récupérer les transactions pour une facture spécifique
+  // OPTIMISÉ: Utiliser useCallback pour éviter les re-renders inutiles
+  const fetchTransactionsForInvoice = useCallback(
+    async (invoiceId) => {
+      try {
+        const { data } = await client.query({
+          query: GET_TRANSACTIONS_FOR_INVOICE,
+          variables: { invoiceId },
+          fetchPolicy: "network-only",
+        });
+
+        const result = data?.transactionsForInvoice;
+        return {
+          transactions: result?.transactions || [],
+          invoiceAmount: result?.invoiceAmount || 0,
+        };
+      } catch (error) {
+        console.error(
+          "[RECONCILIATION] Erreur fetchTransactionsForInvoice:",
+          error
+        );
+        return { transactions: [], invoiceAmount: 0 };
+      }
+    },
+    [client]
+  );
+
+  return {
+    // États
+    isLinking: linkLoading,
+    isUnlinking: unlinkLoading,
+
+    // Actions
+    linkTransaction,
+    unlinkTransaction,
+    fetchTransactionsForInvoice,
+  };
+};

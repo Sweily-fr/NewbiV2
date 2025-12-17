@@ -15,6 +15,7 @@ export {
   useUnlinkTransactionFromInvoice,
   useIgnoreTransaction,
   useReconciliationGraphQL as useReconciliation,
+  useReconciliationForSidebar,
 } from "./useReconciliationGraphQL";
 
 /**
