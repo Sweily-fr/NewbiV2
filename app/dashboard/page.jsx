@@ -54,7 +54,7 @@ import { IncomeCategoryChart } from "@/app/dashboard/components/income-category-
 
 import { DashboardSkeleton } from "@/src/components/dashboard-skeleton";
 import { useDashboardData } from "@/src/hooks/useDashboardData";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useInvoices } from "@/src/graphql/invoiceQueries";
 import { PricingModal } from "@/src/components/pricing-modal";
@@ -411,7 +411,7 @@ function DashboardContent() {
   );
 }
 
-export default function Dashboard() {
+function DashboardWithSearchParams() {
   const searchParams = useSearchParams();
   const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
 
@@ -437,5 +437,13 @@ export default function Dashboard() {
         onClose={() => setIsPricingModalOpen(false)}
       />
     </>
+  );
+}
+
+export default function Dashboard() {
+  return (
+    <Suspense fallback={<DashboardSkeleton />}>
+      <DashboardWithSearchParams />
+    </Suspense>
   );
 }
