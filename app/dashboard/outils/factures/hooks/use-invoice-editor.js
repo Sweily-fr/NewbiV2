@@ -1154,6 +1154,16 @@ export function useInvoiceEditor({
         });
         
         toast.error(`Le numéro de facture ${invoiceNumber} existe déjà`);
+      } else if (errorMessage.includes("dépasserait le montant du contrat") || errorMessage.includes("situationTotal")) {
+        // Erreur de dépassement du montant du contrat pour les factures de situation
+        setValidationErrors({
+          situationTotal: {
+            message: errorMessage,
+            canEdit: false
+          }
+        });
+        
+        toast.error("Le montant total des factures de situation dépasserait le montant du contrat");
       } else {
         handleError(error, 'invoice', { 
           preventDuplicates: true,
@@ -1446,6 +1456,16 @@ export function useInvoiceEditor({
         });
         
         toast.error(`Le numéro de facture ${invoiceNumber} existe déjà`);
+      } else if (errorMessage.includes("dépasserait le montant du contrat") || errorMessage.includes("situationTotal")) {
+        // Erreur de dépassement du montant du contrat pour les factures de situation
+        setValidationErrors({
+          situationTotal: {
+            message: errorMessage,
+            canEdit: false
+          }
+        });
+        
+        toast.error("Le montant total des factures de situation dépasserait le montant du contrat");
       } else {
         // Vérifier si l'erreur est vide et la remplacer par un message par défaut
         const errorToHandle = error && (error.message || error.graphQLErrors || Object.keys(error).length > 0) 

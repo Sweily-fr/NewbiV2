@@ -1503,7 +1503,12 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
               Récapitulatif de la facturation
             </h2>
             <div className="text-sm text-muted-foreground mb-6 dark:text-[#0A0A0A]">
-              {data.issueDate ? new Date(data.issueDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) : new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
+              {(() => {
+                if (!data.issueDate) return new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+                const date = new Date(data.issueDate);
+                if (isNaN(date.getTime())) return new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+                return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+              })()}
             </div>
 
             {/* Tableau des factures de situation */}
@@ -1530,21 +1535,95 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
               </thead>
               <tbody>
                 {/* Factures de situation précédentes */}
-                {previousSituationInvoices.map((invoice, index) => (
-                  <tr key={invoice.id || index} className="border-b border-gray-200">
-                    <td className="py-3 px-3 dark:text-[#0A0A0A]">
-                      <div className="font-medium text-[11px]">
-                        Facture de situation {invoice.prefix ? `${invoice.prefix}-` : 'F-'}{invoice.number}
-                      </div>
-                      <div className="text-[10px] text-muted-foreground">
-                        Émise le {invoice.issueDate ? new Date(invoice.issueDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'} • {invoice.status === 'PAID' ? 'Payée' : invoice.status === 'SENT' ? 'Envoyée' : 'À encaisser'}
-                      </div>
-                    </td>
-                    <td className="py-3 px-3 text-right dark:text-[#0A0A0A] text-[11px]">
-                      {formatCurrency(invoice.finalTotalTTC || 0)}
-                    </td>
-                  </tr>
-                ))}
+                {previousSituationInvoices.map((invoice, index) => {
+                  // Formater la date de manière sécurisée (utiliser createdAt comme fallback)
+                  // Les dates peuvent être des timestamps en millisecondes (string ou number) ou des dates ISO
+                  const formatDate = (dateStr, fallbackDateStr) => {
+                    const dateToUse = dateStr || fallbackDateStr || invoice.updatedAt;
+                    if (!dateToUse) return '-';
+                    
+                    let date;
+                    // Si c'est un timestamp numérique (string ou number)
+                    if (typeof dateToUse === 'string' && /^\d+$/.test(dateToUse)) {
+                      date = new Date(parseInt(dateToUse, 10));
+                    } else if (typeof dateToUse === 'number') {
+                      date = new Date(dateToUse);
+                    } else {
+                      // Sinon c'est probablement une date ISO
+                      date = new Date(dateToUse);
+                    }
+                    
+                    if (isNaN(date.getTime())) return '-';
+                    return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+                  };
+                  
+                  // Mapper le statut vers un libellé français
+                  const getStatusLabel = (status) => {
+                    switch (status) {
+                      case 'PAID': return 'Payée';
+                      case 'COMPLETED': return 'Encaissée';
+                      case 'SENT': return 'Envoyée';
+                      case 'PENDING': return 'En attente';
+                      case 'DRAFT': return 'Brouillon';
+                      case 'CANCELED': return 'Annulée';
+                      case 'OVERDUE': return 'En retard';
+                      default: return 'En attente';
+                    }
+                  };
+                  
+                  // Calculer le montant réel TTC en tenant compte du progressPercentage et des remises
+                  const calculateInvoiceTotalTTC = () => {
+                    if (!invoice.items || invoice.items.length === 0) {
+                      return invoice.finalTotalTTC || 0;
+                    }
+                    
+                    let totalTTC = 0;
+                    invoice.items.forEach(item => {
+                      const quantity = parseFloat(item.quantity) || 1;
+                      const unitPrice = parseFloat(item.unitPrice) || 0;
+                      const progressPercentage = item.progressPercentage !== undefined && item.progressPercentage !== null 
+                        ? parseFloat(item.progressPercentage) 
+                        : 100;
+                      const vatRate = parseFloat(item.vatRate) || 0;
+                      const discount = parseFloat(item.discount) || 0;
+                      const discountType = item.discountType || 'PERCENTAGE';
+                      
+                      // Calculer le montant HT avec avancement
+                      let itemHT = quantity * unitPrice * (progressPercentage / 100);
+                      
+                      // Appliquer la remise
+                      if (discount > 0) {
+                        if (discountType === 'PERCENTAGE' || discountType === 'percentage') {
+                          itemHT = itemHT * (1 - Math.min(discount, 100) / 100);
+                        } else {
+                          itemHT = Math.max(0, itemHT - discount);
+                        }
+                      }
+                      
+                      // Ajouter la TVA
+                      const itemTTC = itemHT * (1 + vatRate / 100);
+                      totalTTC += itemTTC;
+                    });
+                    
+                    return totalTTC;
+                  };
+                  
+                  return (
+                    <tr key={invoice.id || index} className="border-b border-gray-200">
+                      <td className="py-3 px-3 dark:text-[#0A0A0A]">
+                        <div className="font-medium text-[11px]">
+                          Facture de situation {invoice.prefix ? `${invoice.prefix}-` : 'F-'}{invoice.number}
+                        </div>
+                        <div className="text-[10px] text-muted-foreground">
+                          Émise le {formatDate(invoice.issueDate, invoice.createdAt)} • {getStatusLabel(invoice.status)}
+                        </div>
+                      </td>
+                      <td className="py-3 px-3 text-right dark:text-[#0A0A0A] text-[11px]">
+                        {formatCurrency(calculateInvoiceTotalTTC())}
+                      </td>
+                    </tr>
+                  );
+                })}
                 {/* Facture actuelle */}
                 <tr className="border-b border-gray-200">
                   <td className="py-3 px-3 dark:text-[#0A0A0A]">
@@ -1552,7 +1631,23 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
                       Facture de situation {data.prefix ? `${data.prefix}-` : 'F-'}{data.number || '000001'}
                     </div>
                     <div className="text-[10px] text-muted-foreground">
-                      Émise le {data.issueDate ? new Date(data.issueDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) : new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })} • À encaisser
+                      Émise le {(() => {
+                        if (!data.issueDate) return new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+                        const date = new Date(data.issueDate);
+                        if (isNaN(date.getTime())) return new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+                        return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+                      })()} • {(() => {
+                        switch (data.status) {
+                          case 'PAID': return 'Payée';
+                          case 'COMPLETED': return 'Encaissée';
+                          case 'SENT': return 'Envoyée';
+                          case 'PENDING': return 'En attente';
+                          case 'DRAFT': return 'Brouillon';
+                          case 'CANCELED': return 'Annulée';
+                          case 'OVERDUE': return 'En retard';
+                          default: return 'En attente';
+                        }
+                      })()}
                     </div>
                   </td>
                   <td className="py-3 px-3 text-right dark:text-[#0A0A0A] text-[11px]">
@@ -1674,8 +1769,38 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
                     totalContratTTCValue = totalContratAfterDiscount + totalContratTVA;
                   }
                   
-                  // Montant facturé à ce jour (factures précédentes)
-                  const montantFacture = previousSituationInvoices.reduce((sum, inv) => sum + (parseFloat(inv.finalTotalTTC) || 0), 0);
+                  // Montant facturé à ce jour (factures précédentes) - calculé avec progressPercentage
+                  const montantFacture = previousSituationInvoices.reduce((sum, inv) => {
+                    if (!inv.items || inv.items.length === 0) {
+                      return sum + (parseFloat(inv.finalTotalTTC) || 0);
+                    }
+                    
+                    let invoiceTTC = 0;
+                    inv.items.forEach(item => {
+                      const quantity = parseFloat(item.quantity) || 1;
+                      const unitPrice = parseFloat(item.unitPrice) || 0;
+                      const progressPercentage = item.progressPercentage !== undefined && item.progressPercentage !== null 
+                        ? parseFloat(item.progressPercentage) 
+                        : 100;
+                      const vatRate = parseFloat(item.vatRate) || 0;
+                      const discount = parseFloat(item.discount) || 0;
+                      const discountType = item.discountType || 'PERCENTAGE';
+                      
+                      let itemHT = quantity * unitPrice * (progressPercentage / 100);
+                      
+                      if (discount > 0) {
+                        if (discountType === 'PERCENTAGE' || discountType === 'percentage') {
+                          itemHT = itemHT * (1 - Math.min(discount, 100) / 100);
+                        } else {
+                          itemHT = Math.max(0, itemHT - discount);
+                        }
+                      }
+                      
+                      invoiceTTC += itemHT * (1 + vatRate / 100);
+                    });
+                    
+                    return sum + invoiceTTC;
+                  }, 0);
                   
                   // Avancement cumulé
                   const avancementCumule = totalContratTTCValue > 0 ? (montantFacture / totalContratTTCValue) * 100 : 0;

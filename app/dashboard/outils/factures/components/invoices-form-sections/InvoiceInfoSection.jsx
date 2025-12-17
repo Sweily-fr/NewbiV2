@@ -804,39 +804,59 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
                   </CommandEmpty>
                   
                   {/* Devis acceptés */}
-                  {(referenceFilter === "all" || referenceFilter === "quotes") && quotesData?.quotes?.quotes?.length > 0 && (
-                    <CommandGroup heading={`Devis acceptés (${quotesData.quotes.quotes.length})`}>
-                      {[...quotesData.quotes.quotes].sort((a, b) => {
-                        // Trier par numéro décroissant pour avoir les plus récents en premier
-                        const numA = parseInt(a.number) || 0;
-                        const numB = parseInt(b.number) || 0;
-                        return numB - numA;
-                      }).map((quote) => {
-                        const fullRef = quote.prefix ? `${quote.prefix}-${quote.number}` : quote.number;
-                        return (
-                          <CommandItem
-                            key={quote.id}
-                            value={fullRef}
-                            onSelect={() => {
-                              setValue("purchaseOrderNumber", fullRef, { shouldDirty: true });
-                              setReferenceSearchOpen(false);
-                              setReferenceSearchTerm("");
-                              setReferenceFilter("all");
-                            }}
-                            className="flex items-center gap-2 cursor-pointer"
-                          >
-                            <FileText className="h-4 w-4 text-blue-500 shrink-0" />
-                            <div className="flex-1 min-w-0">
-                              <div className="font-medium truncate">{fullRef}</div>
-                              <div className="text-xs text-muted-foreground truncate">
-                                {quote.client?.name} • {formatCurrency(quote.finalTotalTTC)}
+                  {(referenceFilter === "all" || referenceFilter === "quotes") && quotesData?.quotes?.quotes?.length > 0 && (() => {
+                    // Pour les factures de situation, filtrer les devis dont le total facturé a atteint le montant du devis
+                    const availableQuotes = data.invoiceType === "situation" 
+                      ? quotesData.quotes.quotes.filter(quote => {
+                          const invoicedTotal = quote.situationInvoicedTotal || 0;
+                          const contractTotal = quote.finalTotalTTC || 0;
+                          // Afficher uniquement si le total facturé est inférieur au contrat
+                          return invoicedTotal < contractTotal;
+                        })
+                      : quotesData.quotes.quotes;
+                    
+                    if (availableQuotes.length === 0) return null;
+                    
+                    return (
+                      <CommandGroup heading={`Devis acceptés (${availableQuotes.length})`}>
+                        {[...availableQuotes].sort((a, b) => {
+                          // Trier par numéro décroissant pour avoir les plus récents en premier
+                          const numA = parseInt(a.number) || 0;
+                          const numB = parseInt(b.number) || 0;
+                          return numB - numA;
+                        }).map((quote) => {
+                          const fullRef = quote.prefix ? `${quote.prefix}-${quote.number}` : quote.number;
+                          const invoicedTotal = quote.situationInvoicedTotal || 0;
+                          const remaining = data.invoiceType === "situation" && invoicedTotal > 0 
+                            ? quote.finalTotalTTC - invoicedTotal 
+                            : null;
+                          
+                          return (
+                            <CommandItem
+                              key={quote.id}
+                              value={fullRef}
+                              onSelect={() => {
+                                setValue("purchaseOrderNumber", fullRef, { shouldDirty: true });
+                                setReferenceSearchOpen(false);
+                                setReferenceSearchTerm("");
+                                setReferenceFilter("all");
+                              }}
+                              className="flex items-center gap-2 cursor-pointer"
+                            >
+                              <FileText className="h-4 w-4 text-blue-500 shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <div className="font-medium truncate">{fullRef}</div>
+                                <div className="text-xs text-muted-foreground truncate">
+                                  {quote.client?.name} • {formatCurrency(quote.finalTotalTTC)}
+                                  {remaining !== null && ` • Reste: ${formatCurrency(remaining)}`}
+                                </div>
                               </div>
-                            </div>
-                          </CommandItem>
-                        );
-                      })}
-                    </CommandGroup>
-                  )}
+                            </CommandItem>
+                          );
+                        })}
+                      </CommandGroup>
+                    );
+                  })()}
                   
                   {/* Références de situation existantes - uniquement pour les factures de situation */}
                   {data.invoiceType === "situation" && (referenceFilter === "all" || referenceFilter === "situations") && situationRefsData?.situationReferences?.length > 0 && (() => {

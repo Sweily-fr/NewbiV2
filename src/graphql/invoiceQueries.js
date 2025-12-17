@@ -283,6 +283,7 @@ export const GET_SITUATION_INVOICES_BY_QUOTE_REF = gql`
       invoiceType
       situationNumber
       purchaseOrderNumber
+      status
       issueDate
       createdAt
       finalTotalTTC
