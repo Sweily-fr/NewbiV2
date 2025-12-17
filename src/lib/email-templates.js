@@ -1610,4 +1610,229 @@ export const emailTemplates = {
     </body>
     </html>
   `,
+
+  // Template pour paiement réussi
+  paymentSucceeded: ({
+    customerName,
+    plan,
+    amount,
+    invoiceNumber,
+    paymentDate,
+    nextRenewalDate,
+  }) => `
+    <!DOCTYPE html>
+    <html lang="fr">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Paiement confirmé</title>
+    </head>
+    <body style="margin: 0; padding: 40px 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #ffffff; color: #1f2937;">
+      <div style="max-width: 500px; margin: 0 auto;">
+        
+        <!-- Logo -->
+        <div style="text-align: center; margin-bottom: 40px;">
+          <img src="https://pub-4febea4e469a42638fac4d12ea86064f.r2.dev/newbiLogo.png" alt="Newbi" style="height: 100px; width: 100px;">
+        </div>
+        
+        <!-- Icône succès -->
+        <div style="text-align: center; margin-bottom: 24px;">
+          <div style="display: inline-block; background-color: #10b981; border-radius: 50%; padding: 16px;">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </div>
+        </div>
+        
+        <!-- Titre principal -->
+        <h1 style="font-size: 24px; font-weight: 600; color: #1f2937; margin: 0 0 16px 0; text-align: center;">
+          Paiement confirmé
+        </h1>
+        
+        <!-- Message principal -->
+        <p style="font-size: 16px; line-height: 1.5; color: #6b7280; margin: 0 0 32px 0; text-align: center;">
+          Merci pour votre paiement ! Votre abonnement <strong style="color: #5B4FFF;">${plan}</strong> est actif.
+        </p>
+        
+        <!-- Détails du paiement -->
+        <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; margin: 24px 0; border-radius: 8px;">
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="padding: 8px 0; font-size: 14px; color: #6b7280;">N° de facture :</td>
+              <td style="padding: 8px 0; font-size: 14px; color: #1f2937; text-align: right;">
+                ${invoiceNumber}
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; font-size: 14px; color: #6b7280;">Date de paiement :</td>
+              <td style="padding: 8px 0; font-size: 14px; color: #1f2937; text-align: right;">
+                ${paymentDate}
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; font-size: 14px; color: #6b7280;">Plan :</td>
+              <td style="padding: 8px 0; font-size: 14px; color: #1f2937; font-weight: 600; text-align: right;">
+                ${plan}
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; font-size: 14px; color: #6b7280;">Prochain renouvellement :</td>
+              <td style="padding: 8px 0; font-size: 14px; color: #1f2937; text-align: right;">
+                ${nextRenewalDate}
+              </td>
+            </tr>
+            <tr style="border-top: 1px solid #e2e8f0;">
+              <td style="padding: 12px 0 8px 0; font-size: 14px; color: #6b7280; font-weight: 600;">Montant payé :</td>
+              <td style="padding: 12px 0 8px 0; font-size: 18px; color: #10b981; font-weight: 600; text-align: right;">
+                ${amount}
+              </td>
+            </tr>
+          </table>
+        </div>
+        
+        <!-- Bouton CTA -->
+        <div style="text-align: center; margin: 32px 0;">
+          <a href="${process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "https://app.newbi.fr"}/dashboard" style="display: inline-block; background-color: #5B4FFF; color: #ffffff; text-decoration: none; padding: 14px 28px; border-radius: 8px; font-weight: 500; font-size: 16px;">
+            Accéder à mon espace
+          </a>
+        </div>
+        
+        <!-- Footer -->
+        <div style="margin-top: 48px; padding-top: 24px; border-top: 1px solid #e5e7eb;">
+          <p style="font-size: 11px; color: #9ca3af; margin: 0 0 20px 0; text-align: center;">
+            Vous recevez cet email suite à votre paiement sur Newbi.
+          </p>
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+            <tr>
+              <td style="text-align: left; vertical-align: middle;">
+                <img src="https://pub-866a54f5560d449cb224411e60410621.r2.dev/Logo_NI_Purple.png" alt="Newbi" style="height: 24px; width: auto;">
+              </td>
+              <td style="text-align: right; vertical-align: middle;">
+                <a href="https://www.instagram.com/newbi_fr?igsh=OXhuZHRtY3M5bW83" target="_blank" style="text-decoration: none;">
+                  <img src="https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/social/instagram/instagram-black.png" alt="Instagram" style="height: 24px; width: 24px;">
+                </a>
+              </td>
+            </tr>
+          </table>
+          <div style="text-align: left; font-size: 10px; color: #9ca3af; line-height: 1.6;">
+            <p style="margin: 0 0 4px 0; font-weight: 600;">SWEILY</p>
+            <p style="margin: 0 0 4px 0;">SAS au capital de 10 000,00 €</p>
+            <p style="margin: 0 0 4px 0;">SIREN : 981 576 549 • RCS Paris</p>
+            <p style="margin: 0;">229 rue Saint-Honoré, 75001 Paris</p>
+          </div>
+        </div>
+        
+      </div>
+    </body>
+    </html>
+  `,
+
+  // Template pour échec de paiement
+  paymentFailed: ({ customerName, plan, amount, failureReason, retryDate }) => `
+    <!DOCTYPE html>
+    <html lang="fr">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Échec de paiement</title>
+    </head>
+    <body style="margin: 0; padding: 40px 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #ffffff; color: #1f2937;">
+      <div style="max-width: 500px; margin: 0 auto;">
+        
+        <!-- Logo -->
+        <div style="text-align: center; margin-bottom: 40px;">
+          <img src="https://pub-4febea4e469a42638fac4d12ea86064f.r2.dev/newbiLogo.png" alt="Newbi" style="height: 100px; width: 100px;">
+        </div>
+        
+        <!-- Icône erreur -->
+        <div style="text-align: center; margin-bottom: 24px;">
+          <div style="display: inline-block; background-color: #ef4444; border-radius: 50%; padding: 16px;">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </div>
+        </div>
+        
+        <!-- Titre principal -->
+        <h1 style="font-size: 24px; font-weight: 600; color: #1f2937; margin: 0 0 16px 0; text-align: center;">
+          Échec de paiement
+        </h1>
+        
+        <!-- Message principal -->
+        <p style="font-size: 16px; line-height: 1.5; color: #6b7280; margin: 0 0 32px 0; text-align: center;">
+          Nous n'avons pas pu traiter votre paiement pour l'abonnement <strong style="color: #5B4FFF;">${plan}</strong>.
+        </p>
+        
+        <!-- Détails de l'erreur -->
+        <div style="background-color: #fef2f2; border: 1px solid #fecaca; padding: 20px; margin: 24px 0; border-radius: 8px;">
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="padding: 8px 0; font-size: 14px; color: #6b7280;">Plan :</td>
+              <td style="padding: 8px 0; font-size: 14px; color: #1f2937; font-weight: 600; text-align: right;">
+                ${plan}
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; font-size: 14px; color: #6b7280;">Montant :</td>
+              <td style="padding: 8px 0; font-size: 14px; color: #1f2937; text-align: right;">
+                ${amount}
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; font-size: 14px; color: #6b7280;">Raison :</td>
+              <td style="padding: 8px 0; font-size: 14px; color: #ef4444; font-weight: 500; text-align: right;">
+                ${failureReason}
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; font-size: 14px; color: #6b7280;">Prochaine tentative :</td>
+              <td style="padding: 8px 0; font-size: 14px; color: #1f2937; text-align: right;">
+                ${retryDate}
+              </td>
+            </tr>
+          </table>
+        </div>
+        
+        <!-- Instructions -->
+        <p style="font-size: 14px; line-height: 1.5; color: #6b7280; margin: 24px 0; text-align: center;">
+          Veuillez mettre à jour vos informations de paiement pour éviter toute interruption de service.
+        </p>
+        
+        <!-- Bouton CTA -->
+        <div style="text-align: center; margin: 32px 0;">
+          <a href="${process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "https://app.newbi.fr"}/dashboard/settings?tab=subscription" style="display: inline-block; background-color: #ef4444; color: #ffffff; text-decoration: none; padding: 14px 28px; border-radius: 8px; font-weight: 500; font-size: 16px;">
+            Mettre à jour mon paiement
+          </a>
+        </div>
+        
+        <!-- Footer -->
+        <div style="margin-top: 48px; padding-top: 24px; border-top: 1px solid #e5e7eb;">
+          <p style="font-size: 11px; color: #9ca3af; margin: 0 0 20px 0; text-align: center;">
+            Si vous avez des questions, contactez notre support à support@newbi.fr
+          </p>
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+            <tr>
+              <td style="text-align: left; vertical-align: middle;">
+                <img src="https://pub-866a54f5560d449cb224411e60410621.r2.dev/Logo_NI_Purple.png" alt="Newbi" style="height: 24px; width: auto;">
+              </td>
+              <td style="text-align: right; vertical-align: middle;">
+                <a href="https://www.instagram.com/newbi_fr?igsh=OXhuZHRtY3M5bW83" target="_blank" style="text-decoration: none;">
+                  <img src="https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/social/instagram/instagram-black.png" alt="Instagram" style="height: 24px; width: 24px;">
+                </a>
+              </td>
+            </tr>
+          </table>
+          <div style="text-align: left; font-size: 10px; color: #9ca3af; line-height: 1.6;">
+            <p style="margin: 0 0 4px 0; font-weight: 600;">SWEILY</p>
+            <p style="margin: 0 0 4px 0;">SAS au capital de 10 000,00 €</p>
+            <p style="margin: 0 0 4px 0;">SIREN : 981 576 549 • RCS Paris</p>
+            <p style="margin: 0;">229 rue Saint-Honoré, 75001 Paris</p>
+          </div>
+        </div>
+        
+      </div>
+    </body>
+    </html>
+  `,
 };

@@ -81,6 +81,14 @@ export function useDashboardLayoutSimple() {
     const hasCancelSuccess = urlParams?.get("cancel_success") === "true";
     const hasSubscriptionSuccess =
       urlParams?.get("subscription_success") === "true";
+    const hasPaymentSuccess = urlParams?.get("payment_success") === "true";
+
+    // ✅ Déterminer si on revient de Stripe (n'importe quel paramètre de succès)
+    const isReturningFromStripe =
+      hasStripeSession ||
+      hasCancelSuccess ||
+      hasSubscriptionSuccess ||
+      hasPaymentSuccess;
 
     // Essayer de charger depuis le cache local d'abord
     // Utiliser activeOrganization.id en priorité, sinon session.activeOrganizationId
@@ -90,7 +98,7 @@ export function useDashboardLayoutSimple() {
 
     if (cacheKey) {
       // Si on revient de Stripe, d'une résiliation ou d'un nouvel abonnement, vider le cache pour forcer le rechargement
-      if (hasStripeSession || hasCancelSuccess || hasSubscriptionSuccess) {
+      if (isReturningFromStripe) {
         localStorage.removeItem(cacheKey);
         console.log(
           "🗑️ Cache d'abonnement invalidé (retour Stripe/résiliation/nouvel abonnement)"
@@ -100,12 +108,7 @@ export function useDashboardLayoutSimple() {
       // Cache intelligent : 5 minutes + invalidation après paiement/résiliation
       try {
         const cached = localStorage.getItem(cacheKey);
-        if (
-          cached &&
-          !hasStripeSession &&
-          !hasCancelSuccess &&
-          !hasSubscriptionSuccess
-        ) {
+        if (cached && !isReturningFromStripe) {
           // ← Ne pas utiliser le cache si on revient de Stripe, résiliation ou nouvel abonnement
           const { data: cachedSubscription, timestamp } = JSON.parse(cached);
           const isValid = Date.now() - timestamp < 5 * 60 * 1000; // 5 minutes (évite les flashs)
@@ -150,56 +153,54 @@ export function useDashboardLayoutSimple() {
           organizationId
         );
 
-        const { data: subscriptions, error } =
-          await authClient.subscription.list({
-            query: {
-              referenceId: organizationId,
-            },
-          });
+        // ✅ Utiliser l'API personnalisée qui récupère directement depuis MongoDB
+        // (inclut les abonnements canceled, contrairement à Better Auth subscription.list)
+        const response = await fetch(
+          `/api/organizations/${organizationId}/subscription`
+        );
+        const data = await response.json();
 
-        console.log("🔍 [SUBSCRIPTION] Result:", { subscriptions, error });
+        console.log("🔍 [SUBSCRIPTION] Result:", data);
 
-        if (!error) {
-          // ✅ Trouver un abonnement actif OU un abonnement annulé mais encore dans la période payée
-          const activeSubscription = subscriptions?.find((sub) => {
-            // Abonnement actif ou en période d'essai
-            if (sub.status === "active" || sub.status === "trialing") {
-              return true;
+        if (response.ok && data) {
+          // Vérifier si l'abonnement est actif ou encore valide (canceled mais dans la période payée)
+          let activeSubscription = null;
+
+          // Si pas d'abonnement ou abonnement expiré
+          if (data.isDefault || data.status === "expired" || !data.status) {
+            console.log("🔍 [SUBSCRIPTION] Pas d'abonnement actif ou expiré");
+            activeSubscription = null;
+          } else if (data.status === "active" || data.status === "trialing") {
+            activeSubscription = data;
+          } else if (data.status === "canceled" && data.periodEnd) {
+            const periodEndDate = new Date(data.periodEnd);
+            const now = new Date();
+            if (periodEndDate > now) {
+              console.log(
+                "🔍 [SUBSCRIPTION] Abonnement annulé mais encore valide jusqu'au:",
+                periodEndDate.toLocaleDateString("fr-FR")
+              );
+              activeSubscription = data;
+            } else {
+              console.log("🔍 [SUBSCRIPTION] Abonnement annulé et expiré");
+              activeSubscription = null;
             }
-            // Abonnement annulé mais encore dans la période payée (prorata)
-            if (sub.status === "canceled" && sub.periodEnd) {
-              const periodEndDate = new Date(sub.periodEnd);
-              const now = new Date();
-              if (periodEndDate > now) {
-                console.log(
-                  "🔍 [SUBSCRIPTION] Abonnement annulé mais encore valide jusqu'au:",
-                  periodEndDate.toLocaleDateString("fr-FR")
-                );
-                return true;
-              }
-            }
-            return false;
-          });
+          }
 
           console.log(
             "🔍 [SUBSCRIPTION] Active subscription:",
             activeSubscription
           );
 
-          setSubscription(activeSubscription || null);
+          setSubscription(activeSubscription);
 
           // Sauvegarder en cache pour éviter les flashs futurs
-          // ⚠️ NE PAS mettre en cache si on revient de Stripe et qu'il n'y a pas d'abonnement
-          // (le webhook n'a peut-être pas encore créé l'abonnement)
-          const shouldCache =
-            activeSubscription ||
-            (!hasStripeSession && !hasSubscriptionSuccess);
-          if (cacheKey && shouldCache) {
+          if (cacheKey) {
             try {
               localStorage.setItem(
                 cacheKey,
                 JSON.stringify({
-                  data: activeSubscription || null,
+                  data: activeSubscription,
                   timestamp: Date.now(),
                 })
               );
@@ -230,110 +231,107 @@ export function useDashboardLayoutSimple() {
 
     const urlParams = new URLSearchParams(window.location.search);
     const hasStripeSession = urlParams.get("session_id");
+    const hasSubscriptionSuccess =
+      urlParams.get("subscription_success") === "true";
+    const hasPaymentSuccess = urlParams.get("payment_success") === "true";
 
-    if (!hasStripeSession) return;
+    // ✅ Déclencher le polling si on revient de Stripe (session_id OU subscription_success OU payment_success)
+    if (!hasStripeSession && !hasSubscriptionSuccess && !hasPaymentSuccess)
+      return;
+
+    console.log("🔄 [POLLING] Démarrage du polling après retour Stripe...", {
+      hasStripeSession: !!hasStripeSession,
+      hasSubscriptionSuccess,
+      hasPaymentSuccess,
+    });
 
     // Attendre que l'organisation soit disponible
     if (!session?.session?.activeOrganizationId) {
       return;
     }
 
-    console.log("🔄 [POLLING] Démarrage du polling après retour Stripe...");
-
     let attempts = 0;
-    const maxAttempts = 30; // 30 tentatives max
-    let pollTimeout;
-    let isPollingActive = true;
+    const maxAttempts = 30; // 30 × 2s = 60 secondes max
+    let pollInterval;
 
-    // Fonction de polling avec intervalle progressif
+    // Fonction de polling - utilise l'API personnalisée
     const checkSubscription = async () => {
-      if (!isPollingActive) return;
-
       attempts++;
       console.log(`🔄 [POLLING] Tentative ${attempts}/${maxAttempts}...`);
 
       try {
-        const { data: subscriptions, error } =
-          await authClient.subscription.list({
-            query: {
-              referenceId: session.session.activeOrganizationId,
-            },
-          });
+        const response = await fetch(
+          `/api/organizations/${session.session.activeOrganizationId}/subscription`
+        );
+        const data = await response.json();
 
-        if (error) {
-          console.error("❌ [POLLING] Erreur API:", error);
-        } else {
-          const activeSubscription = subscriptions?.find(
-            (sub) => sub.status === "active" || sub.status === "trialing"
-          );
+        console.log(`🔍 [POLLING] Résultat:`, data);
 
-          if (activeSubscription) {
-            isPollingActive = false;
-            console.log(
-              "✅ [POLLING] Abonnement trouvé!",
-              activeSubscription.plan
-            );
-
-            // Mettre à jour l'état
-            setSubscription(activeSubscription);
-
-            // Mettre à jour le cache
-            const cacheKey = `subscription-${session.session.activeOrganizationId}`;
-            localStorage.setItem(
-              cacheKey,
-              JSON.stringify({
-                data: activeSubscription,
-                timestamp: Date.now(),
-              })
-            );
-
-            // Nettoyer l'URL
-            window.history.replaceState(
-              {},
-              document.title,
-              window.location.pathname
-            );
-
-            // Afficher un toast de succès
-            toast.success("Abonnement activé avec succès !");
-
-            return; // Arrêter le polling
-          }
+        if (!response.ok) {
+          console.error("❌ [POLLING] Erreur API:", data.error);
+          return;
         }
 
-        // Continuer le polling si pas encore trouvé
-        if (attempts < maxAttempts && isPollingActive) {
-          // Intervalle progressif : 500ms les 5 premières, puis 1s, puis 2s
-          const delay = attempts <= 5 ? 500 : attempts <= 15 ? 1000 : 2000;
-          pollTimeout = setTimeout(checkSubscription, delay);
-        } else if (attempts >= maxAttempts) {
-          console.warn(
-            "⚠️ [POLLING] Timeout - abonnement non trouvé après 30 tentatives"
+        // Vérifier si l'abonnement est actif
+        const isActive = data.status === "active" || data.status === "trialing";
+
+        if (isActive) {
+          clearInterval(pollInterval);
+          console.log("✅ [POLLING] Abonnement trouvé!", data.plan);
+
+          // Mettre à jour l'état
+          setSubscription(data);
+
+          // Mettre à jour le cache
+          const cacheKey = `subscription-${session.session.activeOrganizationId}`;
+          localStorage.setItem(
+            cacheKey,
+            JSON.stringify({
+              data: data,
+              timestamp: Date.now(),
+            })
           );
-          // Nettoyer l'URL même en cas d'échec
+
+          // Nettoyer l'URL
           window.history.replaceState(
             {},
             document.title,
             window.location.pathname
           );
+
+          console.log("✅ [POLLING] Subscription mise à jour");
+        } else {
+          console.log(
+            `⏳ [POLLING] Pas d'abonnement actif trouvé (status: ${data.status}), nouvelle tentative...`
+          );
+          if (attempts >= maxAttempts) {
+            clearInterval(pollInterval);
+            console.warn(
+              "⚠️ [POLLING] Timeout - abonnement non trouvé après 30 tentatives"
+            );
+            // Nettoyer l'URL même en cas d'échec
+            window.history.replaceState(
+              {},
+              document.title,
+              window.location.pathname
+            );
+          }
         }
       } catch (error) {
         console.error("❌ [POLLING] Erreur:", error);
-        // Continuer le polling malgré l'erreur
-        if (attempts < maxAttempts && isPollingActive) {
-          pollTimeout = setTimeout(checkSubscription, 2000);
-        }
       }
     };
 
     // Première vérification immédiate
     checkSubscription();
 
+    // Puis polling toutes les 1 seconde (plus rapide)
+    pollInterval = setInterval(checkSubscription, 1000);
+
     // Cleanup
     return () => {
-      isPollingActive = false;
-      if (pollTimeout) {
-        clearTimeout(pollTimeout);
+      if (pollInterval) {
+        clearInterval(pollInterval);
       }
     };
   }, [isHydrated, session?.session?.activeOrganizationId]);

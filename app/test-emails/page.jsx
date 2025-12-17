@@ -105,6 +105,84 @@ export default function TestEmailsPage() {
       ],
       label: "Notification inviteur - Membre accepté",
     },
+    // Templates d'abonnement
+    subscriptionCreated: {
+      params: [
+        {
+          customerName: "Jean Dupont",
+          plan: "PME",
+          price: "48,99 €",
+          billingInterval: "mois",
+          features: [
+            "Jusqu'à 10 utilisateurs",
+            "1 workspace inclus",
+            "Toutes les fonctionnalités Freelance",
+            "Support prioritaire",
+          ],
+        },
+      ],
+      label: "Abonnement - Nouvel abonnement",
+    },
+    subscriptionChanged: {
+      params: [
+        {
+          customerName: "Jean Dupont",
+          oldPlan: "Freelance",
+          newPlan: "PME",
+          newPrice: "48,99 €/mois",
+          isUpgrade: true,
+          effectiveDate: "17 décembre 2025",
+        },
+      ],
+      label: "Abonnement - Changement de plan",
+    },
+    subscriptionCancelled: {
+      params: [
+        {
+          customerName: "Jean Dupont",
+          plan: "PME",
+          endDate: "17 janvier 2026",
+        },
+      ],
+      label: "Abonnement - Résiliation",
+    },
+    renewalReminder: {
+      params: [
+        {
+          customerName: "Jean Dupont",
+          plan: "PME",
+          price: "48,99 €/mois",
+          renewalDate: "17 janvier 2026",
+          amount: "48,99 € TTC",
+        },
+      ],
+      label: "Abonnement - Rappel de renouvellement",
+    },
+    paymentSucceeded: {
+      params: [
+        {
+          customerName: "Jean Dupont",
+          plan: "PME",
+          amount: "48,99 €",
+          invoiceNumber: "INV-2025-001234",
+          paymentDate: "17 décembre 2025",
+          nextRenewalDate: "17 janvier 2026",
+        },
+      ],
+      label: "Abonnement - Paiement réussi",
+    },
+    paymentFailed: {
+      params: [
+        {
+          customerName: "Jean Dupont",
+          plan: "PME",
+          amount: "48,99 €",
+          failureReason: "Carte expirée",
+          retryDate: "20 décembre 2025",
+        },
+      ],
+      label: "Abonnement - Échec de paiement",
+    },
   };
 
   // Générer le HTML du template sélectionné
@@ -190,7 +268,10 @@ export default function TestEmailsPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Sélectionnez un template
                 </label>
-                <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
+                <Select
+                  value={selectedTemplate}
+                  onValueChange={setSelectedTemplate}
+                >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Choisir un template" />
                   </SelectTrigger>
@@ -260,7 +341,8 @@ export default function TestEmailsPage() {
                 </Button>
               </div>
               <p className="text-xs text-gray-500 mt-2">
-                L'email sera envoyé avec les données de test du template sélectionné
+                L'email sera envoyé avec les données de test du template
+                sélectionné
               </p>
             </div>
           </div>
@@ -306,7 +388,9 @@ export default function TestEmailsPage() {
 
         {/* Template Info */}
         <Card className="p-6 mt-6">
-          <h2 className="text-lg font-semibold mb-4">Informations du template</h2>
+          <h2 className="text-lg font-semibold mb-4">
+            Informations du template
+          </h2>
           <div className="space-y-2 text-sm">
             <div className="flex gap-2">
               <span className="font-medium text-gray-700">Template :</span>

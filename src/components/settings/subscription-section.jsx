@@ -253,7 +253,13 @@ export function SubscriptionSection({
 
   // Récupérer le prix depuis Stripe (TTC)
   const getSubscriptionPrice = () => {
-    return subscription?.plan === "pro" ? 17.99 : 0;
+    const prices = {
+      freelance: 14.59,
+      pme: 48.99,
+      entreprise: 94.99,
+      pro: 17.99, // Legacy
+    };
+    return prices[subscription?.plan] || 0;
   };
 
   const plans = [
@@ -368,12 +374,13 @@ export function SubscriptionSection({
                         ? "Pack Entreprise"
                         : "Pack Pro"}
                 </h3>
-                {subscription.cancelAtPeriodEnd ? (
+                {subscription.cancelAtPeriodEnd ||
+                subscription.status === "canceled" ? (
                   <Badge
                     variant="outline"
                     className="text-[10px] px-1.5 py-0 h-4 border-orange-400 text-orange-600 dark:border-orange-600 dark:text-orange-400"
                   >
-                    Résiliation programmée
+                    Résilié
                   </Badge>
                 ) : (
                   <Badge
@@ -391,31 +398,33 @@ export function SubscriptionSection({
               </p>
               <span className="text-xs text-gray-500 hidden md:inline">•</span>
               <p className="text-xs text-gray-400 hidden md:block">
-                {subscription.cancelAtPeriodEnd
-                  ? `Fin d'accès : ${formatDate(subscription.periodEnd)}`
+                {subscription.cancelAtPeriodEnd ||
+                subscription.status === "canceled"
+                  ? `Accès aux outils Pro jusqu'au ${formatDate(subscription.periodEnd)}`
                   : `Prochain prélèvement : ${formatDate(subscription.periodEnd)}`}
               </p>
             </div>
-            {!subscription.cancelAtPeriodEnd && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20"
-                onClick={openCancelModal}
-                disabled={isLoading || !canManageSubscription}
-                title={
-                  !canManageSubscription
-                    ? "Seul le propriétaire peut résilier l'abonnement"
-                    : ""
-                }
-              >
-                {isLoading ? (
-                  <LoaderCircle className="h-3 w-3 animate-spin" />
-                ) : (
-                  "Résilier"
-                )}
-              </Button>
-            )}
+            {!subscription.cancelAtPeriodEnd &&
+              subscription.status !== "canceled" && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20"
+                  onClick={openCancelModal}
+                  disabled={isLoading || !canManageSubscription}
+                  title={
+                    !canManageSubscription
+                      ? "Seul le propriétaire peut résilier l'abonnement"
+                      : ""
+                  }
+                >
+                  {isLoading ? (
+                    <LoaderCircle className="h-3 w-3 animate-spin" />
+                  ) : (
+                    "Résilier"
+                  )}
+                </Button>
+              )}
           </div>
         )}
 

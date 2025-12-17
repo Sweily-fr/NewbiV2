@@ -45,11 +45,31 @@ export async function GET(request, { params }) {
     });
 
     if (!subscription) {
-      // Retourner un plan par défaut si pas d'abonnement
+      // Retourner null si pas d'abonnement
       return NextResponse.json({
-        plan: "freelance",
-        status: "active",
+        plan: null,
+        status: null,
         isDefault: true,
+      });
+    }
+
+    // Vérifier si l'abonnement canceled est expiré (periodEnd dans le passé)
+    const now = new Date();
+    const periodEnd = subscription.periodEnd
+      ? new Date(subscription.periodEnd)
+      : null;
+    const isExpired =
+      subscription.status === "canceled" && periodEnd && periodEnd < now;
+
+    if (isExpired) {
+      // Abonnement expiré - retourner comme inactif
+      return NextResponse.json({
+        plan: subscription.plan,
+        status: "expired",
+        stripeSubscriptionId: subscription.stripeSubscriptionId,
+        periodEnd: subscription.periodEnd,
+        isDefault: false,
+        isExpired: true,
       });
     }
 
@@ -58,6 +78,7 @@ export async function GET(request, { params }) {
       status: subscription.status,
       stripeSubscriptionId: subscription.stripeSubscriptionId,
       periodEnd: subscription.periodEnd,
+      cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
       isDefault: false,
     });
   } catch (error) {
