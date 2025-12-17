@@ -189,6 +189,7 @@ export function useInvoiceTable({
   reminderEnabled = false,
   onOpenReminderSettings,
   excludedClientIds = [],
+  onOpenSidebar, // Callback pour ouvrir la sidebar au niveau du tableau
 }) {
   const [globalFilter, setGlobalFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState([]);
@@ -659,6 +660,7 @@ export function useInvoiceTable({
               }
               isClientExcluded={isClientExcluded}
               onOpenReminderSettings={onOpenReminderSettings}
+              onOpenSidebar={onOpenSidebar}
             />
           );
         },
@@ -666,7 +668,13 @@ export function useInvoiceTable({
         enableHiding: false,
       },
     ],
-    [onRefetch, reminderEnabled, onOpenReminderSettings, excludedClientIds] // Inclure toutes les dépendances
+    [
+      onRefetch,
+      reminderEnabled,
+      onOpenReminderSettings,
+      excludedClientIds,
+      onOpenSidebar,
+    ] // Inclure toutes les dépendances
   );
 
   // Create table instance with optimized settings
