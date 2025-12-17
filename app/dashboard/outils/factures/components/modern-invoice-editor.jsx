@@ -186,14 +186,13 @@ export default function ModernInvoiceEditor({
     return date.toLocaleDateString("fr-FR");
   };
 
-  // Handler personnalisé pour afficher la modal d'envoi après création
+  // Handler personnalisé pour créer la facture et proposer l'envoi par email
   const handleSubmitWithEmail = async () => {
     const result = await handleSubmit();
 
     if (result?.success && result?.invoice) {
-      // Stocker les données de la facture créée
-      // Utiliser les données du formulaire comme fallback pour les dates
-      setCreatedInvoiceData({
+      // Stocker les données de la facture créée pour la modal d'envoi
+      const invoiceData = {
         id: result.invoice.id,
         number: `${result.invoice.prefix || "F"}-${result.invoice.number}`,
         clientName: result.invoice.client?.name,
@@ -209,18 +208,24 @@ export default function ModernInvoiceEditor({
         dueDate:
           formatDate(result.invoice.dueDate) || formatDate(formData.dueDate),
         redirectUrl: result.redirectUrl,
-      });
-      // Afficher la modal d'envoi
-      setShowSendEmailModal(true);
+      };
+      setCreatedInvoiceData(invoiceData);
+
+      // Stocker les données dans sessionStorage pour afficher le toast sur la page de liste
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("newInvoiceData", JSON.stringify(invoiceData));
+      }
+
+      // Rediriger vers la liste des factures
+      router.push("/dashboard/outils/factures");
     }
   };
 
-  // Handler pour fermer la modal et rediriger
+  // Handler pour fermer la modal après envoi d'email
   const handleEmailModalClose = () => {
     setShowSendEmailModal(false);
-    if (createdInvoiceData?.redirectUrl) {
-      router.push(createdInvoiceData.redirectUrl);
-    }
+    // Rediriger vers la liste des factures après envoi ou fermeture
+    router.push("/dashboard/outils/factures");
   };
 
   return (

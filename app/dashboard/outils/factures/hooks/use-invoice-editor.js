@@ -383,7 +383,7 @@ export function useInvoiceEditor({
     });
   }, [formData.prefix, isFormInitialized]);
 
-  // Re-valider quand la référence devis change (format uniquement, optionnel)
+  // Re-valider quand la référence change (format uniquement, optionnel)
   useEffect(() => {
     // Ne pas valider si le formulaire n'est pas encore initialisé
     if (!isFormInitialized) return;
@@ -408,7 +408,7 @@ export function useInvoiceEditor({
           ...prevErrors,
           purchaseOrderNumber: {
             message:
-              "La référence devis ne doit contenir que des lettres, chiffres et tirets (sans espaces ni caractères spéciaux)",
+              "La référence ne doit contenir que des lettres, chiffres et tirets (sans espaces ni caractères spéciaux)",
             canEdit: true,
           },
         };

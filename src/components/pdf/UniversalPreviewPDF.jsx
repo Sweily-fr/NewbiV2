@@ -1,11 +1,9 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { useQuery } from "@apollo/client";
 import { useSession } from "@/src/lib/auth-client";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { generateDynamicFooter } from "@/src/utils/document-suggestions";
-import { GET_SITUATION_INVOICES_BY_QUOTE_REF } from "@/src/graphql/invoiceQueries";
 
 // Fonction utilitaire pour calculer le total d'un article en prenant en compte la remise et l'avancement
 const calculateItemTotal = (quantity, unitPrice, discount, discountType, progressPercentage = 100) => {
@@ -61,35 +59,12 @@ const applyOpacityToColor = (color, opacity) => {
   return color;
 };
 
-const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF = false, previousSituationInvoices: propPreviousSituationInvoices = [], contractTotalTTC = null }) => {
+const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF = false, previousSituationInvoices = [], contractTotalTTC = null }) => {
   const { data: session } = useSession();
   const { organization } = useWorkspace();
   const documentRef = useRef(null);
   const [scale, setScale] = useState(1);
   const [containerHeight, setContainerHeight] = useState('auto');
-
-  // Récupérer automatiquement les factures de situation précédentes si c'est une facture de situation
-  const isSituationInvoice = type === "invoice" && data?.invoiceType === "situation";
-  const { data: situationData } = useQuery(GET_SITUATION_INVOICES_BY_QUOTE_REF, {
-    variables: {
-      workspaceId: data?.workspaceId || organization?.id,
-      purchaseOrderNumber: data?.purchaseOrderNumber || "",
-    },
-    skip: !isSituationInvoice || !data?.purchaseOrderNumber || (!data?.workspaceId && !organization?.id),
-    fetchPolicy: "cache-first",
-  });
-
-  // Utiliser les factures passées en prop ou celles récupérées automatiquement
-  // Exclure la facture actuelle de la liste
-  const previousSituationInvoices = React.useMemo(() => {
-    if (propPreviousSituationInvoices.length > 0) {
-      return propPreviousSituationInvoices.filter(inv => inv.id !== data?.id);
-    }
-    if (situationData?.situationInvoicesByQuoteRef) {
-      return situationData.situationInvoicesByQuoteRef.filter(inv => inv.id !== data?.id);
-    }
-    return [];
-  }, [propPreviousSituationInvoices, situationData, data?.id]);
 
   // Déterminer si c'est un avoir (credit note)
   const isCreditNote = type === "creditNote";
@@ -601,7 +576,7 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
               {data.purchaseOrderNumber && (
                 <div className="flex justify-end" style={{ fontSize: "10px" }}>
                   <span className="font-medium w-38 dark:text-[#0A0A0A] mr-2">
-                    Référence devis:
+                    Référence:
                   </span>
                   <span className="dark:text-[#0A0A0A]">
                     {data.purchaseOrderNumber}
@@ -1517,13 +1492,13 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
       {/* PAGE RÉCAPITULATIF DE FACTURATION - Uniquement pour les factures de situation */}
       {data.invoiceType === "situation" && (
         <div 
-          className="w-full bg-white"
+          className={isMobile ? "w-full bg-white px-6 pt-4 pb-4" : "w-full bg-white px-14 pt-10 pb-4"}
           data-pdf-section="situation-recap"
           data-page-break-before
           style={{ pageBreakBefore: 'always' }}
         >
           {/* Contenu du récapitulatif */}
-          <div className={isMobile ? "px-6 py-6" : "px-14 py-10"}>
+          <div>
             <h2 className="text-xl font-semibold mb-1 dark:text-[#0A0A0A]">
               Récapitulatif de la facturation
             </h2>
@@ -1545,13 +1520,13 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
                   }}
                 >
                   <th 
-                    className="py-2 px-3 text-left text-[10px] font-medium"
+                    className="py-2 px-2 text-left text-[10px] font-medium"
                     style={{ color: data.appearance?.headerTextColor || "#FFFFFF" }}
                   >
                     Avancement
                   </th>
                   <th 
-                    className="py-2 px-3 text-right text-[10px] font-medium"
+                    className="py-2 px-2 text-right text-[10px] font-medium"
                     style={{ color: data.appearance?.headerTextColor || "#FFFFFF" }}
                   >
                     Total TTC
@@ -1635,7 +1610,7 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
                   
                   return (
                     <tr key={invoice.id || index} className="border-b border-gray-200">
-                      <td className="py-3 px-3 dark:text-[#0A0A0A]">
+                      <td className="py-3 px-2 dark:text-[#0A0A0A]">
                         <div className="font-medium text-[11px]">
                           Facture de situation {invoice.prefix ? `${invoice.prefix}-` : 'F-'}{invoice.number}
                         </div>
@@ -1643,7 +1618,7 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
                           Émise le {formatDate(invoice.issueDate, invoice.createdAt)} • {getStatusLabel(invoice.status)}
                         </div>
                       </td>
-                      <td className="py-3 px-3 text-right dark:text-[#0A0A0A] text-[11px]">
+                      <td className="py-3 px-2 text-right dark:text-[#0A0A0A] text-[11px]">
                         {formatCurrency(calculateInvoiceTotalTTC())}
                       </td>
                     </tr>
@@ -1651,7 +1626,7 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
                 })}
                 {/* Facture actuelle */}
                 <tr className="border-b border-gray-200">
-                  <td className="py-3 px-3 dark:text-[#0A0A0A]">
+                  <td className="py-3 px-2 dark:text-[#0A0A0A]">
                     <div className="font-medium text-[11px]">
                       Facture de situation {data.prefix ? `${data.prefix}-` : 'F-'}{data.number || '000001'}
                     </div>
@@ -1675,7 +1650,7 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
                       })()}
                     </div>
                   </td>
-                  <td className="py-3 px-3 text-right dark:text-[#0A0A0A] text-[11px]">
+                  <td className="py-3 px-2 text-right dark:text-[#0A0A0A] text-[11px]">
                     {formatCurrency(
                       (() => {
                         // Calculer le total TTC de la facture actuelle
@@ -1794,38 +1769,42 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
                     totalContratTTCValue = totalContratAfterDiscount + totalContratTVA;
                   }
                   
-                  // Montant facturé à ce jour (factures précédentes) - calculé avec progressPercentage
-                  const montantFacture = previousSituationInvoices.reduce((sum, inv) => {
-                    if (!inv.items || inv.items.length === 0) {
-                      return sum + (parseFloat(inv.finalTotalTTC) || 0);
+                  // Montant facturé à ce jour (factures précédentes + facture actuelle)
+                  // D'abord calculer le total des factures précédentes
+                  const montantFacturePrecedent = previousSituationInvoices.reduce((sum, inv) => {
+                    // Utiliser directement finalTotalTTC si disponible
+                    return sum + (parseFloat(inv.finalTotalTTC) || 0);
+                  }, 0);
+                  
+                  // Calculer le montant de la facture actuelle à partir des items (plus précis que finalTotalTTC)
+                  const montantFactureActuelle = data.items?.reduce((sum, item) => {
+                    const quantity = parseFloat(item.quantity) || 0;
+                    const unitPrice = parseFloat(item.unitPrice) || 0;
+                    const progressPercentage = item.progressPercentage !== undefined && item.progressPercentage !== null 
+                      ? parseFloat(item.progressPercentage) 
+                      : 100;
+                    const vatRate = parseFloat(item.vatRate) || 0;
+                    const discount = parseFloat(item.discount) || 0;
+                    const discountType = item.discountType || 'PERCENTAGE';
+                    
+                    // Calculer le montant HT avec avancement
+                    let itemHT = quantity * unitPrice * (progressPercentage / 100);
+                    
+                    // Appliquer la remise
+                    if (discount > 0) {
+                      if (discountType === 'PERCENTAGE' || discountType === 'percentage') {
+                        itemHT = itemHT * (1 - Math.min(discount, 100) / 100);
+                      } else {
+                        itemHT = Math.max(0, itemHT - discount);
+                      }
                     }
                     
-                    let invoiceTTC = 0;
-                    inv.items.forEach(item => {
-                      const quantity = parseFloat(item.quantity) || 1;
-                      const unitPrice = parseFloat(item.unitPrice) || 0;
-                      const progressPercentage = item.progressPercentage !== undefined && item.progressPercentage !== null 
-                        ? parseFloat(item.progressPercentage) 
-                        : 100;
-                      const vatRate = parseFloat(item.vatRate) || 0;
-                      const discount = parseFloat(item.discount) || 0;
-                      const discountType = item.discountType || 'PERCENTAGE';
-                      
-                      let itemHT = quantity * unitPrice * (progressPercentage / 100);
-                      
-                      if (discount > 0) {
-                        if (discountType === 'PERCENTAGE' || discountType === 'percentage') {
-                          itemHT = itemHT * (1 - Math.min(discount, 100) / 100);
-                        } else {
-                          itemHT = Math.max(0, itemHT - discount);
-                        }
-                      }
-                      
-                      invoiceTTC += itemHT * (1 + vatRate / 100);
-                    });
-                    
-                    return sum + invoiceTTC;
-                  }, 0);
+                    // Ajouter la TVA
+                    return sum + (itemHT * (1 + vatRate / 100));
+                  }, 0) || 0;
+                  
+                  // Total facturé à ce jour = précédentes + actuelle
+                  const montantFacture = montantFacturePrecedent + montantFactureActuelle;
                   
                   // Avancement cumulé
                   const avancementCumule = totalContratTTCValue > 0 ? (montantFacture / totalContratTTCValue) * 100 : 0;
@@ -1841,7 +1820,7 @@ const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF 
                       </div>
                       <div className="flex justify-between py-2 text-[11px] dark:text-[#0A0A0A]">
                         <span>Montant facturé à ce jour (TTC)</span>
-                        <span className="font-medium">{montantFacture > 0 ? `-${formatCurrency(montantFacture)}` : formatCurrency(0)}</span>
+                        <span className="font-medium">{formatCurrency(montantFacture)}</span>
                       </div>
                       <div className="flex justify-between py-2 text-[11px] dark:text-[#0A0A0A]">
                         <span>Avancement cumulé</span>

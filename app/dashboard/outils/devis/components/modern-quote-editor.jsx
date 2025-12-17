@@ -137,13 +137,13 @@ export default function ModernQuoteEditor({
     return date.toLocaleDateString("fr-FR");
   };
 
-  // Handler personnalisé pour afficher la modal d'envoi après création
+  // Handler personnalisé pour créer le devis et proposer l'envoi par email
   const handleSubmitWithEmail = async () => {
     const result = await onSubmit();
 
     if (result?.success && result?.quote) {
-      // Stocker les données du devis créé
-      setCreatedQuoteData({
+      // Stocker les données du devis créé pour la modal d'envoi
+      const quoteData = {
         id: result.quote.id,
         number: `${result.quote.prefix || "D"}-${result.quote.number}`,
         clientName: result.quote.client?.name,
@@ -155,18 +155,24 @@ export default function ModernQuoteEditor({
         companyName: result.quote.companyInfo?.name,
         issueDate: formatDate(result.quote.issueDate),
         redirectUrl: result.redirectUrl,
-      });
-      // Afficher la modal d'envoi
-      setShowSendEmailModal(true);
+      };
+      setCreatedQuoteData(quoteData);
+
+      // Stocker les données dans sessionStorage pour afficher le toast sur la page de liste
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("newQuoteData", JSON.stringify(quoteData));
+      }
+
+      // Rediriger vers la liste des devis
+      router.push("/dashboard/outils/devis");
     }
   };
 
-  // Handler pour fermer la modal et rediriger
+  // Handler pour fermer la modal après envoi d'email
   const handleEmailModalClose = () => {
     setShowSendEmailModal(false);
-    if (createdQuoteData?.redirectUrl) {
-      router.push(createdQuoteData.redirectUrl);
-    }
+    // Rediriger vers la liste des devis après envoi ou fermeture
+    router.push("/dashboard/outils/devis");
   };
 
   return (

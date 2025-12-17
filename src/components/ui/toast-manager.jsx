@@ -2,7 +2,7 @@
 
 import { useState, useCallback, createContext, useContext } from "react";
 import { Button } from "@/src/components/ui/button";
-import { X, CheckCircle, AlertCircle, Info, Landmark } from "lucide-react";
+import { X, CheckCircle, AlertCircle, Info, Landmark, FileText } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 
 // Context pour le toast manager
@@ -15,6 +15,7 @@ const TOAST_ICONS = {
   info: Info,
   warning: AlertCircle,
   reconciliation: Landmark,
+  document: FileText,
 };
 
 // Couleurs selon le type
@@ -26,6 +27,7 @@ const TOAST_COLORS = {
   warning:
     "bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800",
   reconciliation: "bg-[#202020] border-[#202020]",
+  document: "bg-[#202020] border-[#202020]",
 };
 
 const ICON_COLORS = {
@@ -34,12 +36,13 @@ const ICON_COLORS = {
   info: "text-blue-600",
   warning: "text-amber-600",
   reconciliation: "text-[#FFF]",
+  document: "text-[#FFF]",
 };
 
 // Composant Toast individuel
 function Toast({ toast, onClose }) {
   const Icon = TOAST_ICONS[toast.type] || Info;
-  const isDarkBg = toast.type === "reconciliation";
+  const isDarkBg = toast.type === "reconciliation" || toast.type === "document";
 
   return (
     <div

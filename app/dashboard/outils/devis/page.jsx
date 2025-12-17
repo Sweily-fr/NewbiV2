@@ -21,12 +21,51 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
 import { CompanyInfoGuard } from "@/src/components/company-info-guard";
 import { useQuotes, QUOTE_STATUS } from "@/src/graphql/quoteQueries";
+import { useToastManager } from "@/src/components/ui/toast-manager";
+import { SendDocumentModal } from "@/app/dashboard/outils/factures/components/send-document-modal";
 
 function QuotesContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [quoteIdToOpen, setQuoteIdToOpen] = useState(null);
+
+  // Toast manager et modal d'envoi pour les nouveaux devis
+  const toastManager = useToastManager();
+  const [showSendEmailModal, setShowSendEmailModal] = useState(false);
+  const [newQuoteData, setNewQuoteData] = useState(null);
+
+  // Vérifier si un nouveau devis vient d'être créé
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const storedData = sessionStorage.getItem("newQuoteData");
+      if (storedData) {
+        try {
+          const quoteData = JSON.parse(storedData);
+          setNewQuoteData(quoteData);
+          
+          // Afficher le toast avec bouton "Envoyer au client"
+          toastManager.add({
+            type: "document",
+            title: "Devis créé avec succès",
+            description: `Devis ${quoteData.number} créé`,
+            timeout: 10000,
+            actionProps: quoteData.clientEmail ? {
+              children: "Envoyer au client",
+              onClick: () => {
+                setShowSendEmailModal(true);
+              },
+            } : undefined,
+          });
+          
+          // Supprimer les données du sessionStorage
+          sessionStorage.removeItem("newQuoteData");
+        } catch (e) {
+          sessionStorage.removeItem("newQuoteData");
+        }
+      }
+    }
+  }, [toastManager]);
 
   useEffect(() => {
     const id = searchParams.get("id");
@@ -264,6 +303,24 @@ function QuotesContent() {
         open={isSettingsOpen}
         onOpenChange={setIsSettingsOpen}
       />
+
+      {/* Modal d'envoi par email pour les nouveaux devis */}
+      {newQuoteData && (
+        <SendDocumentModal
+          open={showSendEmailModal}
+          onOpenChange={setShowSendEmailModal}
+          documentId={newQuoteData.id}
+          documentType="quote"
+          documentNumber={newQuoteData.number}
+          clientName={newQuoteData.clientName}
+          clientEmail={newQuoteData.clientEmail}
+          totalAmount={newQuoteData.totalAmount}
+          companyName={newQuoteData.companyName}
+          issueDate={newQuoteData.issueDate}
+          onSent={() => setShowSendEmailModal(false)}
+          onClose={() => setShowSendEmailModal(false)}
+        />
+      )}
     </>
   );
 }

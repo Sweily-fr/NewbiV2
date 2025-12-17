@@ -72,7 +72,7 @@ const PAYMENT_TERMS_SUGGESTIONS = [
   { value: 60, label: "60 jours" },
 ];
 
-export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: validateInvoiceNumberExists, onSituationNumberChange, onPreviousSituationInvoicesChange, onContractTotalChange }) {
+export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: validateInvoiceNumberExists, onSituationNumberChange, onPreviousSituationInvoicesChange, onContractTotalChange, setValidationErrors }) {
   const {
     watch,
     setValue,
@@ -95,7 +95,7 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
   // Get the last invoice prefix
   const { prefix: lastInvoicePrefix, loading: loadingLastPrefix } = useLastInvoicePrefix();
   
-  // Query pour rechercher les factures de situation par référence devis
+  // Query pour rechercher les factures de situation par référence
   const [fetchSituationInvoices, { data: situationData, loading: loadingSituation }] = useLazyQuery(
     GET_SITUATION_INVOICES_BY_QUOTE_REF,
     { fetchPolicy: "network-only" }
@@ -162,6 +162,34 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
     }
   );
 
+  // Calculer les compteurs filtrés pour les tabulations
+  const availableQuotesCount = React.useMemo(() => {
+    if (!quotesData?.quotes?.quotes) return 0;
+    if (data.invoiceType !== "situation") return quotesData.quotes.quotes.length;
+    
+    return quotesData.quotes.quotes.filter(quote => {
+      const invoicedTotal = quote.situationInvoicedTotal || 0;
+      const contractTotal = quote.finalTotalTTC || 0;
+      // Calculer le reste à facturer
+      const remaining = contractTotal - invoicedTotal;
+      // Afficher uniquement si le reste est strictement positif (> 0.01 pour éviter les erreurs d'arrondi)
+      return remaining > 0.01;
+    }).length;
+  }, [quotesData, data.invoiceType]);
+
+  const availableSituationsCount = React.useMemo(() => {
+    if (!situationRefsData?.situationReferences) return 0;
+    
+    return situationRefsData.situationReferences.filter(ref => {
+      // Si pas de montant de contrat défini, ne pas afficher (on ne peut pas calculer le reste)
+      if (!ref.contractTotal || ref.contractTotal === 0) return false;
+      // Calculer le reste à facturer
+      const remaining = ref.contractTotal - (ref.totalTTC || 0);
+      // Afficher uniquement si le reste est strictement positif (> 0.01 pour éviter les erreurs d'arrondi)
+      return remaining > 0.01;
+    }).length;
+  }, [situationRefsData]);
+
   // State pour stocker le numéro de situation
   const [situationNumber, setSituationNumber] = React.useState(1);
   
@@ -176,7 +204,7 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
   }, []);
 
 
-  // Rechercher les factures de situation et le devis quand le type est "situation" et qu'il y a une référence devis
+  // Rechercher les factures de situation et le devis quand le type est "situation" et qu'il y a une référence
   React.useEffect(() => {
     if (data.invoiceType === "situation" && data.purchaseOrderNumber && workspaceId) {
       fetchSituationInvoices({
@@ -284,11 +312,13 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
           description: item.description || "",
           quantity: item.quantity || 1,
           unitPrice: item.unitPrice || 0,
-          vatRate: item.vatRate || 20,
+          vatRate: item.vatRate !== undefined ? item.vatRate : 20,
+          vatExemptionText: item.vatExemptionText || "", // Mention d'exonération TVA
           unit: item.unit || "unité",
           discount: item.discount || 0,
           discountType: item.discountType || "PERCENTAGE",
-          progressPercentage: 0,
+          details: item.details || "", // Détails supplémentaires
+          progressPercentage: 100, // Première situation: 100% reste à facturer
         }));
         
         setValue("items", copiedItems, { shouldDirty: true });
@@ -346,17 +376,36 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
         if (lastSituationInvoice.items && lastSituationInvoice.items.length > 0) {
           console.log('📋 [SITUATION COPY] Copie des articles de la dernière facture de situation:', lastSituationInvoice.items.length, 'articles');
           
-          // Copier les articles avec progressPercentage remis à 0 pour la nouvelle situation
-          const copiedItems = lastSituationInvoice.items.map(item => ({
-            description: item.description || "",
-            quantity: item.quantity || 1,
-            unitPrice: item.unitPrice || 0,
-            vatRate: item.vatRate || 20,
-            unit: item.unit || "unité",
-            discount: item.discount || 0,
-            discountType: item.discountType || "PERCENTAGE",
-            progressPercentage: 0, // Remettre à 0 pour la nouvelle situation
-          }));
+          // Calculer le total des avancements déjà facturés pour chaque article
+          // En sommant les progressPercentage de toutes les factures précédentes
+          const totalProgressByIndex = {};
+          otherInvoices.forEach(invoice => {
+            if (invoice.items) {
+              invoice.items.forEach((item, idx) => {
+                totalProgressByIndex[idx] = (totalProgressByIndex[idx] || 0) + (item.progressPercentage || 0);
+              });
+            }
+          });
+          
+          // Copier les articles avec progressPercentage = reste à facturer (100% - déjà facturé)
+          const copiedItems = lastSituationInvoice.items.map((item, idx) => {
+            const alreadyInvoiced = totalProgressByIndex[idx] || 0;
+            const remainingProgress = Math.max(0, 100 - alreadyInvoiced);
+            console.log(`📋 [SITUATION COPY] Article ${idx}: déjà facturé ${alreadyInvoiced}%, reste ${remainingProgress}%`);
+            
+            return {
+              description: item.description || "",
+              quantity: item.quantity || 1,
+              unitPrice: item.unitPrice || 0,
+              vatRate: item.vatRate !== undefined ? item.vatRate : 20,
+              vatExemptionText: item.vatExemptionText || "", // Mention d'exonération TVA
+              unit: item.unit || "unité",
+              discount: item.discount || 0,
+              discountType: item.discountType || "PERCENTAGE",
+              details: item.details || "", // Détails supplémentaires
+              progressPercentage: remainingProgress, // Reste à facturer (100% - déjà facturé)
+            };
+          });
           
           setValue("items", copiedItems, { shouldDirty: true });
           
@@ -390,6 +439,153 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
       }
     }
   }, [situationData, data.invoiceType, data.id, data.purchaseOrderNumber, setValue, onSituationNumberChange, onPreviousSituationInvoicesChange]);
+
+  // Créer une clé de dépendance pour les items (pour détecter les changements profonds)
+  const itemsKey = React.useMemo(() => {
+    if (!data.items || data.items.length === 0) return '';
+    return data.items.map(item => 
+      `${item.quantity || 0}-${item.unitPrice || 0}-${item.vatRate || 0}-${item.discount || 0}-${item.discountType || 'PERCENTAGE'}-${item.progressPercentage || 100}`
+    ).join('|');
+  }, [data.items]);
+
+  // Validation frontend : vérifier que le total des factures de situation ne dépasse pas le contrat
+  React.useEffect(() => {
+    if (!setValidationErrors) return;
+    
+    if (data.invoiceType === "situation" && data.purchaseOrderNumber) {
+      // Calculer le montant du contrat
+      let contractTotal = 0;
+      
+      // Priorité 1: Depuis le devis
+      if (quoteData?.quoteByNumber) {
+        contractTotal = quoteData.quoteByNumber.finalTotalTTC || 0;
+      } 
+      // Priorité 2: Depuis la première facture de situation
+      else if (situationData?.situationInvoicesByQuoteRef?.length > 0) {
+        const existingInvoices = situationData.situationInvoicesByQuoteRef;
+        const sortedInvoices = [...existingInvoices].sort((a, b) => 
+          new Date(a.issueDate || a.createdAt) - new Date(b.issueDate || b.createdAt)
+        );
+        const firstInvoice = sortedInvoices[0];
+        
+        if (firstInvoice.items && firstInvoice.items.length > 0) {
+          let totalHT = 0;
+          let totalVAT = 0;
+          
+          firstInvoice.items.forEach(item => {
+            const quantity = parseFloat(item.quantity) || 0;
+            const unitPrice = parseFloat(item.unitPrice) || 0;
+            const vatRate = parseFloat(item.vatRate) || 0;
+            const discount = parseFloat(item.discount) || 0;
+            const discountType = item.discountType || "PERCENTAGE";
+            
+            let itemTotal = quantity * unitPrice;
+            if (discount > 0) {
+              if (discountType === "PERCENTAGE") {
+                itemTotal = itemTotal * (1 - discount / 100);
+              } else {
+                itemTotal = Math.max(0, itemTotal - discount);
+              }
+            }
+            
+            totalHT += itemTotal;
+            totalVAT += itemTotal * (vatRate / 100);
+          });
+          
+          contractTotal = totalHT + totalVAT;
+        }
+      }
+      
+      // Calculer le total déjà facturé (excluant la facture actuelle)
+      const existingInvoices = situationData?.situationInvoicesByQuoteRef || [];
+      const otherInvoices = data.id 
+        ? existingInvoices.filter(inv => inv.id !== data.id)
+        : existingInvoices;
+      
+      const alreadyInvoicedTotal = otherInvoices.reduce(
+        (sum, inv) => sum + (inv.finalTotalTTC || 0), 
+        0
+      );
+      
+      // Calculer le total de la facture actuelle à partir des items (car finalTotalTTC peut ne pas être à jour)
+      let currentInvoiceTotal = 0;
+      if (data.items && data.items.length > 0) {
+        const globalDiscount = parseFloat(data.discount) || 0;
+        const globalDiscountType = data.discountType || 'PERCENTAGE';
+        
+        let totalHT = 0;
+        let totalVAT = 0;
+        
+        data.items.forEach(item => {
+          const quantity = parseFloat(item.quantity) || 1;
+          const unitPrice = parseFloat(item.unitPrice) || 0;
+          const vatRate = parseFloat(item.vatRate) || 0;
+          const discount = parseFloat(item.discount) || 0;
+          const discountType = item.discountType || 'PERCENTAGE';
+          const progressPercentage = parseFloat(item.progressPercentage) || 100;
+          
+          // Calculer le total HT de la ligne avec avancement
+          let lineHT = quantity * unitPrice * (progressPercentage / 100);
+          
+          // Appliquer la remise de ligne
+          if (discount > 0) {
+            if (discountType === 'PERCENTAGE') {
+              lineHT = lineHT * (1 - discount / 100);
+            } else {
+              lineHT = Math.max(0, lineHT - discount);
+            }
+          }
+          
+          totalHT += lineHT;
+          totalVAT += lineHT * (vatRate / 100);
+        });
+        
+        // Appliquer la remise globale
+        if (globalDiscount > 0) {
+          if (globalDiscountType === 'PERCENTAGE') {
+            const discountMultiplier = 1 - globalDiscount / 100;
+            totalHT = totalHT * discountMultiplier;
+            totalVAT = totalVAT * discountMultiplier;
+          } else {
+            const totalBeforeDiscount = totalHT + totalVAT;
+            if (totalBeforeDiscount > 0) {
+              const discountRatio = Math.min(1, globalDiscount / totalBeforeDiscount);
+              totalHT = totalHT * (1 - discountRatio);
+              totalVAT = totalVAT * (1 - discountRatio);
+            }
+          }
+        }
+        
+        currentInvoiceTotal = totalHT + totalVAT;
+      }
+      
+      // Vérifier si le total dépasserait le contrat
+      if (contractTotal > 0 && (alreadyInvoicedTotal + currentInvoiceTotal) > contractTotal * 1.001) { // 0.1% de tolérance pour les arrondis
+        const remaining = Math.max(0, contractTotal - alreadyInvoicedTotal);
+        setValidationErrors(prev => ({
+          ...prev,
+          situationTotal: {
+            message: `Le montant total des factures de situation dépasserait le montant du contrat. Montant du contrat: ${formatCurrency(contractTotal)}. Déjà facturé: ${formatCurrency(alreadyInvoicedTotal)}. Reste disponible: ${formatCurrency(remaining)}. Montant de cette facture: ${formatCurrency(currentInvoiceTotal)}.`,
+            canEdit: false
+          }
+        }));
+      } else {
+        // Supprimer l'erreur si elle existait
+        setValidationErrors(prev => {
+          const newErrors = { ...prev };
+          delete newErrors.situationTotal;
+          return newErrors;
+        });
+      }
+    } else {
+      // Supprimer l'erreur si ce n'est pas une facture de situation
+      setValidationErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors.situationTotal;
+        return newErrors;
+      });
+    }
+  }, [data.invoiceType, data.purchaseOrderNumber, itemsKey, data.discount, data.discountType, data.id, quoteData, situationData, setValidationErrors]);
 
   // Set default invoice number when nextInvoiceNumber is available
   React.useEffect(() => {
@@ -547,7 +743,7 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
           </Select>
           {data.invoiceType === "situation" && (
             <p className="text-xs text-muted-foreground">
-              Une référence unique est générée automatiquement. Vous pouvez la modifier ou utiliser une référence de devis existante pour lier plusieurs factures de situation.
+              Une référence unique est générée automatiquement. Vous pouvez la modifier ou utiliser une référence existante pour lier plusieurs factures de situation.
               {situationData?.situationInvoicesByQuoteRef?.length > 0 && (
                 <span className="block mt-1 text-primary font-medium">
                   {situationData.situationInvoicesByQuoteRef.length} facture(s) de situation existante(s) avec cette référence.
@@ -710,14 +906,14 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
           </div>
         </div>
 
-        {/* Référence devis / Référence de situation */}
+        {/* Référence / Référence de situation */}
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <Label
               htmlFor="purchase-order-number"
               className="text-sm font-light"
             >
-              {data.invoiceType === "situation" ? "Référence de situation" : "Référence devis"}
+              {data.invoiceType === "situation" ? "Référence de situation" : "Référence"}
               {data.invoiceType === "situation" && <span className="text-red-500">*</span>}
             </Label>
             <Tooltip>
@@ -728,7 +924,7 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
                 <p>
                   {data.invoiceType === "situation" 
                     ? "Référence unique permettant de lier plusieurs factures de situation entre elles. Peut être une référence de devis ou une référence générée automatiquement."
-                    : "Référence du devis qui a été accepté et transformé en facture (optionnel). Permet de faire le lien entre devis et facture."
+                    : "Référence du contrat, devis, bon de commande ou dossier lié à cette facture (optionnel)."
                   }
                 </p>
               </TooltipContent>
@@ -745,7 +941,7 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
               >
                 {data.purchaseOrderNumber || (
                   <span className="text-muted-foreground">
-                    {data.invoiceType === "situation" ? "Rechercher ou saisir une référence..." : "Rechercher un devis..."}
+                    {data.invoiceType === "situation" ? "Rechercher ou saisir une référence..." : "Saisir une référence..."}
                   </span>
                 )}
                 <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -773,7 +969,7 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
                       onClick={() => setReferenceFilter("quotes")}
                     >
                       <FileText className="h-3 w-3 mr-1" />
-                      Devis ({quotesData?.quotes?.quotes?.length || 0})
+                      Devis ({availableQuotesCount})
                     </Button>
                     <Button
                       type="button"
@@ -783,7 +979,7 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
                       onClick={() => setReferenceFilter("situations")}
                     >
                       <Receipt className="h-3 w-3 mr-1" />
-                      Situations ({situationRefsData?.situationReferences?.length || 0})
+                      Situations ({availableSituationsCount})
                     </Button>
                   </div>
                 </div>
@@ -810,8 +1006,10 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
                       ? quotesData.quotes.quotes.filter(quote => {
                           const invoicedTotal = quote.situationInvoicedTotal || 0;
                           const contractTotal = quote.finalTotalTTC || 0;
-                          // Afficher uniquement si le total facturé est inférieur au contrat
-                          return invoicedTotal < contractTotal;
+                          // Calculer le reste à facturer
+                          const remaining = contractTotal - invoicedTotal;
+                          // Afficher uniquement si le reste est strictement positif (> 0.01 pour éviter les erreurs d'arrondi)
+                          return remaining > 0.01;
                         })
                       : quotesData.quotes.quotes;
                     
@@ -862,10 +1060,12 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
                   {data.invoiceType === "situation" && (referenceFilter === "all" || referenceFilter === "situations") && situationRefsData?.situationReferences?.length > 0 && (() => {
                     // Filtrer les références dont le total n'a pas atteint le montant du contrat
                     const availableRefs = situationRefsData.situationReferences.filter(ref => {
-                      // Si pas de montant de contrat défini, afficher la référence
-                      if (!ref.contractTotal || ref.contractTotal === 0) return true;
-                      // Afficher uniquement si le total facturé est inférieur au contrat
-                      return ref.totalTTC < ref.contractTotal;
+                      // Si pas de montant de contrat défini, ne pas afficher
+                      if (!ref.contractTotal || ref.contractTotal === 0) return false;
+                      // Calculer le reste à facturer
+                      const remaining = ref.contractTotal - (ref.totalTTC || 0);
+                      // Afficher uniquement si le reste est strictement positif (> 0.01 pour éviter les erreurs d'arrondi)
+                      return remaining > 0.01;
                     });
                     
                     if (availableRefs.length === 0) return null;

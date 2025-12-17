@@ -286,7 +286,7 @@ export default function ItemsSection({
                                     : `-${formatCurrency(discount)}`}
                                 </span>
                               )}
-                              {progressPercentage < 100 && (
+                              {progressPercentage !== 100 && (
                                 <>
                                   <span className="font-normal">•</span>
                                   <span style={{ color: "#5b50ff" }} className="font-normal">
@@ -296,8 +296,20 @@ export default function ItemsSection({
                               )}
                             </div>
                             <div className="font-normal">
-                              {formatCurrency(subtotal)} HT • {vatRate}% TVA •{" "}
-                              {formatCurrency(totalTTC)} TTC
+                              {progressPercentage !== 100 ? (
+                                <>
+                                  <span className="text-muted-foreground">{formatCurrency(quantity * unitPrice)} HT</span>
+                                  <span className="mx-1">→</span>
+                                  <span style={{ color: "#5b50ff" }}>{formatCurrency(subtotal)} HT</span>
+                                  <span> • {vatRate}% TVA • </span>
+                                  <span style={{ color: "#5b50ff" }}>{formatCurrency(totalTTC)} TTC</span>
+                                </>
+                              ) : (
+                                <>
+                                  {formatCurrency(subtotal)} HT • {vatRate}% TVA •{" "}
+                                  {formatCurrency(totalTTC)} TTC
+                                </>
+                              )}
                             </div>
                           </div>
                         </div>

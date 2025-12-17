@@ -269,9 +269,11 @@ export const GET_QUOTE_BY_NUMBER = gql`
         quantity
         unitPrice
         vatRate
+        vatExemptionText
         unit
         discount
         discountType
+        details
       }
       client {
         id
@@ -401,7 +403,7 @@ export const useQuotes = (filters = {}) => {
       limit,
     },
     skip: !workspaceId,
-    fetchPolicy: "cache-first",
+    fetchPolicy: "cache-and-network",
     nextFetchPolicy: "cache-first",
     errorPolicy: "all",
   });
@@ -535,18 +537,12 @@ export function useNextQuoteNumber(prefix, options = {}) {
 
 // Hook pour créer un devis
 export const useCreateQuote = () => {
-  const client = useApolloClient();
   const { workspaceId } = useRequiredWorkspace();
   const { handleMutationError } = useErrorHandler();
 
   const [createQuoteMutation, { loading }] = useMutation(CREATE_QUOTE, {
-    onCompleted: () => {
-      // Toast désactivé ici - géré dans use-quote-editor.js
-      // Invalider le cache des listes
-      client.refetchQueries({
-        include: [GET_QUOTES, GET_QUOTE_STATS],
-      });
-    },
+    refetchQueries: ['GetQuotes', 'GetQuoteStats'],
+    awaitRefetchQueries: true,
     onError: (error) => {
       handleMutationError(error, "create", "quote");
     },

@@ -526,6 +526,7 @@ export default function EnhancedInvoiceForm({
                 validateInvoiceNumber={validateInvoiceNumber}
                 onPreviousSituationInvoicesChange={onPreviousSituationInvoicesChange}
                 onContractTotalChange={onContractTotalChange}
+                setValidationErrors={setValidationErrors}
               />
 
               {/* Section 2: Sélection d'un client */}
