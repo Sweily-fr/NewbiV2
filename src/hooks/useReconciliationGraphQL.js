@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useApolloClient } from "@apollo/client";
+import { useCallback } from "react";
 import { toast } from "@/src/components/ui/sonner";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import {
@@ -209,27 +210,31 @@ export const useReconciliationGraphQL = () => {
 
   // Fonction pour récupérer les transactions pour une facture spécifique
   // (utilisée par le drawer de facture)
-  const fetchTransactionsForInvoice = async (invoiceId) => {
-    try {
-      const { data } = await client.query({
-        query: GET_TRANSACTIONS_FOR_INVOICE,
-        variables: { invoiceId },
-        fetchPolicy: "network-only",
-      });
+  // OPTIMISÉ: Utiliser useCallback pour éviter les re-renders inutiles
+  const fetchTransactionsForInvoice = useCallback(
+    async (invoiceId) => {
+      try {
+        const { data } = await client.query({
+          query: GET_TRANSACTIONS_FOR_INVOICE,
+          variables: { invoiceId },
+          fetchPolicy: "network-only",
+        });
 
-      const result = data?.transactionsForInvoice;
-      return {
-        transactions: result?.transactions || [],
-        invoiceAmount: result?.invoiceAmount || 0,
-      };
-    } catch (error) {
-      console.error(
-        "[RECONCILIATION] Erreur fetchTransactionsForInvoice:",
-        error
-      );
-      return { transactions: [], invoiceAmount: 0 };
-    }
-  };
+        const result = data?.transactionsForInvoice;
+        return {
+          transactions: result?.transactions || [],
+          invoiceAmount: result?.invoiceAmount || 0,
+        };
+      } catch (error) {
+        console.error(
+          "[RECONCILIATION] Erreur fetchTransactionsForInvoice:",
+          error
+        );
+        return { transactions: [], invoiceAmount: 0 };
+      }
+    },
+    [client]
+  );
 
   return {
     // Données

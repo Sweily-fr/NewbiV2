@@ -269,8 +269,14 @@ export const GET_LAST_INVOICE_PREFIX = gql`
 `;
 
 export const GET_SITUATION_INVOICES_BY_QUOTE_REF = gql`
-  query GetSituationInvoicesByQuoteRef($workspaceId: ID!, $purchaseOrderNumber: String!) {
-    situationInvoicesByQuoteRef(workspaceId: $workspaceId, purchaseOrderNumber: $purchaseOrderNumber) {
+  query GetSituationInvoicesByQuoteRef(
+    $workspaceId: ID!
+    $purchaseOrderNumber: String!
+  ) {
+    situationInvoicesByQuoteRef(
+      workspaceId: $workspaceId
+      purchaseOrderNumber: $purchaseOrderNumber
+    ) {
       id
       number
       prefix

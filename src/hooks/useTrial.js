@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { useSession, authClient } from "@/src/lib/auth-client";
 import { gql, useQuery, useMutation } from "@apollo/client";
 
@@ -40,12 +40,16 @@ const START_TRIAL = gql`
 
 /**
  * Hook pour gérer la période d'essai de l'utilisateur
+ * OPTIMISÉ: Évite les appels redondants à Better Auth
  */
 export function useTrial() {
   const { data: session } = useSession();
-  const { data: activeOrg } = authClient.useActiveOrganization();
+  // OPTIMISÉ: Utiliser useActiveOrganization une seule fois avec cache
+  const { data: activeOrg, isPending: orgLoading } =
+    authClient.useActiveOrganization();
   const [trialStatus, setTrialStatus] = useState(null);
   const isMountedRef = useRef(false);
+  const lastOrgIdRef = useRef(null);
 
   // Marquer le composant comme monté
   useEffect(() => {
@@ -56,10 +60,15 @@ export function useTrial() {
   }, []);
 
   // Requête pour obtenir le statut de la période d'essai
-  const { loading, error, refetch, data: queryData } = useQuery(GET_TRIAL_STATUS, {
+  const {
+    loading,
+    error,
+    refetch,
+    data: queryData,
+  } = useQuery(GET_TRIAL_STATUS, {
     skip: !session?.user,
-    fetchPolicy: 'network-only',
-    errorPolicy: 'all',
+    fetchPolicy: "network-only",
+    errorPolicy: "all",
     notifyOnNetworkStatusChange: false,
     pollInterval: 0, // Pas de polling automatique
   });
@@ -74,14 +83,15 @@ export function useTrial() {
   // Gérer les erreurs dans useEffect
   useEffect(() => {
     if (isMountedRef.current && error) {
-      console.error('Erreur GraphQL trial:', error);
+      console.error("Erreur GraphQL trial:", error);
       // En cas d'erreur, utiliser les données de session comme fallback
       setTrialStatus(null);
     }
   }, [error]);
 
   // Mutation pour démarrer une période d'essai
-  const [startTrialMutation, { loading: startingTrial, data: mutationData }] = useMutation(START_TRIAL);
+  const [startTrialMutation, { loading: startingTrial, data: mutationData }] =
+    useMutation(START_TRIAL);
 
   // Gérer les données de la mutation dans useEffect
   useEffect(() => {
@@ -98,12 +108,12 @@ export function useTrial() {
     }
 
     const now = new Date();
-    
+
     // Vérifier si l'organisation a une période d'essai active
     if (activeOrg.isTrialActive && activeOrg.trialEndDate) {
       const trialEndDate = new Date(activeOrg.trialEndDate);
       const isExpired = now > trialEndDate;
-      
+
       if (isExpired) {
         return {
           isTrialActive: false,
@@ -180,35 +190,49 @@ export function useTrial() {
     try {
       await refetch();
     } catch (error) {
-      console.error("Erreur lors du rafraîchissement du statut d'essai:", error);
+      console.error(
+        "Erreur lors du rafraîchissement du statut d'essai:",
+        error
+      );
     }
   }, [refetch]);
 
-  // Retourner directement les valeurs calculées au lieu de fonctions
-  const finalStatus = {
-    // État
-    trialStatus: currentTrialStatus,
-    loading: loading || startingTrial || !activeOrg,
-    error,
+  // OPTIMISÉ: Mémoriser le résultat pour éviter les re-renders inutiles
+  const finalStatus = useMemo(
+    () => ({
+      // État
+      trialStatus: currentTrialStatus,
+      loading: loading || startingTrial || orgLoading,
+      error,
 
-    // Actions
-    startTrial,
-    refreshTrialStatus,
+      // Actions
+      startTrial,
+      refreshTrialStatus,
 
-    // Helpers - Retourner les valeurs directement
-    canStartTrial: currentTrialStatus && !currentTrialStatus.hasUsedTrial,
-    hasPremiumAccess: currentTrialStatus?.hasPremiumAccess || false,
-    trialMessage: currentTrialStatus?.isTrialActive 
-      ? `Il vous reste ${currentTrialStatus.daysRemaining} jours d'essai gratuit`
-      : currentTrialStatus?.hasUsedTrial 
-        ? "Votre période d'essai gratuite est terminée"
-        : "Démarrez votre essai gratuit de 14 jours",
-    
-    // Données spécifiques
-    isTrialActive: currentTrialStatus?.isTrialActive || false,
-    daysRemaining: currentTrialStatus?.daysRemaining || 0,
-    hasUsedTrial: currentTrialStatus?.hasUsedTrial || false,
-  };
+      // Helpers - Retourner les valeurs directement
+      canStartTrial: currentTrialStatus && !currentTrialStatus.hasUsedTrial,
+      hasPremiumAccess: currentTrialStatus?.hasPremiumAccess || false,
+      trialMessage: currentTrialStatus?.isTrialActive
+        ? `Il vous reste ${currentTrialStatus.daysRemaining} jours d'essai gratuit`
+        : currentTrialStatus?.hasUsedTrial
+          ? "Votre période d'essai gratuite est terminée"
+          : "Démarrez votre essai gratuit de 14 jours",
+
+      // Données spécifiques
+      isTrialActive: currentTrialStatus?.isTrialActive || false,
+      daysRemaining: currentTrialStatus?.daysRemaining || 0,
+      hasUsedTrial: currentTrialStatus?.hasUsedTrial || false,
+    }),
+    [
+      currentTrialStatus,
+      loading,
+      startingTrial,
+      orgLoading,
+      error,
+      startTrial,
+      refreshTrialStatus,
+    ]
+  );
 
   return finalStatus;
 }
