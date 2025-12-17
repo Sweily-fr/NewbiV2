@@ -302,6 +302,7 @@ export const SEARCH_QUOTES_FOR_REFERENCE = gql`
         number
         issueDate
         finalTotalTTC
+        situationInvoicedTotal
         client {
           name
         }
