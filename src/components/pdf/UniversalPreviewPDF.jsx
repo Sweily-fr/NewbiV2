@@ -1,9 +1,11 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { useQuery } from "@apollo/client";
 import { useSession } from "@/src/lib/auth-client";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { generateDynamicFooter } from "@/src/utils/document-suggestions";
+import { GET_SITUATION_INVOICES_BY_QUOTE_REF } from "@/src/graphql/invoiceQueries";
 
 // Fonction utilitaire pour calculer le total d'un article en prenant en compte la remise et l'avancement
 const calculateItemTotal = (quantity, unitPrice, discount, discountType, progressPercentage = 100) => {
@@ -59,12 +61,35 @@ const applyOpacityToColor = (color, opacity) => {
   return color;
 };
 
-const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF = false, previousSituationInvoices = [], contractTotalTTC = null }) => {
+const UniversalPreviewPDF = ({ data, type = "invoice", isMobile = false, forPDF = false, previousSituationInvoices: propPreviousSituationInvoices = [], contractTotalTTC = null }) => {
   const { data: session } = useSession();
   const { organization } = useWorkspace();
   const documentRef = useRef(null);
   const [scale, setScale] = useState(1);
   const [containerHeight, setContainerHeight] = useState('auto');
+
+  // Récupérer automatiquement les factures de situation précédentes si c'est une facture de situation
+  const isSituationInvoice = type === "invoice" && data?.invoiceType === "situation";
+  const { data: situationData } = useQuery(GET_SITUATION_INVOICES_BY_QUOTE_REF, {
+    variables: {
+      workspaceId: data?.workspaceId || organization?.id,
+      purchaseOrderNumber: data?.purchaseOrderNumber || "",
+    },
+    skip: !isSituationInvoice || !data?.purchaseOrderNumber || (!data?.workspaceId && !organization?.id),
+    fetchPolicy: "cache-first",
+  });
+
+  // Utiliser les factures passées en prop ou celles récupérées automatiquement
+  // Exclure la facture actuelle de la liste
+  const previousSituationInvoices = React.useMemo(() => {
+    if (propPreviousSituationInvoices.length > 0) {
+      return propPreviousSituationInvoices.filter(inv => inv.id !== data?.id);
+    }
+    if (situationData?.situationInvoicesByQuoteRef) {
+      return situationData.situationInvoicesByQuoteRef.filter(inv => inv.id !== data?.id);
+    }
+    return [];
+  }, [propPreviousSituationInvoices, situationData, data?.id]);
 
   // Déterminer si c'est un avoir (credit note)
   const isCreditNote = type === "creditNote";

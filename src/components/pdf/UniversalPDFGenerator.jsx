@@ -16,6 +16,8 @@ const UniversalPDFGenerator = ({
   variant = "outline",
   size = "sm",
   disabled = false,
+  previousSituationInvoices = [],
+  contractTotalTTC = null,
   ...props
 }) => {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -46,7 +48,13 @@ const UniversalPDFGenerator = ({
       {/* Composant caché utilisé pour la génération du PDF */}
       <div style={{ display: "none" }}>
         <div ref={componentRef}>
-          <UniversalPreviewPDF data={data} type={type} />
+          <UniversalPreviewPDF 
+            data={data} 
+            type={type} 
+            forPDF={true}
+            previousSituationInvoices={previousSituationInvoices}
+            contractTotalTTC={contractTotalTTC}
+          />
         </div>
       </div>
 

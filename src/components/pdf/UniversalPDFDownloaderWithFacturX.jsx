@@ -496,6 +496,8 @@ const UniversalPDFDownloaderWithFacturX = ({
   size = "sm",
   disabled = false,
   enableFacturX = true,
+  previousSituationInvoices = [],
+  contractTotalTTC = null,
   ...props
 }) => {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -1326,6 +1328,8 @@ const UniversalPDFDownloaderWithFacturX = ({
             type={type}
             isMobile={false}
             forPDF={true}
+            previousSituationInvoices={previousSituationInvoices}
+            contractTotalTTC={contractTotalTTC}
           />
         </div>
       </div>
