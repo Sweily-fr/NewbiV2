@@ -16,15 +16,16 @@ import { GET_INVOICES } from "@/src/graphql/invoiceQueries";
  * Remplace useReconciliation.fetchSuggestions (REST)
  */
 export const useReconciliationSuggestions = () => {
-  const { workspaceId } = useRequiredWorkspace();
+  const { workspaceId, loading: workspaceLoading } = useRequiredWorkspace();
 
   const { data, loading, error, refetch } = useQuery(
     GET_RECONCILIATION_SUGGESTIONS,
     {
       variables: { workspaceId },
       fetchPolicy: "cache-and-network",
-      skip: !workspaceId, // Ne pas exécuter tant que le workspace n'est pas disponible
+      skip: !workspaceId || workspaceLoading, // Ne pas exécuter tant que le workspace n'est pas disponible
       pollInterval: 30000, // Rafraîchir toutes les 30 secondes
+      errorPolicy: "all", // Ne pas lancer d'erreur, retourner les données partielles
     }
   );
 
@@ -34,7 +35,7 @@ export const useReconciliationSuggestions = () => {
     suggestions: result?.suggestions || [],
     unmatchedCount: result?.unmatchedCount || 0,
     pendingInvoicesCount: result?.pendingInvoicesCount || 0,
-    loading,
+    loading: loading || workspaceLoading,
     error,
     refetch,
   };
