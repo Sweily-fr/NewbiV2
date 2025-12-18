@@ -8,6 +8,7 @@ import {
   CheckCircle,
   AlignLeft,
 } from "lucide-react";
+import { TimerDisplay } from "./TimerDisplay";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import {
@@ -208,8 +209,11 @@ const TaskCard = memo(function TaskCard({ task, onEdit, onDelete, index, isDragg
             )}
           </div>
           
-          {/* Ligne 2: Avatar + Date d'échéance + Priorité */}
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          {/* Ligne 2: Timer + Avatar + Date d'échéance + Priorité */}
+          <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
+            {/* Timer Display */}
+            <TimerDisplay timeTracking={task.timeTracking} />
+            
             {assignedMembersInfo && assignedMembersInfo.length > 0 && (
               <AvatarGroup 
                 users={assignedMembersInfo} 
@@ -290,6 +294,7 @@ const TaskCard = memo(function TaskCard({ task, onEdit, onDelete, index, isDragg
   );
 }, (prevProps, nextProps) => {
   // Comparaison personnalisée pour éviter les re-renders inutiles
+  // Note: On ne compare PAS timeTracking pour permettre la mise à jour en temps réel du timer
   return (
     prevProps.task.id === nextProps.task.id &&
     prevProps.task.title === nextProps.task.title &&

@@ -25,6 +25,7 @@ export const useKanbanTasks = (boardId, board) => {
     newTag: "",
     newChecklistItem: "",
     pendingComments: [], // Commentaires en attente de création
+    timeTracking: null, // Données du timer
   };
 
   const [taskForm, setTaskForm] = useState(initialTaskForm);
@@ -459,6 +460,7 @@ export const useKanbanTasks = (boardId, board) => {
       assignedMembers: Array.isArray(task?.assignedMembers) ? task.assignedMembers : [],
       comments: Array.isArray(task?.comments) ? task.comments : [],
       activity: Array.isArray(task?.activity) ? task.activity : [],
+      timeTracking: task?.timeTracking || null, // Données du timer
       userId: task?.userId,
       createdAt: task?.createdAt,
       updatedAt: task?.updatedAt,
