@@ -18,6 +18,7 @@ import { fr } from 'date-fns/locale';
 import { Checklist } from '@/src/components/Checklist';
 import { MemberSelector } from './MemberSelector';
 import { TaskActivity } from './TaskActivity';
+import { TimerControls } from './TimerControls';
 import { useAssignedMembersInfo } from '@/src/hooks/useAssignedMembersInfo';
 import MultipleSelector from '@/src/components/ui/multiple-selector';
 import { cn } from '@/src/lib/utils';
@@ -897,6 +898,22 @@ export function TaskModal({
                 onChange={handleChecklistChange}
               />
             </div>
+
+            {/* Timer et facturation (uniquement en mode édition) */}
+            {isEditing && (taskForm.id || taskForm._id) && (
+              <div className="mt-6">
+                <TimerControls
+                  taskId={taskForm.id || taskForm._id}
+                  timeTracking={taskForm.timeTracking}
+                  onTimerUpdate={(newTimeTracking) => {
+                    setTaskForm(prev => ({
+                      ...prev,
+                      timeTracking: newTimeTracking
+                    }));
+                  }}
+                />
+              </div>
+            )}
             </div>
             
             {/* Footer fixe */}
@@ -1484,6 +1501,22 @@ export function TaskModal({
                     onChange={handleChecklistChange}
                   />
                 </div>
+
+                {/* Timer et facturation (uniquement en mode édition) */}
+                {isEditing && (taskForm.id || taskForm._id) && (
+                  <div className="mt-6">
+                    <TimerControls
+                      taskId={taskForm.id || taskForm._id}
+                      timeTracking={taskForm.timeTracking}
+                      onTimerUpdate={(newTimeTracking) => {
+                        setTaskForm(prev => ({
+                          ...prev,
+                          timeTracking: newTimeTracking
+                        }));
+                      }}
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Footer fixe mobile */}
