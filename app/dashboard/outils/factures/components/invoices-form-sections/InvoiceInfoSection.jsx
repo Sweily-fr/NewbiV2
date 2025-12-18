@@ -2,7 +2,7 @@
 
 import React from "react";
 import { useFormContext } from "react-hook-form";
-import { Calendar as CalendarIcon, Clock, Building, Info, Search, FileText, Receipt, ChevronDown } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, Building, Info, Search, FileText, Receipt, ChevronDown, X, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useLazyQuery, useQuery } from "@apollo/client";
@@ -72,7 +72,7 @@ const PAYMENT_TERMS_SUGGESTIONS = [
   { value: 60, label: "60 jours" },
 ];
 
-export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: validateInvoiceNumberExists, onSituationNumberChange, onPreviousSituationInvoicesChange, onContractTotalChange, setValidationErrors }) {
+export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: validateInvoiceNumberExists, onSituationNumberChange, onPreviousSituationInvoicesChange, onContractTotalChange, setValidationErrors, onLinkedToQuoteChange, onResetItems }) {
   const {
     watch,
     setValue,
@@ -197,11 +197,51 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
   const prefixInitialized = React.useRef(false);
   // Flag pour éviter la validation au premier montage
   const isInitialMount = React.useRef(true);
+  // Ref pour suivre le type de facture précédent
+  const previousInvoiceType = React.useRef(data.invoiceType);
+  // Ref pour suivre la dernière référence pour laquelle les articles ont été copiés
+  const lastCopiedReference = React.useRef(null);
 
   // Marquer que le montage initial est terminé après le premier rendu
   React.useEffect(() => {
     isInitialMount.current = false;
   }, []);
+
+  // Vider les articles si on change de type de facture depuis "situation" vers un autre type
+  React.useEffect(() => {
+    // Ne pas exécuter au premier montage
+    if (isInitialMount.current) {
+      previousInvoiceType.current = data.invoiceType;
+      return;
+    }
+    
+    // Si on passe de "situation" à un autre type, vider les articles et la référence
+    if (previousInvoiceType.current === "situation" && data.invoiceType !== "situation") {
+      console.log('📋 [TYPE CHANGE] Changement de type de facture depuis "situation" vers', data.invoiceType);
+      // Vider les articles via le callback du parent
+      if (onResetItems) {
+        onResetItems();
+      }
+      // Vider la référence
+      setValue("purchaseOrderNumber", "", { shouldDirty: true });
+      // Réinitialiser le numéro de situation
+      setValue("situationNumber", null, { shouldDirty: false });
+      setSituationNumber(1);
+      // Notifier le parent
+      if (onLinkedToQuoteChange) {
+        onLinkedToQuoteChange(false);
+      }
+      if (onContractTotalChange) {
+        onContractTotalChange(null);
+      }
+      if (onPreviousSituationInvoicesChange) {
+        onPreviousSituationInvoicesChange([]);
+      }
+    }
+    
+    // Mettre à jour la référence du type précédent
+    previousInvoiceType.current = data.invoiceType;
+  }, [data.invoiceType, setValue, onResetItems, onLinkedToQuoteChange, onContractTotalChange, onPreviousSituationInvoicesChange]);
 
 
   // Rechercher les factures de situation et le devis quand le type est "situation" et qu'il y a une référence
@@ -222,6 +262,36 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
       });
     }
   }, [data.invoiceType, data.purchaseOrderNumber, workspaceId, fetchSituationInvoices, fetchQuoteByNumber]);
+
+  // Notifier le parent si la facture de situation est liée à un devis ou à des factures de situation existantes
+  React.useEffect(() => {
+    if (data.invoiceType === "situation" && data.purchaseOrderNumber) {
+      // Vérifier si liée à un devis
+      let isLinkedToQuote = false;
+      if (quoteData?.quoteByNumber) {
+        const quote = quoteData.quoteByNumber;
+        const quoteFullRef = quote.prefix ? `${quote.prefix}-${quote.number}` : quote.number;
+        isLinkedToQuote = quoteFullRef === data.purchaseOrderNumber;
+      }
+      
+      // Vérifier si liée à des factures de situation existantes
+      const existingInvoices = situationData?.situationInvoicesByQuoteRef || [];
+      // Exclure la facture actuelle si elle est en mode édition
+      const otherInvoices = data.id 
+        ? existingInvoices.filter(inv => inv.id !== data.id)
+        : existingInvoices;
+      const isLinkedToExistingSituation = otherInvoices.length > 0;
+      
+      // Notifier le parent si liée à un devis OU à des factures de situation existantes
+      if (onLinkedToQuoteChange) {
+        onLinkedToQuoteChange(isLinkedToQuote || isLinkedToExistingSituation);
+      }
+    } else {
+      if (onLinkedToQuoteChange) {
+        onLinkedToQuoteChange(false);
+      }
+    }
+  }, [quoteData, situationData, data.invoiceType, data.purchaseOrderNumber, data.id, onLinkedToQuoteChange]);
 
   // Notifier le parent du total du contrat quand le devis ou la première facture de situation est récupéré
   React.useEffect(() => {
@@ -294,11 +364,18 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
         purchaseOrderNumber: data.purchaseOrderNumber,
         match: quoteFullRef === data.purchaseOrderNumber,
         itemsCount: quote.items?.length,
-        finalTotalTTC: quote.finalTotalTTC
+        finalTotalTTC: quote.finalTotalTTC,
+        lastCopiedReference: lastCopiedReference.current
       });
       
       // Vérifier que le devis récupéré correspond bien à la référence sélectionnée
       if (quoteFullRef !== data.purchaseOrderNumber) {
+        return;
+      }
+      
+      // Ne pas re-copier si les articles ont déjà été copiés pour cette référence
+      if (lastCopiedReference.current === data.purchaseOrderNumber) {
+        console.log('📋 [QUOTE COPY] Articles déjà copiés pour cette référence, skip');
         return;
       }
       
@@ -322,6 +399,8 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
         }));
         
         setValue("items", copiedItems, { shouldDirty: true });
+        // Marquer cette référence comme copiée
+        lastCopiedReference.current = data.purchaseOrderNumber;
         
         // Copier aussi le client si disponible
         if (quote.client) {
@@ -369,64 +448,71 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
 
       // Copier les articles de la dernière facture de situation
       // (priorité sur le devis car les factures de situation peuvent avoir des modifications)
-      if (otherInvoices.length > 0) {
-        // Prendre la dernière facture de situation (triée par date croissante, donc la dernière est à la fin)
-        const lastSituationInvoice = otherInvoices[otherInvoices.length - 1];
-        
-        if (lastSituationInvoice.items && lastSituationInvoice.items.length > 0) {
-          console.log('📋 [SITUATION COPY] Copie des articles de la dernière facture de situation:', lastSituationInvoice.items.length, 'articles');
+      if (otherInvoices.length > 0 && data.purchaseOrderNumber) {
+        // Ne pas re-copier si les articles ont déjà été copiés pour cette référence
+        if (lastCopiedReference.current === data.purchaseOrderNumber) {
+          console.log('📋 [SITUATION COPY] Articles déjà copiés pour cette référence, skip');
+        } else {
+          // Prendre la dernière facture de situation (triée par date croissante, donc la dernière est à la fin)
+          const lastSituationInvoice = otherInvoices[otherInvoices.length - 1];
           
-          // Calculer le total des avancements déjà facturés pour chaque article
-          // En sommant les progressPercentage de toutes les factures précédentes
-          const totalProgressByIndex = {};
-          otherInvoices.forEach(invoice => {
-            if (invoice.items) {
-              invoice.items.forEach((item, idx) => {
-                totalProgressByIndex[idx] = (totalProgressByIndex[idx] || 0) + (item.progressPercentage || 0);
-              });
-            }
-          });
-          
-          // Copier les articles avec progressPercentage = reste à facturer (100% - déjà facturé)
-          const copiedItems = lastSituationInvoice.items.map((item, idx) => {
-            const alreadyInvoiced = totalProgressByIndex[idx] || 0;
-            const remainingProgress = Math.max(0, 100 - alreadyInvoiced);
-            console.log(`📋 [SITUATION COPY] Article ${idx}: déjà facturé ${alreadyInvoiced}%, reste ${remainingProgress}%`);
+          if (lastSituationInvoice.items && lastSituationInvoice.items.length > 0) {
+            console.log('📋 [SITUATION COPY] Copie des articles de la dernière facture de situation:', lastSituationInvoice.items.length, 'articles');
             
-            return {
-              description: item.description || "",
-              quantity: item.quantity || 1,
-              unitPrice: item.unitPrice || 0,
-              vatRate: item.vatRate !== undefined ? item.vatRate : 20,
-              vatExemptionText: item.vatExemptionText || "", // Mention d'exonération TVA
-              unit: item.unit || "unité",
-              discount: item.discount || 0,
-              discountType: item.discountType || "PERCENTAGE",
-              details: item.details || "", // Détails supplémentaires
-              progressPercentage: remainingProgress, // Reste à facturer (100% - déjà facturé)
-            };
-          });
+            // Calculer le total des avancements déjà facturés pour chaque article
+            // En sommant les progressPercentage de toutes les factures précédentes
+            const totalProgressByIndex = {};
+            otherInvoices.forEach(invoice => {
+              if (invoice.items) {
+                invoice.items.forEach((item, idx) => {
+                  totalProgressByIndex[idx] = (totalProgressByIndex[idx] || 0) + (item.progressPercentage || 0);
+                });
+              }
+            });
+            
+            // Copier les articles avec progressPercentage = reste à facturer (100% - déjà facturé)
+            const copiedItems = lastSituationInvoice.items.map((item, idx) => {
+              const alreadyInvoiced = totalProgressByIndex[idx] || 0;
+              const remainingProgress = Math.max(0, 100 - alreadyInvoiced);
+              console.log(`📋 [SITUATION COPY] Article ${idx}: déjà facturé ${alreadyInvoiced}%, reste ${remainingProgress}%`);
+              
+              return {
+                description: item.description || "",
+                quantity: item.quantity || 1,
+                unitPrice: item.unitPrice || 0,
+                vatRate: item.vatRate !== undefined ? item.vatRate : 20,
+                vatExemptionText: item.vatExemptionText || "", // Mention d'exonération TVA
+                unit: item.unit || "unité",
+                discount: item.discount || 0,
+                discountType: item.discountType || "PERCENTAGE",
+                details: item.details || "", // Détails supplémentaires
+                progressPercentage: remainingProgress, // Reste à facturer (100% - déjà facturé)
+              };
+            });
+            
+            setValue("items", copiedItems, { shouldDirty: true });
+            // Marquer cette référence comme copiée
+            lastCopiedReference.current = data.purchaseOrderNumber;
           
-          setValue("items", copiedItems, { shouldDirty: true });
-          
-          // Copier aussi le client si disponible
-          if (lastSituationInvoice.client) {
-            const clientData = lastSituationInvoice.client;
-            setValue("client", {
-              id: clientData.id || "",
-              name: clientData.name || "",
-              email: clientData.email || "",
-              type: clientData.type || "COMPANY",
-              vatNumber: clientData.vatNumber || "",
-              siret: clientData.siret || "",
-              address: {
-                fullName: clientData.address?.fullName || "",
-                street: clientData.address?.street || "",
-                city: clientData.address?.city || "",
-                postalCode: clientData.address?.postalCode || "",
-                country: clientData.address?.country || "",
-              },
-            }, { shouldDirty: true });
+            // Copier aussi le client si disponible
+            if (lastSituationInvoice.client) {
+              const clientData = lastSituationInvoice.client;
+              setValue("client", {
+                id: clientData.id || "",
+                name: clientData.name || "",
+                email: clientData.email || "",
+                type: clientData.type || "COMPANY",
+                vatNumber: clientData.vatNumber || "",
+                siret: clientData.siret || "",
+                address: {
+                  fullName: clientData.address?.fullName || "",
+                  street: clientData.address?.street || "",
+                  city: clientData.address?.city || "",
+                  postalCode: clientData.address?.postalCode || "",
+                  country: clientData.address?.country || "",
+                },
+              }, { shouldDirty: true });
+            }
           }
         }
       }
@@ -984,9 +1070,87 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
                   </div>
                 </div>
               )}
+              
+              {/* Actions rapides - Vider ou Régénérer */}
+              {data.invoiceType === "situation" && (
+                <div className="p-2 border-b flex gap-2">
+                  {data.purchaseOrderNumber && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 text-xs flex-1"
+                      onClick={() => {
+                        console.log('📋 [CLEAR REF] Vidage de la référence et des articles');
+                        // Réinitialiser le ref de la dernière référence copiée
+                        lastCopiedReference.current = null;
+                        // Vider la référence
+                        setValue("purchaseOrderNumber", "", { shouldDirty: true, shouldValidate: true });
+                        // Vider les articles via le callback du parent
+                        if (onResetItems) {
+                          onResetItems();
+                        }
+                        // Réinitialiser le numéro de situation
+                        setValue("situationNumber", null, { shouldDirty: false });
+                        setSituationNumber(1);
+                        // Notifier le parent
+                        if (onLinkedToQuoteChange) {
+                          onLinkedToQuoteChange(false);
+                        }
+                        if (onContractTotalChange) {
+                          onContractTotalChange(null);
+                        }
+                        if (onPreviousSituationInvoicesChange) {
+                          onPreviousSituationInvoicesChange([]);
+                        }
+                        setReferenceSearchOpen(false);
+                      }}
+                    >
+                      <X className="h-3 w-3 mr-1" />
+                      Vider
+                    </Button>
+                  )}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8 text-xs flex-1"
+                    onClick={() => {
+                      console.log('📋 [NEW AUTO REF] Génération d\'une nouvelle référence automatique');
+                      const now = new Date();
+                      const autoRef = `SIT-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}`;
+                      // Marquer cette nouvelle référence comme "copiée" pour éviter toute re-copie
+                      // (même s'il n'y a rien à copier pour une référence auto-générée)
+                      lastCopiedReference.current = autoRef;
+                      setValue("purchaseOrderNumber", autoRef, { shouldDirty: true, shouldValidate: true });
+                      // Vider les articles via le callback du parent
+                      console.log('📋 [NEW AUTO REF] Appel de onResetItems');
+                      if (onResetItems) {
+                        onResetItems();
+                      }
+                      setValue("situationNumber", 1, { shouldDirty: false });
+                      setSituationNumber(1);
+                      if (onLinkedToQuoteChange) {
+                        onLinkedToQuoteChange(false);
+                      }
+                      if (onContractTotalChange) {
+                        onContractTotalChange(null);
+                      }
+                      if (onPreviousSituationInvoicesChange) {
+                        onPreviousSituationInvoicesChange([]);
+                      }
+                      setReferenceSearchOpen(false);
+                    }}
+                  >
+                    <RefreshCw className="h-3 w-3 mr-1" />
+                    {data.purchaseOrderNumber ? "Nouvelle référence auto" : "Générer une référence"}
+                  </Button>
+                </div>
+              )}
+              
               <Command shouldFilter={false}>
                 <CommandInput 
-                  placeholder="Rechercher un devis..."
+                  placeholder="Rechercher une référence..."
                   value={referenceSearchTerm}
                   onValueChange={setReferenceSearchTerm}
                 />
