@@ -296,6 +296,17 @@
   stroke-width: 1.5;
 }
 
+/* Tooltip styles - fond noir #202020 */
+[data-slot="tooltip-content"] {
+  background-color: #202020 !important;
+  color: white !important;
+}
+
+[data-slot="tooltip-content"] [class*="Arrow"] {
+  background-color: #202020 !important;
+  fill: #202020 !important;
+}
+
 /* Support pour Safari iOS et safe-area-inset */
 @supports (padding: max(0px)) {
   body {
