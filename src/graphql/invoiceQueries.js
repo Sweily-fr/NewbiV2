@@ -292,9 +292,11 @@ export const GET_SITUATION_INVOICES_BY_QUOTE_REF = gql`
         quantity
         unitPrice
         vatRate
+        vatExemptionText
         unit
         discount
         discountType
+        details
         progressPercentage
       }
       client {
@@ -505,7 +507,7 @@ export const useInvoices = () => {
         {}
       ),
     },
-    fetchPolicy: "cache-first",
+    fetchPolicy: "cache-and-network",
     nextFetchPolicy: "cache-first",
     errorPolicy: "all",
     notifyOnNetworkStatusChange: true,
@@ -727,17 +729,11 @@ export const useLastInvoicePrefix = () => {
 
 // Hook pour créer une facture
 export const useCreateInvoice = () => {
-  const client = useApolloClient();
   const { workspaceId } = useRequiredWorkspace();
 
   const [createInvoiceMutation, { loading }] = useMutation(CREATE_INVOICE, {
-    onCompleted: () => {
-      // Toast désactivé ici - géré dans use-invoice-editor.js
-      // Invalider le cache des factures pour forcer un refetch
-      client.refetchQueries({
-        include: [GET_INVOICES, GET_INVOICE_STATS],
-      });
-    },
+    refetchQueries: ['GetInvoices', 'GetInvoiceStats'],
+    awaitRefetchQueries: true,
     // onError désactivé - les erreurs sont gérées dans les composants appelants
   });
 

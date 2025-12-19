@@ -2,6 +2,7 @@
 
 import React from "react";
 import { useFormContext } from "react-hook-form";
+<<<<<<< HEAD
 import {
   Calendar as CalendarIcon,
   Clock,
@@ -12,6 +13,9 @@ import {
   Receipt,
   ChevronDown,
 } from "lucide-react";
+=======
+import { Calendar as CalendarIcon, Clock, Building, Info, Search, FileText, Receipt, ChevronDown, X, RefreshCw } from "lucide-react";
+>>>>>>> e48b7abbde583da5dd0517a0721c403ca2f43a3e
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useLazyQuery, useQuery } from "@apollo/client";
@@ -89,6 +93,7 @@ const PAYMENT_TERMS_SUGGESTIONS = [
   { value: 60, label: "60 jours" },
 ];
 
+<<<<<<< HEAD
 export default function InvoiceInfoSection({
   canEdit,
   validateInvoiceNumber: validateInvoiceNumberExists,
@@ -96,6 +101,9 @@ export default function InvoiceInfoSection({
   onPreviousSituationInvoicesChange,
   onContractTotalChange,
 }) {
+=======
+export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: validateInvoiceNumberExists, onSituationNumberChange, onPreviousSituationInvoicesChange, onContractTotalChange, setValidationErrors, onLinkedToQuoteChange, onResetItems }) {
+>>>>>>> e48b7abbde583da5dd0517a0721c403ca2f43a3e
   const {
     watch,
     setValue,
@@ -116,6 +124,7 @@ export default function InvoiceInfoSection({
   } = useInvoiceNumber();
 
   // Get the last invoice prefix
+<<<<<<< HEAD
   const { prefix: lastInvoicePrefix, loading: loadingLastPrefix } =
     useLastInvoicePrefix();
 
@@ -126,6 +135,15 @@ export default function InvoiceInfoSection({
   ] = useLazyQuery(GET_SITUATION_INVOICES_BY_QUOTE_REF, {
     fetchPolicy: "network-only",
   });
+=======
+  const { prefix: lastInvoicePrefix, loading: loadingLastPrefix } = useLastInvoicePrefix();
+  
+  // Query pour rechercher les factures de situation par référence
+  const [fetchSituationInvoices, { data: situationData, loading: loadingSituation }] = useLazyQuery(
+    GET_SITUATION_INVOICES_BY_QUOTE_REF,
+    { fetchPolicy: "network-only" }
+  );
+>>>>>>> e48b7abbde583da5dd0517a0721c403ca2f43a3e
 
   // Query pour récupérer le devis par son numéro (pour le total du contrat)
   const [fetchQuoteByNumber, { data: quoteData, loading: loadingQuote }] =
@@ -189,6 +207,34 @@ export default function InvoiceInfoSection({
     }
   );
 
+  // Calculer les compteurs filtrés pour les tabulations
+  const availableQuotesCount = React.useMemo(() => {
+    if (!quotesData?.quotes?.quotes) return 0;
+    if (data.invoiceType !== "situation") return quotesData.quotes.quotes.length;
+    
+    return quotesData.quotes.quotes.filter(quote => {
+      const invoicedTotal = quote.situationInvoicedTotal || 0;
+      const contractTotal = quote.finalTotalTTC || 0;
+      // Calculer le reste à facturer
+      const remaining = contractTotal - invoicedTotal;
+      // Afficher uniquement si le reste est strictement positif (> 0.01 pour éviter les erreurs d'arrondi)
+      return remaining > 0.01;
+    }).length;
+  }, [quotesData, data.invoiceType]);
+
+  const availableSituationsCount = React.useMemo(() => {
+    if (!situationRefsData?.situationReferences) return 0;
+    
+    return situationRefsData.situationReferences.filter(ref => {
+      // Si pas de montant de contrat défini, ne pas afficher (on ne peut pas calculer le reste)
+      if (!ref.contractTotal || ref.contractTotal === 0) return false;
+      // Calculer le reste à facturer
+      const remaining = ref.contractTotal - (ref.totalTTC || 0);
+      // Afficher uniquement si le reste est strictement positif (> 0.01 pour éviter les erreurs d'arrondi)
+      return remaining > 0.01;
+    }).length;
+  }, [situationRefsData]);
+
   // State pour stocker le numéro de situation
   const [situationNumber, setSituationNumber] = React.useState(1);
 
@@ -196,13 +242,58 @@ export default function InvoiceInfoSection({
   const prefixInitialized = React.useRef(false);
   // Flag pour éviter la validation au premier montage
   const isInitialMount = React.useRef(true);
+  // Ref pour suivre le type de facture précédent
+  const previousInvoiceType = React.useRef(data.invoiceType);
+  // Ref pour suivre la dernière référence pour laquelle les articles ont été copiés
+  const lastCopiedReference = React.useRef(null);
 
   // Marquer que le montage initial est terminé après le premier rendu
   React.useEffect(() => {
     isInitialMount.current = false;
   }, []);
 
+<<<<<<< HEAD
   // Rechercher les factures de situation et le devis quand le type est "situation" et qu'il y a une référence devis
+=======
+  // Vider les articles si on change de type de facture depuis "situation" vers un autre type
+  React.useEffect(() => {
+    // Ne pas exécuter au premier montage
+    if (isInitialMount.current) {
+      previousInvoiceType.current = data.invoiceType;
+      return;
+    }
+    
+    // Si on passe de "situation" à un autre type, vider les articles et la référence
+    if (previousInvoiceType.current === "situation" && data.invoiceType !== "situation") {
+      console.log('📋 [TYPE CHANGE] Changement de type de facture depuis "situation" vers', data.invoiceType);
+      // Vider les articles via le callback du parent
+      if (onResetItems) {
+        onResetItems();
+      }
+      // Vider la référence
+      setValue("purchaseOrderNumber", "", { shouldDirty: true });
+      // Réinitialiser le numéro de situation
+      setValue("situationNumber", null, { shouldDirty: false });
+      setSituationNumber(1);
+      // Notifier le parent
+      if (onLinkedToQuoteChange) {
+        onLinkedToQuoteChange(false);
+      }
+      if (onContractTotalChange) {
+        onContractTotalChange(null);
+      }
+      if (onPreviousSituationInvoicesChange) {
+        onPreviousSituationInvoicesChange([]);
+      }
+    }
+    
+    // Mettre à jour la référence du type précédent
+    previousInvoiceType.current = data.invoiceType;
+  }, [data.invoiceType, setValue, onResetItems, onLinkedToQuoteChange, onContractTotalChange, onPreviousSituationInvoicesChange]);
+
+
+  // Rechercher les factures de situation et le devis quand le type est "situation" et qu'il y a une référence
+>>>>>>> e48b7abbde583da5dd0517a0721c403ca2f43a3e
   React.useEffect(() => {
     if (
       data.invoiceType === "situation" &&
@@ -230,6 +321,36 @@ export default function InvoiceInfoSection({
     fetchSituationInvoices,
     fetchQuoteByNumber,
   ]);
+
+  // Notifier le parent si la facture de situation est liée à un devis ou à des factures de situation existantes
+  React.useEffect(() => {
+    if (data.invoiceType === "situation" && data.purchaseOrderNumber) {
+      // Vérifier si liée à un devis
+      let isLinkedToQuote = false;
+      if (quoteData?.quoteByNumber) {
+        const quote = quoteData.quoteByNumber;
+        const quoteFullRef = quote.prefix ? `${quote.prefix}-${quote.number}` : quote.number;
+        isLinkedToQuote = quoteFullRef === data.purchaseOrderNumber;
+      }
+      
+      // Vérifier si liée à des factures de situation existantes
+      const existingInvoices = situationData?.situationInvoicesByQuoteRef || [];
+      // Exclure la facture actuelle si elle est en mode édition
+      const otherInvoices = data.id 
+        ? existingInvoices.filter(inv => inv.id !== data.id)
+        : existingInvoices;
+      const isLinkedToExistingSituation = otherInvoices.length > 0;
+      
+      // Notifier le parent si liée à un devis OU à des factures de situation existantes
+      if (onLinkedToQuoteChange) {
+        onLinkedToQuoteChange(isLinkedToQuote || isLinkedToExistingSituation);
+      }
+    } else {
+      if (onLinkedToQuoteChange) {
+        onLinkedToQuoteChange(false);
+      }
+    }
+  }, [quoteData, situationData, data.invoiceType, data.purchaseOrderNumber, data.id, onLinkedToQuoteChange]);
 
   // Notifier le parent du total du contrat quand le devis ou la première facture de situation est récupéré
   React.useEffect(() => {
@@ -311,13 +432,27 @@ export default function InvoiceInfoSection({
         match: quoteFullRef === data.purchaseOrderNumber,
         itemsCount: quote.items?.length,
         finalTotalTTC: quote.finalTotalTTC,
+<<<<<<< HEAD
+=======
+        lastCopiedReference: lastCopiedReference.current
+>>>>>>> e48b7abbde583da5dd0517a0721c403ca2f43a3e
       });
 
       // Vérifier que le devis récupéré correspond bien à la référence sélectionnée
       if (quoteFullRef !== data.purchaseOrderNumber) {
         return;
       }
+<<<<<<< HEAD
 
+=======
+      
+      // Ne pas re-copier si les articles ont déjà été copiés pour cette référence
+      if (lastCopiedReference.current === data.purchaseOrderNumber) {
+        console.log('📋 [QUOTE COPY] Articles déjà copiés pour cette référence, skip');
+        return;
+      }
+      
+>>>>>>> e48b7abbde583da5dd0517a0721c403ca2f43a3e
       const existingInvoices = situationData?.situationInvoicesByQuoteRef || [];
 
       // Ne copier les articles du devis que s'il n'y a pas de factures de situation existantes
@@ -332,15 +467,23 @@ export default function InvoiceInfoSection({
           description: item.description || "",
           quantity: item.quantity || 1,
           unitPrice: item.unitPrice || 0,
-          vatRate: item.vatRate || 20,
+          vatRate: item.vatRate !== undefined ? item.vatRate : 20,
+          vatExemptionText: item.vatExemptionText || "", // Mention d'exonération TVA
           unit: item.unit || "unité",
           discount: item.discount || 0,
           discountType: item.discountType || "PERCENTAGE",
-          progressPercentage: 0,
+          details: item.details || "", // Détails supplémentaires
+          progressPercentage: 100, // Première situation: 100% reste à facturer
         }));
 
         setValue("items", copiedItems, { shouldDirty: true });
+<<<<<<< HEAD
 
+=======
+        // Marquer cette référence comme copiée
+        lastCopiedReference.current = data.purchaseOrderNumber;
+        
+>>>>>>> e48b7abbde583da5dd0517a0721c403ca2f43a3e
         // Copier aussi le client si disponible
         if (quote.client) {
           const clientData = quote.client;
@@ -397,6 +540,7 @@ export default function InvoiceInfoSection({
 
       // Copier les articles de la dernière facture de situation
       // (priorité sur le devis car les factures de situation peuvent avoir des modifications)
+<<<<<<< HEAD
       if (otherInvoices.length > 0) {
         // Prendre la dernière facture de situation (triée par date croissante, donc la dernière est à la fin)
         const lastSituationInvoice = otherInvoices[otherInvoices.length - 1];
@@ -431,6 +575,58 @@ export default function InvoiceInfoSection({
             setValue(
               "client",
               {
+=======
+      if (otherInvoices.length > 0 && data.purchaseOrderNumber) {
+        // Ne pas re-copier si les articles ont déjà été copiés pour cette référence
+        if (lastCopiedReference.current === data.purchaseOrderNumber) {
+          console.log('📋 [SITUATION COPY] Articles déjà copiés pour cette référence, skip');
+        } else {
+          // Prendre la dernière facture de situation (triée par date croissante, donc la dernière est à la fin)
+          const lastSituationInvoice = otherInvoices[otherInvoices.length - 1];
+          
+          if (lastSituationInvoice.items && lastSituationInvoice.items.length > 0) {
+            console.log('📋 [SITUATION COPY] Copie des articles de la dernière facture de situation:', lastSituationInvoice.items.length, 'articles');
+            
+            // Calculer le total des avancements déjà facturés pour chaque article
+            // En sommant les progressPercentage de toutes les factures précédentes
+            const totalProgressByIndex = {};
+            otherInvoices.forEach(invoice => {
+              if (invoice.items) {
+                invoice.items.forEach((item, idx) => {
+                  totalProgressByIndex[idx] = (totalProgressByIndex[idx] || 0) + (item.progressPercentage || 0);
+                });
+              }
+            });
+            
+            // Copier les articles avec progressPercentage = reste à facturer (100% - déjà facturé)
+            const copiedItems = lastSituationInvoice.items.map((item, idx) => {
+              const alreadyInvoiced = totalProgressByIndex[idx] || 0;
+              const remainingProgress = Math.max(0, 100 - alreadyInvoiced);
+              console.log(`📋 [SITUATION COPY] Article ${idx}: déjà facturé ${alreadyInvoiced}%, reste ${remainingProgress}%`);
+              
+              return {
+                description: item.description || "",
+                quantity: item.quantity || 1,
+                unitPrice: item.unitPrice || 0,
+                vatRate: item.vatRate !== undefined ? item.vatRate : 20,
+                vatExemptionText: item.vatExemptionText || "", // Mention d'exonération TVA
+                unit: item.unit || "unité",
+                discount: item.discount || 0,
+                discountType: item.discountType || "PERCENTAGE",
+                details: item.details || "", // Détails supplémentaires
+                progressPercentage: remainingProgress, // Reste à facturer (100% - déjà facturé)
+              };
+            });
+            
+            setValue("items", copiedItems, { shouldDirty: true });
+            // Marquer cette référence comme copiée
+            lastCopiedReference.current = data.purchaseOrderNumber;
+          
+            // Copier aussi le client si disponible
+            if (lastSituationInvoice.client) {
+              const clientData = lastSituationInvoice.client;
+              setValue("client", {
+>>>>>>> e48b7abbde583da5dd0517a0721c403ca2f43a3e
                 id: clientData.id || "",
                 name: clientData.name || "",
                 email: clientData.email || "",
@@ -444,9 +640,14 @@ export default function InvoiceInfoSection({
                   postalCode: clientData.address?.postalCode || "",
                   country: clientData.address?.country || "",
                 },
+<<<<<<< HEAD
               },
               { shouldDirty: true }
             );
+=======
+              }, { shouldDirty: true });
+            }
+>>>>>>> e48b7abbde583da5dd0517a0721c403ca2f43a3e
           }
         }
       }
@@ -467,6 +668,153 @@ export default function InvoiceInfoSection({
     onSituationNumberChange,
     onPreviousSituationInvoicesChange,
   ]);
+
+  // Créer une clé de dépendance pour les items (pour détecter les changements profonds)
+  const itemsKey = React.useMemo(() => {
+    if (!data.items || data.items.length === 0) return '';
+    return data.items.map(item => 
+      `${item.quantity || 0}-${item.unitPrice || 0}-${item.vatRate || 0}-${item.discount || 0}-${item.discountType || 'PERCENTAGE'}-${item.progressPercentage || 100}`
+    ).join('|');
+  }, [data.items]);
+
+  // Validation frontend : vérifier que le total des factures de situation ne dépasse pas le contrat
+  React.useEffect(() => {
+    if (!setValidationErrors) return;
+    
+    if (data.invoiceType === "situation" && data.purchaseOrderNumber) {
+      // Calculer le montant du contrat
+      let contractTotal = 0;
+      
+      // Priorité 1: Depuis le devis
+      if (quoteData?.quoteByNumber) {
+        contractTotal = quoteData.quoteByNumber.finalTotalTTC || 0;
+      } 
+      // Priorité 2: Depuis la première facture de situation
+      else if (situationData?.situationInvoicesByQuoteRef?.length > 0) {
+        const existingInvoices = situationData.situationInvoicesByQuoteRef;
+        const sortedInvoices = [...existingInvoices].sort((a, b) => 
+          new Date(a.issueDate || a.createdAt) - new Date(b.issueDate || b.createdAt)
+        );
+        const firstInvoice = sortedInvoices[0];
+        
+        if (firstInvoice.items && firstInvoice.items.length > 0) {
+          let totalHT = 0;
+          let totalVAT = 0;
+          
+          firstInvoice.items.forEach(item => {
+            const quantity = parseFloat(item.quantity) || 0;
+            const unitPrice = parseFloat(item.unitPrice) || 0;
+            const vatRate = parseFloat(item.vatRate) || 0;
+            const discount = parseFloat(item.discount) || 0;
+            const discountType = item.discountType || "PERCENTAGE";
+            
+            let itemTotal = quantity * unitPrice;
+            if (discount > 0) {
+              if (discountType === "PERCENTAGE") {
+                itemTotal = itemTotal * (1 - discount / 100);
+              } else {
+                itemTotal = Math.max(0, itemTotal - discount);
+              }
+            }
+            
+            totalHT += itemTotal;
+            totalVAT += itemTotal * (vatRate / 100);
+          });
+          
+          contractTotal = totalHT + totalVAT;
+        }
+      }
+      
+      // Calculer le total déjà facturé (excluant la facture actuelle)
+      const existingInvoices = situationData?.situationInvoicesByQuoteRef || [];
+      const otherInvoices = data.id 
+        ? existingInvoices.filter(inv => inv.id !== data.id)
+        : existingInvoices;
+      
+      const alreadyInvoicedTotal = otherInvoices.reduce(
+        (sum, inv) => sum + (inv.finalTotalTTC || 0), 
+        0
+      );
+      
+      // Calculer le total de la facture actuelle à partir des items (car finalTotalTTC peut ne pas être à jour)
+      let currentInvoiceTotal = 0;
+      if (data.items && data.items.length > 0) {
+        const globalDiscount = parseFloat(data.discount) || 0;
+        const globalDiscountType = data.discountType || 'PERCENTAGE';
+        
+        let totalHT = 0;
+        let totalVAT = 0;
+        
+        data.items.forEach(item => {
+          const quantity = parseFloat(item.quantity) || 1;
+          const unitPrice = parseFloat(item.unitPrice) || 0;
+          const vatRate = parseFloat(item.vatRate) || 0;
+          const discount = parseFloat(item.discount) || 0;
+          const discountType = item.discountType || 'PERCENTAGE';
+          const progressPercentage = parseFloat(item.progressPercentage) || 100;
+          
+          // Calculer le total HT de la ligne avec avancement
+          let lineHT = quantity * unitPrice * (progressPercentage / 100);
+          
+          // Appliquer la remise de ligne
+          if (discount > 0) {
+            if (discountType === 'PERCENTAGE') {
+              lineHT = lineHT * (1 - discount / 100);
+            } else {
+              lineHT = Math.max(0, lineHT - discount);
+            }
+          }
+          
+          totalHT += lineHT;
+          totalVAT += lineHT * (vatRate / 100);
+        });
+        
+        // Appliquer la remise globale
+        if (globalDiscount > 0) {
+          if (globalDiscountType === 'PERCENTAGE') {
+            const discountMultiplier = 1 - globalDiscount / 100;
+            totalHT = totalHT * discountMultiplier;
+            totalVAT = totalVAT * discountMultiplier;
+          } else {
+            const totalBeforeDiscount = totalHT + totalVAT;
+            if (totalBeforeDiscount > 0) {
+              const discountRatio = Math.min(1, globalDiscount / totalBeforeDiscount);
+              totalHT = totalHT * (1 - discountRatio);
+              totalVAT = totalVAT * (1 - discountRatio);
+            }
+          }
+        }
+        
+        currentInvoiceTotal = totalHT + totalVAT;
+      }
+      
+      // Vérifier si le total dépasserait le contrat
+      if (contractTotal > 0 && (alreadyInvoicedTotal + currentInvoiceTotal) > contractTotal * 1.001) { // 0.1% de tolérance pour les arrondis
+        const remaining = Math.max(0, contractTotal - alreadyInvoicedTotal);
+        setValidationErrors(prev => ({
+          ...prev,
+          situationTotal: {
+            message: `Le montant total des factures de situation dépasserait le montant du contrat. Montant du contrat: ${formatCurrency(contractTotal)}. Déjà facturé: ${formatCurrency(alreadyInvoicedTotal)}. Reste disponible: ${formatCurrency(remaining)}. Montant de cette facture: ${formatCurrency(currentInvoiceTotal)}.`,
+            canEdit: false
+          }
+        }));
+      } else {
+        // Supprimer l'erreur si elle existait
+        setValidationErrors(prev => {
+          const newErrors = { ...prev };
+          delete newErrors.situationTotal;
+          return newErrors;
+        });
+      }
+    } else {
+      // Supprimer l'erreur si ce n'est pas une facture de situation
+      setValidationErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors.situationTotal;
+        return newErrors;
+      });
+    }
+  }, [data.invoiceType, data.purchaseOrderNumber, itemsKey, data.discount, data.discountType, data.id, quoteData, situationData, setValidationErrors]);
 
   // Set default invoice number when nextInvoiceNumber is available
   React.useEffect(() => {
@@ -665,9 +1013,7 @@ export default function InvoiceInfoSection({
           </Select>
           {data.invoiceType === "situation" && (
             <p className="text-xs text-muted-foreground">
-              Une référence unique est générée automatiquement. Vous pouvez la
-              modifier ou utiliser une référence de devis existante pour lier
-              plusieurs factures de situation.
+              Une référence unique est générée automatiquement. Vous pouvez la modifier ou utiliser une référence existante pour lier plusieurs factures de situation.
               {situationData?.situationInvoicesByQuoteRef?.length > 0 && (
                 <span className="block mt-1 text-primary font-medium">
                   {situationData.situationInvoicesByQuoteRef.length} facture(s)
@@ -845,19 +1191,15 @@ export default function InvoiceInfoSection({
           </div>
         </div>
 
-        {/* Référence devis / Référence de situation */}
+        {/* Référence / Référence de situation */}
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <Label
               htmlFor="purchase-order-number"
               className="text-sm font-light"
             >
-              {data.invoiceType === "situation"
-                ? "Référence de situation"
-                : "Référence devis"}
-              {data.invoiceType === "situation" && (
-                <span className="text-red-500">*</span>
-              )}
+              {data.invoiceType === "situation" ? "Référence de situation" : "Référence"}
+              {data.invoiceType === "situation" && <span className="text-red-500">*</span>}
             </Label>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -867,7 +1209,8 @@ export default function InvoiceInfoSection({
                 <p>
                   {data.invoiceType === "situation"
                     ? "Référence unique permettant de lier plusieurs factures de situation entre elles. Peut être une référence de devis ou une référence générée automatiquement."
-                    : "Référence du devis qui a été accepté et transformé en facture (optionnel). Permet de faire le lien entre devis et facture."}
+                    : "Référence du contrat, devis, bon de commande ou dossier lié à cette facture (optionnel)."
+                  }
                 </p>
               </TooltipContent>
             </Tooltip>
@@ -886,9 +1229,7 @@ export default function InvoiceInfoSection({
               >
                 {data.purchaseOrderNumber || (
                   <span className="text-muted-foreground">
-                    {data.invoiceType === "situation"
-                      ? "Rechercher ou saisir une référence..."
-                      : "Rechercher un devis..."}
+                    {data.invoiceType === "situation" ? "Rechercher ou saisir une référence..." : "Saisir une référence..."}
                   </span>
                 )}
                 <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -918,7 +1259,7 @@ export default function InvoiceInfoSection({
                       onClick={() => setReferenceFilter("quotes")}
                     >
                       <FileText className="h-3 w-3 mr-1" />
-                      Devis ({quotesData?.quotes?.quotes?.length || 0})
+                      Devis ({availableQuotesCount})
                     </Button>
                     <Button
                       type="button"
@@ -930,15 +1271,92 @@ export default function InvoiceInfoSection({
                       onClick={() => setReferenceFilter("situations")}
                     >
                       <Receipt className="h-3 w-3 mr-1" />
-                      Situations (
-                      {situationRefsData?.situationReferences?.length || 0})
+                      Situations ({availableSituationsCount})
                     </Button>
                   </div>
                 </div>
               )}
+              
+              {/* Actions rapides - Vider ou Régénérer */}
+              {data.invoiceType === "situation" && (
+                <div className="p-2 border-b flex gap-2">
+                  {data.purchaseOrderNumber && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 text-xs flex-1"
+                      onClick={() => {
+                        console.log('📋 [CLEAR REF] Vidage de la référence et des articles');
+                        // Réinitialiser le ref de la dernière référence copiée
+                        lastCopiedReference.current = null;
+                        // Vider la référence
+                        setValue("purchaseOrderNumber", "", { shouldDirty: true, shouldValidate: true });
+                        // Vider les articles via le callback du parent
+                        if (onResetItems) {
+                          onResetItems();
+                        }
+                        // Réinitialiser le numéro de situation
+                        setValue("situationNumber", null, { shouldDirty: false });
+                        setSituationNumber(1);
+                        // Notifier le parent
+                        if (onLinkedToQuoteChange) {
+                          onLinkedToQuoteChange(false);
+                        }
+                        if (onContractTotalChange) {
+                          onContractTotalChange(null);
+                        }
+                        if (onPreviousSituationInvoicesChange) {
+                          onPreviousSituationInvoicesChange([]);
+                        }
+                        setReferenceSearchOpen(false);
+                      }}
+                    >
+                      <X className="h-3 w-3 mr-1" />
+                      Vider
+                    </Button>
+                  )}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8 text-xs flex-1"
+                    onClick={() => {
+                      console.log('📋 [NEW AUTO REF] Génération d\'une nouvelle référence automatique');
+                      const now = new Date();
+                      const autoRef = `SIT-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}`;
+                      // Marquer cette nouvelle référence comme "copiée" pour éviter toute re-copie
+                      // (même s'il n'y a rien à copier pour une référence auto-générée)
+                      lastCopiedReference.current = autoRef;
+                      setValue("purchaseOrderNumber", autoRef, { shouldDirty: true, shouldValidate: true });
+                      // Vider les articles via le callback du parent
+                      console.log('📋 [NEW AUTO REF] Appel de onResetItems');
+                      if (onResetItems) {
+                        onResetItems();
+                      }
+                      setValue("situationNumber", 1, { shouldDirty: false });
+                      setSituationNumber(1);
+                      if (onLinkedToQuoteChange) {
+                        onLinkedToQuoteChange(false);
+                      }
+                      if (onContractTotalChange) {
+                        onContractTotalChange(null);
+                      }
+                      if (onPreviousSituationInvoicesChange) {
+                        onPreviousSituationInvoicesChange([]);
+                      }
+                      setReferenceSearchOpen(false);
+                    }}
+                  >
+                    <RefreshCw className="h-3 w-3 mr-1" />
+                    {data.purchaseOrderNumber ? "Nouvelle référence auto" : "Générer une référence"}
+                  </Button>
+                </div>
+              )}
+              
               <Command shouldFilter={false}>
-                <CommandInput
-                  placeholder="Rechercher un devis..."
+                <CommandInput 
+                  placeholder="Rechercher une référence..."
                   value={referenceSearchTerm}
                   onValueChange={setReferenceSearchTerm}
                 />
@@ -956,72 +1374,100 @@ export default function InvoiceInfoSection({
                   </CommandEmpty>
 
                   {/* Devis acceptés */}
-                  {(referenceFilter === "all" ||
-                    referenceFilter === "quotes") &&
-                    quotesData?.quotes?.quotes?.length > 0 &&
-                    (() => {
-                      // Pour les factures de situation, filtrer les devis dont le total facturé a atteint le montant du devis
-                      const availableQuotes =
-                        data.invoiceType === "situation"
-                          ? quotesData.quotes.quotes.filter((quote) => {
-                              const invoicedTotal =
-                                quote.situationInvoicedTotal || 0;
-                              const contractTotal = quote.finalTotalTTC || 0;
-                              // Afficher uniquement si le total facturé est inférieur au contrat
-                              return invoicedTotal < contractTotal;
-                            })
-                          : quotesData.quotes.quotes;
-
-                      if (availableQuotes.length === 0) return null;
-
-                      return (
-                        <CommandGroup
-                          heading={`Devis acceptés (${availableQuotes.length})`}
-                        >
-                          {[...availableQuotes]
-                            .sort((a, b) => {
-                              // Trier par numéro décroissant pour avoir les plus récents en premier
-                              const numA = parseInt(a.number) || 0;
-                              const numB = parseInt(b.number) || 0;
-                              return numB - numA;
-                            })
-                            .map((quote) => {
-                              const fullRef = quote.prefix
-                                ? `${quote.prefix}-${quote.number}`
-                                : quote.number;
-                              const invoicedTotal =
-                                quote.situationInvoicedTotal || 0;
-                              const remaining =
-                                data.invoiceType === "situation" &&
-                                invoicedTotal > 0
-                                  ? quote.finalTotalTTC - invoicedTotal
-                                  : null;
-
-                              return (
-                                <CommandItem
-                                  key={quote.id}
-                                  value={fullRef}
-                                  onSelect={() => {
-                                    setValue("purchaseOrderNumber", fullRef, {
-                                      shouldDirty: true,
-                                    });
-                                    setReferenceSearchOpen(false);
-                                    setReferenceSearchTerm("");
-                                    setReferenceFilter("all");
-                                  }}
-                                  className="flex items-center gap-2 cursor-pointer"
-                                >
-                                  <FileText className="h-4 w-4 text-blue-500 shrink-0" />
-                                  <div className="flex-1 min-w-0">
-                                    <div className="font-medium truncate">
-                                      {fullRef}
-                                    </div>
-                                    <div className="text-xs text-muted-foreground truncate">
-                                      {quote.client?.name} •{" "}
-                                      {formatCurrency(quote.finalTotalTTC)}
-                                      {remaining !== null &&
-                                        ` • Reste: ${formatCurrency(remaining)}`}
-                                    </div>
+                  {(referenceFilter === "all" || referenceFilter === "quotes") && quotesData?.quotes?.quotes?.length > 0 && (() => {
+                    // Pour les factures de situation, filtrer les devis dont le total facturé a atteint le montant du devis
+                    const availableQuotes = data.invoiceType === "situation" 
+                      ? quotesData.quotes.quotes.filter(quote => {
+                          const invoicedTotal = quote.situationInvoicedTotal || 0;
+                          const contractTotal = quote.finalTotalTTC || 0;
+                          // Calculer le reste à facturer
+                          const remaining = contractTotal - invoicedTotal;
+                          // Afficher uniquement si le reste est strictement positif (> 0.01 pour éviter les erreurs d'arrondi)
+                          return remaining > 0.01;
+                        })
+                      : quotesData.quotes.quotes;
+                    
+                    if (availableQuotes.length === 0) return null;
+                    
+                    return (
+                      <CommandGroup heading={`Devis acceptés (${availableQuotes.length})`}>
+                        {[...availableQuotes].sort((a, b) => {
+                          // Trier par numéro décroissant pour avoir les plus récents en premier
+                          const numA = parseInt(a.number) || 0;
+                          const numB = parseInt(b.number) || 0;
+                          return numB - numA;
+                        }).map((quote) => {
+                          const fullRef = quote.prefix ? `${quote.prefix}-${quote.number}` : quote.number;
+                          const invoicedTotal = quote.situationInvoicedTotal || 0;
+                          const remaining = data.invoiceType === "situation" && invoicedTotal > 0 
+                            ? quote.finalTotalTTC - invoicedTotal 
+                            : null;
+                          
+                          return (
+                            <CommandItem
+                              key={quote.id}
+                              value={fullRef}
+                              onSelect={() => {
+                                setValue("purchaseOrderNumber", fullRef, { shouldDirty: true });
+                                setReferenceSearchOpen(false);
+                                setReferenceSearchTerm("");
+                                setReferenceFilter("all");
+                              }}
+                              className="flex items-center gap-2 cursor-pointer"
+                            >
+                              <FileText className="h-4 w-4 text-blue-500 shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <div className="font-medium truncate">{fullRef}</div>
+                                <div className="text-xs text-muted-foreground truncate">
+                                  {quote.client?.name} • {formatCurrency(quote.finalTotalTTC)}
+                                  {remaining !== null && ` • Reste: ${formatCurrency(remaining)}`}
+                                </div>
+                              </div>
+                            </CommandItem>
+                          );
+                        })}
+                      </CommandGroup>
+                    );
+                  })()}
+                  
+                  {/* Références de situation existantes - uniquement pour les factures de situation */}
+                  {data.invoiceType === "situation" && (referenceFilter === "all" || referenceFilter === "situations") && situationRefsData?.situationReferences?.length > 0 && (() => {
+                    // Filtrer les références dont le total n'a pas atteint le montant du contrat
+                    const availableRefs = situationRefsData.situationReferences.filter(ref => {
+                      // Si pas de montant de contrat défini, ne pas afficher
+                      if (!ref.contractTotal || ref.contractTotal === 0) return false;
+                      // Calculer le reste à facturer
+                      const remaining = ref.contractTotal - (ref.totalTTC || 0);
+                      // Afficher uniquement si le reste est strictement positif (> 0.01 pour éviter les erreurs d'arrondi)
+                      return remaining > 0.01;
+                    });
+                    
+                    if (availableRefs.length === 0) return null;
+                    
+                    return (
+                      <>
+                        {referenceFilter === "all" && quotesData?.quotes?.quotes?.length > 0 && <CommandSeparator />}
+                        <CommandGroup heading={`Factures de situation (${availableRefs.length})`}>
+                          {availableRefs.map((ref) => {
+                            const remaining = ref.contractTotal ? ref.contractTotal - ref.totalTTC : null;
+                            return (
+                              <CommandItem
+                                key={ref.reference}
+                                value={ref.reference}
+                                onSelect={() => {
+                                  setValue("purchaseOrderNumber", ref.reference, { shouldDirty: true });
+                                  setReferenceSearchOpen(false);
+                                  setReferenceSearchTerm("");
+                                  setReferenceFilter("all");
+                                }}
+                                className="flex items-center gap-2 cursor-pointer"
+                              >
+                                <Receipt className="h-4 w-4 text-green-500 shrink-0" />
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-medium truncate">{ref.reference}</div>
+                                  <div className="text-xs text-muted-foreground truncate">
+                                    {ref.count} facture(s) • Facturé: {formatCurrency(ref.totalTTC)}
+                                    {remaining !== null && ` • Reste: ${formatCurrency(remaining)}`}
                                   </div>
                                 </CommandItem>
                               );

@@ -71,6 +71,7 @@ export default function ItemsSection({
   validationErrors = [],
   markFieldAsEditing,
   unmarkFieldAsEditing,
+  isLinkedToQuote = false,
 }) {
   // Déterminer si c'est un avoir
   const isCreditNoteContext =
@@ -93,6 +94,9 @@ export default function ItemsSection({
   // Observer les changements en temps réel pour tous les items
   const watchedItems = watch("items") || [];
   const invoiceType = watch("invoiceType");
+  
+  // Déterminer si les champs des articles sont verrouillés (facture de situation liée à un devis)
+  const isItemFieldLocked = isLinkedToQuote && invoiceType === "situation";
   
   // État pour gérer l'affichage des champs optionnels par article
   const [showProgress, setShowProgress] = useState({});
@@ -178,21 +182,35 @@ export default function ItemsSection({
           </div>
         )}
 
-        {/* Bouton ajouter article */}
-        <div className="flex flex-col md:flex-row gap-3 items-stretch">
-          {ProductSearchCombobox ? (
-            <>
-              <div className="flex-1 min-w-0 order-1 md:order-1">
-                <div className="h-full">
-                  <ProductSearchCombobox
-                    onSelect={addItem}
-                    placeholder="Rechercher un produit..."
-                    disabled={!canEdit}
-                    className="h-full"
-                  />
+        {/* Bouton ajouter article - Masqué pour les factures de situation liées à un devis */}
+        {!(isLinkedToQuote && invoiceType === "situation") && (
+          <div className="flex flex-col md:flex-row gap-3 items-stretch">
+            {ProductSearchCombobox ? (
+              <>
+                <div className="flex-1 min-w-0 order-1 md:order-1">
+                  <div className="h-full">
+                    <ProductSearchCombobox
+                      onSelect={addItem}
+                      placeholder="Rechercher un produit..."
+                      disabled={!canEdit}
+                      className="h-full"
+                    />
+                  </div>
                 </div>
-              </div>
-              <div className="flex-shrink-0 order-2 md:order-2 md:w-auto">
+                <div className="flex-shrink-0 order-2 md:order-2 md:w-auto">
+                  <Button
+                    onClick={() => addItem()}
+                    disabled={!canEdit}
+                    className="gap-2 w-full h-full min-h-10 font-normal"
+                    size="lg"
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span className="md:inline">Ajouter un article</span>
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <div className="w-full">
                 <Button
                   onClick={() => addItem()}
                   disabled={!canEdit}
@@ -200,24 +218,19 @@ export default function ItemsSection({
                   size="lg"
                 >
                   <Plus className="h-4 w-4" />
-                  <span className="md:inline">Ajouter un article</span>
+                  Ajouter un article
                 </Button>
               </div>
-            </>
-          ) : (
-            <div className="w-full">
-              <Button
-                onClick={() => addItem()}
-                disabled={!canEdit}
-                className="gap-2 w-full h-full min-h-10 font-normal"
-                size="lg"
-              >
-                <Plus className="h-4 w-4" />
-                Ajouter un article
-              </Button>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
+        
+        {/* Message informatif pour les factures de situation liées à un devis ou à une facture de situation existante */}
+        {isLinkedToQuote && invoiceType === "situation" && (
+          <div className="bg-muted/50 rounded-lg p-4 text-sm text-muted-foreground">
+            <p>Les articles sont importés depuis le document lié. Seuls le pourcentage d'avancement et la remise sont modifiables.</p>
+          </div>
+        )}
 
         {/* Liste des articles avec Accordion */}
         {items.length > 0 && (
@@ -286,7 +299,7 @@ export default function ItemsSection({
                                     : `-${formatCurrency(discount)}`}
                                 </span>
                               )}
-                              {progressPercentage < 100 && (
+                              {progressPercentage !== 100 && (
                                 <>
                                   <span className="font-normal">•</span>
                                   <span style={{ color: "#5b50ff" }} className="font-normal">
@@ -296,32 +309,47 @@ export default function ItemsSection({
                               )}
                             </div>
                             <div className="font-normal">
-                              {formatCurrency(subtotal)} HT • {vatRate}% TVA •{" "}
-                              {formatCurrency(totalTTC)} TTC
+                              {progressPercentage !== 100 ? (
+                                <>
+                                  <span className="text-muted-foreground">{formatCurrency(quantity * unitPrice)} HT</span>
+                                  <span className="mx-1">→</span>
+                                  <span style={{ color: "#5b50ff" }}>{formatCurrency(subtotal)} HT</span>
+                                  <span> • {vatRate}% TVA • </span>
+                                  <span style={{ color: "#5b50ff" }}>{formatCurrency(totalTTC)} TTC</span>
+                                </>
+                              ) : (
+                                <>
+                                  {formatCurrency(subtotal)} HT • {vatRate}% TVA •{" "}
+                                  {formatCurrency(totalTTC)} TTC
+                                </>
+                              )}
                             </div>
                           </div>
                         </div>
-                        <div
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (canEdit) {
-                              removeItem(index);
-                            }
-                          }}
-                          className={`h-8 w-8 flex items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors ${!canEdit ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
-                          role="button"
-                          tabIndex={0}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" || e.key === " ") {
+                        {/* Bouton de suppression - Masqué pour les factures de situation liées à un devis */}
+                        {!isItemFieldLocked && (
+                          <div
+                            onClick={(e) => {
                               e.stopPropagation();
                               if (canEdit) {
                                 removeItem(index);
                               }
-                            }
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </div>
+                            }}
+                            className={`h-8 w-8 flex items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors ${!canEdit ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+                            role="button"
+                            tabIndex={0}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                e.stopPropagation();
+                                if (canEdit) {
+                                  removeItem(index);
+                                }
+                              }
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </div>
+                        )}
                       </div>
                     </AccordionTrigger>
                     <AccordionContent className="pb-6 pt-2 px-2 overflow-visible">
@@ -358,7 +386,7 @@ export default function ItemsSection({
                                 },
                               })}
                               placeholder="Décrivez votre produit ou service"
-                              disabled={!canEdit}
+                              disabled={!canEdit || isItemFieldLocked}
                               onFocus={() => markFieldAsEditing?.(index, "description")}
                               onBlur={() => unmarkFieldAsEditing?.(index, "description")}
                               className={`h-10 rounded-lg text-sm w-full ${
@@ -395,7 +423,7 @@ export default function ItemsSection({
                               },
                             })}
                             placeholder="Informations complémentaires sur l'article"
-                            disabled={!canEdit}
+                            disabled={!canEdit || isItemFieldLocked}
                             rows={2}
                             onFocus={() => markFieldAsEditing?.(index, "details")}
                             onBlur={() => unmarkFieldAsEditing?.(index, "details")}
@@ -468,7 +496,7 @@ export default function ItemsSection({
                                       field.onBlur();
                                       unmarkFieldAsEditing?.(index, "quantity");
                                     }}
-                                    disabled={!canEdit}
+                                    disabled={!canEdit || isItemFieldLocked}
                                     onFocus={() => markFieldAsEditing?.(index, "quantity")}
                                     className={`h-10 text-sm w-full ${
                                       errors?.items?.[index]?.quantity || hasFieldError(index, "quantity")
@@ -501,7 +529,7 @@ export default function ItemsSection({
                                   <Select
                                     value={field.value || "none"}
                                     onValueChange={(value) => field.onChange(value === "none" ? "" : value)}
-                                    disabled={!canEdit}
+                                    disabled={!canEdit || isItemFieldLocked}
                                   >
                                     <SelectTrigger className="w-full text-sm">
                                       <SelectValue placeholder="Aucune unité" />
@@ -573,7 +601,7 @@ export default function ItemsSection({
                                     });
                                   },
                                 })}
-                                disabled={!canEdit}
+                                disabled={!canEdit || isItemFieldLocked}
                                 onFocus={() => markFieldAsEditing?.(index, "unitPrice")}
                                 onBlur={() => unmarkFieldAsEditing?.(index, "unitPrice")}
                                 className={`h-10 text-sm w-full ${
@@ -607,7 +635,7 @@ export default function ItemsSection({
                                   <Select
                                     value={field.value?.toString() || "20"}
                                     onValueChange={(value) => field.onChange(parseFloat(value))}
-                                    disabled={!canEdit}
+                                    disabled={!canEdit || isItemFieldLocked}
                                   >
                                     <SelectTrigger className="w-full text-sm">
                                       <SelectValue />
@@ -652,7 +680,7 @@ export default function ItemsSection({
                                   <Select
                                     value={field.value || "none"}
                                     onValueChange={field.onChange}
-                                    disabled={!canEdit}
+                                    disabled={!canEdit || isItemFieldLocked}
                                   >
                                     <SelectTrigger className={`w-full text-sm ${
                                       hasFieldError(index, "vatExemptionText")
@@ -1032,8 +1060,8 @@ export default function ItemsSection({
           </div>
         )}
 
-        {/* Bouton ajouter article en bas */}
-        {items.length > 0 && (
+        {/* Bouton ajouter article en bas - Masqué pour les factures de situation liées à un devis */}
+        {items.length > 0 && !isItemFieldLocked && (
           <div className="flex justify-center pt-4">
             <Button
               onClick={() => addItem()}

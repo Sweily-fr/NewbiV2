@@ -102,7 +102,6 @@ import { useInvoiceReminderSettings } from "@/src/graphql/invoiceReminderQueries
 import { useInvoiceTable } from "../hooks/use-invoice-table";
 import InvoiceRowActions from "./invoice-row-actions";
 import { Skeleton } from "@/src/components/ui/skeleton";
-import InvoiceExportButton from "./invoice-export-button";
 import InvoiceFilters from "./invoice-filters";
 import InvoiceSidebar from "./invoice-sidebar";
 import { ImportInvoiceModal } from "./import-invoice-modal";
@@ -121,8 +120,6 @@ export default function InvoiceTable({
   onOpenReminderSettings,
   triggerImport,
   onImportTriggered,
-  triggerExport,
-  onExportTriggered,
 }) {
   const router = useRouter();
   const { invoices, loading, error, refetch } = useInvoices();
@@ -149,8 +146,6 @@ export default function InvoiceTable({
   const excludedClientIds =
     reminderSettingsData?.getInvoiceReminderSettings?.excludedClientIds || [];
 
-  // État pour le dropdown d'export (pour le trigger depuis le header)
-  const [isExportDropdownOpen, setIsExportDropdownOpen] = useState(false);
 
   // Réagir aux triggers depuis le header
   useEffect(() => {
@@ -159,13 +154,6 @@ export default function InvoiceTable({
       onImportTriggered?.();
     }
   }, [triggerImport, onImportTriggered]);
-
-  useEffect(() => {
-    if (triggerExport) {
-      setIsExportDropdownOpen(true);
-      onExportTriggered?.();
-    }
-  }, [triggerExport, onExportTriggered]);
 
   // Combiner les factures normales et importées
   const combinedInvoices = useMemo(() => {

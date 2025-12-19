@@ -118,8 +118,12 @@ export function useCreditNoteEditor({
           const unitPrice = parseFloat(item.unitPrice) || 0;
           const vatRate = parseFloat(item.vatRate) || 0;
           const itemDiscount = parseFloat(item.discount) || 0;
+          // Prendre en compte le pourcentage d'avancement
+          const progressPercentage = item.progressPercentage !== undefined && item.progressPercentage !== null 
+            ? parseFloat(item.progressPercentage) 
+            : 100;
 
-          let itemTotal = quantity * unitPrice;
+          let itemTotal = quantity * unitPrice * (progressPercentage / 100);
 
           // Apply item discount
           if (itemDiscount > 0) {
@@ -437,6 +441,7 @@ function transformInvoiceToCreditNoteFormData(
         vatRate: item.vatRate,
         discount: item.discount || 0,
         discountType: item.discountType || "PERCENTAGE",
+        progressPercentage: item.progressPercentage !== undefined ? item.progressPercentage : 100, // Conserver le % d'avancement
       })) || [],
     customFields: invoice.customFields || [],
     bankDetails: invoice.bankDetails || {

@@ -98,7 +98,7 @@ export default function ModernCreditNoteEditor({
       const result = await finalize(false); // Ne pas rediriger automatiquement
       
       if (result?.success && result?.creditNote) {
-        // Stocker les données de l'avoir créé
+        // Stocker les données de l'avoir créé pour la modal d'envoi
         // Le montant doit être négatif pour un avoir - utiliser formData ou result
         const amount = formData.finalTotalTTC || result.creditNote.finalTotalTTC || 0;
         
@@ -112,7 +112,7 @@ export default function ModernCreditNoteEditor({
           ? formatDate(formData.issueDate)
           : formatDate(result.creditNote.issueDate);
         
-        setCreatedCreditNoteData({
+        const creditNoteData = {
           id: result.creditNote.id,
           number: `${result.creditNote.prefix || "AV"}-${result.creditNote.number}`,
           clientName: result.creditNote.client?.name,
@@ -122,21 +122,27 @@ export default function ModernCreditNoteEditor({
           issueDate: creditNoteDate,
           invoiceNumber: invoiceNum,
           redirectUrl: result.redirectUrl,
-        });
-        // Afficher la modal d'envoi
-        setShowSendEmailModal(true);
+        };
+        setCreatedCreditNoteData(creditNoteData);
+
+        // Stocker les données dans sessionStorage pour afficher le toast sur la page de liste
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem("newCreditNoteData", JSON.stringify(creditNoteData));
+        }
+
+        // Rediriger vers la liste des factures
+        router.push("/dashboard/outils/factures");
       }
     } catch (error) {
       // Error is already handled in the hook
     }
   };
 
-  // Handler pour fermer la modal et rediriger
+  // Handler pour fermer la modal après envoi d'email
   const handleEmailModalClose = () => {
     setShowSendEmailModal(false);
-    if (createdCreditNoteData?.redirectUrl) {
-      router.push(createdCreditNoteData.redirectUrl);
-    }
+    // Rediriger vers la liste des factures après envoi ou fermeture
+    router.push("/dashboard/outils/factures");
   };
 
   const getStatusBadge = () => {

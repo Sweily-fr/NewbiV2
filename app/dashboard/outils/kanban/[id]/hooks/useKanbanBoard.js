@@ -154,8 +154,8 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
           }
         }
         
-        // Pour les mises à jour (UPDATED), mettre à jour le cache Apollo
-        if (type === 'UPDATED' && task) {
+        // Pour les mises à jour (UPDATED, TIMER_STARTED, TIMER_STOPPED), mettre à jour le cache Apollo
+        if ((type === 'UPDATED' || type === 'TIMER_STARTED' || type === 'TIMER_STOPPED') && task) {
           try {
             const cacheData = apolloClient.cache.readQuery({
               query: GET_BOARD,
@@ -178,10 +178,16 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
                 }
               });
               
-              console.log("✅ [Subscription] Tâche mise à jour dans le cache:", task.title);
+              if (type === 'TIMER_STARTED') {
+                console.log("✅ [Subscription] Timer démarré dans le cache:", task.title);
+              } else if (type === 'TIMER_STOPPED') {
+                console.log("✅ [Subscription] Timer arrêté dans le cache:", task.title);
+              } else {
+                console.log("✅ [Subscription] Tâche mise à jour dans le cache:", task.title);
+              }
             }
           } catch (error) {
-            console.error("❌ [Subscription] Erreur mise à jour cache (UPDATED):", error);
+            console.error("❌ [Subscription] Erreur mise à jour cache (UPDATED/TIMER):", error);
           }
         }
         
