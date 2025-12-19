@@ -162,7 +162,7 @@ export default function InvoicePreview({ data = {}, className = "", status }) {
               </p>
               {data.purchaseOrderNumber && (
                 <p style={{ margin: "2px 0" }}>
-                  Référence devis: {data.purchaseOrderNumber}
+                  Référence: {data.purchaseOrderNumber}
                 </p>
               )}
               {data.isDepositInvoice && (

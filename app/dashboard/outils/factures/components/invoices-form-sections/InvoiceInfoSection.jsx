@@ -11,6 +11,9 @@ import {
   FileText,
   Receipt,
   ChevronDown,
+  ClipboardList,
+  X,
+  RefreshCw,
 } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -847,30 +850,85 @@ export default function InvoiceInfoSection({
 
         {/* Référence devis / Référence de situation */}
         <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <Label
-              htmlFor="purchase-order-number"
-              className="text-sm font-light"
-            >
-              {data.invoiceType === "situation"
-                ? "Référence de situation"
-                : "Référence devis"}
-              {data.invoiceType === "situation" && (
-                <span className="text-red-500">*</span>
-              )}
-            </Label>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-              </TooltipTrigger>
-              <TooltipContent side="top" className="max-w-[280px] sm:max-w-xs">
-                <p>
-                  {data.invoiceType === "situation"
-                    ? "Référence unique permettant de lier plusieurs factures de situation entre elles. Peut être une référence de devis ou une référence générée automatiquement."
-                    : "Référence du devis qui a été accepté et transformé en facture (optionnel). Permet de faire le lien entre devis et facture."}
-                </p>
-              </TooltipContent>
-            </Tooltip>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Label
+                htmlFor="purchase-order-number"
+                className="text-sm font-light"
+              >
+                {data.invoiceType === "situation"
+                  ? "Référence de situation"
+                  : "Référence devis"}
+                {data.invoiceType === "situation" && (
+                  <span className="text-red-500">*</span>
+                )}
+              </Label>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent
+                  side="top"
+                  className="max-w-[280px] sm:max-w-xs"
+                >
+                  <p>
+                    {data.invoiceType === "situation"
+                      ? "Référence unique permettant de lier plusieurs factures de situation entre elles. Peut être une référence de devis ou une référence générée automatiquement."
+                      : "Référence du devis qui a été accepté et transformé en facture (optionnel). Permet de faire le lien entre devis et facture."}
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+            {data.invoiceType === "situation" && canEdit && (
+              <div className="flex items-center gap-2">
+                {/* Bouton pour vider la référence */}
+                {data.purchaseOrderNumber && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 bg-muted/50 hover:bg-muted rounded-md"
+                        onClick={() => {
+                          setValue("purchaseOrderNumber", "", {
+                            shouldDirty: true,
+                          });
+                        }}
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">
+                      <p>Vider la référence</p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+                {/* Bouton pour générer une nouvelle référence */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 bg-muted/50 hover:bg-muted rounded-md"
+                      onClick={() => {
+                        const now = new Date();
+                        const autoRef = `SIT-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}-${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}${String(now.getSeconds()).padStart(2, "0")}`;
+                        setValue("purchaseOrderNumber", autoRef, {
+                          shouldDirty: true,
+                        });
+                      }}
+                    >
+                      <RefreshCw className="h-3.5 w-3.5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">
+                    <p>Générer une nouvelle référence automatique</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            )}
           </div>
           <Popover
             open={referenceSearchOpen}
@@ -894,7 +952,7 @@ export default function InvoiceInfoSection({
                 <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-[420px] p-0" align="start">
+            <PopoverContent className="w-[490px] p-0" align="start">
               {/* Onglets de filtre - uniquement pour les factures de situation */}
               {data.invoiceType === "situation" && (
                 <div className="p-2 border-b">
@@ -903,7 +961,7 @@ export default function InvoiceInfoSection({
                       type="button"
                       variant={referenceFilter === "all" ? "default" : "ghost"}
                       size="sm"
-                      className="h-7 text-xs"
+                      className="h-8 text-sm font-normal"
                       onClick={() => setReferenceFilter("all")}
                     >
                       Tout
@@ -914,10 +972,10 @@ export default function InvoiceInfoSection({
                         referenceFilter === "quotes" ? "default" : "ghost"
                       }
                       size="sm"
-                      className="h-7 text-xs"
+                      className="h-8 text-sm font-normal"
                       onClick={() => setReferenceFilter("quotes")}
                     >
-                      <FileText className="h-3 w-3 mr-1" />
+                      <FileText className="h-4 w-4 mr-1.5" />
                       Devis ({quotesData?.quotes?.quotes?.length || 0})
                     </Button>
                     <Button
@@ -926,10 +984,10 @@ export default function InvoiceInfoSection({
                         referenceFilter === "situations" ? "default" : "ghost"
                       }
                       size="sm"
-                      className="h-7 text-xs"
+                      className="h-8 text-sm font-normal"
                       onClick={() => setReferenceFilter("situations")}
                     >
-                      <Receipt className="h-3 w-3 mr-1" />
+                      <ClipboardList className="h-4 w-4 mr-1.5" />
                       Situations (
                       {situationRefsData?.situationReferences?.length || 0})
                     </Button>
@@ -1013,14 +1071,20 @@ export default function InvoiceInfoSection({
                                 >
                                   <FileText className="h-4 w-4 text-blue-500 shrink-0" />
                                   <div className="flex-1 min-w-0">
-                                    <div className="font-medium truncate">
+                                    <div className="font-normal truncate">
                                       {fullRef}
                                     </div>
                                     <div className="text-xs text-muted-foreground truncate">
                                       {quote.client?.name} •{" "}
                                       {formatCurrency(quote.finalTotalTTC)}
-                                      {remaining !== null &&
-                                        ` • Reste: ${formatCurrency(remaining)}`}
+                                      {remaining !== null && (
+                                        <>
+                                          {" • "}
+                                          <span style={{ color: "#5a50ff" }}>
+                                            Reste: {formatCurrency(remaining)}
+                                          </span>
+                                        </>
+                                      )}
                                     </div>
                                   </div>
                                 </CommandItem>
@@ -1077,16 +1141,22 @@ export default function InvoiceInfoSection({
                                   }}
                                   className="flex items-center gap-2 cursor-pointer"
                                 >
-                                  <Receipt className="h-4 w-4 text-green-500 shrink-0" />
+                                  <ClipboardList className="h-4 w-4 shrink-0" />
                                   <div className="flex-1 min-w-0">
-                                    <div className="font-medium truncate">
+                                    <div className="font-normal truncate">
                                       {ref.reference}
                                     </div>
                                     <div className="text-xs text-muted-foreground truncate">
                                       {ref.count} facture(s) • Facturé:{" "}
                                       {formatCurrency(ref.totalTTC)}
-                                      {remaining !== null &&
-                                        ` • Reste: ${formatCurrency(remaining)}`}
+                                      {remaining !== null && (
+                                        <>
+                                          {" • "}
+                                          <span style={{ color: "#5a50ff" }}>
+                                            Reste: {formatCurrency(remaining)}
+                                          </span>
+                                        </>
+                                      )}
                                     </div>
                                   </div>
                                 </CommandItem>

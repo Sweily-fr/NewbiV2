@@ -338,6 +338,8 @@ export function useCreateCreditNote() {
     refetchQueries: [
       'GetCreditNotesByInvoice', // Rafraîchir la liste des avoirs de la facture
       'GetCreditNoteStats', // Rafraîchir les statistiques
+      'GetInvoices', // Rafraîchir la liste des factures
+      'GetInvoiceStats', // Rafraîchir les statistiques des factures
     ],
     awaitRefetchQueries: true,
   });

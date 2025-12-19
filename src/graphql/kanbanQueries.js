@@ -1,6 +1,27 @@
 import { gql } from '@apollo/client';
 
 // GraphQL Queries
+export const GET_TASK_TIMER = gql`
+  query GetTaskTimer($id: ID!, $workspaceId: ID) {
+    task(id: $id, workspaceId: $workspaceId) {
+      id
+      timeTracking {
+        totalSeconds
+        isRunning
+        currentStartTime
+        hourlyRate
+        roundingOption
+        entries {
+          id
+          startTime
+          endTime
+          duration
+        }
+      }
+    }
+  }
+`;
+
 export const GET_BOARDS = gql`
   query GetBoards($workspaceId: ID) {
     boards(workspaceId: $workspaceId) {
@@ -58,6 +79,19 @@ export const GET_BOARD = gql`
           completed
         }
         assignedMembers
+        timeTracking {
+          totalSeconds
+          isRunning
+          currentStartTime
+          entries {
+            id
+            startTime
+            endTime
+            duration
+          }
+          hourlyRate
+          roundingOption
+        }
         comments {
           id
           userId
@@ -285,6 +319,19 @@ export const TASK_FRAGMENT = gql`
       completed
     }
     assignedMembers
+    timeTracking {
+      totalSeconds
+      isRunning
+      currentStartTime
+      entries {
+        id
+        startTime
+        endTime
+        duration
+      }
+      hourlyRate
+      roundingOption
+    }
     comments {
       id
       userId
@@ -400,4 +447,32 @@ export const COLUMN_UPDATED_SUBSCRIPTION = gql`
     }
   }
   ${COLUMN_FRAGMENT}
+`;
+
+// Mutations pour le timer
+export const START_TIMER = gql`
+  mutation StartTimer($taskId: ID!, $workspaceId: ID) {
+    startTimer(taskId: $taskId, workspaceId: $workspaceId) {
+      ...TaskFields
+    }
+  }
+  ${TASK_FRAGMENT}
+`;
+
+export const STOP_TIMER = gql`
+  mutation StopTimer($taskId: ID!, $workspaceId: ID) {
+    stopTimer(taskId: $taskId, workspaceId: $workspaceId) {
+      ...TaskFields
+    }
+  }
+  ${TASK_FRAGMENT}
+`;
+
+export const UPDATE_TIMER_SETTINGS = gql`
+  mutation UpdateTimerSettings($taskId: ID!, $hourlyRate: Float, $roundingOption: String, $workspaceId: ID) {
+    updateTimerSettings(taskId: $taskId, hourlyRate: $hourlyRate, roundingOption: $roundingOption, workspaceId: $workspaceId) {
+      ...TaskFields
+    }
+  }
+  ${TASK_FRAGMENT}
 `;

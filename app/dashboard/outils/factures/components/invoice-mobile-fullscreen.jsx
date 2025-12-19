@@ -18,7 +18,10 @@ import {
   INVOICE_STATUS,
   INVOICE_STATUS_LABELS,
   INVOICE_STATUS_COLORS,
+  GET_SITUATION_INVOICES_BY_QUOTE_REF,
 } from "@/src/graphql/invoiceQueries";
+import { useLazyQuery } from "@apollo/client";
+import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { useCreditNotesByInvoice } from "@/src/graphql/creditNoteQueries";
 import { hasReachedCreditNoteLimit } from "@/src/utils/creditNoteUtils";
 import { toast } from "@/src/components/ui/sonner";
@@ -36,8 +39,11 @@ export default function InvoiceMobileFullscreen({
   const router = useRouter();
   const { canCreate } = usePermissions();
   const [canCreateCreditNote, setCanCreateCreditNote] = useState(false);
+  const [previousSituationInvoices, setPreviousSituationInvoices] = useState([]);
+  const [contractTotalTTC, setContractTotalTTC] = useState(null);
   const { markAsPaid, loading: markingAsPaid } = useMarkInvoiceAsPaid();
   const { changeStatus, loading: changingStatus } = useChangeInvoiceStatus();
+  const { workspaceId } = useRequiredWorkspace();
 
   // Vérifier les permissions pour créer un avoir
   useEffect(() => {
@@ -59,6 +65,80 @@ export default function InvoiceMobileFullscreen({
     invoice: fullInvoice,
     loading: loadingFullInvoice,
   } = useInvoice(initialInvoice?.id);
+
+  // Query pour récupérer les factures de situation précédentes
+  const [fetchSituationInvoices, { data: situationData }] = useLazyQuery(
+    GET_SITUATION_INVOICES_BY_QUOTE_REF,
+    { fetchPolicy: "network-only" }
+  );
+
+  // Récupérer les factures de situation précédentes quand c'est une facture de situation
+  useEffect(() => {
+    const invoice = fullInvoice || initialInvoice;
+    if (
+      isOpen &&
+      workspaceId &&
+      invoice?.invoiceType === "situation" &&
+      invoice?.purchaseOrderNumber
+    ) {
+      fetchSituationInvoices({
+        variables: {
+          workspaceId,
+          purchaseOrderNumber: invoice.purchaseOrderNumber,
+        },
+      });
+    } else {
+      setPreviousSituationInvoices([]);
+      setContractTotalTTC(null);
+    }
+  }, [isOpen, workspaceId, fullInvoice, initialInvoice, fetchSituationInvoices]);
+
+  // Mettre à jour les factures de situation précédentes quand les données arrivent
+  useEffect(() => {
+    const invoice = fullInvoice || initialInvoice;
+    if (situationData?.situationInvoicesByQuoteRef && invoice?.id) {
+      const otherInvoices = situationData.situationInvoicesByQuoteRef
+        .filter((inv) => inv.id !== invoice.id)
+        .sort((a, b) => (a.situationNumber || 0) - (b.situationNumber || 0));
+      
+      setPreviousSituationInvoices(otherInvoices);
+
+      const allInvoices = situationData.situationInvoicesByQuoteRef;
+      if (allInvoices.length > 0) {
+        const firstInvoice = allInvoices.reduce((prev, curr) => 
+          (prev.situationNumber || 0) < (curr.situationNumber || 0) ? prev : curr
+        );
+        
+        if (firstInvoice.items && firstInvoice.items.length > 0) {
+          let totalContratHT = 0;
+          let totalContratTVA = 0;
+          
+          firstInvoice.items.forEach((item) => {
+            const quantity = parseFloat(item.quantity) || 0;
+            const unitPrice = parseFloat(item.unitPrice) || 0;
+            const vatRate = parseFloat(item.vatRate) || 0;
+            const discount = parseFloat(item.discount) || 0;
+            const discountType = item.discountType || "PERCENTAGE";
+            
+            let itemTotal = quantity * unitPrice;
+            
+            if (discount > 0) {
+              if (discountType === "PERCENTAGE" || discountType === "percentage") {
+                itemTotal = itemTotal * (1 - Math.min(discount, 100) / 100);
+              } else {
+                itemTotal = Math.max(0, itemTotal - discount);
+              }
+            }
+            
+            totalContratHT += itemTotal;
+            totalContratTVA += itemTotal * (vatRate / 100);
+          });
+          
+          setContractTotalTTC(totalContratHT + totalContratTVA);
+        }
+      }
+    }
+  }, [situationData, fullInvoice, initialInvoice]);
 
   // Ne rien afficher si pas ouvert ou pas de facture
   if (!isOpen || !initialInvoice) return null;
@@ -177,6 +257,8 @@ export default function InvoiceMobileFullscreen({
                   variant="ghost"
                   size="sm"
                   className="h-8"
+                  previousSituationInvoices={previousSituationInvoices}
+                  contractTotalTTC={contractTotalTTC}
                 >
                   Télécharger
                 </UniversalPDFDownloaderWithFacturX>
@@ -370,6 +452,8 @@ export default function InvoiceMobileFullscreen({
               enableFacturX={true}
               variant="outline"
               size="sm"
+              previousSituationInvoices={previousSituationInvoices}
+              contractTotalTTC={contractTotalTTC}
             >
               Télécharger
             </UniversalPDFDownloaderWithFacturX>

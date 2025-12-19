@@ -279,6 +279,7 @@ export default function EnhancedInvoiceForm({
   const [activeField, setActiveField] = useState(null);
   const [internalCurrentStep, setInternalCurrentStep] = useState(1);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [isLinkedToQuote, setIsLinkedToQuote] = useState(false);
   const canEdit = !readOnly && !loading;
 
   // Utiliser l'état externe si fourni, sinon utiliser l'état interne
@@ -297,9 +298,17 @@ export default function EnhancedInvoiceForm({
     append,
     remove,
     update,
+    replace: replaceItems,
   } = useFieldArray({
     name: "items",
   });
+  
+  // Fonction pour réinitialiser les articles (utilisée par InvoiceInfoSection)
+  const resetItems = useCallback(() => {
+    console.log('📋 [RESET ITEMS] Réinitialisation des articles, items actuels:', items.length);
+    replaceItems([]);
+    console.log('📋 [RESET ITEMS] Articles vidés');
+  }, [replaceItems, items.length]);
 
   // Watch les données du formulaire
   const data = watch();
@@ -526,6 +535,9 @@ export default function EnhancedInvoiceForm({
                 validateInvoiceNumber={validateInvoiceNumber}
                 onPreviousSituationInvoicesChange={onPreviousSituationInvoicesChange}
                 onContractTotalChange={onContractTotalChange}
+                setValidationErrors={setValidationErrors}
+                onLinkedToQuoteChange={setIsLinkedToQuote}
+                onResetItems={resetItems}
               />
 
               {/* Section 2: Sélection d'un client */}
@@ -565,6 +577,7 @@ export default function EnhancedInvoiceForm({
                 validationErrors={validationErrors?.items?.details || []}
                 markFieldAsEditing={markFieldAsEditing}
                 unmarkFieldAsEditing={unmarkFieldAsEditing}
+                isLinkedToQuote={isLinkedToQuote}
               />
 
               {/* Section 2: Facturation de livraison */}

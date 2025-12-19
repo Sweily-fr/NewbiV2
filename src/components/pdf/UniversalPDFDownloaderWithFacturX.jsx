@@ -496,6 +496,8 @@ const UniversalPDFDownloaderWithFacturX = ({
   size = "sm",
   disabled = false,
   enableFacturX = true,
+  previousSituationInvoices = [],
+  contractTotalTTC = null,
   ...props
 }) => {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -618,6 +620,10 @@ const UniversalPDFDownloaderWithFacturX = ({
           "Exonération TVA"
         ),
         terms: await captureSection('[data-pdf-section="terms"]', "Conditions"),
+        situationRecap: await captureSection(
+          '[data-pdf-section="situation-recap"]',
+          "Récapitulatif de situation"
+        ),
         footer: await captureSection('[data-pdf-section="footer"]', "Footer"),
       };
 
@@ -666,6 +672,7 @@ const UniversalPDFDownloaderWithFacturX = ({
         totals: getHeightMM(sections.totals?.img),
         vatExemption: getHeightMM(sections.vatExemption?.img),
         terms: getHeightMM(sections.terms?.img),
+        situationRecap: getHeightMM(sections.situationRecap?.img),
         footer: getHeightMM(sections.footer?.img),
       };
 
@@ -677,6 +684,7 @@ const UniversalPDFDownloaderWithFacturX = ({
       console.log(`  Table header: ${heights.tableHeader.toFixed(1)}mm`);
       console.log(`  Items: ${heights.items.length} items`);
       console.log(`  Totaux: ${heights.totals.toFixed(1)}mm`);
+      console.log(`  Récapitulatif situation: ${heights.situationRecap.toFixed(1)}mm`);
       console.log(`  Footer: ${heights.footer.toFixed(1)}mm`);
 
       // Calculer la pagination intelligente
@@ -995,6 +1003,29 @@ const UniversalPDFDownloaderWithFacturX = ({
         }
       }
 
+      // Ajouter le récapitulatif de situation si présent (sur une nouvelle page)
+      if (sections.situationRecap && heights.situationRecap > 0) {
+        console.log(`\n📊 Ajout du récapitulatif de situation...`);
+        
+        // Le récapitulatif de situation doit être sur une nouvelle page
+        pages.push(currentPage);
+        currentPage = {
+          number: pages.length + 1,
+          sections: [],
+          currentHeight: 0,
+        };
+        
+        currentPage.sections.push({
+          type: "situationRecap",
+          data: sections.situationRecap,
+          height: heights.situationRecap,
+          spacing: SECTION_SPACING,
+          canBreak: false,
+        });
+        currentPage.currentHeight += heights.situationRecap + SECTION_SPACING;
+        console.log(`  ✓ Récapitulatif de situation ajouté (${heights.situationRecap.toFixed(1)}mm)`);
+      }
+
       // Vérifier si le footer rentre sur la page courante
       if (currentPage.currentHeight + heights.footer > AVAILABLE_HEIGHT) {
         // Pas assez de place pour le footer, créer une page dédiée
@@ -1087,12 +1118,14 @@ const UniversalPDFDownloaderWithFacturX = ({
             );
           } else {
             // Section complète
+            // Le récapitulatif de situation inclut déjà son padding, donc pas de marge supplémentaire
+            const isFullWidthSection = section.type === "situationRecap";
             pdf.addImage(
               section.data.dataUrl,
               "JPEG",
-              MARGIN_LEFT,
-              currentY,
-              CONTENT_WIDTH,
+              isFullWidthSection ? 0 : MARGIN_LEFT,
+              isFullWidthSection ? 0 : currentY,
+              isFullWidthSection ? A4_WIDTH_MM : CONTENT_WIDTH,
               section.height,
               `${section.type}-${i}-${currentY}`,
               "FAST"
@@ -1326,6 +1359,8 @@ const UniversalPDFDownloaderWithFacturX = ({
             type={type}
             isMobile={false}
             forPDF={true}
+            previousSituationInvoices={previousSituationInvoices}
+            contractTotalTTC={contractTotalTTC}
           />
         </div>
       </div>

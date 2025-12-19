@@ -27,10 +27,13 @@ import { Skeleton } from "@/src/components/ui/skeleton";
 import InvoiceTable from "./components/invoice-table";
 import { InvoiceSettingsModal } from "./components/invoice-settings-modal";
 import { AutoReminderModal } from "./components/auto-reminder-modal";
+import InvoiceExportButton from "./components/invoice-export-button";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
 import { CompanyInfoGuard } from "@/src/components/company-info-guard";
 import { useInvoices, INVOICE_STATUS } from "@/src/graphql/invoiceQueries";
+import { useToastManager } from "@/src/components/ui/toast-manager";
+import { SendDocumentModal } from "./components/send-document-modal";
 
 function InvoicesContent() {
   const router = useRouter();
@@ -41,7 +44,68 @@ function InvoicesContent() {
 
   // Refs pour déclencher les actions depuis le header
   const [triggerImport, setTriggerImport] = useState(false);
-  const [triggerExport, setTriggerExport] = useState(false);
+
+  // Toast manager et modal d'envoi pour les nouvelles factures/avoirs
+  const toastManager = useToastManager();
+  const [showSendEmailModal, setShowSendEmailModal] = useState(false);
+  const [newDocumentData, setNewDocumentData] = useState(null);
+  const [documentType, setDocumentType] = useState("invoice");
+
+  // Vérifier si une nouvelle facture ou un nouvel avoir vient d'être créé
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      // Vérifier les factures
+      const invoiceData = sessionStorage.getItem("newInvoiceData");
+      if (invoiceData) {
+        try {
+          const data = JSON.parse(invoiceData);
+          setNewDocumentData(data);
+          setDocumentType("invoice");
+          
+          toastManager.add({
+            type: "document",
+            title: "Facture créée avec succès",
+            description: `Facture ${data.number} créée`,
+            timeout: 10000,
+            actionProps: data.clientEmail ? {
+              children: "Envoyer au client",
+              onClick: () => setShowSendEmailModal(true),
+            } : undefined,
+          });
+          
+          sessionStorage.removeItem("newInvoiceData");
+        } catch (e) {
+          sessionStorage.removeItem("newInvoiceData");
+        }
+        return;
+      }
+
+      // Vérifier les avoirs
+      const creditNoteData = sessionStorage.getItem("newCreditNoteData");
+      if (creditNoteData) {
+        try {
+          const data = JSON.parse(creditNoteData);
+          setNewDocumentData(data);
+          setDocumentType("creditNote");
+          
+          toastManager.add({
+            type: "document",
+            title: "Avoir créé avec succès",
+            description: `Avoir ${data.number} créé`,
+            timeout: 10000,
+            actionProps: data.clientEmail ? {
+              children: "Envoyer au client",
+              onClick: () => setShowSendEmailModal(true),
+            } : undefined,
+          });
+          
+          sessionStorage.removeItem("newCreditNoteData");
+        } catch (e) {
+          sessionStorage.removeItem("newCreditNoteData");
+        }
+      }
+    }
+  }, [toastManager]);
 
   useEffect(() => {
     const id = searchParams.get("id");
@@ -79,21 +143,29 @@ function InvoicesContent() {
     let overdueCount = 0;
 
     invoices.forEach((invoice) => {
+      // Utiliser finalTotalHT (après remises) ou totalHT si non disponible
+      const invoiceAmount = invoice.finalTotalHT ?? invoice.totalHT ?? 0;
+      
       // Exclure les brouillons du CA facturé
       if (invoice.status !== INVOICE_STATUS.DRAFT) {
-        totalBilled += invoice.totalHT || 0;
+        totalBilled += invoiceAmount;
       }
 
       // CA payé = factures terminées
       if (invoice.status === INVOICE_STATUS.COMPLETED) {
-        totalPaid += invoice.totalHT || 0;
+        totalPaid += invoiceAmount;
       }
 
       // Factures en retard = en attente + date d'échéance dépassée
       if (invoice.status === INVOICE_STATUS.PENDING && invoice.dueDate) {
-        const dueDate = new Date(invoice.dueDate);
+        // dueDate peut être un timestamp en string ou un format ISO
+        const dueDateValue = typeof invoice.dueDate === 'string' && /^\d+$/.test(invoice.dueDate)
+          ? parseInt(invoice.dueDate, 10)
+          : invoice.dueDate;
+        const dueDate = new Date(dueDateValue);
+        dueDate.setHours(0, 0, 0, 0);
         if (dueDate < today) {
-          overdueAmount += invoice.totalHT || 0;
+          overdueAmount += invoiceAmount;
           overdueCount++;
         }
       }
@@ -150,13 +222,9 @@ function InvoicesContent() {
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button
-                    variant="secondary"
-                    size="icon"
-                    onClick={() => setTriggerExport(true)}
-                  >
-                    <Download className="h-4 w-4" strokeWidth={1.5} />
-                  </Button>
+                  <span>
+                    <InvoiceExportButton invoices={invoices} iconOnly />
+                  </span>
                 </TooltipTrigger>
                 <TooltipContent
                   side="bottom"
@@ -333,8 +401,6 @@ function InvoicesContent() {
             onOpenReminderSettings={() => setIsAutoReminderOpen(true)}
             triggerImport={triggerImport}
             onImportTriggered={() => setTriggerImport(false)}
-            triggerExport={triggerExport}
-            onExportTriggered={() => setTriggerExport(false)}
           />
         </Suspense>
       </div>
@@ -404,6 +470,26 @@ function InvoicesContent() {
         open={isAutoReminderOpen}
         onOpenChange={setIsAutoReminderOpen}
       />
+
+      {/* Modal d'envoi par email pour les nouvelles factures/avoirs */}
+      {newDocumentData && (
+        <SendDocumentModal
+          open={showSendEmailModal}
+          onOpenChange={setShowSendEmailModal}
+          documentId={newDocumentData.id}
+          documentType={documentType}
+          documentNumber={newDocumentData.number}
+          clientName={newDocumentData.clientName}
+          clientEmail={newDocumentData.clientEmail}
+          totalAmount={newDocumentData.totalAmount}
+          companyName={newDocumentData.companyName}
+          issueDate={newDocumentData.issueDate}
+          dueDate={newDocumentData.dueDate}
+          invoiceNumber={newDocumentData.invoiceNumber}
+          onSent={() => setShowSendEmailModal(false)}
+          onClose={() => setShowSendEmailModal(false)}
+        />
+      )}
     </>
   );
 }
