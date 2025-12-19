@@ -150,6 +150,7 @@ export function CreateWorkspaceModal({ open, onOpenChange, onSuccess }) {
               membersWithRoles={membersWithRoles}
               onEmailsChange={handleEmailsChange}
               onRoleChange={handleRoleChange}
+              selectedPlan={selectedPlan}
             />
           )}
 

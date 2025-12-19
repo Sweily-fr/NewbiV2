@@ -42,17 +42,19 @@ export function useCreateWorkspace() {
       sessionStorage.setItem("pending_org_creation", JSON.stringify(orgData));
 
       // Créer la session de checkout Stripe
-      const response = await fetch("/api/create-checkout-session", {
+      const response = await fetch("/api/create-org-subscription", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          planName: selectedPlan,
-          isAnnual: isAnnual,
-          userId: session.user.id,
-          successUrl: `${window.location.origin}/dashboard/subscribe?success=true`,
-          cancelUrl: `${window.location.origin}/dashboard/subscribe?canceled=true`,
+          organizationData: {
+            name: workspaceName,
+            type: workspaceType,
+            planName: selectedPlan,
+            isAnnual: isAnnual,
+            invitedMembers: invitedMembersWithRoles,
+          },
         }),
       });
 

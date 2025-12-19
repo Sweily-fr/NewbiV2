@@ -22,7 +22,9 @@ const getDemoInvoiceData = (formData, organization) => {
   const termsAndConditions = formData?.termsAndConditions || "";
   const showBankDetails =
     formData?.showBankDetails !== undefined ? formData?.showBankDetails : false;
-  const primaryColor = formData?.primaryColor || "#5b4fff";
+  // IMPORTANT: Lire la couleur depuis appearance.headerBgColor (modifié par InvoiceSettingsView)
+  const primaryColor =
+    formData?.appearance?.headerBgColor || formData?.primaryColor || "#5b4fff";
   const clientPositionRight = formData?.clientPositionRight || false;
 
   return {
@@ -96,9 +98,10 @@ const getDemoInvoiceData = (formData, organization) => {
     primaryColor: primaryColor,
     // Appliquer la couleur via appearance (utilisé par UniversalPreviewPDF)
     appearance: {
-      headerBgColor: primaryColor || "#5b4fff",
-      headerTextColor: "#FFFFFF",
-      textColor: "#000000",
+      headerBgColor:
+        formData?.appearance?.headerBgColor || primaryColor || "#5b4fff",
+      headerTextColor: formData?.appearance?.headerTextColor || "#FFFFFF",
+      textColor: formData?.appearance?.textColor || "#000000",
     },
     // Appliquer tous les autres paramètres d'invoice settings
     invoiceSettings: {
@@ -136,7 +139,11 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
             termsAndConditions:
               org?.invoiceTermsAndConditions || org?.documentTermsAndConditions,
             showBankDetails: org?.showBankDetails,
-            primaryColor: org?.documentHeaderBgColor,
+            appearance: {
+              textColor: org?.documentTextColor,
+              headerTextColor: org?.documentHeaderTextColor,
+              headerBgColor: org?.documentHeaderBgColor,
+            },
             bankDetails: {
               iban: org?.bankIban,
               bic: org?.bankBic,
@@ -169,6 +176,12 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
             showBankDetails: org?.showBankDetails || false,
             primaryColor: org?.documentHeaderBgColor || "#5b4fff",
             clientPositionRight: org?.invoiceClientPositionRight || false,
+            // IMPORTANT: Initialiser appearance pour que InvoiceSettingsView puisse modifier les couleurs
+            appearance: {
+              textColor: org?.documentTextColor || "#000000",
+              headerTextColor: org?.documentHeaderTextColor || "#FFFFFF",
+              headerBgColor: org?.documentHeaderBgColor || "#5b4fff",
+            },
           };
 
           console.log("📝 Valeurs initiales du formulaire:", formValues);
@@ -203,13 +216,19 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
       showBankDetails: false,
       clientPositionRight: false,
       primaryColor: "#5b4fff",
+      appearance: {
+        textColor: "#000000",
+        headerTextColor: "#FFFFFF",
+        headerBgColor: "#5b4fff",
+      },
     },
   });
 
   // Réinitialiser le formulaire quand les valeurs initiales changent
   useEffect(() => {
     if (initialValues) {
-      form.reset(initialValues);
+      console.log("🔄 Reset du formulaire avec les valeurs:", initialValues);
+      form.reset(initialValues, { keepDefaultValues: false });
     }
   }, [initialValues, form]);
 
@@ -245,8 +264,14 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
         invoiceFooterNotes: formValues.footerNotes,
         invoiceTermsAndConditions: formValues.termsAndConditions,
 
-        // Couleur du document
-        documentHeaderBgColor: formValues.primaryColor,
+        // Couleurs du document (sauvegarder toutes les couleurs)
+        documentTextColor: formValues.appearance?.textColor || "#000000",
+        documentHeaderTextColor:
+          formValues.appearance?.headerTextColor || "#FFFFFF",
+        documentHeaderBgColor:
+          formValues.appearance?.headerBgColor ||
+          formValues.primaryColor ||
+          "#5b4fff",
 
         // Position du client dans le PDF (factures)
         invoiceClientPositionRight: formValues.clientPositionRight || false,

@@ -399,11 +399,11 @@ export const stripePlugin = stripe({
               );
 
               try {
-                // Vérifier si l'abonnement existe déjà
+                // Vérifier si l'abonnement existe déjà pour cette organisation
                 const existingSub = await mongoDb
                   .collection("subscription")
                   .findOne({
-                    stripeSubscriptionId: subscription.id,
+                    referenceId: referenceId,
                   });
 
                 if (!existingSub) {
@@ -437,18 +437,18 @@ export const stripePlugin = stripe({
                       : new Date(),
                   };
 
-                  // ✅ Utiliser l'adapter Better Auth pour créer l'abonnement
-                  // Cela génère automatiquement le champ `id` requis
-                  await adapter.create({
-                    model: "subscription",
-                    data: subscriptionData,
-                  });
+                  // ✅ Créer l'abonnement directement dans MongoDB
+                  await mongoDb
+                    .collection("subscription")
+                    .insertOne(subscriptionData);
 
                   console.log(
                     `✅ [STRIPE WEBHOOK] Abonnement créé via adapter pour nouvelle org: ${referenceId}`
                   );
                 } else {
-                  console.log(`✅ [STRIPE WEBHOOK] Abonnement existe déjà`);
+                  console.log(
+                    `✅ [STRIPE WEBHOOK] Abonnement existe déjà pour cette org: ${referenceId}`
+                  );
                 }
               } catch (subError) {
                 console.error(
@@ -553,11 +553,11 @@ export const stripePlugin = stripe({
                                 });
 
                                 console.log(
-                                  `✅ [STRIPE WEBHOOK] Invitation envoyée à ${email}`
+                                  `✅ [STRIPE WEBHOOK] Invitation envoyée à ${memberEmail}`
                                 );
                               } catch (inviteError) {
                                 console.error(
-                                  `❌ [STRIPE WEBHOOK] Erreur invitation ${email}:`,
+                                  `❌ [STRIPE WEBHOOK] Erreur invitation ${memberEmail}:`,
                                   inviteError
                                 );
                               }
@@ -812,74 +812,11 @@ export const stripePlugin = stripe({
                 }
               }
 
-              // Envoyer l'email de bienvenue
-              try {
-                const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
-                const customer = await stripe.customers.retrieve(
-                  subscription.customer
-                );
-
-                const { sendSubscriptionCreatedEmail } = await import(
-                  "./auth-utils.js"
-                );
-
-                // Déterminer les fonctionnalités selon le plan
-                const planFeatures = {
-                  freelance: [
-                    "1 utilisateur inclus",
-                    "Facturation complète",
-                    "Gestion client et fournisseurs",
-                    "OCR des reçus",
-                    "Catalogue produits",
-                    "Rapports financiers",
-                  ],
-                  pme: [
-                    "10 utilisateurs inclus",
-                    "Toutes les fonctionnalités Freelance",
-                    "Connexion comptes bancaires",
-                    "Gestion de trésorerie",
-                    "Transfert de fichiers sécurisé",
-                    "Rapports avancés",
-                  ],
-                  entreprise: [
-                    "25 utilisateurs inclus",
-                    "Toutes les fonctionnalités PME",
-                    "Support prioritaire",
-                    "Sièges additionnels (7,49€/mois)",
-                    "Gestion multi-organisations",
-                    "API access",
-                  ],
-                };
-
-                // Déterminer le prix et l'intervalle
-                const isAnnual = priceData?.recurring?.interval === "year";
-                const priceMap = {
-                  freelance: { monthly: "14,59€/mois", annual: "13,13€/mois" },
-                  pme: { monthly: "48,99€/mois", annual: "44,09€/mois" },
-                  entreprise: { monthly: "94,99€/mois", annual: "85,49€/mois" },
-                };
-
-                await sendSubscriptionCreatedEmail({
-                  to: customer.email,
-                  customerName: customer.name || customer.email,
-                  plan: planName.toUpperCase(),
-                  price: isAnnual
-                    ? priceMap[planName]?.annual
-                    : priceMap[planName]?.monthly,
-                  billingInterval: isAnnual ? "Annuelle" : "Mensuelle",
-                  features: planFeatures[planName] || [],
-                });
-
-                console.log(
-                  `✅ [STRIPE WEBHOOK] Email de bienvenue envoyé à ${customer.email}`
-                );
-              } catch (emailError) {
-                console.error(
-                  `⚠️ [STRIPE WEBHOOK] Erreur envoi email bienvenue:`,
-                  emailError
-                );
-                // Ne pas bloquer la création d'abonnement si l'email échoue
-              }
+              // L'email de paiement avec facture PDF sera envoyé via le webhook invoice.payment_succeeded
+              // Ne pas envoyer d'email ici pour éviter les doublons
+              console.log(
+                `ℹ️ [STRIPE WEBHOOK] Abonnement créé, email de paiement sera envoyé via invoice.payment_succeeded`
+              );
             }
 
             console.log(
@@ -1130,9 +1067,111 @@ export const stripePlugin = stripe({
 
         case "invoice.payment_succeeded":
         case "invoice.paid":
-          console.log(`💰 [STRIPE WEBHOOK] Paiement facture réussi`);
-          // Ces événements sont gérés automatiquement par Stripe
-          // Pas besoin d'action supplémentaire
+          const paidInvoice = event.data.object;
+          console.log(
+            `💰 [STRIPE WEBHOOK] Paiement facture réussi: ${paidInvoice.id}, billing_reason: ${paidInvoice.billing_reason}`
+          );
+
+          try {
+            const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+
+            // Récupérer les infos du client
+            const customer = await stripe.customers.retrieve(
+              paidInvoice.customer
+            );
+
+            // Récupérer l'abonnement pour avoir le nom du plan
+            let planName = "FREELANCE";
+            let nextRenewalDate = "";
+
+            if (paidInvoice.subscription) {
+              const subscription = await stripe.subscriptions.retrieve(
+                paidInvoice.subscription
+              );
+              planName =
+                subscription.metadata?.planName?.toUpperCase() || "FREELANCE";
+              nextRenewalDate = new Date(
+                subscription.current_period_end * 1000
+              ).toLocaleDateString("fr-FR", {
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+              });
+            }
+
+            // Formater les données
+            const amount = `${(paidInvoice.amount_paid / 100).toFixed(2)}€`;
+            const invoiceNumber = paidInvoice.number || paidInvoice.id;
+            const paymentDate = new Date(
+              paidInvoice.status_transitions?.paid_at * 1000 || Date.now()
+            ).toLocaleDateString("fr-FR", {
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+            });
+
+            // URL du PDF de la facture (généré automatiquement par Stripe)
+            const invoicePdfUrl = paidInvoice.invoice_pdf;
+
+            // Récupérer l'URL du reçu Stripe via le charge
+            let receiptUrl = null;
+            try {
+              if (paidInvoice.charge) {
+                const charge = await stripe.charges.retrieve(
+                  paidInvoice.charge
+                );
+                receiptUrl = charge.receipt_url;
+                console.log(
+                  `🧾 [STRIPE WEBHOOK] Reçu Stripe trouvé: ${receiptUrl}`
+                );
+              } else if (paidInvoice.payment_intent) {
+                const paymentIntent = await stripe.paymentIntents.retrieve(
+                  paidInvoice.payment_intent
+                );
+                if (paymentIntent.latest_charge) {
+                  const charge = await stripe.charges.retrieve(
+                    paymentIntent.latest_charge
+                  );
+                  receiptUrl = charge.receipt_url;
+                  console.log(
+                    `🧾 [STRIPE WEBHOOK] Reçu Stripe trouvé via payment_intent: ${receiptUrl}`
+                  );
+                }
+              }
+            } catch (receiptError) {
+              console.warn(
+                `⚠️ [STRIPE WEBHOOK] Impossible de récupérer le reçu:`,
+                receiptError.message
+              );
+            }
+
+            // Envoyer l'email avec la facture et le reçu en pièce jointe
+            const { sendPaymentSucceededEmail } = await import(
+              "./auth-utils.js"
+            );
+
+            await sendPaymentSucceededEmail({
+              to: customer.email,
+              customerName: customer.name || customer.email,
+              plan: planName,
+              amount,
+              invoiceNumber,
+              paymentDate,
+              nextRenewalDate,
+              invoicePdfUrl,
+              receiptUrl,
+            });
+
+            console.log(
+              `✅ [STRIPE WEBHOOK] Email de paiement réussi envoyé à ${customer.email} avec facture PDF${receiptUrl ? " et reçu" : ""}`
+            );
+          } catch (emailError) {
+            console.error(
+              `⚠️ [STRIPE WEBHOOK] Erreur envoi email paiement réussi:`,
+              emailError
+            );
+            // Ne pas bloquer le webhook si l'email échoue
+          }
           break;
 
         case "invoice.created":
@@ -1163,7 +1202,9 @@ export const stripePlugin = stripe({
 export const organizationPlugin = organization({
   allowUserToCreateOrganization: true,
   organizationLimit: 5,
-  membershipLimit: 100,
+  // Limite fixe élevée - la vraie vérification se fait dans canInviteMember()
+  // Better Auth a des problèmes avec les limites dynamiques async
+  membershipLimit: 200,
   creatorRole: "owner",
   schema: {
     organization: {

@@ -67,16 +67,6 @@ export default function BankBalanceCard({
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedBank, setSelectedBank] = useState(null);
 
-  // Limites de comptes bancaires selon l'abonnement
-  const bankAccountLimit = useMemo(() => {
-    const plan = subscription?.plan?.toLowerCase();
-    if (plan === "entreprise") return 5;
-    if (plan === "pme") return 3;
-    return 1; // freelance ou par défaut
-  }, [subscription?.plan]);
-
-  const canAddBankAccount = accountsCount < bankAccountLimit;
-
   // Vérifier le statut de connexion bancaire
   const checkConnectionStatus = async () => {
     if (!workspaceId) return;
@@ -299,6 +289,18 @@ export default function BankBalanceCard({
     return Array.from(banksMap.values());
   }, [accounts]);
 
+  // Limites de connexions bancaires selon l'abonnement (1 connexion = 1 banque)
+  const bankConnectionLimit = useMemo(() => {
+    const plan = subscription?.plan?.toLowerCase();
+    if (plan === "entreprise") return 5;
+    if (plan === "pme") return 3;
+    return 1; // freelance ou par défaut
+  }, [subscription?.plan]);
+
+  // Compter le nombre de connexions bancaires uniques (banques différentes)
+  const connectedBanksCount = uniqueBanks.length;
+  const canAddBankAccount = connectedBanksCount < bankConnectionLimit;
+
   const finalLoading = isLoading || bankLoading;
 
   if (finalLoading) {
@@ -465,7 +467,14 @@ export default function BankBalanceCard({
   return (
     <Card className={`${className} flex flex-col`}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-normal">Soldes</CardTitle>
+        <div className="flex items-center gap-2">
+          <CardTitle className="text-sm font-normal">Soldes</CardTitle>
+          {uniqueBanks.length > 0 && (
+            <span className="text-xs text-muted-foreground">
+              {connectedBanksCount}/{bankConnectionLimit}
+            </span>
+          )}
+        </div>
         {/* Avatars des banques connectées */}
         {uniqueBanks.length > 0 && (
           <div className="-space-x-2 flex">
@@ -545,9 +554,93 @@ export default function BankBalanceCard({
             ) : (
               <Plus className="h-4 w-4 mr-2" />
             )}
-            Connecter un compte bancaire
+            Connecter une banque ({bankConnectionLimit - connectedBanksCount}{" "}
+            restante{bankConnectionLimit - connectedBanksCount > 1 ? "s" : ""})
           </Button>
         )}
+
+        {/* Modal de sélection de banque */}
+        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+          <DialogContent className="sm:max-w-md max-h-[80vh]">
+            <DialogHeader>
+              <DialogTitle>Connecter votre banque</DialogTitle>
+              <DialogDescription>
+                Sélectionnez votre banque pour synchroniser vos comptes (
+                {connectedBanksCount}/{bankConnectionLimit} connexions
+                utilisées)
+              </DialogDescription>
+            </DialogHeader>
+
+            {/* Barre de recherche */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Rechercher une banque..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+
+            {/* Liste des banques */}
+            <ScrollArea className="h-[350px] pr-4">
+              {isLoadingInstitutions ? (
+                <div className="flex items-center justify-center py-8">
+                  <LoaderCircle className="h-6 w-6 animate-spin text-muted-foreground" />
+                  <span className="ml-2 text-sm text-muted-foreground">
+                    Chargement des banques...
+                  </span>
+                </div>
+              ) : filteredInstitutions.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  {searchQuery
+                    ? "Aucune banque trouvée"
+                    : "Aucune banque disponible"}
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {filteredInstitutions.map((bank) => (
+                    <button
+                      key={bank.id}
+                      onClick={() => handleSelectBank(bank)}
+                      disabled={isConnecting}
+                      className="w-full flex items-center gap-3 p-3 rounded-lg border hover:bg-accent hover:border-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {bank.logo ? (
+                        <img
+                          src={bank.logo}
+                          alt={bank.name}
+                          className="h-8 w-8 object-contain rounded"
+                          onError={(e) => {
+                            e.target.style.display = "none";
+                            e.target.nextSibling.style.display = "flex";
+                          }}
+                        />
+                      ) : null}
+                      <div
+                        className="h-8 w-8 rounded bg-muted items-center justify-center"
+                        style={{ display: bank.logo ? "none" : "flex" }}
+                      >
+                        <Building2 className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                      <div className="flex-1 text-left">
+                        <p className="text-sm font-medium">{bank.name}</p>
+                        {bank.groupName && bank.groupName !== bank.name && (
+                          <p className="text-xs text-muted-foreground">
+                            {bank.groupName}
+                          </p>
+                        )}
+                      </div>
+                      {isConnecting && selectedBank?.id === bank.id && (
+                        <LoaderCircle className="h-4 w-4 animate-spin" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </ScrollArea>
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );

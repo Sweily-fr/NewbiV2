@@ -69,60 +69,38 @@ export const useOrganizationInvitations = () => {
           throw new Error("Aucune organisation trouvée pour cet utilisateur");
         }
 
-        // ✅ NOUVEAU : Vérifier les limites d'utilisateurs selon le plan
-        if (role !== "accountant") {
-          try {
-            const response = await fetch("/api/billing/check-user-limit", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ organizationId: userOrg.id }),
-            });
+        // ✅ Vérifier les limites selon le plan et le rôle (BLOQUANT)
+        try {
+          const response = await fetch("/api/billing/check-user-limit", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ organizationId: userOrg.id, role }),
+          });
 
-            const result = await response.json();
+          const result = await response.json();
 
-            if (!result.canAdd) {
-              toast.error(
-                result.reason ||
-                  `Limite d'utilisateurs atteinte pour votre plan. Passez à un plan supérieur pour inviter plus de collaborateurs.`
-              );
-              return { success: false, error: result.reason };
-            }
+          if (!result.canInvite) {
+            toast.error(result.reason || "Limite atteinte pour votre plan.");
+            return { success: false, error: result.reason };
+          }
 
+          // Afficher un avertissement si c'est un siège payant
+          if (result.isPaid) {
             console.log(
-              `✅ Limite vérifiée: ${result.currentCount}/${result.limit} utilisateurs`
+              `💰 Siège payant: ${result.additionalCost}€/mois supplémentaire`
             );
-          } catch (limitError) {
-            console.error(
-              "⚠️ Erreur vérification limite (non-bloquant):",
-              limitError
-            );
-            // Continuer quand même si la vérification échoue
+            // Note: On pourrait ajouter une confirmation ici si nécessaire
           }
-        }
 
-        // Validation spéciale pour les comptables
-        if (role === "accountant") {
-          // Vérifier qu'il n'y a pas déjà un comptable dans l'organisation
-          const collaboratorsResult = await getAllCollaborators(userOrg.id);
-
-          if (collaboratorsResult.success) {
-            const existingAccountant = collaboratorsResult.data.find(
-              (member) => member.role === "accountant"
-            );
-
-            if (existingAccountant) {
-              toast.error(
-                "Un comptable est déjà assigné à cette organisation. Vous ne pouvez avoir qu'un seul comptable par organisation."
-              );
-              return { success: false, error: "Comptable déjà existant" };
-            }
-          } else {
-            console.error(
-              "Erreur lors de la vérification des collaborateurs:",
-              collaboratorsResult.error
-            );
-            // Continuer quand même l'invitation si on ne peut pas vérifier
-          }
+          console.log(
+            `✅ Limite vérifiée pour ${role}: canInvite=${result.canInvite}`
+          );
+        } catch (limitError) {
+          console.error("❌ Erreur vérification limite:", limitError);
+          toast.error(
+            "Impossible de vérifier les limites. Veuillez réessayer."
+          );
+          return { success: false, error: "Erreur vérification limite" };
         }
 
         const { data, error } = await organization.inviteMember({

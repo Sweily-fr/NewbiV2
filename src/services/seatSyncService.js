@@ -20,92 +20,205 @@ export class SeatSyncService {
   getPlanLimits(planName) {
     const limits = {
       freelance: {
-        users: 1,
+        users: 0, // 0 utilisateur invité (owner seul)
+        accountants: 1, // 1 comptable gratuit
+        canAddPaidUsers: false, // Pas de siège payant possible
         workspaces: 1,
-        projects: 50,
+        bankAccounts: 1,
         storage: 50,
-        invoices: 500,
       },
       pme: {
-        users: 10,
+        users: 10, // 10 utilisateurs inclus
+        accountants: 3, // 3 comptables gratuits
+        canAddPaidUsers: true, // Sièges payants possibles (7,49€/mois)
         workspaces: 1,
-        projects: 200,
+        bankAccounts: 3,
         storage: 200,
-        invoices: 2000,
       },
       entreprise: {
-        users: 25,
+        users: 25, // 25 utilisateurs inclus
+        accountants: 5, // 5 comptables gratuits
+        canAddPaidUsers: true, // Sièges payants possibles (7,49€/mois)
         workspaces: 1,
-        projects: 500,
+        bankAccounts: 5,
         storage: 500,
-        invoices: 5000,
       },
     };
 
-    return limits[planName] || limits.freelance;
+    return limits[planName?.toLowerCase()] || limits.freelance;
   }
 
   /**
-   * Vérifie si l'organisation peut ajouter un nouveau membre
+   * Vérifie si l'organisation peut inviter un nouveau membre selon son rôle
+   * Logique :
+   * - Freelance : 0 utilisateur, 1 comptable (pas de siège payant)
+   * - PME : 10 utilisateurs inclus, 3 comptables, sièges payants possibles (7,49€/mois)
+   * - Entreprise : 25 utilisateurs inclus, 5 comptables, sièges payants possibles (7,49€/mois)
+   *
    * @param {string} organizationId
-   * @param {Object} adapter
-   * @returns {Promise<{canAdd: boolean, reason: string, currentCount: number, limit: number, planName: string}>}
+   * @param {string} role - Rôle de l'invité (member, admin, guest, accountant)
+   * @returns {Promise<Object>}
    */
-  async canAddMember(organizationId, adapter) {
+  async canInviteMember(organizationId, role = "member") {
     try {
-      // 1. Récupérer l'abonnement
       const { mongoDb } = await import("../lib/mongodb.js");
+      const { ObjectId } = await import("mongodb");
+
+      // 1. Récupérer l'abonnement
       const subscription = await mongoDb.collection("subscription").findOne({
         referenceId: organizationId,
       });
 
       if (!subscription) {
         return {
-          canAdd: false,
-          reason: "Aucun abonnement actif",
-          currentCount: 0,
-          limit: 0,
+          canInvite: false,
+          reason: "Aucun abonnement actif. Veuillez souscrire à un plan.",
           planName: "none",
         };
       }
 
       // 2. Récupérer les limites du plan
       const planLimits = this.getPlanLimits(subscription.plan);
+      const isAccountant = role === "accountant";
 
-      // 3. Compter les membres actuels (exclure accountant qui est gratuit)
-      const { ObjectId } = await import("mongodb");
+      // 3. Compter les membres actuels par type
       const members = await mongoDb
         .collection("member")
+        .find({ organizationId: new ObjectId(organizationId) })
+        .toArray();
+
+      const currentUsers = members.filter(
+        (m) => m.role !== "accountant" && m.role !== "owner"
+      ).length;
+      const currentAccountants = members.filter(
+        (m) => m.role === "accountant"
+      ).length;
+
+      // 4. Compter les invitations pending par type
+      const pendingInvitations = await mongoDb
+        .collection("invitation")
         .find({
           organizationId: new ObjectId(organizationId),
+          status: "pending",
         })
         .toArray();
 
-      const activeMembers = members.filter((m) => m.role !== "accountant");
+      const pendingUsers = pendingInvitations.filter(
+        (i) => i.role !== "accountant"
+      ).length;
+      const pendingAccountants = pendingInvitations.filter(
+        (i) => i.role === "accountant"
+      ).length;
 
-      // 4. Vérifier la limite
-      const canAdd = activeMembers.length < planLimits.users;
+      // 5. Totaux (membres + invitations pending)
+      const totalUsers = currentUsers + pendingUsers;
+      const totalAccountants = currentAccountants + pendingAccountants;
 
-      console.log(`📊 [SEAT CHECK] Organisation ${organizationId}:`, {
+      console.log(`📊 [INVITE CHECK] Organisation ${organizationId}:`, {
         plan: subscription.plan,
-        currentMembers: activeMembers.length,
-        limit: planLimits.users,
-        canAdd,
+        role,
+        currentUsers,
+        pendingUsers,
+        totalUsers,
+        limitUsers: planLimits.users,
+        currentAccountants,
+        pendingAccountants,
+        totalAccountants,
+        limitAccountants: planLimits.accountants,
+        canAddPaidUsers: planLimits.canAddPaidUsers,
       });
 
-      return {
-        canAdd,
-        reason: canAdd
-          ? "OK"
-          : `Limite de ${planLimits.users} utilisateur(s) atteinte pour le plan ${subscription.plan}`,
-        currentCount: activeMembers.length,
-        limit: planLimits.users,
-        planName: subscription.plan,
-      };
+      // 6. Vérification selon le type d'invitation
+      if (isAccountant) {
+        // Vérifier la limite de comptables
+        if (totalAccountants >= planLimits.accountants) {
+          return {
+            canInvite: false,
+            reason: `Limite de ${planLimits.accountants} comptable(s) atteinte pour le plan ${subscription.plan.toUpperCase()}. Passez à un plan supérieur pour inviter plus de comptables.`,
+            planName: subscription.plan,
+            currentAccountants,
+            pendingAccountants,
+            totalAccountants,
+            limitAccountants: planLimits.accountants,
+          };
+        }
+
+        return {
+          canInvite: true,
+          reason: "OK",
+          planName: subscription.plan,
+          currentAccountants,
+          pendingAccountants,
+          totalAccountants,
+          limitAccountants: planLimits.accountants,
+          availableAccountants: planLimits.accountants - totalAccountants,
+        };
+      } else {
+        // Vérifier la limite d'utilisateurs
+        const usersIncluded = planLimits.users;
+        const availableIncluded = Math.max(0, usersIncluded - totalUsers);
+
+        // Si dans la limite incluse
+        if (totalUsers < usersIncluded) {
+          return {
+            canInvite: true,
+            reason: "OK",
+            planName: subscription.plan,
+            currentUsers,
+            pendingUsers,
+            totalUsers,
+            limitUsers: usersIncluded,
+            availableUsers: availableIncluded,
+            isPaid: false,
+            additionalCost: 0,
+          };
+        }
+
+        // Au-delà de la limite incluse
+        if (planLimits.canAddPaidUsers) {
+          // PME/Entreprise : siège payant possible
+          const additionalSeats = totalUsers - usersIncluded + 1; // +1 pour le nouveau
+          return {
+            canInvite: true,
+            reason: "OK - Siège supplémentaire payant",
+            planName: subscription.plan,
+            currentUsers,
+            pendingUsers,
+            totalUsers,
+            limitUsers: usersIncluded,
+            availableUsers: 0,
+            isPaid: true,
+            additionalCost: 7.49,
+            totalAdditionalSeats: additionalSeats,
+            totalAdditionalCost: additionalSeats * 7.49,
+          };
+        } else {
+          // Freelance : pas de siège payant
+          return {
+            canInvite: false,
+            reason: `Le plan FREELANCE ne permet pas d'inviter d'utilisateurs. Passez au plan PME ou ENTREPRISE pour inviter des collaborateurs.`,
+            planName: subscription.plan,
+            currentUsers,
+            pendingUsers,
+            totalUsers,
+            limitUsers: usersIncluded,
+            availableUsers: 0,
+            isPaid: false,
+          };
+        }
+      }
     } catch (error) {
-      console.error("❌ Erreur vérification limite membres:", error);
+      console.error("❌ Erreur vérification invitation:", error);
       throw error;
     }
+  }
+
+  /**
+   * @deprecated Utiliser canInviteMember() à la place
+   */
+  async canAddMember(organizationId, adapter) {
+    // Redirige vers la nouvelle méthode pour compatibilité
+    return this.canInviteMember(organizationId, "member");
   }
   /**
    * Récupère les prix depuis Stripe (avec cache)

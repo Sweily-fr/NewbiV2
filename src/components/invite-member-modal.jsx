@@ -15,7 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/src/components/ui/dialog";
-import { X, Users } from "lucide-react";
+import { X, Users, LoaderCircle } from "lucide-react";
 import { useOrganizationInvitations } from "@/src/hooks/useOrganizationInvitations";
 import MultipleSelector from "@/src/components/ui/multiselect";
 import { Avatar, AvatarFallback } from "@/src/components/ui/avatar";
@@ -28,6 +28,7 @@ export function InviteMemberModal({ open, onOpenChange, onSuccess }) {
   const [membersWithRoles, setMembersWithRoles] = useState([]);
   const [seatsInfo, setSeatsInfo] = useState(null);
   const [existingMembers, setExistingMembers] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
   const { inviteMember, inviting } = useOrganizationInvitations();
   const { organization } = useDashboardLayoutContext();
 
@@ -36,6 +37,7 @@ export function InviteMemberModal({ open, onOpenChange, onSuccess }) {
     const fetchData = async () => {
       if (!organization?.id) return;
 
+      setIsLoading(true);
       try {
         // Récupérer les membres existants (comme dans espaces-section)
         const membersResponse = await fetch(
@@ -90,14 +92,26 @@ export function InviteMemberModal({ open, onOpenChange, onSuccess }) {
               (m) => m.role !== "owner"
             );
 
-            const currentMembers = membersWithoutOwner.length;
+            // Compter utilisateurs et comptables séparément
+            const currentUsers = membersWithoutOwner.filter(
+              (m) => m.role !== "accountant"
+            ).length;
+            const currentAccountants = membersWithoutOwner.filter(
+              (m) => m.role === "accountant"
+            ).length;
 
             // Récupérer le plan de l'organisation depuis la DB
             const subResponse = await fetch(
               `/api/organizations/${organization.id}/subscription`
             );
 
-            let includedSeats = 1; // Par défaut freelance
+            // Nouvelles limites par plan
+            const planLimitsConfig = {
+              freelance: { users: 0, accountants: 1, canAddPaidUsers: false },
+              pme: { users: 10, accountants: 3, canAddPaidUsers: true },
+              entreprise: { users: 25, accountants: 5, canAddPaidUsers: true },
+            };
+
             let planName = "freelance";
 
             console.log("🔍 Subscription response status:", subResponse.status);
@@ -105,19 +119,7 @@ export function InviteMemberModal({ open, onOpenChange, onSuccess }) {
             if (subResponse.ok) {
               const subData = await subResponse.json();
               console.log("📊 Subscription data:", subData);
-              planName = subData.plan || "freelance";
-
-              // Limites selon le plan
-              const planLimits = {
-                freelance: 1,
-                pme: 10,
-                entreprise: 25,
-              };
-
-              includedSeats = planLimits[planName] || 1;
-              console.log(
-                `✅ Plan détecté: ${planName}, sièges inclus: ${includedSeats}`
-              );
+              planName = subData.plan?.toLowerCase() || "freelance";
             } else {
               console.error(
                 "❌ Erreur récupération subscription:",
@@ -125,26 +127,42 @@ export function InviteMemberModal({ open, onOpenChange, onSuccess }) {
               );
             }
 
-            const availableSeats = Math.max(0, includedSeats - currentMembers);
+            const planLimits =
+              planLimitsConfig[planName] || planLimitsConfig.freelance;
+            const availableUsers = Math.max(0, planLimits.users - currentUsers);
+            const availableAccountants = Math.max(
+              0,
+              planLimits.accountants - currentAccountants
+            );
 
             setSeatsInfo({
-              currentMembers,
-              includedSeats,
-              availableSeats,
+              currentUsers,
+              currentAccountants,
+              includedUsers: planLimits.users,
+              includedAccountants: planLimits.accountants,
+              availableUsers,
+              availableAccountants,
+              canAddPaidUsers: planLimits.canAddPaidUsers,
               plan: planName,
               seatCost: 7.49,
             });
 
             console.log("📊 Seats info calculé:", {
-              currentMembers,
-              includedSeats,
-              availableSeats,
+              currentUsers,
+              currentAccountants,
+              includedUsers: planLimits.users,
+              includedAccountants: planLimits.accountants,
+              availableUsers,
+              availableAccountants,
+              canAddPaidUsers: planLimits.canAddPaidUsers,
               plan: planName,
             });
           }
         }
       } catch (error) {
         console.error("Erreur lors de la récupération des données:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -271,215 +289,231 @@ export function InviteMemberModal({ open, onOpenChange, onSuccess }) {
           </div>
         </DialogHeader>
 
-        <div className="space-y-4">
-          {/* Affichage des membres actuels et sièges disponibles */}
-          {seatsInfo && (
-            <div className="flex items-center gap-2 px-3 py-2.5 bg-muted/30 rounded-lg border border-border/50">
-              <Users className="h-4 w-4 text-muted-foreground" />
-              <div className="flex-1">
-                <p className="text-xs text-muted-foreground">
-                  <span className="font-medium text-foreground">
-                    {seatsInfo.currentMembers}
-                  </span>{" "}
-                  membre{seatsInfo.currentMembers > 1 ? "s" : ""} actuel
-                  {seatsInfo.currentMembers > 1 ? "s" : ""} •{" "}
-                  <span className="font-medium text-foreground">
-                    {seatsInfo.availableSeats}
-                  </span>{" "}
-                  siège{seatsInfo.availableSeats > 1 ? "s" : ""} disponible
-                  {seatsInfo.availableSeats > 1 ? "s" : ""} sur{" "}
-                  <span className="font-medium text-foreground">
-                    {seatsInfo.includedSeats}
-                  </span>
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Champ d'ajout d'emails */}
-          <div className="space-y-2">
-            <MultipleSelector
-              value={invitedEmails}
-              onChange={handleEmailsChange}
-              placeholder="Entrez des adresses email"
-              creatable
-              className="w-full"
-            />
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <LoaderCircle className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
-
-          {/* Callout pour la facturation */}
-          {seatsInfo && (
-            <Callout type="neutral" noMargin>
-              <p className="text-xs">
-                {seatsInfo.availableSeats > 0 ? (
-                  <>
-                    Les{" "}
-                    <strong>
-                      {seatsInfo.availableSeats} siège
-                      {seatsInfo.availableSeats > 1 ? "s" : ""} restant
-                      {seatsInfo.availableSeats > 1 ? "s" : ""}
-                    </strong>{" "}
-                    sont inclus dans votre abonnement. Au-delà, chaque membre
-                    supplémentaire sera facturé <strong>7,49€/mois</strong>.
-                  </>
-                ) : (
-                  <>
-                    <strong>Facturation :</strong> L'ajout d'un membre (admin,
-                    membre ou invité) est facturé <strong>7,49€/mois</strong> en
-                    plus de votre abonnement.
-                  </>
-                )}{" "}
-                Un seul <strong>comptable gratuit</strong> par organisation est
-                autorisé.
-              </p>
-            </Callout>
-          )}
-
-          {/* Liste des membres ajoutés */}
-          {membersWithRoles.length > 0 && (
-            <div className="space-y-2">
-              <p className="text-xs font-medium text-muted-foreground">
-                Membres à inviter ({membersWithRoles.length})
-              </p>
-              <div className="border rounded-lg divide-y max-h-[300px] overflow-y-auto">
-                {membersWithRoles.map((member) => (
-                  <div
-                    key={member.email}
-                    className="flex items-center justify-between p-3 hover:bg-muted/50"
-                  >
-                    <div className="flex items-center gap-3 flex-1">
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback className="bg-[#5b4fff]/10 text-[#5b4fff] text-xs">
-                          {member.email[0].toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="text-sm">{member.email}</span>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <Select
-                        value={member.role}
-                        onValueChange={(newRole) =>
-                          handleRoleChange(member.email, newRole)
-                        }
-                      >
-                        <SelectTrigger className="w-[180px] h-8 text-xs border-none shadow-none hover:bg-muted">
-                          <SelectValue>{getRoleLabel(member.role)}</SelectValue>
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="admin">
-                            <div className="flex flex-col">
-                              <span className="font-normal text-sm">
-                                Administrateur
-                              </span>
-                              <span className="text-xs text-muted-foreground">
-                                Gestion complète
-                              </span>
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="member">
-                            <div className="flex flex-col">
-                              <span className="font-normal text-sm">
-                                Membre
-                              </span>
-                              <span className="text-xs text-muted-foreground">
-                                Accès standard
-                              </span>
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="guest">
-                            <div className="flex flex-col">
-                              <span className="font-normal text-sm">
-                                Invité
-                              </span>
-                              <span className="text-xs text-muted-foreground">
-                                Accès limité
-                              </span>
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="accountant">
-                            <div className="flex flex-col">
-                              <span className="font-normal text-sm">
-                                Comptable
-                              </span>
-                              <span className="text-xs text-muted-foreground">
-                                Accès comptabilité
-                              </span>
-                            </div>
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleRemoveMember(member.email)}
-                        className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
+        ) : (
+          <div className="space-y-4">
+            {/* Affichage des membres actuels et sièges disponibles */}
+            {seatsInfo && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 px-3 py-2.5 bg-muted/30 rounded-lg border border-border/50">
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <div className="flex-1">
+                    <p className="text-xs text-muted-foreground">
+                      <span className="font-medium text-foreground">
+                        {seatsInfo.currentUsers}
+                      </span>{" "}
+                      utilisateur{seatsInfo.currentUsers > 1 ? "s" : ""} •{" "}
+                      <span className="font-medium text-foreground">
+                        {seatsInfo.availableUsers}
+                      </span>{" "}
+                      disponible{seatsInfo.availableUsers > 1 ? "s" : ""} sur{" "}
+                      <span className="font-medium text-foreground">
+                        {seatsInfo.includedUsers}
+                      </span>
+                      {seatsInfo.canAddPaidUsers &&
+                        seatsInfo.availableUsers === 0 && (
+                          <span className="text-amber-600 dark:text-amber-400">
+                            {" "}
+                            (+7,49€/mois)
+                          </span>
+                        )}
+                    </p>
                   </div>
-                ))}
+                </div>
+                <div className="flex items-center gap-2 px-3 py-2.5 bg-muted/30 rounded-lg border border-border/50">
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <div className="flex-1">
+                    <p className="text-xs text-muted-foreground">
+                      <span className="font-medium text-foreground">
+                        {seatsInfo.currentAccountants}
+                      </span>{" "}
+                      comptable{seatsInfo.currentAccountants > 1 ? "s" : ""} •{" "}
+                      <span className="font-medium text-foreground">
+                        {seatsInfo.availableAccountants}
+                      </span>{" "}
+                      disponible{seatsInfo.availableAccountants > 1 ? "s" : ""}{" "}
+                      sur{" "}
+                      <span className="font-medium text-foreground">
+                        {seatsInfo.includedAccountants}
+                      </span>
+                    </p>
+                  </div>
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Message si limite atteinte */}
-          {seatsInfo &&
-            seatsInfo.availableSeats === 0 &&
-            membersWithRoles.length > 0 && (
-              <Callout type="warning" noMargin>
+            {/* Champ d'ajout d'emails */}
+            <div className="space-y-2">
+              <MultipleSelector
+                value={invitedEmails}
+                onChange={handleEmailsChange}
+                placeholder="Entrez des adresses email"
+                creatable
+                className="w-full"
+              />
+            </div>
+
+            {/* Callout pour la facturation */}
+            {seatsInfo && (
+              <Callout type="neutral" noMargin>
                 <p className="text-xs">
-                  <strong>Limite atteinte !</strong> Vous avez atteint la limite
-                  de{" "}
-                  <strong>
-                    {seatsInfo.includedSeats} membre
-                    {seatsInfo.includedSeats > 1 ? "s" : ""}
-                  </strong>{" "}
-                  de votre plan <strong>{seatsInfo.plan}</strong>.
-                  {seatsInfo.plan !== "entreprise" && (
-                    <> Passez au plan supérieur pour inviter plus de membres.</>
+                  {seatsInfo.plan === "freelance" ? (
+                    <>
+                      <strong>Plan Freelance :</strong> Vous pouvez inviter{" "}
+                      <strong>{seatsInfo.includedAccountants} comptable</strong>{" "}
+                      gratuit. Pour inviter des collaborateurs, passez au plan
+                      PME ou Entreprise.
+                    </>
+                  ) : seatsInfo.availableUsers > 0 ? (
+                    <>
+                      <strong>
+                        {seatsInfo.availableUsers} siège
+                        {seatsInfo.availableUsers > 1 ? "s" : ""} utilisateur
+                      </strong>{" "}
+                      inclus dans votre abonnement. Au-delà, chaque utilisateur
+                      supplémentaire sera facturé <strong>7,49€/mois</strong>.{" "}
+                      <strong>
+                        {seatsInfo.includedAccountants} comptable
+                        {seatsInfo.includedAccountants > 1 ? "s" : ""}
+                      </strong>{" "}
+                      gratuit{seatsInfo.includedAccountants > 1 ? "s" : ""}.
+                    </>
+                  ) : (
+                    <>
+                      <strong>Limite atteinte :</strong> L'ajout d'un
+                      utilisateur sera facturé <strong>7,49€/mois</strong>.{" "}
+                      <strong>
+                        {seatsInfo.availableAccountants} comptable
+                        {seatsInfo.availableAccountants > 1 ? "s" : ""}
+                      </strong>{" "}
+                      disponible{seatsInfo.availableAccountants > 1 ? "s" : ""}.
+                    </>
                   )}
                 </p>
               </Callout>
             )}
 
-          {/* Boutons d'action */}
-          <div className="flex gap-2 pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                setInvitedEmails([]);
-                setMembersWithRoles([]);
-                onOpenChange(false);
-              }}
-              className="flex-1 h-9 text-sm cursor-pointer font-normal"
-            >
-              Annuler
-            </Button>
-            <Button
-              onClick={handleInviteAll}
-              disabled={
-                inviting ||
-                membersWithRoles.length === 0 ||
-                (seatsInfo &&
-                  seatsInfo.availableSeats === 0 &&
-                  membersWithRoles.length > 0)
-              }
-              className="flex-1 h-9 text-sm font-normal bg-[#5b4fff] hover:bg-[#5b4fff]/90 cursor-pointer text-white disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {inviting
-                ? "Envoi..."
-                : seatsInfo &&
-                    seatsInfo.availableSeats === 0 &&
-                    membersWithRoles.length > 0
-                  ? "Limite atteinte"
+            {/* Liste des membres ajoutés */}
+            {membersWithRoles.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-muted-foreground">
+                  Membres à inviter ({membersWithRoles.length})
+                </p>
+                <div className="border rounded-lg divide-y max-h-[300px] overflow-y-auto">
+                  {membersWithRoles.map((member) => (
+                    <div
+                      key={member.email}
+                      className="flex items-center justify-between p-3 hover:bg-muted/50"
+                    >
+                      <div className="flex items-center gap-3 flex-1">
+                        <Avatar className="h-8 w-8">
+                          <AvatarFallback className="bg-[#5b4fff]/10 text-[#5b4fff] text-xs">
+                            {member.email[0].toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="text-sm">{member.email}</span>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <Select
+                          value={member.role}
+                          onValueChange={(newRole) =>
+                            handleRoleChange(member.email, newRole)
+                          }
+                        >
+                          <SelectTrigger className="w-[180px] h-8 text-xs border-none shadow-none hover:bg-muted">
+                            <SelectValue>
+                              {getRoleLabel(member.role)}
+                            </SelectValue>
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="admin">
+                              <div className="flex flex-col">
+                                <span className="font-normal text-sm">
+                                  Administrateur
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  Gestion complète
+                                </span>
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="member">
+                              <div className="flex flex-col">
+                                <span className="font-normal text-sm">
+                                  Membre
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  Accès standard
+                                </span>
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="guest">
+                              <div className="flex flex-col">
+                                <span className="font-normal text-sm">
+                                  Invité
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  Accès limité
+                                </span>
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="accountant">
+                              <div className="flex flex-col">
+                                <span className="font-normal text-sm">
+                                  Comptable
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  Accès comptabilité
+                                </span>
+                              </div>
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemoveMember(member.email)}
+                          className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Boutons d'action */}
+            <div className="flex gap-2 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setInvitedEmails([]);
+                  setMembersWithRoles([]);
+                  onOpenChange(false);
+                }}
+                className="flex-1 h-9 text-sm cursor-pointer font-normal"
+              >
+                Annuler
+              </Button>
+              <Button
+                onClick={handleInviteAll}
+                disabled={inviting || membersWithRoles.length === 0}
+                className="flex-1 h-9 text-sm font-normal bg-[#5b4fff] hover:bg-[#5b4fff]/90 cursor-pointer text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {inviting
+                  ? "Envoi..."
                   : `Inviter ${membersWithRoles.length} membre${membersWithRoles.length > 1 ? "s" : ""}`}
-            </Button>
+              </Button>
+            </div>
           </div>
-        </div>
+        )}
       </DialogContent>
     </Dialog>
   );

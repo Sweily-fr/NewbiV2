@@ -17,7 +17,8 @@ export async function GET(request, { params }) {
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
 
-    const { organizationId } = params;
+    // Next.js 15 : params doit être await avant d'accéder à ses propriétés
+    const { organizationId } = await params;
 
     // Vérifier que l'utilisateur appartient à cette organisation via la collection member
     const memberCheck = await mongoDb.collection("member").findOne({

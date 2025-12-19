@@ -19,70 +19,90 @@ export function OrgActivationHandler() {
       const orgCreated = searchParams.get("org_created");
       const paymentSuccess = searchParams.get("payment_success");
 
-      if (orgCreated === "true" && paymentSuccess === "true") {
+      // Vérifier si on a déjà traité cette activation
+      const hasProcessed = sessionStorage.getItem("org_activation_processed");
+
+      if (orgCreated === "true" && paymentSuccess === "true" && !hasProcessed) {
+        // Marquer comme traité IMMÉDIATEMENT pour éviter les doublons
+        sessionStorage.setItem("org_activation_processed", "true");
         console.log(
           "🔄 [ORG ACTIVATION] Activation de la nouvelle organisation..."
         );
 
         try {
-          // Récupérer les données de l'organisation depuis sessionStorage
-          const pendingOrgData = sessionStorage.getItem("pending_org_creation");
+          // Attendre que le webhook crée l'organisation (max 5 secondes)
+          let attempts = 0;
+          const maxAttempts = 10;
+          let newOrgId = null;
 
-          if (pendingOrgData) {
-            const orgData = JSON.parse(pendingOrgData);
-            console.log("📋 [ORG ACTIVATION] Données organisation:", orgData);
+          while (attempts < maxAttempts && !newOrgId) {
+            await new Promise((resolve) => setTimeout(resolve, 500));
+
+            // Récupérer la liste des organisations
+            const { data: organizations } =
+              await authClient.organization.list();
+
+            if (organizations && organizations.length > 0) {
+              // Trier par date de création (la plus récente en premier)
+              const sortedOrgs = [...organizations].sort(
+                (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+              );
+
+              // La nouvelle organisation est la plus récente
+              const newestOrg = sortedOrgs[0];
+
+              // Vérifier si elle a été créée il y a moins de 2 minutes
+              const createdAt = new Date(newestOrg.createdAt);
+              const now = new Date();
+              const diffMinutes = (now - createdAt) / 1000 / 60;
+
+              if (diffMinutes < 2) {
+                newOrgId = newestOrg.id;
+                console.log(
+                  `✅ [ORG ACTIVATION] Nouvelle organisation trouvée: ${newOrgId}`
+                );
+              }
+            }
+
+            attempts++;
           }
 
-          // Rafraîchir la session pour récupérer la nouvelle organisation
-          const { data: session } = await authClient.getSession();
+          if (newOrgId) {
+            // Activer la nouvelle organisation
+            await authClient.organization.setActive({
+              organizationId: newOrgId,
+            });
 
-          if (session?.session?.activeOrganizationId) {
             console.log(
-              `✅ [ORG ACTIVATION] Organisation active: ${session.session.activeOrganizationId}`
+              `✅ [ORG ACTIVATION] Organisation activée: ${newOrgId}`
             );
 
             // Nettoyer le sessionStorage
             sessionStorage.removeItem("pending_org_creation");
+            sessionStorage.removeItem("org_activation_processed");
 
             // Afficher un message de succès
             toast.success("Organisation créée avec succès !", {
               description: "Votre abonnement est maintenant actif.",
             });
 
-            // Nettoyer les paramètres de l'URL
+            // Nettoyer les paramètres de l'URL sans recharger
             router.replace("/dashboard");
-
-            // Recharger la page pour mettre à jour l'UI
-            setTimeout(() => {
-              window.location.reload();
-            }, 500);
           } else {
             console.warn(
-              "⚠️ [ORG ACTIVATION] Aucune organisation active trouvée"
+              "⚠️ [ORG ACTIVATION] Organisation non trouvée après 5 secondes"
             );
-
-            // Attendre un peu et réessayer (le webhook peut prendre du temps)
-            setTimeout(async () => {
-              const { data: retrySession } = await authClient.getSession();
-
-              if (retrySession?.session?.activeOrganizationId) {
-                console.log(
-                  "✅ [ORG ACTIVATION] Organisation active (2ème tentative)"
-                );
-                sessionStorage.removeItem("pending_org_creation");
-                toast.success("Organisation créée avec succès !");
-                router.replace("/dashboard");
-                setTimeout(() => window.location.reload(), 500);
-              } else {
-                toast.error("Erreur lors de l'activation de l'organisation", {
-                  description: "Veuillez rafraîchir la page.",
-                });
-              }
-            }, 2000);
+            sessionStorage.removeItem("org_activation_processed");
+            toast.error("Erreur lors de l'activation de l'organisation", {
+              description: "Veuillez rafraîchir la page.",
+            });
+            router.replace("/dashboard");
           }
         } catch (error) {
           console.error("❌ [ORG ACTIVATION] Erreur:", error);
+          sessionStorage.removeItem("org_activation_processed");
           toast.error("Erreur lors de l'activation de l'organisation");
+          router.replace("/dashboard");
         }
       }
     };

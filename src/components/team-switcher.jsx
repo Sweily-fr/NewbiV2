@@ -413,44 +413,33 @@ export function TeamSwitcher() {
                   items={sortedOrganizations.map((org) => org.id)}
                   strategy={verticalListSortingStrategy}
                 >
-                  {sortedOrganizations.map((org) => (
-                    <SortableOrganizationItem
-                      key={org.id}
-                      org={org}
-                      isActive={activeOrganization?.id === org.id}
-                      onSelect={handleSetActiveOrganization}
-                      disabled={isChangingOrg}
-                      onRename={(org) => {
-                        setSelectedOrganization(org);
-                        setRenameModalOpen(true);
-                      }}
-                      setSortedOrganizations={setSortedOrganizations}
-                      setInviteDialogOpen={setInviteDialogOpen}
-                      setSettingsModalOpen={setSettingsModalOpen}
-                    />
-                  ))}
+                  <div className="max-h-[180px] overflow-y-auto">
+                    {sortedOrganizations.map((org) => (
+                      <SortableOrganizationItem
+                        key={org.id}
+                        org={org}
+                        isActive={activeOrganization?.id === org.id}
+                        onSelect={handleSetActiveOrganization}
+                        disabled={isChangingOrg}
+                        onRename={(org) => {
+                          setSelectedOrganization(org);
+                          setRenameModalOpen(true);
+                        }}
+                        setSortedOrganizations={setSortedOrganizations}
+                        setInviteDialogOpen={setInviteDialogOpen}
+                        setSettingsModalOpen={setSettingsModalOpen}
+                      />
+                    ))}
+                  </div>
                 </SortableContext>
               </DndContext>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                onClick={() => {
-                  if (isActive()) {
-                    setCreateWorkspaceOpen(true);
-                  }
-                }}
-                disabled={!isActive()}
-                className={`gap-2 p-2 ${
-                  isActive()
-                    ? "cursor-pointer text-[#5b4fff]"
-                    : "cursor-not-allowed opacity-50"
-                }`}
+                onClick={() => setCreateWorkspaceOpen(true)}
+                className="gap-2 p-2 cursor-pointer text-[#5b4fff]"
               >
-                <Plus
-                  className={`h-2 w-2 ${isActive() ? "text-[#5b4fff]" : ""}`}
-                />
-                <span
-                  className={`text-xs ${isActive() ? "text-[#5b4fff]" : ""}`}
-                >
+                <Plus className="h-2 w-2 text-[#5b4fff]" />
+                <span className="text-xs text-[#5b4fff]">
                   Ajouter un espace de travail
                 </span>
                 {!isActive() && (
@@ -665,7 +654,7 @@ function SortableOrganizationItem({
       <DropdownMenuItem
         onClick={() => !disabled && onSelect(org.id)}
         className={`gap-2 p-2 transition-colors ${
-          isDragging ? "bg-accent/80" : ""
+          isDragging ? "bg-accent/80" : isActive ? "bg-muted/100" : ""
         }`}
         disabled={disabled}
         style={{ cursor: isDragging ? "grabbing" : "grab" }}
@@ -703,9 +692,6 @@ function SortableOrganizationItem({
         <div className="flex flex-col flex-1">
           <span className="font-normal text-xs">{org.name}</span>
         </div>
-
-        {/* Check si actif */}
-        {isActive && <Check className="ml-auto h-4 w-4 text-[#5b4fff]" />}
 
         {/* Bouton 3 points */}
         <button

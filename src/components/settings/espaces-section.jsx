@@ -268,13 +268,12 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
     fetchMembers();
   }, [selectedOrg, refreshTrigger]);
 
-  // Filter members based on search term and status (only active members)
+  // Filter members based on search term (afficher tous les statuts : active, pending, etc.)
   const filteredMembers = members.filter(
     (member) =>
-      member.status === "active" &&
-      (member.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        member.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        member.role?.toLowerCase().includes(searchTerm.toLowerCase()))
+      member.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      member.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      member.role?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleDeleteMember = (member) => {
@@ -558,9 +557,16 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
                                   .toUpperCase() || "?"}
                               </AvatarFallback>
                             </Avatar>
-                            <div>
-                              <div className="font-normal text-sm">
-                                {member.name || "Sans nom"}
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="font-normal text-sm">
+                                  {member.name || "Sans nom"}
+                                </span>
+                                {member.status === "pending" && (
+                                  <Badge className="bg-orange-100 border-orange-300 text-orange-800 font-normal text-[10px] px-1.5 py-0">
+                                    En attente
+                                  </Badge>
+                                )}
                               </div>
                               <div className="text-xs text-muted-foreground">
                                 {member.email}

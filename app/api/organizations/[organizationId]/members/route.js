@@ -17,7 +17,8 @@ export async function GET(request, { params }) {
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
 
-    const { organizationId } = params;
+    // Next.js 15 : params doit être await avant d'accéder à ses propriétés
+    const { organizationId } = await params;
 
     console.log(
       `📊 API - Récupération des membres pour org: ${organizationId}`

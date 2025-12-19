@@ -76,6 +76,15 @@ export default function InvoiceSettingsView({
   } = useFormContext();
   const data = watch();
 
+  // Debug: Log des couleurs reçues
+  useEffect(() => {
+    console.log("🎨 InvoiceSettingsView - Couleurs reçues:", {
+      textColor: data.appearance?.textColor,
+      headerTextColor: data.appearance?.headerTextColor,
+      headerBgColor: data.appearance?.headerBgColor,
+    });
+  }, [data.appearance]);
+
   const { data: organization } = authClient.useActiveOrganization();
 
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);

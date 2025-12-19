@@ -109,16 +109,10 @@ export default function TestEmailsPage() {
     subscriptionCreated: {
       params: [
         {
-          customerName: "Jean Dupont",
-          plan: "PME",
-          price: "48,99 €",
+          customerName: "Sofiane",
+          plan: "Pro",
+          price: "14,99 €",
           billingInterval: "mois",
-          features: [
-            "Jusqu'à 10 utilisateurs",
-            "1 workspace inclus",
-            "Toutes les fonctionnalités Freelance",
-            "Support prioritaire",
-          ],
         },
       ],
       label: "Abonnement - Nouvel abonnement",

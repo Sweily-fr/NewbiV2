@@ -2,7 +2,16 @@
 
 import React from "react";
 import { useFormContext } from "react-hook-form";
-import { Calendar as CalendarIcon, Clock, Building, Info, Search, FileText, Receipt, ChevronDown } from "lucide-react";
+import {
+  Calendar as CalendarIcon,
+  Clock,
+  Building,
+  Info,
+  Search,
+  FileText,
+  Receipt,
+  ChevronDown,
+} from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useLazyQuery, useQuery } from "@apollo/client";
@@ -30,6 +39,7 @@ import {
   Select,
   SelectContent,
   SelectItem,
+  SelectItemWithDescription,
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
@@ -50,8 +60,15 @@ import {
   getCurrentMonthYear,
 } from "@/src/utils/invoiceUtils";
 import { useInvoiceNumber } from "../../hooks/use-invoice-number";
-import { useLastInvoicePrefix, GET_SITUATION_INVOICES_BY_QUOTE_REF, GET_SITUATION_REFERENCES } from "@/src/graphql/invoiceQueries";
-import { GET_QUOTE_BY_NUMBER, SEARCH_QUOTES_FOR_REFERENCE } from "@/src/graphql/quoteQueries";
+import {
+  useLastInvoicePrefix,
+  GET_SITUATION_INVOICES_BY_QUOTE_REF,
+  GET_SITUATION_REFERENCES,
+} from "@/src/graphql/invoiceQueries";
+import {
+  GET_QUOTE_BY_NUMBER,
+  SEARCH_QUOTES_FOR_REFERENCE,
+} from "@/src/graphql/quoteQueries";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 
 // Fonction utilitaire pour formater les montants
@@ -72,7 +89,13 @@ const PAYMENT_TERMS_SUGGESTIONS = [
   { value: 60, label: "60 jours" },
 ];
 
-export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: validateInvoiceNumberExists, onSituationNumberChange, onPreviousSituationInvoicesChange, onContractTotalChange }) {
+export default function InvoiceInfoSection({
+  canEdit,
+  validateInvoiceNumber: validateInvoiceNumberExists,
+  onSituationNumberChange,
+  onPreviousSituationInvoicesChange,
+  onContractTotalChange,
+}) {
   const {
     watch,
     setValue,
@@ -93,19 +116,20 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
   } = useInvoiceNumber();
 
   // Get the last invoice prefix
-  const { prefix: lastInvoicePrefix, loading: loadingLastPrefix } = useLastInvoicePrefix();
-  
+  const { prefix: lastInvoicePrefix, loading: loadingLastPrefix } =
+    useLastInvoicePrefix();
+
   // Query pour rechercher les factures de situation par référence devis
-  const [fetchSituationInvoices, { data: situationData, loading: loadingSituation }] = useLazyQuery(
-    GET_SITUATION_INVOICES_BY_QUOTE_REF,
-    { fetchPolicy: "network-only" }
-  );
+  const [
+    fetchSituationInvoices,
+    { data: situationData, loading: loadingSituation },
+  ] = useLazyQuery(GET_SITUATION_INVOICES_BY_QUOTE_REF, {
+    fetchPolicy: "network-only",
+  });
 
   // Query pour récupérer le devis par son numéro (pour le total du contrat)
-  const [fetchQuoteByNumber, { data: quoteData, loading: loadingQuote }] = useLazyQuery(
-    GET_QUOTE_BY_NUMBER,
-    { fetchPolicy: "network-only" }
-  );
+  const [fetchQuoteByNumber, { data: quoteData, loading: loadingQuote }] =
+    useLazyQuery(GET_QUOTE_BY_NUMBER, { fetchPolicy: "network-only" });
 
   // State pour la recherche de références
   const [referenceSearchOpen, setReferenceSearchOpen] = React.useState(false);
@@ -138,14 +162,17 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
   // Debug: afficher les devis reçus
   React.useEffect(() => {
     if (quotesData?.quotes?.quotes) {
-      console.log("📋 [QUOTES SEARCH] Devis reçus:", quotesData.quotes.quotes.map(q => ({
-        id: q.id,
-        number: q.number,
-        prefix: q.prefix,
-        fullRef: q.prefix ? `${q.prefix}-${q.number}` : q.number,
-        finalTotalTTC: q.finalTotalTTC,
-        client: q.client?.name
-      })));
+      console.log(
+        "📋 [QUOTES SEARCH] Devis reçus:",
+        quotesData.quotes.quotes.map((q) => ({
+          id: q.id,
+          number: q.number,
+          prefix: q.prefix,
+          fullRef: q.prefix ? `${q.prefix}-${q.number}` : q.number,
+          finalTotalTTC: q.finalTotalTTC,
+          client: q.client?.name,
+        }))
+      );
     }
   }, [quotesData]);
 
@@ -164,7 +191,7 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
 
   // State pour stocker le numéro de situation
   const [situationNumber, setSituationNumber] = React.useState(1);
-  
+
   // Flag pour savoir si le préfixe a déjà été initialisé
   const prefixInitialized = React.useRef(false);
   // Flag pour éviter la validation au premier montage
@@ -175,10 +202,13 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
     isInitialMount.current = false;
   }, []);
 
-
   // Rechercher les factures de situation et le devis quand le type est "situation" et qu'il y a une référence devis
   React.useEffect(() => {
-    if (data.invoiceType === "situation" && data.purchaseOrderNumber && workspaceId) {
+    if (
+      data.invoiceType === "situation" &&
+      data.purchaseOrderNumber &&
+      workspaceId
+    ) {
       fetchSituationInvoices({
         variables: {
           workspaceId,
@@ -193,7 +223,13 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
         },
       });
     }
-  }, [data.invoiceType, data.purchaseOrderNumber, workspaceId, fetchSituationInvoices, fetchQuoteByNumber]);
+  }, [
+    data.invoiceType,
+    data.purchaseOrderNumber,
+    workspaceId,
+    fetchSituationInvoices,
+    fetchQuoteByNumber,
+  ]);
 
   // Notifier le parent du total du contrat quand le devis ou la première facture de situation est récupéré
   React.useEffect(() => {
@@ -203,32 +239,34 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
         if (onContractTotalChange) {
           onContractTotalChange(quoteData.quoteByNumber.finalTotalTTC);
         }
-      } 
-      // Priorité 2: Si pas de devis mais des factures de situation existent, 
+      }
+      // Priorité 2: Si pas de devis mais des factures de situation existent,
       // calculer le total à partir de la première facture (sans avancement)
       else if (situationData?.situationInvoicesByQuoteRef?.length > 0) {
         const existingInvoices = situationData.situationInvoicesByQuoteRef;
         // Trier par date de création pour obtenir la première
-        const sortedInvoices = [...existingInvoices].sort((a, b) => 
-          new Date(a.issueDate || a.createdAt) - new Date(b.issueDate || b.createdAt)
+        const sortedInvoices = [...existingInvoices].sort(
+          (a, b) =>
+            new Date(a.issueDate || a.createdAt) -
+            new Date(b.issueDate || b.createdAt)
         );
         const firstInvoice = sortedInvoices[0];
-        
+
         // Calculer le total TTC de la première facture SANS tenir compte de l'avancement
         if (firstInvoice.items && firstInvoice.items.length > 0) {
           let totalHT = 0;
           let totalVAT = 0;
-          
-          firstInvoice.items.forEach(item => {
+
+          firstInvoice.items.forEach((item) => {
             const quantity = parseFloat(item.quantity) || 0;
             const unitPrice = parseFloat(item.unitPrice) || 0;
             const vatRate = parseFloat(item.vatRate) || 0;
             const discount = parseFloat(item.discount) || 0;
             const discountType = item.discountType || "PERCENTAGE";
-            
+
             // Calculer le total de l'article SANS avancement
             let itemTotal = quantity * unitPrice;
-            
+
             // Appliquer la remise
             if (discount > 0) {
               if (discountType === "PERCENTAGE") {
@@ -237,11 +275,11 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
                 itemTotal = Math.max(0, itemTotal - discount);
               }
             }
-            
+
             totalHT += itemTotal;
             totalVAT += itemTotal * (vatRate / 100);
           });
-          
+
           const contractTotal = totalHT + totalVAT;
           if (onContractTotalChange) {
             onContractTotalChange(contractTotal);
@@ -257,30 +295,40 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
 
   // Copier les articles du devis quand il est récupéré (si pas de factures de situation existantes)
   React.useEffect(() => {
-    if (data.invoiceType === "situation" && quoteData?.quoteByNumber && data.purchaseOrderNumber) {
+    if (
+      data.invoiceType === "situation" &&
+      quoteData?.quoteByNumber &&
+      data.purchaseOrderNumber
+    ) {
       const quote = quoteData.quoteByNumber;
-      const quoteFullRef = quote.prefix ? `${quote.prefix}-${quote.number}` : quote.number;
-      
-      console.log('📋 [QUOTE COPY] Devis récupéré:', {
+      const quoteFullRef = quote.prefix
+        ? `${quote.prefix}-${quote.number}`
+        : quote.number;
+
+      console.log("📋 [QUOTE COPY] Devis récupéré:", {
         quoteFullRef,
         purchaseOrderNumber: data.purchaseOrderNumber,
         match: quoteFullRef === data.purchaseOrderNumber,
         itemsCount: quote.items?.length,
-        finalTotalTTC: quote.finalTotalTTC
+        finalTotalTTC: quote.finalTotalTTC,
       });
-      
+
       // Vérifier que le devis récupéré correspond bien à la référence sélectionnée
       if (quoteFullRef !== data.purchaseOrderNumber) {
         return;
       }
-      
+
       const existingInvoices = situationData?.situationInvoicesByQuoteRef || [];
-      
+
       // Ne copier les articles du devis que s'il n'y a pas de factures de situation existantes
-      if (existingInvoices.length === 0 && quote.items && quote.items.length > 0) {
-        console.log('📋 [QUOTE COPY] Copie des articles:', quote.items);
-        
-        const copiedItems = quote.items.map(item => ({
+      if (
+        existingInvoices.length === 0 &&
+        quote.items &&
+        quote.items.length > 0
+      ) {
+        console.log("📋 [QUOTE COPY] Copie des articles:", quote.items);
+
+        const copiedItems = quote.items.map((item) => ({
           description: item.description || "",
           quantity: item.quantity || 1,
           unitPrice: item.unitPrice || 0,
@@ -290,39 +338,49 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
           discountType: item.discountType || "PERCENTAGE",
           progressPercentage: 0,
         }));
-        
+
         setValue("items", copiedItems, { shouldDirty: true });
-        
+
         // Copier aussi le client si disponible
         if (quote.client) {
           const clientData = quote.client;
-          setValue("client", {
-            id: clientData.id || "",
-            name: clientData.name || "",
-            email: clientData.email || "",
-            type: clientData.type || "COMPANY",
-            vatNumber: clientData.vatNumber || "",
-            siret: clientData.siret || "",
-            address: {
-              fullName: clientData.address?.fullName || "",
-              street: clientData.address?.street || "",
-              city: clientData.address?.city || "",
-              postalCode: clientData.address?.postalCode || "",
-              country: clientData.address?.country || "",
+          setValue(
+            "client",
+            {
+              id: clientData.id || "",
+              name: clientData.name || "",
+              email: clientData.email || "",
+              type: clientData.type || "COMPANY",
+              vatNumber: clientData.vatNumber || "",
+              siret: clientData.siret || "",
+              address: {
+                fullName: clientData.address?.fullName || "",
+                street: clientData.address?.street || "",
+                city: clientData.address?.city || "",
+                postalCode: clientData.address?.postalCode || "",
+                country: clientData.address?.country || "",
+              },
             },
-          }, { shouldDirty: true });
+            { shouldDirty: true }
+          );
         }
       }
     }
-  }, [quoteData, situationData, data.invoiceType, data.purchaseOrderNumber, setValue]);
+  }, [
+    quoteData,
+    situationData,
+    data.invoiceType,
+    data.purchaseOrderNumber,
+    setValue,
+  ]);
 
   // Calculer le numéro de situation et copier les articles de la dernière facture de situation
   React.useEffect(() => {
     if (data.invoiceType === "situation") {
       const existingInvoices = situationData?.situationInvoicesByQuoteRef || [];
       // Exclure la facture actuelle si elle est en mode édition
-      const otherInvoices = data.id 
-        ? existingInvoices.filter(inv => inv.id !== data.id)
+      const otherInvoices = data.id
+        ? existingInvoices.filter((inv) => inv.id !== data.id)
         : existingInvoices;
       const newSituationNumber = otherInvoices.length + 1;
       setSituationNumber(newSituationNumber);
@@ -342,12 +400,19 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
       if (otherInvoices.length > 0) {
         // Prendre la dernière facture de situation (triée par date croissante, donc la dernière est à la fin)
         const lastSituationInvoice = otherInvoices[otherInvoices.length - 1];
-        
-        if (lastSituationInvoice.items && lastSituationInvoice.items.length > 0) {
-          console.log('📋 [SITUATION COPY] Copie des articles de la dernière facture de situation:', lastSituationInvoice.items.length, 'articles');
-          
+
+        if (
+          lastSituationInvoice.items &&
+          lastSituationInvoice.items.length > 0
+        ) {
+          console.log(
+            "📋 [SITUATION COPY] Copie des articles de la dernière facture de situation:",
+            lastSituationInvoice.items.length,
+            "articles"
+          );
+
           // Copier les articles avec progressPercentage remis à 0 pour la nouvelle situation
-          const copiedItems = lastSituationInvoice.items.map(item => ({
+          const copiedItems = lastSituationInvoice.items.map((item) => ({
             description: item.description || "",
             quantity: item.quantity || 1,
             unitPrice: item.unitPrice || 0,
@@ -357,27 +422,31 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
             discountType: item.discountType || "PERCENTAGE",
             progressPercentage: 0, // Remettre à 0 pour la nouvelle situation
           }));
-          
+
           setValue("items", copiedItems, { shouldDirty: true });
-          
+
           // Copier aussi le client si disponible
           if (lastSituationInvoice.client) {
             const clientData = lastSituationInvoice.client;
-            setValue("client", {
-              id: clientData.id || "",
-              name: clientData.name || "",
-              email: clientData.email || "",
-              type: clientData.type || "COMPANY",
-              vatNumber: clientData.vatNumber || "",
-              siret: clientData.siret || "",
-              address: {
-                fullName: clientData.address?.fullName || "",
-                street: clientData.address?.street || "",
-                city: clientData.address?.city || "",
-                postalCode: clientData.address?.postalCode || "",
-                country: clientData.address?.country || "",
+            setValue(
+              "client",
+              {
+                id: clientData.id || "",
+                name: clientData.name || "",
+                email: clientData.email || "",
+                type: clientData.type || "COMPANY",
+                vatNumber: clientData.vatNumber || "",
+                siret: clientData.siret || "",
+                address: {
+                  fullName: clientData.address?.fullName || "",
+                  street: clientData.address?.street || "",
+                  city: clientData.address?.city || "",
+                  postalCode: clientData.address?.postalCode || "",
+                  country: clientData.address?.country || "",
+                },
               },
-            }, { shouldDirty: true });
+              { shouldDirty: true }
+            );
           }
         }
       }
@@ -389,7 +458,15 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
         onPreviousSituationInvoicesChange([]);
       }
     }
-  }, [situationData, data.invoiceType, data.id, data.purchaseOrderNumber, setValue, onSituationNumberChange, onPreviousSituationInvoicesChange]);
+  }, [
+    situationData,
+    data.invoiceType,
+    data.id,
+    data.purchaseOrderNumber,
+    setValue,
+    onSituationNumberChange,
+    onPreviousSituationInvoicesChange,
+  ]);
 
   // Set default invoice number when nextInvoiceNumber is available
   React.useEffect(() => {
@@ -434,7 +511,7 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
     const value = e.target.value;
     const cursorPosition = e.target.selectionStart;
 
-    console.log('[InvoiceInfoSection] handlePrefixChange - New value:', value);
+    console.log("[InvoiceInfoSection] handlePrefixChange - New value:", value);
 
     // Auto-fill MM (month)
     if (value.includes("MM")) {
@@ -469,14 +546,36 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
   // Set default prefix from last invoice only once on mount (only for new invoices)
   React.useEffect(() => {
     const isNewInvoice = !data.id;
-    
-    console.log('[InvoiceInfoSection] useEffect - Current prefix:', data.prefix);
-    console.log('[InvoiceInfoSection] useEffect - Last invoice prefix:', lastInvoicePrefix);
-    console.log('[InvoiceInfoSection] useEffect - Will set?', !loadingLastPrefix && !prefixInitialized.current && !data.prefix && lastInvoicePrefix && isNewInvoice);
-    
-    if (!loadingLastPrefix && !prefixInitialized.current && !data.prefix && lastInvoicePrefix && isNewInvoice) {
-      console.log('[InvoiceInfoSection] Setting prefix to:', lastInvoicePrefix);
-      setValue("prefix", lastInvoicePrefix, { shouldValidate: false, shouldDirty: false });
+
+    console.log(
+      "[InvoiceInfoSection] useEffect - Current prefix:",
+      data.prefix
+    );
+    console.log(
+      "[InvoiceInfoSection] useEffect - Last invoice prefix:",
+      lastInvoicePrefix
+    );
+    console.log(
+      "[InvoiceInfoSection] useEffect - Will set?",
+      !loadingLastPrefix &&
+        !prefixInitialized.current &&
+        !data.prefix &&
+        lastInvoicePrefix &&
+        isNewInvoice
+    );
+
+    if (
+      !loadingLastPrefix &&
+      !prefixInitialized.current &&
+      !data.prefix &&
+      lastInvoicePrefix &&
+      isNewInvoice
+    ) {
+      console.log("[InvoiceInfoSection] Setting prefix to:", lastInvoicePrefix);
+      setValue("prefix", lastInvoicePrefix, {
+        shouldValidate: false,
+        shouldDirty: false,
+      });
       prefixInitialized.current = true;
     }
   }, [lastInvoicePrefix, loadingLastPrefix, data.id]);
@@ -518,14 +617,18 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
             onValueChange={(value) => {
               setValue("invoiceType", value, { shouldDirty: true });
               // Mettre à jour isDepositInvoice pour la compatibilité
-              setValue("isDepositInvoice", value === "deposit", { shouldDirty: true });
-              
+              setValue("isDepositInvoice", value === "deposit", {
+                shouldDirty: true,
+              });
+
               if (value === "situation") {
                 // Générer une référence automatique pour les factures de situation si pas de référence
                 if (!data.purchaseOrderNumber && !data.id) {
                   const now = new Date();
-                  const autoRef = `SIT-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}`;
-                  setValue("purchaseOrderNumber", autoRef, { shouldDirty: true });
+                  const autoRef = `SIT-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}-${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}${String(now.getSeconds()).padStart(2, "0")}`;
+                  setValue("purchaseOrderNumber", autoRef, {
+                    shouldDirty: true,
+                  });
                 }
               } else {
                 // Si on change vers un autre type, effacer la référence auto-générée (SIT-...)
@@ -540,17 +643,35 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
               <SelectValue placeholder="Sélectionner le type de facture" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="standard">Facture</SelectItem>
-              <SelectItem value="deposit">Facture d'acompte</SelectItem>
-              <SelectItem value="situation">Facture de situation</SelectItem>
+              <SelectItemWithDescription
+                value="standard"
+                description="Facturer le montant total en une seule facture."
+              >
+                Facture
+              </SelectItemWithDescription>
+              <SelectItemWithDescription
+                value="deposit"
+                description="Facturer le paiement anticipé avec la première facture."
+              >
+                Facture d'acompte
+              </SelectItemWithDescription>
+              <SelectItemWithDescription
+                value="situation"
+                description="Facturer une partie du montant total d'un projet en cours."
+              >
+                Facture de situation
+              </SelectItemWithDescription>
             </SelectContent>
           </Select>
           {data.invoiceType === "situation" && (
             <p className="text-xs text-muted-foreground">
-              Une référence unique est générée automatiquement. Vous pouvez la modifier ou utiliser une référence de devis existante pour lier plusieurs factures de situation.
+              Une référence unique est générée automatiquement. Vous pouvez la
+              modifier ou utiliser une référence de devis existante pour lier
+              plusieurs factures de situation.
               {situationData?.situationInvoicesByQuoteRef?.length > 0 && (
                 <span className="block mt-1 text-primary font-medium">
-                  {situationData.situationInvoicesByQuoteRef.length} facture(s) de situation existante(s) avec cette référence.
+                  {situationData.situationInvoicesByQuoteRef.length} facture(s)
+                  de situation existante(s) avec cette référence.
                 </span>
               )}
             </p>
@@ -568,11 +689,15 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" />
                 </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-[280px] sm:max-w-xs">
+                <TooltipContent
+                  side="top"
+                  className="max-w-[280px] sm:max-w-xs"
+                >
                   <p>
                     Préfixe personnalisable pour identifier vos factures. Tapez{" "}
-                    <span className="font-mono">MM</span> pour insérer le mois actuel
-                    ou <span className="font-mono">AAAA</span> pour l'année.
+                    <span className="font-mono">MM</span> pour insérer le mois
+                    actuel ou <span className="font-mono">AAAA</span> pour
+                    l'année.
                   </p>
                 </TooltipContent>
               </Tooltip>
@@ -597,7 +722,10 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
                     // Déclencher la validation du numéro quand le préfixe change
                     const currentNumber = watch("number");
                     if (currentNumber && validateInvoiceNumberExists) {
-                      await validateInvoiceNumberExists(currentNumber, e.target.value);
+                      await validateInvoiceNumberExists(
+                        currentNumber,
+                        e.target.value
+                      );
                     }
                   }}
                   placeholder="F-MMYYYY"
@@ -618,11 +746,15 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" />
                 </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-[280px] sm:max-w-xs">
+                <TooltipContent
+                  side="top"
+                  className="max-w-[280px] sm:max-w-xs"
+                >
                   <p>
-                    Numéro unique et séquentiel de votre facture. Il sera automatiquement
-                    formaté avec des zéros (ex: 000001). La numérotation doit être
-                    continue sans saut pour respecter les obligations légales.
+                    Numéro unique et séquentiel de votre facture. Il sera
+                    automatiquement formaté avec des zéros (ex: 000001). La
+                    numérotation doit être continue sans saut pour respecter les
+                    obligations légales.
                   </p>
                 </TooltipContent>
               </Tooltip>
@@ -676,7 +808,7 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
                   if (isInitialMount.current) {
                     return;
                   }
-                  
+
                   // Format with leading zeros when leaving the field
                   let finalNumber;
                   if (e.target.value) {
@@ -687,11 +819,14 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
                     finalNumber = String(nextInvoiceNumber).padStart(4, "0");
                     setValue("number", finalNumber, { shouldValidate: true });
                   }
-                  
+
                   // Vérifier si le numéro existe déjà (avec le préfixe)
                   if (finalNumber && validateInvoiceNumberExists) {
                     const currentPrefix = watch("prefix");
-                    await validateInvoiceNumberExists(finalNumber, currentPrefix);
+                    await validateInvoiceNumberExists(
+                      finalNumber,
+                      currentPrefix
+                    );
                   }
                 }}
                 className={`${errors?.number ? "border-red-500" : ""}`}
@@ -717,8 +852,12 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
               htmlFor="purchase-order-number"
               className="text-sm font-light"
             >
-              {data.invoiceType === "situation" ? "Référence de situation" : "Référence devis"}
-              {data.invoiceType === "situation" && <span className="text-red-500">*</span>}
+              {data.invoiceType === "situation"
+                ? "Référence de situation"
+                : "Référence devis"}
+              {data.invoiceType === "situation" && (
+                <span className="text-red-500">*</span>
+              )}
             </Label>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -726,15 +865,17 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
               </TooltipTrigger>
               <TooltipContent side="top" className="max-w-[280px] sm:max-w-xs">
                 <p>
-                  {data.invoiceType === "situation" 
+                  {data.invoiceType === "situation"
                     ? "Référence unique permettant de lier plusieurs factures de situation entre elles. Peut être une référence de devis ou une référence générée automatiquement."
-                    : "Référence du devis qui a été accepté et transformé en facture (optionnel). Permet de faire le lien entre devis et facture."
-                  }
+                    : "Référence du devis qui a été accepté et transformé en facture (optionnel). Permet de faire le lien entre devis et facture."}
                 </p>
               </TooltipContent>
             </Tooltip>
           </div>
-          <Popover open={referenceSearchOpen} onOpenChange={setReferenceSearchOpen}>
+          <Popover
+            open={referenceSearchOpen}
+            onOpenChange={setReferenceSearchOpen}
+          >
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
@@ -745,7 +886,9 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
               >
                 {data.purchaseOrderNumber || (
                   <span className="text-muted-foreground">
-                    {data.invoiceType === "situation" ? "Rechercher ou saisir une référence..." : "Rechercher un devis..."}
+                    {data.invoiceType === "situation"
+                      ? "Rechercher ou saisir une référence..."
+                      : "Rechercher un devis..."}
                   </span>
                 )}
                 <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -767,7 +910,9 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
                     </Button>
                     <Button
                       type="button"
-                      variant={referenceFilter === "quotes" ? "default" : "ghost"}
+                      variant={
+                        referenceFilter === "quotes" ? "default" : "ghost"
+                      }
                       size="sm"
                       className="h-7 text-xs"
                       onClick={() => setReferenceFilter("quotes")}
@@ -777,19 +922,22 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
                     </Button>
                     <Button
                       type="button"
-                      variant={referenceFilter === "situations" ? "default" : "ghost"}
+                      variant={
+                        referenceFilter === "situations" ? "default" : "ghost"
+                      }
                       size="sm"
                       className="h-7 text-xs"
                       onClick={() => setReferenceFilter("situations")}
                     >
                       <Receipt className="h-3 w-3 mr-1" />
-                      Situations ({situationRefsData?.situationReferences?.length || 0})
+                      Situations (
+                      {situationRefsData?.situationReferences?.length || 0})
                     </Button>
                   </div>
                 </div>
               )}
               <Command shouldFilter={false}>
-                <CommandInput 
+                <CommandInput
                   placeholder="Rechercher un devis..."
                   value={referenceSearchTerm}
                   onValueChange={setReferenceSearchTerm}
@@ -797,113 +945,158 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
                 <CommandList className="max-h-[280px]">
                   <CommandEmpty>
                     {loadingQuotes || loadingSituationRefs ? (
-                      <span className="text-muted-foreground">Recherche en cours...</span>
+                      <span className="text-muted-foreground">
+                        Recherche en cours...
+                      </span>
                     ) : (
-                      <span className="text-muted-foreground">Aucun résultat trouvé</span>
+                      <span className="text-muted-foreground">
+                        Aucun résultat trouvé
+                      </span>
                     )}
                   </CommandEmpty>
-                  
+
                   {/* Devis acceptés */}
-                  {(referenceFilter === "all" || referenceFilter === "quotes") && quotesData?.quotes?.quotes?.length > 0 && (() => {
-                    // Pour les factures de situation, filtrer les devis dont le total facturé a atteint le montant du devis
-                    const availableQuotes = data.invoiceType === "situation" 
-                      ? quotesData.quotes.quotes.filter(quote => {
-                          const invoicedTotal = quote.situationInvoicedTotal || 0;
-                          const contractTotal = quote.finalTotalTTC || 0;
-                          // Afficher uniquement si le total facturé est inférieur au contrat
-                          return invoicedTotal < contractTotal;
-                        })
-                      : quotesData.quotes.quotes;
-                    
-                    if (availableQuotes.length === 0) return null;
-                    
-                    return (
-                      <CommandGroup heading={`Devis acceptés (${availableQuotes.length})`}>
-                        {[...availableQuotes].sort((a, b) => {
-                          // Trier par numéro décroissant pour avoir les plus récents en premier
-                          const numA = parseInt(a.number) || 0;
-                          const numB = parseInt(b.number) || 0;
-                          return numB - numA;
-                        }).map((quote) => {
-                          const fullRef = quote.prefix ? `${quote.prefix}-${quote.number}` : quote.number;
-                          const invoicedTotal = quote.situationInvoicedTotal || 0;
-                          const remaining = data.invoiceType === "situation" && invoicedTotal > 0 
-                            ? quote.finalTotalTTC - invoicedTotal 
-                            : null;
-                          
-                          return (
-                            <CommandItem
-                              key={quote.id}
-                              value={fullRef}
-                              onSelect={() => {
-                                setValue("purchaseOrderNumber", fullRef, { shouldDirty: true });
-                                setReferenceSearchOpen(false);
-                                setReferenceSearchTerm("");
-                                setReferenceFilter("all");
-                              }}
-                              className="flex items-center gap-2 cursor-pointer"
-                            >
-                              <FileText className="h-4 w-4 text-blue-500 shrink-0" />
-                              <div className="flex-1 min-w-0">
-                                <div className="font-medium truncate">{fullRef}</div>
-                                <div className="text-xs text-muted-foreground truncate">
-                                  {quote.client?.name} • {formatCurrency(quote.finalTotalTTC)}
-                                  {remaining !== null && ` • Reste: ${formatCurrency(remaining)}`}
-                                </div>
-                              </div>
-                            </CommandItem>
-                          );
-                        })}
-                      </CommandGroup>
-                    );
-                  })()}
-                  
-                  {/* Références de situation existantes - uniquement pour les factures de situation */}
-                  {data.invoiceType === "situation" && (referenceFilter === "all" || referenceFilter === "situations") && situationRefsData?.situationReferences?.length > 0 && (() => {
-                    // Filtrer les références dont le total n'a pas atteint le montant du contrat
-                    const availableRefs = situationRefsData.situationReferences.filter(ref => {
-                      // Si pas de montant de contrat défini, afficher la référence
-                      if (!ref.contractTotal || ref.contractTotal === 0) return true;
-                      // Afficher uniquement si le total facturé est inférieur au contrat
-                      return ref.totalTTC < ref.contractTotal;
-                    });
-                    
-                    if (availableRefs.length === 0) return null;
-                    
-                    return (
-                      <>
-                        {referenceFilter === "all" && quotesData?.quotes?.quotes?.length > 0 && <CommandSeparator />}
-                        <CommandGroup heading={`Factures de situation (${availableRefs.length})`}>
-                          {availableRefs.map((ref) => {
-                            const remaining = ref.contractTotal ? ref.contractTotal - ref.totalTTC : null;
-                            return (
-                              <CommandItem
-                                key={ref.reference}
-                                value={ref.reference}
-                                onSelect={() => {
-                                  setValue("purchaseOrderNumber", ref.reference, { shouldDirty: true });
-                                  setReferenceSearchOpen(false);
-                                  setReferenceSearchTerm("");
-                                  setReferenceFilter("all");
-                                }}
-                                className="flex items-center gap-2 cursor-pointer"
-                              >
-                                <Receipt className="h-4 w-4 text-green-500 shrink-0" />
-                                <div className="flex-1 min-w-0">
-                                  <div className="font-medium truncate">{ref.reference}</div>
-                                  <div className="text-xs text-muted-foreground truncate">
-                                    {ref.count} facture(s) • Facturé: {formatCurrency(ref.totalTTC)}
-                                    {remaining !== null && ` • Reste: ${formatCurrency(remaining)}`}
+                  {(referenceFilter === "all" ||
+                    referenceFilter === "quotes") &&
+                    quotesData?.quotes?.quotes?.length > 0 &&
+                    (() => {
+                      // Pour les factures de situation, filtrer les devis dont le total facturé a atteint le montant du devis
+                      const availableQuotes =
+                        data.invoiceType === "situation"
+                          ? quotesData.quotes.quotes.filter((quote) => {
+                              const invoicedTotal =
+                                quote.situationInvoicedTotal || 0;
+                              const contractTotal = quote.finalTotalTTC || 0;
+                              // Afficher uniquement si le total facturé est inférieur au contrat
+                              return invoicedTotal < contractTotal;
+                            })
+                          : quotesData.quotes.quotes;
+
+                      if (availableQuotes.length === 0) return null;
+
+                      return (
+                        <CommandGroup
+                          heading={`Devis acceptés (${availableQuotes.length})`}
+                        >
+                          {[...availableQuotes]
+                            .sort((a, b) => {
+                              // Trier par numéro décroissant pour avoir les plus récents en premier
+                              const numA = parseInt(a.number) || 0;
+                              const numB = parseInt(b.number) || 0;
+                              return numB - numA;
+                            })
+                            .map((quote) => {
+                              const fullRef = quote.prefix
+                                ? `${quote.prefix}-${quote.number}`
+                                : quote.number;
+                              const invoicedTotal =
+                                quote.situationInvoicedTotal || 0;
+                              const remaining =
+                                data.invoiceType === "situation" &&
+                                invoicedTotal > 0
+                                  ? quote.finalTotalTTC - invoicedTotal
+                                  : null;
+
+                              return (
+                                <CommandItem
+                                  key={quote.id}
+                                  value={fullRef}
+                                  onSelect={() => {
+                                    setValue("purchaseOrderNumber", fullRef, {
+                                      shouldDirty: true,
+                                    });
+                                    setReferenceSearchOpen(false);
+                                    setReferenceSearchTerm("");
+                                    setReferenceFilter("all");
+                                  }}
+                                  className="flex items-center gap-2 cursor-pointer"
+                                >
+                                  <FileText className="h-4 w-4 text-blue-500 shrink-0" />
+                                  <div className="flex-1 min-w-0">
+                                    <div className="font-medium truncate">
+                                      {fullRef}
+                                    </div>
+                                    <div className="text-xs text-muted-foreground truncate">
+                                      {quote.client?.name} •{" "}
+                                      {formatCurrency(quote.finalTotalTTC)}
+                                      {remaining !== null &&
+                                        ` • Reste: ${formatCurrency(remaining)}`}
+                                    </div>
                                   </div>
-                                </div>
-                              </CommandItem>
-                            );
-                          })}
+                                </CommandItem>
+                              );
+                            })}
                         </CommandGroup>
-                      </>
-                    );
-                  })()}
-                  
+                      );
+                    })()}
+
+                  {/* Références de situation existantes - uniquement pour les factures de situation */}
+                  {data.invoiceType === "situation" &&
+                    (referenceFilter === "all" ||
+                      referenceFilter === "situations") &&
+                    situationRefsData?.situationReferences?.length > 0 &&
+                    (() => {
+                      // Filtrer les références dont le total n'a pas atteint le montant du contrat
+                      const availableRefs =
+                        situationRefsData.situationReferences.filter((ref) => {
+                          // Si pas de montant de contrat défini, afficher la référence
+                          if (!ref.contractTotal || ref.contractTotal === 0)
+                            return true;
+                          // Afficher uniquement si le total facturé est inférieur au contrat
+                          return ref.totalTTC < ref.contractTotal;
+                        });
+
+                      if (availableRefs.length === 0) return null;
+
+                      return (
+                        <>
+                          {referenceFilter === "all" &&
+                            quotesData?.quotes?.quotes?.length > 0 && (
+                              <CommandSeparator />
+                            )}
+                          <CommandGroup
+                            heading={`Factures de situation (${availableRefs.length})`}
+                          >
+                            {availableRefs.map((ref) => {
+                              const remaining = ref.contractTotal
+                                ? ref.contractTotal - ref.totalTTC
+                                : null;
+                              return (
+                                <CommandItem
+                                  key={ref.reference}
+                                  value={ref.reference}
+                                  onSelect={() => {
+                                    setValue(
+                                      "purchaseOrderNumber",
+                                      ref.reference,
+                                      { shouldDirty: true }
+                                    );
+                                    setReferenceSearchOpen(false);
+                                    setReferenceSearchTerm("");
+                                    setReferenceFilter("all");
+                                  }}
+                                  className="flex items-center gap-2 cursor-pointer"
+                                >
+                                  <Receipt className="h-4 w-4 text-green-500 shrink-0" />
+                                  <div className="flex-1 min-w-0">
+                                    <div className="font-medium truncate">
+                                      {ref.reference}
+                                    </div>
+                                    <div className="text-xs text-muted-foreground truncate">
+                                      {ref.count} facture(s) • Facturé:{" "}
+                                      {formatCurrency(ref.totalTTC)}
+                                      {remaining !== null &&
+                                        ` • Reste: ${formatCurrency(remaining)}`}
+                                    </div>
+                                  </div>
+                                </CommandItem>
+                              );
+                            })}
+                          </CommandGroup>
+                        </>
+                      );
+                    })()}
+
                   {/* Option pour saisir manuellement */}
                   {referenceSearchTerm && (
                     <>
@@ -912,7 +1105,11 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
                         <CommandItem
                           value={referenceSearchTerm}
                           onSelect={() => {
-                            setValue("purchaseOrderNumber", referenceSearchTerm, { shouldDirty: true });
+                            setValue(
+                              "purchaseOrderNumber",
+                              referenceSearchTerm,
+                              { shouldDirty: true }
+                            );
                             setReferenceSearchOpen(false);
                             setReferenceSearchTerm("");
                             setReferenceFilter("all");
@@ -921,7 +1118,9 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
                         >
                           <Search className="h-4 w-4 text-gray-500 shrink-0" />
                           <div className="flex-1 min-w-0">
-                            <div className="font-medium truncate">Utiliser "{referenceSearchTerm}"</div>
+                            <div className="font-medium truncate">
+                              Utiliser "{referenceSearchTerm}"
+                            </div>
                             <div className="text-xs text-muted-foreground">
                               Saisir cette référence manuellement
                             </div>
@@ -934,7 +1133,7 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
               </Command>
             </PopoverContent>
           </Popover>
-          
+
           {/* Bouton pour effacer la référence */}
           {data.purchaseOrderNumber && canEdit && (
             <Button
@@ -942,7 +1141,9 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
               variant="ghost"
               size="sm"
               className="mt-1 h-auto p-0 text-xs text-muted-foreground hover:text-foreground"
-              onClick={() => setValue("purchaseOrderNumber", "", { shouldDirty: true })}
+              onClick={() =>
+                setValue("purchaseOrderNumber", "", { shouldDirty: true })
+              }
             >
               Effacer la référence
             </Button>
@@ -960,11 +1161,14 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" />
                 </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-[280px] sm:max-w-xs">
+                <TooltipContent
+                  side="top"
+                  className="max-w-[280px] sm:max-w-xs"
+                >
                   <p>
                     Date à laquelle la facture est créée et envoyée au client.
-                    Cette date est automatiquement définie lors de la création et
-                    sert de référence pour calculer la date d'échéance.
+                    Cette date est automatiquement définie lors de la création
+                    et sert de référence pour calculer la date d'échéance.
                   </p>
                 </TooltipContent>
               </Tooltip>
@@ -1007,7 +1211,9 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
               <PopoverContent className="w-auto p-0" align="start">
                 <Calendar
                   mode="single"
-                  selected={data.issueDate ? new Date(data.issueDate) : undefined}
+                  selected={
+                    data.issueDate ? new Date(data.issueDate) : undefined
+                  }
                   onSelect={(date) => {
                     const dateStr = format(date, "yyyy-MM-dd");
                     setValue("issueDate", dateStr, {
@@ -1021,9 +1227,7 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
               </PopoverContent>
             </Popover>
             {errors?.issueDate && (
-              <p className="text-xs text-red-500">
-                {errors.issueDate.message}
-              </p>
+              <p className="text-xs text-red-500">{errors.issueDate.message}</p>
             )}
           </div>
 
@@ -1034,11 +1238,15 @@ export default function InvoiceInfoSection({ canEdit, validateInvoiceNumber: val
                 <TooltipTrigger asChild>
                   <Info className="h-4 w-4 text-muted-foreground cursor-help" />
                 </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-[280px] sm:max-w-xs">
+                <TooltipContent
+                  side="top"
+                  className="max-w-[280px] sm:max-w-xs"
+                >
                   <p>
-                    Date limite de paiement de la facture. Au-delà de cette date,
-                    des pénalités de retard peuvent s'appliquer. Utilisez le sélecteur
-                    pour ajouter automatiquement 15, 30, 45 ou 60 jours.
+                    Date limite de paiement de la facture. Au-delà de cette
+                    date, des pénalités de retard peuvent s'appliquer. Utilisez
+                    le sélecteur pour ajouter automatiquement 15, 30, 45 ou 60
+                    jours.
                   </p>
                 </TooltipContent>
               </Tooltip>

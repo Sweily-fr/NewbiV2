@@ -98,6 +98,54 @@ export function SidebarTrialCard() {
 
   // Essai expiré
   if (isTrialExpired) {
+    // Mode rétréci : afficher uniquement l'icône couronne avec dropdown
+    if (isCollapsed && !isMobile) {
+      return (
+        <>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <div className="flex justify-center py-2 cursor-pointer hover:bg-accent rounded-md mx-1">
+                <CrownIcon className="h-5 w-5 text-[#5B4FFF]" />
+              </div>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              side="right"
+              align="start"
+              sideOffset={8}
+              className="w-[220px] p-3 bg-[#202020] border-none"
+            >
+              <div className="flex items-start gap-2">
+                <div className="flex-shrink-0 mt-[1px]">
+                  <CrownIcon className="h-3.5 w-3.5 text-[#5B4FFF]" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-white text-[12px] mb-2">
+                    Débloquez toutes les fonctionnalités
+                  </h3>
+                  <p className="text-[12px] text-white/80 mb-2">
+                    Votre période d'essai est terminée. Passez au premium pour
+                    continuer.
+                  </p>
+                  <div
+                    className="w-full text-xs font-semibold text-white flex items-center justify-between p-0 h-auto cursor-pointer hover:text-[#5B4FFF]"
+                    onClick={openPricingModal}
+                  >
+                    <span>Passer au premium</span>
+                    <ArrowRightIcon className="w-4 h-4 self-center stroke-[2]" />
+                  </div>
+                </div>
+              </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <PricingModal
+            isOpen={isPricingModalOpen}
+            onClose={() => setIsPricingModalOpen(false)}
+          />
+        </>
+      );
+    }
+
+    // Mode étendu : afficher la card complète
     return (
       <>
         <Card className="mb-2 bg-transparent shadow-xs py-3 rounded-md">
@@ -142,6 +190,54 @@ export function SidebarTrialCard() {
 
   // Essai urgent (3 jours ou moins)
   if (isInTrial && trialDaysRemaining <= 3) {
+    // Mode rétréci : afficher uniquement l'icône couronne avec dropdown
+    if (isCollapsed && !isMobile) {
+      return (
+        <>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <div className="flex justify-center py-2 cursor-pointer hover:bg-accent rounded-md mx-1">
+                <CrownIcon className="h-5 w-5 text-[#5B4FFF]" />
+              </div>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              side="right"
+              align="start"
+              sideOffset={8}
+              className="w-[220px] p-3 bg-[#202020] border-none"
+            >
+              <div className="flex items-start gap-2">
+                <div className="flex-shrink-0 mt-[1px]">
+                  <CrownIcon className="h-3.5 w-3.5 text-[#5B4FFF]" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-white text-[12px] mb-2">
+                    Débloquez toutes les fonctionnalités
+                  </h3>
+                  <p className="text-[12px] text-white/80 mb-2">
+                    Plus que {trialDaysRemaining} jour(s) d'essai. Passez au
+                    premium pour continuer.
+                  </p>
+                  <div
+                    className="w-full text-xs font-semibold text-white flex items-center justify-between p-0 h-auto cursor-pointer hover:text-[#5B4FFF]"
+                    onClick={openPricingModal}
+                  >
+                    <span>Passer au premium</span>
+                    <ArrowRightIcon className="w-4 h-4 self-center stroke-[2]" />
+                  </div>
+                </div>
+              </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <PricingModal
+            isOpen={isPricingModalOpen}
+            onClose={() => setIsPricingModalOpen(false)}
+          />
+        </>
+      );
+    }
+
+    // Mode étendu : afficher la card complète
     return (
       <>
         <Card className="mb-2 bg-transparent shadow-xs py-3 rounded-md">

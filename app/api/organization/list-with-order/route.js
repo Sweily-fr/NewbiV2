@@ -7,12 +7,9 @@ export async function GET(request) {
   try {
     // Vérifier l'authentification
     const session = await auth.api.getSession({ headers: await headers() });
-    
+
     if (!session?.user) {
-      return Response.json(
-        { error: "Non authentifié" },
-        { status: 401 }
-      );
+      return Response.json({ error: "Non authentifié" }, { status: 401 });
     }
 
     // Récupérer les membres de l'utilisateur avec l'ordre
