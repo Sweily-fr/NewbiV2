@@ -13,7 +13,6 @@ import {
   ChevronDown,
   ClipboardList,
   X,
-  RefreshCw,
 } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -56,6 +55,12 @@ import {
   CommandSeparator,
 } from "@/src/components/ui/command";
 import { cn } from "@/src/lib/utils";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/src/components/ui/accordion";
 import {
   generateInvoicePrefix,
   parseInvoicePrefix,
@@ -205,29 +210,37 @@ export default function InvoiceInfoSection({
     isInitialMount.current = false;
   }, []);
 
-  // Rechercher les factures de situation et le devis quand le type est "situation" et qu'il y a une référence devis
+  // Rechercher les factures de situation et le devis quand le type est "situation" et qu'il y a une référence
   React.useEffect(() => {
-    if (
-      data.invoiceType === "situation" &&
-      data.purchaseOrderNumber &&
-      workspaceId
-    ) {
-      fetchSituationInvoices({
-        variables: {
-          workspaceId,
-          purchaseOrderNumber: data.purchaseOrderNumber,
-        },
-      });
-      // Récupérer aussi le devis pour avoir le total du contrat
-      fetchQuoteByNumber({
-        variables: {
-          workspaceId,
-          number: data.purchaseOrderNumber,
-        },
-      });
+    if (data.invoiceType === "situation" && workspaceId) {
+      // Utiliser situationReference en priorité, sinon purchaseOrderNumber
+      const reference = data.situationReference || data.purchaseOrderNumber;
+
+      if (reference) {
+        console.log(
+          `🔍 Recherche des factures de situation pour la référence: ${reference}`
+        );
+        fetchSituationInvoices({
+          variables: {
+            workspaceId,
+            purchaseOrderNumber: reference,
+          },
+        });
+      }
+
+      // Récupérer aussi le devis si purchaseOrderNumber est fourni
+      if (data.purchaseOrderNumber) {
+        fetchQuoteByNumber({
+          variables: {
+            workspaceId,
+            number: data.purchaseOrderNumber,
+          },
+        });
+      }
     }
   }, [
     data.invoiceType,
+    data.situationReference,
     data.purchaseOrderNumber,
     workspaceId,
     fetchSituationInvoices,
@@ -451,6 +464,78 @@ export default function InvoiceInfoSection({
               { shouldDirty: true }
             );
           }
+
+          // Copier les informations financières supplémentaires
+          if (lastSituationInvoice.escompte !== undefined) {
+            setValue("escompte", lastSituationInvoice.escompte, {
+              shouldDirty: true,
+            });
+          }
+          if (lastSituationInvoice.retenueGarantie !== undefined) {
+            setValue("retenueGarantie", lastSituationInvoice.retenueGarantie, {
+              shouldDirty: true,
+            });
+          }
+          if (lastSituationInvoice.isReverseCharge !== undefined) {
+            setValue("isReverseCharge", lastSituationInvoice.isReverseCharge, {
+              shouldDirty: true,
+            });
+          }
+
+          // Copier la remise globale
+          if (lastSituationInvoice.discount !== undefined) {
+            setValue("discount", lastSituationInvoice.discount, {
+              shouldDirty: true,
+            });
+          }
+          if (lastSituationInvoice.discountType !== undefined) {
+            setValue("discountType", lastSituationInvoice.discountType, {
+              shouldDirty: true,
+            });
+          }
+
+          // Copier les notes et conditions
+          if (lastSituationInvoice.headerNotes !== undefined) {
+            setValue("headerNotes", lastSituationInvoice.headerNotes, {
+              shouldDirty: true,
+            });
+          }
+          if (lastSituationInvoice.footerNotes !== undefined) {
+            setValue("footerNotes", lastSituationInvoice.footerNotes, {
+              shouldDirty: true,
+            });
+          }
+          if (lastSituationInvoice.termsAndConditions !== undefined) {
+            setValue(
+              "termsAndConditions",
+              lastSituationInvoice.termsAndConditions,
+              { shouldDirty: true }
+            );
+          }
+
+          // Copier les préférences d'affichage
+          if (lastSituationInvoice.showBankDetails !== undefined) {
+            setValue("showBankDetails", lastSituationInvoice.showBankDetails, {
+              shouldDirty: true,
+            });
+          }
+          if (lastSituationInvoice.clientPositionRight !== undefined) {
+            setValue(
+              "clientPositionRight",
+              lastSituationInvoice.clientPositionRight,
+              { shouldDirty: true }
+            );
+          }
+
+          console.log("💰 [SITUATION COPY] Informations complètes copiées:", {
+            escompte: lastSituationInvoice.escompte,
+            retenueGarantie: lastSituationInvoice.retenueGarantie,
+            isReverseCharge: lastSituationInvoice.isReverseCharge,
+            discount: lastSituationInvoice.discount,
+            discountType: lastSituationInvoice.discountType,
+            showBankDetails: lastSituationInvoice.showBankDetails,
+            clientPositionRight: lastSituationInvoice.clientPositionRight,
+          });
         }
       }
       // Note: Si pas de factures de situation existantes, les articles seront copiés depuis le devis
@@ -465,6 +550,7 @@ export default function InvoiceInfoSection({
     situationData,
     data.invoiceType,
     data.id,
+    data.situationReference,
     data.purchaseOrderNumber,
     setValue,
     onSituationNumberChange,
@@ -601,732 +687,72 @@ export default function InvoiceInfoSection({
       "La date d'échéance doit être postérieure à la date d'émission"
     );
   };
+  // Construire le numéro de facture complet pour l'affichage
+  const fullInvoiceNumber = React.useMemo(() => {
+    const prefix = data.prefix || "";
+    const number =
+      data.number ||
+      (nextInvoiceNumber ? String(nextInvoiceNumber).padStart(4, "0") : "0001");
+    return prefix ? `${prefix}-${number}` : number;
+  }, [data.prefix, data.number, nextInvoiceNumber]);
+
   return (
-    <Card className="shadow-none p-2 border-none bg-transparent">
-      <CardHeader className="p-0">
-        <CardTitle className="flex items-center gap-2 font-normal text-lg">
-          {/* <Clock className="h-5 w-5" /> */}
-          Informations de la facture
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6 p-0">
-        {/* Type de facture */}
-        <div className="space-y-2">
-          <Label htmlFor="invoice-type" className="text-sm font-light">
-            Type de facture
-          </Label>
-          <Select
-            value={data.invoiceType || "standard"}
-            onValueChange={(value) => {
-              setValue("invoiceType", value, { shouldDirty: true });
-              // Mettre à jour isDepositInvoice pour la compatibilité
-              setValue("isDepositInvoice", value === "deposit", {
-                shouldDirty: true,
-              });
-
-              if (value === "situation") {
-                // Générer une référence automatique pour les factures de situation si pas de référence
-                if (!data.purchaseOrderNumber && !data.id) {
-                  const now = new Date();
-                  const autoRef = `SIT-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}-${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}${String(now.getSeconds()).padStart(2, "0")}`;
-                  setValue("purchaseOrderNumber", autoRef, {
-                    shouldDirty: true,
-                  });
-                }
-              } else {
-                // Si on change vers un autre type, effacer la référence auto-générée (SIT-...)
-                if (data.purchaseOrderNumber?.startsWith("SIT-")) {
-                  setValue("purchaseOrderNumber", "", { shouldDirty: true });
-                }
-              }
-            }}
-            disabled={!canEdit}
-          >
-            <SelectTrigger id="invoice-type" className="w-full">
-              <SelectValue placeholder="Sélectionner le type de facture" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItemWithDescription
-                value="standard"
-                description="Facturer le montant total en une seule facture."
-              >
-                Facture
-              </SelectItemWithDescription>
-              <SelectItemWithDescription
-                value="deposit"
-                description="Facturer le paiement anticipé avec la première facture."
-              >
-                Facture d'acompte
-              </SelectItemWithDescription>
-              <SelectItemWithDescription
-                value="situation"
-                description="Facturer une partie du montant total d'un projet en cours."
-              >
-                Facture de situation
-              </SelectItemWithDescription>
-            </SelectContent>
-          </Select>
-          {data.invoiceType === "situation" && (
-            <p className="text-xs text-muted-foreground">
-              Une référence unique est générée automatiquement. Vous pouvez la
-              modifier ou utiliser une référence de devis existante pour lier
-              plusieurs factures de situation.
-              {situationData?.situationInvoicesByQuoteRef?.length > 0 && (
-                <span className="block mt-1 text-primary font-medium">
-                  {situationData.situationInvoicesByQuoteRef.length} facture(s)
-                  de situation existante(s) avec cette référence.
-                </span>
-              )}
-            </p>
-          )}
-        </div>
-
-        {/* Préfixe et numéro de facture */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Label htmlFor="invoice-prefix" className="text-sm font-light">
-                Préfixe de facture
-              </Label>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                </TooltipTrigger>
-                <TooltipContent
-                  side="top"
-                  className="max-w-[280px] sm:max-w-xs"
-                >
-                  <p>
-                    Préfixe personnalisable pour identifier vos factures. Tapez{" "}
-                    <span className="font-mono">MM</span> pour insérer le mois
-                    actuel ou <span className="font-mono">AAAA</span> pour
-                    l'année.
-                  </p>
-                </TooltipContent>
-              </Tooltip>
-            </div>
-            <div className="space-y-1">
-              <div className="relative">
-                <Input
-                  id="invoice-prefix"
-                  {...register("prefix", {
-                    maxLength: {
-                      value: 20,
-                      message: "Le préfixe ne doit pas dépasser 20 caractères",
-                    },
-                    pattern: {
-                      value: /^[A-Za-z0-9-]*$/,
-                      message:
-                        "Le préfixe ne doit contenir que des lettres, chiffres et tirets (sans espaces ni caractères spéciaux)",
-                    },
-                  })}
-                  onChange={handlePrefixChange}
-                  onBlur={async (e) => {
-                    // Déclencher la validation du numéro quand le préfixe change
-                    const currentNumber = watch("number");
-                    if (currentNumber && validateInvoiceNumberExists) {
-                      await validateInvoiceNumberExists(
-                        currentNumber,
-                        e.target.value
-                      );
-                    }
-                  }}
-                  placeholder="F-MMYYYY"
-                  disabled={!canEdit}
-                />
-              </div>
-              {errors?.prefix && (
-                <p className="text-xs text-red-500">{errors.prefix.message}</p>
-              )}
-            </div>
+    <>
+      {/* Section Informations de la facture */}
+      <Card className="shadow-none p-2 border-none bg-transparent">
+        <CardHeader className="p-0">
+          <CardTitle className="flex items-center gap-2 font-normal text-lg">
+            Informations de la facture
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6 p-0">
+          {/* Numéro automatique de facture - Affiché en premier */}
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-muted-foreground">
+              Numéro automatique de facture :
+            </span>
+            <span className="font-medium">{fullInvoiceNumber}</span>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-[280px] sm:max-w-xs">
+                <p>
+                  Ce numéro est généré automatiquement de manière séquentielle.
+                  Vous pouvez le personnaliser dans les paramètres avancés
+                  ci-dessous.
+                </p>
+              </TooltipContent>
+            </Tooltip>
           </div>
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Label htmlFor="invoice-number" className="text-sm font-light">
-                Numéro de facture
-              </Label>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                </TooltipTrigger>
-                <TooltipContent
-                  side="top"
-                  className="max-w-[280px] sm:max-w-xs"
-                >
-                  <p>
-                    Numéro unique et séquentiel de votre facture. Il sera
-                    automatiquement formaté avec des zéros (ex: 000001). La
-                    numérotation doit être continue sans saut pour respecter les
-                    obligations légales.
-                  </p>
-                </TooltipContent>
-              </Tooltip>
-            </div>
-            <div className="space-y-1">
-              <Input
-                id="invoice-number"
-                {...register("number", {
-                  required: "Le numéro de facture est requis",
-                  validate: {
-                    isNumeric: (value) => {
-                      if (!/^\d+$/.test(value)) {
-                        return "Le numéro doit contenir uniquement des chiffres";
-                      }
-                      return true;
-                    },
-                    isValidSequence: (value) => {
-                      if (isLoadingInvoiceNumber) return true; // Skip validation while loading
-                      const result = validateInvoiceNumber(parseInt(value, 10));
-                      return result.isValid || result.message;
-                    },
-                  },
-                  minLength: {
-                    value: 1,
-                    message: "Le numéro est requis",
-                  },
-                  maxLength: {
-                    value: 6,
-                    message: "Le numéro ne peut pas dépasser 6 chiffres",
-                  },
-                })}
-                value={
-                  data.number ||
-                  (nextInvoiceNumber
-                    ? String(nextInvoiceNumber).padStart(4, "0")
-                    : "")
-                }
-                onChange={(e) => {
-                  // Allow only numbers and update the value
-                  const value = e.target.value.replace(/\D/g, "");
-                  setValue("number", value, { shouldValidate: true });
-                }}
-                placeholder={
-                  nextInvoiceNumber
-                    ? String(nextInvoiceNumber).padStart(4, "0")
-                    : "000001"
-                }
-                disabled={!canEdit || isLoadingInvoiceNumber}
-                onBlur={async (e) => {
-                  // Ne pas valider au montage initial pour éviter l'affichage de la bannière
-                  if (isInitialMount.current) {
-                    return;
-                  }
 
-                  // Format with leading zeros when leaving the field
-                  let finalNumber;
-                  if (e.target.value) {
-                    finalNumber = e.target.value.padStart(4, "0");
-                    setValue("number", finalNumber, { shouldValidate: true });
-                  } else if (nextInvoiceNumber) {
-                    // If field is empty, set to next invoice number
-                    finalNumber = String(nextInvoiceNumber).padStart(4, "0");
-                    setValue("number", finalNumber, { shouldValidate: true });
-                  }
-
-                  // Vérifier si le numéro existe déjà (avec le préfixe)
-                  if (finalNumber && validateInvoiceNumberExists) {
-                    const currentPrefix = watch("prefix");
-                    await validateInvoiceNumberExists(
-                      finalNumber,
-                      currentPrefix
-                    );
-                  }
-                }}
-                className={`${errors?.number ? "border-red-500" : ""}`}
-              />
-              {errors?.number ? (
-                <p className="text-xs text-red-500">{errors.number.message}</p>
-              ) : (
-                <></>
-                // <p className="text-xs text-muted-foreground">
-                //   {isLoadingInvoiceNumber
-                //     ? "Chargement du prochain numéro..."
-                //     : `Prochain numéro suggéré: ${nextInvoiceNumber ? String(nextInvoiceNumber).padStart(4, "0") : "000001"} (numérotation séquentielle)`}
-                // </p>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Référence devis / Référence de situation */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <Label
-                htmlFor="purchase-order-number"
-                className="text-sm font-light"
-              >
-                {data.invoiceType === "situation"
-                  ? "Référence de situation"
-                  : "Référence devis"}
-                {data.invoiceType === "situation" && (
-                  <span className="text-red-500">*</span>
-                )}
-              </Label>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                </TooltipTrigger>
-                <TooltipContent
-                  side="top"
-                  className="max-w-[280px] sm:max-w-xs"
-                >
-                  <p>
-                    {data.invoiceType === "situation"
-                      ? "Référence unique permettant de lier plusieurs factures de situation entre elles. Peut être une référence de devis ou une référence générée automatiquement."
-                      : "Référence du devis qui a été accepté et transformé en facture (optionnel). Permet de faire le lien entre devis et facture."}
-                  </p>
-                </TooltipContent>
-              </Tooltip>
-            </div>
-            {data.invoiceType === "situation" && canEdit && (
+          {/* Dates - Affichées juste après le numéro (empilées verticalement) */}
+          <div className="space-y-4">
+            {/* Date d'émission */}
+            <div className="space-y-2">
               <div className="flex items-center gap-2">
-                {/* Bouton pour vider la référence */}
-                {data.purchaseOrderNumber && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 bg-muted/50 hover:bg-muted rounded-md"
-                        onClick={() => {
-                          setValue("purchaseOrderNumber", "", {
-                            shouldDirty: true,
-                          });
-                        }}
-                      >
-                        <X className="h-3.5 w-3.5" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="top">
-                      <p>Vider la référence</p>
-                    </TooltipContent>
-                  </Tooltip>
-                )}
-                {/* Bouton pour générer une nouvelle référence */}
+                <Label className="text-sm font-light">
+                  Date d'émission <span className="text-red-500">*</span>
+                </Label>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7 bg-muted/50 hover:bg-muted rounded-md"
-                      onClick={() => {
-                        const now = new Date();
-                        const autoRef = `SIT-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}-${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}${String(now.getSeconds()).padStart(2, "0")}`;
-                        setValue("purchaseOrderNumber", autoRef, {
-                          shouldDirty: true,
-                        });
-                      }}
-                    >
-                      <RefreshCw className="h-3.5 w-3.5" />
-                    </Button>
+                    <Info className="h-4 w-4 text-muted-foreground cursor-help" />
                   </TooltipTrigger>
-                  <TooltipContent side="top">
-                    <p>Générer une nouvelle référence automatique</p>
+                  <TooltipContent
+                    side="top"
+                    className="max-w-[280px] sm:max-w-xs"
+                  >
+                    <p>
+                      Date à laquelle la facture est créée et envoyée au client.
+                      Cette date sert de référence pour calculer la date
+                      d'échéance.
+                    </p>
                   </TooltipContent>
                 </Tooltip>
               </div>
-            )}
-          </div>
-          <Popover
-            open={referenceSearchOpen}
-            onOpenChange={setReferenceSearchOpen}
-          >
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                role="combobox"
-                aria-expanded={referenceSearchOpen}
-                className="w-full justify-between font-normal"
-                disabled={!canEdit}
-              >
-                {data.purchaseOrderNumber || (
-                  <span className="text-muted-foreground">
-                    {data.invoiceType === "situation"
-                      ? "Rechercher ou saisir une référence..."
-                      : "Rechercher un devis..."}
-                  </span>
-                )}
-                <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-[490px] p-0" align="start">
-              {/* Onglets de filtre - uniquement pour les factures de situation */}
-              {data.invoiceType === "situation" && (
-                <div className="p-2 border-b">
-                  <div className="flex gap-1">
-                    <Button
-                      type="button"
-                      variant={referenceFilter === "all" ? "default" : "ghost"}
-                      size="sm"
-                      className="h-8 text-sm font-normal"
-                      onClick={() => setReferenceFilter("all")}
-                    >
-                      Tout
-                    </Button>
-                    <Button
-                      type="button"
-                      variant={
-                        referenceFilter === "quotes" ? "default" : "ghost"
-                      }
-                      size="sm"
-                      className="h-8 text-sm font-normal"
-                      onClick={() => setReferenceFilter("quotes")}
-                    >
-                      <FileText className="h-4 w-4 mr-1.5" />
-                      Devis ({quotesData?.quotes?.quotes?.length || 0})
-                    </Button>
-                    <Button
-                      type="button"
-                      variant={
-                        referenceFilter === "situations" ? "default" : "ghost"
-                      }
-                      size="sm"
-                      className="h-8 text-sm font-normal"
-                      onClick={() => setReferenceFilter("situations")}
-                    >
-                      <ClipboardList className="h-4 w-4 mr-1.5" />
-                      Situations (
-                      {situationRefsData?.situationReferences?.length || 0})
-                    </Button>
-                  </div>
-                </div>
-              )}
-              <Command shouldFilter={false}>
-                <CommandInput
-                  placeholder="Rechercher un devis..."
-                  value={referenceSearchTerm}
-                  onValueChange={setReferenceSearchTerm}
-                />
-                <CommandList className="max-h-[280px]">
-                  <CommandEmpty>
-                    {loadingQuotes || loadingSituationRefs ? (
-                      <span className="text-muted-foreground">
-                        Recherche en cours...
-                      </span>
-                    ) : (
-                      <span className="text-muted-foreground">
-                        Aucun résultat trouvé
-                      </span>
-                    )}
-                  </CommandEmpty>
-
-                  {/* Devis acceptés */}
-                  {(referenceFilter === "all" ||
-                    referenceFilter === "quotes") &&
-                    quotesData?.quotes?.quotes?.length > 0 &&
-                    (() => {
-                      // Pour les factures de situation, filtrer les devis dont le total facturé a atteint le montant du devis
-                      const availableQuotes =
-                        data.invoiceType === "situation"
-                          ? quotesData.quotes.quotes.filter((quote) => {
-                              const invoicedTotal =
-                                quote.situationInvoicedTotal || 0;
-                              const contractTotal = quote.finalTotalTTC || 0;
-                              // Afficher uniquement si le total facturé est inférieur au contrat
-                              return invoicedTotal < contractTotal;
-                            })
-                          : quotesData.quotes.quotes;
-
-                      if (availableQuotes.length === 0) return null;
-
-                      return (
-                        <CommandGroup
-                          heading={`Devis acceptés (${availableQuotes.length})`}
-                        >
-                          {[...availableQuotes]
-                            .sort((a, b) => {
-                              // Trier par numéro décroissant pour avoir les plus récents en premier
-                              const numA = parseInt(a.number) || 0;
-                              const numB = parseInt(b.number) || 0;
-                              return numB - numA;
-                            })
-                            .map((quote) => {
-                              const fullRef = quote.prefix
-                                ? `${quote.prefix}-${quote.number}`
-                                : quote.number;
-                              const invoicedTotal =
-                                quote.situationInvoicedTotal || 0;
-                              const remaining =
-                                data.invoiceType === "situation" &&
-                                invoicedTotal > 0
-                                  ? quote.finalTotalTTC - invoicedTotal
-                                  : null;
-
-                              return (
-                                <CommandItem
-                                  key={quote.id}
-                                  value={fullRef}
-                                  onSelect={() => {
-                                    setValue("purchaseOrderNumber", fullRef, {
-                                      shouldDirty: true,
-                                    });
-                                    setReferenceSearchOpen(false);
-                                    setReferenceSearchTerm("");
-                                    setReferenceFilter("all");
-                                  }}
-                                  className="flex items-center gap-2 cursor-pointer"
-                                >
-                                  <FileText className="h-4 w-4 text-blue-500 shrink-0" />
-                                  <div className="flex-1 min-w-0">
-                                    <div className="font-normal truncate">
-                                      {fullRef}
-                                    </div>
-                                    <div className="text-xs text-muted-foreground truncate">
-                                      {quote.client?.name} •{" "}
-                                      {formatCurrency(quote.finalTotalTTC)}
-                                      {remaining !== null && (
-                                        <>
-                                          {" • "}
-                                          <span style={{ color: "#5a50ff" }}>
-                                            Reste: {formatCurrency(remaining)}
-                                          </span>
-                                        </>
-                                      )}
-                                    </div>
-                                  </div>
-                                </CommandItem>
-                              );
-                            })}
-                        </CommandGroup>
-                      );
-                    })()}
-
-                  {/* Références de situation existantes - uniquement pour les factures de situation */}
-                  {data.invoiceType === "situation" &&
-                    (referenceFilter === "all" ||
-                      referenceFilter === "situations") &&
-                    situationRefsData?.situationReferences?.length > 0 &&
-                    (() => {
-                      // Filtrer les références dont le total n'a pas atteint le montant du contrat
-                      const availableRefs =
-                        situationRefsData.situationReferences.filter((ref) => {
-                          // Si pas de montant de contrat défini, afficher la référence
-                          if (!ref.contractTotal || ref.contractTotal === 0)
-                            return true;
-                          // Afficher uniquement si le total facturé est inférieur au contrat
-                          return ref.totalTTC < ref.contractTotal;
-                        });
-
-                      if (availableRefs.length === 0) return null;
-
-                      return (
-                        <>
-                          {referenceFilter === "all" &&
-                            quotesData?.quotes?.quotes?.length > 0 && (
-                              <CommandSeparator />
-                            )}
-                          <CommandGroup
-                            heading={`Factures de situation (${availableRefs.length})`}
-                          >
-                            {availableRefs.map((ref) => {
-                              const remaining = ref.contractTotal
-                                ? ref.contractTotal - ref.totalTTC
-                                : null;
-                              return (
-                                <CommandItem
-                                  key={ref.reference}
-                                  value={ref.reference}
-                                  onSelect={() => {
-                                    setValue(
-                                      "purchaseOrderNumber",
-                                      ref.reference,
-                                      { shouldDirty: true }
-                                    );
-                                    setReferenceSearchOpen(false);
-                                    setReferenceSearchTerm("");
-                                    setReferenceFilter("all");
-                                  }}
-                                  className="flex items-center gap-2 cursor-pointer"
-                                >
-                                  <ClipboardList className="h-4 w-4 shrink-0" />
-                                  <div className="flex-1 min-w-0">
-                                    <div className="font-normal truncate">
-                                      {ref.reference}
-                                    </div>
-                                    <div className="text-xs text-muted-foreground truncate">
-                                      {ref.count} facture(s) • Facturé:{" "}
-                                      {formatCurrency(ref.totalTTC)}
-                                      {remaining !== null && (
-                                        <>
-                                          {" • "}
-                                          <span style={{ color: "#5a50ff" }}>
-                                            Reste: {formatCurrency(remaining)}
-                                          </span>
-                                        </>
-                                      )}
-                                    </div>
-                                  </div>
-                                </CommandItem>
-                              );
-                            })}
-                          </CommandGroup>
-                        </>
-                      );
-                    })()}
-
-                  {/* Option pour saisir manuellement */}
-                  {referenceSearchTerm && (
-                    <>
-                      <CommandSeparator />
-                      <CommandGroup heading="Saisie manuelle">
-                        <CommandItem
-                          value={referenceSearchTerm}
-                          onSelect={() => {
-                            setValue(
-                              "purchaseOrderNumber",
-                              referenceSearchTerm,
-                              { shouldDirty: true }
-                            );
-                            setReferenceSearchOpen(false);
-                            setReferenceSearchTerm("");
-                            setReferenceFilter("all");
-                          }}
-                          className="flex items-center gap-2 cursor-pointer"
-                        >
-                          <Search className="h-4 w-4 text-gray-500 shrink-0" />
-                          <div className="flex-1 min-w-0">
-                            <div className="font-medium truncate">
-                              Utiliser "{referenceSearchTerm}"
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              Saisir cette référence manuellement
-                            </div>
-                          </div>
-                        </CommandItem>
-                      </CommandGroup>
-                    </>
-                  )}
-                </CommandList>
-              </Command>
-            </PopoverContent>
-          </Popover>
-
-          {/* Bouton pour effacer la référence */}
-          {data.purchaseOrderNumber && canEdit && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="mt-1 h-auto p-0 text-xs text-muted-foreground hover:text-foreground"
-              onClick={() =>
-                setValue("purchaseOrderNumber", "", { shouldDirty: true })
-              }
-            >
-              Effacer la référence
-            </Button>
-          )}
-        </div>
-
-        {/* Dates */}
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Label className="text-sm font-light">
-                Date d'émission <span className="text-red-500">*</span>
-              </Label>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                </TooltipTrigger>
-                <TooltipContent
-                  side="top"
-                  className="max-w-[280px] sm:max-w-xs"
-                >
-                  <p>
-                    Date à laquelle la facture est créée et envoyée au client.
-                    Cette date est automatiquement définie lors de la création
-                    et sert de référence pour calculer la date d'échéance.
-                  </p>
-                </TooltipContent>
-              </Tooltip>
-            </div>
-            <input
-              type="hidden"
-              {...register("issueDate", {
-                required: false, // On ne veut plus de message d'erreur
-              })}
-            />
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  disabled={!canEdit}
-                  className={cn(
-                    "w-full justify-start font-normal text-left",
-                    !data.issueDate && "text-muted-foreground",
-                    errors?.issueDate && "border-red-500"
-                  )}
-                  type="button"
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {data.issueDate ? (
-                    (() => {
-                      try {
-                        const date = new Date(data.issueDate);
-                        if (isNaN(date.getTime()))
-                          return <span>Date invalide</span>;
-                        return format(date, "PPP", { locale: fr });
-                      } catch (error) {
-                        return <span>Date invalide</span>;
-                      }
-                    })()
-                  ) : (
-                    <span>Choisir une date</span>
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={
-                    data.issueDate ? new Date(data.issueDate) : undefined
-                  }
-                  onSelect={(date) => {
-                    const dateStr = format(date, "yyyy-MM-dd");
-                    setValue("issueDate", dateStr, {
-                      shouldDirty: true,
-                      shouldValidate: true,
-                    });
-                  }}
-                  initialFocus
-                  locale={fr}
-                />
-              </PopoverContent>
-            </Popover>
-            {errors?.issueDate && (
-              <p className="text-xs text-red-500">{errors.issueDate.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Label className="text-sm font-light">Date d'échéance</Label>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                </TooltipTrigger>
-                <TooltipContent
-                  side="top"
-                  className="max-w-[280px] sm:max-w-xs"
-                >
-                  <p>
-                    Date limite de paiement de la facture. Au-delà de cette
-                    date, des pénalités de retard peuvent s'appliquer. Utilisez
-                    le sélecteur pour ajouter automatiquement 15, 30, 45 ou 60
-                    jours.
-                  </p>
-                </TooltipContent>
-              </Tooltip>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 w-full">
               <input
                 type="hidden"
-                {...register("dueDate", {
-                  validate: validateDueDate,
-                })}
+                {...register("issueDate", { required: false })}
               />
               <Popover>
                 <PopoverTrigger asChild>
@@ -1335,16 +761,16 @@ export default function InvoiceInfoSection({
                     disabled={!canEdit}
                     className={cn(
                       "w-full justify-start font-normal text-left",
-                      !data.dueDate && "text-muted-foreground",
-                      errors?.dueDate && "border-red-500"
+                      !data.issueDate && "text-muted-foreground",
+                      errors?.issueDate && "border-red-500"
                     )}
                     type="button"
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {data.dueDate ? (
+                    {data.issueDate ? (
                       (() => {
                         try {
-                          const date = new Date(data.dueDate);
+                          const date = new Date(data.issueDate);
                           if (isNaN(date.getTime()))
                             return <span>Date invalide</span>;
                           return format(date, "PPP", { locale: fr });
@@ -1360,10 +786,12 @@ export default function InvoiceInfoSection({
                 <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
                     mode="single"
-                    selected={data.dueDate ? new Date(data.dueDate) : undefined}
+                    selected={
+                      data.issueDate ? new Date(data.issueDate) : undefined
+                    }
                     onSelect={(date) => {
                       const dateStr = format(date, "yyyy-MM-dd");
-                      setValue("dueDate", dateStr, {
+                      setValue("issueDate", dateStr, {
                         shouldDirty: true,
                         shouldValidate: true,
                       });
@@ -1373,41 +801,812 @@ export default function InvoiceInfoSection({
                   />
                 </PopoverContent>
               </Popover>
-              <Select
-                onValueChange={(value) => {
-                  const days = parseInt(value);
-                  const issueDate = new Date(data.issueDate || new Date());
-                  const dueDate = new Date(issueDate);
-                  dueDate.setDate(dueDate.getDate() + days);
-                  setValue("dueDate", dueDate.toISOString().split("T")[0], {
-                    shouldDirty: true,
-                    shouldValidate: true, // Ajout de la validation
-                  });
-                }}
-                disabled={!canEdit}
-                defaultValue="30"
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="30 jours" />
-                </SelectTrigger>
-                <SelectContent>
-                  {PAYMENT_TERMS_SUGGESTIONS.map((term) => (
-                    <SelectItem key={term.value} value={term.value.toString()}>
-                      {term.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {errors?.issueDate && (
+                <p className="text-xs text-red-500">
+                  {errors.issueDate.message}
+                </p>
+              )}
             </div>
-            {errors?.dueDate && (
-              <p className="text-xs text-red-500">{errors.dueDate.message}</p>
-            )}
-            <p className="text-xs">
-              Utilisez le sélecteur "+" pour ajouter des jours automatiquement
-            </p>
+
+            {/* Date d'échéance */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Label className="text-sm font-light">Date d'échéance</Label>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="top"
+                    className="max-w-[280px] sm:max-w-xs"
+                  >
+                    <p>
+                      Date limite de paiement de la facture. Au-delà de cette
+                      date, des pénalités de retard peuvent s'appliquer.
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+              <input
+                type="hidden"
+                {...register("dueDate", { validate: validateDueDate })}
+              />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 w-full">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      disabled={!canEdit}
+                      className={cn(
+                        "w-full justify-start font-normal text-left",
+                        !data.dueDate && "text-muted-foreground",
+                        errors?.dueDate && "border-red-500"
+                      )}
+                      type="button"
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {data.dueDate ? (
+                        (() => {
+                          try {
+                            const date = new Date(data.dueDate);
+                            if (isNaN(date.getTime()))
+                              return <span>Date invalide</span>;
+                            return format(date, "PPP", { locale: fr });
+                          } catch (error) {
+                            return <span>Date invalide</span>;
+                          }
+                        })()
+                      ) : (
+                        <span>Choisir une date</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={
+                        data.dueDate ? new Date(data.dueDate) : undefined
+                      }
+                      onSelect={(date) => {
+                        const dateStr = format(date, "yyyy-MM-dd");
+                        setValue("dueDate", dateStr, {
+                          shouldDirty: true,
+                          shouldValidate: true,
+                        });
+                      }}
+                      initialFocus
+                      locale={fr}
+                    />
+                  </PopoverContent>
+                </Popover>
+                <Select
+                  onValueChange={(value) => {
+                    const days = parseInt(value);
+                    const issueDate = new Date(data.issueDate || new Date());
+                    const dueDate = new Date(issueDate);
+                    dueDate.setDate(dueDate.getDate() + days);
+                    setValue("dueDate", dueDate.toISOString().split("T")[0], {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    });
+                  }}
+                  disabled={!canEdit}
+                  defaultValue="30"
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="30 jours" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PAYMENT_TERMS_SUGGESTIONS.map((term) => (
+                      <SelectItem
+                        key={term.value}
+                        value={term.value.toString()}
+                      >
+                        {term.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {errors?.dueDate && (
+                <p className="text-xs text-red-500">{errors.dueDate.message}</p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Utilisez le sélecteur pour ajouter des jours automatiquement
+              </p>
+            </div>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+
+      {/* Section Type de facture - Séparée */}
+      <Card className="shadow-none p-2 mb-4 border-none bg-transparent">
+        <CardHeader className="p-0">
+          <CardTitle className="flex items-center gap-2 font-normal text-lg">
+            Type de facture
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6 p-0">
+          {/* Sélecteur de type */}
+          <div className="space-y-2">
+            <Select
+              value={data.invoiceType || "standard"}
+              onValueChange={(value) => {
+                setValue("invoiceType", value, { shouldDirty: true });
+                setValue("isDepositInvoice", value === "deposit", {
+                  shouldDirty: true,
+                });
+
+                if (value === "situation") {
+                  if (!data.situationReference && !data.id) {
+                    const year = new Date().getFullYear();
+                    const randomNum = String(
+                      Math.floor(Math.random() * 1000)
+                    ).padStart(3, "0");
+                    const autoRef = `SIT-${year}-${randomNum}`;
+                    setValue("situationReference", autoRef, {
+                      shouldDirty: true,
+                    });
+                  }
+                }
+              }}
+              disabled={!canEdit}
+            >
+              <SelectTrigger id="invoice-type" className="w-full">
+                <SelectValue placeholder="Sélectionner le type de facture" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItemWithDescription
+                  value="standard"
+                  description="Facturer le montant total en une seule facture."
+                >
+                  Facture
+                </SelectItemWithDescription>
+                <SelectItemWithDescription
+                  value="deposit"
+                  description="Facturer le paiement anticipé avec la première facture."
+                >
+                  Facture d'acompte
+                </SelectItemWithDescription>
+                <SelectItemWithDescription
+                  value="situation"
+                  description="Facturer une partie du montant total d'un projet en cours."
+                >
+                  Facture de situation
+                </SelectItemWithDescription>
+              </SelectContent>
+            </Select>
+            {data.invoiceType === "situation" && (
+              <p className="text-xs text-muted-foreground">
+                Une référence unique est générée automatiquement. Vous pouvez la
+                modifier ou utiliser une référence de devis existante pour lier
+                plusieurs factures de situation.
+                {situationData?.situationInvoicesByQuoteRef?.length > 0 && (
+                  <span className="block mt-1 text-primary font-medium">
+                    {situationData.situationInvoicesByQuoteRef.length}{" "}
+                    facture(s) de situation existante(s) avec cette référence.
+                  </span>
+                )}
+              </p>
+            )}
+          </div>
+
+          {/* Référence de situation - Combobox unifié */}
+          {data.invoiceType === "situation" && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <Label
+                    htmlFor="situation-reference"
+                    className="text-sm font-light"
+                  >
+                    Référence de situation{" "}
+                    <span className="text-red-500">*</span>
+                  </Label>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent
+                      side="top"
+                      className="max-w-[280px] sm:max-w-xs"
+                    >
+                      <p>
+                        Tapez une nouvelle référence ou sélectionnez un projet
+                        existant pour continuer la facturation progressive.
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+                {canEdit && data.situationReference && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 bg-muted/50 hover:bg-muted rounded-md"
+                        onClick={() => {
+                          setValue("situationReference", "", {
+                            shouldDirty: true,
+                          });
+                          setValue("purchaseOrderNumber", "", {
+                            shouldDirty: true,
+                          });
+                        }}
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">
+                      <p>Effacer pour saisir manuellement</p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+              </div>
+              <input type="hidden" {...register("situationReference")} />
+              <Popover
+                open={referenceSearchOpen}
+                onOpenChange={setReferenceSearchOpen}
+              >
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={referenceSearchOpen}
+                    className={cn(
+                      "w-full justify-between font-normal",
+                      errors?.situationReference && "border-red-500"
+                    )}
+                    disabled={!canEdit}
+                  >
+                    {data.situationReference ? (
+                      <span className="flex items-center gap-2">
+                        {situationData?.situationInvoicesByQuoteRef?.length >
+                        0 ? (
+                          <ClipboardList className="h-4 w-4 text-primary shrink-0" />
+                        ) : data.purchaseOrderNumber ? (
+                          <FileText className="h-4 w-4 text-blue-500 shrink-0" />
+                        ) : null}
+                        {data.situationReference}
+                        {situationData?.situationInvoicesByQuoteRef?.length >
+                          0 && (
+                          <span className="text-xs text-muted-foreground">
+                            ({situationData.situationInvoicesByQuoteRef.length}{" "}
+                            facture(s))
+                          </span>
+                        )}
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">
+                        Tapez ou sélectionnez une référence...
+                      </span>
+                    )}
+                    <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[490px] p-0" align="start">
+                  <div className="p-2 border-b">
+                    <div className="flex gap-1">
+                      <Button
+                        type="button"
+                        variant={
+                          referenceFilter === "all" ? "default" : "ghost"
+                        }
+                        size="sm"
+                        className="h-8 text-sm font-normal"
+                        onClick={() => setReferenceFilter("all")}
+                      >
+                        Tout
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={
+                          referenceFilter === "situations" ? "default" : "ghost"
+                        }
+                        size="sm"
+                        className="h-8 text-sm font-normal"
+                        onClick={() => setReferenceFilter("situations")}
+                      >
+                        <ClipboardList className="h-4 w-4 mr-1.5" />
+                        Projets (
+                        {situationRefsData?.situationReferences?.length || 0})
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={
+                          referenceFilter === "quotes" ? "default" : "ghost"
+                        }
+                        size="sm"
+                        className="h-8 text-sm font-normal"
+                        onClick={() => setReferenceFilter("quotes")}
+                      >
+                        <FileText className="h-4 w-4 mr-1.5" />
+                        Devis ({quotesData?.quotes?.quotes?.length || 0})
+                      </Button>
+                    </div>
+                  </div>
+                  <Command shouldFilter={false}>
+                    <CommandInput
+                      placeholder="Tapez une nouvelle référence ou recherchez..."
+                      value={referenceSearchTerm}
+                      onValueChange={setReferenceSearchTerm}
+                    />
+                    <CommandList className="max-h-[280px]">
+                      <CommandEmpty>
+                        {loadingQuotes || loadingSituationRefs ? (
+                          <span className="text-muted-foreground">
+                            Recherche en cours...
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">
+                            Aucun projet existant. Tapez pour créer une nouvelle
+                            référence.
+                          </span>
+                        )}
+                      </CommandEmpty>
+
+                      {/* Option pour créer une nouvelle référence avec le texte saisi */}
+                      {referenceSearchTerm && (
+                        <CommandGroup heading="Nouvelle référence">
+                          <CommandItem
+                            value={`new-${referenceSearchTerm}`}
+                            onSelect={() => {
+                              setValue(
+                                "situationReference",
+                                referenceSearchTerm,
+                                { shouldDirty: true }
+                              );
+                              setValue("purchaseOrderNumber", "", {
+                                shouldDirty: true,
+                              });
+                              setReferenceSearchOpen(false);
+                              setReferenceSearchTerm("");
+                              setReferenceFilter("all");
+                            }}
+                            className="flex items-center gap-2 cursor-pointer"
+                          >
+                            <Search className="h-4 w-4 text-green-500 shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium truncate">
+                                Créer "{referenceSearchTerm}"
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                Nouveau projet de situation
+                              </div>
+                            </div>
+                          </CommandItem>
+                        </CommandGroup>
+                      )}
+
+                      {/* Projets de situation existants */}
+                      {(referenceFilter === "all" ||
+                        referenceFilter === "situations") &&
+                        situationRefsData?.situationReferences?.length > 0 &&
+                        (() => {
+                          const availableRefs =
+                            situationRefsData.situationReferences.filter(
+                              (ref) => {
+                                if (
+                                  !ref.contractTotal ||
+                                  ref.contractTotal === 0
+                                )
+                                  return true;
+                                return ref.totalTTC < ref.contractTotal;
+                              }
+                            );
+
+                          if (availableRefs.length === 0) return null;
+
+                          return (
+                            <>
+                              {referenceSearchTerm && <CommandSeparator />}
+                              <CommandGroup
+                                heading={`Projets existants (${availableRefs.length})`}
+                              >
+                                {availableRefs.map((ref) => {
+                                  const remaining = ref.contractTotal
+                                    ? ref.contractTotal - ref.totalTTC
+                                    : null;
+                                  return (
+                                    <CommandItem
+                                      key={ref.reference}
+                                      value={ref.reference}
+                                      onSelect={() => {
+                                        setValue(
+                                          "situationReference",
+                                          ref.reference,
+                                          { shouldDirty: true }
+                                        );
+                                        setValue("purchaseOrderNumber", "", {
+                                          shouldDirty: true,
+                                        });
+                                        setReferenceSearchOpen(false);
+                                        setReferenceSearchTerm("");
+                                        setReferenceFilter("all");
+                                      }}
+                                      className="flex items-center gap-2 cursor-pointer"
+                                    >
+                                      <ClipboardList className="h-4 w-4 text-primary shrink-0" />
+                                      <div className="flex-1 min-w-0">
+                                        <div className="font-normal truncate">
+                                          {ref.reference}
+                                        </div>
+                                        <div className="text-xs text-muted-foreground truncate">
+                                          {ref.count} facture(s) • Facturé:{" "}
+                                          {formatCurrency(ref.totalTTC)}
+                                          {remaining !== null && (
+                                            <>
+                                              {" • "}
+                                              <span
+                                                style={{ color: "#5a50ff" }}
+                                              >
+                                                Reste:{" "}
+                                                {formatCurrency(remaining)}
+                                              </span>
+                                            </>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </CommandItem>
+                                  );
+                                })}
+                              </CommandGroup>
+                            </>
+                          );
+                        })()}
+
+                      {/* Devis acceptés */}
+                      {(referenceFilter === "all" ||
+                        referenceFilter === "quotes") &&
+                        quotesData?.quotes?.quotes?.length > 0 &&
+                        (() => {
+                          const availableQuotes =
+                            quotesData.quotes.quotes.filter((quote) => {
+                              const invoicedTotal =
+                                quote.situationInvoicedTotal || 0;
+                              const contractTotal = quote.finalTotalTTC || 0;
+                              return invoicedTotal < contractTotal;
+                            });
+
+                          if (availableQuotes.length === 0) return null;
+
+                          return (
+                            <>
+                              {(referenceSearchTerm ||
+                                situationRefsData?.situationReferences?.length >
+                                  0) && <CommandSeparator />}
+                              <CommandGroup
+                                heading={`Devis acceptés (${availableQuotes.length})`}
+                              >
+                                {[...availableQuotes]
+                                  .sort((a, b) => {
+                                    const numA = parseInt(a.number) || 0;
+                                    const numB = parseInt(b.number) || 0;
+                                    return numB - numA;
+                                  })
+                                  .map((quote) => {
+                                    const fullRef = quote.prefix
+                                      ? `${quote.prefix}-${quote.number}`
+                                      : quote.number;
+                                    const invoicedTotal =
+                                      quote.situationInvoicedTotal || 0;
+                                    const remaining =
+                                      invoicedTotal > 0
+                                        ? quote.finalTotalTTC - invoicedTotal
+                                        : quote.finalTotalTTC;
+
+                                    return (
+                                      <CommandItem
+                                        key={quote.id}
+                                        value={fullRef}
+                                        onSelect={() => {
+                                          // Pour un devis, on utilise la référence du devis comme situationReference
+                                          // et on garde aussi purchaseOrderNumber pour le lien avec le devis
+                                          setValue(
+                                            "situationReference",
+                                            fullRef,
+                                            { shouldDirty: true }
+                                          );
+                                          setValue(
+                                            "purchaseOrderNumber",
+                                            fullRef,
+                                            { shouldDirty: true }
+                                          );
+                                          setReferenceSearchOpen(false);
+                                          setReferenceSearchTerm("");
+                                          setReferenceFilter("all");
+                                        }}
+                                        className="flex items-center gap-2 cursor-pointer"
+                                      >
+                                        <FileText className="h-4 w-4 text-blue-500 shrink-0" />
+                                        <div className="flex-1 min-w-0">
+                                          <div className="font-normal truncate">
+                                            {fullRef}
+                                          </div>
+                                          <div className="text-xs text-muted-foreground truncate">
+                                            {quote.client?.name} •{" "}
+                                            {formatCurrency(
+                                              quote.finalTotalTTC
+                                            )}
+                                            {invoicedTotal > 0 && (
+                                              <>
+                                                {" • "}
+                                                <span
+                                                  style={{ color: "#5a50ff" }}
+                                                >
+                                                  Reste:{" "}
+                                                  {formatCurrency(remaining)}
+                                                </span>
+                                              </>
+                                            )}
+                                          </div>
+                                        </div>
+                                      </CommandItem>
+                                    );
+                                  })}
+                              </CommandGroup>
+                            </>
+                          );
+                        })()}
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+              {errors?.situationReference && (
+                <p className="text-xs text-red-500">
+                  {errors.situationReference.message}
+                </p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                {situationData?.situationInvoicesByQuoteRef?.length > 0 ? (
+                  <span className="text-primary font-medium">
+                    {situationData.situationInvoicesByQuoteRef.length}{" "}
+                    facture(s) existante(s) • Les articles seront copiés
+                    automatiquement
+                  </span>
+                ) : data.purchaseOrderNumber ? (
+                  <span className="text-blue-600 font-medium">
+                    Basé sur le devis {data.purchaseOrderNumber} • Les articles
+                    seront copiés automatiquement
+                  </span>
+                ) : (
+                  "Tapez une nouvelle référence ou sélectionnez un projet existant"
+                )}
+              </p>
+            </div>
+          )}
+
+          {/* Montant total du contrat (pour situations sans devis) */}
+          {data.invoiceType === "situation" && !quoteData?.quoteByNumber && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Label htmlFor="contract-total" className="text-sm font-light">
+                  Montant total du contrat (€)
+                </Label>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="top"
+                    className="max-w-[280px] sm:max-w-xs"
+                  >
+                    <p>
+                      Montant total TTC du contrat. Ce montant servira de
+                      référence pour valider que le total de toutes les factures
+                      de situation ne dépasse pas le contrat.
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+              <Input
+                id="contract-total"
+                type="number"
+                step="0.01"
+                min="0"
+                {...register("contractTotal", {
+                  valueAsNumber: true,
+                  min: {
+                    value: 0,
+                    message: "Le montant doit être positif",
+                  },
+                })}
+                placeholder="Ex: 50000.00"
+                disabled={!canEdit}
+                className={errors?.contractTotal ? "border-red-500" : ""}
+              />
+              {errors?.contractTotal && (
+                <p className="text-xs text-red-500">
+                  {errors.contractTotal.message}
+                </p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Optionnel. Si non renseigné, aucune validation du montant total
+                ne sera effectuée.
+              </p>
+            </div>
+          )}
+
+          {/* Référence devis - uniquement pour les factures standard et acompte */}
+          {data.invoiceType !== "situation" && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <Label
+                    htmlFor="purchase-order-number"
+                    className="text-sm font-light"
+                  >
+                    Référence devis
+                  </Label>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent
+                      side="top"
+                      className="max-w-[280px] sm:max-w-xs"
+                    >
+                      <p>
+                        Référence du devis qui a été accepté et transformé en
+                        facture (optionnel). Permet de faire le lien entre devis
+                        et facture.
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+              </div>
+              <Popover
+                open={referenceSearchOpen}
+                onOpenChange={setReferenceSearchOpen}
+              >
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={referenceSearchOpen}
+                    className="w-full justify-between font-normal"
+                    disabled={!canEdit}
+                  >
+                    {data.purchaseOrderNumber || (
+                      <span className="text-muted-foreground">
+                        Rechercher un devis...
+                      </span>
+                    )}
+                    <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[490px] p-0" align="start">
+                  <Command shouldFilter={false}>
+                    <CommandInput
+                      placeholder="Rechercher un devis..."
+                      value={referenceSearchTerm}
+                      onValueChange={setReferenceSearchTerm}
+                    />
+                    <CommandList className="max-h-[280px]">
+                      <CommandEmpty>
+                        {loadingQuotes ? (
+                          <span className="text-muted-foreground">
+                            Recherche en cours...
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">
+                            Aucun devis trouvé
+                          </span>
+                        )}
+                      </CommandEmpty>
+
+                      {/* Devis acceptés */}
+                      {quotesData?.quotes?.quotes?.length > 0 &&
+                        (() => {
+                          const availableQuotes = quotesData.quotes.quotes;
+
+                          if (availableQuotes.length === 0) return null;
+
+                          return (
+                            <CommandGroup
+                              heading={`Devis acceptés (${availableQuotes.length})`}
+                            >
+                              {[...availableQuotes]
+                                .sort((a, b) => {
+                                  // Trier par numéro décroissant pour avoir les plus récents en premier
+                                  const numA = parseInt(a.number) || 0;
+                                  const numB = parseInt(b.number) || 0;
+                                  return numB - numA;
+                                })
+                                .map((quote) => {
+                                  const fullRef = quote.prefix
+                                    ? `${quote.prefix}-${quote.number}`
+                                    : quote.number;
+
+                                  return (
+                                    <CommandItem
+                                      key={quote.id}
+                                      value={fullRef}
+                                      onSelect={() => {
+                                        setValue(
+                                          "purchaseOrderNumber",
+                                          fullRef,
+                                          {
+                                            shouldDirty: true,
+                                          }
+                                        );
+                                        setReferenceSearchOpen(false);
+                                        setReferenceSearchTerm("");
+                                      }}
+                                      className="flex items-center gap-2 cursor-pointer"
+                                    >
+                                      <FileText className="h-4 w-4 text-blue-500 shrink-0" />
+                                      <div className="flex-1 min-w-0">
+                                        <div className="font-normal truncate">
+                                          {fullRef}
+                                        </div>
+                                        <div className="text-xs text-muted-foreground truncate">
+                                          {quote.client?.name} •{" "}
+                                          {formatCurrency(quote.finalTotalTTC)}
+                                        </div>
+                                      </div>
+                                    </CommandItem>
+                                  );
+                                })}
+                            </CommandGroup>
+                          );
+                        })()}
+
+                      {/* Option pour saisir manuellement */}
+                      {referenceSearchTerm && (
+                        <>
+                          <CommandSeparator />
+                          <CommandGroup heading="Saisie manuelle">
+                            <CommandItem
+                              value={referenceSearchTerm}
+                              onSelect={() => {
+                                setValue(
+                                  "purchaseOrderNumber",
+                                  referenceSearchTerm,
+                                  { shouldDirty: true }
+                                );
+                                setReferenceSearchOpen(false);
+                                setReferenceSearchTerm("");
+                              }}
+                              className="flex items-center gap-2 cursor-pointer"
+                            >
+                              <Search className="h-4 w-4 text-gray-500 shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <div className="font-medium truncate">
+                                  Utiliser "{referenceSearchTerm}"
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  Saisir cette référence manuellement
+                                </div>
+                              </div>
+                            </CommandItem>
+                          </CommandGroup>
+                        </>
+                      )}
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+
+              {/* Bouton pour effacer la référence */}
+              {data.purchaseOrderNumber && canEdit && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="mt-1 h-auto p-0 text-xs text-muted-foreground hover:text-foreground"
+                  onClick={() =>
+                    setValue("purchaseOrderNumber", "", { shouldDirty: true })
+                  }
+                >
+                  Effacer la référence
+                </Button>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </>
   );
 }

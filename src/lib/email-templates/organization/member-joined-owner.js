@@ -118,7 +118,7 @@ export const memberJoinedNotificationOwner = (data) => `
     "
   >
     <a 
-      href="${process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "https://app.newbi.fr"}/dashboard/settings?tab=members" 
+      href="${process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "https://app.newbi.fr"}/dashboard" 
       style="
         display: block;
         width: 100%;

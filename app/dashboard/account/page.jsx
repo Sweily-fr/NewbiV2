@@ -38,13 +38,13 @@ export default function Account() {
                   votre compte, vous devez d'abord annuler votre abonnement pour
                   éviter des frais futurs.
                 </p>
-                <Link href="/dashboard/subscribe">
+                <Link href="/dashboard">
                   <Button
                     variant="outline"
                     size="sm"
                     className="text-red-700 border-red-300 cursor-pointer"
                   >
-                    Gérer mon abonnement
+                    Retour au tableau de bord
                   </Button>
                 </Link>
               </div>

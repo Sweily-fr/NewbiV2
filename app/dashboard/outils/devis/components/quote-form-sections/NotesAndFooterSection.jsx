@@ -21,12 +21,12 @@ import Link from "next/link";
 // Fonction de formatage de l'IBAN avec espaces
 const formatIban = (iban) => {
   if (!iban) return "";
-  
+
   // Supprimer tous les espaces existants et convertir en majuscules
-  const cleanIban = iban.replace(/\s/g, '').toUpperCase();
-  
+  const cleanIban = iban.replace(/\s/g, "").toUpperCase();
+
   // Ajouter un espace tous les 4 caractères
-  return cleanIban.replace(/(.{4})/g, '$1 ').trim();
+  return cleanIban.replace(/(.{4})/g, "$1 ").trim();
 };
 
 export default function NotesAndFooterSection({ canEdit }) {
@@ -258,7 +258,7 @@ export default function NotesAndFooterSection({ canEdit }) {
                       Coordonnées bancaires configurées
                     </span>
                   </div>
-                  <Link href="/dashboard/settings">
+                  <Link href="/dashboard">
                     <Button variant="outline" size="sm" className="gap-2">
                       <Settings className="h-4 w-4" />
                       Modifier

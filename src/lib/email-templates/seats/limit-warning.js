@@ -61,8 +61,8 @@ export const seatLimitWarning = ({
         
         <!-- Bouton CTA -->
         <div style="text-align: center; margin: 32px 0;">
-          <a href="${process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "https://app.newbi.fr"}/dashboard/settings?tab=subscription" style="display: inline-block; background-color: #5B4FFF; color: #ffffff; text-decoration: none; padding: 14px 28px; border-radius: 8px; font-weight: 500; font-size: 16px;">
-            Gérer mon abonnement
+          <a href="${process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "https://app.newbi.fr"}/dashboard" style="display: inline-block; background-color: #5B4FFF; color: #ffffff; text-decoration: none; padding: 14px 28px; border-radius: 8px; font-weight: 500; font-size: 16px;">
+            Accéder au tableau de bord
           </a>
         </div>
         

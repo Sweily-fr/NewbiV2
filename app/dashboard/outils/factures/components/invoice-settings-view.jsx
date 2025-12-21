@@ -2,7 +2,21 @@
 
 import { useFormContext } from "react-hook-form";
 import React, { useEffect, useState, useRef } from "react";
-import { Tag, Settings, AlignLeft, AlignRight, Check } from "lucide-react";
+import {
+  Tag,
+  Settings,
+  AlignLeft,
+  AlignRight,
+  Check,
+  Info,
+} from "lucide-react";
+import { useInvoiceNumber } from "../hooks/use-invoice-number";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/src/components/ui/tooltip";
+import { getCurrentMonthYear } from "@/src/utils/invoiceUtils";
 import { documentSuggestions } from "@/src/utils/document-suggestions";
 import { SuggestionDropdown } from "@/src/components/ui/suggestion-dropdown";
 import {
@@ -67,6 +81,9 @@ export default function InvoiceSettingsView({
   onCancel,
   onSave,
   onCloseAttempt,
+  validateInvoiceNumberExists,
+  validationErrors = {},
+  setValidationErrors,
 }) {
   const {
     watch,
@@ -75,6 +92,48 @@ export default function InvoiceSettingsView({
     formState: { errors },
   } = useFormContext();
   const data = watch();
+
+  // Hook pour la numérotation séquentielle des factures
+  const {
+    nextInvoiceNumber,
+    validateInvoiceNumber,
+    isLoading: isLoadingInvoiceNumber,
+    hasExistingInvoices,
+    getFormattedNextNumber,
+  } = useInvoiceNumber();
+
+  // Gérer le changement de préfixe avec auto-fill pour MM et AAAA
+  const handlePrefixChange = (e) => {
+    const value = e.target.value;
+    const cursorPosition = e.target.selectionStart;
+
+    // Auto-fill MM (month)
+    if (value.includes("MM")) {
+      const { month } = getCurrentMonthYear();
+      const newValue = value.replace("MM", month);
+      setValue("prefix", newValue, { shouldValidate: true });
+      const newPosition = cursorPosition + month.length - 2;
+      setTimeout(() => {
+        e.target.setSelectionRange(newPosition, newPosition);
+      }, 0);
+      return;
+    }
+
+    // Auto-fill AAAA (year)
+    if (value.includes("AAAA")) {
+      const { year } = getCurrentMonthYear();
+      const newValue = value.replace("AAAA", year);
+      setValue("prefix", newValue, { shouldValidate: true });
+      const newPosition = cursorPosition + year.length - 4;
+      setTimeout(() => {
+        e.target.setSelectionRange(newPosition, newPosition);
+      }, 0);
+      return;
+    }
+
+    // Default behavior
+    setValue("prefix", value, { shouldValidate: true });
+  };
 
   // Debug: Log des couleurs reçues
   useEffect(() => {
@@ -320,10 +379,229 @@ export default function InvoiceSettingsView({
                       BIC/SWIFT : {errors.bankDetails.bic.message}
                     </li>
                   )}
+                  {errors.prefix && (
+                    <li className="text-sm">
+                      Préfixe : {errors.prefix.message}
+                    </li>
+                  )}
+                  {errors.number && (
+                    <li className="text-sm">
+                      Numéro : {errors.number.message}
+                    </li>
+                  )}
                 </ul>
               </AlertDescription>
             </Alert>
           )}
+
+          {/* Section Numérotation */}
+          <Card className="shadow-none border-none bg-transparent">
+            <CardHeader className="p-0">
+              <CardTitle className="flex items-center gap-2 font-normal text-lg">
+                Numérotation
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 p-0">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {/* Préfixe de facture */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Label
+                      htmlFor="invoice-prefix"
+                      className="text-sm font-light"
+                    >
+                      Préfixe de facture
+                    </Label>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent
+                        side="top"
+                        className="max-w-[280px] sm:max-w-xs"
+                      >
+                        <p>
+                          Préfixe personnalisable pour identifier vos factures.
+                          Tapez <span className="font-mono">MM</span> pour
+                          insérer le mois actuel ou{" "}
+                          <span className="font-mono">AAAA</span> pour l'année.
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                  <div className="space-y-1">
+                    <Input
+                      id="invoice-prefix"
+                      {...register("prefix", {
+                        maxLength: {
+                          value: 20,
+                          message:
+                            "Le préfixe ne doit pas dépasser 20 caractères",
+                        },
+                        pattern: {
+                          value: /^[A-Za-z0-9-]*$/,
+                          message:
+                            "Le préfixe ne doit contenir que des lettres, chiffres et tirets",
+                        },
+                      })}
+                      onChange={handlePrefixChange}
+                      onBlur={async (e) => {
+                        // Vérifier si le numéro existe déjà quand le préfixe change
+                        const currentNumber = data.number;
+                        if (currentNumber && validateInvoiceNumberExists) {
+                          await validateInvoiceNumberExists(
+                            currentNumber,
+                            e.target.value
+                          );
+                        }
+                      }}
+                      placeholder="F-MMYYYY"
+                      disabled={!canEdit}
+                      className={
+                        errors?.prefix
+                          ? "border-destructive focus-visible:ring-1 focus-visible:ring-destructive"
+                          : ""
+                      }
+                    />
+                    {errors?.prefix && (
+                      <p className="text-xs text-destructive">
+                        {errors.prefix.message}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Numéro de facture */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Label
+                      htmlFor="invoice-number"
+                      className="text-sm font-light"
+                    >
+                      Numéro de facture
+                    </Label>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent
+                        side="top"
+                        className="max-w-[280px] sm:max-w-xs"
+                      >
+                        <p>
+                          Numéro unique et séquentiel de votre facture. La
+                          numérotation doit être continue sans saut pour
+                          respecter les obligations légales.
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                  <div className="space-y-1">
+                    <Input
+                      id="invoice-number"
+                      {...register("number", {
+                        required: "Le numéro de facture est requis",
+                        validate: {
+                          isNumeric: (value) => {
+                            if (!/^\d+$/.test(value)) {
+                              return "Le numéro doit contenir uniquement des chiffres";
+                            }
+                            return true;
+                          },
+                          isValidSequence: (value) => {
+                            if (isLoadingInvoiceNumber) return true;
+                            const result = validateInvoiceNumber(
+                              parseInt(value, 10)
+                            );
+                            return result.isValid || result.message;
+                          },
+                        },
+                        minLength: {
+                          value: 1,
+                          message: "Le numéro est requis",
+                        },
+                        maxLength: {
+                          value: 6,
+                          message: "Le numéro ne peut pas dépasser 6 chiffres",
+                        },
+                      })}
+                      value={
+                        data.number ||
+                        (nextInvoiceNumber
+                          ? String(nextInvoiceNumber).padStart(4, "0")
+                          : "")
+                      }
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, "");
+                        setValue("number", value, { shouldValidate: true });
+                      }}
+                      onBlur={async (e) => {
+                        let finalNumber;
+                        if (e.target.value) {
+                          finalNumber = e.target.value.padStart(4, "0");
+                          setValue("number", finalNumber, {
+                            shouldValidate: true,
+                          });
+                        } else if (nextInvoiceNumber) {
+                          finalNumber = String(nextInvoiceNumber).padStart(
+                            4,
+                            "0"
+                          );
+                          setValue("number", finalNumber, {
+                            shouldValidate: true,
+                          });
+                        }
+
+                        // Vérifier si le numéro existe déjà (avec le préfixe)
+                        if (finalNumber && validateInvoiceNumberExists) {
+                          const currentPrefix = data.prefix;
+                          await validateInvoiceNumberExists(
+                            finalNumber,
+                            currentPrefix
+                          );
+                        }
+                      }}
+                      placeholder={
+                        nextInvoiceNumber
+                          ? String(nextInvoiceNumber).padStart(4, "0")
+                          : "000001"
+                      }
+                      disabled={!canEdit || isLoadingInvoiceNumber}
+                      className={
+                        errors?.number || validationErrors?.invoiceNumber
+                          ? "border-destructive focus-visible:ring-1 focus-visible:ring-destructive"
+                          : ""
+                      }
+                    />
+                    {errors?.number && (
+                      <p className="text-xs text-destructive">
+                        {errors.number.message}
+                      </p>
+                    )}
+                    {!errors?.number && validationErrors?.invoiceNumber && (
+                      <p className="text-xs text-destructive">
+                        {validationErrors.invoiceNumber.message}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Note explicative sur la numérotation */}
+              <div className="mt-4 p-3 bg-muted/30 rounded-lg border border-muted">
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  <span className="font-medium">Note :</span> La numérotation
+                  des factures doit être séquentielle et continue pour respecter
+                  les obligations légales françaises. Le préfixe vous permet
+                  d'organiser vos factures par période (ex: F-122025 pour
+                  décembre 2025). Le système vérifie automatiquement qu'il n'y a
+                  pas de saut dans la numérotation.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+          <Separator />
+
           {/* Coordonnées bancaires */}
           <Card className="shadow-none border-none bg-transparent">
             <CardHeader className="p-0">

@@ -46,7 +46,9 @@ export default function ModernInvoiceEditor({
   const [debouncedFormData, setDebouncedFormData] = useState(null);
   const [showSendEmailModal, setShowSendEmailModal] = useState(false);
   const [createdInvoiceData, setCreatedInvoiceData] = useState(null);
-  const [previousSituationInvoices, setPreviousSituationInvoices] = useState([]);
+  const [previousSituationInvoices, setPreviousSituationInvoices] = useState(
+    []
+  );
   const [contractTotalTTC, setContractTotalTTC] = useState(null);
   const pdfRef = useRef(null);
 
@@ -335,6 +337,9 @@ export default function ModernInvoiceEditor({
                       canEdit={!isReadOnly}
                       onCancel={() => setShowSettings(false)}
                       onCloseAttempt={setCloseSettingsHandler}
+                      validateInvoiceNumberExists={validateInvoiceNumber}
+                      validationErrors={validationErrors}
+                      setValidationErrors={setValidationErrors}
                       onSave={async () => {
                         try {
                           // Sauvegarder les paramètres dans l'organisation
@@ -366,7 +371,9 @@ export default function ModernInvoiceEditor({
                       onEditClient={() => setShowEditClient(true)}
                       markFieldAsEditing={markFieldAsEditing}
                       unmarkFieldAsEditing={unmarkFieldAsEditing}
-                      onPreviousSituationInvoicesChange={setPreviousSituationInvoices}
+                      onPreviousSituationInvoicesChange={
+                        setPreviousSituationInvoices
+                      }
                       onContractTotalChange={setContractTotalTTC}
                     />
                   )}
@@ -391,7 +398,12 @@ export default function ModernInvoiceEditor({
               </div>
             ) : debouncedFormData ? (
               <div ref={pdfRef}>
-                <UniversalPreviewPDF data={debouncedFormData} type="invoice" previousSituationInvoices={previousSituationInvoices} contractTotalTTC={contractTotalTTC} />
+                <UniversalPreviewPDF
+                  data={debouncedFormData}
+                  type="invoice"
+                  previousSituationInvoices={previousSituationInvoices}
+                  contractTotalTTC={contractTotalTTC}
+                />
               </div>
             ) : null}
           </div>

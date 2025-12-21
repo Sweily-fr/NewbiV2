@@ -83,7 +83,7 @@ export function AccessDeniedCard({
               if (onSettings) {
                 onSettings();
               } else {
-                router.push("/dashboard/settings?tab=generale");
+                router.push("/dashboard");
               }
             },
           },

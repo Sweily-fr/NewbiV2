@@ -251,7 +251,7 @@ export function SubscriptionSection({
       const { data, error } = await authClient.subscription.cancel({
         subscriptionId: subscription.id, // ✅ Utiliser l'id interne Better Auth
         referenceId: sessionData.session.activeOrganizationId,
-        returnUrl: `${window.location.origin}/dashboard/subscribe?cancel_success=true`,
+        returnUrl: `${window.location.origin}/dashboard`,
       });
 
       if (error) {
@@ -829,7 +829,7 @@ export function SubscriptionSection({
               </div>
 
               {/* Contenu */}
-              <div className="px-6 pb-6 space-y-4">
+              <div className="px-6 pb-6 space-y-4 max-h-[60vh] overflow-y-auto">
                 {/* Changement de plan */}
                 <div className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-800">
                   <div className="flex items-center gap-3">
@@ -1064,8 +1064,7 @@ export function SubscriptionSection({
                         className="w-full text-sm"
                         onClick={() => {
                           setShowPlanChangeModal(false);
-                          window.location.href =
-                            "/dashboard/settings?tab=access";
+                          window.location.href = "/dashboard";
                         }}
                       >
                         <Users className="mr-2 h-4 w-4" />

@@ -31,7 +31,7 @@ export function useInvoiceEditor({
 
   // Auth hook pour récupérer les données utilisateur
   const { session } = useUser();
-  
+
   // Error handler
   const { handleError } = useErrorHandler();
   const [validationErrors, setValidationErrors] = useState({});
@@ -58,43 +58,46 @@ export function useInvoiceEditor({
     mode: "onChange",
     resolver: async (values) => {
       const errors = {};
-      
+
       // Validation du client
       if (!values.client || !values.client.id) {
         errors.client = {
           type: "required",
-          message: "Veuillez sélectionner un client"
+          message: "Veuillez sélectionner un client",
         };
       }
-      
+
       // Validation des informations entreprise
       if (!values.companyInfo?.name) {
         errors.companyInfo = {
           type: "required",
-          message: "Le nom de l'entreprise est requis"
+          message: "Le nom de l'entreprise est requis",
         };
       }
-      
+
       if (!values.companyInfo?.email) {
         errors.companyInfo = {
           type: "required",
-          message: "L'email de l'entreprise est requis"
+          message: "L'email de l'entreprise est requis",
         };
       }
-      
+
       // Validation des articles (seulement pour la validation finale)
-      if (values.status === "PENDING" && (!values.items || values.items.length === 0)) {
+      if (
+        values.status === "PENDING" &&
+        (!values.items || values.items.length === 0)
+      ) {
         errors.items = {
           type: "required",
-          message: "Veuillez ajouter au moins un article"
+          message: "Veuillez ajouter au moins un article",
         };
       }
-      
+
       return {
         values: Object.keys(errors).length === 0 ? values : {},
-        errors
+        errors,
       };
-    }
+    },
   });
 
   const { watch, setValue, getValues, formState, reset, trigger } = form;
@@ -107,19 +110,31 @@ export function useInvoiceEditor({
 
   // Watch all form data for auto-save
   const formData = watch();
-  
+
   // Watch items array to detect deep changes in real-time
   const watchedItems = useWatch({ control: form.control, name: "items" });
   const watchedShipping = useWatch({ control: form.control, name: "shipping" });
   const watchedDiscount = useWatch({ control: form.control, name: "discount" });
-  const watchedDiscountType = useWatch({ control: form.control, name: "discountType" });
-  const watchedCustomFields = useWatch({ control: form.control, name: "customFields" });
+  const watchedDiscountType = useWatch({
+    control: form.control,
+    name: "discountType",
+  });
+  const watchedCustomFields = useWatch({
+    control: form.control,
+    name: "customFields",
+  });
   const watchedClient = useWatch({ control: form.control, name: "client" });
-  
+
   // Créer des valeurs stables pour éviter les boucles infinies
-  const shippingData = useMemo(() => JSON.stringify(watchedShipping || {}), [watchedShipping]);
-  const itemsDataString = useMemo(() => JSON.stringify(watchedItems || []), [watchedItems]);
-  
+  const shippingData = useMemo(
+    () => JSON.stringify(watchedShipping || {}),
+    [watchedShipping]
+  );
+  const itemsDataString = useMemo(
+    () => JSON.stringify(watchedItems || []),
+    [watchedItems]
+  );
+
   // Fonction pour marquer un champ comme en cours d'édition
   const markFieldAsEditing = (itemIndex, fieldName) => {
     setEditingFields((prev) => {
@@ -128,7 +143,7 @@ export function useInvoiceEditor({
       return newSet;
     });
   };
-  
+
   // Fonction pour retirer un champ de la liste d'édition
   const unmarkFieldAsEditing = (itemIndex, fieldName) => {
     setEditingFields((prev) => {
@@ -144,7 +159,7 @@ export function useInvoiceEditor({
     });
     // Le useEffect se déclenchera automatiquement quand editingFields change
   };
-  
+
   // Mettre à jour companyInfo quand organization est chargée
   useEffect(() => {
     if (organization && !formData.companyInfo?.legalForm) {
@@ -173,16 +188,16 @@ export function useInvoiceEditor({
           bankName: organization?.bankName || "",
         },
       };
-      
+
       setValue("companyInfo", updatedCompanyInfo, { shouldDirty: false });
     }
   }, [organization, formData.companyInfo?.legalForm, setValue]);
-  
+
   // Re-valider quand le client change (avec debounce)
   useEffect(() => {
     // Ne pas valider si le formulaire n'est pas encore initialisé
     if (!isFormInitialized) return;
-    
+
     // Debounce de 500ms
     const timeoutId = setTimeout(() => {
       setValidationErrors((prevErrors) => {
@@ -190,17 +205,31 @@ export function useInvoiceEditor({
           // Vérifier si le client est valide
           const client = watchedClient;
           const clientErrors = [];
-          
-          if (!client.name || client.name.trim() === "") clientErrors.push("nom manquant");
-          if (!client.email || client.email.trim() === "") clientErrors.push("email manquant");
-          if (!client.address?.street || client.address.street.trim() === "") clientErrors.push("adresse (rue) manquante");
-          if (!client.address?.city || client.address.city.trim() === "") clientErrors.push("ville manquante");
-          if (!client.address?.postalCode || client.address.postalCode.trim() === "") clientErrors.push("code postal manquant");
-          if (!client.address?.country || client.address.country.trim() === "") clientErrors.push("pays manquant");
-          if (client.type === "COMPANY" && (!client.vatNumber || client.vatNumber.trim() === "")) {
-            clientErrors.push("numéro de TVA manquant (obligatoire pour les entreprises)");
+
+          if (!client.name || client.name.trim() === "")
+            clientErrors.push("nom manquant");
+          if (!client.email || client.email.trim() === "")
+            clientErrors.push("email manquant");
+          if (!client.address?.street || client.address.street.trim() === "")
+            clientErrors.push("adresse (rue) manquante");
+          if (!client.address?.city || client.address.city.trim() === "")
+            clientErrors.push("ville manquante");
+          if (
+            !client.address?.postalCode ||
+            client.address.postalCode.trim() === ""
+          )
+            clientErrors.push("code postal manquant");
+          if (!client.address?.country || client.address.country.trim() === "")
+            clientErrors.push("pays manquant");
+          if (
+            client.type === "COMPANY" &&
+            (!client.vatNumber || client.vatNumber.trim() === "")
+          ) {
+            clientErrors.push(
+              "numéro de TVA manquant (obligatoire pour les entreprises)"
+            );
           }
-          
+
           // Si le client est valide, supprimer l'erreur
           if (clientErrors.length === 0) {
             if (prevErrors.client) {
@@ -213,9 +242,9 @@ export function useInvoiceEditor({
             return {
               ...prevErrors,
               client: {
-                message: `Le client "${client.name || 'Sans nom'}" a des informations incomplètes:\n${clientErrors.join(", ")}`,
-                canEdit: true
-              }
+                message: `Le client "${client.name || "Sans nom"}" a des informations incomplètes:\n${clientErrors.join(", ")}`,
+                canEdit: true,
+              },
             };
           }
         } else {
@@ -226,11 +255,11 @@ export function useInvoiceEditor({
             return newErrors;
           }
         }
-        
+
         return prevErrors;
       });
     }, 500); // Attendre 500ms après avoir arrêté de taper
-    
+
     // Cleanup : annuler le timeout si l'utilisateur retape avant les 500ms
     return () => clearTimeout(timeoutId);
   }, [watchedClient, isFormInitialized]);
@@ -239,25 +268,25 @@ export function useInvoiceEditor({
   useEffect(() => {
     // Ne pas valider si le formulaire n'est pas encore initialisé
     if (!isFormInitialized) return;
-    
+
     setValidationErrors((prevErrors) => {
       const companyInfo = formData.companyInfo;
-      
+
       if (!companyInfo?.name || companyInfo.name.trim() === "") {
         return {
           ...prevErrors,
           companyInfo: {
             message: "Le nom de l'entreprise est requis",
-            canEdit: true
-          }
+            canEdit: true,
+          },
         };
       } else if (!companyInfo?.email || companyInfo.email.trim() === "") {
         return {
           ...prevErrors,
           companyInfo: {
             message: "L'email de l'entreprise est requis",
-            canEdit: true
-          }
+            canEdit: true,
+          },
         };
       } else {
         // Supprimer l'erreur si les champs sont valides
@@ -267,7 +296,7 @@ export function useInvoiceEditor({
           return newErrors;
         }
       }
-      
+
       return prevErrors;
     });
   }, [formData.companyInfo, isFormInitialized]);
@@ -276,15 +305,15 @@ export function useInvoiceEditor({
   useEffect(() => {
     // Ne pas valider si le formulaire n'est pas encore initialisé
     if (!isFormInitialized) return;
-    
+
     setValidationErrors((prevErrors) => {
       if (!formData.issueDate) {
         return {
           ...prevErrors,
           issueDate: {
             message: "La date d'émission est requise",
-            canEdit: true
-          }
+            canEdit: true,
+          },
         };
       } else {
         // Supprimer l'erreur si la date est valide
@@ -294,7 +323,7 @@ export function useInvoiceEditor({
           return newErrors;
         }
       }
-      
+
       return prevErrors;
     });
   }, [formData.issueDate, isFormInitialized]);
@@ -303,7 +332,7 @@ export function useInvoiceEditor({
   useEffect(() => {
     // Ne pas valider si le formulaire n'est pas encore initialisé
     if (!isFormInitialized) return;
-    
+
     setValidationErrors((prevErrors) => {
       // Si pas de date d'échéance, pas d'erreur (champ optionnel)
       if (!formData.dueDate) {
@@ -314,19 +343,20 @@ export function useInvoiceEditor({
         }
         return prevErrors;
       }
-      
+
       // Si on a une date d'échéance, vérifier qu'elle est >= à la date d'émission
       if (formData.issueDate && formData.dueDate) {
         const issueDate = new Date(formData.issueDate);
         const dueDate = new Date(formData.dueDate);
-        
+
         if (dueDate < issueDate) {
           return {
             ...prevErrors,
             dueDate: {
-              message: "La date d'échéance doit être postérieure ou égale à la date d'émission",
-              canEdit: true
-            }
+              message:
+                "La date d'échéance doit être postérieure ou égale à la date d'émission",
+              canEdit: true,
+            },
           };
         } else {
           // Supprimer l'erreur si la date est valide
@@ -337,7 +367,7 @@ export function useInvoiceEditor({
           }
         }
       }
-      
+
       return prevErrors;
     });
   }, [formData.issueDate, formData.dueDate, isFormInitialized]);
@@ -346,7 +376,7 @@ export function useInvoiceEditor({
   useEffect(() => {
     // Ne pas valider si le formulaire n'est pas encore initialisé
     if (!isFormInitialized) return;
-    
+
     setValidationErrors((prevErrors) => {
       const prefix = formData.prefix || "";
 
@@ -387,7 +417,7 @@ export function useInvoiceEditor({
   useEffect(() => {
     // Ne pas valider si le formulaire n'est pas encore initialisé
     if (!isFormInitialized) return;
-    
+
     setValidationErrors((prevErrors) => {
       const ref = formData.purchaseOrderNumber || "";
 
@@ -419,7 +449,7 @@ export function useInvoiceEditor({
         delete newErrors.purchaseOrderNumber;
         return newErrors;
       }
-      
+
       return prevErrors;
     });
   }, [formData.purchaseOrderNumber, isFormInitialized]);
@@ -428,30 +458,32 @@ export function useInvoiceEditor({
   useEffect(() => {
     // Ne pas valider si le formulaire n'est pas encore initialisé
     if (!isFormInitialized) return;
-    
+
     // Debounce de 500ms
     const timeoutId = setTimeout(() => {
       setValidationErrors((prevErrors) => {
         if (watchedCustomFields && watchedCustomFields.length > 0) {
           const invalidCustomFields = [];
           const customFieldsWithErrors = [];
-          
+
           watchedCustomFields.forEach((field, index) => {
             const fieldErrors = [];
-            
+
             if (!field.name || field.name.trim() === "") {
               fieldErrors.push("nom manquant");
             }
             if (!field.value || field.value.trim() === "") {
               fieldErrors.push("valeur manquante");
             }
-            
+
             if (fieldErrors.length > 0) {
-              invalidCustomFields.push(`Champ personnalisé ${index + 1}: ${fieldErrors.join(", ")}`);
+              invalidCustomFields.push(
+                `Champ personnalisé ${index + 1}: ${fieldErrors.join(", ")}`
+              );
               customFieldsWithErrors.push({ index, errors: fieldErrors });
             }
           });
-          
+
           // Si tous les champs personnalisés sont valides, supprimer l'erreur
           if (invalidCustomFields.length === 0) {
             if (prevErrors.customFields) {
@@ -466,8 +498,8 @@ export function useInvoiceEditor({
               customFields: {
                 message: `Certains champs personnalisés sont incomplets:\n${invalidCustomFields.join("\n")}`,
                 canEdit: false,
-                details: customFieldsWithErrors
-              }
+                details: customFieldsWithErrors,
+              },
             };
           }
         } else {
@@ -478,11 +510,11 @@ export function useInvoiceEditor({
             return newErrors;
           }
         }
-        
+
         return prevErrors;
       });
     }, 500); // Attendre 500ms après avoir arrêté de taper
-    
+
     // Cleanup : annuler le timeout si l'utilisateur retape avant les 500ms
     return () => clearTimeout(timeoutId);
   }, [watchedCustomFields, isFormInitialized]);
@@ -491,121 +523,168 @@ export function useInvoiceEditor({
   useEffect(() => {
     // Ne pas valider si le formulaire n'est pas encore initialisé
     if (!isFormInitialized) return;
-    
+
     // Debounce de 500ms - la validation se déclenche 500ms après avoir arrêté de taper
     const timeoutId = setTimeout(() => {
       setValidationErrors((prevErrors) => {
-      // Valider les articles si on a des articles
-      if (watchedItems && watchedItems.length > 0) {
-        const invalidItems = [];
-        const itemsWithErrors = [];
-        
-        watchedItems.forEach((item, index) => {
-          const itemErrors = [];
-          const fields = [];
-          
-          // Valider les champs (validation automatique après 500ms d'inactivité)
-          
-          // Valider la description (obligatoire)
-          if (!item.description || item.description.trim() === "") {
-            itemErrors.push("description manquante");
-            fields.push("description");
-          } else if (item.description.length > 255) {
-            itemErrors.push("description trop longue (max 255 caractères)");
-            fields.push("description");
-          } else if (!/^[A-Za-zÀ-ÖØ-öø-ÿ0-9\s\.,;:!?@#$%&*()\[\]\-_+='"/\\]+$/.test(item.description)) {
-            itemErrors.push("description contient des caractères non autorisés");
-            fields.push("description");
-          }
-          
-          // Valider les détails si présents (optionnel mais limité à 500 caractères)
-          if (item.details && item.details.length > 500) {
-            itemErrors.push("détails trop longs (max 500 caractères)");
-            fields.push("details");
-          }
-          
-          // Valider la quantité si présente
-          if (item.quantity && parseFloat(item.quantity) <= 0) {
-            itemErrors.push("quantité invalide");
-            fields.push("quantity");
-          }
-          
-          // Valider le prix si présent
-          if (item.unitPrice !== undefined && item.unitPrice !== null && item.unitPrice !== "") {
-            const priceValue = item.unitPrice;
-            const isInvalid = priceValue === undefined || 
-                             priceValue === null || 
-                             priceValue === "" || 
-                             isNaN(parseFloat(priceValue)) ||
-                             parseFloat(priceValue) <= 0;
-            
-            if (isInvalid) {
-              itemErrors.push("prix unitaire doit être > 0€");
-              fields.push("unitPrice");
+        // Valider les articles si on a des articles
+        if (watchedItems && watchedItems.length > 0) {
+          const invalidItems = [];
+          const itemsWithErrors = [];
+
+          watchedItems.forEach((item, index) => {
+            const itemErrors = [];
+            const fields = [];
+
+            // Vérifier si l'article a été "touché" (l'utilisateur a commencé à le remplir)
+            // Un article est considéré comme touché s'il a une description, un prix ou une quantité modifiée
+            const hasBeenTouched =
+              (item.description && item.description.trim() !== "") ||
+              (item.unitPrice !== undefined &&
+                item.unitPrice !== null &&
+                item.unitPrice !== "" &&
+                item.unitPrice !== 0) ||
+              (item.quantity !== undefined &&
+                item.quantity !== null &&
+                item.quantity !== "" &&
+                item.quantity !== 1);
+
+            // Ne pas valider les articles qui n'ont pas été touchés
+            if (!hasBeenTouched) {
+              return; // Skip cet article
             }
-          }
-          
-          // Valider la remise de l'article si c'est un pourcentage
-          if (item.discountType === "PERCENTAGE" && item.discount !== undefined && item.discount !== null && item.discount !== "") {
-            const discountValue = parseFloat(item.discount);
-            if (discountValue > 100) {
-              itemErrors.push("remise ne peut pas dépasser 100%");
-              fields.push("discount");
-            } else if (discountValue < 0) {
-              itemErrors.push("remise ne peut pas être négative");
-              fields.push("discount");
+
+            // Valider les champs (validation automatique après 500ms d'inactivité)
+
+            // Valider la description (obligatoire)
+            if (!item.description || item.description.trim() === "") {
+              itemErrors.push("description manquante");
+              fields.push("description");
+            } else if (item.description.length > 255) {
+              itemErrors.push("description trop longue (max 255 caractères)");
+              fields.push("description");
+            } else if (
+              !/^[A-Za-zÀ-ÖØ-öø-ÿ0-9\s\.,;:!?@#$%&*()\[\]\-_+='"/\\]+$/.test(
+                item.description
+              )
+            ) {
+              itemErrors.push(
+                "description contient des caractères non autorisés"
+              );
+              fields.push("description");
             }
-          }
-          
-          // Vérifier le texte d'exonération de TVA si la TVA est à 0% (sauf en auto-liquidation)
-          const vatRate = parseFloat(item.vatRate) || 0;
-          if (vatRate === 0 && !formData.isReverseCharge) {
-            const vatExemptionText = item.vatExemptionText;
-            if (!vatExemptionText || vatExemptionText.trim() === "" || vatExemptionText === "none") {
-              itemErrors.push("texte d'exonération de TVA requis (TVA à 0%)");
-              fields.push("vatExemptionText");
+
+            // Valider les détails si présents (optionnel mais limité à 500 caractères)
+            if (item.details && item.details.length > 500) {
+              itemErrors.push("détails trop longs (max 500 caractères)");
+              fields.push("details");
             }
-          }
-          
-          if (itemErrors.length > 0) {
-            invalidItems.push(`Article ${index + 1}: ${itemErrors.join(", ")}`);
-            itemsWithErrors.push({ index, fields });
-          }
-        });
-        
-        // Toujours mettre à jour l'état des erreurs
-        if (invalidItems.length === 0) {
-          // Tous les articles sont valides, supprimer l'erreur si elle existe
-          if (prevErrors.items) {
-            const newErrors = { ...prevErrors };
-            delete newErrors.items;
-            return newErrors;
-          }
-        } else {
-          // Il y a des erreurs, les afficher
-          return {
-            ...prevErrors,
-            items: {
-              message: `Certains articles sont incomplets:\n${invalidItems.join("\n")}`,
-              canEdit: false,
-              details: itemsWithErrors
+
+            // Valider la quantité si présente
+            if (item.quantity && parseFloat(item.quantity) <= 0) {
+              itemErrors.push("quantité invalide");
+              fields.push("quantity");
             }
-          };
+
+            // Valider le prix si présent
+            if (
+              item.unitPrice !== undefined &&
+              item.unitPrice !== null &&
+              item.unitPrice !== ""
+            ) {
+              const priceValue = item.unitPrice;
+              const isInvalid =
+                priceValue === undefined ||
+                priceValue === null ||
+                priceValue === "" ||
+                isNaN(parseFloat(priceValue)) ||
+                parseFloat(priceValue) <= 0;
+
+              if (isInvalid) {
+                itemErrors.push("prix unitaire doit être > 0€");
+                fields.push("unitPrice");
+              }
+            }
+
+            // Valider la remise de l'article si c'est un pourcentage
+            if (
+              item.discountType === "PERCENTAGE" &&
+              item.discount !== undefined &&
+              item.discount !== null &&
+              item.discount !== ""
+            ) {
+              const discountValue = parseFloat(item.discount);
+              if (discountValue > 100) {
+                itemErrors.push("remise ne peut pas dépasser 100%");
+                fields.push("discount");
+              } else if (discountValue < 0) {
+                itemErrors.push("remise ne peut pas être négative");
+                fields.push("discount");
+              }
+            }
+
+            // Vérifier le texte d'exonération de TVA si la TVA est à 0% (sauf en auto-liquidation)
+            const vatRate = parseFloat(item.vatRate) || 0;
+            if (vatRate === 0 && !formData.isReverseCharge) {
+              const vatExemptionText = item.vatExemptionText;
+              if (
+                !vatExemptionText ||
+                vatExemptionText.trim() === "" ||
+                vatExemptionText === "none"
+              ) {
+                itemErrors.push("texte d'exonération de TVA requis (TVA à 0%)");
+                fields.push("vatExemptionText");
+              }
+            }
+
+            if (itemErrors.length > 0) {
+              invalidItems.push(
+                `Article ${index + 1}: ${itemErrors.join(", ")}`
+              );
+              itemsWithErrors.push({ index, fields });
+            }
+          });
+
+          // Toujours mettre à jour l'état des erreurs
+          if (invalidItems.length === 0) {
+            // Tous les articles sont valides, supprimer l'erreur si elle existe
+            if (prevErrors.items) {
+              const newErrors = { ...prevErrors };
+              delete newErrors.items;
+              return newErrors;
+            }
+          } else {
+            // Il y a des erreurs, les afficher
+            return {
+              ...prevErrors,
+              items: {
+                message: `Certains articles sont incomplets:\n${invalidItems.join("\n")}`,
+                canEdit: false,
+                details: itemsWithErrors,
+              },
+            };
+          }
         }
-      }
-      return prevErrors;
+        return prevErrors;
       });
     }, 500); // Attendre 500ms après avoir arrêté de taper
 
     // Cleanup : annuler le timeout si l'utilisateur retape avant les 500ms
     return () => clearTimeout(timeoutId);
-  }, [itemsDataString, editingFields, touchedFields, formData.isReverseCharge, watchedItems, isFormInitialized]);
+  }, [
+    itemsDataString,
+    editingFields,
+    touchedFields,
+    formData.isReverseCharge,
+    watchedItems,
+    isFormInitialized,
+  ]);
 
   // Re-valider quand la remise change
   useEffect(() => {
     // Ne pas valider si le formulaire n'est pas encore initialisé
     if (!isFormInitialized) return;
-    
+
     setValidationErrors((prevErrors) => {
       // Valider la remise en pourcentage
       if (watchedDiscountType === "PERCENTAGE") {
@@ -614,27 +693,27 @@ export function useInvoiceEditor({
             ...prevErrors,
             discount: {
               message: "La remise ne peut pas dépasser 100%",
-              canEdit: false
-            }
+              canEdit: false,
+            },
           };
         } else if (watchedDiscount < 0) {
           return {
             ...prevErrors,
             discount: {
               message: "La remise ne peut pas être négative",
-              canEdit: false
-            }
+              canEdit: false,
+            },
           };
         }
       }
-      
+
       // Si la remise est valide, supprimer l'erreur
       if (prevErrors.discount) {
         const newErrors = { ...prevErrors };
         delete newErrors.discount;
         return newErrors;
       }
-      
+
       return prevErrors;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -644,7 +723,7 @@ export function useInvoiceEditor({
   useEffect(() => {
     // Ne pas valider si le formulaire n'est pas encore initialisé
     if (!isFormInitialized) return;
-    
+
     // Debounce de 500ms
     const timeoutId = setTimeout(() => {
       setValidationErrors((prevErrors) => {
@@ -659,40 +738,53 @@ export function useInvoiceEditor({
         } else {
           const shippingErrors = [];
           const shippingAddr = watchedShipping?.shippingAddress || {};
-          
+
           if (!shippingAddr.fullName || shippingAddr.fullName.trim() === "") {
             shippingErrors.push("nom complet manquant");
-          } else if (!/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shippingAddr.fullName.trim())) {
+          } else if (
+            !/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shippingAddr.fullName.trim())
+          ) {
             shippingErrors.push("nom complet invalide");
           }
-          
+
           if (!shippingAddr.street || shippingAddr.street.trim() === "") {
             shippingErrors.push("adresse manquante");
           } else if (shippingAddr.street.trim().length < 5) {
             shippingErrors.push("adresse trop courte");
           }
-          
-          if (!shippingAddr.postalCode || shippingAddr.postalCode.trim() === "") {
+
+          if (
+            !shippingAddr.postalCode ||
+            shippingAddr.postalCode.trim() === ""
+          ) {
             shippingErrors.push("code postal manquant");
           } else if (!/^\d{5}$/.test(shippingAddr.postalCode.trim())) {
             shippingErrors.push("code postal invalide");
           }
-          
+
           if (!shippingAddr.city || shippingAddr.city.trim() === "") {
             shippingErrors.push("ville manquante");
-          } else if (!/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shippingAddr.city.trim())) {
+          } else if (
+            !/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shippingAddr.city.trim())
+          ) {
             shippingErrors.push("ville invalide");
           }
-          
+
           if (!shippingAddr.country || shippingAddr.country.trim() === "") {
             shippingErrors.push("pays manquant");
           }
-          
+
           const shippingCost = watchedShipping?.shippingAmountHT;
-          if (shippingCost === undefined || shippingCost === null || shippingCost === "" || isNaN(parseFloat(shippingCost)) || parseFloat(shippingCost) < 0) {
+          if (
+            shippingCost === undefined ||
+            shippingCost === null ||
+            shippingCost === "" ||
+            isNaN(parseFloat(shippingCost)) ||
+            parseFloat(shippingCost) < 0
+          ) {
             shippingErrors.push("coût de livraison invalide");
           }
-          
+
           if (shippingErrors.length === 0) {
             // Pas d'erreurs, supprimer l'erreur si elle existe
             if (prevErrors.shipping) {
@@ -706,16 +798,16 @@ export function useInvoiceEditor({
               ...prevErrors,
               shipping: {
                 message: `Informations de livraison incomplètes:\n${shippingErrors.join(", ")}`,
-                canEdit: true
-              }
+                canEdit: true,
+              },
             };
           }
         }
-        
+
         return prevErrors;
       });
     }, 500); // Attendre 500ms après avoir arrêté de taper
-    
+
     // Cleanup : annuler le timeout si l'utilisateur retape avant les 500ms
     return () => clearTimeout(timeoutId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -811,8 +903,11 @@ export function useInvoiceEditor({
           ""
       );
       setValue("showBankDetails", organization.showBankDetails || false);
-      setValue("clientPositionRight", organization.invoiceClientPositionRight || false);
-      
+      setValue(
+        "clientPositionRight",
+        organization.invoiceClientPositionRight || false
+      );
+
       // Marquer le formulaire comme initialisé après un court délai pour s'assurer que tous les setValue sont terminés
       setTimeout(() => {
         setIsFormInitialized(true);
@@ -841,7 +936,10 @@ export function useInvoiceEditor({
       const currentValue = getValues("clientPositionRight");
       // Ne mettre à jour que si la valeur n'est pas déjà définie
       if (currentValue === undefined || currentValue === null) {
-        setValue("clientPositionRight", organization.invoiceClientPositionRight || false);
+        setValue(
+          "clientPositionRight",
+          organization.invoiceClientPositionRight || false
+        );
       }
     }
   }, [organization, setValue, getValues]);
@@ -894,23 +992,23 @@ export function useInvoiceEditor({
   // Manual save handler
   const handleSave = useCallback(async () => {
     const currentFormData = getValues();
-    
-    console.log('[handleSave] Form data before save:', currentFormData);
-    console.log('[handleSave] Prefix in form:', currentFormData.prefix);
-    
+
+    console.log("[handleSave] Form data before save:", currentFormData);
+    console.log("[handleSave] Prefix in form:", currentFormData.prefix);
+
     // Validation manuelle pour le brouillon (moins stricte)
     const errors = {};
-    
+
     if (!currentFormData.client || !currentFormData.client.id) {
       errors.client = {
         message: "Veuillez sélectionner un client",
-        canEdit: false // Pas de client à modifier
+        canEdit: false, // Pas de client à modifier
       };
     } else {
       // Vérifier les champs obligatoires du client sélectionné
       const client = currentFormData.client;
       const clientErrors = [];
-      
+
       if (!client.name || client.name.trim() === "") {
         clientErrors.push("nom manquant");
       }
@@ -923,145 +1021,169 @@ export function useInvoiceEditor({
       if (!client.address?.city || client.address.city.trim() === "") {
         clientErrors.push("ville manquante");
       }
-      if (!client.address?.postalCode || client.address.postalCode.trim() === "") {
+      if (
+        !client.address?.postalCode ||
+        client.address.postalCode.trim() === ""
+      ) {
         clientErrors.push("code postal manquant");
       }
       if (!client.address?.country || client.address.country.trim() === "") {
         clientErrors.push("pays manquant");
       }
-      
+
       // Vérifier le numéro de TVA pour les entreprises
-      if (client.type === "COMPANY" && (!client.vatNumber || client.vatNumber.trim() === "")) {
-        clientErrors.push("numéro de TVA manquant (obligatoire pour les entreprises)");
+      if (
+        client.type === "COMPANY" &&
+        (!client.vatNumber || client.vatNumber.trim() === "")
+      ) {
+        clientErrors.push(
+          "numéro de TVA manquant (obligatoire pour les entreprises)"
+        );
       }
-      
+
       if (clientErrors.length > 0) {
         errors.client = {
-          message: `Le client "${client.name || 'Sans nom'}" a des informations incomplètes:\n${clientErrors.join(", ")}`,
-          canEdit: true // On peut modifier le client
+          message: `Le client "${client.name || "Sans nom"}" a des informations incomplètes:\n${clientErrors.join(", ")}`,
+          canEdit: true, // On peut modifier le client
         };
       }
     }
-    
-    if (!currentFormData.companyInfo?.name || !currentFormData.companyInfo?.email) {
+
+    if (
+      !currentFormData.companyInfo?.name ||
+      !currentFormData.companyInfo?.email
+    ) {
       errors.companyInfo = {
         message: "Les informations de l'entreprise sont incomplètes",
-        canEdit: true // On peut toujours modifier l'entreprise
+        canEdit: true, // On peut toujours modifier l'entreprise
       };
     }
-    
+
     // Validation de la remise globale
     if (currentFormData.discountType === "PERCENTAGE") {
       if (currentFormData.discount > 100) {
         errors.discount = {
           message: "La remise ne peut pas dépasser 100%",
-          canEdit: false
+          canEdit: false,
         };
       } else if (currentFormData.discount < 0) {
         errors.discount = {
           message: "La remise ne peut pas être négative",
-          canEdit: false
+          canEdit: false,
         };
       }
     }
-    
+
     // Validation de la livraison si activée
     if (currentFormData.shipping?.billShipping) {
       const shippingErrors = [];
       const shippingAddr = currentFormData.shipping?.shippingAddress || {};
-      
+
       // Validation du nom complet
       if (!shippingAddr.fullName || shippingAddr.fullName.trim() === "") {
         shippingErrors.push("nom complet manquant");
-      } else if (!/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shippingAddr.fullName.trim())) {
+      } else if (
+        !/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shippingAddr.fullName.trim())
+      ) {
         shippingErrors.push("nom complet invalide");
       }
-      
+
       // Validation de l'adresse
       if (!shippingAddr.street || shippingAddr.street.trim() === "") {
         shippingErrors.push("adresse manquante");
       } else if (shippingAddr.street.trim().length < 5) {
         shippingErrors.push("adresse trop courte");
       }
-      
+
       // Validation du code postal
       if (!shippingAddr.postalCode || shippingAddr.postalCode.trim() === "") {
         shippingErrors.push("code postal manquant");
       } else if (!/^\d{5}$/.test(shippingAddr.postalCode.trim())) {
         shippingErrors.push("code postal invalide (5 chiffres requis)");
       }
-      
+
       // Validation de la ville
       if (!shippingAddr.city || shippingAddr.city.trim() === "") {
         shippingErrors.push("ville manquante");
       } else if (!/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shippingAddr.city.trim())) {
         shippingErrors.push("ville invalide");
       }
-      
+
       // Validation du pays
       if (!shippingAddr.country || shippingAddr.country.trim() === "") {
         shippingErrors.push("pays manquant");
       }
-      
+
       // Validation du coût de livraison
       const shippingCost = currentFormData.shipping?.shippingAmountHT;
-      if (shippingCost === undefined || shippingCost === null || shippingCost === "" || isNaN(parseFloat(shippingCost)) || parseFloat(shippingCost) < 0) {
+      if (
+        shippingCost === undefined ||
+        shippingCost === null ||
+        shippingCost === "" ||
+        isNaN(parseFloat(shippingCost)) ||
+        parseFloat(shippingCost) < 0
+      ) {
         shippingErrors.push("coût de livraison invalide (doit être >= 0€)");
       }
-      
+
       if (shippingErrors.length > 0) {
         errors.shipping = {
           message: `Les informations de livraison sont incomplètes ou invalides:\n${shippingErrors.join(", ")}`,
-          canEdit: false
+          canEdit: false,
         };
       }
     }
-    
+
     // Validation des champs personnalisés
-    if (currentFormData.customFields && currentFormData.customFields.length > 0) {
+    if (
+      currentFormData.customFields &&
+      currentFormData.customFields.length > 0
+    ) {
       const invalidCustomFields = [];
       const customFieldsWithErrors = [];
-      
+
       currentFormData.customFields.forEach((field, index) => {
         const fieldErrors = [];
-        
+
         if (!field.name || field.name.trim() === "") {
           fieldErrors.push("nom du champ manquant");
         }
         if (!field.value || field.value.trim() === "") {
           fieldErrors.push("valeur manquante");
         }
-        
+
         if (fieldErrors.length > 0) {
-          invalidCustomFields.push(`Champ personnalisé ${index + 1}: ${fieldErrors.join(", ")}`);
+          invalidCustomFields.push(
+            `Champ personnalisé ${index + 1}: ${fieldErrors.join(", ")}`
+          );
           customFieldsWithErrors.push({ index, errors: fieldErrors });
         }
       });
-      
+
       if (invalidCustomFields.length > 0) {
         errors.customFields = {
           message: `Certains champs personnalisés sont incomplets:\n${invalidCustomFields.join("\n")}`,
           canEdit: false,
-          details: customFieldsWithErrors
+          details: customFieldsWithErrors,
         };
       }
     }
-    
+
     // Validation des articles - vérifier qu'il y en a au moins un
     if (!currentFormData.items || currentFormData.items.length === 0) {
       errors.items = {
         message: "Veuillez ajouter au moins un article à la facture",
-        canEdit: false
+        canEdit: false,
       };
     } else {
       // Vérifier que chaque article a les champs requis
       const invalidItems = [];
       const itemsWithErrors = [];
-      
+
       currentFormData.items.forEach((item, index) => {
         const itemErrors = [];
         const fields = [];
-        
+
         if (!item.description || item.description.trim() === "") {
           itemErrors.push("description");
           fields.push("description");
@@ -1071,50 +1193,55 @@ export function useInvoiceEditor({
           fields.push("quantity");
         }
         const priceValue = item.unitPrice;
-        const isInvalid = priceValue === undefined || 
-                         priceValue === null || 
-                         priceValue === "" || 
-                         isNaN(parseFloat(priceValue)) ||
-                         parseFloat(priceValue) <= 0;
-        
+        const isInvalid =
+          priceValue === undefined ||
+          priceValue === null ||
+          priceValue === "" ||
+          isNaN(parseFloat(priceValue)) ||
+          parseFloat(priceValue) <= 0;
+
         if (isInvalid) {
           itemErrors.push("prix unitaire doit être > 0€");
           fields.push("unitPrice");
         }
-        
+
         // Vérifier le texte d'exonération de TVA si la TVA est à 0% (sauf en auto-liquidation)
         const vatRate = parseFloat(item.vatRate) || 0;
         if (vatRate === 0 && !currentFormData.isReverseCharge) {
           const vatExemptionText = item.vatExemptionText;
-          if (!vatExemptionText || vatExemptionText.trim() === "" || vatExemptionText === "none") {
+          if (
+            !vatExemptionText ||
+            vatExemptionText.trim() === "" ||
+            vatExemptionText === "none"
+          ) {
             itemErrors.push("texte d'exonération de TVA requis (TVA à 0%)");
             fields.push("vatExemptionText");
           }
         }
-        
+
         if (itemErrors.length > 0) {
           invalidItems.push(`Article ${index + 1}: ${itemErrors.join(", ")}`);
           itemsWithErrors.push({ index, fields });
         }
       });
-      
+
       if (invalidItems.length > 0) {
         errors.items = {
           message: `Certains articles sont incomplets:\n${invalidItems.join("\n")}`,
           canEdit: true,
-          details: itemsWithErrors
+          details: itemsWithErrors,
         };
       }
     }
-    
+
     const errorCount = Object.keys(errors).length;
     const hasErrors = errorCount > 0;
-    
+
     if (hasErrors) {
       setValidationErrors(errors);
       return false;
     }
-    
+
     // Réinitialiser les erreurs si la validation passe
     setValidationErrors({});
 
@@ -1141,33 +1268,46 @@ export function useInvoiceEditor({
     } catch (error) {
       // Vérifier si c'est une erreur de numéro de facture en double
       const errorMessage = error.message || error.toString();
-      if (errorMessage.includes("existe déjà") || errorMessage.includes("already exists") || errorMessage.includes("duplicate")) {
+      if (
+        errorMessage.includes("existe déjà") ||
+        errorMessage.includes("already exists") ||
+        errorMessage.includes("duplicate")
+      ) {
         // Extraire le numéro de facture du message d'erreur si possible
-        const invoiceNumberMatch = errorMessage.match(/([A-Z0-9-]+)\s+existe déjà/i);
-        const invoiceNumber = invoiceNumberMatch ? invoiceNumberMatch[1] : currentFormData.invoiceNumber;
-        
+        const invoiceNumberMatch = errorMessage.match(
+          /([A-Z0-9-]+)\s+existe déjà/i
+        );
+        const invoiceNumber = invoiceNumberMatch
+          ? invoiceNumberMatch[1]
+          : currentFormData.invoiceNumber;
+
         setValidationErrors({
           invoiceNumber: {
             message: `Le numéro de facture ${invoiceNumber} existe déjà. Veuillez en choisir un autre.`,
-            canEdit: true
-          }
+            canEdit: true,
+          },
         });
-        
+
         toast.error(`Le numéro de facture ${invoiceNumber} existe déjà`);
-      } else if (errorMessage.includes("dépasserait le montant du contrat") || errorMessage.includes("situationTotal")) {
+      } else if (
+        errorMessage.includes("dépasserait le montant du contrat") ||
+        errorMessage.includes("situationTotal")
+      ) {
         // Erreur de dépassement du montant du contrat pour les factures de situation
         setValidationErrors({
           situationTotal: {
             message: errorMessage,
-            canEdit: false
-          }
+            canEdit: false,
+          },
         });
-        
-        toast.error("Le montant total des factures de situation dépasserait le montant du contrat");
+
+        toast.error(
+          "Le montant total des factures de situation dépasserait le montant du contrat"
+        );
       } else {
-        handleError(error, 'invoice', { 
+        handleError(error, "invoice", {
           preventDuplicates: true,
-          hideServerErrors: true 
+          hideServerErrors: true,
         });
       }
       return false;
@@ -1191,17 +1331,17 @@ export function useInvoiceEditor({
 
     // Validation complète pour la soumission
     const errors = {};
-    
+
     if (!currentFormData.client || !currentFormData.client.id) {
       errors.client = {
         message: "Veuillez sélectionner un client",
-        canEdit: false // Pas de client à modifier
+        canEdit: false, // Pas de client à modifier
       };
     } else {
       // Vérifier les champs obligatoires du client sélectionné
       const client = currentFormData.client;
       const clientErrors = [];
-      
+
       if (!client.name || client.name.trim() === "") {
         clientErrors.push("nom manquant");
       }
@@ -1214,137 +1354,159 @@ export function useInvoiceEditor({
       if (!client.address?.city || client.address.city.trim() === "") {
         clientErrors.push("ville manquante");
       }
-      if (!client.address?.postalCode || client.address.postalCode.trim() === "") {
+      if (
+        !client.address?.postalCode ||
+        client.address.postalCode.trim() === ""
+      ) {
         clientErrors.push("code postal manquant");
       }
       if (!client.address?.country || client.address.country.trim() === "") {
         clientErrors.push("pays manquant");
       }
-      
+
       // Vérifier le numéro de TVA pour les entreprises
-      if (client.type === "COMPANY" && (!client.vatNumber || client.vatNumber.trim() === "")) {
-        clientErrors.push("numéro de TVA manquant (obligatoire pour les entreprises)");
+      if (
+        client.type === "COMPANY" &&
+        (!client.vatNumber || client.vatNumber.trim() === "")
+      ) {
+        clientErrors.push(
+          "numéro de TVA manquant (obligatoire pour les entreprises)"
+        );
       }
-      
+
       if (clientErrors.length > 0) {
         errors.client = {
-          message: `Le client "${client.name || 'Sans nom'}" a des informations incomplètes:\n${clientErrors.join(", ")}`,
-          canEdit: true // On peut modifier le client
+          message: `Le client "${client.name || "Sans nom"}" a des informations incomplètes:\n${clientErrors.join(", ")}`,
+          canEdit: true, // On peut modifier le client
         };
       }
     }
-    
-    if (!currentFormData.companyInfo?.name || !currentFormData.companyInfo?.email) {
+
+    if (
+      !currentFormData.companyInfo?.name ||
+      !currentFormData.companyInfo?.email
+    ) {
       errors.companyInfo = {
         message: "Les informations de l'entreprise sont incomplètes",
-        canEdit: true // On peut toujours modifier l'entreprise
+        canEdit: true, // On peut toujours modifier l'entreprise
       };
     }
-    
+
     // Validation de la remise globale
     if (currentFormData.discountType === "PERCENTAGE") {
       if (currentFormData.discount > 100) {
         errors.discount = {
           message: "La remise ne peut pas dépasser 100%",
-          canEdit: false
+          canEdit: false,
         };
       } else if (currentFormData.discount < 0) {
         errors.discount = {
           message: "La remise ne peut pas être négative",
-          canEdit: false
+          canEdit: false,
         };
       }
     }
-    
+
     // Validation de la livraison si activée
     if (currentFormData.shipping?.billShipping) {
       const shippingErrors = [];
       const shipping = currentFormData.shipping?.shippingAddress || {};
-      
+
       if (!shipping.fullName || shipping.fullName.trim() === "") {
         shippingErrors.push("nom complet manquant");
       } else if (!/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shipping.fullName.trim())) {
         shippingErrors.push("nom complet invalide");
       }
-      
+
       if (!shipping.address || shipping.address.trim() === "") {
         shippingErrors.push("adresse manquante");
       } else if (shipping.address.trim().length < 5) {
         shippingErrors.push("adresse trop courte");
       }
-      
+
       if (!shipping.postalCode || shipping.postalCode.trim() === "") {
         shippingErrors.push("code postal manquant");
       } else if (!/^\d{5}$/.test(shipping.postalCode.trim())) {
         shippingErrors.push("code postal invalide");
       }
-      
+
       if (!shipping.city || shipping.city.trim() === "") {
         shippingErrors.push("ville manquante");
       } else if (!/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shipping.city.trim())) {
         shippingErrors.push("ville invalide");
       }
-      
+
       if (!shipping.country || shipping.country.trim() === "") {
         shippingErrors.push("pays manquant");
       }
-      
-      if (shipping.cost === undefined || shipping.cost === null || shipping.cost === "" || isNaN(parseFloat(shipping.cost)) || parseFloat(shipping.cost) < 0) {
+
+      if (
+        shipping.cost === undefined ||
+        shipping.cost === null ||
+        shipping.cost === "" ||
+        isNaN(parseFloat(shipping.cost)) ||
+        parseFloat(shipping.cost) < 0
+      ) {
         shippingErrors.push("coût de livraison invalide");
       }
-      
+
       if (shippingErrors.length > 0) {
         errors.shipping = {
           message: `Les informations de livraison sont incomplètes ou invalides:\n${shippingErrors.join(", ")}`,
-          canEdit: false
+          canEdit: false,
         };
       }
     }
-    
+
     // Validation des champs personnalisés
-    if (currentFormData.customFields && currentFormData.customFields.length > 0) {
+    if (
+      currentFormData.customFields &&
+      currentFormData.customFields.length > 0
+    ) {
       const invalidCustomFields = [];
       const customFieldsWithErrors = [];
-      
+
       currentFormData.customFields.forEach((field, index) => {
         const fieldErrors = [];
-        
+
         if (!field.name || field.name.trim() === "") {
           fieldErrors.push("nom du champ manquant");
         }
         if (!field.value || field.value.trim() === "") {
           fieldErrors.push("valeur manquante");
         }
-        
+
         if (fieldErrors.length > 0) {
-          invalidCustomFields.push(`Champ personnalisé ${index + 1}: ${fieldErrors.join(", ")}`);
+          invalidCustomFields.push(
+            `Champ personnalisé ${index + 1}: ${fieldErrors.join(", ")}`
+          );
           customFieldsWithErrors.push({ index, errors: fieldErrors });
         }
       });
-      
+
       if (invalidCustomFields.length > 0) {
         errors.customFields = {
           message: `Certains champs personnalisés sont incomplets:\n${invalidCustomFields.join("\n")}`,
           canEdit: false,
-          details: customFieldsWithErrors
+          details: customFieldsWithErrors,
         };
       }
     }
-    
+
     if (!currentFormData.items || currentFormData.items.length === 0) {
       errors.items = {
         message: "Veuillez ajouter au moins un article à la facture",
-        canEdit: false // Pas de bouton modifier pour les articles
+        canEdit: false, // Pas de bouton modifier pour les articles
       };
     } else {
       // Vérifier que chaque article a les champs requis
       const invalidItems = [];
       const itemsWithErrors = [];
-      
+
       currentFormData.items.forEach((item, index) => {
         const itemErrors = [];
         const fields = [];
-        
+
         if (!item.description || item.description.trim() === "") {
           itemErrors.push("description");
           fields.push("description");
@@ -1354,48 +1516,53 @@ export function useInvoiceEditor({
           fields.push("quantity");
         }
         const priceValue = item.unitPrice;
-        const isInvalid = priceValue === undefined || 
-                         priceValue === null || 
-                         priceValue === "" || 
-                         isNaN(parseFloat(priceValue)) ||
-                         parseFloat(priceValue) <= 0;
-        
+        const isInvalid =
+          priceValue === undefined ||
+          priceValue === null ||
+          priceValue === "" ||
+          isNaN(parseFloat(priceValue)) ||
+          parseFloat(priceValue) <= 0;
+
         if (isInvalid) {
           itemErrors.push("prix unitaire doit être > 0€");
           fields.push("unitPrice");
         }
-        
+
         // Vérifier le texte d'exonération de TVA si la TVA est à 0% (sauf en auto-liquidation)
         const vatRate = parseFloat(item.vatRate) || 0;
         if (vatRate === 0 && !formData.isReverseCharge) {
           const vatExemptionText = item.vatExemptionText;
-          if (!vatExemptionText || vatExemptionText.trim() === "" || vatExemptionText === "none") {
+          if (
+            !vatExemptionText ||
+            vatExemptionText.trim() === "" ||
+            vatExemptionText === "none"
+          ) {
             itemErrors.push("texte d'exonération de TVA requis (TVA à 0%)");
             fields.push("vatExemptionText");
           }
         }
-        
+
         if (itemErrors.length > 0) {
           invalidItems.push(`Article ${index + 1}: ${itemErrors.join(", ")}`);
           itemsWithErrors.push({ index, fields });
         }
       });
-      
+
       if (invalidItems.length > 0) {
         errors.items = {
           message: `Certains articles sont incomplets:\n${invalidItems.join("\n")}`,
           canEdit: false,
-          details: itemsWithErrors // Pour afficher les champs en rouge
+          details: itemsWithErrors, // Pour afficher les champs en rouge
         };
       }
     }
-    
+
     if (Object.keys(errors).length > 0) {
       setValidationErrors(errors);
       toast.error("Veuillez corriger les erreurs avant de valider la facture");
       return false;
     }
-    
+
     // Réinitialiser les erreurs si la validation passe
     setValidationErrors({});
 
@@ -1404,14 +1571,15 @@ export function useInvoiceEditor({
       const dataToTransform = {
         ...currentFormData,
         status: "PENDING", // Change status to pending when submitting
-        isDeposit: currentFormData.isDepositInvoice || currentFormData.invoiceType === "deposit", // Mapping correct vers le champ backend
+        isDeposit:
+          currentFormData.isDepositInvoice ||
+          currentFormData.invoiceType === "deposit", // Mapping correct vers le champ backend
         invoiceType: currentFormData.invoiceType || "standard", // Type de facture
       };
 
       // Passer le statut précédent pour gérer automatiquement la date d'émission
       // IMPORTANT: Ne pas définir previousStatus lors de la création pour éviter de vider le préfixe
-      const previousStatus =
-        mode === "edit" ? existingInvoice?.status : null;
+      const previousStatus = mode === "edit" ? existingInvoice?.status : null;
       const input = transformFormDataToInput(dataToTransform, previousStatus);
 
       if (mode === "create") {
@@ -1428,7 +1596,11 @@ export function useInvoiceEditor({
         const result = await updateInvoice(invoiceId, input);
         // Message différent selon si on passe de Draft à Pending ou si on met à jour une facture Pending
         const wasDraft = existingInvoice?.status === "DRAFT";
-        toast.success(wasDraft ? "Facture créée avec succès" : "Facture mise à jour avec succès");
+        toast.success(
+          wasDraft
+            ? "Facture créée avec succès"
+            : "Facture mise à jour avec succès"
+        );
         // Retourner les données de la facture pour permettre l'envoi par email
         return {
           success: true,
@@ -1439,42 +1611,61 @@ export function useInvoiceEditor({
         };
       }
     } catch (error) {
-      console.error('Erreur lors de la sauvegarde de la facture:', error);
-      
+      console.error("Erreur lors de la sauvegarde de la facture:", error);
+
       // Vérifier si c'est une erreur de numéro de facture en double
       const errorMessage = error.message || error.toString();
-      if (errorMessage.includes("existe déjà") || errorMessage.includes("already exists") || errorMessage.includes("duplicate")) {
+      if (
+        errorMessage.includes("existe déjà") ||
+        errorMessage.includes("already exists") ||
+        errorMessage.includes("duplicate")
+      ) {
         // Extraire le numéro de facture du message d'erreur si possible
-        const invoiceNumberMatch = errorMessage.match(/([A-Z0-9-]+)\s+existe déjà/i);
-        const invoiceNumber = invoiceNumberMatch ? invoiceNumberMatch[1] : currentFormData.invoiceNumber;
-        
+        const invoiceNumberMatch = errorMessage.match(
+          /([A-Z0-9-]+)\s+existe déjà/i
+        );
+        const invoiceNumber = invoiceNumberMatch
+          ? invoiceNumberMatch[1]
+          : currentFormData.invoiceNumber;
+
         setValidationErrors({
           invoiceNumber: {
             message: `Le numéro de facture ${invoiceNumber} existe déjà. Veuillez en choisir un autre.`,
-            canEdit: true
-          }
+            canEdit: true,
+          },
         });
-        
+
         toast.error(`Le numéro de facture ${invoiceNumber} existe déjà`);
-      } else if (errorMessage.includes("dépasserait le montant du contrat") || errorMessage.includes("situationTotal")) {
+      } else if (
+        errorMessage.includes("dépasserait le montant du contrat") ||
+        errorMessage.includes("situationTotal")
+      ) {
         // Erreur de dépassement du montant du contrat pour les factures de situation
         setValidationErrors({
           situationTotal: {
             message: errorMessage,
-            canEdit: false
-          }
+            canEdit: false,
+          },
         });
-        
-        toast.error("Le montant total des factures de situation dépasserait le montant du contrat");
+
+        toast.error(
+          "Le montant total des factures de situation dépasserait le montant du contrat"
+        );
       } else {
         // Vérifier si l'erreur est vide et la remplacer par un message par défaut
-        const errorToHandle = error && (error.message || error.graphQLErrors || Object.keys(error).length > 0) 
-          ? error 
-          : new Error('Une erreur inconnue est survenue lors de la sauvegarde de la facture');
-        
-        handleError(errorToHandle, 'invoice', { 
+        const errorToHandle =
+          error &&
+          (error.message ||
+            error.graphQLErrors ||
+            Object.keys(error).length > 0)
+            ? error
+            : new Error(
+                "Une erreur inconnue est survenue lors de la sauvegarde de la facture"
+              );
+
+        handleError(errorToHandle, "invoice", {
           preventDuplicates: true,
-          hideServerErrors: true 
+          hideServerErrors: true,
         });
       }
       return false;
@@ -1508,7 +1699,8 @@ export function useInvoiceEditor({
         invoiceFooterNotes: currentFormData.footerNotes || "",
         invoiceTermsAndConditions: currentFormData.termsAndConditions || "",
         showBankDetails: currentFormData.showBankDetails || false,
-        invoiceClientPositionRight: currentFormData.clientPositionRight || false,
+        invoiceClientPositionRight:
+          currentFormData.clientPositionRight || false,
       };
 
       await updateOrganization(activeOrganization.id, organizationData);
@@ -1518,51 +1710,15 @@ export function useInvoiceEditor({
   }, [getValues]);
 
   // Fonction pour valider le numéro de facture en temps réel
-  const validateInvoiceNumber = useCallback(async (invoiceNumber, invoicePrefix) => {
-    console.log('[validateInvoiceNumber] Validation:', { prefix: invoicePrefix, number: invoiceNumber });
-    
-    if (!invoiceNumber || invoiceNumber.trim() === "") {
-      // Si le numéro est vide, supprimer l'erreur
-      setValidationErrors((prevErrors) => {
-        if (prevErrors.invoiceNumber) {
-          const newErrors = { ...prevErrors };
-          delete newErrors.invoiceNumber;
-          return newErrors;
-        }
-        return prevErrors;
+  const validateInvoiceNumber = useCallback(
+    async (invoiceNumber, invoicePrefix) => {
+      console.log("[validateInvoiceNumber] Validation:", {
+        prefix: invoicePrefix,
+        number: invoiceNumber,
       });
-      return;
-    }
 
-    // Si pas de préfixe fourni, récupérer depuis le formulaire
-    const prefix = invoicePrefix || getValues('prefix');
-    
-    if (!prefix) {
-      console.log('[validateInvoiceNumber] ⚠️ Pas de préfixe, validation ignorée');
-      return;
-    }
-
-    try {
-      const { exists } = await checkInvoiceNumber(invoiceNumber, prefix, invoiceId);
-      
-      console.log('[validateInvoiceNumber] Résultat:', { exists, prefix, number: invoiceNumber });
-      
-      if (exists) {
-        console.log('[validateInvoiceNumber] ❌ Numéro existe déjà, ajout de l\'erreur');
-        setValidationErrors((prevErrors) => {
-          const newErrors = {
-            ...prevErrors,
-            invoiceNumber: {
-              message: `Le numéro de facture ${prefix}-${invoiceNumber} existe déjà. Veuillez en choisir un autre.`,
-              canEdit: true
-            }
-          };
-          console.log('[validateInvoiceNumber] Nouvelles erreurs:', newErrors);
-          return newErrors;
-        });
-      } else {
-        console.log('[validateInvoiceNumber] ✅ Numéro valide, suppression de l\'erreur');
-        // Supprimer l'erreur si le numéro est valide
+      if (!invoiceNumber || invoiceNumber.trim() === "") {
+        // Si le numéro est vide, supprimer l'erreur
         setValidationErrors((prevErrors) => {
           if (prevErrors.invoiceNumber) {
             const newErrors = { ...prevErrors };
@@ -1571,11 +1727,73 @@ export function useInvoiceEditor({
           }
           return prevErrors;
         });
+        return;
       }
-    } catch (error) {
-      console.error("Erreur lors de la validation du numéro de facture:", error);
-    }
-  }, [checkInvoiceNumber, invoiceId, getValues]);
+
+      // Si pas de préfixe fourni, récupérer depuis le formulaire
+      const prefix = invoicePrefix || getValues("prefix");
+
+      if (!prefix) {
+        console.log(
+          "[validateInvoiceNumber] ⚠️ Pas de préfixe, validation ignorée"
+        );
+        return;
+      }
+
+      try {
+        const { exists } = await checkInvoiceNumber(
+          invoiceNumber,
+          prefix,
+          invoiceId
+        );
+
+        console.log("[validateInvoiceNumber] Résultat:", {
+          exists,
+          prefix,
+          number: invoiceNumber,
+        });
+
+        if (exists) {
+          console.log(
+            "[validateInvoiceNumber] ❌ Numéro existe déjà, ajout de l'erreur"
+          );
+          setValidationErrors((prevErrors) => {
+            const newErrors = {
+              ...prevErrors,
+              invoiceNumber: {
+                message: `Le numéro de facture ${prefix}-${invoiceNumber} existe déjà. Veuillez en choisir un autre.`,
+                canEdit: true,
+              },
+            };
+            console.log(
+              "[validateInvoiceNumber] Nouvelles erreurs:",
+              newErrors
+            );
+            return newErrors;
+          });
+        } else {
+          console.log(
+            "[validateInvoiceNumber] ✅ Numéro valide, suppression de l'erreur"
+          );
+          // Supprimer l'erreur si le numéro est valide
+          setValidationErrors((prevErrors) => {
+            if (prevErrors.invoiceNumber) {
+              const newErrors = { ...prevErrors };
+              delete newErrors.invoiceNumber;
+              return newErrors;
+            }
+            return prevErrors;
+          });
+        }
+      } catch (error) {
+        console.error(
+          "Erreur lors de la validation du numéro de facture:",
+          error
+        );
+      }
+    },
+    [checkInvoiceNumber, invoiceId, getValues]
+  );
 
   return {
     form,
@@ -1608,7 +1826,7 @@ export function useInvoiceEditor({
     validateInvoiceNumber,
     saveSettingsToOrganization,
     invoice: existingInvoice,
-    error: loadingInvoice ? null : (!existingInvoice && mode !== "create"),
+    error: loadingInvoice ? null : !existingInvoice && mode !== "create",
   };
 }
 
@@ -1660,6 +1878,8 @@ function getInitialFormData(mode, initialData, session, organization) {
     invoiceType: "standard",
     situationNumber: 1,
     purchaseOrderNumber: "",
+    progressMode: "uniform", // Mode d'avancement: "uniform" ou "individual"
+    globalProgressPercentage: 100, // Pourcentage global pour le mode uniforme
     // Récupérer les données bancaires si elles existent dans la facture
     showBankDetails: organization?.showBankDetails || false,
     bankDetails: {
@@ -1822,10 +2042,11 @@ function transformInvoiceToFormData(invoice) {
             bankName: "",
           },
         },
-    items: invoice.items?.map(item => ({
-      ...item,
-      progressPercentage: item.progressPercentage ?? 100
-    })) || [],
+    items:
+      invoice.items?.map((item) => ({
+        ...item,
+        progressPercentage: item.progressPercentage ?? 100,
+      })) || [],
     discount: invoice.discount || 0,
     discountType: invoice.discountType || "PERCENTAGE",
     retenueGarantie: invoice.retenueGarantie || 0,
@@ -1841,8 +2062,10 @@ function transformInvoiceToFormData(invoice) {
     // Champs qui n'existent pas dans le schéma GraphQL - utiliser des valeurs par défaut
     paymentMethod: null,
     isDepositInvoice: invoice.isDeposit || false, // Mapper isDeposit vers isDepositInvoice pour le formulaire
-    invoiceType: invoice.invoiceType || (invoice.isDeposit ? "deposit" : "standard"), // Mapper invoiceType avec fallback sur isDeposit
+    invoiceType:
+      invoice.invoiceType || (invoice.isDeposit ? "deposit" : "standard"), // Mapper invoiceType avec fallback sur isDeposit
     situationNumber: invoice.situationNumber || 1,
+    situationReference: invoice.situationReference || "",
     purchaseOrderNumber: invoice.purchaseOrderNumber || "",
     // Récupérer les données bancaires si elles existent dans la facture
     showBankDetails: invoice.showBankDetails || false,
@@ -1997,16 +2220,23 @@ function transformFormDataToInput(formData, previousStatus = null) {
   let numberToSend = formData.number || "";
   let prefixToSend = formData.prefix || "";
 
-  console.log('[transformFormDataToInput] Prefix from form:', formData.prefix);
-  console.log('[transformFormDataToInput] Prefix to send:', prefixToSend);
-  console.log('[transformFormDataToInput] previousStatus:', previousStatus);
-  console.log('[transformFormDataToInput] formData.status:', formData.status);
+  console.log("[transformFormDataToInput] Prefix from form:", formData.prefix);
+  console.log("[transformFormDataToInput] Prefix to send:", prefixToSend);
+  console.log("[transformFormDataToInput] previousStatus:", previousStatus);
+  console.log("[transformFormDataToInput] formData.status:", formData.status);
 
   // Si on passe de DRAFT à PENDING, ne pas envoyer le numéro pour permettre la génération automatique
   // IMPORTANT: Seulement si previousStatus existe ET est différent du statut actuel (vrai changement de statut)
-  const isStatusTransition = previousStatus && previousStatus !== formData.status;
-  if (isStatusTransition && previousStatus === "DRAFT" && formData.status === "PENDING") {
-    console.log('[transformFormDataToInput] ⚠️ DRAFT->PENDING transition detected, clearing prefix');
+  const isStatusTransition =
+    previousStatus && previousStatus !== formData.status;
+  if (
+    isStatusTransition &&
+    previousStatus === "DRAFT" &&
+    formData.status === "PENDING"
+  ) {
+    console.log(
+      "[transformFormDataToInput] ⚠️ DRAFT->PENDING transition detected, clearing prefix"
+    );
     numberToSend = undefined; // Ne pas envoyer le numéro
     prefixToSend = undefined; // Ne pas envoyer le préfixe
   }
@@ -2014,8 +2244,13 @@ function transformFormDataToInput(formData, previousStatus = null) {
   // Ne pas envoyer le prefix s'il est vide (pour laisser le backend utiliser le dernier)
   // Mais l'envoyer s'il a une valeur (même si c'est une modification)
   const shouldSendPrefix = prefixToSend !== undefined && prefixToSend !== "";
-  
-  console.log('[transformFormDataToInput] Should send prefix:', shouldSendPrefix, 'Value:', prefixToSend);
+
+  console.log(
+    "[transformFormDataToInput] Should send prefix:",
+    shouldSendPrefix,
+    "Value:",
+    prefixToSend
+  );
 
   return {
     ...(shouldSendPrefix && { prefix: prefixToSend }),
@@ -2029,10 +2264,11 @@ function transformFormDataToInput(formData, previousStatus = null) {
       formData.items?.map((item) => {
         const vatRate = parseFloat(item.vatRate || item.taxRate) || 0;
         // Auto-liquidation : si isReverseCharge = true et TVA = 0, utiliser "Auto-liquidation" comme texte d'exonération
-        const vatExemptionText = formData.isReverseCharge && vatRate === 0
-          ? "Auto-liquidation"
-          : (item.vatExemptionText || "");
-        
+        const vatExemptionText =
+          formData.isReverseCharge && vatRate === 0
+            ? "Auto-liquidation"
+            : item.vatExemptionText || "";
+
         return {
           description: item.description || "",
           quantity: parseFloat(item.quantity) || 0,
@@ -2059,6 +2295,10 @@ function transformFormDataToInput(formData, previousStatus = null) {
         value: field.value,
       })) || [],
     purchaseOrderNumber: formData.purchaseOrderNumber || "",
+    situationReference: formData.situationReference || undefined, // Référence unique du projet de situation
+    contractTotal: formData.contractTotal
+      ? parseFloat(formData.contractTotal)
+      : undefined, // Montant total du contrat
     isDeposit: formData.isDepositInvoice || formData.invoiceType === "deposit", // Mapping correct vers le champ backend
     invoiceType: formData.invoiceType || "standard", // Type de facture (standard, deposit, situation)
     situationNumber: formData.situationNumber || 1, // Numéro de situation pour les factures de situation

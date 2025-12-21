@@ -11,6 +11,7 @@ export const INVOICE_FRAGMENT = gql`
     isDeposit
     invoiceType
     situationNumber
+    situationReference
     status
     issueDate
     dueDate
@@ -314,6 +315,16 @@ export const GET_SITUATION_INVOICES_BY_QUOTE_REF = gql`
           country
         }
       }
+      escompte
+      retenueGarantie
+      isReverseCharge
+      discount
+      discountType
+      headerNotes
+      footerNotes
+      termsAndConditions
+      showBankDetails
+      clientPositionRight
     }
   }
 `;
@@ -327,6 +338,35 @@ export const GET_SITUATION_REFERENCES = gql`
       lastInvoiceDate
       totalTTC
       contractTotal
+    }
+  }
+`;
+
+// Query pour récupérer les factures de situation par situationReference (pour calculer l'avancement cumulé)
+export const GET_SITUATION_INVOICES_BY_REFERENCE = gql`
+  query GetSituationInvoicesByReference(
+    $workspaceId: ID!
+    $situationReference: String!
+  ) {
+    situationInvoicesByReference(
+      workspaceId: $workspaceId
+      situationReference: $situationReference
+    ) {
+      id
+      number
+      invoiceType
+      situationNumber
+      situationReference
+      status
+      issueDate
+      finalTotalTTC
+      items {
+        description
+        quantity
+        unitPrice
+        vatRate
+        progressPercentage
+      }
     }
   }
 `;
@@ -732,7 +772,7 @@ export const useCreateInvoice = () => {
   const { workspaceId } = useRequiredWorkspace();
 
   const [createInvoiceMutation, { loading }] = useMutation(CREATE_INVOICE, {
-    refetchQueries: ['GetInvoices', 'GetInvoiceStats'],
+    refetchQueries: ["GetInvoices", "GetInvoiceStats"],
     awaitRefetchQueries: true,
     // onError désactivé - les erreurs sont gérées dans les composants appelants
   });

@@ -29,11 +29,12 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/src/components/ui/tabs";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/src/components/ui/dialog";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import {
   Command,
@@ -74,8 +75,8 @@ export default function ClientSelector({
   setValidationErrors,
 }) {
   const id = useId();
-  const [activeTab, setActiveTab] = useState("existing");
   const [query, setQuery] = useState("");
+  const [openNewClientDialog, setOpenNewClientDialog] = useState(false);
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [selectedValue, setSelectedValue] = useState("");
@@ -229,25 +230,29 @@ export default function ClientSelector({
   useEffect(() => {
     // Ne valider que si le formulaire manuel est affiché
     if (!showManualForm) return;
-    
+
     // Ne pas valider si le formulaire est vide (état initial)
-    const isFormEmpty = !newClientForm.name && !newClientForm.email && 
-                        !newClientForm.firstName && !newClientForm.lastName &&
-                        !newClientForm.address.street && !newClientForm.address.city;
+    const isFormEmpty =
+      !newClientForm.name &&
+      !newClientForm.email &&
+      !newClientForm.firstName &&
+      !newClientForm.lastName &&
+      !newClientForm.address.street &&
+      !newClientForm.address.city;
     if (isFormEmpty) return;
-    
+
     // Debounce de 500ms
     const timeoutId = setTimeout(() => {
       validateForm();
     }, 500);
-    
+
     return () => clearTimeout(timeoutId);
   }, [newClientForm, showManualForm]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Nettoyer les erreurs quand on quitte le formulaire de nouveau client
+  // Nettoyer les erreurs quand on ferme le dialog de nouveau client
   useEffect(() => {
-    // Si on n'est pas sur l'onglet "new" ou si le formulaire manuel n'est pas affiché
-    if (activeTab !== "new" || !showManualForm) {
+    // Si le dialog n'est pas ouvert ou si le formulaire manuel n'est pas affiché
+    if (!openNewClientDialog || !showManualForm) {
       // Supprimer les erreurs de validation globales
       if (setValidationErrors) {
         setValidationErrors((prev) => {
@@ -259,7 +264,7 @@ export default function ClientSelector({
       // Nettoyer aussi les erreurs locales
       setFormErrors({});
     }
-  }, [activeTab, showManualForm, setValidationErrors]);
+  }, [openNewClientDialog, showManualForm, setValidationErrors]);
 
   const validateForm = () => {
     const errors = {};
@@ -385,7 +390,8 @@ export default function ClientSelector({
       if (newClientForm.siret) {
         const siretRegex = /^\d{9}$|^\d{14}$/;
         if (!siretRegex.test(newClientForm.siret)) {
-          errors.siret = "Le SIREN doit contenir 9 chiffres ou le SIRET 14 chiffres";
+          errors.siret =
+            "Le SIREN doit contenir 9 chiffres ou le SIRET 14 chiffres";
         }
       } else if (newClientForm.siret === "") {
         errors.siret = "Le SIREN/SIRET est obligatoire pour une entreprise";
@@ -402,7 +408,7 @@ export default function ClientSelector({
     }
 
     setFormErrors(errors);
-    
+
     // Afficher aussi dans la bannière globale si setValidationErrors est disponible
     if (setValidationErrors && Object.keys(errors).length > 0) {
       const errorMessages = Object.values(errors);
@@ -410,8 +416,8 @@ export default function ClientSelector({
         ...prev,
         newClient: {
           message: `Erreurs dans le formulaire de nouveau client:\n${errorMessages.join("\n")}`,
-          canEdit: true
-        }
+          canEdit: true,
+        },
       }));
     } else if (setValidationErrors && Object.keys(errors).length === 0) {
       // Supprimer l'erreur si le formulaire est valide
@@ -421,7 +427,7 @@ export default function ClientSelector({
         return newErrors;
       });
     }
-    
+
     return Object.keys(errors).length === 0;
   };
 
@@ -437,16 +443,17 @@ export default function ClientSelector({
     }
 
     // Vérifier si l'email existe déjà dans la liste des clients
-    const clientsList = Array.isArray(clients) ? clients : (clients?.items || []);
-    
+    const clientsList = Array.isArray(clients) ? clients : clients?.items || [];
+
     const emailExists = clientsList.some(
-      (client) => client.email.toLowerCase() === newClientForm.email.toLowerCase()
+      (client) =>
+        client.email.toLowerCase() === newClientForm.email.toLowerCase()
     );
-    
+
     if (emailExists) {
       setFormErrors((prev) => ({
         ...prev,
-        email: "Cet email est déjà utilisé par un autre client"
+        email: "Cet email est déjà utilisé par un autre client",
       }));
       toast.error("Un client avec cet email existe déjà");
       return;
@@ -499,7 +506,7 @@ export default function ClientSelector({
       if (createdClient) {
         onSelect?.(createdClient);
         resetNewClientForm();
-        setActiveTab("existing");
+        setOpenNewClientDialog(false);
         setOpen(false);
       }
     } catch (error) {
@@ -528,7 +535,7 @@ export default function ClientSelector({
         // Afficher l'erreur sur le champ email
         setFormErrors((prev) => ({
           ...prev,
-          email: "Cet email est déjà utilisé par un autre client"
+          email: "Cet email est déjà utilisé par un autre client",
         }));
       } else if (
         error.message.includes("401") ||
@@ -571,21 +578,22 @@ export default function ClientSelector({
   };
 
   const handleSwitchToNewClient = () => {
-    setActiveTab("new");
+    setOpenNewClientDialog(true);
     setOpen(false);
     setQuery("");
     setSelectedValue("");
-    setShowManualForm(false); // Masquer le formulaire manuel par défaut
-    setCompanyQuery(""); // Reset de la recherche entreprise
+    setShowManualForm(false);
+    setCompanyQuery("");
     setCompanies([]);
+  };
 
-    // Focus sur le champ de recherche d'entreprise
-    setTimeout(() => {
-      const searchInput = document.querySelector("#company-search");
-      if (searchInput) {
-        searchInput.focus();
-      }
-    }, 100);
+  // Fermer le dialog et réinitialiser
+  const handleCloseNewClientDialog = () => {
+    setOpenNewClientDialog(false);
+    setShowManualForm(false);
+    setCompanyQuery("");
+    setCompanies([]);
+    resetNewClientForm();
   };
 
   // Fonction pour sélectionner une entreprise de l'API Gouv
@@ -636,472 +644,460 @@ export default function ClientSelector({
   return (
     <div className={cn("w-full", className)}>
       <Card className="shadow-none border-none bg-transparent">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <CardHeader className="p-0 pb-4">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="existing" className="flex items-center gap-2">
-                <User className="h-4 w-4" />
-                <span className="font-normal">Client existant</span>
-              </TabsTrigger>
-              <TabsTrigger value="new" className="flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                <span className="font-normal">Nouveau client</span>
-              </TabsTrigger>
-            </TabsList>
-          </CardHeader>
-
-          <CardContent className="p-0">
-            <TabsContent value="existing" className="m-0">
-              <div className="space-y-4">
-                <div className="space-y-3">
-                  <Popover open={open} onOpenChange={setOpen}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        id={id}
-                        variant="outline"
-                        role="combobox"
-                        aria-expanded={open}
-                        className={cn(
-                          "w-full justify-between font-normal",
-                          error && "border-destructive focus-visible:ring-destructive"
-                        )}
-                        disabled={disabled}
-                      >
-                        <span className={cn("truncate")}>
-                          {selectedValue || placeholder}
-                        </span>
-                        <ChevronDown
-                          size={16}
-                          className="shrink-0"
-                          aria-hidden="true"
-                        />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent
-                      className="border-input p-0"
-                      align="start"
-                      side="top"
-                      sideOffset={4}
-                      avoidCollisions={false}
-                      sticky="always"
-                      style={{
-                        width: 'var(--radix-popover-trigger-width)'
-                      }}
+        <CardContent className="p-0">
+          <div className="space-y-4">
+            {/* Select de client + Bouton Plus */}
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <Popover open={open} onOpenChange={setOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      id={id}
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={open}
+                      className={cn(
+                        "w-full justify-between font-normal",
+                        error &&
+                          "border-destructive focus-visible:ring-destructive"
+                      )}
+                      disabled={disabled}
                     >
-                      <Command>
-                        <CommandInput
-                          placeholder="Rechercher un client..."
-                          value={query}
-                          onValueChange={setQuery}
-                        />
-                        <CommandList>
-                          {loading ? (
-                            <div className="p-3 text-center">
-                              <LoaderCircle className="h-4 w-4 animate-spin mx-auto" />
-                              <span className="text-sm ml-2">Recherche...</span>
-                            </div>
-                          ) : (
-                            <>
-                              <CommandEmpty>
-                                <div className="p-3 text-center">
-                                  <p className="text-sm mb-2">
-                                    Aucun client trouvé
-                                    {query && ` pour "${query}"`}
-                                  </p>
-                                  {query && (
-                                    <Button
-                                      type="button"
+                      <span className={cn("truncate")}>
+                        {selectedValue || placeholder}
+                      </span>
+                      <ChevronDown
+                        size={16}
+                        className="shrink-0"
+                        aria-hidden="true"
+                      />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    className="border-input p-0"
+                    align="start"
+                    side="top"
+                    sideOffset={4}
+                    avoidCollisions={false}
+                    sticky="always"
+                    style={{
+                      width: "var(--radix-popover-trigger-width)",
+                    }}
+                  >
+                    <Command>
+                      <CommandInput
+                        placeholder="Rechercher un client..."
+                        value={query}
+                        onValueChange={setQuery}
+                      />
+                      <CommandList>
+                        {loading ? (
+                          <div className="p-3 text-center">
+                            <LoaderCircle className="h-4 w-4 animate-spin mx-auto" />
+                            <span className="text-sm ml-2">Recherche...</span>
+                          </div>
+                        ) : (
+                          <>
+                            <CommandEmpty>
+                              <div className="p-3 text-center">
+                                <p className="text-sm mb-2">
+                                  Aucun client trouvé
+                                  {query && ` pour "${query}"`}
+                                </p>
+                                {query && (
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handleSwitchToNewClient}
+                                    className="text-xs font-normal"
+                                  >
+                                    <Plus className="h-3 w-3 mr-1" />
+                                    Créer "{query}" comme nouveau client
+                                  </Button>
+                                )}
+                              </div>
+                            </CommandEmpty>
+                            <CommandGroup>
+                              {clients?.map((client) => {
+                                const IconComponent = getClientIcon(
+                                  client.type
+                                );
+                                return (
+                                  <CommandItem
+                                    key={client.id}
+                                    value={client.id}
+                                    onSelect={() => {
+                                      handleClientSelect(client);
+                                      setOpen(false);
+                                    }}
+                                    className="flex items-center space-x-3 px-3 py-2"
+                                  >
+                                    <div className="p-1 bg-muted rounded">
+                                      <IconComponent className="h-4 w-4 text-muted-foreground" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <div className="font-normal truncate">
+                                        {client.name}
+                                      </div>
+                                      <div className="text-sm truncate">
+                                        {client.email}
+                                      </div>
+                                    </div>
+                                    <Badge
                                       variant="outline"
-                                      size="sm"
-                                      onClick={handleSwitchToNewClient}
                                       className="text-xs font-normal"
                                     >
-                                      <Plus className="h-3 w-3 mr-1" />
-                                      Créer "{query}" comme nouveau client
-                                    </Button>
-                                  )}
-                                </div>
-                              </CommandEmpty>
-                              <CommandGroup>
-                                {clients?.map((client) => {
-                                  const IconComponent = getClientIcon(
-                                    client.type
-                                  );
-                                  return (
-                                    <CommandItem
-                                      key={client.id}
-                                      value={client.id}
-                                      onSelect={() => {
-                                        handleClientSelect(client);
-                                        setOpen(false);
-                                      }}
-                                      className="flex items-center space-x-3 px-3 py-2"
-                                    >
-                                      <div className="p-1 bg-muted rounded">
-                                        <IconComponent className="h-4 w-4 text-muted-foreground" />
-                                      </div>
-                                      <div className="flex-1 min-w-0">
-                                        <div className="font-normal truncate">
-                                          {client.name}
-                                        </div>
-                                        <div className="text-sm truncate">
-                                          {client.email}
-                                        </div>
-                                      </div>
-                                      <Badge
-                                        variant="outline"
-                                        className="text-xs font-normal"
-                                      >
-                                        {CLIENT_TYPE_LABELS[client.type]}
-                                      </Badge>
-                                      {selectedClient?.id === client.id && (
-                                        <CheckIcon
-                                          size={16}
-                                          className="ml-auto"
-                                        />
-                                      )}
-                                    </CommandItem>
-                                  );
-                                })}
-                              </CommandGroup>
-                            </>
-                          )}
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                  
-                  {/* Message d'erreur */}
-                  {error && (
-                    <p className="text-sm text-destructive font-normal">
-                      {error}
-                    </p>
-                  )}
+                                      {CLIENT_TYPE_LABELS[client.type]}
+                                    </Badge>
+                                    {selectedClient?.id === client.id && (
+                                      <CheckIcon
+                                        size={16}
+                                        className="ml-auto"
+                                      />
+                                    )}
+                                  </CommandItem>
+                                );
+                              })}
+                            </CommandGroup>
+                          </>
+                        )}
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              </div>
 
-                  {selectedClient && (
-                    <div className="space-y-3">
-                      <div className="p-4 border rounded-lg bg-muted/50">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-start space-x-3 flex-1 min-w-0">
-                            <div className="p-2 bg-primary/10 rounded flex-shrink-0">
+              {/* Bouton Plus pour ajouter un nouveau client */}
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={handleSwitchToNewClient}
+                disabled={disabled}
+                className="bg-muted/50 hover:bg-muted flex-shrink-0"
+                title="Ajouter un nouveau client"
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {/* Message d'erreur */}
+            {error && (
+              <p className="text-sm text-destructive font-normal">{error}</p>
+            )}
+
+            {selectedClient && (
+              <div className="space-y-3">
+                <div className="p-4 border rounded-lg bg-muted/20">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-start space-x-3 flex-1 min-w-0">
+                      {/* <div className="p-2 bg-primary/10 rounded flex-shrink-0">
                               {React.createElement(
                                 getClientIcon(selectedClient.type),
                                 {
                                   className: "h-4 w-4 text-primary",
                                 }
                               )}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="mb-2">
-                                <Badge variant="outline" className="text-xs font-normal">
+                            </div> */}
+                      <div className="flex-1 min-w-0">
+                        <div className="mb-2">
+                          {/* <Badge
+                                  variant="outline"
+                                  className="text-xs font-normal"
+                                >
                                   {CLIENT_TYPE_LABELS[selectedClient.type]}
-                                </Badge>
-                              </div>
-                              <div className="font-normal">
-                                {selectedClient.name}
-                              </div>
-                              <div className="text-sm">
-                                {selectedClient.email}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex gap-2 flex-shrink-0 ml-2">
-                            {onEditClient && (
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => onEditClient(selectedClient)}
-                                disabled={disabled}
-                                className="gap-2"
-                                title="Modifier le client"
-                              >
-                                <Pencil className="h-4 w-4" />
-                                <span className="hidden sm:inline">Modifier</span>
-                              </Button>
-                            )}
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                onSelect?.(null);
-                                setSelectedValue("");
-                                setQuery("");
-                              }}
+                                </Badge> */}
+                        </div>
+                        <div className="flex gap-2">
+                          <span className="font-normal">
+                            {selectedClient.name}
+                          </span>
+                          <div className="mb-2">
+                            <Badge
+                              variant="manual"
+                              className="text-xs font-normal"
                             >
-                              <X className="h-4 w-4" />
-                              <span className="sr-only">
-                                Supprimer la sélection
-                              </span>
-                            </Button>
+                              {CLIENT_TYPE_LABELS[selectedClient.type]}
+                            </Badge>
                           </div>
                         </div>
+                        <div className="text-sm">{selectedClient.email}</div>
                       </div>
-                      
-                      {/* Mention pour la position du client dans le PDF */}
-                      <div className="p-3 border rounded-lg bg-muted/10">
-                        <p className="text-xs text-muted-foreground">
-                          💡 La position des informations client dans le PDF peut être modifiée dans les paramètres de la facture (icône ⚙️ en haut à droite).
-                        </p>
+                    </div>
+                    <div className="flex gap-2 flex-shrink-0 ml-2">
+                      {onEditClient && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onEditClient(selectedClient)}
+                          disabled={disabled}
+                          className="bg-muted/100"
+                          title="Modifier le client"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      )}
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="bg-muted/100"
+                        size="sm"
+                        onClick={() => {
+                          onSelect?.(null);
+                          setSelectedValue("");
+                          setQuery("");
+                        }}
+                      >
+                        <X className="h-4 w-4" />
+                        <span className="sr-only">Supprimer la sélection</span>
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Mention pour la position du client dans le PDF */}
+                <div>
+                  <p className="text-xs text-muted-foreground">
+                    *La position des informations client dans le PDF peut être
+                    modifiée dans les paramètres de la facture (icône ⚙️ en haut
+                    à droite).
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Dialog Modal pour ajouter un nouveau client */}
+      <Dialog open={openNewClientDialog} onOpenChange={setOpenNewClientDialog}>
+        <DialogContent
+          className="max-h-[90vh] overflow-y-auto"
+          style={{ maxWidth: "900px", width: "90vw" }}
+        >
+          <DialogHeader>
+            <DialogTitle>Ajouter un nouveau client</DialogTitle>
+            <DialogDescription>
+              Recherchez une entreprise ou créez un client manuellement
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6 mt-4">
+            {!showManualForm ? (
+              // Interface de recherche d'entreprises API Gouv Data
+              <div className="space-y-6">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label
+                      htmlFor="company-search"
+                      className="text-sm font-normal flex items-center gap-2"
+                    >
+                      <Building className="h-4 w-4" />
+                      Rechercher une entreprise
+                    </Label>
+                    <div className="relative">
+                      <Input
+                        id="company-search"
+                        value={companyQuery}
+                        onChange={(e) => setCompanyQuery(e.target.value)}
+                        placeholder="Nom d'entreprise, SIRET, SIREN..."
+                        className="h-10 rounded-lg text-sm w-full pl-10"
+                        disabled={disabled}
+                      />
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Recherchez une entreprise française via la base de données
+                      officielle
+                    </p>
+                  </div>
+
+                  {/* Résultats de recherche */}
+                  {loadingCompanies && (
+                    <div className="flex items-center justify-center p-8">
+                      <LoaderCircle className="h-6 w-6 animate-spin mr-2" />
+                      <span className="text-sm">Recherche en cours...</span>
+                    </div>
+                  )}
+
+                  {companies.length > 0 && (
+                    <div className="space-y-2">
+                      <Label className="text-sm font-medium">
+                        Entreprises trouvées
+                      </Label>
+                      <div className="space-y-2 max-h-80 overflow-y-auto">
+                        {companies.map((company) => (
+                          <div
+                            key={company.id}
+                            className="p-4 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
+                            onClick={() => handleCompanySelect(company)}
+                          >
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <Building className="h-4 w-4 text-primary flex-shrink-0" />
+                                  <h4 className="font-medium text-sm truncate">
+                                    {company.name}
+                                  </h4>
+                                  {company.status === "A" && (
+                                    <Badge
+                                      variant="outline"
+                                      className="text-xs bg-green-50 text-green-700 border-green-200"
+                                    >
+                                      Active
+                                    </Badge>
+                                  )}
+                                </div>
+                                <div className="space-y-1">
+                                  <p className="text-xs text-muted-foreground">
+                                    <strong>SIRET:</strong> {company.siret}
+                                  </p>
+                                  {company.address && (
+                                    <p className="text-xs text-muted-foreground truncate">
+                                      <strong>Adresse:</strong>{" "}
+                                      {company.address}, {company.postalCode}{" "}
+                                      {company.city}
+                                    </p>
+                                  )}
+                                  {company.activityLabel && (
+                                    <p className="text-xs text-muted-foreground truncate">
+                                      <strong>Activité:</strong>{" "}
+                                      {company.activityLabel}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                              <ExternalLink className="h-4 w-4 text-muted-foreground flex-shrink-0 ml-2" />
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   )}
+
+                  {companyQuery &&
+                    !loadingCompanies &&
+                    companies.length === 0 && (
+                      <div className="text-center p-8 text-muted-foreground">
+                        <Building className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                        <p className="text-sm">
+                          Aucune entreprise trouvée pour "{companyQuery}"
+                        </p>
+                        <p className="text-xs mt-1">
+                          Essayez avec un nom d'entreprise ou un SIRET
+                        </p>
+                      </div>
+                    )}
+                </div>
+
+                {/* Bouton pour créer manuellement */}
+                <div className="pt-4 border-t">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleShowManualForm}
+                    className="w-full h-10 text-sm font-normal"
+                    disabled={disabled}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Créer un client manuellement
+                  </Button>
                 </div>
               </div>
-            </TabsContent>
-
-            <TabsContent value="new" className="m-0">
-              {!showManualForm ? (
-                // Interface de recherche d'entreprises API Gouv Data
+            ) : (
+              // Formulaire manuel (affiché après sélection d'entreprise ou clic sur "Créer manuellement")
+              <form onSubmit={handleNewClientSubmit} className="space-y-6">
                 <div className="space-y-6">
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label
-                        htmlFor="company-search"
-                        className="text-sm font-normal flex items-center gap-2"
-                      >
-                        <Building className="h-4 w-4" />
-                        Rechercher une entreprise
-                      </Label>
-                      <div className="relative">
-                        <Input
-                          id="company-search"
-                          value={companyQuery}
-                          onChange={(e) => setCompanyQuery(e.target.value)}
-                          placeholder="Nom d'entreprise, SIRET, SIREN..."
-                          className="h-10 rounded-lg text-sm w-full pl-10"
-                          disabled={disabled}
-                        />
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        Recherchez une entreprise française via la base de
-                        données officielle
-                      </p>
-                    </div>
-
-                    {/* Résultats de recherche */}
-                    {loadingCompanies && (
-                      <div className="flex items-center justify-center p-8">
-                        <LoaderCircle className="h-6 w-6 animate-spin mr-2" />
-                        <span className="text-sm">Recherche en cours...</span>
-                      </div>
-                    )}
-
-                    {companies.length > 0 && (
-                      <div className="space-y-2">
-                        <Label className="text-sm font-medium">
-                          Entreprises trouvées
-                        </Label>
-                        <div className="space-y-2 max-h-80 overflow-y-auto">
-                          {companies.map((company) => (
-                            <div
-                              key={company.id}
-                              className="p-4 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
-                              onClick={() => handleCompanySelect(company)}
-                            >
-                              <div className="flex items-start justify-between">
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2 mb-1">
-                                    <Building className="h-4 w-4 text-primary flex-shrink-0" />
-                                    <h4 className="font-medium text-sm truncate">
-                                      {company.name}
-                                    </h4>
-                                    {company.status === "A" && (
-                                      <Badge
-                                        variant="outline"
-                                        className="text-xs bg-green-50 text-green-700 border-green-200"
-                                      >
-                                        Active
-                                      </Badge>
-                                    )}
-                                  </div>
-                                  <div className="space-y-1">
-                                    <p className="text-xs text-muted-foreground">
-                                      <strong>SIRET:</strong> {company.siret}
-                                    </p>
-                                    {company.address && (
-                                      <p className="text-xs text-muted-foreground truncate">
-                                        <strong>Adresse:</strong>{" "}
-                                        {company.address}, {company.postalCode}{" "}
-                                        {company.city}
-                                      </p>
-                                    )}
-                                    {company.activityLabel && (
-                                      <p className="text-xs text-muted-foreground truncate">
-                                        <strong>Activité:</strong>{" "}
-                                        {company.activityLabel}
-                                      </p>
-                                    )}
-                                  </div>
-                                </div>
-                                <ExternalLink className="h-4 w-4 text-muted-foreground flex-shrink-0 ml-2" />
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {companyQuery &&
-                      !loadingCompanies &&
-                      companies.length === 0 && (
-                        <div className="text-center p-8 text-muted-foreground">
-                          <Building className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                          <p className="text-sm">
-                            Aucune entreprise trouvée pour "{companyQuery}"
-                          </p>
-                          <p className="text-xs mt-1">
-                            Essayez avec un nom d'entreprise ou un SIRET
-                          </p>
-                        </div>
-                      )}
-                  </div>
-
-                  {/* Bouton pour créer manuellement */}
-                  <div className="pt-4 border-t">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={handleShowManualForm}
-                      className="w-full h-10 text-sm font-normal"
-                      disabled={disabled}
+                  <div className="space-y-2">
+                    <Label
+                      htmlFor="client-type"
+                      className="text-sm font-normal"
                     >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Créer un client manuellement
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                // Formulaire manuel (affiché après sélection d'entreprise ou clic sur "Créer manuellement")
-                <form onSubmit={handleNewClientSubmit} className="space-y-6">
-                  <div className="space-y-6">
-                    <div className="space-y-2">
-                      <Label
-                        htmlFor="client-type"
-                        className="text-sm font-normal"
+                      Type de client
+                    </Label>
+                    <div className="w-full">
+                      <Select
+                        value={newClientForm.type}
+                        onValueChange={(value) =>
+                          setNewClientForm((prev) => ({
+                            ...prev,
+                            type: value,
+                          }))
+                        }
                       >
-                        Type de client
-                      </Label>
-                      <div className="w-full">
-                        <Select
-                          value={newClientForm.type}
-                          onValueChange={(value) =>
-                            setNewClientForm((prev) => ({
-                              ...prev,
-                              type: value,
-                            }))
-                          }
+                        <SelectTrigger className="w-full h-10 rounded-lg text-sm">
+                          <SelectValue placeholder="Sélectionner le type" />
+                        </SelectTrigger>
+                        <SelectContent className="w-full">
+                          <SelectItem value="INDIVIDUAL">
+                            Particulier
+                          </SelectItem>
+                          <SelectItem value="COMPANY">Entreprise</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {newClientForm.type === "COMPANY" ? (
+                    <div className="space-y-4">
+                      {/* Bouton pour rechercher une entreprise */}
+                      <div className="flex justify-center">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => {
+                            setShowManualForm(false);
+                            setCompanyQuery("");
+                            setCompanies([]);
+                            // Focus sur le champ de recherche après un court délai
+                            setTimeout(() => {
+                              const searchInput =
+                                document.getElementById("company-search");
+                              if (searchInput) {
+                                searchInput.focus();
+                              }
+                            }, 100);
+                          }}
+                          className="h-10 text-sm"
+                          disabled={disabled}
                         >
-                          <SelectTrigger className="w-full h-10 rounded-lg text-sm">
-                            <SelectValue placeholder="Sélectionner le type" />
-                          </SelectTrigger>
-                          <SelectContent className="w-full">
-                            <SelectItem value="INDIVIDUAL">
-                              Particulier
-                            </SelectItem>
-                            <SelectItem value="COMPANY">Entreprise</SelectItem>
-                          </SelectContent>
-                        </Select>
+                          <Search className="h-4 w-4 mr-2" />
+                          Rechercher une entreprise
+                        </Button>
                       </div>
-                    </div>
 
-                    {newClientForm.type === "COMPANY" ? (
-                      <div className="space-y-4">
-                        {/* Bouton pour rechercher une entreprise */}
-                        <div className="flex justify-center">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => {
-                              setShowManualForm(false);
-                              setCompanyQuery("");
-                              setCompanies([]);
-                              // Focus sur le champ de recherche après un court délai
-                              setTimeout(() => {
-                                const searchInput =
-                                  document.getElementById("company-search");
-                                if (searchInput) {
-                                  searchInput.focus();
-                                }
-                              }, 100);
-                            }}
-                            className="h-10 text-sm"
-                            disabled={disabled}
-                          >
-                            <Search className="h-4 w-4 mr-2" />
-                            Rechercher une entreprise
-                          </Button>
+                      {/* Séparateur */}
+                      <div className="relative">
+                        <div className="absolute inset-0 flex items-center">
+                          <span className="w-full border-t" />
                         </div>
+                        <div className="relative flex justify-center text-xs uppercase">
+                          <span className="bg-background px-2 text-muted-foreground">
+                            ou saisir manuellement
+                          </span>
+                        </div>
+                      </div>
 
-                        {/* Séparateur */}
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor="client-name"
+                          className="text-sm font-normal"
+                        >
+                          Nom de l'entreprise{" "}
+                          <span className="text-red-500">*</span>
+                        </Label>
                         <div className="relative">
-                          <div className="absolute inset-0 flex items-center">
-                            <span className="w-full border-t" />
-                          </div>
-                          <div className="relative flex justify-center text-xs uppercase">
-                            <span className="bg-background px-2 text-muted-foreground">
-                              ou saisir manuellement
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label
-                            htmlFor="client-name"
-                            className="text-sm font-normal"
-                          >
-                            Nom de l'entreprise{" "}
-                            <span className="text-red-500">*</span>
-                          </Label>
-                          <div className="relative">
-                            <Input
-                              id="client-name"
-                              value={newClientForm.name}
-                              onChange={(e) => {
-                                setNewClientForm((prev) => ({
-                                  ...prev,
-                                  name: e.target.value,
-                                }));
-                                // Effacer l'erreur quand l'utilisateur commence à taper
-                                if (formErrors.name) {
-                                  setFormErrors((prev) => ({
-                                    ...prev,
-                                    name: null,
-                                  }));
-                                }
-                              }}
-                              placeholder="Nom de l'entreprise"
-                              className={`h-10 rounded-lg text-sm w-full ${formErrors.name ? "border-red-500" : ""}`}
-                            />
-                            {formErrors.name && (
-                              <p className="text-xs text-red-500 mt-1">
-                                {formErrors.name}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label
-                            htmlFor="client-firstname"
-                            className="text-sm font-normal"
-                          >
-                            Prénom
-                          </Label>
                           <Input
-                            id="client-firstname"
-                            value={newClientForm.firstName}
+                            id="client-name"
+                            value={newClientForm.name}
                             onChange={(e) => {
                               setNewClientForm((prev) => ({
                                 ...prev,
-                                firstName: e.target.value,
-                                name: `${e.target.value} ${prev.lastName || ""}`.trim(),
+                                name: e.target.value,
                               }));
-                              // Effacer l'erreur du nom si elle existe
+                              // Effacer l'erreur quand l'utilisateur commence à taper
                               if (formErrors.name) {
                                 setFormErrors((prev) => ({
                                   ...prev,
@@ -1109,664 +1105,673 @@ export default function ClientSelector({
                                 }));
                               }
                             }}
-                            placeholder="Prénom"
-                            className="h-10 rounded-lg text-sm w-full"
+                            placeholder="Nom de l'entreprise"
+                            className={`h-10 rounded-lg text-sm w-full ${formErrors.name ? "border-red-500" : ""}`}
                           />
-                        </div>
-                        <div className="space-y-2">
-                          <Label
-                            htmlFor="client-lastname"
-                            className="text-sm font-normal"
-                          >
-                            Nom
-                          </Label>
-                          <Input
-                            id="client-lastname"
-                            value={newClientForm.lastName}
-                            onChange={(e) => {
-                              setNewClientForm((prev) => ({
-                                ...prev,
-                                lastName: e.target.value,
-                                name: `${prev.firstName || ""} ${e.target.value}`.trim(),
-                              }));
-                              // Effacer l'erreur du nom si elle existe
-                              if (formErrors.name) {
-                                setFormErrors((prev) => ({
-                                  ...prev,
-                                  name: null,
-                                }));
-                              }
-                            }}
-                            placeholder="Nom"
-                            className="h-10 rounded-lg text-sm w-full"
-                          />
+                          {formErrors.name && (
+                            <p className="text-xs text-red-500 mt-1">
+                              {formErrors.name}
+                            </p>
+                          )}
                         </div>
                       </div>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label
-                        htmlFor="client-email"
-                        className="text-sm font-normal"
-                      >
-                        Email <span className="text-red-500">*</span>
-                      </Label>
-                      <div className="relative">
-                        <Input
-                          id="client-email"
-                          type="email"
-                          value={newClientForm.email}
-                          onChange={(e) => {
-                            setNewClientForm((prev) => ({
-                              ...prev,
-                              email: e.target.value,
-                            }));
-                            // Effacer l'erreur quand l'utilisateur commence à taper
-                            if (formErrors.email) {
-                              setFormErrors((prev) => ({
-                                ...prev,
-                                email: null,
-                              }));
-                            }
-                          }}
-                          placeholder="contact@exemple.com"
-                          className={`h-10 rounded-lg text-sm w-full ${formErrors.email ? "border-red-500" : ""}`}
-                        />
-                        {formErrors.email && (
-                          <p className="text-xs text-red-500 mt-1">
-                            {formErrors.email}
-                          </p>
-                        )}
-                      </div>
                     </div>
-
-                    <div className="space-y-2">
-                      <Label
-                        htmlFor="client-phone"
-                        className="text-sm font-normal"
-                      >
-                        Téléphone
-                      </Label>
-                      <div className="relative">
-                        <Input
-                          id="client-phone"
-                          value={newClientForm.phone}
-                          onChange={(e) => {
-                            setNewClientForm((prev) => ({
-                              ...prev,
-                              phone: e.target.value,
-                            }));
-                            // Effacer l'erreur quand l'utilisateur commence à taper
-                            if (formErrors.phone) {
-                              setFormErrors((prev) => {
-                                const newErrors = { ...prev };
-                                delete newErrors.phone;
-                                return newErrors;
-                              });
-                            }
-                          }}
-                          className={`h-10 rounded-lg text-sm w-full ${formErrors.phone ? "border-red-500" : ""}`}
-                          placeholder="01 23 45 67 89"
-                        />
-                        {formErrors.phone && (
-                          <p className="text-xs text-red-500 mt-1">
-                            {formErrors.phone}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Champs spécifiques aux entreprises */}
-                  {newClientForm.type === "COMPANY" && (
+                  ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label
-                          htmlFor="client-siret"
+                          htmlFor="client-firstname"
                           className="text-sm font-normal"
                         >
-                          SIREN/SIRET
+                          Prénom
                         </Label>
-                        <div className="relative">
-                          <Input
-                            id="client-siret"
-                            value={newClientForm.siret || ""}
-                            onChange={(e) =>
-                              setNewClientForm((prev) => ({
+                        <Input
+                          id="client-firstname"
+                          value={newClientForm.firstName}
+                          onChange={(e) => {
+                            setNewClientForm((prev) => ({
+                              ...prev,
+                              firstName: e.target.value,
+                              name: `${e.target.value} ${prev.lastName || ""}`.trim(),
+                            }));
+                            // Effacer l'erreur du nom si elle existe
+                            if (formErrors.name) {
+                              setFormErrors((prev) => ({
                                 ...prev,
-                                siret: e.target.value,
-                              }))
+                                name: null,
+                              }));
                             }
-                            placeholder="123456789 ou 12345678901234"
-                            disabled={disabled}
-                            className={cn(
-                              "h-10 rounded-lg",
-                              formErrors.siret && "border-red-500"
-                            )}
-                          />
-                        </div>
-                        <p className="text-xs text-gray-500">
-                          Numéro SIREN (9 chiffres) ou SIRET (14 chiffres)
-                        </p>
+                          }}
+                          placeholder="Prénom"
+                          className="h-10 rounded-lg text-sm w-full"
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label
-                          htmlFor="client-vat"
+                          htmlFor="client-lastname"
                           className="text-sm font-normal"
                         >
-                          N° TVA
+                          Nom
                         </Label>
-                        <div className="relative">
-                          <Input
-                            id="client-vat"
-                            value={newClientForm.vatNumber || ""}
-                            onChange={(e) =>
-                              setNewClientForm((prev) => ({
+                        <Input
+                          id="client-lastname"
+                          value={newClientForm.lastName}
+                          onChange={(e) => {
+                            setNewClientForm((prev) => ({
+                              ...prev,
+                              lastName: e.target.value,
+                              name: `${prev.firstName || ""} ${e.target.value}`.trim(),
+                            }));
+                            // Effacer l'erreur du nom si elle existe
+                            if (formErrors.name) {
+                              setFormErrors((prev) => ({
                                 ...prev,
-                                vatNumber: e.target.value,
-                              }))
+                                name: null,
+                              }));
                             }
-                            placeholder="FR12345678901"
-                            className="h-10 rounded-lg text-sm w-full"
-                          />
-                        </div>
+                          }}
+                          placeholder="Nom"
+                          className="h-10 rounded-lg text-sm w-full"
+                        />
                       </div>
                     </div>
                   )}
+                </div>
 
-                  {/* Adresse */}
-                  <div className="space-y-4">
-                    <div className="flex items-center space-x-2">
-                      <div className="h-px bg-gray-200 flex-1"></div>
-                      <span className="text-sm font-medium text-gray-600">
-                        Adresse de facturation
-                      </span>
-                      <div className="h-px bg-gray-200 flex-1"></div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label
-                        htmlFor="client-street"
-                        className="text-sm font-normal"
-                      >
-                        Adresse <span className="text-red-500">*</span>
-                      </Label>
-                      <div className="relative">
-                        <Input
-                          id="client-street"
-                          value={newClientForm.address?.street || ""}
-                          onChange={(e) => {
-                            setNewClientForm((prev) => ({
-                              ...prev,
-                              address: {
-                                ...prev.address,
-                                street: e.target.value,
-                              },
-                            }));
-                            // Effacer l'erreur quand l'utilisateur commence à taper
-                            if (formErrors["address.street"]) {
-                              setFormErrors((prev) => {
-                                const newErrors = { ...prev };
-                                delete newErrors["address.street"];
-                                return newErrors;
-                              });
-                            }
-                          }}
-                          placeholder="1 rue de l'exemple"
-                          className={`h-10 rounded-lg text-sm w-full ${formErrors["address.street"] ? "border-red-500" : ""}`}
-                        />
-                        {formErrors["address.street"] && (
-                          <p className="text-xs text-red-500 mt-1">
-                            {formErrors["address.street"]}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="space-y-2">
-                        <Label
-                          htmlFor="client-postal-code"
-                          className="text-sm font-normal"
-                        >
-                          Code postal <span className="text-red-500">*</span>
-                        </Label>
-                        <div className="relative">
-                          <Input
-                            id="client-postal-code"
-                            value={newClientForm.address?.postalCode || ""}
-                            onChange={(e) => {
-                              setNewClientForm((prev) => ({
-                                ...prev,
-                                address: {
-                                  ...prev.address,
-                                  postalCode: e.target.value,
-                                },
-                              }));
-                              // Effacer l'erreur quand l'utilisateur commence à taper
-                              if (formErrors["address.postalCode"]) {
-                                setFormErrors((prev) => {
-                                  const newErrors = { ...prev };
-                                  delete newErrors["address.postalCode"];
-                                  return newErrors;
-                                });
-                              }
-                            }}
-                            placeholder="75000"
-                            className={`h-10 rounded-lg text-sm w-full ${formErrors["address.postalCode"] ? "border-red-500" : ""}`}
-                          />
-                          {formErrors["address.postalCode"] && (
-                            <p className="text-xs text-red-500 mt-1">
-                              {formErrors["address.postalCode"]}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="space-y-2 md:col-span-2">
-                        <Label
-                          htmlFor="client-city"
-                          className="text-sm font-normal"
-                        >
-                          Ville <span className="text-red-500">*</span>
-                        </Label>
-                        <div className="relative">
-                          <Input
-                            id="client-city"
-                            value={newClientForm.address?.city || ""}
-                            onChange={(e) => {
-                              setNewClientForm((prev) => ({
-                                ...prev,
-                                address: {
-                                  ...prev.address,
-                                  city: e.target.value,
-                                },
-                              }));
-                              // Effacer l'erreur quand l'utilisateur commence à taper
-                              if (formErrors["address.city"]) {
-                                setFormErrors((prev) => {
-                                  const newErrors = { ...prev };
-                                  delete newErrors["address.city"];
-                                  return newErrors;
-                                });
-                              }
-                            }}
-                            placeholder="Paris"
-                            className={`h-10 rounded-lg text-sm w-full ${formErrors["address.city"] ? "border-red-500" : ""}`}
-                          />
-                          {formErrors["address.city"] && (
-                            <p className="text-xs text-red-500 mt-1">
-                              {formErrors["address.city"]}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label
-                        htmlFor="client-country"
-                        className="text-sm font-normal"
-                      >
-                        Pays
-                      </Label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label
+                      htmlFor="client-email"
+                      className="text-sm font-normal"
+                    >
+                      Email <span className="text-red-500">*</span>
+                    </Label>
+                    <div className="relative">
                       <Input
-                        id="client-country"
-                        value={newClientForm.address?.country || "France"}
-                        onChange={(e) =>
+                        id="client-email"
+                        type="email"
+                        value={newClientForm.email}
+                        onChange={(e) => {
                           setNewClientForm((prev) => ({
                             ...prev,
-                            address: {
-                              ...prev.address,
-                              country: e.target.value,
-                            },
-                          }))
-                        }
-                        placeholder="France"
-                        className="h-10 rounded-lg text-sm w-full"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Adresse */}
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <div className="relative">
-                        <Textarea
-                          id="client-address"
-                          value={`${newClientForm.address.street}\n${newClientForm.address.postalCode} ${newClientForm.address.city}\n${newClientForm.address.country}`}
-                          onChange={(e) => {
-                            const lines = e.target.value.split("\n");
-                            const newAddress = {
-                              street: lines[0] || "",
-                              postalCode: lines[1]?.split(" ")[0] || "",
-                              city:
-                                lines[1]
-                                  ?.split(" ")
-                                  .slice(1)
-                                  .join(" ")
-                                  .trim() || "",
-                              country: (lines[2] || "France").trim(),
-                            };
-
-                            setNewClientForm((prev) => ({
+                            email: e.target.value,
+                          }));
+                          // Effacer l'erreur quand l'utilisateur commence à taper
+                          if (formErrors.email) {
+                            setFormErrors((prev) => ({
                               ...prev,
-                              address: {
-                                ...defaultAddress, // S'assurer que tous les champs sont définis
-                                ...prev.address, // Conserver les valeurs existantes
-                                ...newAddress, // Appliquer les nouvelles valeurs
-                              },
+                              email: null,
                             }));
-                          }}
-                          placeholder="123 Rue de la Paix\n75001 Paris\nFrance"
-                          className="absolute inset-0 opacity-0 w-full h-full cursor-pointer pointer-events-none"
-                          rows={1}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="different-shipping-address"
-                          checked={
-                            newClientForm.hasDifferentShippingAddress || false
                           }
-                          onCheckedChange={(checked) => {
-                            setNewClientForm((prev) => ({
-                              ...prev,
-                              hasDifferentShippingAddress: Boolean(checked),
-                            }));
-                          }}
-                        />
-                        <Label
-                          htmlFor="different-shipping-address"
-                          className="text-sm font-normal cursor-pointer"
-                        >
-                          Utiliser une adresse de livraison différente
-                        </Label>
-                      </div>
-
-                      {newClientForm.hasDifferentShippingAddress && (
-                        <div className="space-y-4 px-6 pt-2 border-l-2 border-gray-200">
-                          <Label className="text-sm font-normal text-gray-700">
-                            Adresse de livraison
-                          </Label>
-
-                          {/* Nom complet */}
-                          <div className="space-y-2">
-                            <Label
-                              htmlFor="shipping-fullname"
-                              className="text-sm font-normal"
-                            >
-                              Nom complet
-                            </Label>
-                            <Input
-                              id="shipping-fullname"
-                              value={
-                                newClientForm.shippingAddress?.fullName || ""
-                              }
-                              onChange={(e) => {
-                                setNewClientForm((prev) => ({
-                                  ...prev,
-                                  shippingAddress: {
-                                    ...prev.shippingAddress,
-                                    fullName: e.target.value,
-                                  },
-                                }));
-                              }}
-                              placeholder="Nom complet du destinataire"
-                              className="h-10 rounded-lg text-sm w-full"
-                            />
-                          </div>
-
-                          {/* Rue */}
-                          <div className="space-y-2">
-                            <Label
-                              htmlFor="shipping-street"
-                              className="text-sm font-normal"
-                            >
-                              Rue <span className="text-red-500">*</span>
-                            </Label>
-                            <div className="relative">
-                              <Input
-                                id="shipping-street"
-                                value={
-                                  newClientForm.shippingAddress?.street || ""
-                                }
-                                onChange={(e) => {
-                                  setNewClientForm((prev) => ({
-                                    ...prev,
-                                    shippingAddress: {
-                                      ...prev.shippingAddress,
-                                      street: e.target.value,
-                                    },
-                                  }));
-                                  // Effacer l'erreur quand l'utilisateur commence à taper
-                                  if (formErrors["shippingAddress.street"]) {
-                                    setFormErrors((prev) => {
-                                      const newErrors = { ...prev };
-                                      delete newErrors[
-                                        "shippingAddress.street"
-                                      ];
-                                      return newErrors;
-                                    });
-                                  }
-                                }}
-                                placeholder="123 Rue de la Paix"
-                                className={`h-10 rounded-lg text-sm w-full ${formErrors["shippingAddress.street"] ? "border-red-500" : ""}`}
-                              />
-                              {formErrors["shippingAddress.street"] && (
-                                <p className="text-xs text-red-500 mt-1">
-                                  {formErrors["shippingAddress.street"]}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Code postal et Ville */}
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                              <Label
-                                htmlFor="shipping-postal-code"
-                                className="text-sm font-normal"
-                              >
-                                Code postal
-                              </Label>
-                              <div className="relative">
-                                <Input
-                                  id="shipping-postal-code"
-                                  value={
-                                    newClientForm.shippingAddress?.postalCode ||
-                                    ""
-                                  }
-                                  onChange={(e) => {
-                                    setNewClientForm((prev) => ({
-                                      ...prev,
-                                      shippingAddress: {
-                                        ...prev.shippingAddress,
-                                        postalCode: e.target.value,
-                                      },
-                                    }));
-                                    // Effacer l'erreur quand l'utilisateur commence à taper
-                                    if (
-                                      formErrors["shippingAddress.postalCode"]
-                                    ) {
-                                      setFormErrors((prev) => {
-                                        const newErrors = { ...prev };
-                                        delete newErrors[
-                                          "shippingAddress.postalCode"
-                                        ];
-                                        return newErrors;
-                                      });
-                                    }
-                                  }}
-                                  placeholder="75001"
-                                  className={`h-10 rounded-lg text-sm w-full ${formErrors["shippingAddress.postalCode"] ? "border-red-500" : ""}`}
-                                />
-                                {formErrors["shippingAddress.postalCode"] && (
-                                  <p className="text-xs text-red-500 mt-1">
-                                    {formErrors["shippingAddress.postalCode"]}
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                            <div className="space-y-2">
-                              <Label
-                                htmlFor="shipping-city"
-                                className="text-sm font-normal"
-                              >
-                                Ville <span className="text-red-500">*</span>
-                              </Label>
-                              <div className="relative">
-                                <Input
-                                  id="shipping-city"
-                                  value={
-                                    newClientForm.shippingAddress?.city || ""
-                                  }
-                                  onChange={(e) => {
-                                    setNewClientForm((prev) => ({
-                                      ...prev,
-                                      shippingAddress: {
-                                        ...prev.shippingAddress,
-                                        city: e.target.value,
-                                      },
-                                    }));
-                                    // Effacer l'erreur quand l'utilisateur commence à taper
-                                    if (formErrors["shippingAddress.city"]) {
-                                      setFormErrors((prev) => {
-                                        const newErrors = { ...prev };
-                                        delete newErrors[
-                                          "shippingAddress.city"
-                                        ];
-                                        return newErrors;
-                                      });
-                                    }
-                                  }}
-                                  placeholder="Paris"
-                                  className={`h-10 rounded-lg text-sm w-full ${formErrors["shippingAddress.city"] ? "border-red-500" : ""}`}
-                                />
-                                {formErrors["shippingAddress.city"] && (
-                                  <p className="text-xs text-red-500 mt-1">
-                                    {formErrors["shippingAddress.city"]}
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Pays */}
-                          <div className="space-y-2">
-                            <Label
-                              htmlFor="shipping-country"
-                              className="text-sm font-normal"
-                            >
-                              Pays
-                            </Label>
-                            <Input
-                              id="shipping-country"
-                              value={
-                                newClientForm.shippingAddress?.country ||
-                                "France"
-                              }
-                              onChange={(e) =>
-                                setNewClientForm((prev) => ({
-                                  ...prev,
-                                  shippingAddress: {
-                                    ...prev.shippingAddress,
-                                    country: e.target.value,
-                                  },
-                                }))
-                              }
-                              placeholder="France"
-                              className="h-10 rounded-lg text-sm w-full"
-                            />
-                          </div>
-                        </div>
+                        }}
+                        placeholder="contact@exemple.com"
+                        className={`h-10 rounded-lg text-sm w-full ${formErrors.email ? "border-red-500" : ""}`}
+                      />
+                      {formErrors.email && (
+                        <p className="text-xs text-red-500 mt-1">
+                          {formErrors.email}
+                        </p>
                       )}
                     </div>
                   </div>
 
                   <div className="space-y-2">
                     <Label
-                      htmlFor="client-notes"
+                      htmlFor="client-phone"
                       className="text-sm font-normal"
                     >
-                      Notes (optionnel)
+                      Téléphone
                     </Label>
-                    <Textarea
-                      id="client-notes"
-                      value={newClientForm.notes}
+                    <div className="relative">
+                      <Input
+                        id="client-phone"
+                        value={newClientForm.phone}
+                        onChange={(e) => {
+                          setNewClientForm((prev) => ({
+                            ...prev,
+                            phone: e.target.value,
+                          }));
+                          // Effacer l'erreur quand l'utilisateur commence à taper
+                          if (formErrors.phone) {
+                            setFormErrors((prev) => {
+                              const newErrors = { ...prev };
+                              delete newErrors.phone;
+                              return newErrors;
+                            });
+                          }
+                        }}
+                        className={`h-10 rounded-lg text-sm w-full ${formErrors.phone ? "border-red-500" : ""}`}
+                        placeholder="01 23 45 67 89"
+                      />
+                      {formErrors.phone && (
+                        <p className="text-xs text-red-500 mt-1">
+                          {formErrors.phone}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Champs spécifiques aux entreprises */}
+                {newClientForm.type === "COMPANY" && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label
+                        htmlFor="client-siret"
+                        className="text-sm font-normal"
+                      >
+                        SIREN/SIRET
+                      </Label>
+                      <div className="relative">
+                        <Input
+                          id="client-siret"
+                          value={newClientForm.siret || ""}
+                          onChange={(e) =>
+                            setNewClientForm((prev) => ({
+                              ...prev,
+                              siret: e.target.value,
+                            }))
+                          }
+                          placeholder="123456789 ou 12345678901234"
+                          disabled={disabled}
+                          className={cn(
+                            "h-10 rounded-lg",
+                            formErrors.siret && "border-red-500"
+                          )}
+                        />
+                      </div>
+                      <p className="text-xs text-gray-500">
+                        Numéro SIREN (9 chiffres) ou SIRET (14 chiffres)
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label
+                        htmlFor="client-vat"
+                        className="text-sm font-normal"
+                      >
+                        N° TVA
+                      </Label>
+                      <div className="relative">
+                        <Input
+                          id="client-vat"
+                          value={newClientForm.vatNumber || ""}
+                          onChange={(e) =>
+                            setNewClientForm((prev) => ({
+                              ...prev,
+                              vatNumber: e.target.value,
+                            }))
+                          }
+                          placeholder="FR12345678901"
+                          className="h-10 rounded-lg text-sm w-full"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Adresse */}
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-2">
+                    <div className="h-px bg-gray-200 flex-1"></div>
+                    <span className="text-sm font-medium text-gray-600">
+                      Adresse de facturation
+                    </span>
+                    <div className="h-px bg-gray-200 flex-1"></div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label
+                      htmlFor="client-street"
+                      className="text-sm font-normal"
+                    >
+                      Adresse <span className="text-red-500">*</span>
+                    </Label>
+                    <div className="relative">
+                      <Input
+                        id="client-street"
+                        value={newClientForm.address?.street || ""}
+                        onChange={(e) => {
+                          setNewClientForm((prev) => ({
+                            ...prev,
+                            address: {
+                              ...prev.address,
+                              street: e.target.value,
+                            },
+                          }));
+                          // Effacer l'erreur quand l'utilisateur commence à taper
+                          if (formErrors["address.street"]) {
+                            setFormErrors((prev) => {
+                              const newErrors = { ...prev };
+                              delete newErrors["address.street"];
+                              return newErrors;
+                            });
+                          }
+                        }}
+                        placeholder="1 rue de l'exemple"
+                        className={`h-10 rounded-lg text-sm w-full ${formErrors["address.street"] ? "border-red-500" : ""}`}
+                      />
+                      {formErrors["address.street"] && (
+                        <p className="text-xs text-red-500 mt-1">
+                          {formErrors["address.street"]}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label
+                        htmlFor="client-postal-code"
+                        className="text-sm font-normal"
+                      >
+                        Code postal <span className="text-red-500">*</span>
+                      </Label>
+                      <div className="relative">
+                        <Input
+                          id="client-postal-code"
+                          value={newClientForm.address?.postalCode || ""}
+                          onChange={(e) => {
+                            setNewClientForm((prev) => ({
+                              ...prev,
+                              address: {
+                                ...prev.address,
+                                postalCode: e.target.value,
+                              },
+                            }));
+                            // Effacer l'erreur quand l'utilisateur commence à taper
+                            if (formErrors["address.postalCode"]) {
+                              setFormErrors((prev) => {
+                                const newErrors = { ...prev };
+                                delete newErrors["address.postalCode"];
+                                return newErrors;
+                              });
+                            }
+                          }}
+                          placeholder="75000"
+                          className={`h-10 rounded-lg text-sm w-full ${formErrors["address.postalCode"] ? "border-red-500" : ""}`}
+                        />
+                        {formErrors["address.postalCode"] && (
+                          <p className="text-xs text-red-500 mt-1">
+                            {formErrors["address.postalCode"]}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 md:col-span-2">
+                      <Label
+                        htmlFor="client-city"
+                        className="text-sm font-normal"
+                      >
+                        Ville <span className="text-red-500">*</span>
+                      </Label>
+                      <div className="relative">
+                        <Input
+                          id="client-city"
+                          value={newClientForm.address?.city || ""}
+                          onChange={(e) => {
+                            setNewClientForm((prev) => ({
+                              ...prev,
+                              address: {
+                                ...prev.address,
+                                city: e.target.value,
+                              },
+                            }));
+                            // Effacer l'erreur quand l'utilisateur commence à taper
+                            if (formErrors["address.city"]) {
+                              setFormErrors((prev) => {
+                                const newErrors = { ...prev };
+                                delete newErrors["address.city"];
+                                return newErrors;
+                              });
+                            }
+                          }}
+                          placeholder="Paris"
+                          className={`h-10 rounded-lg text-sm w-full ${formErrors["address.city"] ? "border-red-500" : ""}`}
+                        />
+                        {formErrors["address.city"] && (
+                          <p className="text-xs text-red-500 mt-1">
+                            {formErrors["address.city"]}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label
+                      htmlFor="client-country"
+                      className="text-sm font-normal"
+                    >
+                      Pays
+                    </Label>
+                    <Input
+                      id="client-country"
+                      value={newClientForm.address?.country || "France"}
                       onChange={(e) =>
                         setNewClientForm((prev) => ({
                           ...prev,
-                          notes: e.target.value,
+                          address: {
+                            ...prev.address,
+                            country: e.target.value,
+                          },
                         }))
                       }
-                      placeholder="Notes internes sur ce client..."
-                      rows={2}
-                      className="rounded-lg px-3 py-2 text-sm resize-none"
+                      placeholder="France"
+                      className="h-10 rounded-lg text-sm w-full"
                     />
-                    <p className="text-xs">
-                      Ces notes ne seront visibles que par vous
-                    </p>
+                  </div>
+                </div>
+
+                {/* Adresse */}
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <div className="relative">
+                      <Textarea
+                        id="client-address"
+                        value={`${newClientForm.address.street}\n${newClientForm.address.postalCode} ${newClientForm.address.city}\n${newClientForm.address.country}`}
+                        onChange={(e) => {
+                          const lines = e.target.value.split("\n");
+                          const newAddress = {
+                            street: lines[0] || "",
+                            postalCode: lines[1]?.split(" ")[0] || "",
+                            city:
+                              lines[1]?.split(" ").slice(1).join(" ").trim() ||
+                              "",
+                            country: (lines[2] || "France").trim(),
+                          };
+
+                          setNewClientForm((prev) => ({
+                            ...prev,
+                            address: {
+                              ...defaultAddress, // S'assurer que tous les champs sont définis
+                              ...prev.address, // Conserver les valeurs existantes
+                              ...newAddress, // Appliquer les nouvelles valeurs
+                            },
+                          }));
+                        }}
+                        placeholder="123 Rue de la Paix\n75001 Paris\nFrance"
+                        className="absolute inset-0 opacity-0 w-full h-full cursor-pointer pointer-events-none"
+                        rows={1}
+                      />
+                    </div>
                   </div>
 
-                  {/* Form Actions */}
-                  <div className="flex justify-end space-x-2 pt-4">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        // Nettoyer les erreurs locales et globales d'abord
-                        setFormErrors({});
-                        if (setValidationErrors) {
-                          setValidationErrors((prev) => {
-                            const newErrors = { ...prev };
-                            delete newErrors.newClient;
-                            return newErrors;
-                          });
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="different-shipping-address"
+                        checked={
+                          newClientForm.hasDifferentShippingAddress || false
                         }
-                        // Puis réinitialiser le formulaire
-                        resetNewClientForm();
-                        // Masquer le formulaire manuel
-                        setShowManualForm(false);
-                        // Retourner à l'onglet clients existants
-                        setActiveTab("existing");
-                      }}
-                      disabled={disabled}
-                      className="h-10 px-4 text-sm font-normal"
-                    >
-                      Annuler
-                    </Button>
-                    <Button
-                      type="submit"
-                      disabled={
-                        createLoading ||
-                        !newClientForm.name ||
-                        !newClientForm.email ||
-                        disabled
-                      }
-                      className="h-10 px-4 text-sm font-normal"
-                    >
-                      {createLoading ? (
-                        <>
-                          <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
-                          Création...
-                        </>
-                      ) : (
-                        "Créer le client"
-                      )}
-                    </Button>
+                        onCheckedChange={(checked) => {
+                          setNewClientForm((prev) => ({
+                            ...prev,
+                            hasDifferentShippingAddress: Boolean(checked),
+                          }));
+                        }}
+                      />
+                      <Label
+                        htmlFor="different-shipping-address"
+                        className="text-sm font-normal cursor-pointer"
+                      >
+                        Utiliser une adresse de livraison différente
+                      </Label>
+                    </div>
+
+                    {newClientForm.hasDifferentShippingAddress && (
+                      <div className="space-y-4 px-6 pt-2 border-l-2 border-gray-200">
+                        <Label className="text-sm font-normal text-gray-700">
+                          Adresse de livraison
+                        </Label>
+
+                        {/* Nom complet */}
+                        <div className="space-y-2">
+                          <Label
+                            htmlFor="shipping-fullname"
+                            className="text-sm font-normal"
+                          >
+                            Nom complet
+                          </Label>
+                          <Input
+                            id="shipping-fullname"
+                            value={
+                              newClientForm.shippingAddress?.fullName || ""
+                            }
+                            onChange={(e) => {
+                              setNewClientForm((prev) => ({
+                                ...prev,
+                                shippingAddress: {
+                                  ...prev.shippingAddress,
+                                  fullName: e.target.value,
+                                },
+                              }));
+                            }}
+                            placeholder="Nom complet du destinataire"
+                            className="h-10 rounded-lg text-sm w-full"
+                          />
+                        </div>
+
+                        {/* Rue */}
+                        <div className="space-y-2">
+                          <Label
+                            htmlFor="shipping-street"
+                            className="text-sm font-normal"
+                          >
+                            Rue <span className="text-red-500">*</span>
+                          </Label>
+                          <div className="relative">
+                            <Input
+                              id="shipping-street"
+                              value={
+                                newClientForm.shippingAddress?.street || ""
+                              }
+                              onChange={(e) => {
+                                setNewClientForm((prev) => ({
+                                  ...prev,
+                                  shippingAddress: {
+                                    ...prev.shippingAddress,
+                                    street: e.target.value,
+                                  },
+                                }));
+                                // Effacer l'erreur quand l'utilisateur commence à taper
+                                if (formErrors["shippingAddress.street"]) {
+                                  setFormErrors((prev) => {
+                                    const newErrors = { ...prev };
+                                    delete newErrors["shippingAddress.street"];
+                                    return newErrors;
+                                  });
+                                }
+                              }}
+                              placeholder="123 Rue de la Paix"
+                              className={`h-10 rounded-lg text-sm w-full ${formErrors["shippingAddress.street"] ? "border-red-500" : ""}`}
+                            />
+                            {formErrors["shippingAddress.street"] && (
+                              <p className="text-xs text-red-500 mt-1">
+                                {formErrors["shippingAddress.street"]}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Code postal et Ville */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label
+                              htmlFor="shipping-postal-code"
+                              className="text-sm font-normal"
+                            >
+                              Code postal
+                            </Label>
+                            <div className="relative">
+                              <Input
+                                id="shipping-postal-code"
+                                value={
+                                  newClientForm.shippingAddress?.postalCode ||
+                                  ""
+                                }
+                                onChange={(e) => {
+                                  setNewClientForm((prev) => ({
+                                    ...prev,
+                                    shippingAddress: {
+                                      ...prev.shippingAddress,
+                                      postalCode: e.target.value,
+                                    },
+                                  }));
+                                  // Effacer l'erreur quand l'utilisateur commence à taper
+                                  if (
+                                    formErrors["shippingAddress.postalCode"]
+                                  ) {
+                                    setFormErrors((prev) => {
+                                      const newErrors = { ...prev };
+                                      delete newErrors[
+                                        "shippingAddress.postalCode"
+                                      ];
+                                      return newErrors;
+                                    });
+                                  }
+                                }}
+                                placeholder="75001"
+                                className={`h-10 rounded-lg text-sm w-full ${formErrors["shippingAddress.postalCode"] ? "border-red-500" : ""}`}
+                              />
+                              {formErrors["shippingAddress.postalCode"] && (
+                                <p className="text-xs text-red-500 mt-1">
+                                  {formErrors["shippingAddress.postalCode"]}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <Label
+                              htmlFor="shipping-city"
+                              className="text-sm font-normal"
+                            >
+                              Ville <span className="text-red-500">*</span>
+                            </Label>
+                            <div className="relative">
+                              <Input
+                                id="shipping-city"
+                                value={
+                                  newClientForm.shippingAddress?.city || ""
+                                }
+                                onChange={(e) => {
+                                  setNewClientForm((prev) => ({
+                                    ...prev,
+                                    shippingAddress: {
+                                      ...prev.shippingAddress,
+                                      city: e.target.value,
+                                    },
+                                  }));
+                                  // Effacer l'erreur quand l'utilisateur commence à taper
+                                  if (formErrors["shippingAddress.city"]) {
+                                    setFormErrors((prev) => {
+                                      const newErrors = { ...prev };
+                                      delete newErrors["shippingAddress.city"];
+                                      return newErrors;
+                                    });
+                                  }
+                                }}
+                                placeholder="Paris"
+                                className={`h-10 rounded-lg text-sm w-full ${formErrors["shippingAddress.city"] ? "border-red-500" : ""}`}
+                              />
+                              {formErrors["shippingAddress.city"] && (
+                                <p className="text-xs text-red-500 mt-1">
+                                  {formErrors["shippingAddress.city"]}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Pays */}
+                        <div className="space-y-2">
+                          <Label
+                            htmlFor="shipping-country"
+                            className="text-sm font-normal"
+                          >
+                            Pays
+                          </Label>
+                          <Input
+                            id="shipping-country"
+                            value={
+                              newClientForm.shippingAddress?.country || "France"
+                            }
+                            onChange={(e) =>
+                              setNewClientForm((prev) => ({
+                                ...prev,
+                                shippingAddress: {
+                                  ...prev.shippingAddress,
+                                  country: e.target.value,
+                                },
+                              }))
+                            }
+                            placeholder="France"
+                            className="h-10 rounded-lg text-sm w-full"
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </form>
-              )}
-            </TabsContent>
-          </CardContent>
-        </Tabs>
-      </Card>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="client-notes" className="text-sm font-normal">
+                    Notes (optionnel)
+                  </Label>
+                  <Textarea
+                    id="client-notes"
+                    value={newClientForm.notes}
+                    onChange={(e) =>
+                      setNewClientForm((prev) => ({
+                        ...prev,
+                        notes: e.target.value,
+                      }))
+                    }
+                    placeholder="Notes internes sur ce client..."
+                    rows={2}
+                    className="rounded-lg px-3 py-2 text-sm resize-none"
+                  />
+                  <p className="text-xs">
+                    Ces notes ne seront visibles que par vous
+                  </p>
+                </div>
+
+                {/* Form Actions */}
+                <div className="flex justify-end space-x-2 pt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleCloseNewClientDialog}
+                    disabled={disabled}
+                    className="h-10 px-4 text-sm font-normal"
+                  >
+                    Annuler
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={
+                      createLoading ||
+                      !newClientForm.name ||
+                      !newClientForm.email ||
+                      disabled
+                    }
+                    className="h-10 px-4 text-sm font-normal"
+                  >
+                    {createLoading ? (
+                      <>
+                        <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                        Création...
+                      </>
+                    ) : (
+                      "Créer le client"
+                    )}
+                  </Button>
+                </div>
+              </form>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

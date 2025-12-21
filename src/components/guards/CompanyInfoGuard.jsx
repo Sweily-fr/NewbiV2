@@ -30,7 +30,7 @@ import { Building2, AlertCircle, Settings } from "lucide-react";
  */
 export function CompanyInfoGuard({
   children,
-  redirectPath = "/dashboard/settings",
+  redirectPath = "/dashboard",
   loadingComponent = null,
   title = "Vérification des informations d'entreprise",
   description = "Nous vérifions que vos informations d'entreprise sont complètes...",

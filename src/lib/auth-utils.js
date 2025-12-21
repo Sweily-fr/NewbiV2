@@ -100,7 +100,7 @@ export async function sendPaymentFailedEmail({
   amount,
   invoiceUrl,
 }) {
-  const updatePaymentUrl = `${process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "http://localhost:3000"}/dashboard/settings?tab=subscription`;
+  const updatePaymentUrl = `${process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "http://localhost:3000"}/dashboard`;
 
   await sendEmail({
     to,

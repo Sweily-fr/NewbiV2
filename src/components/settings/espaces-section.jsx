@@ -71,10 +71,15 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [memberToDelete, setMemberToDelete] = useState(null);
   const [orgMemberCounts, setOrgMemberCounts] = useState({});
+  const [updatingRoleForMember, setUpdatingRoleForMember] = useState(null);
 
   // Utiliser le hook pour les invitations
-  const { getAllCollaborators, removeMember, cancelInvitation } =
-    useOrganizationInvitations();
+  const {
+    getAllCollaborators,
+    removeMember,
+    cancelInvitation,
+    updateMemberRole,
+  } = useOrganizationInvitations();
 
   // Récupérer les organisations
   const { data: organizationsList } = authClient.useListOrganizations();
@@ -352,6 +357,47 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
     setSelectedOrg(org);
   };
 
+  // Gérer le changement de rôle d'un membre
+  const handleRoleChange = async (member, newRole) => {
+    if (!canManageOrgSettings) {
+      toast.error("Vous n'avez pas la permission de modifier les rôles");
+      return;
+    }
+
+    if (member.role === newRole) {
+      return; // Pas de changement
+    }
+
+    try {
+      setUpdatingRoleForMember(member.id);
+
+      console.log("🔄 Changement de rôle pour:", {
+        memberId: member.id,
+        email: member.email,
+        currentRole: member.role,
+        newRole,
+        orgId: selectedOrg?.id,
+      });
+
+      // Appeler la fonction updateMemberRole du hook avec l'ID du membre
+      const result = await updateMemberRole(
+        member.id, // Better Auth utilise l'ID du membre
+        newRole,
+        selectedOrg?.id
+      );
+
+      if (result.success) {
+        // Rafraîchir la liste des membres
+        setRefreshTrigger((prev) => prev + 1);
+      }
+    } catch (error) {
+      console.error("Erreur lors du changement de rôle:", error);
+      toast.error("Erreur lors du changement de rôle");
+    } finally {
+      setUpdatingRoleForMember(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -379,7 +425,6 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
             <TableRow>
               <TableHead>Organisation</TableHead>
               <TableHead>Membres</TableHead>
-              <TableHead>Accès</TableHead>
               <TableHead className="w-[50px]"></TableHead>
             </TableRow>
           </TableHeader>
@@ -394,7 +439,6 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
                         <Skeleton className="h-8 w-8 rounded-md" />
                         <div className="space-y-2">
                           <Skeleton className="h-4 w-[200px]" />
-                          <Skeleton className="h-3 w-[150px]" />
                         </div>
                       </div>
                     </TableCell>
@@ -405,9 +449,6 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Skeleton className="h-6 w-[60px] rounded-full" />
-                    </TableCell>
-                    <TableCell>
                       <Skeleton className="h-4 w-4" />
                     </TableCell>
                   </TableRow>
@@ -415,7 +456,7 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
               </>
             ) : organizations.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} className="text-center py-8">
+                <TableCell colSpan={3} className="text-center py-8">
                   Aucune organisation
                 </TableCell>
               </TableRow>
@@ -433,9 +474,6 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
                       </div>
                       <div>
                         <div className="font-medium text-sm">{org.name}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {org.id}
-                        </div>
                       </div>
                     </div>
                   </TableCell>
@@ -447,11 +485,6 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
                         {(orgMemberCounts[org.id] || 0) > 1 ? "s" : ""}
                       </span>
                     </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge className="bg-gray-100 border-gray-300 text-gray-800 font-normal">
-                      Défaut
-                    </Badge>
                   </TableCell>
                   <TableCell>
                     <ChevronRight className="h-4 w-4 text-muted-foreground" />
@@ -577,12 +610,12 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
                         <TableCell className="text-right">
                           <Select
                             value={member.role}
-                            disabled={!canManageOrgSettings}
+                            disabled={
+                              !canManageOrgSettings ||
+                              updatingRoleForMember === member.id
+                            }
                             onValueChange={(newRole) => {
-                              // TODO: Implémenter le changement de rôle
-                              console.log(
-                                `Changer le rôle de ${member.email} à ${newRole}`
-                              );
+                              handleRoleChange(member, newRole);
                             }}
                           >
                             <SelectTrigger className="w-full md:w-[240px] border-none shadow-none cursor-pointer hover:bg-[#F0EFED]/90 ml-auto transition-colors">

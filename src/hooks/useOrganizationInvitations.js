@@ -302,27 +302,46 @@ export const useOrganizationInvitations = () => {
 
   // Mettre à jour le rôle d'un membre
   const updateMemberRole = useCallback(
-    async (memberId, role, organizationId = null) => {
+    async (memberId, newRole, organizationId = null) => {
       try {
-        const { data, error } = await organization.updateMemberRole({
+        const userOrg = getUserOrganization();
+        const orgId = organizationId || userOrg?.id;
+
+        if (!orgId) {
+          toast.error("Aucune organisation trouvée");
+          return { success: false, error: "Aucune organisation trouvée" };
+        }
+
+        console.log("🔄 Mise à jour du rôle:", {
           memberId,
-          role,
-          organizationId,
+          newRole,
+          orgId,
+          type: typeof memberId,
+        });
+
+        // Better Auth attend 'memberId' et 'newRole' comme paramètres
+        const { data, error } = await organization.updateMemberRole({
+          memberId: memberId,
+          newRole: newRole,
+          organizationId: orgId,
         });
 
         if (error) {
+          console.error("❌ Erreur updateMemberRole:", error);
           toast.error("Erreur lors de la mise à jour du rôle");
           return { success: false, error };
         }
 
+        console.log("✅ Rôle mis à jour avec succès:", data);
         toast.success("Rôle mis à jour avec succès");
         return { success: true, data };
       } catch (error) {
+        console.error("❌ Exception updateMemberRole:", error);
         toast.error(error.message || "Erreur lors de la mise à jour du rôle");
         return { success: false, error: error.message };
       }
     },
-    []
+    [getUserOrganization]
   );
 
   // Fonction pour récupérer tous les collaborateurs (membres + invitations)
