@@ -49,7 +49,6 @@ export default function ModernInvoiceEditor({
   const [previousSituationInvoices, setPreviousSituationInvoices] = useState(
     []
   );
-  const [contractTotalTTC, setContractTotalTTC] = useState(null);
   const pdfRef = useRef(null);
 
   // Récupérer l'organisation au chargement
@@ -374,7 +373,6 @@ export default function ModernInvoiceEditor({
                       onPreviousSituationInvoicesChange={
                         setPreviousSituationInvoices
                       }
-                      onContractTotalChange={setContractTotalTTC}
                     />
                   )}
                 </FormProvider>
@@ -402,7 +400,6 @@ export default function ModernInvoiceEditor({
                   data={debouncedFormData}
                   type="invoice"
                   previousSituationInvoices={previousSituationInvoices}
-                  contractTotalTTC={contractTotalTTC}
                 />
               </div>
             ) : null}

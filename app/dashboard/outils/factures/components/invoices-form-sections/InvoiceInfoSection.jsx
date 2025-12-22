@@ -102,7 +102,6 @@ export default function InvoiceInfoSection({
   validateInvoiceNumber: validateInvoiceNumberExists,
   onSituationNumberChange,
   onPreviousSituationInvoicesChange,
-  onContractTotalChange,
 }) {
   const {
     watch,
@@ -246,68 +245,6 @@ export default function InvoiceInfoSection({
     fetchSituationInvoices,
     fetchQuoteByNumber,
   ]);
-
-  // Notifier le parent du total du contrat quand le devis ou la première facture de situation est récupéré
-  React.useEffect(() => {
-    if (data.invoiceType === "situation") {
-      // Priorité 1: Si un devis correspondant existe, utiliser son total
-      if (quoteData?.quoteByNumber) {
-        if (onContractTotalChange) {
-          onContractTotalChange(quoteData.quoteByNumber.finalTotalTTC);
-        }
-      }
-      // Priorité 2: Si pas de devis mais des factures de situation existent,
-      // calculer le total à partir de la première facture (sans avancement)
-      else if (situationData?.situationInvoicesByQuoteRef?.length > 0) {
-        const existingInvoices = situationData.situationInvoicesByQuoteRef;
-        // Trier par date de création pour obtenir la première
-        const sortedInvoices = [...existingInvoices].sort(
-          (a, b) =>
-            new Date(a.issueDate || a.createdAt) -
-            new Date(b.issueDate || b.createdAt)
-        );
-        const firstInvoice = sortedInvoices[0];
-
-        // Calculer le total TTC de la première facture SANS tenir compte de l'avancement
-        if (firstInvoice.items && firstInvoice.items.length > 0) {
-          let totalHT = 0;
-          let totalVAT = 0;
-
-          firstInvoice.items.forEach((item) => {
-            const quantity = parseFloat(item.quantity) || 0;
-            const unitPrice = parseFloat(item.unitPrice) || 0;
-            const vatRate = parseFloat(item.vatRate) || 0;
-            const discount = parseFloat(item.discount) || 0;
-            const discountType = item.discountType || "PERCENTAGE";
-
-            // Calculer le total de l'article SANS avancement
-            let itemTotal = quantity * unitPrice;
-
-            // Appliquer la remise
-            if (discount > 0) {
-              if (discountType === "PERCENTAGE") {
-                itemTotal = itemTotal * (1 - discount / 100);
-              } else {
-                itemTotal = Math.max(0, itemTotal - discount);
-              }
-            }
-
-            totalHT += itemTotal;
-            totalVAT += itemTotal * (vatRate / 100);
-          });
-
-          const contractTotal = totalHT + totalVAT;
-          if (onContractTotalChange) {
-            onContractTotalChange(contractTotal);
-          }
-        }
-      }
-    } else {
-      if (onContractTotalChange) {
-        onContractTotalChange(null);
-      }
-    }
-  }, [quoteData, situationData, data.invoiceType, onContractTotalChange]);
 
   // Copier les articles du devis quand il est récupéré (si pas de factures de situation existantes)
   React.useEffect(() => {
@@ -705,7 +642,7 @@ export default function InvoiceInfoSection({
             Informations de la facture
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6 p-0">
+        <CardContent className="space-y-4 p-0">
           {/* Numéro automatique de facture - Affiché en premier */}
           <div className="flex items-center gap-2 text-sm">
             <span className="text-muted-foreground">
@@ -720,7 +657,7 @@ export default function InvoiceInfoSection({
                 <p>
                   Ce numéro est généré automatiquement de manière séquentielle.
                   Vous pouvez le personnaliser dans les paramètres avancés
-                  ci-dessous.
+                  ci-dessus.
                 </p>
               </TooltipContent>
             </Tooltip>
@@ -920,13 +857,13 @@ export default function InvoiceInfoSection({
       </Card>
 
       {/* Section Type de facture - Séparée */}
-      <Card className="shadow-none p-2 mb-4 border-none bg-transparent">
+      <Card className="shadow-none p-2 mb-2 border-none bg-transparent">
         <CardHeader className="p-0">
           <CardTitle className="flex items-center gap-2 font-normal text-lg">
             Type de facture
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6 p-0">
+        <CardContent className="space-y-4 p-0">
           {/* Sélecteur de type */}
           <div className="space-y-2">
             <Select
@@ -1378,7 +1315,7 @@ export default function InvoiceInfoSection({
           )}
 
           {/* Montant total du contrat (pour situations sans devis) */}
-          {data.invoiceType === "situation" && !quoteData?.quoteByNumber && (
+          {/* {data.invoiceType === "situation" && !quoteData?.quoteByNumber && (
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <Label htmlFor="contract-total" className="text-sm font-light">
@@ -1426,7 +1363,7 @@ export default function InvoiceInfoSection({
                 ne sera effectuée.
               </p>
             </div>
-          )}
+          )} */}
 
           {/* Référence devis - uniquement pour les factures standard et acompte */}
           {data.invoiceType !== "situation" && (

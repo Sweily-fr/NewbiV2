@@ -497,7 +497,6 @@ const UniversalPDFDownloaderWithFacturX = ({
   disabled = false,
   enableFacturX = true,
   previousSituationInvoices = [],
-  contractTotalTTC = null,
   ...props
 }) => {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -684,7 +683,9 @@ const UniversalPDFDownloaderWithFacturX = ({
       console.log(`  Table header: ${heights.tableHeader.toFixed(1)}mm`);
       console.log(`  Items: ${heights.items.length} items`);
       console.log(`  Totaux: ${heights.totals.toFixed(1)}mm`);
-      console.log(`  Récapitulatif situation: ${heights.situationRecap.toFixed(1)}mm`);
+      console.log(
+        `  Récapitulatif situation: ${heights.situationRecap.toFixed(1)}mm`
+      );
       console.log(`  Footer: ${heights.footer.toFixed(1)}mm`);
 
       // Calculer la pagination intelligente
@@ -1006,7 +1007,7 @@ const UniversalPDFDownloaderWithFacturX = ({
       // Ajouter le récapitulatif de situation si présent (sur une nouvelle page)
       if (sections.situationRecap && heights.situationRecap > 0) {
         console.log(`\n📊 Ajout du récapitulatif de situation...`);
-        
+
         // Le récapitulatif de situation doit être sur une nouvelle page
         pages.push(currentPage);
         currentPage = {
@@ -1014,7 +1015,7 @@ const UniversalPDFDownloaderWithFacturX = ({
           sections: [],
           currentHeight: 0,
         };
-        
+
         currentPage.sections.push({
           type: "situationRecap",
           data: sections.situationRecap,
@@ -1023,7 +1024,9 @@ const UniversalPDFDownloaderWithFacturX = ({
           canBreak: false,
         });
         currentPage.currentHeight += heights.situationRecap + SECTION_SPACING;
-        console.log(`  ✓ Récapitulatif de situation ajouté (${heights.situationRecap.toFixed(1)}mm)`);
+        console.log(
+          `  ✓ Récapitulatif de situation ajouté (${heights.situationRecap.toFixed(1)}mm)`
+        );
       }
 
       // Vérifier si le footer rentre sur la page courante
@@ -1360,7 +1363,6 @@ const UniversalPDFDownloaderWithFacturX = ({
             isMobile={false}
             forPDF={true}
             previousSituationInvoices={previousSituationInvoices}
-            contractTotalTTC={contractTotalTTC}
           />
         </div>
       </div>

@@ -18,7 +18,6 @@ const UniversalPDFDownloader = ({
   size = "sm",
   disabled = false,
   previousSituationInvoices = [],
-  contractTotalTTC = null,
   ...props
 }) => {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -365,7 +364,6 @@ const UniversalPDFDownloader = ({
             isMobile={false}
             forPDF={true}
             previousSituationInvoices={previousSituationInvoices}
-            contractTotalTTC={contractTotalTTC}
           />
         </div>
       </div>

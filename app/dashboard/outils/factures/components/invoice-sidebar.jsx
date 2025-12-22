@@ -65,8 +65,9 @@ export default function InvoiceSidebar({
     useState(false);
   const [showMobileDetails, setShowMobileDetails] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [previousSituationInvoices, setPreviousSituationInvoices] = useState([]);
-  const [contractTotalTTC, setContractTotalTTC] = useState(null);
+  const [previousSituationInvoices, setPreviousSituationInvoices] = useState(
+    []
+  );
 
   const router = useRouter();
   const { workspaceId } = useRequiredWorkspace();
@@ -96,73 +97,49 @@ export default function InvoiceSidebar({
   // Récupérer les factures de situation précédentes quand c'est une facture de situation
   useEffect(() => {
     const invoice = fullInvoice || initialInvoice;
+    // Utiliser situationReference en priorité, sinon purchaseOrderNumber
+    const reference =
+      invoice?.situationReference || invoice?.purchaseOrderNumber;
+
     if (
       isOpen &&
       workspaceId &&
       invoice?.invoiceType === "situation" &&
-      invoice?.purchaseOrderNumber
+      reference
     ) {
       fetchSituationInvoices({
         variables: {
           workspaceId,
-          purchaseOrderNumber: invoice.purchaseOrderNumber,
+          purchaseOrderNumber: reference,
         },
       });
     } else {
       // Réinitialiser si ce n'est pas une facture de situation
       setPreviousSituationInvoices([]);
-      setContractTotalTTC(null);
     }
-  }, [isOpen, workspaceId, fullInvoice, initialInvoice, fetchSituationInvoices]);
+  }, [
+    isOpen,
+    workspaceId,
+    fullInvoice,
+    initialInvoice,
+    fetchSituationInvoices,
+  ]);
 
   // Mettre à jour les factures de situation précédentes quand les données arrivent
   useEffect(() => {
     const invoice = fullInvoice || initialInvoice;
     if (situationData?.situationInvoicesByQuoteRef && invoice?.id) {
-      // Filtrer pour exclure la facture actuelle et trier par numéro de situation
-      const otherInvoices = situationData.situationInvoicesByQuoteRef
-        .filter((inv) => inv.id !== invoice.id)
+      // Filtrer pour n'inclure que les factures avec un situationNumber INFÉRIEUR à la facture actuelle
+      const currentSituationNumber = invoice.situationNumber || 1;
+      const previousInvoices = situationData.situationInvoicesByQuoteRef
+        .filter(
+          (inv) =>
+            inv.id !== invoice.id &&
+            (inv.situationNumber || 0) < currentSituationNumber
+        )
         .sort((a, b) => (a.situationNumber || 0) - (b.situationNumber || 0));
-      
-      setPreviousSituationInvoices(otherInvoices);
 
-      // Calculer le total du contrat à partir de la première facture de situation (100% des articles)
-      const allInvoices = situationData.situationInvoicesByQuoteRef;
-      if (allInvoices.length > 0) {
-        const firstInvoice = allInvoices.reduce((prev, curr) => 
-          (prev.situationNumber || 0) < (curr.situationNumber || 0) ? prev : curr
-        );
-        
-        // Calculer le total TTC du contrat (100% de tous les articles sans avancement)
-        if (firstInvoice.items && firstInvoice.items.length > 0) {
-          let totalContratHT = 0;
-          let totalContratTVA = 0;
-          
-          firstInvoice.items.forEach((item) => {
-            const quantity = parseFloat(item.quantity) || 0;
-            const unitPrice = parseFloat(item.unitPrice) || 0;
-            const vatRate = parseFloat(item.vatRate) || 0;
-            const discount = parseFloat(item.discount) || 0;
-            const discountType = item.discountType || "PERCENTAGE";
-            
-            let itemTotal = quantity * unitPrice;
-            
-            // Appliquer la remise
-            if (discount > 0) {
-              if (discountType === "PERCENTAGE" || discountType === "percentage") {
-                itemTotal = itemTotal * (1 - Math.min(discount, 100) / 100);
-              } else {
-                itemTotal = Math.max(0, itemTotal - discount);
-              }
-            }
-            
-            totalContratHT += itemTotal;
-            totalContratTVA += itemTotal * (vatRate / 100);
-          });
-          
-          setContractTotalTTC(totalContratHT + totalContratTVA);
-        }
-      }
+      setPreviousSituationInvoices(previousInvoices);
     }
   }, [situationData, fullInvoice, initialInvoice]);
 
@@ -481,7 +458,7 @@ export default function InvoiceSidebar({
   const handleCreateInvoice = async () => {
     try {
       await changeStatus(invoice.id, INVOICE_STATUS.PENDING);
-      toast.success("Facture créée avec succès");
+      // toast.success("Facture créée avec succès");
       if (onRefetch) onRefetch();
     } catch (error) {
       // L'erreur est gérée par errorLink dans apolloClient.js
@@ -551,11 +528,10 @@ export default function InvoiceSidebar({
       >
         <div className="absolute inset-0 bg-black/80 p-0 flex items-start justify-center overflow-y-auto py-4 md:py-12 px-2 md:px-24">
           <div className="w-[210mm] max-w-full min-h-[calc(100%-4rem)] bg-white">
-            <UniversalPreviewPDF 
-              data={invoice} 
-              type="invoice" 
+            <UniversalPreviewPDF
+              data={invoice}
+              type="invoice"
               previousSituationInvoices={previousSituationInvoices}
-              contractTotalTTC={contractTotalTTC}
             />
           </div>
         </div>
@@ -610,7 +586,6 @@ export default function InvoiceSidebar({
                 type="invoice"
                 enableFacturX={true}
                 previousSituationInvoices={previousSituationInvoices}
-                contractTotalTTC={contractTotalTTC}
               />
             )}
             <Button
@@ -1310,11 +1285,10 @@ export default function InvoiceSidebar({
           </DialogHeader>
           <div className="flex-1 overflow-y-auto bg-[#F9F9F9] dark:bg-[#1a1a1a] p-8">
             <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-8 max-w-4xl mx-auto">
-              <UniversalPreviewPDF 
-                data={invoice} 
-                type="invoice" 
+              <UniversalPreviewPDF
+                data={invoice}
+                type="invoice"
                 previousSituationInvoices={previousSituationInvoices}
-                contractTotalTTC={contractTotalTTC}
               />
             </div>
           </div>

@@ -283,6 +283,7 @@ export const GET_SITUATION_INVOICES_BY_QUOTE_REF = gql`
       prefix
       invoiceType
       situationNumber
+      situationReference
       purchaseOrderNumber
       status
       issueDate

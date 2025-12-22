@@ -39,8 +39,9 @@ export default function InvoiceMobileFullscreen({
   const router = useRouter();
   const { canCreate } = usePermissions();
   const [canCreateCreditNote, setCanCreateCreditNote] = useState(false);
-  const [previousSituationInvoices, setPreviousSituationInvoices] = useState([]);
-  const [contractTotalTTC, setContractTotalTTC] = useState(null);
+  const [previousSituationInvoices, setPreviousSituationInvoices] = useState(
+    []
+  );
   const { markAsPaid, loading: markingAsPaid } = useMarkInvoiceAsPaid();
   const { changeStatus, loading: changingStatus } = useChangeInvoiceStatus();
   const { workspaceId } = useRequiredWorkspace();
@@ -55,16 +56,14 @@ export default function InvoiceMobileFullscreen({
   }, [canCreate]);
 
   // Fetch credit notes for this invoice
-  const {
-    creditNotes,
-    loading: loadingCreditNotes,
-  } = useCreditNotesByInvoice(initialInvoice?.id);
+  const { creditNotes, loading: loadingCreditNotes } = useCreditNotesByInvoice(
+    initialInvoice?.id
+  );
 
   // Récupérer les données complètes de la facture
-  const {
-    invoice: fullInvoice,
-    loading: loadingFullInvoice,
-  } = useInvoice(initialInvoice?.id);
+  const { invoice: fullInvoice, loading: loadingFullInvoice } = useInvoice(
+    initialInvoice?.id
+  );
 
   // Query pour récupérer les factures de situation précédentes
   const [fetchSituationInvoices, { data: situationData }] = useLazyQuery(
@@ -75,68 +74,48 @@ export default function InvoiceMobileFullscreen({
   // Récupérer les factures de situation précédentes quand c'est une facture de situation
   useEffect(() => {
     const invoice = fullInvoice || initialInvoice;
+    // Utiliser situationReference en priorité, sinon purchaseOrderNumber
+    const reference =
+      invoice?.situationReference || invoice?.purchaseOrderNumber;
+
     if (
       isOpen &&
       workspaceId &&
       invoice?.invoiceType === "situation" &&
-      invoice?.purchaseOrderNumber
+      reference
     ) {
       fetchSituationInvoices({
         variables: {
           workspaceId,
-          purchaseOrderNumber: invoice.purchaseOrderNumber,
+          purchaseOrderNumber: reference,
         },
       });
     } else {
       setPreviousSituationInvoices([]);
-      setContractTotalTTC(null);
     }
-  }, [isOpen, workspaceId, fullInvoice, initialInvoice, fetchSituationInvoices]);
+  }, [
+    isOpen,
+    workspaceId,
+    fullInvoice,
+    initialInvoice,
+    fetchSituationInvoices,
+  ]);
 
   // Mettre à jour les factures de situation précédentes quand les données arrivent
   useEffect(() => {
     const invoice = fullInvoice || initialInvoice;
     if (situationData?.situationInvoicesByQuoteRef && invoice?.id) {
-      const otherInvoices = situationData.situationInvoicesByQuoteRef
-        .filter((inv) => inv.id !== invoice.id)
+      // Filtrer pour n'inclure que les factures avec un situationNumber INFÉRIEUR à la facture actuelle
+      const currentSituationNumber = invoice.situationNumber || 1;
+      const previousInvoices = situationData.situationInvoicesByQuoteRef
+        .filter(
+          (inv) =>
+            inv.id !== invoice.id &&
+            (inv.situationNumber || 0) < currentSituationNumber
+        )
         .sort((a, b) => (a.situationNumber || 0) - (b.situationNumber || 0));
-      
-      setPreviousSituationInvoices(otherInvoices);
 
-      const allInvoices = situationData.situationInvoicesByQuoteRef;
-      if (allInvoices.length > 0) {
-        const firstInvoice = allInvoices.reduce((prev, curr) => 
-          (prev.situationNumber || 0) < (curr.situationNumber || 0) ? prev : curr
-        );
-        
-        if (firstInvoice.items && firstInvoice.items.length > 0) {
-          let totalContratHT = 0;
-          let totalContratTVA = 0;
-          
-          firstInvoice.items.forEach((item) => {
-            const quantity = parseFloat(item.quantity) || 0;
-            const unitPrice = parseFloat(item.unitPrice) || 0;
-            const vatRate = parseFloat(item.vatRate) || 0;
-            const discount = parseFloat(item.discount) || 0;
-            const discountType = item.discountType || "PERCENTAGE";
-            
-            let itemTotal = quantity * unitPrice;
-            
-            if (discount > 0) {
-              if (discountType === "PERCENTAGE" || discountType === "percentage") {
-                itemTotal = itemTotal * (1 - Math.min(discount, 100) / 100);
-              } else {
-                itemTotal = Math.max(0, itemTotal - discount);
-              }
-            }
-            
-            totalContratHT += itemTotal;
-            totalContratTVA += itemTotal * (vatRate / 100);
-          });
-          
-          setContractTotalTTC(totalContratHT + totalContratTVA);
-        }
-      }
+      setPreviousSituationInvoices(previousInvoices);
     }
   }, [situationData, fullInvoice, initialInvoice]);
 
@@ -195,7 +174,7 @@ export default function InvoiceMobileFullscreen({
       onClose();
     } catch (error) {
       // L'erreur est gérée par errorLink dans apolloClient.js
-      console.error('Erreur lors du changement de statut:', error);
+      console.error("Erreur lors du changement de statut:", error);
     }
   };
 
@@ -216,7 +195,10 @@ export default function InvoiceMobileFullscreen({
   };
 
   // Vérifier si la facture a atteint sa limite d'avoirs
-  const creditNoteLimitReached = hasReachedCreditNoteLimit(invoice, creditNotes);
+  const creditNoteLimitReached = hasReachedCreditNoteLimit(
+    invoice,
+    creditNotes
+  );
 
   const isLoading = markingAsPaid || changingStatus || loadingFullInvoice;
 
@@ -234,15 +216,15 @@ export default function InvoiceMobileFullscreen({
               <h2 className="text-lg font-normal">Facture {invoice.number}</h2>
               <span
                 className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium w-fit ${
-                  invoice.status === 'DRAFT'
-                    ? 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100'
-                    : invoice.status === 'PENDING'
-                    ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100'
-                    : invoice.status === 'PAID'
-                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100'
-                    : invoice.status === 'OVERDUE'
-                    ? 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-100'
-                    : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100'
+                  invoice.status === "DRAFT"
+                    ? "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100"
+                    : invoice.status === "PENDING"
+                      ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100"
+                      : invoice.status === "PAID"
+                        ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"
+                        : invoice.status === "OVERDUE"
+                          ? "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-100"
+                          : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100"
                 }`}
               >
                 {statusLabel}
@@ -258,7 +240,6 @@ export default function InvoiceMobileFullscreen({
                   size="sm"
                   className="h-8"
                   previousSituationInvoices={previousSituationInvoices}
-                  contractTotalTTC={contractTotalTTC}
                 >
                   Télécharger
                 </UniversalPDFDownloaderWithFacturX>
@@ -292,28 +273,41 @@ export default function InvoiceMobileFullscreen({
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm text-muted-foreground">Date d'émission</p>
-                    <p className="font-medium">{formatDate(invoice.issueDate)}</p>
+                    <p className="text-sm text-muted-foreground">
+                      Date d'émission
+                    </p>
+                    <p className="font-medium">
+                      {formatDate(invoice.issueDate)}
+                    </p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Date d'échéance</p>
+                    <p className="text-sm text-muted-foreground">
+                      Date d'échéance
+                    </p>
                     <p className="font-medium">{formatDate(invoice.dueDate)}</p>
                   </div>
                 </div>
 
                 <div>
-                  <p className="text-sm text-muted-foreground">Montant total TTC</p>
+                  <p className="text-sm text-muted-foreground">
+                    Montant total TTC
+                  </p>
                   <p className="text-2xl font-bold">
                     {formatCurrency(invoice.finalTotalTTC)}
                   </p>
                 </div>
 
-                {invoice.status === INVOICE_STATUS.COMPLETED && invoice.paymentDate && (
-                  <div>
-                    <p className="text-sm text-muted-foreground">Date de paiement</p>
-                    <p className="font-medium">{formatDate(invoice.paymentDate)}</p>
-                  </div>
-                )}
+                {invoice.status === INVOICE_STATUS.COMPLETED &&
+                  invoice.paymentDate && (
+                    <div>
+                      <p className="text-sm text-muted-foreground">
+                        Date de paiement
+                      </p>
+                      <p className="font-medium">
+                        {formatDate(invoice.paymentDate)}
+                      </p>
+                    </div>
+                  )}
               </div>
 
               {/* Aperçu PDF - Version mobile avec même design que desktop */}
@@ -329,7 +323,9 @@ export default function InvoiceMobileFullscreen({
               {/* Avoirs liés - Cliquables pour télécharger */}
               {creditNotes && creditNotes.length > 0 && (
                 <div className="space-y-2">
-                  <p className="text-sm font-normal">Avoirs créés ({creditNotes.length})</p>
+                  <p className="text-sm font-normal">
+                    Avoirs créés ({creditNotes.length})
+                  </p>
                   <div className="space-y-2">
                     {creditNotes.map((cn) => (
                       <div
@@ -363,7 +359,10 @@ export default function InvoiceMobileFullscreen({
         </div>
 
         {/* Footer avec actions */}
-        <div className="fixed bottom-0 left-0 right-0 bg-background border-t px-4 py-3 flex flex-col gap-1.5" style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}>
+        <div
+          className="fixed bottom-0 left-0 right-0 bg-background border-t px-4 py-3 flex flex-col gap-1.5"
+          style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
+        >
           {invoice.status === INVOICE_STATUS.DRAFT && (
             <Button
               onClick={handleCreateInvoice}
@@ -421,29 +420,33 @@ export default function InvoiceMobileFullscreen({
             </>
           )}
 
-          {invoice.status === INVOICE_STATUS.COMPLETED && !creditNoteLimitReached && canCreateCreditNote && (
-            <Button
-              onClick={handleCreateCreditNote}
-              variant="outline"
-              size="sm"
-              className="w-full font-normal"
-            >
-              <Receipt className="mr-2 h-4 w-4" />
-              Créer un avoir
-            </Button>
-          )}
+          {invoice.status === INVOICE_STATUS.COMPLETED &&
+            !creditNoteLimitReached &&
+            canCreateCreditNote && (
+              <Button
+                onClick={handleCreateCreditNote}
+                variant="outline"
+                size="sm"
+                className="w-full font-normal"
+              >
+                <Receipt className="mr-2 h-4 w-4" />
+                Créer un avoir
+              </Button>
+            )}
 
-          {invoice.status === INVOICE_STATUS.CANCELED && !creditNoteLimitReached && canCreateCreditNote && (
-            <Button
-              onClick={handleCreateCreditNote}
-              variant="outline"
-              size="sm"
-              className="w-full font-normal"
-            >
-              <Receipt className="mr-2 h-4 w-4" />
-              Créer un avoir
-            </Button>
-          )}
+          {invoice.status === INVOICE_STATUS.CANCELED &&
+            !creditNoteLimitReached &&
+            canCreateCreditNote && (
+              <Button
+                onClick={handleCreateCreditNote}
+                variant="outline"
+                size="sm"
+                className="w-full font-normal"
+              >
+                <Receipt className="mr-2 h-4 w-4" />
+                Créer un avoir
+              </Button>
+            )}
 
           {invoice.status === INVOICE_STATUS.DRAFT && (
             <UniversalPDFDownloaderWithFacturX
@@ -453,14 +456,12 @@ export default function InvoiceMobileFullscreen({
               variant="outline"
               size="sm"
               previousSituationInvoices={previousSituationInvoices}
-              contractTotalTTC={contractTotalTTC}
             >
               Télécharger
             </UniversalPDFDownloaderWithFacturX>
           )}
         </div>
       </div>
-
     </>
   );
 }

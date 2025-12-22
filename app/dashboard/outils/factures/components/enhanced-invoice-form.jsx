@@ -284,7 +284,6 @@ export default function EnhancedInvoiceForm({
   markFieldAsEditing,
   unmarkFieldAsEditing,
   onPreviousSituationInvoicesChange,
-  onContractTotalChange,
 }) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [activeField, setActiveField] = useState(null);
@@ -559,7 +558,7 @@ export default function EnhancedInvoiceForm({
         ref={scrollContainerRef}
         className="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent min-h-0 pb-20 lg:pb-0"
       >
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* Étape 1: Détails de la facture */}
           {currentStep === 1 && (
             <>
@@ -593,7 +592,6 @@ export default function EnhancedInvoiceForm({
                 onPreviousSituationInvoicesChange={
                   onPreviousSituationInvoicesChange
                 }
-                onContractTotalChange={onContractTotalChange}
                 setValidationErrors={setValidationErrors}
                 onLinkedToQuoteChange={setIsLinkedToQuote}
                 onResetItems={resetItems}

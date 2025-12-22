@@ -1557,6 +1557,25 @@ export function useInvoiceEditor({
       }
     }
 
+    // Validation de l'avancement pour les factures de situation
+    // L'avancement cumulé (factures précédentes + actuelle) ne doit pas dépasser 100%
+    if (currentFormData.invoiceType === "situation") {
+      const globalProgress =
+        parseFloat(currentFormData.globalProgressPercentage) || 0;
+
+      // Vérifier si l'avancement de cette facture dépasse 100%
+      if (globalProgress > 100) {
+        errors.progress = {
+          message: `L'avancement de cette facture (${globalProgress}%) ne peut pas dépasser 100%`,
+          canEdit: false,
+        };
+      }
+
+      // Note: La validation de l'avancement cumulé (avec les factures précédentes)
+      // est gérée côté ProgressSection.jsx qui affiche un avertissement
+      // et empêche de saisir plus que le solde restant
+    }
+
     if (Object.keys(errors).length > 0) {
       setValidationErrors(errors);
       toast.error("Veuillez corriger les erreurs avant de valider la facture");

@@ -75,8 +75,42 @@ const UniversalPreviewPDF = ({
   isMobile = false,
   forPDF = false,
   previousSituationInvoices = [],
-  contractTotalTTC = null,
 }) => {
+  // Calculer le montant marché HT (total à 100% sans avancement) pour les factures de situation
+  const calculateMontantMarcheHT = () => {
+    if (!data.items || data.items.length === 0) return 0;
+
+    let totalHT = data.items.reduce((sum, item) => {
+      const quantity = parseFloat(item.quantity) || 0;
+      const unitPrice = parseFloat(item.unitPrice) || 0;
+      let itemTotal = quantity * unitPrice;
+
+      // Appliquer la remise sur l'article
+      const discount = parseFloat(item.discount) || 0;
+      if (discount > 0) {
+        if (item.discountType?.toUpperCase() === "PERCENTAGE") {
+          itemTotal = itemTotal * (1 - Math.min(discount, 100) / 100);
+        } else {
+          itemTotal = Math.max(0, itemTotal - discount);
+        }
+      }
+      return sum + itemTotal;
+    }, 0);
+
+    // Appliquer la remise globale
+    const globalDiscount = parseFloat(data.discount) || 0;
+    if (globalDiscount > 0) {
+      if (data.discountType?.toUpperCase() === "PERCENTAGE") {
+        totalHT = totalHT * (1 - Math.min(globalDiscount, 100) / 100);
+      } else {
+        totalHT = Math.max(0, totalHT - globalDiscount);
+      }
+    }
+
+    return totalHT;
+  };
+
+  const montantMarcheHT = calculateMontantMarcheHT();
   const { data: session } = useSession();
   const { organization } = useWorkspace();
   const documentRef = useRef(null);
@@ -655,6 +689,17 @@ const UniversalPreviewPDF = ({
                         </span>
                       </div>
                     )}
+                    <div
+                      className="flex justify-end"
+                      style={{ fontSize: "10px" }}
+                    >
+                      <span className="font-medium w-38 dark:text-[#0A0A0A] mr-2">
+                        Montant marché:
+                      </span>
+                      <span className="dark:text-[#0A0A0A]">
+                        {formatCurrency(montantMarcheHT)} HT
+                      </span>
+                    </div>
                     <div
                       className="flex justify-end"
                       style={{ fontSize: "10px" }}
@@ -1388,26 +1433,36 @@ const UniversalPreviewPDF = ({
             data-keep-with-footer
           >
             <div className="w-72 space-y-1 text-xs">
-              {/* 1. Total HT - Affiché seulement s'il y a des remises sur articles ou des remises globales */}
-              {/* Ne pas afficher le prix barré si le total est 0 (avancement 0%) */}
-              {(subtotalAfterItemDiscounts < subtotal || discount > 0) && (
-                <div className="flex justify-between py-1 px-3">
-                  <span className="font-medium text-[10px] dark:text-[#0A0A0A]">
-                    Total HT
-                  </span>
-                  <div className="flex flex-col items-end">
-                    {subtotalAfterItemDiscounts < subtotal &&
-                      subtotalAfterItemDiscounts > 0 && (
+              {/* 1. Total HT - Pour les factures de situation, afficher directement le total avec avancement sans prix barré */}
+              {(() => {
+                const isSituationInvoice = data.invoiceType === "situation";
+                // Pour les factures de situation, ne pas afficher le prix barré (la différence vient de l'avancement, pas d'une remise)
+                const hasItemDiscounts =
+                  !isSituationInvoice && subtotalAfterItemDiscounts < subtotal;
+                const showTotalHTSection =
+                  hasItemDiscounts || discount > 0 || isSituationInvoice;
+
+                if (!showTotalHTSection) return null;
+
+                return (
+                  <div className="flex justify-between py-1 px-3">
+                    <span className="font-medium text-[10px] dark:text-[#0A0A0A]">
+                      Total HT
+                    </span>
+                    <div className="flex flex-col items-end">
+                      {/* Afficher le prix barré seulement pour les remises sur articles (pas pour l'avancement des factures de situation) */}
+                      {hasItemDiscounts && subtotalAfterItemDiscounts > 0 && (
                         <span className="line-through text-gray-400 text-[9px] mb-[-2px]">
                           {formatCurrency(subtotal)}
                         </span>
                       )}
-                    <span className="dark:text-[#0A0A0A] text-[10px] font-medium">
-                      {formatCurrency(subtotalAfterItemDiscounts)}
-                    </span>
+                      <span className="dark:text-[#0A0A0A] text-[10px] font-medium">
+                        {formatCurrency(subtotalAfterItemDiscounts)}
+                      </span>
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               {/* 2. Remise */}
               {discount > 0 && (
@@ -1431,6 +1486,7 @@ const UniversalPreviewPDF = ({
               )}
 
               {/* 3. Total HT final - Affiché avec le bon libellé selon les remises */}
+              {/* Pour les factures de situation, le Total HT est déjà affiché dans la section 1 */}
               {discount > 0 ? (
                 <div className="flex justify-between py-1 px-3">
                   <span className="font-medium text-[10px] dark:text-[#0A0A0A]">
@@ -1441,8 +1497,9 @@ const UniversalPreviewPDF = ({
                   </span>
                 </div>
               ) : (
-                // Si pas de remise globale ET pas de remise sur articles, afficher le total HT simple
-                subtotalAfterItemDiscounts >= subtotal && (
+                // Si pas de remise globale ET pas de remise sur articles ET pas une facture de situation, afficher le total HT simple
+                subtotalAfterItemDiscounts >= subtotal &&
+                data.invoiceType !== "situation" && (
                   <div className="flex justify-between py-1 px-3">
                     <span className="font-medium text-[10px] dark:text-[#0A0A0A]">
                       Total HT
@@ -2168,112 +2225,41 @@ const UniversalPreviewPDF = ({
               <div className="flex justify-end">
                 <div className="w-72">
                   {(() => {
-                    // Utiliser le total du devis si disponible, sinon calculer à partir des articles
-                    let totalContratTTCValue = contractTotalTTC;
+                    // Montant marché HT (déjà calculé en haut du composant)
+                    const totalMarcheHT = montantMarcheHT;
 
-                    if (!totalContratTTCValue) {
-                      // Fallback: Calculer le total du contrat (100% de tous les articles sans avancement)
-                      const totalContratHT =
-                        data.items?.reduce((sum, item) => {
+                    // Montant facturé à ce jour HT (factures précédentes + facture actuelle)
+                    // Calculer le total HT des factures précédentes
+                    const montantFacturePrecedentHT =
+                      previousSituationInvoices.reduce((sum, inv) => {
+                        // Calculer le HT de chaque facture précédente
+                        let invHT = 0;
+                        inv.items?.forEach((item) => {
                           const quantity = parseFloat(item.quantity) || 0;
                           const unitPrice = parseFloat(item.unitPrice) || 0;
-                          let itemTotal = quantity * unitPrice;
+                          const progressPercentage =
+                            parseFloat(item.progressPercentage) || 0;
                           const discount = parseFloat(item.discount) || 0;
+                          let itemHT =
+                            quantity * unitPrice * (progressPercentage / 100);
                           if (discount > 0) {
                             if (
                               item.discountType?.toUpperCase() === "PERCENTAGE"
                             ) {
-                              itemTotal =
-                                itemTotal * (1 - Math.min(discount, 100) / 100);
+                              itemHT =
+                                itemHT * (1 - Math.min(discount, 100) / 100);
                             } else {
-                              itemTotal = Math.max(0, itemTotal - discount);
+                              itemHT = Math.max(0, itemHT - discount);
                             }
                           }
-                          return sum + itemTotal;
-                        }, 0) || 0;
-
-                      // Appliquer la remise globale
-                      let totalContratAfterDiscount = totalContratHT;
-                      const globalDiscount = parseFloat(data.discount) || 0;
-                      if (globalDiscount > 0) {
-                        if (data.discountType?.toUpperCase() === "PERCENTAGE") {
-                          totalContratAfterDiscount =
-                            totalContratHT *
-                            (1 - Math.min(globalDiscount, 100) / 100);
-                        } else {
-                          totalContratAfterDiscount = Math.max(
-                            0,
-                            totalContratHT - globalDiscount
-                          );
-                        }
-                      }
-
-                      // Calculer la TVA du contrat (0 si auto-liquidation)
-                      let totalContratTVA = 0;
-                      if (!data.isReverseCharge) {
-                        totalContratTVA =
-                          data.items?.reduce((sum, item) => {
-                            const quantity = parseFloat(item.quantity) || 0;
-                            const unitPrice = parseFloat(item.unitPrice) || 0;
-                            const vatRate = parseFloat(item.vatRate) || 0;
-                            let itemTotal = quantity * unitPrice;
-                            const discount = parseFloat(item.discount) || 0;
-                            if (discount > 0) {
-                              if (
-                                item.discountType?.toUpperCase() ===
-                                "PERCENTAGE"
-                              ) {
-                                itemTotal =
-                                  itemTotal *
-                                  (1 - Math.min(discount, 100) / 100);
-                              } else {
-                                itemTotal = Math.max(0, itemTotal - discount);
-                              }
-                            }
-                            if (globalDiscount > 0 && totalContratHT > 0) {
-                              itemTotal =
-                                itemTotal *
-                                (totalContratAfterDiscount / totalContratHT);
-                            }
-                            return sum + (itemTotal * vatRate) / 100;
-                          }, 0) || 0;
-                      }
-
-                      // Appliquer l'escompte sur le total du contrat
-                      let totalContratHTFinal = totalContratAfterDiscount;
-                      let totalContratTVAFinal = totalContratTVA;
-                      const escompteValue = parseFloat(data.escompte) || 0;
-                      if (escompteValue > 0) {
-                        const escompteAmount =
-                          (totalContratAfterDiscount * escompteValue) / 100;
-                        totalContratHTFinal =
-                          totalContratAfterDiscount - escompteAmount;
-                        // Ajuster la TVA proportionnellement
-                        if (totalContratAfterDiscount > 0) {
-                          totalContratTVAFinal =
-                            totalContratTVA *
-                            (totalContratHTFinal / totalContratAfterDiscount);
-                        }
-                      }
-
-                      totalContratTTCValue =
-                        totalContratHTFinal + totalContratTVAFinal;
-                    }
-
-                    // Montant facturé à ce jour (factures précédentes + facture actuelle)
-                    // D'abord calculer le total des factures précédentes
-                    const montantFacturePrecedent =
-                      previousSituationInvoices.reduce((sum, inv) => {
-                        // Utiliser directement finalTotalTTC si disponible
-                        return sum + (parseFloat(inv.finalTotalTTC) || 0);
+                          invHT += itemHT;
+                        });
+                        return sum + invHT;
                       }, 0);
 
-                    // Calculer le montant de la facture actuelle à partir des items (plus précis que finalTotalTTC)
-                    // en tenant compte de l'escompte, la retenue de garantie et l'auto-liquidation
-                    const calculateCurrentInvoiceTotal = () => {
-                      // Étape 1: Calculer le total HT des articles avec avancement et remises
+                    // Calculer le montant HT de la facture actuelle
+                    const calculateCurrentInvoiceHT = () => {
                       let totalHT = 0;
-                      let totalTVA = 0;
 
                       data.items?.forEach((item) => {
                         const quantity = parseFloat(item.quantity) || 0;
@@ -2283,7 +2269,6 @@ const UniversalPreviewPDF = ({
                           item.progressPercentage !== null
                             ? parseFloat(item.progressPercentage)
                             : 100;
-                        const vatRate = parseFloat(item.vatRate) || 0;
                         const discount = parseFloat(item.discount) || 0;
                         const discountType = item.discountType || "PERCENTAGE";
 
@@ -2305,79 +2290,50 @@ const UniversalPreviewPDF = ({
                         }
 
                         totalHT += itemHT;
-
-                        // Calculer la TVA (0 si auto-liquidation)
-                        if (!data.isReverseCharge && vatRate > 0) {
-                          totalTVA += itemHT * (vatRate / 100);
-                        }
                       });
 
-                      // Étape 2: Appliquer la remise globale
+                      // Appliquer la remise globale
                       const globalDiscount = parseFloat(data.discount) || 0;
                       if (globalDiscount > 0) {
-                        const originalTotalHT = totalHT;
                         if (data.discountType?.toUpperCase() === "PERCENTAGE") {
                           totalHT =
                             totalHT * (1 - Math.min(globalDiscount, 100) / 100);
                         } else {
                           totalHT = Math.max(0, totalHT - globalDiscount);
                         }
-                        // Ajuster la TVA proportionnellement
-                        if (originalTotalHT > 0) {
-                          totalTVA = totalTVA * (totalHT / originalTotalHT);
-                        }
                       }
 
-                      // Étape 3: Appliquer l'escompte sur le HT
-                      const escompteValue = parseFloat(data.escompte) || 0;
-                      if (escompteValue > 0) {
-                        const escompteAmount = (totalHT * escompteValue) / 100;
-                        const htAfterEscompte = totalHT - escompteAmount;
-                        // Ajuster la TVA proportionnellement
-                        if (totalHT > 0) {
-                          totalTVA = totalTVA * (htAfterEscompte / totalHT);
-                        }
-                        totalHT = htAfterEscompte;
-                      }
-
-                      // Étape 4: Calculer le TTC
-                      // NOTE: Pour le récapitulatif d'avancement, on ne déduit PAS la retenue de garantie
-                      // car c'est un montant retenu temporairement qui sera payé plus tard.
-                      // La retenue apparaît uniquement dans le "Net à payer" de chaque facture.
-                      let totalTTC = totalHT + totalTVA;
-
-                      return totalTTC;
+                      return totalHT;
                     };
 
-                    const montantFactureActuelle =
-                      calculateCurrentInvoiceTotal();
+                    const montantFactureActuelleHT =
+                      calculateCurrentInvoiceHT();
 
-                    // Total facturé à ce jour = précédentes + actuelle
-                    const montantFacture =
-                      montantFacturePrecedent + montantFactureActuelle;
+                    // Total facturé à ce jour HT = précédentes + actuelle
+                    const montantFactureHT =
+                      montantFacturePrecedentHT + montantFactureActuelleHT;
 
-                    // Avancement cumulé
+                    // Avancement cumulé (basé sur le HT)
                     const avancementCumule =
-                      totalContratTTCValue > 0
-                        ? (montantFacture / totalContratTTCValue) * 100
+                      totalMarcheHT > 0
+                        ? (montantFactureHT / totalMarcheHT) * 100
                         : 0;
 
-                    // Solde à facturer
-                    const soldeAFacturer =
-                      totalContratTTCValue - montantFacture;
+                    // Solde à facturer HT
+                    const soldeAFacturerHT = totalMarcheHT - montantFactureHT;
 
                     return (
                       <>
                         <div className="flex justify-between py-2 text-[11px] dark:text-[#0A0A0A]">
-                          <span>Total du contrat (TTC)</span>
+                          <span>Montant marché (HT)</span>
                           <span className="font-medium">
-                            {formatCurrency(totalContratTTCValue)}
+                            {formatCurrency(totalMarcheHT)}
                           </span>
                         </div>
                         <div className="flex justify-between py-2 text-[11px] dark:text-[#0A0A0A]">
-                          <span>Montant facturé à ce jour (TTC)</span>
+                          <span>Montant facturé à ce jour (HT)</span>
                           <span className="font-medium">
-                            {formatCurrency(montantFacture)}
+                            {formatCurrency(montantFactureHT)}
                           </span>
                         </div>
                         <div className="flex justify-between py-2 text-[11px] dark:text-[#0A0A0A]">
@@ -2397,8 +2353,8 @@ const UniversalPreviewPDF = ({
                             padding: "8px 12px",
                           }}
                         >
-                          <span>Solde à facturer (TTC)</span>
-                          <span>{formatCurrency(soldeAFacturer)}</span>
+                          <span>Solde à facturer (HT)</span>
+                          <span>{formatCurrency(soldeAFacturerHT)}</span>
                         </div>
                       </>
                     );
