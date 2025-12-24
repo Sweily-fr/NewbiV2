@@ -119,6 +119,12 @@ const GET_EMAIL_SIGNATURE = gql`
         verticalSeparatorRight
       }
       detailedSpacing
+      elementsOrder
+      horizontalLayout {
+        leftColumn
+        rightColumn
+        bottomRow
+      }
       paddings {
         photo {
           top

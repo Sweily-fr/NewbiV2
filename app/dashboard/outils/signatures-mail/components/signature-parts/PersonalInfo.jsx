@@ -24,10 +24,18 @@ const PersonalInfo = ({
   spacings = {},
   signatureData = {},
   nameAlignment = "left",
+  // Props pour afficher un seul élément (utilisé avec elementsOrder)
+  showOnlyName = false,
+  showOnlyPosition = false,
+  showOnlyCompany = false,
 }) => {
+  // Si un mode "showOnly" est actif, on n'affiche que cet élément
+  const showAll = !showOnlyName && !showOnlyPosition && !showOnlyCompany;
+  
   return (
     <>
       {/* Nom complet */}
+      {(showAll || showOnlyName) && fullName && (
       <tr>
         <td
           colSpan="2"
@@ -72,9 +80,10 @@ const PersonalInfo = ({
           </div>
         </td>
       </tr>
+      )}
 
       {/* Poste */}
-      {position && (
+      {(showAll || showOnlyPosition) && position && (
         <tr>
           <td
             colSpan="2"
@@ -116,7 +125,7 @@ const PersonalInfo = ({
       )}
 
       {/* Nom d'entreprise */}
-      {companyName && (
+      {(showAll || showOnlyCompany) && companyName && (
         <tr>
           <td
             colSpan="2"
