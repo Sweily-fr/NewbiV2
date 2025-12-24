@@ -14,6 +14,7 @@ import {
 import { usePathname } from "next/navigation";
 import { ModeToggle } from "@/src/components/ui/mode-toggle";
 import { TrialCounter } from "@/src/components/trial-counter";
+import { EmailVerificationBadgeHeader } from "@/src/components/email-verification-badge-header";
 import { Save } from "lucide-react";
 import { useQuery } from "@apollo/client";
 import { GET_BOARD } from "@/src/graphql/kanbanQueries";
@@ -125,7 +126,7 @@ function SiteHeaderContent() {
   }, [pathname, kanbanData, searchParams]); // Dépendance sur pathname, kanbanData et searchParams
 
   return (
-    <header className="flex h-10 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height) md:relative md:top-auto md:z-auto fixed top-0 z-50 bg-white md:bg-transparent dark:bg-background w-full">
+    <header className="flex h-10 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height) md:relative md:top-auto md:z-auto fixed top-0 z-50 bg-amber-500/10 dark:bg-amber-500/10 w-full">
       <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
         <SidebarTrigger className="-ml-1" />
         <Separator
@@ -137,6 +138,7 @@ function SiteHeaderContent() {
             {pathname !== "/" && breadcrumbs}
           </BreadcrumbList>
         </Breadcrumb>
+        <EmailVerificationBadgeHeader />
         <div className="ml-auto flex items-center gap-2">
           {/* <SignatureSaveButton /> */}
           <TrialCounter />
@@ -158,7 +160,7 @@ function SiteHeaderContent() {
 // Composant de fallback pour le loading
 function SiteHeaderFallback() {
   return (
-    <header className="flex h-10 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height) md:relative md:top-auto md:z-auto fixed top-0 z-50 bg-white md:bg-transparent dark:bg-background w-full">
+    <header className="flex h-10 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height) md:relative md:top-auto md:z-auto fixed top-0 z-50 bg-amber-500/10 dark:bg-amber-500/10 w-full">
       <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
         <SidebarTrigger className="-ml-1" />
         <Separator

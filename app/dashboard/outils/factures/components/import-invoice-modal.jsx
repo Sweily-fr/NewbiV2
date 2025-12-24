@@ -11,19 +11,15 @@ import {
 import { Button } from "@/src/components/ui/button";
 import { Progress } from "@/src/components/ui/progress";
 import { ScrollArea } from "@/src/components/ui/scroll-area";
-import {
-  Upload,
-  FileText,
-  X,
-  Check,
-  AlertCircle,
-  Loader2,
-} from "lucide-react";
+import { Upload, FileText, X, Check, AlertCircle, Loader2 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { useMutation } from "@apollo/client";
 import { UPLOAD_DOCUMENT } from "@/src/graphql/mutations/documentUpload";
-import { IMPORT_INVOICE, GET_IMPORTED_INVOICES } from "@/src/graphql/importedInvoiceQueries";
+import {
+  IMPORT_INVOICE,
+  GET_IMPORTED_INVOICES,
+} from "@/src/graphql/importedInvoiceQueries";
 import { toast } from "sonner";
 
 const MAX_FILES = 100;
@@ -68,8 +64,14 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
     onOpenChange(false);
   };
 
-  const handleDragOver = (e) => { e.preventDefault(); setIsDragging(true); };
-  const handleDragLeave = (e) => { e.preventDefault(); setIsDragging(false); };
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
 
   const handleDrop = (e) => {
     e.preventDefault();
@@ -104,7 +106,7 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
 
   /**
    * Import parallélisé : Upload + OCR lancés simultanément
-   * 
+   *
    * Architecture:
    * - PARALLEL_UPLOADS: Nombre d'uploads simultanés vers Cloudflare
    * - PARALLEL_OCR: Nombre de traitements OCR simultanés
@@ -115,7 +117,7 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
 
     setPhase(PHASE.UPLOADING);
     setUploadProgress(0);
-    
+
     // Fermer le modal immédiatement pour UX instantanée
     const totalFiles = files.length;
     const filesToProcess = [...files];
@@ -131,7 +133,9 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
 
     // Estimation du temps (~15s par facture avec 3 streams parallèles)
     const estimatedSecondsPerFile = 15;
-    const estimatedTotalSeconds = Math.ceil((totalFiles / PARALLEL_STREAMS) * estimatedSecondsPerFile);
+    const estimatedTotalSeconds = Math.ceil(
+      (totalFiles / PARALLEL_STREAMS) * estimatedSecondsPerFile
+    );
     const startTime = Date.now();
 
     // Formater l'estimation initiale
@@ -153,10 +157,15 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
     // Fonction pour formater le temps restant
     const formatTimeRemaining = () => {
       const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
-      const avgSecondsPerFile = processedCount > 0 ? elapsedSeconds / processedCount : estimatedSecondsPerFile;
+      const avgSecondsPerFile =
+        processedCount > 0
+          ? elapsedSeconds / processedCount
+          : estimatedSecondsPerFile;
       const remainingFiles = totalFiles - processedCount;
-      const remainingSeconds = Math.ceil(remainingFiles * avgSecondsPerFile / PARALLEL_STREAMS);
-      
+      const remainingSeconds = Math.ceil(
+        (remainingFiles * avgSecondsPerFile) / PARALLEL_STREAMS
+      );
+
       if (remainingSeconds < 60) {
         return `~${remainingSeconds}s restantes`;
       }
@@ -211,7 +220,7 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
     };
 
     // Helper pour délai
-    const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+    const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
     // Traiter tous les fichiers en parallèle avec limite de concurrence et délai
     const processAllFiles = async () => {
@@ -228,10 +237,10 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
           if (timeSinceLastStart < DELAY_BETWEEN_STARTS && lastStartTime > 0) {
             await delay(DELAY_BETWEEN_STARTS - timeSinceLastStart);
           }
-          
+
           const file = queue.shift();
           lastStartTime = Date.now();
-          
+
           const promise = processFile(file).finally(() => {
             activePromises.delete(promise);
           });
@@ -250,14 +259,15 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
 
       // Toast final
       toast.dismiss(toastId);
-      
+
       const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
       const elapsedMinutes = Math.floor(elapsedSeconds / 60);
       const elapsedSecondsRemainder = elapsedSeconds % 60;
-      const timeDisplay = elapsedMinutes > 0 
-        ? `${elapsedMinutes}min ${elapsedSecondsRemainder}s`
-        : `${elapsedSeconds}s`;
-      
+      const timeDisplay =
+        elapsedMinutes > 0
+          ? `${elapsedMinutes}min ${elapsedSecondsRemainder}s`
+          : `${elapsedSeconds}s`;
+
       toast.success(
         `${successCount} facture(s) importée(s) en ${timeDisplay} !`,
         { duration: 5000 }
@@ -265,7 +275,6 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
 
       // Rafraîchir la liste des factures
       onImportSuccess?.();
-      
     } catch (error) {
       console.error("Import error:", error);
       toast.dismiss(toastId);
@@ -280,13 +289,17 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
   };
 
   // Calcul du nombre de fichiers uploadés
-  const uploadedCount = Object.values(uploadStatus).filter(s => s === "uploaded").length;
+  const uploadedCount = Object.values(uploadStatus).filter(
+    (s) => s === "uploaded"
+  ).length;
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl overflow-hidden">
+      <DialogContent className="sm:max-w-[425px] overflow-hidden">
         <DialogHeader>
-          <DialogTitle>Importer des factures</DialogTitle>
+          <DialogTitle className="font-medium">
+            Importer des factures
+          </DialogTitle>
           <DialogDescription>
             Importez vos factures PDF pour extraction automatique des données
           </DialogDescription>
@@ -299,7 +312,9 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
             <div
               className={cn(
                 "border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer",
-                isDragging ? "border-primary bg-primary/5" : "border-muted-foreground/25 hover:border-muted-foreground/50"
+                isDragging
+                  ? "border-primary bg-primary/5"
+                  : "border-muted-foreground/25 hover:border-muted-foreground/50"
               )}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
@@ -314,7 +329,10 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
                 className="hidden"
                 onChange={(e) => addFiles(Array.from(e.target.files || []))}
               />
-              <Upload className="h-6 w-6 mx-auto mb-3" style={{ color: '#5b50FF' }} />
+              <Upload
+                className="h-6 w-6 mx-auto mb-3"
+                style={{ color: "#5b50FF" }}
+              />
               <p className="text-sm font-medium">
                 Glissez vos PDF ici ou cliquez pour sélectionner
               </p>
@@ -327,10 +345,12 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
             {files.length > 0 && (
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium">{files.length} fichier(s) sélectionné(s)</p>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
+                  <p className="text-sm font-medium">
+                    {files.length} fichier(s) sélectionné(s)
+                  </p>
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => setFiles([])}
                     className="text-xs text-muted-foreground hover:text-destructive"
                   >
@@ -345,11 +365,13 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
                         className="flex items-center gap-2 p-2 rounded hover:bg-muted/50 group overflow-hidden"
                       >
                         <FileText className="h-4 w-4 text-red-500 flex-shrink-0" />
-                        <div 
+                        <div
                           className="flex-1 min-w-0 overflow-hidden cursor-default"
                           title={file.name}
                         >
-                          <p className="text-sm truncate max-w-full">{file.name}</p>
+                          <p className="text-sm truncate max-w-full">
+                            {file.name}
+                          </p>
                         </div>
                         <span className="text-xs text-muted-foreground flex-shrink-0">
                           {formatFileSize(file.size)}
@@ -358,7 +380,10 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
                           variant="ghost"
                           size="icon"
                           className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
-                          onClick={(e) => { e.stopPropagation(); removeFile(index); }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeFile(index);
+                          }}
                         >
                           <X className="h-3 w-3" />
                         </Button>
@@ -387,11 +412,20 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
             <div className="flex flex-col items-center gap-4">
               <div className="relative">
                 <div className="h-16 w-16 rounded-full border-4 border-muted flex items-center justify-center">
-                  <Upload className="h-7 w-7 animate-pulse" style={{ color: '#5b50FF' }} />
+                  <Upload
+                    className="h-7 w-7 animate-pulse"
+                    style={{ color: "#5b50FF" }}
+                  />
                 </div>
-                <div 
+                <div
                   className="absolute inset-0 rounded-full border-t-transparent animate-spin"
-                  style={{ animationDuration: '1s', borderWidth: '4px', borderStyle: 'solid', borderColor: '#5b50FF', borderTopColor: 'transparent' }}
+                  style={{
+                    animationDuration: "1s",
+                    borderWidth: "4px",
+                    borderStyle: "solid",
+                    borderColor: "#5b50FF",
+                    borderTopColor: "transparent",
+                  }}
                 />
               </div>
               <div className="text-center">
@@ -401,10 +435,12 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
                 </p>
               </div>
             </div>
-            
+
             <div className="space-y-2">
               <Progress value={uploadProgress} className="h-2" />
-              <p className="text-xs text-center text-muted-foreground">{uploadProgress}%</p>
+              <p className="text-xs text-center text-muted-foreground">
+                {uploadProgress}%
+              </p>
             </div>
 
             {/* Liste compacte des fichiers en cours */}
@@ -416,7 +452,10 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
                     className="flex items-center gap-2 px-2 py-1 text-sm overflow-hidden"
                   >
                     {uploadStatus[index] === "uploading" && (
-                      <Loader2 className="h-3 w-3 animate-spin flex-shrink-0" style={{ color: '#5b50FF' }} />
+                      <Loader2
+                        className="h-3 w-3 animate-spin flex-shrink-0"
+                        style={{ color: "#5b50FF" }}
+                      />
                     )}
                     {uploadStatus[index] === "uploaded" && (
                       <Check className="h-3 w-3 text-green-500 flex-shrink-0" />
@@ -427,12 +466,17 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
                     {!uploadStatus[index] && (
                       <div className="h-3 w-3 rounded-full border border-muted-foreground/30 flex-shrink-0" />
                     )}
-                    <span className="truncate text-muted-foreground flex-1 min-w-0" title={file.name}>{file.name}</span>
+                    <span
+                      className="truncate text-muted-foreground flex-1 min-w-0"
+                      title={file.name}
+                    >
+                      {file.name}
+                    </span>
                   </div>
                 ))}
               </div>
             </ScrollArea>
-            
+
             <p className="text-xs text-center text-muted-foreground">
               Le modal se fermera automatiquement après l'upload
             </p>
