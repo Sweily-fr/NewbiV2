@@ -563,6 +563,14 @@ export function TabSignature({ existingSignatureId = null }) {
         position: signatureData.fontSize?.position || 14,
         contact: signatureData.fontSize?.contact || 12,
       },
+      // Ordre des éléments (drag & drop)
+      elementsOrder: signatureData.elementsOrder || ["photo", "fullName", "position", "company", "separator", "contact", "logo", "social"],
+      // Layout horizontal (3 zones)
+      horizontalLayout: signatureData.horizontalLayout || {
+        leftColumn: ["photo", "fullName", "position", "company"],
+        rightColumn: ["contact"],
+        bottomRow: ["separator", "logo", "social"],
+      },
     };
   };
 

@@ -79,6 +79,12 @@ const GET_EMAIL_SIGNATURE = gql`
         verticalSeparatorRight
       }
       detailedSpacing
+      elementsOrder
+      horizontalLayout {
+        leftColumn
+        rightColumn
+        bottomRow
+      }
       paddings {
         photo {
           top
@@ -304,6 +310,14 @@ function SignatureProviderContent({ children }) {
       website: "https://www.newbi.fr",
       address: "123 Avenue des Champs-Élysées, 75008 Paris, France",
       contactElementsOrder: [],
+      // Ordre des éléments de la signature verticale (drag & drop)
+      elementsOrder: ["photo", "fullName", "position", "company", "separator", "contact", "logo", "social"],
+      // Ordre des éléments pour la signature horizontale (3 zones)
+      horizontalLayout: {
+        leftColumn: ["photo", "fullName", "position", "company"],
+        rightColumn: ["contact"],
+        bottomRow: ["separator", "logo", "social"],
+      },
       // Réseaux sociaux
       socialNetworks: {
         facebook: "",
