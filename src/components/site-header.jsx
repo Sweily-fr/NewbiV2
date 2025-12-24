@@ -1,5 +1,5 @@
 "use client";
-import React, { Suspense } from "react";
+import React, { Suspense, useState, useEffect } from "react";
 import { Button } from "@/src/components/ui/button";
 import { Separator } from "@/src/components/ui/separator";
 import { SidebarTrigger } from "@/src/components/ui/sidebar";
@@ -20,6 +20,7 @@ import { useQuery } from "@apollo/client";
 import { GET_BOARD } from "@/src/graphql/kanbanQueries";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { useSearchParams } from "next/navigation";
+import { authClient } from "@/src/lib/auth-client";
 
 // Composant bouton de sauvegarde pour les signatures
 const SignatureSaveButton = () => {
@@ -50,6 +51,26 @@ function SiteHeaderContent() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { workspaceId } = useWorkspace();
+  const [isEmailVerified, setIsEmailVerified] = useState(true);
+
+  // Vérifier l'état de vérification de l'email
+  useEffect(() => {
+    const checkEmailVerification = async () => {
+      try {
+        const { data: session } = await authClient.getSession();
+        setIsEmailVerified(session?.user?.emailVerified ?? true);
+      } catch (error) {
+        console.error("Erreur vérification email:", error);
+        setIsEmailVerified(true); // Par défaut, pas de fond amber en cas d'erreur
+      }
+    };
+
+    checkEmailVerification();
+
+    // Vérifier toutes les 30 secondes
+    const interval = setInterval(checkEmailVerification, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Détecter si on est sur une page Kanban avec ID
   const isKanbanPage =
@@ -126,7 +147,9 @@ function SiteHeaderContent() {
   }, [pathname, kanbanData, searchParams]); // Dépendance sur pathname, kanbanData et searchParams
 
   return (
-    <header className="flex h-10 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height) md:relative md:top-auto md:z-auto fixed top-0 z-50 bg-amber-500/10 dark:bg-amber-500/10 w-full">
+    <header
+      className={`flex h-10 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height) md:relative md:top-auto md:z-auto fixed top-0 z-50 w-full ${!isEmailVerified ? "bg-amber-500/10 dark:bg-amber-500/10" : "bg-background"}`}
+    >
       <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
         <SidebarTrigger className="-ml-1" />
         <Separator
@@ -160,7 +183,7 @@ function SiteHeaderContent() {
 // Composant de fallback pour le loading
 function SiteHeaderFallback() {
   return (
-    <header className="flex h-10 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height) md:relative md:top-auto md:z-auto fixed top-0 z-50 bg-amber-500/10 dark:bg-amber-500/10 w-full">
+    <header className="flex h-10 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height) md:relative md:top-auto md:z-auto fixed top-0 z-50 bg-background w-full">
       <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
         <SidebarTrigger className="-ml-1" />
         <Separator
