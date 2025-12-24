@@ -19,7 +19,7 @@ import "@/src/styles/signature-text-selection.css";
 import "./signature-preview.css";
 
 // Ordre par défaut des éléments
-const DEFAULT_ORDER = ["photo", "fullName", "position", "company", "separator", "contact", "logo", "social"];
+const DEFAULT_ORDER = ["photo", "fullName", "position", "separator", "contact", "logo", "social"];
 
 const VerticalSignature = ({
   signatureData,
