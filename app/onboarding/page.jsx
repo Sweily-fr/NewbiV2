@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { authClient } from "@/src/lib/auth-client";
 import { useActiveOrganization } from "@/src/lib/organization-client";
@@ -10,7 +10,7 @@ import AccountTypeStep from "./steps/account-type-step";
 import CompanySearchStep from "./steps/company-search-step";
 import { getAssetUrl } from "@/src/lib/image-utils";
 
-export default function OnboardingPage() {
+function OnboardingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { organization, updateOrganization } = useActiveOrganization();
@@ -639,5 +639,21 @@ export default function OnboardingPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function OnboardingPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="animate-pulse text-muted-foreground">
+            Chargement...
+          </div>
+        </div>
+      }
+    >
+      <OnboardingContent />
+    </Suspense>
   );
 }
