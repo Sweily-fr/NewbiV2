@@ -564,10 +564,10 @@ export function TabSignature({ existingSignatureId = null }) {
         contact: signatureData.fontSize?.contact || 12,
       },
       // Ordre des éléments (drag & drop)
-      elementsOrder: signatureData.elementsOrder || ["photo", "fullName", "position", "company", "separator", "contact", "logo", "social"],
+      elementsOrder: signatureData.elementsOrder || ["photo", "fullName", "position", "separator", "contact", "logo", "social"],
       // Layout horizontal (3 zones)
       horizontalLayout: signatureData.horizontalLayout || {
-        leftColumn: ["photo", "fullName", "position", "company"],
+        leftColumn: ["photo", "fullName", "position"],
         rightColumn: ["contact"],
         bottomRow: ["separator", "logo", "social"],
       },

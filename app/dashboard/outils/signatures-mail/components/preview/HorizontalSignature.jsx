@@ -21,7 +21,7 @@ import "./signature-preview.css";
 
 // Layout par défaut
 const DEFAULT_HORIZONTAL_LAYOUT = {
-  leftColumn: ["photo", "fullName", "position", "company"],
+  leftColumn: ["photo", "fullName", "position"],
   rightColumn: ["contact"],
   bottomRow: ["separator", "logo", "social"],
 };

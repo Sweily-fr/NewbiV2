@@ -2,7 +2,7 @@
 
 import React from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
-import { GripVertical, Image, User, Briefcase, Building2, Minus, Phone, ImageIcon, Share2, ArrowLeftRight } from "lucide-react";
+import { GripVertical, Image, User, Briefcase, Minus, Phone, ImageIcon, Share2, ArrowLeftRight } from "lucide-react";
 import { Label } from "@/src/components/ui/label";
 import { cn } from "@/src/lib/utils";
 
@@ -25,12 +25,6 @@ const ELEMENTS_CONFIG = {
     label: "Poste",
     icon: Briefcase,
     description: "Votre fonction",
-  },
-  company: {
-    id: "company",
-    label: "Entreprise",
-    icon: Building2,
-    description: "Nom de l'entreprise",
   },
   separator: {
     id: "separator",
@@ -59,9 +53,9 @@ const ELEMENTS_CONFIG = {
 };
 
 // Ordres par défaut
-const DEFAULT_VERTICAL_ORDER = ["photo", "fullName", "position", "company", "separator", "contact", "logo", "social"];
+const DEFAULT_VERTICAL_ORDER = ["photo", "fullName", "position", "separator", "contact", "logo", "social"];
 const DEFAULT_HORIZONTAL_LAYOUT = {
-  leftColumn: ["photo", "fullName", "position", "company"],
+  leftColumn: ["photo", "fullName", "position"],
   rightColumn: ["contact"],
   bottomRow: ["separator", "logo", "social"],
 };
