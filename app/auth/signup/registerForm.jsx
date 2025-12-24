@@ -28,7 +28,7 @@ const RegisterFormContent = () => {
   // Récupérer les paramètres d'invitation
   const invitationId = searchParams.get("invitation");
   const invitationEmail = searchParams.get("email");
-  
+
   // Récupérer le code partenaire
   const partnerCode = searchParams.get("partner");
 
@@ -37,15 +37,15 @@ const RegisterFormContent = () => {
     if (partnerCode) {
       formData.referralCode = partnerCode;
     }
-    
+
     // Selon la doc Better Auth, l'erreur est retournée directement dans { data, error }
     const { data, error } = await signUp.email(formData, {
       onSuccess: async (ctx) => {
-        toast.success("Vous avez reçu un email de verification");
+        toast.success("Compte créé avec succès ! Configurons votre espace.");
 
-        // Si c'est une inscription via invitation, stocker l'invitationId pour l'accepter après la connexion
+        // Si c'est une inscription via invitation, stocker l'invitationId pour l'accepter après l'onboarding
         if (invitationId && invitationEmail) {
-          // Stocker dans localStorage pour l'utiliser après la connexion
+          // Stocker dans localStorage pour l'utiliser après l'onboarding
           localStorage.setItem(
             "pendingInvitation",
             JSON.stringify({
@@ -56,16 +56,16 @@ const RegisterFormContent = () => {
           );
 
           console.log(
-            `📋 Invitation ${invitationId} stockée pour acceptation après connexion`
+            `📋 Invitation ${invitationId} stockée pour acceptation après onboarding`
           );
 
           toast.info(
-            "Veuillez vérifier votre email puis vous connecter pour rejoindre l'organisation."
+            "Configurez votre espace puis vous serez automatiquement connecté."
           );
         }
 
-        // Redirection vers la page de connexion après inscription
-        router.push("/auth/login");
+        // Redirection vers l'onboarding après inscription
+        router.push("/onboarding?step=1");
       },
       onError: (ctx) => {
         // L'erreur est gérée via le retour { data, error }

@@ -61,6 +61,7 @@ import { TeamSwitcher } from "@/src/components/team-switcher";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { authClient } from "@/src/lib/auth-client";
 import { useOrganizationInvitations } from "@/src/hooks/useOrganizationInvitations";
+import { EmailVerificationBadge } from "@/src/components/email-verification-badge";
 
 const data = {
   teams: [
