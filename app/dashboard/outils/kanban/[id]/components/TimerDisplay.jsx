@@ -39,11 +39,21 @@ export function TimerDisplay({ timeTracking }) {
     }
   }, [timeTracking]);
 
-  // Formater le temps en heures:minutes
+  // Formater le temps avec logique d'affichage
+  // Si >= 1h : afficher h + min
+  // Si < 1h : afficher min + sec
   const formatTime = (seconds) => {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
-    return `${hours}h${minutes.toString().padStart(2, '0')}`;
+    const secs = seconds % 60;
+
+    if (hours >= 1) {
+      // Afficher heures + minutes
+      return `${hours}h${minutes.toString().padStart(2, '0')}`;
+    } else {
+      // Afficher minutes + secondes
+      return `${minutes}m${secs.toString().padStart(2, '0')}`;
+    }
   };
 
   // Calculer le prix basé sur le temps et le tarif horaire

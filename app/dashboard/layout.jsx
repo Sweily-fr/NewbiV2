@@ -30,6 +30,7 @@ import {
   ToastProvider,
   ToastManagerInitializer,
 } from "@/src/components/ui/toast-manager";
+import { FloatingTimer } from "@/src/components/FloatingTimer";
 
 // Composant interne qui utilise le contexte
 function DashboardContent({ children }) {
@@ -212,6 +213,9 @@ function DashboardContent({ children }) {
         onOpenChange={setSettingsModalOpen}
         initialTab={settingsInitialTab}
       />
+
+      {/* Timer flottant - visible sur toutes les pages quand un timer est actif */}
+      <FloatingTimer />
 
       {/* Bouton de test pour le modal (à retirer en production) */}
       {/* {process.env.NODE_ENV === "development" && (

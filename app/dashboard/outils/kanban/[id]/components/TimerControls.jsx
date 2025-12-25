@@ -194,123 +194,86 @@ export function TimerControls({ taskId, timeTracking, onTimerUpdate }) {
 
   return (
     <div className="space-y-3">
-      {/* Track Time - Style ClickUp */}
-      <div className="flex items-center gap-4">
-        <Label className="text-sm font-normal w-32 flex-shrink-0 flex items-center gap-2">
+      {/* Gestion du temps - Style ClickUp */}
+      <div className="flex items-center gap-3">
+        {/* Label avec icône */}
+        <div className="flex items-center gap-2 flex-shrink-0">
           <Clock className="h-4 w-4 text-muted-foreground" />
-          Track Time
-        </Label>
-        <div className="flex-1 flex items-center gap-2">
-          {/* Bouton rouge circulaire quand actif */}
-          <button
-            onClick={handleStartStop}
-            disabled={starting || stopping}
-            className={`w-5 h-5 rounded-full flex items-center justify-center transition-all ${
-              isRunning 
-                ? 'bg-red-500 hover:bg-red-600 animate-pulse' 
-                : 'bg-gray-300 hover:bg-gray-400'
-            }`}
-            title={isRunning ? "Arrêter le timer" : "Démarrer le timer"}
-          >
-            <div className={`w-2 h-2 rounded-full ${isRunning ? 'bg-white' : 'bg-gray-600'}`} />
-          </button>
-          
-          {/* Affichage du temps */}
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/50 rounded-md border border-border">
-            <span className="text-sm font-mono tabular-nums">
-              {formatTime(currentTime)}
-            </span>
-          </div>
+          <span className="text-sm font-normal">Gestion du temps</span>
         </div>
-      </div>
 
-      {/* Prix estimé - Affiché seulement si configuré */}
-      {price && (
-        <div className="flex items-center gap-4">
-          <Label className="text-sm font-normal w-32 flex-shrink-0 flex items-center gap-2">
+        {/* Bouton rouge circulaire quand actif */}
+        <button
+          onClick={handleStartStop}
+          disabled={starting || stopping}
+          className={`w-5 h-5 rounded-full flex items-center justify-center transition-all flex-shrink-0 ${
+            isRunning 
+              ? 'bg-red-500 hover:bg-red-600 animate-pulse' 
+              : 'bg-gray-300 hover:bg-gray-400'
+          }`}
+          title={isRunning ? "Arrêter le timer" : "Démarrer le timer"}
+        >
+          <div className={`w-2 h-2 rounded-full ${isRunning ? 'bg-white' : 'bg-gray-600'}`} />
+        </button>
+        
+        {/* Affichage du temps */}
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/50 rounded-md border border-border flex-shrink-0">
+          <span className="text-sm font-mono tabular-nums">
+            {formatTime(currentTime)}
+          </span>
+        </div>
+
+        {/* Prix à l'heure - Input inline */}
+        <Input
+          type="number"
+          min="0"
+          step="0.01"
+          value={hourlyRate}
+          onChange={(e) => setHourlyRate(e.target.value)}
+          onBlur={handleSaveSettings}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              handleSaveSettings();
+            }
+          }}
+          placeholder="Prix/h"
+          className="w-28 h-9 flex-shrink-0"
+          title="Prix à l'heure"
+        />
+
+        {/* Arrondi - Select inline */}
+        <Select value={roundingOption} onValueChange={(value) => {
+          setRoundingOption(value);
+          // Sauvegarder automatiquement
+          setTimeout(() => {
+            updateSettings({
+              variables: {
+                taskId,
+                hourlyRate: hourlyRate ? parseFloat(hourlyRate) : null,
+                roundingOption: value,
+                workspaceId,
+              },
+            });
+          }, 0);
+        }}>
+          <SelectTrigger className="w-40 h-9 flex-shrink-0">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">Proportionnel</SelectItem>
+            <SelectItem value="up">Arrondir ↑</SelectItem>
+            <SelectItem value="down">Arrondir ↓</SelectItem>
+          </SelectContent>
+        </Select>
+
+        {/* Prix estimé - Affiché directement */}
+        {price && (
+          <div className="px-3 py-1.5 bg-muted/50 rounded-md border border-border inline-flex items-center gap-1.5 flex-shrink-0 ml-auto">
             <Euro className="h-4 w-4 text-muted-foreground" />
-            Prix estimé
-          </Label>
-          <div className="flex-1">
-            <div className="px-3 py-1.5 bg-muted/50 rounded-md border border-border inline-flex items-center gap-1">
-              <span className="text-sm font-semibold">{price}€</span>
-            </div>
+            <span className="text-sm font-semibold">{price}€</span>
           </div>
-        </div>
-      )}
-
-      {/* Paramètres - Collapsible */}
-      <Collapsible open={showSettings} onOpenChange={setShowSettings}>
-        <CollapsibleTrigger asChild>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-full justify-start text-sm text-muted-foreground hover:text-foreground"
-          >
-            <ChevronDown className={`h-4 w-4 mr-2 transition-transform ${showSettings ? 'rotate-180' : ''}`} />
-            Paramètres de facturation
-          </Button>
-        </CollapsibleTrigger>
-        <CollapsibleContent className="space-y-3 pt-3">
-          {/* Prix à l'heure */}
-          <div className="flex items-center gap-4">
-            <Label htmlFor="hourlyRate" className="text-sm font-normal w-32 flex-shrink-0">
-              Prix à l'heure
-            </Label>
-            <div className="flex-1">
-              <Input
-                id="hourlyRate"
-                type="number"
-                min="0"
-                step="0.01"
-                value={hourlyRate}
-                onChange={(e) => setHourlyRate(e.target.value)}
-                placeholder="Ex: 50"
-                className="max-w-[200px]"
-              />
-            </div>
-          </div>
-
-          {/* Arrondi */}
-          <div className="flex items-center gap-4">
-            <Label htmlFor="rounding" className="text-sm font-normal w-32 flex-shrink-0">
-              Arrondi
-            </Label>
-            <div className="flex-1">
-              <Select value={roundingOption} onValueChange={setRoundingOption}>
-                <SelectTrigger id="rounding" className="max-w-[300px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">
-                    Conversion proportionnelle (ex: 2h30 = 2.5h)
-                  </SelectItem>
-                  <SelectItem value="up">
-                    Arrondir à l'heure suivante (ex: 2h31 = 3h)
-                  </SelectItem>
-                  <SelectItem value="down">
-                    Arrondir à l'heure précédente (ex: 2h31 = 2h)
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* Bouton enregistrer */}
-          <div className="flex items-center gap-4">
-            <div className="w-32 flex-shrink-0" />
-            <div className="flex-1">
-              <Button
-                onClick={handleSaveSettings}
-                disabled={updating}
-                size="sm"
-              >
-                Enregistrer les paramètres
-              </Button>
-            </div>
-          </div>
-        </CollapsibleContent>
-      </Collapsible>
+        )}
+      </div>
     </div>
   );
 }

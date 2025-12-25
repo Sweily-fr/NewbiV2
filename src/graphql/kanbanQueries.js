@@ -476,3 +476,22 @@ export const UPDATE_TIMER_SETTINGS = gql`
   }
   ${TASK_FRAGMENT}
 `;
+
+// Query pour récupérer les tâches avec timer actif
+export const GET_ACTIVE_TIMERS = gql`
+  query GetActiveTimers($workspaceId: ID) {
+    activeTimers(workspaceId: $workspaceId) {
+      id
+      title
+      boardId
+      columnId
+      timeTracking {
+        totalSeconds
+        isRunning
+        currentStartTime
+        hourlyRate
+        roundingOption
+      }
+    }
+  }
+`;
