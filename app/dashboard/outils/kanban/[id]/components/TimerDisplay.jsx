@@ -23,10 +23,14 @@ export function TimerDisplay({ timeTracking }) {
         const startTime = new Date(timeTracking.currentStartTime);
         const now = new Date();
         const elapsedSeconds = Math.floor((now - startTime) / 1000);
-        total += elapsedSeconds;
+        // Protection contre les valeurs négatives (problème de fuseau horaire)
+        if (elapsedSeconds > 0) {
+          total += elapsedSeconds;
+        }
       }
       
-      setCurrentTime(total);
+      // S'assurer que le total n'est jamais négatif
+      setCurrentTime(Math.max(0, total));
     };
 
     // Mettre à jour immédiatement
@@ -43,9 +47,11 @@ export function TimerDisplay({ timeTracking }) {
   // Si >= 1h : afficher h + min
   // Si < 1h : afficher min + sec
   const formatTime = (seconds) => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
+    // Protection contre les valeurs négatives
+    const safeSeconds = Math.max(0, seconds);
+    const hours = Math.floor(safeSeconds / 3600);
+    const minutes = Math.floor((safeSeconds % 3600) / 60);
+    const secs = safeSeconds % 60;
 
     if (hours >= 1) {
       // Afficher heures + minutes
@@ -58,9 +64,9 @@ export function TimerDisplay({ timeTracking }) {
 
   // Calculer le prix basé sur le temps et le tarif horaire
   const calculatePrice = () => {
-    if (!timeTracking?.hourlyRate) return null;
+    if (!timeTracking?.hourlyRate || currentTime <= 0) return null;
 
-    const hours = currentTime / 3600;
+    const hours = Math.max(0, currentTime) / 3600;
     const roundingOption = timeTracking.roundingOption || 'none';
     
     let billableHours = hours;

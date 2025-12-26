@@ -126,10 +126,14 @@ export function TimerControls({ taskId, timeTracking, onTimerUpdate }) {
         const startTime = new Date(timeTracking.currentStartTime);
         const now = new Date();
         const elapsedSeconds = Math.floor((now - startTime) / 1000);
-        total += elapsedSeconds;
+        // Protection contre les valeurs négatives (problème de fuseau horaire)
+        if (elapsedSeconds > 0) {
+          total += elapsedSeconds;
+        }
       }
       
-      setCurrentTime(total);
+      // S'assurer que le total n'est jamais négatif
+      setCurrentTime(Math.max(0, total));
     };
 
     updateTime();
@@ -142,17 +146,19 @@ export function TimerControls({ taskId, timeTracking, onTimerUpdate }) {
 
   // Formater le temps en heures:minutes:secondes (format ClickUp)
   const formatTime = (seconds) => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
+    // Protection contre les valeurs négatives
+    const safeSeconds = Math.max(0, seconds);
+    const hours = Math.floor(safeSeconds / 3600);
+    const minutes = Math.floor((safeSeconds % 3600) / 60);
+    const secs = safeSeconds % 60;
     return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
   // Calculer le prix
   const calculatePrice = () => {
-    if (!hourlyRate || !currentTime) return null;
+    if (!hourlyRate || currentTime <= 0) return null;
 
-    const hours = currentTime / 3600;
+    const hours = Math.max(0, currentTime) / 3600;
     let billableHours = hours;
     
     if (roundingOption === 'up') {

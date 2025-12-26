@@ -61,9 +61,13 @@ export function FloatingTimer() {
           const startTime = new Date(task.timeTracking.currentStartTime);
           const now = new Date();
           const elapsedSeconds = Math.floor((now - startTime) / 1000);
-          total += elapsedSeconds;
+          // Protection contre les valeurs négatives (problème de fuseau horaire)
+          if (elapsedSeconds > 0) {
+            total += elapsedSeconds;
+          }
         }
-        times[task.id] = total;
+        // S'assurer que le total n'est jamais négatif
+        times[task.id] = Math.max(0, total);
       });
       setTaskTimes(times);
     };
@@ -92,9 +96,11 @@ export function FloatingTimer() {
 
   // Formater le temps
   const formatTime = (seconds) => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
+    // Protection contre les valeurs négatives
+    const safeSeconds = Math.max(0, seconds);
+    const hours = Math.floor(safeSeconds / 3600);
+    const minutes = Math.floor((safeSeconds % 3600) / 60);
+    const secs = safeSeconds % 60;
 
     if (hours >= 1) {
       return `${hours}h${minutes.toString().padStart(2, "0")}`;
