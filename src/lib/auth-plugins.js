@@ -888,6 +888,28 @@ export const stripePlugin = stripe({
         case "invoice.payment_failed":
           const failedInvoice = event.data.object;
 
+          // Déduplication pour éviter les emails multiples
+          if (!global._processedStripeEvents) {
+            global._processedStripeEvents = new Set();
+          }
+
+          const failedKey = `failed_${failedInvoice.id}`;
+          if (global._processedStripeEvents.has(failedKey)) {
+            console.log(
+              `⏭️ [STRIPE WEBHOOK] Email de paiement échoué déjà envoyé pour ${failedKey}, skip`
+            );
+            break;
+          }
+
+          // Marquer comme traité (expire après 1h)
+          global._processedStripeEvents.add(failedKey);
+          setTimeout(
+            () => {
+              global._processedStripeEvents?.delete(failedKey);
+            },
+            60 * 60 * 1000
+          ); // 1 heure
+
           try {
             // Import MongoDB directement
             const { mongoDb } = await import("./mongodb.js");
@@ -950,6 +972,28 @@ export const stripePlugin = stripe({
 
         case "customer.subscription.deleted":
           const deletedSub = event.data.object;
+
+          // Déduplication pour éviter les emails multiples
+          if (!global._processedStripeEvents) {
+            global._processedStripeEvents = new Set();
+          }
+
+          const cancelKey = `cancel_${deletedSub.id}`;
+          if (global._processedStripeEvents.has(cancelKey)) {
+            console.log(
+              `⏭️ [STRIPE WEBHOOK] Email d'annulation déjà envoyé pour ${cancelKey}, skip`
+            );
+            break;
+          }
+
+          // Marquer comme traité (expire après 1h)
+          global._processedStripeEvents.add(cancelKey);
+          setTimeout(
+            () => {
+              global._processedStripeEvents?.delete(cancelKey);
+            },
+            60 * 60 * 1000
+          ); // 1 heure
 
           try {
             // ✅ Utiliser MongoDB directement au lieu de l'adapter
@@ -1015,6 +1059,30 @@ export const stripePlugin = stripe({
         case "invoice.upcoming":
           // Facture à venir (7 jours avant le renouvellement)
           const upcomingInvoice = event.data.object;
+
+          // Déduplication pour éviter les emails multiples
+          if (!global._processedStripeEvents) {
+            global._processedStripeEvents = new Set();
+          }
+
+          // Clé unique basée sur l'abonnement et la période (pour éviter les doublons sur retry)
+          const renewalKey = `renewal_${upcomingInvoice.subscription}_${upcomingInvoice.period_end}`;
+          if (global._processedStripeEvents.has(renewalKey)) {
+            console.log(
+              `⏭️ [STRIPE WEBHOOK] Email de rappel déjà envoyé pour ${renewalKey}, skip`
+            );
+            break;
+          }
+
+          // Marquer comme traité (expire après 24h)
+          global._processedStripeEvents.add(renewalKey);
+          setTimeout(
+            () => {
+              global._processedStripeEvents?.delete(renewalKey);
+            },
+            24 * 60 * 60 * 1000
+          ); // 24 heures
+
           console.log(
             `📅 [STRIPE WEBHOOK] Facture à venir pour ${upcomingInvoice.customer}`
           );
@@ -1035,13 +1103,21 @@ export const stripePlugin = stripe({
             );
 
             const planName = subscription.metadata?.planName || "FREELANCE";
-            const renewalDate = new Date(
-              subscription.current_period_end * 1000
-            ).toLocaleDateString("fr-FR", {
-              day: "numeric",
-              month: "long",
-              year: "numeric",
-            });
+            // Formater la date de renouvellement avec vérification
+            let renewalDate = "Date non disponible";
+            if (subscription.current_period_end) {
+              const renewalTimestamp = subscription.current_period_end * 1000;
+              if (!isNaN(renewalTimestamp) && renewalTimestamp > 0) {
+                renewalDate = new Date(renewalTimestamp).toLocaleDateString(
+                  "fr-FR",
+                  {
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                  }
+                );
+              }
+            }
 
             // Formater le montant
             const amount = `${(upcomingInvoice.amount_due / 100).toFixed(2)}€`;
@@ -1065,9 +1141,37 @@ export const stripePlugin = stripe({
           }
           break;
 
-        case "invoice.payment_succeeded":
         case "invoice.paid":
+          // ⚠️ On utilise UNIQUEMENT invoice.paid (pas invoice.payment_succeeded)
+          // car Stripe envoie les deux événements pour le même paiement, ce qui causait des emails en double
           const paidInvoice = event.data.object;
+
+          // Vérifier si on a déjà traité cet événement (déduplication)
+          const eventId = event.id;
+          const invoiceId = paidInvoice.id;
+
+          // Utiliser un cache simple pour éviter les doublons (en mémoire)
+          if (!global._processedStripeEvents) {
+            global._processedStripeEvents = new Set();
+          }
+
+          const eventKey = `payment_email_${invoiceId}`;
+          if (global._processedStripeEvents.has(eventKey)) {
+            console.log(
+              `⏭️ [STRIPE WEBHOOK] Email déjà envoyé pour facture ${invoiceId}, skip`
+            );
+            break;
+          }
+
+          // Marquer comme traité (expire après 1h pour éviter les fuites mémoire)
+          global._processedStripeEvents.add(eventKey);
+          setTimeout(
+            () => {
+              global._processedStripeEvents?.delete(eventKey);
+            },
+            60 * 60 * 1000
+          ); // 1 heure
+
           console.log(
             `💰 [STRIPE WEBHOOK] Paiement facture réussi: ${paidInvoice.id}, billing_reason: ${paidInvoice.billing_reason}`
           );
@@ -1082,7 +1186,7 @@ export const stripePlugin = stripe({
 
             // Récupérer l'abonnement pour avoir le nom du plan
             let planName = "FREELANCE";
-            let nextRenewalDate = "";
+            let nextRenewalDate = "Date non disponible";
 
             if (paidInvoice.subscription) {
               const subscription = await stripe.subscriptions.retrieve(
@@ -1090,25 +1194,47 @@ export const stripePlugin = stripe({
               );
               planName =
                 subscription.metadata?.planName?.toUpperCase() || "FREELANCE";
-              nextRenewalDate = new Date(
-                subscription.current_period_end * 1000
-              ).toLocaleDateString("fr-FR", {
-                day: "numeric",
-                month: "long",
-                year: "numeric",
-              });
+
+              // Formater la date de prochain renouvellement avec vérification
+              if (subscription.current_period_end) {
+                const renewalTimestamp = subscription.current_period_end * 1000;
+                if (!isNaN(renewalTimestamp) && renewalTimestamp > 0) {
+                  nextRenewalDate = new Date(
+                    renewalTimestamp
+                  ).toLocaleDateString("fr-FR", {
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                  });
+                }
+              }
             }
 
             // Formater les données
             const amount = `${(paidInvoice.amount_paid / 100).toFixed(2)}€`;
             const invoiceNumber = paidInvoice.number || paidInvoice.id;
-            const paymentDate = new Date(
-              paidInvoice.status_transitions?.paid_at * 1000 || Date.now()
-            ).toLocaleDateString("fr-FR", {
+
+            // Formater la date de paiement avec vérification
+            let paymentDate = new Date().toLocaleDateString("fr-FR", {
               day: "numeric",
               month: "long",
               year: "numeric",
             });
+
+            if (paidInvoice.status_transitions?.paid_at) {
+              const paidTimestamp =
+                paidInvoice.status_transitions.paid_at * 1000;
+              if (!isNaN(paidTimestamp) && paidTimestamp > 0) {
+                paymentDate = new Date(paidTimestamp).toLocaleDateString(
+                  "fr-FR",
+                  {
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                  }
+                );
+              }
+            }
 
             // URL du PDF de la facture (généré automatiquement par Stripe)
             const invoicePdfUrl = paidInvoice.invoice_pdf;
@@ -1407,6 +1533,30 @@ export const organizationPlugin = organization({
         },
         quoteClientPositionRight: {
           type: "boolean",
+          input: true,
+          required: false,
+        },
+        // Organization type (business or accounting_firm)
+        organizationType: {
+          type: "string",
+          input: true,
+          required: false,
+        },
+        // Onboarding completion status
+        onboardingCompleted: {
+          type: "boolean",
+          input: true,
+          required: false,
+        },
+        // SIREN number
+        siren: {
+          type: "string",
+          input: true,
+          required: false,
+        },
+        // Activity sector
+        activitySector: {
+          type: "string",
           input: true,
           required: false,
         },

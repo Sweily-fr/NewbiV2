@@ -30,7 +30,7 @@ import {
   ToastProvider,
   ToastManagerInitializer,
 } from "@/src/components/ui/toast-manager";
-import { FloatingTimer } from "@/src/components/FloatingTimer";
+import { AccountingViewProvider } from "@/src/contexts/accounting-view-context";
 
 // Composant interne qui utilise le contexte
 function DashboardContent({ children }) {
@@ -244,12 +244,14 @@ export default function DashboardLayout({ children }) {
   // Wrapper avec le provider de layout optimisé
   const content = (
     <DashboardLayoutProvider>
-      <ToastProvider>
-        <ToastManagerInitializer />
-        <ReconciliationToastProvider>
-          <DashboardContent>{children}</DashboardContent>
-        </ReconciliationToastProvider>
-      </ToastProvider>
+      <AccountingViewProvider>
+        <ToastProvider>
+          <ToastManagerInitializer />
+          <ReconciliationToastProvider>
+            <DashboardContent>{children}</DashboardContent>
+          </ReconciliationToastProvider>
+        </ToastProvider>
+      </AccountingViewProvider>
     </DashboardLayoutProvider>
   );
 

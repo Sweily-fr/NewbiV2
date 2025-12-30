@@ -90,6 +90,24 @@ export function NavMain({
     isCommunicationSubActive
   );
 
+  // États pour les menus comptables (items avec sous-liens)
+  const [accountingMenuStates, setAccountingMenuStates] = useState({});
+
+  // Initialiser les états des menus comptables
+  useEffect(() => {
+    const initialStates = {};
+    items.forEach((item) => {
+      if (item.items && item.items.length > 0) {
+        const isSubActive = item.items.some(
+          (subItem) =>
+            pathname === subItem.url || pathname?.startsWith(subItem.url + "/")
+        );
+        initialStates[item.title] = isSubActive;
+      }
+    });
+    setAccountingMenuStates(initialStates);
+  }, [items, pathname]);
+
   // Garder les menus ouverts si un sous-lien est actif
   useEffect(() => {
     if (isVentesSubActive) setIsVentesOpen(true);
@@ -340,14 +358,64 @@ export function NavMain({
               align="start"
               className="min-w-[180px]"
             >
-              {subItems.map((subItem) => {
+              {subItems.map((subItem, index) => {
+                // Si l'item a une section, c'est un groupe
+                if (subItem.section) {
+                  return (
+                    <div key={`section-${index}`}>
+                      {/* Séparateur avant la section (sauf pour la première) */}
+                      {index > 0 && <DropdownMenuSeparator />}
+                      {/* Titre de la section */}
+                      <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                        {subItem.section}
+                      </div>
+                      {/* Items de la section */}
+                      {subItem.items?.map((item) => {
+                        const isSubItemActive =
+                          pathname === item.url ||
+                          pathname?.startsWith(item.url + "/");
+                        const hasSubAccess = !item.isPro || isActive();
+                        return (
+                          <DropdownMenuItem
+                            key={item.title}
+                            asChild={hasSubAccess}
+                            disabled={!hasSubAccess}
+                            className={cn(
+                              !hasSubAccess && "opacity-60 cursor-not-allowed"
+                            )}
+                          >
+                            {hasSubAccess ? (
+                              <Link
+                                href={item.url}
+                                onClick={handleLinkClick}
+                                className={cn(
+                                  "cursor-pointer",
+                                  isSubItemActive && "bg-accent font-medium"
+                                )}
+                              >
+                                {item.title}
+                              </Link>
+                            ) : (
+                              <div className="flex items-center justify-between w-full">
+                                <span>{item.title}</span>
+                                <Crown className="w-3 h-3 text-[#5b4fff]" />
+                              </div>
+                            )}
+                          </DropdownMenuItem>
+                        );
+                      })}
+                    </div>
+                  );
+                }
+
+                // Sinon, c'est un item simple (ancien format)
                 const isSubItemActive =
                   pathname === subItem.url ||
                   pathname?.startsWith(subItem.url + "/");
                 const hasSubAccess = !subItem.isPro || isActive();
                 return (
                   <DropdownMenuItem
-                    key={subItem.title}
+                    key={subItem.title || `item-${index}`}
                     asChild={hasSubAccess}
                     disabled={!hasSubAccess}
                     className={cn(
@@ -416,7 +484,60 @@ export function NavMain({
           </div>
           <CollapsibleContent>
             <SidebarMenuSub>
-              {subItems.map((subItem) => {
+              {subItems.map((subItem, index) => {
+                // Si l'item a une section, c'est un groupe
+                if (subItem.section) {
+                  return (
+                    <div key={`section-${index}`}>
+                      {/* Séparateur avant la section (sauf pour la première) */}
+                      {index > 0 && (
+                        <div className="my-2 border-t border-sidebar-border" />
+                      )}
+                      {/* Titre de la section */}
+                      <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        {subItem.section}
+                      </div>
+                      {/* Items de la section */}
+                      {subItem.items?.map((item) => {
+                        const isSubItemActive =
+                          pathname === item.url ||
+                          pathname?.startsWith(item.url + "/");
+                        const hasSubAccess = !item.isPro || isActive();
+                        return (
+                          <SidebarMenuSubItem key={item.title}>
+                            <SidebarMenuSubButton
+                              asChild={hasSubAccess}
+                              isActive={isSubItemActive && hasSubAccess}
+                              className={cn(
+                                !hasSubAccess && "opacity-60 cursor-not-allowed"
+                              )}
+                            >
+                              {hasSubAccess ? (
+                                <Link
+                                  href={item.url}
+                                  onClick={handleLinkClick}
+                                  className={cn(
+                                    isSubItemActive &&
+                                      "bg-[#F0F0F0] dark:bg-sidebar-accent text-sidebar-foreground font-medium"
+                                  )}
+                                >
+                                  <span className="text-sm">{item.title}</span>
+                                </Link>
+                              ) : (
+                                <div className="flex items-center justify-between w-full">
+                                  <span className="text-sm">{item.title}</span>
+                                  <Crown className="w-3 h-3 text-[#5b4fff]" />
+                                </div>
+                              )}
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        );
+                      })}
+                    </div>
+                  );
+                }
+
+                // Sinon, c'est un item simple (ancien format)
                 const isSubItemActive =
                   pathname === subItem.url ||
                   pathname?.startsWith(subItem.url + "/");
@@ -458,8 +579,38 @@ export function NavMain({
     );
   };
 
+  // Fonction pour rendre un item avec sous-liens (pour la navigation comptable)
+  const renderItemWithSubItems = (item) => {
+    const isSubActive = item.items?.some(
+      (subItem) =>
+        pathname === subItem.url || pathname?.startsWith(subItem.url + "/")
+    );
+
+    const isOpen = accountingMenuStates[item.title] || false;
+    const setIsOpen = (value) => {
+      setAccountingMenuStates((prev) => ({
+        ...prev,
+        [item.title]: value,
+      }));
+    };
+
+    return renderCollapsibleMenu(
+      item.title,
+      item.icon,
+      item.items,
+      isOpen,
+      setIsOpen,
+      isSubActive
+    );
+  };
+
   // Fonction pour rendre un item simple
   const renderSimpleItem = (item) => {
+    // Si l'item a des sous-items, utiliser le rendu avec sous-menus
+    if (item.items && item.items.length > 0) {
+      return renderItemWithSubItems(item);
+    }
+
     const isProTab = proTabs.includes(item.title);
     const hasAccess = !isProTab || isActive();
     const isItemActive =

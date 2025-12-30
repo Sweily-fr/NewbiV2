@@ -90,9 +90,12 @@ export const auth = betterAuth({
 
             // Calculer les dates de trial (180 jours - 6 mois)
             const now = new Date();
-            const trialEnd = new Date(now.getTime() + 180 * 24 * 60 * 60 * 1000);
+            const trialEnd = new Date(
+              now.getTime() + 180 * 24 * 60 * 60 * 1000
+            );
 
-            // Créer l'organisation
+            // Créer l'organisation avec onboardingCompleted: false
+            // L'onboarding définira le type d'organisation (business ou accounting_firm)
             const orgResult = await mongoDb
               .collection("organization")
               .insertOne({
@@ -104,6 +107,10 @@ export const auth = betterAuth({
                   createdAt: now.toISOString(),
                   createdVia: user.accounts?.[0]?.providerId || "email",
                 },
+                // ✅ Nouveaux champs pour le système comptable
+                organizationType: null, // Sera défini pendant l'onboarding: 'business' ou 'accounting_firm'
+                onboardingCompleted: false, // Sera mis à true après l'onboarding
+                // Trial system
                 trialStartDate: now,
                 trialEndDate: trialEnd,
                 isTrialActive: true,
