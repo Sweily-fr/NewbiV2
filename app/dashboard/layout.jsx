@@ -31,6 +31,7 @@ import {
   ToastManagerInitializer,
 } from "@/src/components/ui/toast-manager";
 import { AccountingViewProvider } from "@/src/contexts/accounting-view-context";
+import { FloatingTimer } from "@/src/components/FloatingTimer";
 
 // Composant interne qui utilise le contexte
 function DashboardContent({ children }) {
