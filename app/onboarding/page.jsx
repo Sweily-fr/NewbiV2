@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { authClient } from "@/src/lib/auth-client";
 import { useActiveOrganization } from "@/src/lib/organization-client";
 import { toast } from "@/src/components/ui/sonner";
-import { TrendingUp } from "lucide-react";
+import { TrendingUp, LoaderCircle } from "lucide-react";
 import AccountTypeStep from "./steps/account-type-step";
 import CompanySearchStep from "./steps/company-search-step";
 import { getAssetUrl } from "@/src/lib/image-utils";
@@ -15,6 +15,32 @@ function OnboardingContent() {
   const searchParams = useSearchParams();
   const { organization, updateOrganization } = useActiveOrganization();
   const [currentStep, setCurrentStep] = useState(1);
+  const [isChecking, setIsChecking] = useState(true);
+
+  // Vérifier si l'utilisateur a déjà complété l'onboarding
+  useEffect(() => {
+    const checkOnboardingStatus = async () => {
+      try {
+        const { data: session } = await authClient.getSession();
+        const hasSeenOnboarding = session?.user?.hasSeenOnboarding;
+
+        if (hasSeenOnboarding) {
+          console.log(
+            "✅ [ONBOARDING] Utilisateur a déjà complété l'onboarding, redirection vers /dashboard"
+          );
+          router.push("/dashboard");
+          return;
+        }
+
+        setIsChecking(false);
+      } catch (error) {
+        console.error("❌ [ONBOARDING] Erreur vérification onboarding:", error);
+        setIsChecking(false);
+      }
+    };
+
+    checkOnboardingStatus();
+  }, [router]);
 
   // Synchroniser l'étape avec l'URL
   useEffect(() => {
@@ -60,6 +86,17 @@ function OnboardingContent() {
   const updateFormData = (data) => {
     setFormData((prev) => ({ ...prev, ...data }));
   };
+
+  // Afficher un loader pendant la vérification
+  if (isChecking) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <LoaderCircle className="animate-spin mx-auto" />
+        </div>
+      </div>
+    );
+  }
 
   const handleNext = () => {
     if (currentStep < totalSteps) {
@@ -109,7 +146,13 @@ function OnboardingContent() {
 
       // Mettre à jour les informations entreprise si renseignées
       if (organization) {
-        const orgData = {};
+        const orgData = {
+          // ✅ IMPORTANT: Toujours sauvegarder le type d'organisation et marquer l'onboarding comme complété
+          organizationType: formData.accountType || "business", // 'business' ou 'accounting_firm'
+          onboardingCompleted: true,
+        };
+
+        // Informations entreprise
         if (formData.companyName) orgData.companyName = formData.companyName;
         if (formData.companyEmail) orgData.companyEmail = formData.companyEmail;
         if (formData.siret) orgData.siret = formData.siret;
@@ -122,6 +165,8 @@ function OnboardingContent() {
         if (formData.fiscalRegime) orgData.fiscalRegime = formData.fiscalRegime;
         if (formData.activityCategory)
           orgData.activityCategory = formData.activityCategory;
+        if (formData.activitySector)
+          orgData.activitySector = formData.activitySector;
         if (formData.isVatSubject !== undefined)
           orgData.isVatSubject = formData.isVatSubject;
         if (formData.hasCommercialActivity !== undefined)
@@ -134,10 +179,11 @@ function OnboardingContent() {
         if (formData.addressCountry)
           orgData.addressCountry = formData.addressCountry;
 
-        if (Object.keys(orgData).length > 0) {
-          await updateOrganization(orgData);
-          console.log("✅ [ONBOARDING] Organisation mise à jour");
-        }
+        await updateOrganization(orgData);
+        console.log(
+          "✅ [ONBOARDING] Organisation mise à jour avec type:",
+          formData.accountType
+        );
       }
 
       // Gérer les invitations en attente (si l'utilisateur s'est inscrit via invitation)

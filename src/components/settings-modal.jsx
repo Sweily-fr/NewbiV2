@@ -14,6 +14,7 @@ import {
   Users,
   Crown,
   User,
+  Landmark,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/src/components/ui/dialog";
 import {
@@ -50,6 +51,7 @@ import UserInfoSection from "./settings/user-info-section";
 import { NotificationsSection } from "./settings/notifications-section";
 import { MobileSettingsModal } from "./settings/mobile/mobile-settings-modal";
 import { usePermissions } from "@/src/hooks/usePermissions";
+import { BankAccountsSection } from "./settings/bank-accounts-section";
 
 export function SettingsModal({
   open,
@@ -333,6 +335,10 @@ export function SettingsModal({
             canManageOrgSettings={canManageOrgSettings}
           />
         );
+      case "comptes-bancaires":
+        return (
+          <BankAccountsSection canManageOrgSettings={canManageOrgSettings} />
+        );
       case "personnes":
         return <PersonnesSection />;
       case "user-info":
@@ -373,6 +379,11 @@ export function SettingsModal({
           id: "informations-legales",
           label: "Informations légales",
           icon: FileText,
+        },
+        {
+          id: "comptes-bancaires",
+          label: "Comptes bancaires",
+          icon: Landmark,
         },
         { id: "securite", label: "Sécurité", icon: Shield },
       ],

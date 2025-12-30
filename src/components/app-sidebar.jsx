@@ -37,6 +37,11 @@ import {
   MessageCircleQuestionMark,
   Inbox,
   Landmark,
+  FileText,
+  ClipboardCheck,
+  Receipt,
+  BarChart3,
+  FolderOpen,
 } from "lucide-react";
 
 import { NavDocuments } from "@/src/components/nav-documents";
@@ -44,7 +49,10 @@ import { NavMain } from "@/src/components/nav-main";
 import { NavSecondary } from "@/src/components/nav-secondary";
 import { NavUser } from "@/src/components/nav-user";
 import { SidebarTrialCard } from "@/src/components/sidebar-trial-card";
+import { SidebarViewTabs } from "@/src/components/sidebar-view-tabs";
 import { Skeleton } from "@/src/components/ui/skeleton";
+import { useOrganizationType } from "@/src/hooks/useOrganizationType";
+import { useAccountingView } from "@/src/contexts/accounting-view-context";
 import {
   Sidebar,
   SidebarContent,
@@ -181,6 +189,225 @@ const data = {
       icon: MessageCircleQuestionMark,
     },
   ],
+  // Navigation pour la vue Comptabilité (cabinets comptables)
+  navAccounting: [
+    {
+      title: "Saisie",
+      url: "/dashboard/comptabilite/saisie",
+      icon: FileText,
+      items: [
+        {
+          section: "Factures",
+          items: [
+            {
+              title: "Factures fournisseurs",
+              url: "/dashboard/comptabilite/saisie/factures-fournisseurs",
+            },
+            {
+              title: "Factures clients",
+              url: "/dashboard/comptabilite/saisie/factures-clients",
+            },
+          ],
+        },
+        {
+          section: "Banque",
+          items: [
+            {
+              title: "Transactions",
+              url: "/dashboard/comptabilite/saisie/transactions",
+            },
+            {
+              title: "Rapprochement bancaire",
+              url: "/dashboard/comptabilite/saisie/rapprochement-bancaire",
+            },
+          ],
+        },
+        {
+          section: "Écritures",
+          items: [
+            {
+              title: "Journaux",
+              url: "/dashboard/comptabilite/saisie/journaux",
+            },
+            {
+              title: "Saisie en masse",
+              url: "/dashboard/comptabilite/saisie/saisie-masse",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      title: "Révision",
+      url: "/dashboard/comptabilite/revision",
+      icon: ClipboardCheck,
+      items: [
+        {
+          section: "Balances",
+          items: [
+            {
+              title: "Balance générale",
+              url: "/dashboard/comptabilite/revision/balance-generale",
+            },
+            {
+              title: "Balance fournisseurs",
+              url: "/dashboard/comptabilite/revision/balance-fournisseurs",
+            },
+            {
+              title: "Balance clients",
+              url: "/dashboard/comptabilite/revision/balance-clients",
+            },
+            {
+              title: "Balance âgée",
+              url: "/dashboard/comptabilite/revision/balance-agee",
+            },
+          ],
+        },
+        {
+          section: "Grand livre",
+          items: [
+            {
+              title: "Grand livre",
+              url: "/dashboard/comptabilite/revision/grand-livre",
+            },
+          ],
+        },
+        {
+          section: "Outils de révision",
+          items: [
+            {
+              title: "Guide de révision",
+              url: "/dashboard/comptabilite/revision/guide-revision",
+            },
+            {
+              title: "Feuilles maîtresses",
+              url: "/dashboard/comptabilite/revision/feuilles-maitresses",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      title: "Fiscalité",
+      url: "/dashboard/comptabilite/fiscalite",
+      icon: Receipt,
+      items: [
+        {
+          section: "Mes déclarations",
+          items: [
+            {
+              title: "Statut des télédéclarations",
+              url: "/dashboard/comptabilite/fiscalite/teledeclarations",
+            },
+          ],
+        },
+        {
+          section: "TVA - Déclarations",
+          items: [
+            {
+              title: "TVA - Déclarations",
+              url: "/dashboard/comptabilite/fiscalite/tva-declarations",
+            },
+            {
+              title: "TVA - Demande de remboursement",
+              url: "/dashboard/comptabilite/fiscalite/tva-remboursement",
+            },
+            {
+              title: "TVA - Acompte (CA12)",
+              url: "/dashboard/comptabilite/fiscalite/tva-acompte",
+            },
+          ],
+        },
+        {
+          section: "Liasse fiscale",
+          items: [
+            {
+              title: "IS - Acompte (2571)",
+              url: "/dashboard/comptabilite/fiscalite/is-acompte",
+            },
+            {
+              title: "IS - Solde (2572)",
+              url: "/dashboard/comptabilite/fiscalite/is-solde",
+            },
+            {
+              title: "CVAE - Acompte (1329 AC)",
+              url: "/dashboard/comptabilite/fiscalite/cvae-acompte",
+            },
+            {
+              title: "CVAE - Solde (1329 DEF)",
+              url: "/dashboard/comptabilite/fiscalite/cvae-solde",
+            },
+            {
+              title: "DAS2 - Honoraires",
+              url: "/dashboard/comptabilite/fiscalite/das2",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      title: "États Financiers",
+      url: "/dashboard/comptabilite/etats-financiers",
+      icon: BarChart3,
+      items: [
+        {
+          section: "Bilan",
+          items: [
+            {
+              title: "Compte de résultat",
+              url: "/dashboard/comptabilite/etats-financiers/compte-resultat",
+            },
+            {
+              title: "Soldes Intermédiaires de Gestion",
+              url: "/dashboard/comptabilite/etats-financiers/sig",
+            },
+          ],
+        },
+        {
+          section: "Plaquettes",
+          items: [
+            {
+              title: "Plaquettes",
+              url: "/dashboard/comptabilite/etats-financiers/plaquettes",
+            },
+          ],
+        },
+      ],
+    },
+    {
+      title: "Dossier du client",
+      url: "/dashboard/comptabilite/dossier-client",
+      icon: FolderOpen,
+      items: [
+        {
+          section: "Documents partagés",
+          items: [
+            {
+              title: "Documents partagés",
+              url: "/dashboard/comptabilite/dossier-client/documents",
+            },
+            {
+              title: "Plan comptable",
+              url: "/dashboard/comptabilite/dossier-client/plan-comptable",
+            },
+          ],
+        },
+        {
+          section: "Liste des tiers",
+          items: [
+            {
+              title: "Fournisseurs",
+              url: "/dashboard/comptabilite/dossier-client/fournisseurs",
+            },
+            {
+              title: "Clients",
+              url: "/dashboard/comptabilite/dossier-client/clients",
+            },
+          ],
+        },
+      ],
+    },
+  ],
 };
 
 export function AppSidebar({
@@ -198,6 +425,12 @@ export function AppSidebar({
   const [theme, setTheme] = React.useState("light");
   const [notificationCount, setNotificationCount] = React.useState(0);
   const { listInvitations } = useOrganizationInvitations();
+
+  // Vérifier si l'organisation est un cabinet comptable
+  const { isAccountingFirm, loading: orgTypeLoading } = useOrganizationType();
+
+  // Récupérer la vue active (Entreprise ou Comptabilité)
+  const { activeView } = useAccountingView();
 
   // Récupérer l'état de la sidebar pour adapter les skeletons
   const { state: sidebarState } = useSidebar();
@@ -300,16 +533,30 @@ export function AppSidebar({
       <SidebarContent className="mt-1">
         {session?.user && !subscriptionLoading ? (
           <>
-            <NavMain
-              items={data.navMain}
-              navVentes={data.navVentes}
-              navAfterVentes={data.navAfterVentes}
-              navProjets={data.navProjets}
-              navDocuments={data.navDocuments}
-              navCommunication={data.navCommunication}
-              onOpenNotifications={onOpenNotifications}
-              notificationCount={notificationCount}
-            />
+            {/* Tabs pour les cabinets comptables */}
+            {isAccountingFirm && !orgTypeLoading && <SidebarViewTabs />}
+
+            {/* Navigation conditionnelle selon la vue active */}
+            {activeView === "accounting" && isAccountingFirm ? (
+              // Vue Comptabilité : afficher uniquement les liens comptables
+              <NavMain
+                items={data.navAccounting}
+                onOpenNotifications={onOpenNotifications}
+                notificationCount={notificationCount}
+              />
+            ) : (
+              // Vue Entreprise : afficher la navigation standard
+              <NavMain
+                items={data.navMain}
+                navVentes={data.navVentes}
+                navAfterVentes={data.navAfterVentes}
+                navProjets={data.navProjets}
+                navDocuments={data.navDocuments}
+                navCommunication={data.navCommunication}
+                onOpenNotifications={onOpenNotifications}
+                notificationCount={notificationCount}
+              />
+            )}
             <NavSecondary
               items={data.navSecondary}
               onCommunityClick={onCommunityClick}
@@ -417,6 +664,6 @@ export function AppSidebar({
           </div>
         )}
       </SidebarFooter>
-    </Sidebar>
+    </Sidebar> 
   );
 }
