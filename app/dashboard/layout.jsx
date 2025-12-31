@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, Suspense } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { AppSidebar } from "@/src/components/app-sidebar";
 import { CommunitySidebar } from "@/src/components/community-sidebar";
 import { SiteHeader } from "@/src/components/site-header";
@@ -32,13 +32,12 @@ import {
 } from "@/src/components/ui/toast-manager";
 import { AccountingViewProvider } from "@/src/contexts/accounting-view-context";
 import { FloatingTimer } from "@/src/components/FloatingTimer";
-import { toast } from "@/src/components/ui/sonner";
+import { OAuthCallbackHandler } from "@/src/components/oauth-callback-handler";
 
 // Composant interne qui utilise le contexte
 function DashboardContent({ children }) {
   const pathname = usePathname();
   const router = useRouter();
-  const searchParams = useSearchParams();
   const isSignaturePage = pathname === "/dashboard/outils/signatures-mail/new";
   const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
@@ -90,41 +89,6 @@ function DashboardContent({ children }) {
   useEffect(() => {
     setIsHydrated(true);
   }, []);
-
-  // Gérer les paramètres d'URL pour ouvrir le modal de paramètres (OAuth callback)
-  useEffect(() => {
-    if (!isHydrated) return;
-
-    const openSettings = searchParams.get("openSettings");
-    const settingsTab = searchParams.get("settingsTab");
-    const success = searchParams.get("success");
-    const error = searchParams.get("error");
-    const message = searchParams.get("message");
-
-    if (openSettings === "true") {
-      // Ouvrir le modal de paramètres sur la bonne section
-      if (settingsTab) {
-        setSettingsInitialTab(settingsTab);
-      }
-      setSettingsModalOpen(true);
-
-      // Afficher le message de succès ou d'erreur
-      if (success === "true" && message) {
-        toast.success(decodeURIComponent(message));
-      } else if (error) {
-        toast.error(decodeURIComponent(error));
-      }
-
-      // Nettoyer l'URL
-      const newUrl = new URL(window.location.href);
-      newUrl.searchParams.delete("openSettings");
-      newUrl.searchParams.delete("settingsTab");
-      newUrl.searchParams.delete("success");
-      newUrl.searchParams.delete("error");
-      newUrl.searchParams.delete("message");
-      window.history.replaceState({}, "", newUrl.pathname);
-    }
-  }, [searchParams, isHydrated]);
 
   // Déterminer si on est sur une page d'outil qui nécessite la sidebar fermée
   const isToolPage =
@@ -243,6 +207,14 @@ function DashboardContent({ children }) {
       {/* Gestionnaire d'URL pour Stripe Connect */}
       <Suspense fallback={null}>
         <StripeConnectUrlHandler />
+      </Suspense>
+
+      {/* Gestionnaire de callback OAuth (SuperPDP, etc.) */}
+      <Suspense fallback={null}>
+        <OAuthCallbackHandler
+          onOpenSettings={setSettingsModalOpen}
+          onSetSettingsTab={setSettingsInitialTab}
+        />
       </Suspense>
 
       {/* Modal de paramètres avec notifications */}
