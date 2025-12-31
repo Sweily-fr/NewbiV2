@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import { toast } from "@/src/components/ui/toast";
+import { toast } from "@/src/components/ui/sonner";
 
 /**
  * Composant pour gérer les callbacks OAuth (SuperPDP, etc.)
