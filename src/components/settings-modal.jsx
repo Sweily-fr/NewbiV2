@@ -15,6 +15,7 @@ import {
   Crown,
   User,
   Landmark,
+  Zap,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/src/components/ui/dialog";
 import {
@@ -52,6 +53,7 @@ import { NotificationsSection } from "./settings/notifications-section";
 import { MobileSettingsModal } from "./settings/mobile/mobile-settings-modal";
 import { usePermissions } from "@/src/hooks/usePermissions";
 import { BankAccountsSection } from "./settings/bank-accounts-section";
+import { EInvoicingSection } from "./settings/e-invoicing-section";
 
 export function SettingsModal({
   open,
@@ -339,6 +341,10 @@ export function SettingsModal({
         return (
           <BankAccountsSection canManageOrgSettings={canManageOrgSettings} />
         );
+      case "facturation-electronique":
+        return (
+          <EInvoicingSection canManageOrgSettings={canManageOrgSettings} />
+        );
       case "personnes":
         return <PersonnesSection />;
       case "user-info":
@@ -386,6 +392,12 @@ export function SettingsModal({
           icon: Landmark,
         },
         { id: "securite", label: "Sécurité", icon: Shield },
+        {
+          id: "facturation-electronique",
+          label: "Facturation électronique",
+          icon: Zap,
+          isNew: true,
+        },
       ],
     },
     {
@@ -535,6 +547,11 @@ export function SettingsModal({
                                 <Icon className="h-4 w-4" />
                                 <span className="flex font-normal items-center gap-2">
                                   {item.label}
+                                  {item.isNew && (
+                                    <span className="px-1.5 py-0.5 text-[10px] font-medium bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 rounded-md">
+                                      nouveau
+                                    </span>
+                                  )}
                                   {item.disabled &&
                                     (item.id === "espaces" ? (
                                       <Crown className="w-3 h-3 text-[#5b4fff]" />

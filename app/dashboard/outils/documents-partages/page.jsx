@@ -568,7 +568,7 @@ export default function DocumentsPartagesPage() {
           </div>
 
           {/* Stats */}
-          <div className="flex items-center gap-6 mt-4 text-sm">
+          {/* <div className="flex items-center gap-6 mt-4 text-sm">
             <div className="flex items-center gap-1.5 text-muted-foreground">
               <FileText className="h-4 w-4" />
               <span>{stats?.totalDocuments || 0} document(s)</span>
@@ -581,7 +581,7 @@ export default function DocumentsPartagesPage() {
               <Archive className="h-4 w-4" />
               <span>{formatTotalSize(stats?.totalSize || 0)}</span>
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
 
@@ -606,7 +606,7 @@ export default function DocumentsPartagesPage() {
             </Button>
           </div>
           <ScrollArea className="flex-1">
-            <div className="pt-2 pl-2 pr-2 relative">
+            <div className="pt-2 pl-0 pr-0 relative">
               {/* Indicateur de chargement subtil pendant le refetch */}
               {(foldersRefetching || docsRefetching) && (
                 <div className="absolute top-1 right-2 z-10">
@@ -640,7 +640,7 @@ export default function DocumentsPartagesPage() {
                               className="pb-0 overflow-hidden"
                             >
                               <TreeItemLabel
-                                className="rounded-none py-1 w-full cursor-pointer hover:bg-accent/50"
+                                className="rounded-none py-1 w-full cursor-pointer hover:bg-accent"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   if (isFolder) {
@@ -793,6 +793,33 @@ export default function DocumentsPartagesPage() {
               </div>
 
               <div className="flex items-center gap-2">
+                {/* Actions de sélection - à gauche de la recherche */}
+                {selectedDocuments.length > 0 && (
+                  <>
+                    <span className="text-sm text-muted-foreground">
+                      {selectedDocuments.length} sélectionné(s)
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowMoveModal(true)}
+                      className="h-8 text-xs"
+                    >
+                      <FolderInput className="h-3.5 w-3.5 mr-1" />
+                      Déplacer
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowDeleteModal(true)}
+                      className="h-8 text-xs text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-3.5 w-3.5 mr-1" />
+                      Supprimer
+                    </Button>
+                  </>
+                )}
+
                 {/* Recherche */}
                 <div className="relative">
                   <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -827,42 +854,6 @@ export default function DocumentsPartagesPage() {
                 </div>
               </div>
             </div>
-
-            {/* Actions de sélection */}
-            {selectedDocuments.length > 0 && (
-              <div className="flex items-center gap-2 mt-3 pt-3 border-t">
-                <span className="text-sm text-muted-foreground">
-                  {selectedDocuments.length} sélectionné(s)
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowMoveModal(true)}
-                  className="h-7 text-xs"
-                >
-                  <FolderInput className="h-3.5 w-3.5 mr-1" />
-                  Déplacer
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowDeleteModal(true)}
-                  className="h-7 text-xs text-destructive hover:text-destructive"
-                >
-                  <Trash2 className="h-3.5 w-3.5 mr-1" />
-                  Supprimer
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setSelectedDocuments([])}
-                  className="h-7 text-xs"
-                >
-                  <X className="h-3.5 w-3.5 mr-1" />
-                  Annuler
-                </Button>
-              </div>
-            )}
           </div>
 
           {/* Documents list */}
