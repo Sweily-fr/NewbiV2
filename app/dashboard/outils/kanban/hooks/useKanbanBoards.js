@@ -241,6 +241,19 @@ export const useKanbanBoards = () => {
     }
   };
 
+  // Fonction pour supprimer directement par ID (utilisée pour la suppression multiple)
+  const deleteBoardById = async (boardId) => {
+    try {
+      await deleteBoard({
+        variables: { id: boardId, workspaceId },
+      });
+      return true;
+    } catch (error) {
+      console.error("Error in deleteBoardById:", error);
+      return false;
+    }
+  };
+
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString("fr-FR", {
       year: "numeric",
@@ -279,6 +292,7 @@ export const useKanbanBoards = () => {
     handleDeleteClick,
     handleEditClick,
     handleConfirmDelete,
+    deleteBoardById,
     formatDate,
   };
 };

@@ -28,6 +28,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/src/components/ui/alert-dialog";
 import {
   Dialog,
@@ -57,6 +58,8 @@ import { useKanbanBoardsTable } from "./hooks/useKanbanBoardsTable";
 function KanbanPageContent() {
   const router = useRouter();
   const [boardPreview, setBoardPreview] = React.useState(null);
+  const [isDeleteMultipleOpen, setIsDeleteMultipleOpen] = React.useState(false);
+  const [isDeletingMultiple, setIsDeletingMultiple] = React.useState(false);
 
   const {
     // State
@@ -86,6 +89,7 @@ function KanbanPageContent() {
     handleDeleteClick,
     handleEditClick,
     handleConfirmDelete,
+    deleteBoardById,
     formatDate,
   } = useKanbanBoards();
 
@@ -104,7 +108,7 @@ function KanbanPageContent() {
       {/* Header */}
       <div className="flex items-start justify-between px-4 sm:px-6 pt-4 sm:pt-6 flex-shrink-0">
         <div>
-          <h1 className="text-2xl font-medium mb-2">Tableaux Kanban</h1>
+          <h1 className="text-2xl font-medium mb-2">Dossiers Kanban</h1>
         </div>
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
@@ -113,15 +117,15 @@ function KanbanPageContent() {
               className="font-normal bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
             >
               <Plus className="h-4 w-4 mr-2" />
-              Nouveau tableau
+              Nouveau dossier
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[425px] p-6">
             <form onSubmit={handleCreateBoard}>
               <DialogHeader>
-                <DialogTitle>Créer un nouveau tableau</DialogTitle>
+                <DialogTitle>Créer un nouveau dossier</DialogTitle>
                 <DialogDescription>
-                  Créez un nouveau tableau Kanban pour organiser vos tâches.
+                  Créez un nouveau dossier Kanban pour organiser vos tâches.
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
@@ -138,7 +142,7 @@ function KanbanPageContent() {
                         title: e.target.value,
                       }))
                     }
-                    placeholder="Nom du tableau"
+                    placeholder="Nom du dossier"
                     required
                   />
                 </div>
@@ -155,7 +159,7 @@ function KanbanPageContent() {
                         description: e.target.value,
                       }))
                     }
-                    placeholder="Description du tableau (optionnel)"
+                    placeholder="Description du dossier (optionnel)"
                     rows={3}
                   />
                 </div>
@@ -188,7 +192,7 @@ function KanbanPageContent() {
       <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-4 flex-shrink-0">
         <div className="relative max-w-md">
           <Input
-            placeholder="Rechercher un tableau..."
+            placeholder="Rechercher un dossier..."
             value={globalFilter ?? ""}
             onChange={(event) => setGlobalFilter(event.target.value)}
             className="w-full sm:w-[400px] ps-9"
@@ -200,16 +204,52 @@ function KanbanPageContent() {
 
         {/* Bulk delete */}
         {selectedRows.length > 0 && (
-          <AlertDialog>
-            <Button
-              variant="destructive"
-              onClick={() => {
-                selectedRows.forEach((board) => setBoardToDelete(board));
-              }}
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Supprimer ({selectedRows.length})
-            </Button>
+          <AlertDialog open={isDeleteMultipleOpen} onOpenChange={setIsDeleteMultipleOpen}>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive">
+                <Trash2 className="mr-2 h-4 w-4" />
+                Supprimer ({selectedRows.length})
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Supprimer les dossiers</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Êtes-vous sûr de vouloir supprimer {selectedRows.length} dossier(s) ?
+                  Cette action est irréversible et supprimera également toutes les
+                  colonnes et tâches associées.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Annuler</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={async () => {
+                    setIsDeletingMultiple(true);
+                    try {
+                      // Supprimer chaque dossier directement par ID
+                      for (const board of selectedRows) {
+                        await deleteBoardById(board.id);
+                      }
+                      table.resetRowSelection();
+                    } finally {
+                      setIsDeletingMultiple(false);
+                      setIsDeleteMultipleOpen(false);
+                    }
+                  }}
+                  className="bg-destructive text-white hover:bg-destructive/90"
+                  disabled={isDeletingMultiple}
+                >
+                  {isDeletingMultiple ? (
+                    <>
+                      <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                      Suppression...
+                    </>
+                  ) : (
+                    "Supprimer définitivement"
+                  )}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
           </AlertDialog>
         )}
       </div>
@@ -225,7 +265,7 @@ function KanbanPageContent() {
                 Commencez votre organisation
               </h3>
               <p className="text-sm text-muted-foreground">
-                Créez votre premier tableau Kanban pour organiser vos tâches et
+                Créez votre premier dossier Kanban pour organiser vos tâches et
                 projets
               </p>
             </div>
@@ -234,7 +274,7 @@ function KanbanPageContent() {
               variant="default"
               className="flex items-center gap-2 font-normal"
             >
-              Créer votre premier tableau
+              Créer votre premier dossier
             </Button>
           </div>
         </div>
@@ -310,8 +350,8 @@ function KanbanPageContent() {
                       className="h-24 text-center p-2"
                     >
                       {globalFilter
-                        ? "Aucun tableau trouvé."
-                        : "Aucun tableau créé."}
+                        ? "Aucun dossier trouvé."
+                        : "Aucun dossier créé."}
                     </td>
                   </tr>
                 )}
@@ -417,10 +457,10 @@ function KanbanPageContent() {
           <form onSubmit={handleUpdateBoard}>
             <DialogHeader className="border-b pb-6 mb-6">
               <DialogTitle className="text-2xl font-bold text-foreground">
-                Modifier le tableau
+                Modifier le dossier
               </DialogTitle>
               <DialogDescription className="text-muted-foreground mt-2">
-                Modifiez les informations de votre tableau Kanban.
+                Modifiez les informations de votre dossier Kanban.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-6">
@@ -434,7 +474,7 @@ function KanbanPageContent() {
                   onChange={(e) =>
                     setFormData((prev) => ({ ...prev, title: e.target.value }))
                   }
-                  placeholder="Nom du tableau"
+                  placeholder="Nom du dossier"
                   required
                   className="rounded-lg"
                 />
@@ -452,7 +492,7 @@ function KanbanPageContent() {
                       description: e.target.value,
                     }))
                   }
-                  placeholder="Description du tableau (optionnel)"
+                  placeholder="Description du dossier (optionnel)"
                   rows={4}
                   className="rounded-lg resize-none"
                 />
@@ -482,18 +522,18 @@ function KanbanPageContent() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
+      {/* Delete Confirmation Dialog (suppression individuelle uniquement) */}
       <AlertDialog
-        open={!!boardToDelete}
+        open={!!boardToDelete && !isDeleteMultipleOpen}
         onOpenChange={(open) => !open && setBoardToDelete(null)}
       >
         <AlertDialogContent className="sm:max-w-[425px]">
           <AlertDialogHeader className="border-b pb-4">
             <AlertDialogTitle className="text-foreground">
-              Supprimer le tableau
+              Supprimer le dossier
             </AlertDialogTitle>
             <AlertDialogDescription className="text-muted-foreground">
-              Êtes-vous sûr de vouloir supprimer ce tableau ? Cette action est
+              Êtes-vous sûr de vouloir supprimer ce dossier ? Cette action est
               irréversible et supprimera également toutes les colonnes et tâches
               associées.
             </AlertDialogDescription>
@@ -568,7 +608,7 @@ export default function KanbanPage() {
     <RoleRouteGuard 
       roles={["owner", "admin", "member", "viewer"]}
       fallbackUrl="/dashboard"
-      toastMessage="Vous n'avez pas accès aux tableaux Kanban. Cette fonctionnalité est réservée aux membres de l'équipe."
+      toastMessage="Vous n'avez pas accès aux dossiers Kanban. Cette fonctionnalité est réservée aux membres de l'équipe."
     >
       <KanbanPageContent />
     </RoleRouteGuard>

@@ -72,7 +72,7 @@ export function useKanbanBoardsTable({
             className="flex items-center cursor-pointer font-normal"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
-            Nom du projet
+            Nom du dossier
             <ArrowUpDown className="ml-2 h-4 w-4" />
           </div>
         ),
