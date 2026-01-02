@@ -5,6 +5,7 @@ import { useQuery, useMutation } from "@apollo/client";
 import { useRouter } from "next/navigation";
 import { Clock, Square, ExternalLink } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/src/components/ui/avatar";
 import {
   Popover,
   PopoverContent,
@@ -168,43 +169,54 @@ export function FloatingTimer() {
 
           <ScrollArea className="max-h-80">
             <div className="p-2 space-y-1">
-              {activeTasks.map((task) => (
-                <div
-                  key={task.id}
-                  className="flex items-center gap-3 p-2.5 rounded-md hover:bg-accent/50 group"
-                >
-                  <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse flex-shrink-0" />
-                  
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{task.title}</p>
-                    <p className="text-xs font-mono text-muted-foreground tabular-nums">
-                      {formatTime(taskTimes[task.id] || 0)}
-                    </p>
-                  </div>
+              {activeTasks.map((task) => {
+                const startedBy = task.timeTracking?.startedBy;
+                const initials = startedBy?.userName
+                  ? startedBy.userName.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)
+                  : "?";
+                
+                return (
+                  <div
+                    key={task.id}
+                    className="flex items-center gap-3 p-2.5 rounded-md hover:bg-accent/50 group"
+                  >
+                    {/* Avatar de l'utilisateur qui a lancé le timer */}
+                    <Avatar className="h-6 w-6 flex-shrink-0">
+                      <AvatarImage src={startedBy?.userImage} alt={startedBy?.userName} />
+                      <AvatarFallback className="text-[10px]">{initials}</AvatarFallback>
+                    </Avatar>
+                    
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{task.title}</p>
+                      <p className="text-xs font-mono text-muted-foreground tabular-nums">
+                        {formatTime(taskTimes[task.id] || 0)}
+                      </p>
+                    </div>
 
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7 opacity-60 hover:opacity-100"
-                      onClick={() => handleOpenTask(task)}
-                      title="Voir la tâche"
-                    >
-                      <ExternalLink className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
-                      onClick={() => handleStopTimer(task.id)}
-                      disabled={stopping}
-                      title="Arrêter le timer"
-                    >
-                      <Square className="h-3.5 w-3.5" />
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 opacity-60 hover:opacity-100"
+                        onClick={() => handleOpenTask(task)}
+                        title="Voir la tâche"
+                      >
+                        <ExternalLink className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => handleStopTimer(task.id)}
+                        disabled={stopping}
+                        title="Arrêter le timer"
+                      >
+                        <Square className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </ScrollArea>
         </PopoverContent>

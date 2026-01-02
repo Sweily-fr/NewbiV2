@@ -323,6 +323,11 @@ export const TASK_FRAGMENT = gql`
       totalSeconds
       isRunning
       currentStartTime
+      startedBy {
+        userId
+        userName
+        userImage
+      }
       entries {
         id
         startTime
@@ -489,6 +494,11 @@ export const GET_ACTIVE_TIMERS = gql`
         totalSeconds
         isRunning
         currentStartTime
+        startedBy {
+          userId
+          userName
+          userImage
+        }
         hourlyRate
         roundingOption
       }
