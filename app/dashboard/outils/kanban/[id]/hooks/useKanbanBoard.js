@@ -57,6 +57,7 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
     variables: { boardId: id, workspaceId },
     skip: !workspaceId || !id || !isReady || sessionLoading || isRedirecting,
     onData: ({ data: subscriptionData }) => {
+      console.log('📡 [Subscription] Données reçues:', subscriptionData?.data?.taskUpdated?.type);
       if (subscriptionData?.data?.taskUpdated) {
         const { type, task, taskId } = subscriptionData.data.taskUpdated;
         
@@ -154,8 +155,8 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
           }
         }
         
-        // Pour les mises à jour (UPDATED, TIMER_STARTED, TIMER_STOPPED), mettre à jour le cache Apollo
-        if ((type === 'UPDATED' || type === 'TIMER_STARTED' || type === 'TIMER_STOPPED') && task) {
+        // Pour les mises à jour (UPDATED, COMMENT_ADDED, COMMENT_UPDATED, TIMER_STARTED, TIMER_STOPPED), mettre à jour le cache Apollo
+        if ((type === 'UPDATED' || type === 'COMMENT_ADDED' || type === 'COMMENT_UPDATED' || type === 'TIMER_STARTED' || type === 'TIMER_STOPPED') && task) {
           try {
             const cacheData = apolloClient.cache.readQuery({
               query: GET_BOARD,

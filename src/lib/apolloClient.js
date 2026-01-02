@@ -43,6 +43,15 @@ const wsLink =
           reconnect: true,
           lazy: true, // Connexion lazy pour permettre la reconnexion avec nouveau token
           connectionParams: async () => {
+            // Vérifier si on est sur une page publique (pas besoin d'auth)
+            const isPublicPage = typeof window !== "undefined" && window.location.pathname.startsWith("/public/");
+            
+            if (isPublicPage) {
+              // Pour les pages publiques, pas besoin d'authentification
+              console.log("ℹ️ [WebSocket] Page publique, connexion sans authentification");
+              return {};
+            }
+            
             // Récupérer le JWT pour l'authentification WebSocket
             let jwtToken = null;
             let retries = 0;

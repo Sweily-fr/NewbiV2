@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { toast } from "@/src/utils/debouncedToast";
 import { useMutation } from "@apollo/client";
 import {
@@ -33,6 +33,40 @@ export const useKanbanTasks = (boardId, board) => {
   const [selectedColumnId, setSelectedColumnId] = useState(null);
   const [isAddTaskOpen, setIsAddTaskOpen] = useState(false);
   const [isEditTaskOpen, setIsEditTaskOpen] = useState(false);
+  
+  // Ref pour éviter les mises à jour en boucle
+  const lastUpdateRef = useRef(null);
+
+  // Synchroniser taskForm avec les données du board quand la tâche en cours d'édition change
+  // Cela permet de recevoir les mises à jour en temps réel (commentaires, etc.)
+  useEffect(() => {
+    if (!isEditTaskOpen || !editingTask?.id || !board?.tasks) return;
+    
+    // Trouver la tâche mise à jour dans le board
+    const updatedTask = board.tasks.find(t => t.id === editingTask.id);
+    if (!updatedTask) return;
+    
+    // Comparer les commentaires pour détecter les changements
+    const currentCommentsCount = taskForm.comments?.length || 0;
+    const updatedCommentsCount = updatedTask.comments?.length || 0;
+    
+    // Éviter les mises à jour en boucle
+    const updateKey = `${updatedTask.id}-${updatedCommentsCount}-${updatedTask.updatedAt}`;
+    if (lastUpdateRef.current === updateKey) return;
+    
+    // Si les commentaires ont changé, mettre à jour le taskForm
+    if (currentCommentsCount !== updatedCommentsCount) {
+      console.log('🔄 [TaskForm] Mise à jour des commentaires:', currentCommentsCount, '→', updatedCommentsCount);
+      lastUpdateRef.current = updateKey;
+      
+      setTaskForm(prev => ({
+        ...prev,
+        comments: updatedTask.comments || [],
+        activity: updatedTask.activity || [],
+        updatedAt: updatedTask.updatedAt
+      }));
+    }
+  }, [board?.tasks, editingTask?.id, isEditTaskOpen, taskForm.comments?.length]);
 
   // Task mutations
   const [addComment] = useMutation(ADD_COMMENT);
