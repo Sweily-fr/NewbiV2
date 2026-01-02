@@ -505,3 +505,282 @@ export const GET_ACTIVE_TIMERS = gql`
     }
   }
 `;
+
+// ============================================
+// PARTAGE PUBLIC DU KANBAN
+// ============================================
+
+// Query pour récupérer les liens de partage d'un tableau
+export const GET_PUBLIC_SHARES = gql`
+  query GetPublicShares($boardId: ID!, $workspaceId: ID) {
+    getPublicShares(boardId: $boardId, workspaceId: $workspaceId) {
+      id
+      token
+      boardId
+      name
+      permissions {
+        canViewTasks
+        canComment
+        canViewComments
+        canViewAssignees
+        canViewDueDates
+        canViewAttachments
+      }
+      isActive
+      expiresAt
+      hasPassword
+      stats {
+        totalViews
+        uniqueVisitors
+        totalComments
+      }
+      shareUrl
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+// Query pour accéder au tableau public (visiteurs externes)
+export const GET_PUBLIC_BOARD = gql`
+  query GetPublicBoard($token: String!, $email: String!, $password: String) {
+    getPublicBoard(token: $token, email: $email, password: $password) {
+      success
+      message
+      board {
+        id
+        title
+        description
+        columns {
+          id
+          title
+          color
+          order
+        }
+        tasks {
+          id
+          title
+          description
+          status
+          priority
+          tags {
+            name
+            className
+            bg
+            text
+            border
+          }
+          startDate
+          dueDate
+          columnId
+          position
+          checklist {
+            id
+            text
+            completed
+          }
+          assignedMembers {
+            id
+            name
+            image
+          }
+          comments {
+            id
+            userName
+            userEmail
+            userImage
+            content
+            isExternal
+            createdAt
+          }
+          timeTracking {
+            totalSeconds
+            isRunning
+            hourlyRate
+          }
+          userId
+          createdAt
+          updatedAt
+        }
+        members {
+          id
+          name
+          image
+        }
+      }
+      share {
+        id
+        permissions {
+          canViewTasks
+          canComment
+          canViewComments
+          canViewAssignees
+          canViewDueDates
+          canViewAttachments
+        }
+      }
+      visitorEmail
+    }
+  }
+`;
+
+// Query pour valider un token public
+export const VALIDATE_PUBLIC_TOKEN = gql`
+  query ValidatePublicToken($token: String!) {
+    validatePublicToken(token: $token)
+  }
+`;
+
+// Mutation pour créer un lien de partage
+export const CREATE_PUBLIC_SHARE = gql`
+  mutation CreatePublicShare($input: CreatePublicShareInput!, $workspaceId: ID) {
+    createPublicShare(input: $input, workspaceId: $workspaceId) {
+      id
+      token
+      boardId
+      name
+      permissions {
+        canViewTasks
+        canComment
+        canViewComments
+        canViewAssignees
+        canViewDueDates
+        canViewAttachments
+      }
+      isActive
+      expiresAt
+      hasPassword
+      shareUrl
+      createdAt
+    }
+  }
+`;
+
+// Mutation pour mettre à jour un lien de partage
+export const UPDATE_PUBLIC_SHARE = gql`
+  mutation UpdatePublicShare($input: UpdatePublicShareInput!, $workspaceId: ID) {
+    updatePublicShare(input: $input, workspaceId: $workspaceId) {
+      id
+      token
+      name
+      permissions {
+        canViewTasks
+        canComment
+        canViewComments
+        canViewAssignees
+        canViewDueDates
+        canViewAttachments
+      }
+      isActive
+      expiresAt
+      hasPassword
+      shareUrl
+      updatedAt
+    }
+  }
+`;
+
+// Mutation pour supprimer un lien de partage
+export const DELETE_PUBLIC_SHARE = gql`
+  mutation DeletePublicShare($id: ID!, $workspaceId: ID) {
+    deletePublicShare(id: $id, workspaceId: $workspaceId)
+  }
+`;
+
+// Mutation pour révoquer un lien de partage
+export const REVOKE_PUBLIC_SHARE = gql`
+  mutation RevokePublicShare($id: ID!, $workspaceId: ID) {
+    revokePublicShare(id: $id, workspaceId: $workspaceId)
+  }
+`;
+
+// Mutation pour ajouter un commentaire externe
+export const ADD_EXTERNAL_COMMENT = gql`
+  mutation AddExternalComment($token: String!, $taskId: ID!, $content: String!, $visitorEmail: String!) {
+    addExternalComment(token: $token, taskId: $taskId, content: $content, visitorEmail: $visitorEmail) {
+      success
+      message
+      task {
+        id
+        comments {
+          id
+          userName
+          userEmail
+          content
+          isExternal
+          createdAt
+        }
+      }
+    }
+  }
+`;
+
+// Mutation pour mettre à jour le profil d'un visiteur externe
+export const UPDATE_VISITOR_PROFILE = gql`
+  mutation UpdateVisitorProfile($token: String!, $email: String!, $input: UpdateVisitorProfileInput!) {
+    updateVisitorProfile(token: $token, email: $email, input: $input) {
+      success
+      message
+      visitor {
+        id
+        email
+        firstName
+        lastName
+        name
+        image
+      }
+    }
+  }
+`;
+
+// Subscription pour les mises à jour en temps réel sur la page publique
+export const PUBLIC_TASK_UPDATED_SUBSCRIPTION = gql`
+  subscription PublicTaskUpdated($token: String!, $boardId: ID!) {
+    publicTaskUpdated(token: $token, boardId: $boardId) {
+      type
+      task {
+        id
+        title
+        description
+        status
+        priority
+        startDate
+        dueDate
+        columnId
+        position
+        tags {
+          name
+        }
+        checklist {
+          id
+          text
+          completed
+        }
+        assignedMembers {
+          id
+          name
+          image
+        }
+        comments {
+          id
+          userName
+          userEmail
+          userImage
+          content
+          isExternal
+          createdAt
+        }
+        timeTracking {
+          totalSeconds
+          isRunning
+          hourlyRate
+        }
+        userId
+        createdAt
+        updatedAt
+      }
+      taskId
+      boardId
+    }
+  }
+`;
