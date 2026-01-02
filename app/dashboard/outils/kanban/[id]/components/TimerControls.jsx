@@ -5,6 +5,7 @@ import { Clock, Euro, ChevronDown } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
+import { Avatar, AvatarFallback, AvatarImage } from "@/src/components/ui/avatar";
 import {
   Select,
   SelectContent,
@@ -271,6 +272,20 @@ export function TimerControls({ taskId, timeTracking, onTimerUpdate }) {
             <SelectItem value="down">Arrondir ↓</SelectItem>
           </SelectContent>
         </Select>
+
+        {/* Lancé par - Affiché quand le timer est actif */}
+        {isRunning && timeTracking?.startedBy && (
+          <div className="flex items-center gap-2 px-2 py-1 text-xs text-muted-foreground flex-shrink-0">
+            <span>Lancé par</span>
+            <Avatar className="h-5 w-5">
+              <AvatarImage src={timeTracking.startedBy.userImage} alt={timeTracking.startedBy.userName} />
+              <AvatarFallback className="text-[9px]">
+                {timeTracking.startedBy.userName?.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2) || "?"}
+              </AvatarFallback>
+            </Avatar>
+            <span className="font-medium text-foreground">{timeTracking.startedBy.userName}</span>
+          </div>
+        )}
 
         {/* Prix estimé - Affiché directement */}
         {price && (
