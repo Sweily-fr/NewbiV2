@@ -263,7 +263,9 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
                   <div className="space-y-2">
                     <Label>Code postal</Label>
                     <Input
-                      placeholder="75001"
+                      placeholder={
+                        isInternational ? "Ex: SW1A 1AA, 10001..." : "75001"
+                      }
                       {...register("address.postalCode")}
                     />
                   </div>
@@ -272,7 +274,11 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
                 <div className="space-y-2">
                   <Label>Pays</Label>
                   <Input
-                    placeholder="France"
+                    placeholder={
+                      isInternational
+                        ? "Ex: Royaume-Uni, États-Unis..."
+                        : "France"
+                    }
                     {...register("address.country")}
                   />
                 </div>
@@ -317,7 +323,9 @@ export default function ClientsModal({ client, onSave, open, onOpenChange }) {
                     <div className="space-y-2">
                       <Label>Code postal</Label>
                       <Input
-                        placeholder="75001"
+                        placeholder={
+                          isInternational ? "Ex: SW1A 1AA, 10001..." : "75001"
+                        }
                         {...register("shippingAddress.postalCode")}
                       />
                     </div>

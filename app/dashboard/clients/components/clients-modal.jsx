@@ -232,6 +232,52 @@ export default function ClientsModal({
     },
   };
 
+  // Règles de validation dynamiques pour le code postal (format libre pour international)
+  const postalCodeValidationRules = {
+    validate: (value) => {
+      if (!value || value.trim() === "") {
+        return "Le code postal est obligatoire";
+      }
+      const currentIsInternational = watch("isInternational");
+      // Pour les entreprises internationales, format libre (2-20 caractères alphanumériques)
+      if (currentIsInternational) {
+        if (value.length < 2 || value.length > 20) {
+          return "Le code postal doit contenir entre 2 et 20 caractères";
+        }
+        return true;
+      }
+      // Pour la France, validation stricte du format
+      const frenchPostalCodeRegex = /^(0[1-9]|[1-8]\d|9[0-8])\d{3}$/;
+      if (!frenchPostalCodeRegex.test(value)) {
+        return "Code postal français invalide (format: 01000 à 98999)";
+      }
+      return true;
+    },
+  };
+
+  // Règles de validation pour le code postal de l'adresse de livraison
+  const shippingPostalCodeValidationRules = {
+    validate: (value) => {
+      const hasDifferentShippingAddr = watch("hasDifferentShippingAddress");
+      if (!hasDifferentShippingAddr) return true;
+      if (!value || value.trim() === "") {
+        return "Le code postal est obligatoire";
+      }
+      const currentIsInternational = watch("isInternational");
+      if (currentIsInternational) {
+        if (value.length < 2 || value.length > 20) {
+          return "Le code postal doit contenir entre 2 et 20 caractères";
+        }
+        return true;
+      }
+      const frenchPostalCodeRegex = /^(0[1-9]|[1-8]\d|9[0-8])\d{3}$/;
+      if (!frenchPostalCodeRegex.test(value)) {
+        return "Code postal français invalide (format: 01000 à 98999)";
+      }
+      return true;
+    },
+  };
+
   // États pour la recherche d'entreprises via API Gouv
   const [companyQuery, setCompanyQuery] = useState("");
   const [debouncedCompanyQuery, setDebouncedCompanyQuery] = useState("");
@@ -951,14 +997,18 @@ export default function ClientsModal({
                         <div className="space-y-2">
                           <Label className="font-normal">Code postal</Label>
                           <Input
-                            placeholder="75001"
+                            placeholder={
+                              isInternational
+                                ? "Ex: SW1A 1AA, 10001..."
+                                : "75001"
+                            }
                             className={cn(
                               errors.address?.postalCode &&
                                 "border-red-500 focus:border-red-500"
                             )}
                             {...register(
                               "address.postalCode",
-                              getValidationRules("postalCode", true)
+                              postalCodeValidationRules
                             )}
                           />
                           {errors.address?.postalCode && (
@@ -1052,17 +1102,18 @@ export default function ClientsModal({
                           <div className="space-y-2">
                             <Label className="font-normal">Code postal</Label>
                             <Input
-                              placeholder="75001"
+                              placeholder={
+                                isInternational
+                                  ? "Ex: SW1A 1AA, 10001..."
+                                  : "75001"
+                              }
                               className={cn(
                                 errors.shippingAddress?.postalCode &&
                                   "border-red-500 focus:border-red-500"
                               )}
                               {...register(
                                 "shippingAddress.postalCode",
-                                getValidationRules(
-                                  "postalCode",
-                                  hasDifferentShipping
-                                )
+                                shippingPostalCodeValidationRules
                               )}
                             />
                             {errors.shippingAddress?.postalCode && (
@@ -1688,14 +1739,18 @@ export default function ClientsModal({
                         <div className="space-y-2">
                           <Label className="font-normal">Code postal</Label>
                           <Input
-                            placeholder="75001"
+                            placeholder={
+                              isInternational
+                                ? "Ex: SW1A 1AA, 10001..."
+                                : "75001"
+                            }
                             className={cn(
                               errors.address?.postalCode &&
                                 "border-red-500 focus:border-red-500"
                             )}
                             {...register(
                               "address.postalCode",
-                              getValidationRules("postalCode", true)
+                              postalCodeValidationRules
                             )}
                           />
                           {errors.address?.postalCode && (
@@ -1789,17 +1844,18 @@ export default function ClientsModal({
                           <div className="space-y-2">
                             <Label className="font-normal">Code postal</Label>
                             <Input
-                              placeholder="75001"
+                              placeholder={
+                                isInternational
+                                  ? "Ex: SW1A 1AA, 10001..."
+                                  : "75001"
+                              }
                               className={cn(
                                 errors.shippingAddress?.postalCode &&
                                   "border-red-500 focus:border-red-500"
                               )}
                               {...register(
                                 "shippingAddress.postalCode",
-                                getValidationRules(
-                                  "postalCode",
-                                  hasDifferentShipping
-                                )
+                                shippingPostalCodeValidationRules
                               )}
                             />
                             {errors.shippingAddress?.postalCode && (

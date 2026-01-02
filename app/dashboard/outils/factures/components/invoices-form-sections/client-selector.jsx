@@ -1506,7 +1506,11 @@ export default function ClientSelector({
                                 });
                               }
                             }}
-                            placeholder="75000"
+                            placeholder={
+                              newClientForm.isInternational
+                                ? "Ex: SW1A 1AA, 10001..."
+                                : "75000"
+                            }
                             className={`h-10 rounded-lg text-sm w-full ${formErrors["address.postalCode"] ? "border-red-500" : ""}`}
                           />
                           {formErrors["address.postalCode"] && (
@@ -1755,7 +1759,11 @@ export default function ClientSelector({
                                       });
                                     }
                                   }}
-                                  placeholder="75001"
+                                  placeholder={
+                                    newClientForm.isInternational
+                                      ? "Ex: SW1A 1AA, 10001..."
+                                      : "75001"
+                                  }
                                   className={`h-10 rounded-lg text-sm w-full ${formErrors["shippingAddress.postalCode"] ? "border-red-500" : ""}`}
                                 />
                                 {formErrors["shippingAddress.postalCode"] && (
