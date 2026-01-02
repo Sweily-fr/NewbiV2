@@ -84,7 +84,7 @@ export function EInvoicingSection({ canManageOrgSettings }) {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-xl font-semibold">Facturation électronique</h2>
+        <h2 className="text-lg font-medium">Facturation électronique</h2>
         <p className="text-sm text-muted-foreground mt-1">
           Conformez-vous à la réforme française de la facturation électronique
         </p>

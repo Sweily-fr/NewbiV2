@@ -5,9 +5,17 @@ import { useState } from "react";
 import Link from "next/link";
 import { Icon } from "@tabler/icons-react";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
-import { Crown, Settings2, Trash, Settings, Users } from "lucide-react";
+import {
+  Crown,
+  Settings2,
+  Trash,
+  Settings,
+  Users,
+  Sparkles,
+} from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import { SettingsModal } from "@/src/components/settings-modal";
+import { EInvoicingPromoModal } from "@/src/components/e-invoicing-promo-modal";
 
 import {
   SidebarGroup,
@@ -124,11 +132,18 @@ function SettingsDropdownMenu() {
   );
 }
 
-export function NavSecondary({ items, onCommunityClick, ...props }) {
+export function NavSecondary({
+  items,
+  onCommunityClick,
+  onOpenEInvoicingPromo,
+  ...props
+}) {
   const [open, setOpen] = useState(false);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
+  const [eInvoicingPromoOpen, setEInvoicingPromoOpen] = useState(false);
   const { isActive } = useSubscription();
-  const { isMobile, setOpenMobile } = useSidebar();
+  const { isMobile, setOpenMobile, state } = useSidebar();
+  const isCollapsed = state === "collapsed";
 
   // Fonction pour fermer la sidebar sur mobile lors du clic
   const handleLinkClick = () => {
@@ -140,6 +155,29 @@ export function NavSecondary({ items, onCommunityClick, ...props }) {
   return (
     <SidebarGroup {...props}>
       <SidebarGroupContent>
+        {/* Bouton Facturation électronique (Sparkles) - visible uniquement pour les abonnés */}
+        {isActive() && (
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                className="cursor-pointer"
+                tooltip="Facturation électronique"
+                onClick={() => {
+                  if (onOpenEInvoicingPromo) {
+                    onOpenEInvoicingPromo();
+                  } else {
+                    setEInvoicingPromoOpen(true);
+                  }
+                  handleLinkClick();
+                }}
+              >
+                <Sparkles className="text-[#5b4eff]" />
+                <span>Facturation électronique</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        )}
+
         {/* Menu Paramètres avec dropdown */}
         <SidebarMenu>
           <SettingsDropdownMenu />
@@ -196,6 +234,12 @@ export function NavSecondary({ items, onCommunityClick, ...props }) {
             );
           })}
         </SidebarMenu>
+
+        {/* Modal de promotion facturation électronique */}
+        <EInvoicingPromoModal
+          open={eInvoicingPromoOpen}
+          onOpenChange={setEInvoicingPromoOpen}
+        />
       </SidebarGroupContent>
     </SidebarGroup>
   );

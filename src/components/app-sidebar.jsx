@@ -413,6 +413,7 @@ const data = {
 export function AppSidebar({
   onCommunityClick,
   onOpenNotifications,
+  onOpenEInvoicingPromo,
   ...props
 }) {
   const pathname = usePathname();
@@ -560,6 +561,7 @@ export function AppSidebar({
             <NavSecondary
               items={data.navSecondary}
               onCommunityClick={onCommunityClick}
+              onOpenEInvoicingPromo={onOpenEInvoicingPromo}
               className="mt-auto"
             />
           </>
@@ -664,6 +666,6 @@ export function AppSidebar({
           </div>
         )}
       </SidebarFooter>
-    </Sidebar> 
+    </Sidebar>
   );
 }

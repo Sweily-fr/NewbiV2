@@ -33,6 +33,7 @@ import {
 import { AccountingViewProvider } from "@/src/contexts/accounting-view-context";
 import { FloatingTimer } from "@/src/components/FloatingTimer";
 import { OAuthCallbackHandler } from "@/src/components/oauth-callback-handler";
+import { EInvoicingPromoModal } from "@/src/components/e-invoicing-promo-modal";
 
 // Composant interne qui utilise le contexte
 function DashboardContent({ children }) {
@@ -44,6 +45,7 @@ function DashboardContent({ children }) {
   const [isCommunitySidebarOpen, setIsCommunitySidebarOpen] = useState(false);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [settingsInitialTab, setSettingsInitialTab] = useState("notifications");
+  const [eInvoicingPromoOpen, setEInvoicingPromoOpen] = useState(false);
 
   // Hook pour gérer l'onboarding et les données du layout
   const {
@@ -89,6 +91,25 @@ function DashboardContent({ children }) {
   useEffect(() => {
     setIsHydrated(true);
   }, []);
+
+  // Afficher le modal de facturation électronique automatiquement après connexion
+  // si l'utilisateur a un abonnement actif et n'a pas encore vu le modal
+  useEffect(() => {
+    if (!isHydrated || !layoutInitialized) return;
+
+    const E_INVOICING_PROMO_KEY = "e_invoicing_promo_shown";
+    const hasSeenPromo = localStorage.getItem(E_INVOICING_PROMO_KEY);
+
+    if (isActive() && !hasSeenPromo && !isOnboardingOpen) {
+      // Attendre un peu pour ne pas surcharger l'utilisateur
+      const timer = setTimeout(() => {
+        setEInvoicingPromoOpen(true);
+        localStorage.setItem(E_INVOICING_PROMO_KEY, "true");
+      }, 2000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [isHydrated, layoutInitialized, isActive, isOnboardingOpen]);
 
   // Déterminer si on est sur une page d'outil qui nécessite la sidebar fermée
   const isToolPage =
@@ -155,6 +176,7 @@ function DashboardContent({ children }) {
           setSettingsInitialTab("notifications");
           setSettingsModalOpen(true);
         }}
+        onOpenEInvoicingPromo={() => setEInvoicingPromoOpen(true)}
       />
       <SidebarInset className="md:pt-0 pt-10">
         <SiteHeader />
@@ -226,6 +248,12 @@ function DashboardContent({ children }) {
 
       {/* Timer flottant - visible sur toutes les pages quand un timer est actif */}
       <FloatingTimer />
+
+      {/* Modal de promotion facturation électronique */}
+      <EInvoicingPromoModal
+        open={eInvoicingPromoOpen}
+        onOpenChange={setEInvoicingPromoOpen}
+      />
 
       {/* Bouton de test pour le modal (à retirer en production) */}
       {/* {process.env.NODE_ENV === "development" && (
