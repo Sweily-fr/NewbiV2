@@ -58,6 +58,7 @@ import { useState, useEffect, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useInvoices } from "@/src/graphql/invoiceQueries";
 import { PricingModal } from "@/src/components/pricing-modal";
+import { ProSubscriptionOverlay } from "@/src/components/pro-subscription-overlay";
 import {
   processIncomeForCharts,
   processExpensesWithBankForCharts,
@@ -414,9 +415,28 @@ function DashboardContent() {
 function DashboardWithSearchParams() {
   const searchParams = useSearchParams();
   const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
+  const [showProAnimation, setShowProAnimation] = useState(false);
+
+  // Détecter le succès de paiement Stripe et afficher l'animation Pro
+  useEffect(() => {
+    const paymentSuccess = searchParams.get("payment_success") === "true";
+    const subscriptionSuccess =
+      searchParams.get("subscription_success") === "true";
+
+    if (paymentSuccess || subscriptionSuccess) {
+      console.log("🎉 Paiement réussi détecté, affichage de l'animation Pro");
+      setShowProAnimation(true);
+      // Nettoyer l'URL des paramètres
+      const cleanUrl = window.location.pathname;
+      window.history.replaceState({}, "", cleanUrl);
+    }
+  }, [searchParams]);
 
   // Ouvrir le modal de pricing si les paramètres pricing=true ou access=restricted sont présents
+  // MAIS seulement si l'animation Pro n'est pas en cours
   useEffect(() => {
+    if (showProAnimation) return; // Ne pas ouvrir le modal si l'animation est en cours
+
     const showPricing = searchParams.get("pricing") === "true";
     const accessRestricted = searchParams.get("access") === "restricted";
 
@@ -426,7 +446,12 @@ function DashboardWithSearchParams() {
       const cleanUrl = window.location.pathname;
       window.history.replaceState({}, "", cleanUrl);
     }
-  }, [searchParams]);
+  }, [searchParams, showProAnimation]);
+
+  const handleProAnimationComplete = () => {
+    setShowProAnimation(false);
+    console.log("✅ Animation Pro terminée, dashboard accessible");
+  };
 
   // Le dashboard principal est accessible sans abonnement
   return (
@@ -435,6 +460,10 @@ function DashboardWithSearchParams() {
       <PricingModal
         isOpen={isPricingModalOpen}
         onClose={() => setIsPricingModalOpen(false)}
+      />
+      <ProSubscriptionOverlay
+        isVisible={showProAnimation}
+        onComplete={handleProAnimationComplete}
       />
     </>
   );

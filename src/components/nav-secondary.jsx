@@ -5,6 +5,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Icon } from "@tabler/icons-react";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
+import { useEInvoicingSettings } from "@/src/hooks/useEInvoicing";
 import {
   Crown,
   Settings2,
@@ -142,8 +143,12 @@ export function NavSecondary({
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [eInvoicingPromoOpen, setEInvoicingPromoOpen] = useState(false);
   const { isActive } = useSubscription();
+  const { settings: eInvoicingSettings } = useEInvoicingSettings();
   const { isMobile, setOpenMobile, state } = useSidebar();
   const isCollapsed = state === "collapsed";
+
+  // Vérifier si la facturation électronique est activée
+  const isEInvoicingEnabled = eInvoicingSettings?.eInvoicingEnabled;
 
   // Fonction pour fermer la sidebar sur mobile lors du clic
   const handleLinkClick = () => {
@@ -155,8 +160,8 @@ export function NavSecondary({
   return (
     <SidebarGroup {...props}>
       <SidebarGroupContent>
-        {/* Bouton Facturation électronique (Sparkles) - visible uniquement pour les abonnés */}
-        {isActive() && (
+        {/* Bouton Facturation électronique (Sparkles) - visible uniquement pour les abonnés ET si non activée */}
+        {isActive() && !isEInvoicingEnabled && (
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton
