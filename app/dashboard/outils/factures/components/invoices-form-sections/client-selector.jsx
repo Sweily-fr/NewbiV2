@@ -14,6 +14,7 @@ import {
   AlignLeft,
   AlignRight,
   Pencil,
+  Globe,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
@@ -105,6 +106,7 @@ export default function ClientSelector({
     phone: "",
     siret: "",
     vatNumber: "",
+    isInternational: false,
     hasDifferentShippingAddress: false,
     address: { ...defaultAddress },
     shippingAddress: { fullName: "", ...defaultAddress },
@@ -229,18 +231,22 @@ export default function ClientSelector({
   useEffect(() => {
     // Ne valider que si le formulaire manuel est affiché
     if (!showManualForm) return;
-    
+
     // Ne pas valider si le formulaire est vide (état initial)
-    const isFormEmpty = !newClientForm.name && !newClientForm.email && 
-                        !newClientForm.firstName && !newClientForm.lastName &&
-                        !newClientForm.address.street && !newClientForm.address.city;
+    const isFormEmpty =
+      !newClientForm.name &&
+      !newClientForm.email &&
+      !newClientForm.firstName &&
+      !newClientForm.lastName &&
+      !newClientForm.address.street &&
+      !newClientForm.address.city;
     if (isFormEmpty) return;
-    
+
     // Debounce de 500ms
     const timeoutId = setTimeout(() => {
       validateForm();
     }, 500);
-    
+
     return () => clearTimeout(timeoutId);
   }, [newClientForm, showManualForm]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -332,12 +338,17 @@ export default function ClientSelector({
       errors.email = "L'email est obligatoire";
     }
 
-    // Validation des codes postaux
+    // Validation des codes postaux (format français uniquement pour les entreprises françaises)
     const postalCodeRegex = /^\d{5}$/;
+    const isInternational = newClientForm.isInternational;
 
     // Validation du code postal de facturation
     if (newClientForm.address?.postalCode) {
-      if (!postalCodeRegex.test(newClientForm.address.postalCode)) {
+      // Validation stricte uniquement pour les entreprises françaises
+      if (
+        !isInternational &&
+        !postalCodeRegex.test(newClientForm.address.postalCode)
+      ) {
         errors["address.postalCode"] =
           "Le code postal doit contenir 5 chiffres";
       }
@@ -358,6 +369,7 @@ export default function ClientSelector({
         errors["shippingAddress.postalCode"] =
           "Le code postal de livraison est obligatoire";
       } else if (
+        !isInternational &&
         !postalCodeRegex.test(newClientForm.shippingAddress.postalCode)
       ) {
         errors["shippingAddress.postalCode"] =
@@ -380,15 +392,26 @@ export default function ClientSelector({
       }
     }
 
-    // Validation du SIREN/SIRET (si entreprise)
+    // Validation du SIREN/SIRET ou numéro d'identification (si entreprise)
     if (newClientForm.type === "COMPANY") {
-      if (newClientForm.siret) {
-        const siretRegex = /^\d{9}$|^\d{14}$/;
-        if (!siretRegex.test(newClientForm.siret)) {
-          errors.siret = "Le SIREN doit contenir 9 chiffres ou le SIRET 14 chiffres";
+      if (newClientForm.isInternational) {
+        // Pour les entreprises internationales : numéro d'identification obligatoire mais format libre
+        if (!newClientForm.siret || newClientForm.siret.trim() === "") {
+          errors.siret =
+            "Le numéro d'identification est obligatoire pour une entreprise internationale";
         }
-      } else if (newClientForm.siret === "") {
-        errors.siret = "Le SIREN/SIRET est obligatoire pour une entreprise";
+      } else {
+        // Pour les entreprises françaises : validation stricte du format SIREN/SIRET
+        if (newClientForm.siret) {
+          const siretRegex = /^\d{9}$|^\d{14}$/;
+          if (!siretRegex.test(newClientForm.siret)) {
+            errors.siret =
+              "Le SIREN doit contenir 9 chiffres ou le SIRET 14 chiffres";
+          }
+        } else {
+          errors.siret =
+            "Le SIREN/SIRET est obligatoire pour une entreprise française";
+        }
       }
     }
 
@@ -402,7 +425,7 @@ export default function ClientSelector({
     }
 
     setFormErrors(errors);
-    
+
     // Afficher aussi dans la bannière globale si setValidationErrors est disponible
     if (setValidationErrors && Object.keys(errors).length > 0) {
       const errorMessages = Object.values(errors);
@@ -410,8 +433,8 @@ export default function ClientSelector({
         ...prev,
         newClient: {
           message: `Erreurs dans le formulaire de nouveau client:\n${errorMessages.join("\n")}`,
-          canEdit: true
-        }
+          canEdit: true,
+        },
       }));
     } else if (setValidationErrors && Object.keys(errors).length === 0) {
       // Supprimer l'erreur si le formulaire est valide
@@ -421,7 +444,7 @@ export default function ClientSelector({
         return newErrors;
       });
     }
-    
+
     return Object.keys(errors).length === 0;
   };
 
@@ -437,16 +460,17 @@ export default function ClientSelector({
     }
 
     // Vérifier si l'email existe déjà dans la liste des clients
-    const clientsList = Array.isArray(clients) ? clients : (clients?.items || []);
-    
+    const clientsList = Array.isArray(clients) ? clients : clients?.items || [];
+
     const emailExists = clientsList.some(
-      (client) => client.email.toLowerCase() === newClientForm.email.toLowerCase()
+      (client) =>
+        client.email.toLowerCase() === newClientForm.email.toLowerCase()
     );
-    
+
     if (emailExists) {
       setFormErrors((prev) => ({
         ...prev,
-        email: "Cet email est déjà utilisé par un autre client"
+        email: "Cet email est déjà utilisé par un autre client",
       }));
       toast.error("Un client avec cet email existe déjà");
       return;
@@ -465,6 +489,7 @@ export default function ClientSelector({
         lastName: newClientForm.lastName || undefined,
         siret: newClientForm.siret || undefined,
         vatNumber: newClientForm.vatNumber || undefined,
+        isInternational: newClientForm.isInternational || false,
         hasDifferentShippingAddress: Boolean(
           newClientForm.hasDifferentShippingAddress
         ),
@@ -528,7 +553,7 @@ export default function ClientSelector({
         // Afficher l'erreur sur le champ email
         setFormErrors((prev) => ({
           ...prev,
-          email: "Cet email est déjà utilisé par un autre client"
+          email: "Cet email est déjà utilisé par un autre client",
         }));
       } else if (
         error.message.includes("401") ||
@@ -562,6 +587,7 @@ export default function ClientSelector({
       phone: "",
       siret: "",
       vatNumber: "",
+      isInternational: false,
       hasDifferentShippingAddress: false,
       address: { ...defaultAddress },
       shippingAddress: { fullName: "", ...defaultAddress },
@@ -663,7 +689,8 @@ export default function ClientSelector({
                         aria-expanded={open}
                         className={cn(
                           "w-full justify-between font-normal",
-                          error && "border-destructive focus-visible:ring-destructive"
+                          error &&
+                            "border-destructive focus-visible:ring-destructive"
                         )}
                         disabled={disabled}
                       >
@@ -685,7 +712,7 @@ export default function ClientSelector({
                       avoidCollisions={false}
                       sticky="always"
                       style={{
-                        width: 'var(--radix-popover-trigger-width)'
+                        width: "var(--radix-popover-trigger-width)",
                       }}
                     >
                       <Command>
@@ -770,7 +797,7 @@ export default function ClientSelector({
                       </Command>
                     </PopoverContent>
                   </Popover>
-                  
+
                   {/* Message d'erreur */}
                   {error && (
                     <p className="text-sm text-destructive font-normal">
@@ -793,7 +820,10 @@ export default function ClientSelector({
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="mb-2">
-                                <Badge variant="outline" className="text-xs font-normal">
+                                <Badge
+                                  variant="outline"
+                                  className="text-xs font-normal"
+                                >
                                   {CLIENT_TYPE_LABELS[selectedClient.type]}
                                 </Badge>
                               </div>
@@ -817,7 +847,9 @@ export default function ClientSelector({
                                 title="Modifier le client"
                               >
                                 <Pencil className="h-4 w-4" />
-                                <span className="hidden sm:inline">Modifier</span>
+                                <span className="hidden sm:inline">
+                                  Modifier
+                                </span>
                               </Button>
                             )}
                             <Button
@@ -838,11 +870,13 @@ export default function ClientSelector({
                           </div>
                         </div>
                       </div>
-                      
+
                       {/* Mention pour la position du client dans le PDF */}
                       <div className="p-3 border rounded-lg bg-muted/10">
                         <p className="text-xs text-muted-foreground">
-                          💡 La position des informations client dans le PDF peut être modifiée dans les paramètres de la facture (icône ⚙️ en haut à droite).
+                          💡 La position des informations client dans le PDF
+                          peut être modifiée dans les paramètres de la facture
+                          (icône ⚙️ en haut à droite).
                         </p>
                       </div>
                     </div>
@@ -856,13 +890,59 @@ export default function ClientSelector({
                 // Interface de recherche d'entreprises API Gouv Data
                 <div className="space-y-6">
                   <div className="space-y-4">
+                    {/* Sélecteur de localisation */}
+                    <div className="space-y-2">
+                      <Label className="text-sm font-normal">
+                        Localisation de l'entreprise
+                      </Label>
+                      <Select
+                        value={
+                          newClientForm.isInternational
+                            ? "international"
+                            : "france"
+                        }
+                        onValueChange={(value) => {
+                          setNewClientForm((prev) => ({
+                            ...prev,
+                            isInternational: value === "international",
+                            siret: value === "international" ? "" : prev.siret,
+                            vatNumber:
+                              value === "international" ? "" : prev.vatNumber,
+                          }));
+                          // Si international, afficher directement le formulaire manuel
+                          if (value === "international") {
+                            setShowManualForm(true);
+                          }
+                        }}
+                      >
+                        <SelectTrigger className="w-full h-10">
+                          <SelectValue placeholder="Sélectionnez la localisation" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="france">
+                            <div className="flex items-center gap-2">
+                              <span>🇫🇷</span>
+                              <span>France</span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="international">
+                            <div className="flex items-center gap-2">
+                              <Globe className="h-4 w-4" />
+                              <span>Hors France</span>
+                            </div>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Recherche d'entreprises françaises via API Gouv */}
                     <div className="space-y-2">
                       <Label
                         htmlFor="company-search"
                         className="text-sm font-normal flex items-center gap-2"
                       >
                         <Building className="h-4 w-4" />
-                        Rechercher une entreprise
+                        Rechercher une entreprise française
                       </Label>
                       <div className="relative">
                         <Input
@@ -1007,45 +1087,99 @@ export default function ClientSelector({
                       </div>
                     </div>
 
+                    {/* Sélecteur de localisation pour les entreprises */}
+                    {newClientForm.type === "COMPANY" && (
+                      <div className="space-y-2">
+                        <Label className="text-sm font-normal">
+                          Localisation de l'entreprise
+                        </Label>
+                        <Select
+                          value={
+                            newClientForm.isInternational
+                              ? "international"
+                              : "france"
+                          }
+                          onValueChange={(value) => {
+                            setNewClientForm((prev) => ({
+                              ...prev,
+                              isInternational: value === "international",
+                              siret:
+                                value === "international" ? "" : prev.siret,
+                              vatNumber:
+                                value === "international" ? "" : prev.vatNumber,
+                            }));
+                          }}
+                        >
+                          <SelectTrigger className="w-full h-10">
+                            <SelectValue placeholder="Sélectionnez la localisation" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="france">
+                              <div className="flex items-center gap-2">
+                                <span>🇫🇷</span>
+                                <span>France</span>
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="international">
+                              <div className="flex items-center gap-2">
+                                <Globe className="h-4 w-4" />
+                                <span>Hors France</span>
+                              </div>
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                        {newClientForm.isInternational && (
+                          <p className="text-xs text-muted-foreground">
+                            Pour les entreprises hors France, les champs SIRET
+                            et TVA sont optionnels.
+                          </p>
+                        )}
+                      </div>
+                    )}
+
                     {newClientForm.type === "COMPANY" ? (
                       <div className="space-y-4">
-                        {/* Bouton pour rechercher une entreprise */}
-                        <div className="flex justify-center">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => {
-                              setShowManualForm(false);
-                              setCompanyQuery("");
-                              setCompanies([]);
-                              // Focus sur le champ de recherche après un court délai
-                              setTimeout(() => {
-                                const searchInput =
-                                  document.getElementById("company-search");
-                                if (searchInput) {
-                                  searchInput.focus();
-                                }
-                              }, 100);
-                            }}
-                            className="h-10 text-sm"
-                            disabled={disabled}
-                          >
-                            <Search className="h-4 w-4 mr-2" />
-                            Rechercher une entreprise
-                          </Button>
-                        </div>
+                        {/* Bouton pour rechercher une entreprise - uniquement pour les entreprises françaises */}
+                        {!newClientForm.isInternational && (
+                          <div className="flex justify-center">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => {
+                                setShowManualForm(false);
+                                setCompanyQuery("");
+                                setCompanies([]);
+                                // Focus sur le champ de recherche après un court délai
+                                setTimeout(() => {
+                                  const searchInput =
+                                    document.getElementById("company-search");
+                                  if (searchInput) {
+                                    searchInput.focus();
+                                  }
+                                }, 100);
+                              }}
+                              className="h-10 text-sm"
+                              disabled={disabled}
+                            >
+                              <Search className="h-4 w-4 mr-2" />
+                              Rechercher une entreprise
+                            </Button>
+                          </div>
+                        )}
 
-                        {/* Séparateur */}
-                        <div className="relative">
-                          <div className="absolute inset-0 flex items-center">
-                            <span className="w-full border-t" />
+                        {/* Séparateur - uniquement pour les entreprises françaises */}
+                        {!newClientForm.isInternational && (
+                          <div className="relative">
+                            <div className="absolute inset-0 flex items-center">
+                              <span className="w-full border-t" />
+                            </div>
+                            <div className="relative flex justify-center text-xs uppercase">
+                              <span className="bg-background px-2 text-muted-foreground">
+                                ou saisir manuellement
+                              </span>
+                            </div>
                           </div>
-                          <div className="relative flex justify-center text-xs uppercase">
-                            <span className="bg-background px-2 text-muted-foreground">
-                              ou saisir manuellement
-                            </span>
-                          </div>
-                        </div>
+                        )}
 
                         <div className="space-y-2">
                           <Label
@@ -1227,7 +1361,10 @@ export default function ClientSelector({
                           htmlFor="client-siret"
                           className="text-sm font-normal"
                         >
-                          SIREN/SIRET
+                          {newClientForm.isInternational
+                            ? "Numéro d'identification"
+                            : "SIREN/SIRET"}
+                          <span className="text-red-500"> *</span>
                         </Label>
                         <div className="relative">
                           <Input
@@ -1239,7 +1376,11 @@ export default function ClientSelector({
                                 siret: e.target.value,
                               }))
                             }
-                            placeholder="123456789 ou 12345678901234"
+                            placeholder={
+                              newClientForm.isInternational
+                                ? "Numéro d'identification de l'entreprise"
+                                : "123456789 ou 12345678901234"
+                            }
                             disabled={disabled}
                             className={cn(
                               "h-10 rounded-lg",
@@ -1248,8 +1389,15 @@ export default function ClientSelector({
                           />
                         </div>
                         <p className="text-xs text-gray-500">
-                          Numéro SIREN (9 chiffres) ou SIRET (14 chiffres)
+                          {newClientForm.isInternational
+                            ? "Numéro d'identification fiscale ou équivalent local (ex: VAT, EIN, etc.)"
+                            : "Numéro SIREN (9 chiffres) ou SIRET (14 chiffres)"}
                         </p>
+                        {formErrors.siret && (
+                          <p className="text-xs text-red-500 mt-1">
+                            {formErrors.siret}
+                          </p>
+                        )}
                       </div>
                       <div className="space-y-2">
                         <Label
@@ -1268,7 +1416,11 @@ export default function ClientSelector({
                                 vatNumber: e.target.value,
                               }))
                             }
-                            placeholder="FR12345678901"
+                            placeholder={
+                              newClientForm.isInternational
+                                ? "Numéro de TVA intracommunautaire"
+                                : "FR12345678901"
+                            }
                             className="h-10 rounded-lg text-sm w-full"
                           />
                         </div>
