@@ -6,6 +6,7 @@ import {
   Building,
   LoaderCircle,
   ExternalLink,
+  Globe,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/src/lib/utils";
@@ -33,7 +34,12 @@ import {
 } from "@/src/components/ui/select";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import { Badge } from "@/src/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/src/components/ui/tabs";
 import { useForm, Controller } from "react-hook-form";
 import { toast } from "@/src/components/ui/sonner";
 import { useCreateClient, useUpdateClient } from "@/src/hooks/useClients";
@@ -46,7 +52,14 @@ import { useWorkspace } from "@/src/hooks/useWorkspace";
 // Import API Gouv utilities
 import { searchCompanies, convertCompanyToClient } from "@/src/utils/api-gouv";
 
-export default function ClientsModal({ client, onSave, open, onOpenChange, defaultListId = null, workspaceId = null }) {
+export default function ClientsModal({
+  client,
+  onSave,
+  open,
+  onOpenChange,
+  defaultListId = null,
+  workspaceId = null,
+}) {
   const [isMobile, setIsMobile] = useState(false);
   const { workspaceId: contextWorkspaceId } = useWorkspace();
   const finalWorkspaceId = workspaceId || contextWorkspaceId;
@@ -67,17 +80,20 @@ export default function ClientsModal({ client, onSave, open, onOpenChange, defau
   const { addToLists } = useAddClientToLists();
   const { addNote: addNoteToClient } = useAddClientNote(finalWorkspaceId);
   const isEditing = !!client;
-  
+
   // Charger le client complet avec activity et notes quand on est en mode édition
-  const { data: fullClientData, loading: loadingFullClient } = useQuery(GET_CLIENT, {
-    variables: { workspaceId: finalWorkspaceId, id: client?.id },
-    skip: !client?.id || !open, // Ne charger que si on a un client et que le modal est ouvert
-    fetchPolicy: 'network-only', // Toujours récupérer les dernières données
-  });
+  const { data: fullClientData, loading: loadingFullClient } = useQuery(
+    GET_CLIENT,
+    {
+      variables: { workspaceId: finalWorkspaceId, id: client?.id },
+      skip: !client?.id || !open, // Ne charger que si on a un client et que le modal est ouvert
+      fetchPolicy: "network-only", // Toujours récupérer les dernières données
+    }
+  );
 
   // Utiliser le client complet si disponible, sinon utiliser le client passé en prop
   const fullClient = fullClientData?.client || client;
-  
+
   const loading = createLoading || updateLoading || loadingFullClient;
 
   const {
@@ -112,6 +128,7 @@ export default function ClientsModal({ client, onSave, open, onOpenChange, defau
       },
       siret: "",
       vatNumber: "",
+      isInternational: false,
     },
   });
 
@@ -120,6 +137,7 @@ export default function ClientsModal({ client, onSave, open, onOpenChange, defau
   const [currentClient, setCurrentClient] = useState(client);
   const [pendingNotes, setPendingNotes] = useState([]);
   const clientType = watch("type");
+  const isInternational = watch("isInternational");
 
   // Mettre à jour currentClient quand fullClient change
   useEffect(() => {
@@ -129,24 +147,24 @@ export default function ClientsModal({ client, onSave, open, onOpenChange, defau
   // Gestion des notes en attente (pour la création de client)
   const addPendingNote = (content) => {
     if (!content.trim()) return;
-    
+
     setPendingNotes((prev) => [
       ...prev,
       {
         id: `pending-${Date.now()}-${Math.random()}`,
         content: content.trim(),
         createdAt: new Date().toISOString(),
-      }
+      },
     ]);
   };
 
   const removePendingNote = (noteId) => {
-    setPendingNotes((prev) => prev.filter(n => n.id !== noteId));
+    setPendingNotes((prev) => prev.filter((n) => n.id !== noteId));
   };
 
   const updatePendingNote = (noteId, newContent) => {
-    setPendingNotes((prev) => 
-      prev.map(n => n.id === noteId ? { ...n, content: newContent } : n)
+    setPendingNotes((prev) =>
+      prev.map((n) => (n.id === noteId ? { ...n, content: newContent } : n))
     );
   };
 
@@ -160,19 +178,58 @@ export default function ClientsModal({ client, onSave, open, onOpenChange, defau
   const getValidationRules = (fieldName, isRequired = false) => {
     const pattern = VALIDATION_PATTERNS[fieldName];
     const rules = {};
-    
+
     if (isRequired) {
       rules.required = "Ce champ est requis";
     }
-    
+
     if (pattern) {
       rules.pattern = {
         value: pattern.pattern,
-        message: pattern.message
+        message: pattern.message,
       };
     }
-    
+
     return rules;
+  };
+
+  // Règles de validation dynamiques pour SIRET (utilise validate pour évaluation dynamique)
+  const siretValidationRules = {
+    validate: (value) => {
+      const currentIsInternational = watch("isInternational");
+      if (!value || value.trim() === "") {
+        return currentIsInternational
+          ? "Le numéro d'identification est obligatoire"
+          : "Le SIREN/SIRET est obligatoire";
+      }
+      // Pour les entreprises françaises, vérifier le format
+      if (!currentIsInternational) {
+        const siretRegex = /^\d{9}$|^\d{14}$/;
+        if (!siretRegex.test(value)) {
+          return "Le SIREN doit contenir 9 chiffres ou le SIRET 14 chiffres";
+        }
+      }
+      return true;
+    },
+  };
+
+  // Règles de validation dynamiques pour TVA (utilise validate pour évaluation dynamique)
+  const vatValidationRules = {
+    validate: (value) => {
+      const currentIsInternational = watch("isInternational");
+      // Pour les entreprises internationales, pas de validation
+      if (currentIsInternational) {
+        return true;
+      }
+      // Pour les entreprises françaises, vérifier le format si une valeur est fournie
+      if (value && value.trim() !== "") {
+        const vatRegex = /^[A-Z]{2}[0-9A-Z]{2,12}$/;
+        if (!vatRegex.test(value)) {
+          return "Format de numéro de TVA invalide (ex: FR12345678901)";
+        }
+      }
+      return true;
+    },
   };
 
   // États pour la recherche d'entreprises via API Gouv
@@ -206,6 +263,7 @@ export default function ClientsModal({ client, onSave, open, onOpenChange, defau
         },
         siret: fullClient.siret || "",
         vatNumber: fullClient.vatNumber || "",
+        isInternational: fullClient.isInternational || false,
       });
       setHasDifferentShipping(fullClient.hasDifferentShippingAddress || false);
     } else if (open) {
@@ -231,6 +289,7 @@ export default function ClientsModal({ client, onSave, open, onOpenChange, defau
         },
         siret: "",
         vatNumber: "",
+        isInternational: false,
       });
       setHasDifferentShipping(false);
     }
@@ -325,9 +384,11 @@ export default function ClientsModal({ client, onSave, open, onOpenChange, defau
       // Validation finale avant soumission
       const hasFormErrors = Object.keys(errors).length > 0;
       const hasCustomErrors = Object.keys(customErrors).length > 0;
-      
+
       if (hasFormErrors || hasCustomErrors) {
-        toast.error("Veuillez corriger les erreurs avant de soumettre le formulaire");
+        toast.error(
+          "Veuillez corriger les erreurs avant de soumettre le formulaire"
+        );
         return;
       }
 
@@ -342,7 +403,7 @@ export default function ClientsModal({ client, onSave, open, onOpenChange, defau
         result = await updateClient(client.id, clientData);
       } else {
         result = await createClient(clientData);
-        
+
         // Ajouter les notes en attente après la création du client
         if (result?.id && pendingNotes.length > 0) {
           try {
@@ -352,23 +413,26 @@ export default function ClientsModal({ client, onSave, open, onOpenChange, defau
             // Réinitialiser les notes en attente
             setPendingNotes([]);
           } catch (error) {
-            console.error('Erreur lors de l\'ajout des notes:', error);
+            console.error("Erreur lors de l'ajout des notes:", error);
           }
         }
-        
+
         // Si un defaultListId est fourni, ajouter le contact à cette liste
         if (defaultListId && workspaceId && result?.id) {
           try {
             await addToLists(workspaceId, result.id, [defaultListId]);
           } catch (error) {
-            console.error('Erreur lors de l\'ajout du contact à la liste:', error);
+            console.error(
+              "Erreur lors de l'ajout du contact à la liste:",
+              error
+            );
           }
         }
       }
 
       // Fermer le modal d'abord
       onOpenChange(false);
-      
+
       // Appeler le callback avec le résultat
       if (onSave) {
         await onSave(result);
@@ -398,6 +462,7 @@ export default function ClientsModal({ client, onSave, open, onOpenChange, defau
           },
           siret: "",
           vatNumber: "",
+          isInternational: false,
         });
       }
       setCustomErrors({});
@@ -425,7 +490,7 @@ export default function ClientsModal({ client, onSave, open, onOpenChange, defau
             ? "!fixed !inset-0 !w-screen !max-w-none !m-0 !rounded-none !translate-x-0 !translate-y-0"
             : "!max-w-[1400px] !w-[calc(100vw-4rem)] h-[calc(100vh-4rem)]"
         }`}
-        style={isMobile ? { height: '100dvh', maxHeight: '100dvh' } : {}}
+        style={isMobile ? { height: "100dvh", maxHeight: "100dvh" } : {}}
       >
         {!isMobile ? (
           // Mode desktop : 2 colonnes (création et édition)
@@ -450,569 +515,88 @@ export default function ClientsModal({ client, onSave, open, onOpenChange, defau
                 onSubmit={handleSubmit(onSubmit)}
                 className="flex flex-col flex-1 min-h-0"
               >
-          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
-            <div className="space-y-4">
-              {/* Type de client */}
-              <div className="space-y-2">
-                <Label className="font-normal">Type de client *</Label>
-                <Controller
-                  name="type"
-                  control={control}
-                  render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Sélectionnez le type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="INDIVIDUAL">Particulier</SelectItem>
-                        <SelectItem value="COMPANY">Entreprise</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-              </div>
-
-              {/* Recherche d'entreprises via API Gouv Data */}
-              {clientType === "COMPANY" && !showCompanySearch && (
-                <div className="space-y-3 p-4 border rounded-lg bg-[#5a50ff]/5 dark:bg-[#5a50ff]/10 border-[#5a50ff]/20 dark:border-[#5a50ff]/30">
-                  <div className="flex items-center gap-2">
-                    <div className="flex items-center justify-center size-8 rounded-full bg-[#5a50ff]/10 dark:bg-[#5a50ff]/20">
-                      <Building className="h-4 w-4 text-[#5a50ff] dark:text-[#5a50ff]" />
-                    </div>
-                    <span className="font-medium text-sm text-[#5a50ff] dark:text-[#5a50ff]">
-                      Rechercher une entreprise
-                    </span>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Importez automatiquement les informations depuis la base
-                    officielle
-                  </p>
-                  <Button
-                    type="button"
-                    onClick={() => setShowCompanySearch(true)}
-                    className="w-full h-9 text-sm bg-[#5a50ff] hover:bg-[#5a50ff]/90 text-white dark:bg-[#5a50ff] dark:hover:bg-[#5a50ff]/90 dark:text-white"
-                  >
-                    <Search className="h-4 w-4 mr-2" />
-                    Rechercher
-                  </Button>
-                </div>
-              )}
-
-              {/* Interface de recherche d'entreprises */}
-              {clientType === "COMPANY" && showCompanySearch && (
-                <div className="space-y-4 p-4 border rounded-lg bg-[#5a50ff]/5 dark:bg-[#5a50ff]/10 border-[#5a50ff]/20 dark:border-[#5a50ff]/30">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="flex items-center justify-center size-8 rounded-full bg-[#5a50ff]/10 dark:bg-[#5a50ff]/20">
-                        <Building className="h-4 w-4 text-[#5a50ff] dark:text-[#5a50ff]" />
-                      </div>
-                      <Label className="font-medium text-[#5a50ff] dark:text-[#5a50ff]">
-                        Rechercher une entreprise
-                      </Label>
-                    </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setShowCompanySearch(false);
-                        setCompanyQuery("");
-                        setCompanies([]);
-                      }}
-                      className="h-8 w-8 p-0 hover:bg-[#5a50ff]/10 dark:hover:bg-[#5a50ff]/20 text-[#5a50ff] dark:text-[#5a50ff] text-lg font-medium"
-                    >
-                      ×
-                    </Button>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="relative">
-                      <Input
-                        value={companyQuery}
-                        onChange={(e) => setCompanyQuery(e.target.value)}
-                        placeholder="Nom d'entreprise, SIRET, SIREN..."
-                        className="h-9 text-sm pl-10"
-                      />
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Recherchez une entreprise française via la base de données
-                      officielle
-                    </p>
-                  </div>
-
-                  {/* Résultats de recherche */}
-                  {loadingCompanies && (
-                    <div className="flex items-center justify-center p-6">
-                      <LoaderCircle className="h-5 w-5 animate-spin mr-2" />
-                      <span className="text-sm">Recherche en cours...</span>
-                    </div>
-                  )}
-
-                  {companies.length > 0 && (
-                    <div className="space-y-2 max-h-60 overflow-y-auto">
-                      {companies.map((company) => (
-                        <div
-                          key={company.id}
-                          className="p-3 border rounded-lg bg-white dark:bg-gray-800 hover:border-[#5a50ff] dark:hover:border-[#5a50ff] hover:shadow-sm cursor-pointer transition-all border-gray-200 dark:border-gray-700"
-                          onClick={() => handleCompanySelect(company)}
-                        >
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-1">
-                                <Building className="h-4 w-4 text-[#5a50ff] dark:text-[#5a50ff] flex-shrink-0" />
-                                <h4 className="font-medium text-sm truncate text-gray-900 dark:text-gray-100">
-                                  {company.name}
-                                </h4>
-                                {company.status === "A" && (
-                                  <Badge
-                                    variant="outline"
-                                    className="text-xs bg-[#5a50ff]/10 dark:bg-[#5a50ff]/20 text-[#5a50ff] dark:text-[#5a50ff] border-[#5a50ff]/20 dark:border-[#5a50ff]/30"
-                                  >
-                                    Active
-                                  </Badge>
-                                )}
-                              </div>
-                              <div className="space-y-1">
-                                <p className="text-xs text-muted-foreground">
-                                  <strong>SIRET:</strong> {company.siret}
-                                </p>
-                                {company.address && (
-                                  <p className="text-xs text-muted-foreground truncate">
-                                    <strong>Adresse:</strong> {company.address},{" "}
-                                    {company.postalCode} {company.city}
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                            <ExternalLink className="h-4 w-4 text-[#5a50ff]/50 dark:text-[#5a50ff]/60 flex-shrink-0 ml-2" />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {companyQuery &&
-                    !loadingCompanies &&
-                    companies.length === 0 && (
-                      <div className="text-center p-6 text-muted-foreground">
-                        <Building className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                        <p className="text-sm">
-                          Aucune entreprise trouvée pour "{companyQuery}"
-                        </p>
-                        <p className="text-xs mt-1">
-                          Essayez avec un nom d'entreprise ou un SIRET
-                        </p>
-                      </div>
-                    )}
-
-                  <div className="pt-2 border-t border-[#5a50ff]/10 dark:border-[#5a50ff]/20">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        setShowCompanySearch(false);
-                        setCompanyQuery("");
-                        setCompanies([]);
-                      }}
-                      className="w-full h-9 text-sm border-[#5a50ff]/20 dark:border-[#5a50ff]/30 text-[#5a50ff] dark:text-[#5a50ff] hover:bg-[#5a50ff]/5 dark:hover:bg-[#5a50ff]/10"
-                    >
-                      Saisir manuellement
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-              {/* Nom/Raison sociale */}
-              {/* Raison sociale uniquement pour les entreprises */}
-              {clientType === "COMPANY" && !showCompanySearch && (
-                <div className="space-y-2">
-                  <Label className="font-normal">Raison sociale *</Label>
-                  <Input
-                    placeholder="Nom de l'entreprise"
-                    className={cn(errors.name && "border-red-500 focus:border-red-500")}
-                    {...register("name", getValidationRules("companyName", true))}
-                  />
-                  {errors.name && (
-                    <p className="text-sm text-red-500">
-                      {errors.name.message}
-                    </p>
-                  )}
-                </div>
-              )}
-
-              {/* Prénom et Nom pour particuliers, Contact et Email pour entreprises */}
-              {clientType === "INDIVIDUAL" ? (
-                <div className="grid grid-cols-2 gap-4">
-                  {/* Prénom */}
-                  <div className="space-y-2">
-                    <Label>Prénom *</Label>
-                    <Input
-                      placeholder="Prénom"
-                      className={cn(errors.firstName && "border-red-500 focus:border-red-500")}
-                      {...register("firstName", {
-                        required: "Le prénom est requis",
-                        pattern: {
-                          value: /^[a-zA-ZÀ-ÿ\s'-]{2,50}$/,
-                          message: "Le prénom doit contenir entre 2 et 50 caractères (lettres, espaces, apostrophes et tirets uniquement)",
-                        },
-                      })}
-                    />
-                    {errors.firstName && (
-                      <p className="text-sm text-red-500">
-                        {errors.firstName.message}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Nom de famille */}
-                  <div className="space-y-2">
-                    <Label className="font-normal">Nom *</Label>
-                    <Input
-                      placeholder="Nom"
-                      className={cn(errors.lastName && "border-red-500 focus:border-red-500")}
-                      {...register("lastName", {
-                        required: "Le nom est requis",
-                        pattern: {
-                          value: /^[a-zA-ZÀ-ÿ\s'-]{2,50}$/,
-                          message: "Le nom doit contenir entre 2 et 50 caractères (lettres, espaces, apostrophes et tirets uniquement)",
-                        },
-                      })}
-                    />
-                    {errors.lastName && (
-                      <p className="text-sm text-red-500">
-                        {errors.lastName.message}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-4">
-                  {/* Contact pour entreprises */}
-                  <div className="space-y-2">
-                    <Label className="font-normal">Contact</Label>
-                    <Input
-                      placeholder="Nom du contact"
-                      className={cn(errors.firstName && "border-red-500 focus:border-red-500")}
-                      {...register("firstName", {
-                        pattern: {
-                          value: /^[a-zA-ZÀ-ÿ\s'-]{2,50}$/,
-                          message: "Le nom du contact doit contenir entre 2 et 50 caractères (lettres, espaces, apostrophes et tirets uniquement)",
-                        },
-                      })}
-                    />
-                    {errors.firstName && (
-                      <p className="text-sm text-red-500">
-                        {errors.firstName.message}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Email (pour tous les types) */}
-                  <div className="space-y-2">
-                    <Label className="font-normal">Email *</Label>
-                    <InputEmail
-                      placeholder="contact@entreprise.com"
-                      className={cn(errors.email && "border-red-500 focus:border-red-500")}
-                      {...register("email", getValidationRules("email", true))}
-                    />
-                    {errors.email && (
-                      <p className="text-sm text-red-500">
-                        {errors.email.message}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Email pour particuliers (ligne séparée) */}
-              {clientType === "INDIVIDUAL" && (
-                <div className="space-y-2">
-                  <Label className="font-normal">Email *</Label>
-                  <InputEmail
-                    placeholder="client@exemple.com"
-                    className={cn(errors.email && "border-red-500 focus:border-red-500")}
-                    {...register("email", getValidationRules("email", true))}
-                  />
-                  {errors.email && (
-                    <p className="text-sm text-red-500">
-                      {errors.email.message}
-                    </p>
-                  )}
-                </div>
-              )}
-
-              {/* Adresse de facturation */}
-              <div className="space-y-3 py-2">
-                <div className="space-y-2">
-                  <Label className="font-normal">Adresse de facturation</Label>
-                  <Textarea
-                    placeholder="123 Rue de la Paix"
-                    className={cn(errors.address?.street && "border-red-500 focus:border-red-500")}
-                    {...register("address.street", getValidationRules("street", true))}
-                    rows={2}
-                  />
-                  {errors.address?.street && (
-                    <p className="text-sm text-red-500 mt-1">
-                      {errors.address.street.message}
-                    </p>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label className="font-normal">Ville</Label>
-                    <Input
-                      placeholder="Paris"
-                      className={cn(errors.address?.city && "border-red-500 focus:border-red-500")}
-                      {...register("address.city", getValidationRules("city", true))}
-                    />
-                    {errors.address?.city && (
-                      <p className="text-sm text-red-500">
-                        {errors.address.city.message}
-                      </p>
-                    )}
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="font-normal">Code postal</Label>
-                    <Input
-                      placeholder="75001"
-                      className={cn(errors.address?.postalCode && "border-red-500 focus:border-red-500")}
-                      {...register("address.postalCode", getValidationRules("postalCode", true))}
-                    />
-                    {errors.address?.postalCode && (
-                      <p className="text-sm text-red-500">
-                        {errors.address.postalCode.message}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="font-normal">Pays</Label>
-                  <Input
-                    placeholder="France"
-                    className={cn(errors.address?.country && "border-red-500 focus:border-red-500")}
-                    {...register("address.country", getValidationRules("country", true))}
-                  />
-                  {errors.address?.country && (
-                    <p className="text-sm text-red-500">
-                      {errors.address.country.message}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {/* Adresse de livraison différente */}
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="differentShipping"
-                  checked={hasDifferentShipping}
-                  onCheckedChange={setHasDifferentShipping}
-                />
-                <Label htmlFor="differentShipping" className="font-normal">
-                  Adresse de livraison différente
-                </Label>
-              </div>
-
-              {/* Adresse de livraison */}
-              {hasDifferentShipping && (
-                <div className="space-y-3 border-l-2 border-gray-200 pl-4">
-                  <div className="space-y-2">
-                    <Label className="font-normal">Adresse</Label>
-                    <Textarea
-                      placeholder="123 Rue de la Livraison"
-                      className={cn(errors.shippingAddress?.street && "border-red-500 focus:border-red-500")}
-                      {...register("shippingAddress.street", getValidationRules("street", hasDifferentShipping))}
-                      rows={2}
-                    />
-                    {errors.shippingAddress?.street && (
-                      <p className="text-sm text-red-500 mt-1">
-                        {errors.shippingAddress.street.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
+                <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+                  <div className="space-y-4">
+                    {/* Type de client */}
                     <div className="space-y-2">
-                      <Label className="font-normal">Ville</Label>
-                      <Input
-                        placeholder="Paris"
-                        className={cn(errors.shippingAddress?.city && "border-red-500 focus:border-red-500")}
-                        {...register("shippingAddress.city", getValidationRules("city", hasDifferentShipping))}
+                      <Label className="font-normal">Type de client *</Label>
+                      <Controller
+                        name="type"
+                        control={control}
+                        render={({ field }) => (
+                          <Select
+                            value={field.value}
+                            onValueChange={field.onChange}
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Sélectionnez le type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="INDIVIDUAL">
+                                Particulier
+                              </SelectItem>
+                              <SelectItem value="COMPANY">
+                                Entreprise
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        )}
                       />
-                      {errors.shippingAddress?.city && (
-                        <p className="text-sm text-red-500">
-                          {errors.shippingAddress.city.message}
-                        </p>
-                      )}
                     </div>
-                    <div className="space-y-2">
-                      <Label className="font-normal">Code postal</Label>
-                      <Input
-                        placeholder="75001"
-                        className={cn(errors.shippingAddress?.postalCode && "border-red-500 focus:border-red-500")}
-                        {...register("shippingAddress.postalCode", getValidationRules("postalCode", hasDifferentShipping))}
-                      />
-                      {errors.shippingAddress?.postalCode && (
-                        <p className="text-sm text-red-500">
-                          {errors.shippingAddress.postalCode.message}
-                        </p>
-                      )}
-                    </div>
-                  </div>
 
-                  <div className="space-y-2">
-                    <Label className="font-normal">Pays</Label>
-                    <Input
-                      placeholder="France"
-                      className={cn(errors.shippingAddress?.country && "border-red-500 focus:border-red-500")}
-                      {...register("shippingAddress.country", getValidationRules("country", hasDifferentShipping))}
-                    />
-                    {errors.shippingAddress?.country && (
-                      <p className="text-sm text-red-500">
-                        {errors.shippingAddress.country.message}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Informations entreprise (pour les entreprises) */}
-              {clientType === "COMPANY" && (
-                <div className="space-y-3 border-t pt-4">
-                  <Label className="text-base font-normal">
-                    Informations entreprise
-                  </Label>
-
-                  <div className="space-y-2">
-                    <Label className="font-normal">SIREN/SIRET *</Label>
-                    <Input
-                      placeholder="123456789 ou 12345678901234"
-                      className={cn(errors.siret && "border-red-500 focus:border-red-500")}
-                      {...register("siret", getValidationRules("siret", true))}
-                    />
-                    {errors.siret && (
-                      <p className="text-sm text-red-500">
-                        {errors.siret.message}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="font-normal">Numéro de TVA</Label>
-                    <Input
-                      placeholder="FR12345678901"
-                      className={cn(errors.vatNumber && "border-red-500 focus:border-red-500")}
-                      {...register("vatNumber", getValidationRules("vatNumber"))}
-                    />
-                    {errors.vatNumber && (
-                      <p className="text-sm text-red-500">
-                        {errors.vatNumber.message}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-                {/* Footer dans le flux flex - s'adapte automatiquement à Safari */}
-                <div 
-                  className="flex-shrink-0 flex gap-3 px-6 border-t bg-background"
-                  style={{ 
-                    paddingTop: '1rem',
-                    paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))'
-                  }}
-                >
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => onOpenChange(false)}
-                    className="flex-1"
-                  >
-                    Annuler
-                  </Button>
-                  <Button 
-                    type="submit" 
-                    disabled={loading || Object.keys(errors).length > 0 || Object.keys(customErrors).length > 0} 
-                    className="flex-1"
-                  >
-                    {loading ? "Enregistrement..." : client ? "Modifier" : "Créer un contact"}
-                  </Button>
-                </div>
-              </form>
-            </div>
-
-            {/* Colonne droite : Timeline d'activité - 50% */}
-            <div className="w-1/2 flex flex-col bg-muted/30">
-              <div className="flex-shrink-0 px-6 py-4 border-b bg-background">
-                <h3 className="font-semibold text-sm">Activité</h3>
-              </div>
-              <div className="flex-1 overflow-hidden">
-                <ClientActivity 
-                  client={currentClient} 
-                  workspaceId={workspaceId}
-                  onClientUpdate={setCurrentClient}
-                  pendingNotes={pendingNotes}
-                  onAddPendingNote={addPendingNote}
-                  onUpdatePendingNote={updatePendingNote}
-                  onRemovePendingNote={removePendingNote}
-                  isCreating={!isEditing}
-                />
-              </div>
-            </div>
-          </div>
-        ) : (
-          // Mode mobile : Onglets (création et édition)
-          <Tabs defaultValue="form" className="flex flex-col h-full gap-0">
-            <div className="flex-shrink-0 p-6 pb-4 border-b">
-              <DialogHeader>
-                <DialogTitle className="text-left">
-                  {client ? "Modifier le client" : "Ajouter un client"}
-                </DialogTitle>
-                <DialogDescription className="text-left">
-                  {client
-                    ? "Modifiez les informations du client"
-                    : "Créez un nouveau client pour votre entreprise"}
-                </DialogDescription>
-              </DialogHeader>
-            </div>
-
-              <TabsList className="flex-shrink-0 grid w-full grid-cols-2 rounded-none border-b py-1.5 px-4">
-                <TabsTrigger value="form" className="py-2 text-sm">Formulaire</TabsTrigger>
-                <TabsTrigger value="activity" className="py-2 text-sm">Activité</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="form" className="flex-1 overflow-hidden m-0">
-                <form
-                  onSubmit={handleSubmit(onSubmit)}
-                  className="flex flex-col h-full"
-                >
-                  <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
-                    <div className="space-y-4">
-                      {/* Type de client */}
+                    {/* Sélecteur de localisation (France / Hors France) - uniquement pour les entreprises */}
+                    {clientType === "COMPANY" && (
                       <div className="space-y-2">
-                        <Label className="font-normal">Type de client *</Label>
+                        <Label className="font-normal">
+                          Localisation de l'entreprise *
+                        </Label>
                         <Controller
-                          name="type"
+                          name="isInternational"
                           control={control}
                           render={({ field }) => (
-                            <Select value={field.value} onValueChange={field.onChange}>
+                            <Select
+                              value={field.value ? "international" : "france"}
+                              onValueChange={(value) => {
+                                field.onChange(value === "international");
+                                if (value === "international") {
+                                  setValue("siret", "");
+                                  setValue("vatNumber", "");
+                                }
+                              }}
+                            >
                               <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Sélectionnez le type" />
+                                <SelectValue placeholder="Sélectionnez la localisation" />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="INDIVIDUAL">Particulier</SelectItem>
-                                <SelectItem value="COMPANY">Entreprise</SelectItem>
+                                <SelectItem value="france">
+                                  <div className="flex items-center gap-2">
+                                    <span>🇫🇷</span>
+                                    <span>France</span>
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="international">
+                                  <div className="flex items-center gap-2">
+                                    <Globe className="h-4 w-4" />
+                                    <span>Hors France</span>
+                                  </div>
+                                </SelectItem>
                               </SelectContent>
                             </Select>
                           )}
                         />
+                        {isInternational && (
+                          <p className="text-xs text-muted-foreground">
+                            Pour les entreprises hors France, les champs SIRET
+                            et TVA sont optionnels et sans validation stricte.
+                          </p>
+                        )}
                       </div>
+                    )}
 
-                      {/* Recherche d'entreprises via API Gouv Data */}
-                      {clientType === "COMPANY" && !showCompanySearch && (
+                    {/* Recherche d'entreprises via API Gouv Data - uniquement pour les entreprises françaises */}
+                    {clientType === "COMPANY" &&
+                      !isInternational &&
+                      !showCompanySearch && (
                         <div className="space-y-3 p-4 border rounded-lg bg-[#5a50ff]/5 dark:bg-[#5a50ff]/10 border-[#5a50ff]/20 dark:border-[#5a50ff]/30">
                           <div className="flex items-center gap-2">
                             <div className="flex items-center justify-center size-8 rounded-full bg-[#5a50ff]/10 dark:bg-[#5a50ff]/20">
@@ -1023,8 +607,8 @@ export default function ClientsModal({ client, onSave, open, onOpenChange, defau
                             </span>
                           </div>
                           <p className="text-xs text-muted-foreground">
-                            Importez automatiquement les informations depuis la base
-                            officielle
+                            Importez automatiquement les informations depuis la
+                            base officielle
                           </p>
                           <Button
                             type="button"
@@ -1037,8 +621,10 @@ export default function ClientsModal({ client, onSave, open, onOpenChange, defau
                         </div>
                       )}
 
-                      {/* Interface de recherche d'entreprises */}
-                      {clientType === "COMPANY" && showCompanySearch && (
+                    {/* Interface de recherche d'entreprises */}
+                    {clientType === "COMPANY" &&
+                      !isInternational &&
+                      showCompanySearch && (
                         <div className="space-y-4 p-4 border rounded-lg bg-[#5a50ff]/5 dark:bg-[#5a50ff]/10 border-[#5a50ff]/20 dark:border-[#5a50ff]/30">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
@@ -1068,15 +654,17 @@ export default function ClientsModal({ client, onSave, open, onOpenChange, defau
                             <div className="relative">
                               <Input
                                 value={companyQuery}
-                                onChange={(e) => setCompanyQuery(e.target.value)}
+                                onChange={(e) =>
+                                  setCompanyQuery(e.target.value)
+                                }
                                 placeholder="Nom d'entreprise, SIRET, SIREN..."
                                 className="h-9 text-sm pl-10"
                               />
                               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             </div>
                             <p className="text-xs text-muted-foreground">
-                              Recherchez une entreprise française via la base de données
-                              officielle
+                              Recherchez une entreprise française via la base de
+                              données officielle
                             </p>
                           </div>
 
@@ -1084,7 +672,9 @@ export default function ClientsModal({ client, onSave, open, onOpenChange, defau
                           {loadingCompanies && (
                             <div className="flex items-center justify-center p-6">
                               <LoaderCircle className="h-5 w-5 animate-spin mr-2" />
-                              <span className="text-sm">Recherche en cours...</span>
+                              <span className="text-sm">
+                                Recherche en cours...
+                              </span>
                             </div>
                           )}
 
@@ -1114,11 +704,13 @@ export default function ClientsModal({ client, onSave, open, onOpenChange, defau
                                       </div>
                                       <div className="space-y-1">
                                         <p className="text-xs text-muted-foreground">
-                                          <strong>SIRET:</strong> {company.siret}
+                                          <strong>SIRET:</strong>{" "}
+                                          {company.siret}
                                         </p>
                                         {company.address && (
                                           <p className="text-xs text-muted-foreground truncate">
-                                            <strong>Adresse:</strong> {company.address},{" "}
+                                            <strong>Adresse:</strong>{" "}
+                                            {company.address},{" "}
                                             {company.postalCode} {company.city}
                                           </p>
                                         )}
@@ -1137,7 +729,8 @@ export default function ClientsModal({ client, onSave, open, onOpenChange, defau
                               <div className="text-center p-6 text-muted-foreground">
                                 <Building className="h-8 w-8 mx-auto mb-2 opacity-50" />
                                 <p className="text-sm">
-                                  Aucune entreprise trouvée pour "{companyQuery}"
+                                  Aucune entreprise trouvée pour "{companyQuery}
+                                  "
                                 </p>
                                 <p className="text-xs mt-1">
                                   Essayez avec un nom d'entreprise ou un SIRET
@@ -1162,116 +755,121 @@ export default function ClientsModal({ client, onSave, open, onOpenChange, defau
                         </div>
                       )}
 
-                      {/* Nom/Raison sociale */}
-                      {/* Raison sociale uniquement pour les entreprises */}
-                      {clientType === "COMPANY" && !showCompanySearch && (
+                    {/* Nom/Raison sociale */}
+                    {/* Raison sociale uniquement pour les entreprises */}
+                    {clientType === "COMPANY" && !showCompanySearch && (
+                      <div className="space-y-2">
+                        <Label className="font-normal">Raison sociale *</Label>
+                        <Input
+                          placeholder="Nom de l'entreprise"
+                          className={cn(
+                            errors.name && "border-red-500 focus:border-red-500"
+                          )}
+                          {...register(
+                            "name",
+                            getValidationRules("companyName", true)
+                          )}
+                        />
+                        {errors.name && (
+                          <p className="text-sm text-red-500">
+                            {errors.name.message}
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Prénom et Nom pour particuliers, Contact et Email pour entreprises */}
+                    {clientType === "INDIVIDUAL" ? (
+                      <div className="grid grid-cols-2 gap-4">
+                        {/* Prénom */}
                         <div className="space-y-2">
-                          <Label className="font-normal">Raison sociale *</Label>
+                          <Label>Prénom *</Label>
                           <Input
-                            placeholder="Nom de l'entreprise"
-                            className={cn(errors.name && "border-red-500 focus:border-red-500")}
-                            {...register("name", getValidationRules("companyName", true))}
+                            placeholder="Prénom"
+                            className={cn(
+                              errors.firstName &&
+                                "border-red-500 focus:border-red-500"
+                            )}
+                            {...register("firstName", {
+                              required: "Le prénom est requis",
+                              pattern: {
+                                value: /^[a-zA-ZÀ-ÿ\s'-]{2,50}$/,
+                                message:
+                                  "Le prénom doit contenir entre 2 et 50 caractères (lettres, espaces, apostrophes et tirets uniquement)",
+                              },
+                            })}
                           />
-                          {errors.name && (
+                          {errors.firstName && (
                             <p className="text-sm text-red-500">
-                              {errors.name.message}
+                              {errors.firstName.message}
                             </p>
                           )}
                         </div>
-                      )}
 
-                      {/* Prénom et Nom pour particuliers, Contact et Email pour entreprises */}
-                      {clientType === "INDIVIDUAL" ? (
-                        <div className="grid grid-cols-2 gap-4">
-                          {/* Prénom */}
-                          <div className="space-y-2">
-                            <Label>Prénom *</Label>
-                            <Input
-                              placeholder="Prénom"
-                              className={cn(errors.firstName && "border-red-500 focus:border-red-500")}
-                              {...register("firstName", {
-                                required: "Le prénom est requis",
-                                pattern: {
-                                  value: /^[a-zA-ZÀ-ÿ\s'-]{2,50}$/,
-                                  message: "Le prénom doit contenir entre 2 et 50 caractères (lettres, espaces, apostrophes et tirets uniquement)",
-                                },
-                              })}
-                            />
-                            {errors.firstName && (
-                              <p className="text-sm text-red-500">
-                                {errors.firstName.message}
-                              </p>
+                        {/* Nom de famille */}
+                        <div className="space-y-2">
+                          <Label className="font-normal">Nom *</Label>
+                          <Input
+                            placeholder="Nom"
+                            className={cn(
+                              errors.lastName &&
+                                "border-red-500 focus:border-red-500"
                             )}
-                          </div>
-
-                          {/* Nom de famille */}
-                          <div className="space-y-2">
-                            <Label className="font-normal">Nom *</Label>
-                            <Input
-                              placeholder="Nom"
-                              className={cn(errors.lastName && "border-red-500 focus:border-red-500")}
-                              {...register("lastName", {
-                                required: "Le nom est requis",
-                                pattern: {
-                                  value: /^[a-zA-ZÀ-ÿ\s'-]{2,50}$/,
-                                  message: "Le nom doit contenir entre 2 et 50 caractères (lettres, espaces, apostrophes et tirets uniquement)",
-                                },
-                              })}
-                            />
-                            {errors.lastName && (
-                              <p className="text-sm text-red-500">
-                                {errors.lastName.message}
-                              </p>
-                            )}
-                          </div>
+                            {...register("lastName", {
+                              required: "Le nom est requis",
+                              pattern: {
+                                value: /^[a-zA-ZÀ-ÿ\s'-]{2,50}$/,
+                                message:
+                                  "Le nom doit contenir entre 2 et 50 caractères (lettres, espaces, apostrophes et tirets uniquement)",
+                              },
+                            })}
+                          />
+                          {errors.lastName && (
+                            <p className="text-sm text-red-500">
+                              {errors.lastName.message}
+                            </p>
+                          )}
                         </div>
-                      ) : (
-                        <div className="grid grid-cols-2 gap-4">
-                          {/* Contact pour entreprises */}
-                          <div className="space-y-2">
-                            <Label className="font-normal">Contact</Label>
-                            <Input
-                              placeholder="Nom du contact"
-                              className={cn(errors.firstName && "border-red-500 focus:border-red-500")}
-                              {...register("firstName", {
-                                pattern: {
-                                  value: /^[a-zA-ZÀ-ÿ\s'-]{2,50}$/,
-                                  message: "Le nom du contact doit contenir entre 2 et 50 caractères (lettres, espaces, apostrophes et tirets uniquement)",
-                                },
-                              })}
-                            />
-                            {errors.firstName && (
-                              <p className="text-sm text-red-500">
-                                {errors.firstName.message}
-                              </p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-4">
+                        {/* Contact pour entreprises */}
+                        <div className="space-y-2">
+                          <Label className="font-normal">Contact</Label>
+                          <Input
+                            placeholder="Nom du contact"
+                            className={cn(
+                              errors.firstName &&
+                                "border-red-500 focus:border-red-500"
                             )}
-                          </div>
-
-                          {/* Email (pour tous les types) */}
-                          <div className="space-y-2">
-                            <Label className="font-normal">Email *</Label>
-                            <InputEmail
-                              placeholder="contact@entreprise.com"
-                              className={cn(errors.email && "border-red-500 focus:border-red-500")}
-                              {...register("email", getValidationRules("email", true))}
-                            />
-                            {errors.email && (
-                              <p className="text-sm text-red-500">
-                                {errors.email.message}
-                              </p>
-                            )}
-                          </div>
+                            {...register("firstName", {
+                              pattern: {
+                                value: /^[a-zA-ZÀ-ÿ\s'-]{2,50}$/,
+                                message:
+                                  "Le nom du contact doit contenir entre 2 et 50 caractères (lettres, espaces, apostrophes et tirets uniquement)",
+                              },
+                            })}
+                          />
+                          {errors.firstName && (
+                            <p className="text-sm text-red-500">
+                              {errors.firstName.message}
+                            </p>
+                          )}
                         </div>
-                      )}
 
-                      {/* Email pour particuliers (ligne séparée) */}
-                      {clientType === "INDIVIDUAL" && (
+                        {/* Email (pour tous les types) */}
                         <div className="space-y-2">
                           <Label className="font-normal">Email *</Label>
                           <InputEmail
-                            placeholder="client@exemple.com"
-                            className={cn(errors.email && "border-red-500 focus:border-red-500")}
-                            {...register("email", getValidationRules("email", true))}
+                            placeholder="contact@entreprise.com"
+                            className={cn(
+                              errors.email &&
+                                "border-red-500 focus:border-red-500"
+                            )}
+                            {...register(
+                              "email",
+                              getValidationRules("email", true)
+                            )}
                           />
                           {errors.email && (
                             <p className="text-sm text-red-500">
@@ -1279,21 +877,154 @@ export default function ClientsModal({ client, onSave, open, onOpenChange, defau
                             </p>
                           )}
                         </div>
-                      )}
+                      </div>
+                    )}
 
-                      {/* Adresse de facturation */}
-                      <div className="space-y-3 py-2">
+                    {/* Email pour particuliers (ligne séparée) */}
+                    {clientType === "INDIVIDUAL" && (
+                      <div className="space-y-2">
+                        <Label className="font-normal">Email *</Label>
+                        <InputEmail
+                          placeholder="client@exemple.com"
+                          className={cn(
+                            errors.email &&
+                              "border-red-500 focus:border-red-500"
+                          )}
+                          {...register(
+                            "email",
+                            getValidationRules("email", true)
+                          )}
+                        />
+                        {errors.email && (
+                          <p className="text-sm text-red-500">
+                            {errors.email.message}
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Adresse de facturation */}
+                    <div className="space-y-3 py-2">
+                      <div className="space-y-2">
+                        <Label className="font-normal">
+                          Adresse de facturation
+                        </Label>
+                        <Textarea
+                          placeholder="123 Rue de la Paix"
+                          className={cn(
+                            errors.address?.street &&
+                              "border-red-500 focus:border-red-500"
+                          )}
+                          {...register(
+                            "address.street",
+                            getValidationRules("street", true)
+                          )}
+                          rows={2}
+                        />
+                        {errors.address?.street && (
+                          <p className="text-sm text-red-500 mt-1">
+                            {errors.address.street.message}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label className="font-normal">Adresse de facturation</Label>
+                          <Label className="font-normal">Ville</Label>
+                          <Input
+                            placeholder="Paris"
+                            className={cn(
+                              errors.address?.city &&
+                                "border-red-500 focus:border-red-500"
+                            )}
+                            {...register(
+                              "address.city",
+                              getValidationRules("city", true)
+                            )}
+                          />
+                          {errors.address?.city && (
+                            <p className="text-sm text-red-500">
+                              {errors.address.city.message}
+                            </p>
+                          )}
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="font-normal">Code postal</Label>
+                          <Input
+                            placeholder="75001"
+                            className={cn(
+                              errors.address?.postalCode &&
+                                "border-red-500 focus:border-red-500"
+                            )}
+                            {...register(
+                              "address.postalCode",
+                              getValidationRules("postalCode", true)
+                            )}
+                          />
+                          {errors.address?.postalCode && (
+                            <p className="text-sm text-red-500">
+                              {errors.address.postalCode.message}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="font-normal">Pays</Label>
+                        <Input
+                          placeholder="France"
+                          className={cn(
+                            errors.address?.country &&
+                              "border-red-500 focus:border-red-500"
+                          )}
+                          {...register(
+                            "address.country",
+                            getValidationRules("country", true)
+                          )}
+                        />
+                        {errors.address?.country && (
+                          <p className="text-sm text-red-500">
+                            {errors.address.country.message}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Adresse de livraison différente */}
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="differentShipping"
+                        checked={hasDifferentShipping}
+                        onCheckedChange={setHasDifferentShipping}
+                      />
+                      <Label
+                        htmlFor="differentShipping"
+                        className="font-normal"
+                      >
+                        Adresse de livraison différente
+                      </Label>
+                    </div>
+
+                    {/* Adresse de livraison */}
+                    {hasDifferentShipping && (
+                      <div className="space-y-3 border-l-2 border-gray-200 pl-4">
+                        <div className="space-y-2">
+                          <Label className="font-normal">Adresse</Label>
                           <Textarea
-                            placeholder="123 Rue de la Paix"
-                            className={cn(errors.address?.street && "border-red-500 focus:border-red-500")}
-                            {...register("address.street", getValidationRules("street", true))}
+                            placeholder="123 Rue de la Livraison"
+                            className={cn(
+                              errors.shippingAddress?.street &&
+                                "border-red-500 focus:border-red-500"
+                            )}
+                            {...register(
+                              "shippingAddress.street",
+                              getValidationRules("street", hasDifferentShipping)
+                            )}
                             rows={2}
                           />
-                          {errors.address?.street && (
+                          {errors.shippingAddress?.street && (
                             <p className="text-sm text-red-500 mt-1">
-                              {errors.address.street.message}
+                              {errors.shippingAddress.street.message}
                             </p>
                           )}
                         </div>
@@ -1303,12 +1034,18 @@ export default function ClientsModal({ client, onSave, open, onOpenChange, defau
                             <Label className="font-normal">Ville</Label>
                             <Input
                               placeholder="Paris"
-                              className={cn(errors.address?.city && "border-red-500 focus:border-red-500")}
-                              {...register("address.city", getValidationRules("city", true))}
+                              className={cn(
+                                errors.shippingAddress?.city &&
+                                  "border-red-500 focus:border-red-500"
+                              )}
+                              {...register(
+                                "shippingAddress.city",
+                                getValidationRules("city", hasDifferentShipping)
+                              )}
                             />
-                            {errors.address?.city && (
+                            {errors.shippingAddress?.city && (
                               <p className="text-sm text-red-500">
-                                {errors.address.city.message}
+                                {errors.shippingAddress.city.message}
                               </p>
                             )}
                           </div>
@@ -1316,12 +1053,21 @@ export default function ClientsModal({ client, onSave, open, onOpenChange, defau
                             <Label className="font-normal">Code postal</Label>
                             <Input
                               placeholder="75001"
-                              className={cn(errors.address?.postalCode && "border-red-500 focus:border-red-500")}
-                              {...register("address.postalCode", getValidationRules("postalCode", true))}
+                              className={cn(
+                                errors.shippingAddress?.postalCode &&
+                                  "border-red-500 focus:border-red-500"
+                              )}
+                              {...register(
+                                "shippingAddress.postalCode",
+                                getValidationRules(
+                                  "postalCode",
+                                  hasDifferentShipping
+                                )
+                              )}
                             />
-                            {errors.address?.postalCode && (
+                            {errors.shippingAddress?.postalCode && (
                               <p className="text-sm text-red-500">
-                                {errors.address.postalCode.message}
+                                {errors.shippingAddress.postalCode.message}
                               </p>
                             )}
                           </div>
@@ -1331,160 +1077,140 @@ export default function ClientsModal({ client, onSave, open, onOpenChange, defau
                           <Label className="font-normal">Pays</Label>
                           <Input
                             placeholder="France"
-                            className={cn(errors.address?.country && "border-red-500 focus:border-red-500")}
-                            {...register("address.country", getValidationRules("country", true))}
+                            className={cn(
+                              errors.shippingAddress?.country &&
+                                "border-red-500 focus:border-red-500"
+                            )}
+                            {...register(
+                              "shippingAddress.country",
+                              getValidationRules(
+                                "country",
+                                hasDifferentShipping
+                              )
+                            )}
                           />
-                          {errors.address?.country && (
+                          {errors.shippingAddress?.country && (
                             <p className="text-sm text-red-500">
-                              {errors.address.country.message}
+                              {errors.shippingAddress.country.message}
                             </p>
                           )}
                         </div>
                       </div>
+                    )}
 
-                      {/* Adresse de livraison différente */}
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id="differentShipping"
-                          checked={hasDifferentShipping}
-                          onCheckedChange={setHasDifferentShipping}
-                        />
-                        <Label htmlFor="differentShipping" className="font-normal">
-                          Adresse de livraison différente
-                        </Label>
-                      </div>
+                    {/* Informations entreprise (pour les entreprises) */}
+                    {clientType === "COMPANY" && (
+                      <div className="space-y-3 border-t pt-4">
+                        {/* <Label className="text-base font-normal">
+                          Informations entreprise
+                        </Label> */}
 
-                      {/* Adresse de livraison */}
-                      {hasDifferentShipping && (
-                        <div className="space-y-3 border-l-2 border-gray-200 pl-4">
-                          <div className="space-y-2">
-                            <Label className="font-normal">Adresse</Label>
-                            <Textarea
-                              placeholder="123 Rue de la Livraison"
-                              className={cn(errors.shippingAddress?.street && "border-red-500 focus:border-red-500")}
-                              {...register("shippingAddress.street", getValidationRules("street", hasDifferentShipping))}
-                              rows={2}
-                            />
-                            {errors.shippingAddress?.street && (
-                              <p className="text-sm text-red-500 mt-1">
-                                {errors.shippingAddress.street.message}
-                              </p>
-                            )}
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                              <Label className="font-normal">Ville</Label>
-                              <Input
-                                placeholder="Paris"
-                                className={cn(errors.shippingAddress?.city && "border-red-500 focus:border-red-500")}
-                                {...register("shippingAddress.city", getValidationRules("city", hasDifferentShipping))}
-                              />
-                              {errors.shippingAddress?.city && (
-                                <p className="text-sm text-red-500">
-                                  {errors.shippingAddress.city.message}
-                                </p>
-                              )}
-                            </div>
-                            <div className="space-y-2">
-                              <Label className="font-normal">Code postal</Label>
-                              <Input
-                                placeholder="75001"
-                                className={cn(errors.shippingAddress?.postalCode && "border-red-500 focus:border-red-500")}
-                                {...register("shippingAddress.postalCode", getValidationRules("postalCode", hasDifferentShipping))}
-                              />
-                              {errors.shippingAddress?.postalCode && (
-                                <p className="text-sm text-red-500">
-                                  {errors.shippingAddress.postalCode.message}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-
-                          <div className="space-y-2">
-                            <Label className="font-normal">Pays</Label>
-                            <Input
-                              placeholder="France"
-                              className={cn(errors.shippingAddress?.country && "border-red-500 focus:border-red-500")}
-                              {...register("shippingAddress.country", getValidationRules("country", hasDifferentShipping))}
-                            />
-                            {errors.shippingAddress?.country && (
-                              <p className="text-sm text-red-500">
-                                {errors.shippingAddress.country.message}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Informations entreprise (pour les entreprises) */}
-                      {clientType === "COMPANY" && (
-                        <div className="space-y-3 border-t pt-4">
-                          <Label className="text-base font-normal">
-                            Informations entreprise
+                        <div className="space-y-2">
+                          <Label className="font-normal">
+                            {isInternational
+                              ? "Numéro d'identification"
+                              : "SIREN/SIRET"}{" "}
+                            *
                           </Label>
-
-                          <div className="space-y-2">
-                            <Label className="font-normal">SIREN/SIRET *</Label>
-                            <Input
-                              placeholder="123456789 ou 12345678901234"
-                              className={cn(errors.siret && "border-red-500 focus:border-red-500")}
-                              {...register("siret", getValidationRules("siret", true))}
-                            />
-                            {errors.siret && (
-                              <p className="text-sm text-red-500">
-                                {errors.siret.message}
-                              </p>
+                          <Input
+                            placeholder={
+                              isInternational
+                                ? "Numéro d'identification (ex: VAT, EIN, etc.)"
+                                : "123456789 ou 12345678901234"
+                            }
+                            className={cn(
+                              errors.siret &&
+                                "border-red-500 focus:border-red-500"
                             )}
-                          </div>
-
-                          <div className="space-y-2">
-                            <Label className="font-normal">Numéro de TVA</Label>
-                            <Input
-                              placeholder="FR12345678901"
-                              className={cn(errors.vatNumber && "border-red-500 focus:border-red-500")}
-                              {...register("vatNumber", getValidationRules("vatNumber"))}
-                            />
-                            {errors.vatNumber && (
-                              <p className="text-sm text-red-500">
-                                {errors.vatNumber.message}
-                              </p>
-                            )}
-                          </div>
+                            {...register("siret", siretValidationRules)}
+                          />
+                          {errors.siret && (
+                            <p className="text-sm text-red-500">
+                              {errors.siret.message}
+                            </p>
+                          )}
+                          {isInternational && (
+                            <p className="text-xs text-muted-foreground">
+                              Numéro d'identification fiscale ou équivalent
+                              local (ex: VAT, EIN, etc.)
+                            </p>
+                          )}
                         </div>
-                      )}
-                    </div>
-                  </div>
 
-                  <div 
-                    className="flex-shrink-0 flex gap-3 px-6 border-t bg-background"
-                    style={{ 
-                      paddingTop: '1rem',
-                      paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))'
-                    }}
+                        <div className="space-y-2">
+                          <Label className="font-normal">Numéro de TVA</Label>
+                          <Input
+                            placeholder={
+                              isInternational
+                                ? "Numéro de TVA (format libre)"
+                                : "FR12345678901"
+                            }
+                            className={cn(
+                              errors.vatNumber &&
+                                "border-red-500 focus:border-red-500"
+                            )}
+                            {...register("vatNumber", vatValidationRules)}
+                          />
+                          {errors.vatNumber && (
+                            <p className="text-sm text-red-500">
+                              {errors.vatNumber.message}
+                            </p>
+                          )}
+                          {isInternational && (
+                            <p className="text-xs text-muted-foreground">
+                              Optionnel - Format libre pour les entreprises hors
+                              UE
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Footer dans le flux flex - s'adapte automatiquement à Safari */}
+                <div
+                  className="flex-shrink-0 flex gap-3 px-6 border-t bg-background"
+                  style={{
+                    paddingTop: "1rem",
+                    paddingBottom: "calc(1rem + env(safe-area-inset-bottom))",
+                  }}
+                >
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => onOpenChange(false)}
+                    className="flex-1"
                   >
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => onOpenChange(false)}
-                      className="flex-1"
-                    >
-                      Annuler
-                    </Button>
-                    <Button 
-                      type="submit" 
-                      disabled={loading || Object.keys(errors).length > 0 || Object.keys(customErrors).length > 0} 
-                      className="flex-1"
-                    >
-                      {loading ? "Enregistrement..." : client ? "Modifier" : "Créer un contact"}
-                    </Button>
-                  </div>
-                </form>
-              </TabsContent>
+                    Annuler
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={
+                      loading ||
+                      Object.keys(errors).length > 0 ||
+                      Object.keys(customErrors).length > 0
+                    }
+                    className="flex-1"
+                  >
+                    {loading
+                      ? "Enregistrement..."
+                      : client
+                        ? "Modifier"
+                        : "Créer un contact"}
+                  </Button>
+                </div>
+              </form>
+            </div>
 
-              <TabsContent value="activity" className="flex-1 overflow-hidden m-0">
-                <ClientActivity 
-                  client={currentClient} 
+            {/* Colonne droite : Timeline d'activité - 50% */}
+            <div className="w-1/2 flex flex-col bg-muted/30">
+              <div className="flex-shrink-0 px-6 py-4 border-b bg-background">
+                <h3 className="font-semibold text-sm">Activité</h3>
+              </div>
+              <div className="flex-1 overflow-hidden">
+                <ClientActivity
+                  client={currentClient}
                   workspaceId={workspaceId}
                   onClientUpdate={setCurrentClient}
                   pendingNotes={pendingNotes}
@@ -1493,7 +1219,741 @@ export default function ClientsModal({ client, onSave, open, onOpenChange, defau
                   onRemovePendingNote={removePendingNote}
                   isCreating={!isEditing}
                 />
-              </TabsContent>
+              </div>
+            </div>
+          </div>
+        ) : (
+          // Mode mobile : Onglets (création et édition)
+          <Tabs defaultValue="form" className="flex flex-col h-full gap-0">
+            <div className="flex-shrink-0 p-6 pb-4 border-b">
+              <DialogHeader>
+                <DialogTitle className="text-left">
+                  {client ? "Modifier le client" : "Ajouter un client"}
+                </DialogTitle>
+                <DialogDescription className="text-left">
+                  {client
+                    ? "Modifiez les informations du client"
+                    : "Créez un nouveau client pour votre entreprise"}
+                </DialogDescription>
+              </DialogHeader>
+            </div>
+
+            <TabsList className="flex-shrink-0 grid w-full grid-cols-2 rounded-none border-b py-1.5 px-4">
+              <TabsTrigger value="form" className="py-2 text-sm">
+                Formulaire
+              </TabsTrigger>
+              <TabsTrigger value="activity" className="py-2 text-sm">
+                Activité
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="form" className="flex-1 overflow-hidden m-0">
+              <form
+                onSubmit={handleSubmit(onSubmit)}
+                className="flex flex-col h-full"
+              >
+                <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+                  <div className="space-y-4">
+                    {/* Type de client */}
+                    <div className="space-y-2">
+                      <Label className="font-normal">Type de client *</Label>
+                      <Controller
+                        name="type"
+                        control={control}
+                        render={({ field }) => (
+                          <Select
+                            value={field.value}
+                            onValueChange={field.onChange}
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Sélectionnez le type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="INDIVIDUAL">
+                                Particulier
+                              </SelectItem>
+                              <SelectItem value="COMPANY">
+                                Entreprise
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
+                    </div>
+
+                    {/* Sélecteur de localisation (France / Hors France) - uniquement pour les entreprises */}
+                    {clientType === "COMPANY" && (
+                      <div className="space-y-2">
+                        <Label className="font-normal">
+                          Localisation de l'entreprise *
+                        </Label>
+                        <Controller
+                          name="isInternational"
+                          control={control}
+                          render={({ field }) => (
+                            <Select
+                              value={field.value ? "international" : "france"}
+                              onValueChange={(value) => {
+                                field.onChange(value === "international");
+                                if (value === "international") {
+                                  setValue("siret", "");
+                                  setValue("vatNumber", "");
+                                }
+                              }}
+                            >
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Sélectionnez la localisation" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="france">
+                                  <div className="flex items-center gap-2">
+                                    <span>🇫🇷</span>
+                                    <span>France</span>
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="international">
+                                  <div className="flex items-center gap-2">
+                                    <Globe className="h-4 w-4" />
+                                    <span>Hors France</span>
+                                  </div>
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                          )}
+                        />
+                        {isInternational && (
+                          <p className="text-xs text-muted-foreground">
+                            Pour les entreprises hors France, les champs SIRET
+                            et TVA sont optionnels et sans validation stricte.
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Recherche d'entreprises via API Gouv Data - uniquement pour les entreprises françaises */}
+                    {clientType === "COMPANY" &&
+                      !isInternational &&
+                      !showCompanySearch && (
+                        <div className="space-y-3 p-4 border rounded-lg bg-[#5a50ff]/5 dark:bg-[#5a50ff]/10 border-[#5a50ff]/20 dark:border-[#5a50ff]/30">
+                          <div className="flex items-center gap-2">
+                            <div className="flex items-center justify-center size-8 rounded-full bg-[#5a50ff]/10 dark:bg-[#5a50ff]/20">
+                              <Building className="h-4 w-4 text-[#5a50ff] dark:text-[#5a50ff]" />
+                            </div>
+                            <span className="font-medium text-sm text-[#5a50ff] dark:text-[#5a50ff]">
+                              Rechercher une entreprise
+                            </span>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            Importez automatiquement les informations depuis la
+                            base officielle
+                          </p>
+                          <Button
+                            type="button"
+                            onClick={() => setShowCompanySearch(true)}
+                            className="w-full h-9 text-sm bg-[#5a50ff] hover:bg-[#5a50ff]/90 text-white dark:bg-[#5a50ff] dark:hover:bg-[#5a50ff]/90 dark:text-white"
+                          >
+                            <Search className="h-4 w-4 mr-2" />
+                            Rechercher
+                          </Button>
+                        </div>
+                      )}
+
+                    {/* Interface de recherche d'entreprises */}
+                    {clientType === "COMPANY" &&
+                      !isInternational &&
+                      showCompanySearch && (
+                        <div className="space-y-4 p-4 border rounded-lg bg-[#5a50ff]/5 dark:bg-[#5a50ff]/10 border-[#5a50ff]/20 dark:border-[#5a50ff]/30">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <div className="flex items-center justify-center size-8 rounded-full bg-[#5a50ff]/10 dark:bg-[#5a50ff]/20">
+                                <Building className="h-4 w-4 text-[#5a50ff] dark:text-[#5a50ff]" />
+                              </div>
+                              <Label className="font-medium text-[#5a50ff] dark:text-[#5a50ff]">
+                                Rechercher une entreprise
+                              </Label>
+                            </div>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setShowCompanySearch(false);
+                                setCompanyQuery("");
+                                setCompanies([]);
+                              }}
+                              className="h-8 w-8 p-0 hover:bg-[#5a50ff]/10 dark:hover:bg-[#5a50ff]/20 text-[#5a50ff] dark:text-[#5a50ff] text-lg font-medium"
+                            >
+                              ×
+                            </Button>
+                          </div>
+
+                          <div className="space-y-2">
+                            <div className="relative">
+                              <Input
+                                value={companyQuery}
+                                onChange={(e) =>
+                                  setCompanyQuery(e.target.value)
+                                }
+                                placeholder="Nom d'entreprise, SIRET, SIREN..."
+                                className="h-9 text-sm pl-10"
+                              />
+                              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              Recherchez une entreprise française via la base de
+                              données officielle
+                            </p>
+                          </div>
+
+                          {/* Résultats de recherche */}
+                          {loadingCompanies && (
+                            <div className="flex items-center justify-center p-6">
+                              <LoaderCircle className="h-5 w-5 animate-spin mr-2" />
+                              <span className="text-sm">
+                                Recherche en cours...
+                              </span>
+                            </div>
+                          )}
+
+                          {companies.length > 0 && (
+                            <div className="space-y-2 max-h-60 overflow-y-auto">
+                              {companies.map((company) => (
+                                <div
+                                  key={company.id}
+                                  className="p-3 border rounded-lg bg-white dark:bg-gray-800 hover:border-[#5a50ff] dark:hover:border-[#5a50ff] hover:shadow-sm cursor-pointer transition-all border-gray-200 dark:border-gray-700"
+                                  onClick={() => handleCompanySelect(company)}
+                                >
+                                  <div className="flex items-start justify-between">
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-2 mb-1">
+                                        <Building className="h-4 w-4 text-[#5a50ff] dark:text-[#5a50ff] flex-shrink-0" />
+                                        <h4 className="font-medium text-sm truncate text-gray-900 dark:text-gray-100">
+                                          {company.name}
+                                        </h4>
+                                        {company.status === "A" && (
+                                          <Badge
+                                            variant="outline"
+                                            className="text-xs bg-[#5a50ff]/10 dark:bg-[#5a50ff]/20 text-[#5a50ff] dark:text-[#5a50ff] border-[#5a50ff]/20 dark:border-[#5a50ff]/30"
+                                          >
+                                            Active
+                                          </Badge>
+                                        )}
+                                      </div>
+                                      <div className="space-y-1">
+                                        <p className="text-xs text-muted-foreground">
+                                          <strong>SIRET:</strong>{" "}
+                                          {company.siret}
+                                        </p>
+                                        {company.address && (
+                                          <p className="text-xs text-muted-foreground truncate">
+                                            <strong>Adresse:</strong>{" "}
+                                            {company.address},{" "}
+                                            {company.postalCode} {company.city}
+                                          </p>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <ExternalLink className="h-4 w-4 text-[#5a50ff]/50 dark:text-[#5a50ff]/60 flex-shrink-0 ml-2" />
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {companyQuery &&
+                            !loadingCompanies &&
+                            companies.length === 0 && (
+                              <div className="text-center p-6 text-muted-foreground">
+                                <Building className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                                <p className="text-sm">
+                                  Aucune entreprise trouvée pour "{companyQuery}
+                                  "
+                                </p>
+                                <p className="text-xs mt-1">
+                                  Essayez avec un nom d'entreprise ou un SIRET
+                                </p>
+                              </div>
+                            )}
+
+                          <div className="pt-2 border-t border-[#5a50ff]/10 dark:border-[#5a50ff]/20">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => {
+                                setShowCompanySearch(false);
+                                setCompanyQuery("");
+                                setCompanies([]);
+                              }}
+                              className="w-full h-9 text-sm border-[#5a50ff]/20 dark:border-[#5a50ff]/30 text-[#5a50ff] dark:text-[#5a50ff] hover:bg-[#5a50ff]/5 dark:hover:bg-[#5a50ff]/10"
+                            >
+                              Saisir manuellement
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+
+                    {/* Nom/Raison sociale */}
+                    {/* Raison sociale uniquement pour les entreprises */}
+                    {clientType === "COMPANY" && !showCompanySearch && (
+                      <div className="space-y-2">
+                        <Label className="font-normal">Raison sociale *</Label>
+                        <Input
+                          placeholder="Nom de l'entreprise"
+                          className={cn(
+                            errors.name && "border-red-500 focus:border-red-500"
+                          )}
+                          {...register(
+                            "name",
+                            getValidationRules("companyName", true)
+                          )}
+                        />
+                        {errors.name && (
+                          <p className="text-sm text-red-500">
+                            {errors.name.message}
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Prénom et Nom pour particuliers, Contact et Email pour entreprises */}
+                    {clientType === "INDIVIDUAL" ? (
+                      <div className="grid grid-cols-2 gap-4">
+                        {/* Prénom */}
+                        <div className="space-y-2">
+                          <Label>Prénom *</Label>
+                          <Input
+                            placeholder="Prénom"
+                            className={cn(
+                              errors.firstName &&
+                                "border-red-500 focus:border-red-500"
+                            )}
+                            {...register("firstName", {
+                              required: "Le prénom est requis",
+                              pattern: {
+                                value: /^[a-zA-ZÀ-ÿ\s'-]{2,50}$/,
+                                message:
+                                  "Le prénom doit contenir entre 2 et 50 caractères (lettres, espaces, apostrophes et tirets uniquement)",
+                              },
+                            })}
+                          />
+                          {errors.firstName && (
+                            <p className="text-sm text-red-500">
+                              {errors.firstName.message}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Nom de famille */}
+                        <div className="space-y-2">
+                          <Label className="font-normal">Nom *</Label>
+                          <Input
+                            placeholder="Nom"
+                            className={cn(
+                              errors.lastName &&
+                                "border-red-500 focus:border-red-500"
+                            )}
+                            {...register("lastName", {
+                              required: "Le nom est requis",
+                              pattern: {
+                                value: /^[a-zA-ZÀ-ÿ\s'-]{2,50}$/,
+                                message:
+                                  "Le nom doit contenir entre 2 et 50 caractères (lettres, espaces, apostrophes et tirets uniquement)",
+                              },
+                            })}
+                          />
+                          {errors.lastName && (
+                            <p className="text-sm text-red-500">
+                              {errors.lastName.message}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-4">
+                        {/* Contact pour entreprises */}
+                        <div className="space-y-2">
+                          <Label className="font-normal">Contact</Label>
+                          <Input
+                            placeholder="Nom du contact"
+                            className={cn(
+                              errors.firstName &&
+                                "border-red-500 focus:border-red-500"
+                            )}
+                            {...register("firstName", {
+                              pattern: {
+                                value: /^[a-zA-ZÀ-ÿ\s'-]{2,50}$/,
+                                message:
+                                  "Le nom du contact doit contenir entre 2 et 50 caractères (lettres, espaces, apostrophes et tirets uniquement)",
+                              },
+                            })}
+                          />
+                          {errors.firstName && (
+                            <p className="text-sm text-red-500">
+                              {errors.firstName.message}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Email (pour tous les types) */}
+                        <div className="space-y-2">
+                          <Label className="font-normal">Email *</Label>
+                          <InputEmail
+                            placeholder="contact@entreprise.com"
+                            className={cn(
+                              errors.email &&
+                                "border-red-500 focus:border-red-500"
+                            )}
+                            {...register(
+                              "email",
+                              getValidationRules("email", true)
+                            )}
+                          />
+                          {errors.email && (
+                            <p className="text-sm text-red-500">
+                              {errors.email.message}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Email pour particuliers (ligne séparée) */}
+                    {clientType === "INDIVIDUAL" && (
+                      <div className="space-y-2">
+                        <Label className="font-normal">Email *</Label>
+                        <InputEmail
+                          placeholder="client@exemple.com"
+                          className={cn(
+                            errors.email &&
+                              "border-red-500 focus:border-red-500"
+                          )}
+                          {...register(
+                            "email",
+                            getValidationRules("email", true)
+                          )}
+                        />
+                        {errors.email && (
+                          <p className="text-sm text-red-500">
+                            {errors.email.message}
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Adresse de facturation */}
+                    <div className="space-y-3 py-2">
+                      <div className="space-y-2">
+                        <Label className="font-normal">
+                          Adresse de facturation
+                        </Label>
+                        <Textarea
+                          placeholder="123 Rue de la Paix"
+                          className={cn(
+                            errors.address?.street &&
+                              "border-red-500 focus:border-red-500"
+                          )}
+                          {...register(
+                            "address.street",
+                            getValidationRules("street", true)
+                          )}
+                          rows={2}
+                        />
+                        {errors.address?.street && (
+                          <p className="text-sm text-red-500 mt-1">
+                            {errors.address.street.message}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label className="font-normal">Ville</Label>
+                          <Input
+                            placeholder="Paris"
+                            className={cn(
+                              errors.address?.city &&
+                                "border-red-500 focus:border-red-500"
+                            )}
+                            {...register(
+                              "address.city",
+                              getValidationRules("city", true)
+                            )}
+                          />
+                          {errors.address?.city && (
+                            <p className="text-sm text-red-500">
+                              {errors.address.city.message}
+                            </p>
+                          )}
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="font-normal">Code postal</Label>
+                          <Input
+                            placeholder="75001"
+                            className={cn(
+                              errors.address?.postalCode &&
+                                "border-red-500 focus:border-red-500"
+                            )}
+                            {...register(
+                              "address.postalCode",
+                              getValidationRules("postalCode", true)
+                            )}
+                          />
+                          {errors.address?.postalCode && (
+                            <p className="text-sm text-red-500">
+                              {errors.address.postalCode.message}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label className="font-normal">Pays</Label>
+                        <Input
+                          placeholder="France"
+                          className={cn(
+                            errors.address?.country &&
+                              "border-red-500 focus:border-red-500"
+                          )}
+                          {...register(
+                            "address.country",
+                            getValidationRules("country", true)
+                          )}
+                        />
+                        {errors.address?.country && (
+                          <p className="text-sm text-red-500">
+                            {errors.address.country.message}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Adresse de livraison différente */}
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="differentShipping"
+                        checked={hasDifferentShipping}
+                        onCheckedChange={setHasDifferentShipping}
+                      />
+                      <Label
+                        htmlFor="differentShipping"
+                        className="font-normal"
+                      >
+                        Adresse de livraison différente
+                      </Label>
+                    </div>
+
+                    {/* Adresse de livraison */}
+                    {hasDifferentShipping && (
+                      <div className="space-y-3 border-l-2 border-gray-200 pl-4">
+                        <div className="space-y-2">
+                          <Label className="font-normal">Adresse</Label>
+                          <Textarea
+                            placeholder="123 Rue de la Livraison"
+                            className={cn(
+                              errors.shippingAddress?.street &&
+                                "border-red-500 focus:border-red-500"
+                            )}
+                            {...register(
+                              "shippingAddress.street",
+                              getValidationRules("street", hasDifferentShipping)
+                            )}
+                            rows={2}
+                          />
+                          {errors.shippingAddress?.street && (
+                            <p className="text-sm text-red-500 mt-1">
+                              {errors.shippingAddress.street.message}
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label className="font-normal">Ville</Label>
+                            <Input
+                              placeholder="Paris"
+                              className={cn(
+                                errors.shippingAddress?.city &&
+                                  "border-red-500 focus:border-red-500"
+                              )}
+                              {...register(
+                                "shippingAddress.city",
+                                getValidationRules("city", hasDifferentShipping)
+                              )}
+                            />
+                            {errors.shippingAddress?.city && (
+                              <p className="text-sm text-red-500">
+                                {errors.shippingAddress.city.message}
+                              </p>
+                            )}
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="font-normal">Code postal</Label>
+                            <Input
+                              placeholder="75001"
+                              className={cn(
+                                errors.shippingAddress?.postalCode &&
+                                  "border-red-500 focus:border-red-500"
+                              )}
+                              {...register(
+                                "shippingAddress.postalCode",
+                                getValidationRules(
+                                  "postalCode",
+                                  hasDifferentShipping
+                                )
+                              )}
+                            />
+                            {errors.shippingAddress?.postalCode && (
+                              <p className="text-sm text-red-500">
+                                {errors.shippingAddress.postalCode.message}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="font-normal">Pays</Label>
+                          <Input
+                            placeholder="France"
+                            className={cn(
+                              errors.shippingAddress?.country &&
+                                "border-red-500 focus:border-red-500"
+                            )}
+                            {...register(
+                              "shippingAddress.country",
+                              getValidationRules(
+                                "country",
+                                hasDifferentShipping
+                              )
+                            )}
+                          />
+                          {errors.shippingAddress?.country && (
+                            <p className="text-sm text-red-500">
+                              {errors.shippingAddress.country.message}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Informations entreprise (pour les entreprises) */}
+                    {clientType === "COMPANY" && (
+                      <div className="space-y-3 border-t pt-4">
+                        <Label className="text-base font-normal">
+                          Informations entreprise
+                        </Label>
+
+                        <div className="space-y-2">
+                          <Label className="font-normal">
+                            {isInternational
+                              ? "Numéro d'identification"
+                              : "SIREN/SIRET"}{" "}
+                            *
+                          </Label>
+                          <Input
+                            placeholder={
+                              isInternational
+                                ? "Numéro d'identification (ex: VAT, EIN, etc.)"
+                                : "123456789 ou 12345678901234"
+                            }
+                            className={cn(
+                              errors.siret &&
+                                "border-red-500 focus:border-red-500"
+                            )}
+                            {...register("siret", siretValidationRules)}
+                          />
+                          {errors.siret && (
+                            <p className="text-sm text-red-500">
+                              {errors.siret.message}
+                            </p>
+                          )}
+                          {isInternational && (
+                            <p className="text-xs text-muted-foreground">
+                              Numéro d'identification fiscale ou équivalent
+                              local (ex: VAT, EIN, etc.)
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="font-normal">Numéro de TVA</Label>
+                          <Input
+                            placeholder={
+                              isInternational
+                                ? "Numéro de TVA (format libre)"
+                                : "FR12345678901"
+                            }
+                            className={cn(
+                              errors.vatNumber &&
+                                "border-red-500 focus:border-red-500"
+                            )}
+                            {...register("vatNumber", vatValidationRules)}
+                          />
+                          {errors.vatNumber && (
+                            <p className="text-sm text-red-500">
+                              {errors.vatNumber.message}
+                            </p>
+                          )}
+                          {isInternational && (
+                            <p className="text-xs text-muted-foreground">
+                              Optionnel - Format libre pour les entreprises hors
+                              UE
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div
+                  className="flex-shrink-0 flex gap-3 px-6 border-t bg-background"
+                  style={{
+                    paddingTop: "1rem",
+                    paddingBottom: "calc(1rem + env(safe-area-inset-bottom))",
+                  }}
+                >
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => onOpenChange(false)}
+                    className="flex-1"
+                  >
+                    Annuler
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={
+                      loading ||
+                      Object.keys(errors).length > 0 ||
+                      Object.keys(customErrors).length > 0
+                    }
+                    className="flex-1"
+                  >
+                    {loading
+                      ? "Enregistrement..."
+                      : client
+                        ? "Modifier"
+                        : "Créer un contact"}
+                  </Button>
+                </div>
+              </form>
+            </TabsContent>
+
+            <TabsContent
+              value="activity"
+              className="flex-1 overflow-hidden m-0"
+            >
+              <ClientActivity
+                client={currentClient}
+                workspaceId={workspaceId}
+                onClientUpdate={setCurrentClient}
+                pendingNotes={pendingNotes}
+                onAddPendingNote={addPendingNote}
+                onUpdatePendingNote={updatePendingNote}
+                onRemovePendingNote={removePendingNote}
+                isCreating={!isEditing}
+              />
+            </TabsContent>
           </Tabs>
         )}
       </DialogContent>
