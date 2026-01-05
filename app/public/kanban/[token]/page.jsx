@@ -7,7 +7,10 @@ import {
   VALIDATE_PUBLIC_TOKEN,
   ADD_EXTERNAL_COMMENT,
   UPDATE_VISITOR_PROFILE,
-  PUBLIC_TASK_UPDATED_SUBSCRIPTION
+  PUBLIC_TASK_UPDATED_SUBSCRIPTION,
+  REQUEST_ACCESS,
+  ACCESS_APPROVED_SUBSCRIPTION,
+  ACCESS_REVOKED_SUBSCRIPTION
 } from "@/src/graphql/kanbanQueries";
 import { toast } from "@/src/components/ui/sonner";
 import { Button } from "@/src/components/ui/button";
@@ -68,6 +71,150 @@ function EmailModal({ isOpen, onSubmit, loading, error }) {
         </form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+// BannedAccessPage Component - Page de demande d'accès pour les utilisateurs bannis
+function BannedAccessPage({ email, token, onAccessApproved }) {
+  const [name, setName] = useState(email?.split('@')[0] || "");
+  const [message, setMessage] = useState("");
+  const [requestSent, setRequestSent] = useState(false);
+  const [loading, setLoading] = useState(false);
+  
+  const [requestAccess] = useMutation(REQUEST_ACCESS);
+
+  // Subscription pour être notifié en temps réel quand l'accès est approuvé
+  useSubscription(ACCESS_APPROVED_SUBSCRIPTION, {
+    variables: { token, email: email?.toLowerCase() },
+    skip: !token || !email,
+    onData: ({ data }) => {
+      const payload = data?.data?.accessApproved;
+      if (payload?.approved) {
+        console.log('✅ [BannedAccessPage] Accès approuvé en temps réel !');
+        toast.success("Votre accès a été approuvé ! Chargement du tableau...");
+        // Appeler le callback pour recharger la page
+        setTimeout(() => {
+          onAccessApproved?.();
+        }, 1500);
+      }
+    }
+  });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    try {
+      const result = await requestAccess({
+        variables: { token, email, name, message }
+      });
+      
+      if (result.data?.requestAccess?.success) {
+        setRequestSent(true);
+        if (result.data.requestAccess.alreadyRequested) {
+          toast.info("Votre demande est déjà en attente de validation");
+        } else {
+          toast.success("Demande d'accès envoyée !");
+        }
+      } else {
+        toast.error(result.data?.requestAccess?.message || "Erreur lors de la demande");
+      }
+    } catch (error) {
+      console.error("Erreur demande d'accès:", error);
+      toast.error("Erreur lors de la demande d'accès");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md">
+        <CardContent className="pt-6">
+          <div className="text-center mb-6">
+            <div className="mx-auto w-16 h-16 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center mb-4">
+              <AlertCircle className="h-8 w-8 text-orange-600 dark:text-orange-400" />
+            </div>
+            <h1 className="text-2xl font-bold text-foreground mb-2">Accès révoqué</h1>
+            <p className="text-muted-foreground">
+              Votre accès à ce tableau a été révoqué par le propriétaire.
+            </p>
+          </div>
+
+          {requestSent ? (
+            <div className="text-center space-y-4">
+              <div className="mx-auto w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-foreground mb-1">Demande envoyée</h2>
+                <p className="text-sm text-muted-foreground">
+                  Votre demande d'accès a été envoyée au propriétaire du tableau. 
+                  Vous serez notifié par email une fois qu'elle sera traitée.
+                </p>
+              </div>
+              <div className="pt-4">
+                <p className="text-xs text-muted-foreground">
+                  Email utilisé : <span className="font-medium">{email}</span>
+                </p>
+              </div>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="p-4 bg-muted/50 rounded-lg border border-border">
+                <p className="text-sm text-muted-foreground mb-3">
+                  Vous pouvez demander un nouvel accès au propriétaire du tableau.
+                </p>
+                
+                <div className="space-y-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="name" className="text-sm">Votre nom</Label>
+                    <Input
+                      id="name"
+                      type="text"
+                      placeholder="Votre nom"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="h-9"
+                    />
+                  </div>
+                  
+                  <div className="space-y-1.5">
+                    <Label htmlFor="message" className="text-sm">Message (optionnel)</Label>
+                    <Textarea
+                      id="message"
+                      placeholder="Expliquez pourquoi vous souhaitez accéder à ce tableau..."
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      rows={3}
+                      className="resize-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Envoi en cours...
+                  </>
+                ) : (
+                  <>
+                    <Send className="mr-2 h-4 w-4" />
+                    Demander l'accès
+                  </>
+                )}
+              </Button>
+
+              <p className="text-xs text-center text-muted-foreground">
+                Email : <span className="font-medium">{email}</span>
+              </p>
+            </form>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 
@@ -1073,6 +1220,7 @@ export default function PublicKanbanPage({ params }) {
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [accessError, setAccessError] = useState(null);
+  const [isBanned, setIsBanned] = useState(false);
   const [boardData, setBoardData] = useState(null);
   const [permissions, setPermissions] = useState(null);
   const [selectedTask, setSelectedTask] = useState(null);
@@ -1137,6 +1285,30 @@ export default function PublicKanbanPage({ params }) {
     },
     onError: (error) => {
       console.error('❌ [Public] Erreur subscription:', error);
+    }
+  });
+
+  // Subscription pour détecter quand l'accès est révoqué (déconnexion temps réel)
+  useSubscription(ACCESS_REVOKED_SUBSCRIPTION, {
+    variables: { token, email: visitorEmail?.toLowerCase() },
+    skip: !boardData?.id || !token || !visitorEmail,
+    onData: ({ data }) => {
+      const payload = data?.data?.accessRevoked;
+      if (payload) {
+        console.log('🚫 [Public] Accès révoqué en temps réel !');
+        toast.error("Votre accès a été révoqué par le propriétaire du tableau.");
+        
+        // Supprimer la session du localStorage
+        try {
+          localStorage.removeItem(getStorageKey(token));
+        } catch (e) {
+          console.warn('Erreur suppression localStorage:', e);
+        }
+        
+        // Marquer comme banni et afficher la page de demande d'accès
+        setBoardData(null);
+        setIsBanned(true);
+      }
     }
   });
 
@@ -1232,7 +1404,14 @@ export default function PublicKanbanPage({ params }) {
           console.warn('Erreur sauvegarde localStorage:', e);
         }
       } else {
-        setAccessError(result.data?.getPublicBoard?.message || "Accès refusé");
+        // Vérifier si l'utilisateur est banni
+        if (result.data?.getPublicBoard?.isBanned) {
+          setVisitorEmail(email);
+          setIsBanned(true);
+          setShowEmailModal(false);
+        } else {
+          setAccessError(result.data?.getPublicBoard?.message || "Accès refusé");
+        }
       }
     } catch (error) {
       setAccessError("Une erreur est survenue");
@@ -1359,6 +1538,42 @@ export default function PublicKanbanPage({ params }) {
           </CardContent>
         </Card>
       </div>
+    );
+  }
+
+  // Banned state - afficher la page de demande d'accès
+  if (isBanned && visitorEmail) {
+    return (
+      <BannedAccessPage 
+        email={visitorEmail} 
+        token={token} 
+        onAccessApproved={async () => {
+          // Recharger les données du tableau quand l'accès est approuvé
+          setIsBanned(false);
+          try {
+            const result = await getPublicBoard({ variables: { token, email: visitorEmail } });
+            if (result.data?.getPublicBoard?.success) {
+              setBoardData(result.data.getPublicBoard.board);
+              setPermissions(result.data.getPublicBoard.share?.permissions);
+              
+              // Récupérer le profil visiteur
+              const visitor = result.data.getPublicBoard.share?.visitors?.find(v => v.email === visitorEmail.toLowerCase());
+              if (visitor) {
+                setVisitorProfile({
+                  firstName: visitor.firstName,
+                  lastName: visitor.lastName,
+                  name: visitor.name || visitorEmail.split('@')[0],
+                  image: visitor.image
+                });
+              }
+            }
+          } catch (error) {
+            console.error('Erreur rechargement après approbation:', error);
+            // En cas d'erreur, recharger la page
+            window.location.reload();
+          }
+        }} 
+      />
     );
   }
 

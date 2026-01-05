@@ -529,6 +529,30 @@ export const GET_PUBLIC_SHARES = gql`
       isActive
       expiresAt
       hasPassword
+      visitors {
+        id
+        email
+        firstName
+        lastName
+        name
+        image
+        firstVisitAt
+        lastVisitAt
+        visitCount
+      }
+      bannedEmails {
+        email
+        bannedAt
+        reason
+      }
+      accessRequests {
+        id
+        email
+        name
+        message
+        requestedAt
+        status
+      }
       stats {
         totalViews
         uniqueVisitors
@@ -620,6 +644,67 @@ export const GET_PUBLIC_BOARD = gql`
         }
       }
       visitorEmail
+      isBanned
+    }
+  }
+`;
+
+// Mutation pour demander l'accès (visiteurs bannis)
+export const REQUEST_ACCESS = gql`
+  mutation RequestAccess($token: String!, $email: String!, $name: String, $message: String) {
+    requestAccess(token: $token, email: $email, name: $name, message: $message) {
+      success
+      message
+      alreadyRequested
+    }
+  }
+`;
+
+// Subscription pour être notifié quand un accès est approuvé (temps réel)
+export const ACCESS_APPROVED_SUBSCRIPTION = gql`
+  subscription AccessApproved($token: String!, $email: String!) {
+    accessApproved(token: $token, email: $email) {
+      email
+      token
+      approved
+    }
+  }
+`;
+
+// Subscription pour être notifié quand un accès est révoqué (déconnexion temps réel)
+export const ACCESS_REVOKED_SUBSCRIPTION = gql`
+  subscription AccessRevoked($token: String!, $email: String!) {
+    accessRevoked(token: $token, email: $email) {
+      email
+      token
+      reason
+    }
+  }
+`;
+
+// Subscription pour être notifié d'une nouvelle demande d'accès (propriétaire)
+export const ACCESS_REQUESTED_SUBSCRIPTION = gql`
+  subscription AccessRequested($boardId: ID!) {
+    accessRequested(boardId: $boardId) {
+      id
+      email
+      name
+      message
+      requestedAt
+      boardId
+    }
+  }
+`;
+
+// Subscription pour voir les visiteurs connectés en temps réel
+export const VISITOR_PRESENCE_SUBSCRIPTION = gql`
+  subscription VisitorPresence($boardId: ID!) {
+    visitorPresence(boardId: $boardId) {
+      email
+      name
+      image
+      boardId
+      isConnected
     }
   }
 `;
@@ -691,6 +776,92 @@ export const DELETE_PUBLIC_SHARE = gql`
 export const REVOKE_PUBLIC_SHARE = gql`
   mutation RevokePublicShare($id: ID!, $workspaceId: ID) {
     revokePublicShare(id: $id, workspaceId: $workspaceId)
+  }
+`;
+
+// Mutation pour révoquer l'accès d'un visiteur spécifique (le bannit)
+export const REVOKE_VISITOR_ACCESS = gql`
+  mutation RevokeVisitorAccess($shareId: ID!, $visitorEmail: String!, $reason: String, $workspaceId: ID) {
+    revokeVisitorAccess(shareId: $shareId, visitorEmail: $visitorEmail, reason: $reason, workspaceId: $workspaceId) {
+      id
+      visitors {
+        id
+        email
+        firstName
+        lastName
+        name
+        image
+        firstVisitAt
+        lastVisitAt
+        visitCount
+      }
+      bannedEmails {
+        email
+        bannedAt
+        reason
+      }
+      accessRequests {
+        id
+        email
+        name
+        message
+        requestedAt
+        status
+      }
+    }
+  }
+`;
+
+// Mutation pour débannir un visiteur
+export const UNBAN_VISITOR = gql`
+  mutation UnbanVisitor($shareId: ID!, $visitorEmail: String!, $workspaceId: ID) {
+    unbanVisitor(shareId: $shareId, visitorEmail: $visitorEmail, workspaceId: $workspaceId) {
+      id
+      bannedEmails {
+        email
+        bannedAt
+        reason
+      }
+    }
+  }
+`;
+
+// Mutation pour approuver une demande d'accès
+export const APPROVE_ACCESS_REQUEST = gql`
+  mutation ApproveAccessRequest($shareId: ID!, $requestId: ID!, $workspaceId: ID) {
+    approveAccessRequest(shareId: $shareId, requestId: $requestId, workspaceId: $workspaceId) {
+      id
+      bannedEmails {
+        email
+        bannedAt
+        reason
+      }
+      accessRequests {
+        id
+        email
+        name
+        message
+        requestedAt
+        status
+      }
+    }
+  }
+`;
+
+// Mutation pour rejeter une demande d'accès
+export const REJECT_ACCESS_REQUEST = gql`
+  mutation RejectAccessRequest($shareId: ID!, $requestId: ID!, $workspaceId: ID) {
+    rejectAccessRequest(shareId: $shareId, requestId: $requestId, workspaceId: $workspaceId) {
+      id
+      accessRequests {
+        id
+        email
+        name
+        message
+        requestedAt
+        status
+      }
+    }
   }
 `;
 
