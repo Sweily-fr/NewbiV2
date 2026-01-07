@@ -5,6 +5,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Icon } from "@tabler/icons-react";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
+import { useEInvoicingSettings } from "@/src/hooks/useEInvoicing";
 import {
   Crown,
   Settings2,
@@ -12,6 +13,10 @@ import {
   Settings,
   Users,
   Sparkles,
+  MessageCircleQuestionMark,
+  GraduationCap,
+  UsersRound,
+  HelpCircle,
 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import { SettingsModal } from "@/src/components/settings-modal";
@@ -48,6 +53,105 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
+
+// Composant pour le menu Aide et support avec dropdown
+function HelpDropdownMenu({ onCommunityClick }) {
+  const { isMobile, setOpenMobile, state } = useSidebar();
+  const isCollapsed = state === "collapsed";
+  const [open, setOpen] = useState(false);
+
+  const handleLinkClick = () => {
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  };
+
+  return (
+    <SidebarMenuItem key={"help"}>
+      <DropdownMenu open={open} onOpenChange={setOpen}>
+        <DropdownMenuTrigger asChild>
+          <SidebarMenuButton
+            className="mb-1 cursor-pointer"
+            tooltip="Aide et support"
+          >
+            <MessageCircleQuestionMark />
+            <span>Aide et support</span>
+          </SidebarMenuButton>
+        </DropdownMenuTrigger>
+
+        <DropdownMenuContent
+          className="w-[280px] rounded-lg"
+          side={isMobile ? "bottom" : "right"}
+          align="start"
+          sideOffset={8}
+        >
+          <DropdownMenuItem
+            className="cursor-pointer flex-col items-start gap-1"
+            asChild
+          >
+            <a
+              href="https://chat.whatsapp.com/FGLms8EYhpv1o5rkrnIldL"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <div className="flex items-center gap-2 w-full">
+                <HelpCircle className="h-4 w-4" />
+                <div className="flex flex-col">
+                  <span className="font-normal text-sm">Aide</span>
+                  <span className="text-xs text-muted-foreground">
+                    Besoin d'aide ? Contactez-nous
+                  </span>
+                </div>
+              </div>
+            </a>
+          </DropdownMenuItem>
+
+          <DropdownMenuItem
+            className="cursor-pointer flex-col items-start gap-1"
+            onClick={(e) => {
+              e.preventDefault();
+              if (onCommunityClick) {
+                onCommunityClick();
+              }
+              handleLinkClick();
+            }}
+          >
+            <div className="flex items-center gap-2 w-full">
+              <UsersRound className="h-4 w-4" />
+              <div className="flex flex-col">
+                <span className="font-normal text-sm">Communauté</span>
+                <span className="text-xs text-muted-foreground">
+                  Rejoignez notre communauté
+                </span>
+              </div>
+            </div>
+          </DropdownMenuItem>
+
+          <DropdownMenuItem
+            className="cursor-pointer flex-col items-start gap-1"
+            asChild
+          >
+            <a
+              href="https://newbi.academy"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <div className="flex items-center gap-2 w-full">
+                <GraduationCap className="h-4 w-4" />
+                <div className="flex flex-col">
+                  <span className="font-normal text-sm">Newbi Academy</span>
+                  <span className="text-xs text-muted-foreground">
+                    Formations et tutoriels
+                  </span>
+                </div>
+              </div>
+            </a>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </SidebarMenuItem>
+  );
+}
 
 // Composant pour le menu Paramètres avec dropdown
 function SettingsDropdownMenu() {
@@ -142,8 +246,12 @@ export function NavSecondary({
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [eInvoicingPromoOpen, setEInvoicingPromoOpen] = useState(false);
   const { isActive } = useSubscription();
+  const { settings: eInvoicingSettings } = useEInvoicingSettings();
   const { isMobile, setOpenMobile, state } = useSidebar();
   const isCollapsed = state === "collapsed";
+
+  // Vérifier si la facturation électronique est activée
+  const isEInvoicingEnabled = eInvoicingSettings?.eInvoicingEnabled;
 
   // Fonction pour fermer la sidebar sur mobile lors du clic
   const handleLinkClick = () => {
@@ -155,8 +263,8 @@ export function NavSecondary({
   return (
     <SidebarGroup {...props}>
       <SidebarGroupContent>
-        {/* Bouton Facturation électronique (Sparkles) - visible uniquement pour les abonnés */}
-        {isActive() && (
+        {/* Bouton Facturation électronique (Sparkles) - visible uniquement pour les abonnés ET si non activée */}
+        {isActive() && !isEInvoicingEnabled && (
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton
@@ -182,12 +290,21 @@ export function NavSecondary({
         <SidebarMenu>
           <SettingsDropdownMenu />
         </SidebarMenu>
+
+        {/* Menu Aide et support avec dropdown */}
+        <SidebarMenu>
+          <HelpDropdownMenu onCommunityClick={onCommunityClick} />
+        </SidebarMenu>
+
         {/* /// */}
         <SidebarMenu>
           {items.map((item) => {
-            // Vérifier si c'est l'item Communauté et si l'utilisateur a un plan Pro
-            const isCommunity = item.title === "Communauté";
-            const hasAccess = !isCommunity || isActive();
+            // Filtrer les items Communauté et Aide (maintenant dans les dropdowns)
+            if (item.title === "Communauté" || item.title === "Aide") {
+              return null;
+            }
+
+            const hasAccess = true;
 
             return (
               <SidebarMenuItem key={item.title}>

@@ -58,6 +58,8 @@ import { useState, useEffect, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useInvoices } from "@/src/graphql/invoiceQueries";
 import { PricingModal } from "@/src/components/pricing-modal";
+import { ProSubscriptionOverlay } from "@/src/components/pro-subscription-overlay";
+import { BankSyncOverlay } from "@/src/components/bank-sync-overlay";
 import {
   processIncomeForCharts,
   processExpensesWithBankForCharts,
@@ -92,6 +94,9 @@ function DashboardContent() {
 
   const { workspaceId } = useWorkspace();
 
+  // État pour l'overlay de synchronisation bancaire
+  const [isBankSyncing, setIsBankSyncing] = useState(false);
+
   // Gérer le retour de Bridge Connect (sync automatique des comptes bancaires)
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -101,6 +106,9 @@ function DashboardContent() {
       console.log(
         "🏦 Retour de Bridge détecté, synchronisation des comptes..."
       );
+
+      // Afficher l'overlay de chargement immédiatement
+      setIsBankSyncing(true);
 
       const syncBankAccounts = async () => {
         try {
@@ -132,6 +140,9 @@ function DashboardContent() {
           window.history.replaceState({}, "", cleanUrl);
         } catch (error) {
           console.error("❌ Erreur lors de la sync bancaire:", error);
+        } finally {
+          // Masquer l'overlay après la sync
+          setIsBankSyncing(false);
         }
       };
 
@@ -244,6 +255,10 @@ function DashboardContent() {
       <Head>
         <meta name="robots" content="noindex,nofollow,noarchive" />
       </Head>
+
+      {/* Overlay de synchronisation bancaire */}
+      <BankSyncOverlay isVisible={isBankSyncing} />
+
       <div className="flex flex-col gap-4 py-8 sm:p-6 md:gap-6 md:py-6 p-4 md:p-6">
         <div className="flex items-center justify-between w-full mb-4 md:mb-6">
           <div className="flex flex-col">
@@ -414,9 +429,28 @@ function DashboardContent() {
 function DashboardWithSearchParams() {
   const searchParams = useSearchParams();
   const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
+  const [showProAnimation, setShowProAnimation] = useState(false);
+
+  // Détecter le succès de paiement Stripe et afficher l'animation Pro
+  useEffect(() => {
+    const paymentSuccess = searchParams.get("payment_success") === "true";
+    const subscriptionSuccess =
+      searchParams.get("subscription_success") === "true";
+
+    if (paymentSuccess || subscriptionSuccess) {
+      console.log("🎉 Paiement réussi détecté, affichage de l'animation Pro");
+      setShowProAnimation(true);
+      // Nettoyer l'URL des paramètres
+      const cleanUrl = window.location.pathname;
+      window.history.replaceState({}, "", cleanUrl);
+    }
+  }, [searchParams]);
 
   // Ouvrir le modal de pricing si les paramètres pricing=true ou access=restricted sont présents
+  // MAIS seulement si l'animation Pro n'est pas en cours
   useEffect(() => {
+    if (showProAnimation) return; // Ne pas ouvrir le modal si l'animation est en cours
+
     const showPricing = searchParams.get("pricing") === "true";
     const accessRestricted = searchParams.get("access") === "restricted";
 
@@ -426,7 +460,12 @@ function DashboardWithSearchParams() {
       const cleanUrl = window.location.pathname;
       window.history.replaceState({}, "", cleanUrl);
     }
-  }, [searchParams]);
+  }, [searchParams, showProAnimation]);
+
+  const handleProAnimationComplete = () => {
+    setShowProAnimation(false);
+    console.log("✅ Animation Pro terminée, dashboard accessible");
+  };
 
   // Le dashboard principal est accessible sans abonnement
   return (
@@ -435,6 +474,10 @@ function DashboardWithSearchParams() {
       <PricingModal
         isOpen={isPricingModalOpen}
         onClose={() => setIsPricingModalOpen(false)}
+      />
+      <ProSubscriptionOverlay
+        isVisible={showProAnimation}
+        onComplete={handleProAnimationComplete}
       />
     </>
   );

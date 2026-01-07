@@ -174,19 +174,9 @@ const data = {
   ],
   navSecondary: [
     {
-      title: "Communauté",
-      url: "https://chat.whatsapp.com/FGLms8EYhpv1o5rkrnIldL",
-      icon: Users,
-    },
-    {
       title: "Recherche",
       url: "#",
       icon: Search,
-    },
-    {
-      title: "Aide",
-      url: "https://chat.whatsapp.com/FGLms8EYhpv1o5rkrnIldL",
-      icon: MessageCircleQuestionMark,
     },
   ],
   // Navigation pour la vue Comptabilité (cabinets comptables)
