@@ -2,8 +2,10 @@
 import React from "react";
 import { useSession } from "@/src/lib/auth-client";
 import { FaFacebook, FaInstagram, FaLinkedin, FaTwitter } from "react-icons/fa";
+import { Heart } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { getAssetUrl } from "@/src/lib/image-utils";
+import Link from "next/link";
 // import { useCookieConsent } from "@/src/hooks/useCookieConsent";
 
 const defaultSections = [
@@ -71,27 +73,30 @@ const Footer7 = ({
   };
 
   return (
-    <div className="px-2 py-2 lg:px-2 bg-gradient-to-t from-[#fbd7d3] via-[#f6f7fc] to-[#cad8f7]">
+    <div className="px-2 py-2 lg:px-2 bg-[#5A50FF]/10">
       <div className="mx-auto w-full lg:px-8 rounded-[15px] md:rounded-[18px] lg:rounded-[18px] bg-white/50">
         <div className="relative pt-12 pb-12 md:pt-20 md:pb-16 text-center sm:py-24 px-4 md:px-0">
           <hgroup>
-            <h2 className="font-mono text-xs/5 font-semibold tracking-widest text-gray-500 uppercase">
+            {/* <h2 className="font-mono text-xs/5 font-medium tracking-widest text-gray-500 uppercase">
               Commencez gratuitement aujourd'hui
-            </h2>
-            <p className="mt-4 md:mt-6 text-xl md:text-2xl lg:text-4xl font-medium tracking-tight text-gray-950">
-              Prêt à simplifier votre gestion d'entreprise ?
+            </h2> */}
+            <p className="mt-4 md:mt-6 text-xl md:text-2xl lg:text-4xl font-normal tracking-tight text-gray-950">
+              Vous aussi, gagnez du temps sur vos achats
               <br className="hidden md:block" />
               <span className="md:hidden"> </span>Commencez gratuitement
               aujourd'hui.
             </p>
           </hgroup>
           <p className="mx-auto mt-4 md:mt-6 max-w-sm text-sm/6 text-gray-500">
-            Commencez à gagner plus rapidement avec NewBi.
+            Commencez à gagner plus rapidement avec newbi.
           </p>
-          <div className="mt-4 md:mt-6">
-            <Button variant="default" asChild>
-              <a href="/auth/signup">Essayez Gratuitement</a>
-            </Button>
+          <div className="mt-4 md:mt-6 flex justify-center">
+            <Link
+              href="/auth/signup"
+              className="inline-block rounded-xl px-8 py-3 text-center text-base font-normal transition duration-150 active:scale-[0.98] bg-[#202020] text-white dark:bg-white dark:text-black hover:bg-gray-800"
+            >
+              Démarrer gratuitement
+            </Link>
           </div>
         </div>
         <div className="pb-6">
@@ -107,13 +112,12 @@ const Footer7 = ({
               <div className="col-span-1 sm:col-span-2 md:col-span-2 flex justify-center md:justify-start mb-6 sm:mb-4 md:mb-0">
                 <div className="lg:pb-6 group/item relative">
                   <img
-                    src={getAssetUrl("NewbiLogo.svg")}
-                    alt="logo"
-                    width="80"
-                    height="80"
-                    className="w-20 h-20 sm:w-24 sm:h-24 md:w-[100px] md:h-[100px]"
+                    src="/newbiLetter.png"
+                    alt="Logo newbi"
+                    width="100"
+                    height="40"
+                    className="object-contain"
                   />
-                  {/* SVG elements can be added here */}
                 </div>
               </div>
               <div className="col-span-1">
@@ -168,6 +172,16 @@ const Footer7 = ({
                   Ressources
                 </h3>
                 <ul className="mt-2 sm:mt-3 md:mt-6 space-y-2 sm:space-y-3 md:space-y-4 text-sm/6">
+                  <li>
+                    <a
+                      className="font-regular text-gray-950 hover:text-gray-700"
+                      href="https://docs.newbi.fr/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Devenez partenaire
+                    </a>
+                  </li>
                   <li>
                     <a
                       className="font-regular text-gray-950 hover:text-gray-700"
@@ -278,9 +292,14 @@ const Footer7 = ({
                   href="https://www.sweily.fr"
                   className="hover:text-gray-700 transition-colors"
                 >
-                  Sweily
+                  By Sweily
                 </a>{" "}
-                — Made with ❤️ in France • © {new Date().getFullYear()}
+                — Made with{" "}
+                <Heart
+                  size={14}
+                  className="inline-block text-red-500 fill-red-500 mx-1"
+                />{" "}
+                in France • © {new Date().getFullYear()}
               </div>
             </div>
           </div>

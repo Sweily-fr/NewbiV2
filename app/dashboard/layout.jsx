@@ -21,7 +21,7 @@ import { SiteHeaderSkeleton } from "@/src/components/site-header-skeleton";
 import { useInactivityTimer } from "@/src/hooks/useInactivityTimer";
 import { useSessionValidator } from "@/src/hooks/useSessionValidator";
 import { authClient } from "@/src/lib/auth-client";
-import { SubscriptionSuccessModal } from "@/src/components/subscription-success-modal";
+import { ProSubscriptionOverlayHandler } from "@/src/components/pro-subscription-overlay-handler";
 import { SettingsModal } from "@/src/components/settings-modal";
 import { OrgActivationHandler } from "@/src/components/org-activation-handler";
 import { StripeConnectUrlHandler } from "@/src/components/stripe-connect-url-handler";
@@ -218,8 +218,8 @@ function DashboardContent({ children }) {
         onOpenChange={setIsCommunitySidebarOpen}
       />
 
-      {/* Modal de succès d'abonnement */}
-      <SubscriptionSuccessModal />
+      {/* Animation de succès d'abonnement Pro */}
+      <ProSubscriptionOverlayHandler />
 
       {/* Gestionnaire d'activation d'organisation après création */}
       <Suspense fallback={null}>

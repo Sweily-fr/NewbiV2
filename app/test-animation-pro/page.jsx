@@ -3,10 +3,12 @@
 import { useState } from "react";
 import { Button } from "@/src/components/ui/button";
 import { ProSubscriptionOverlay } from "@/src/components/pro-subscription-overlay";
-import { Play, RotateCcw } from "lucide-react";
+import { BankSyncOverlay } from "@/src/components/bank-sync-overlay";
+import { Play, RotateCcw, Landmark } from "lucide-react";
 
 export default function TestAnimationPro() {
   const [showOverlay, setShowOverlay] = useState(false);
+  const [showBankSync, setShowBankSync] = useState(false);
   const [animationCount, setAnimationCount] = useState(0);
 
   const handleTriggerAnimation = () => {
@@ -14,9 +16,20 @@ export default function TestAnimationPro() {
     setAnimationCount((prev) => prev + 1);
   };
 
+  const handleTriggerBankSync = () => {
+    setShowBankSync(true);
+    setAnimationCount((prev) => prev + 1);
+
+    // Simuler la durée de la synchronisation (3 secondes)
+    setTimeout(() => {
+      setShowBankSync(false);
+      console.log("✅ Synchronisation bancaire terminée");
+    }, 3000);
+  };
+
   const handleAnimationComplete = () => {
     setShowOverlay(false);
-    console.log("✅ Animation terminée");
+    console.log("✅ Animation Pro terminée");
   };
 
   return (
@@ -46,12 +59,20 @@ export default function TestAnimationPro() {
                 className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
               >
                 <Play className="w-4 h-4 mr-2" />
-                Déclencher l'animation
+                Animation Pro
+              </Button>
+
+              <Button
+                onClick={handleTriggerBankSync}
+                className="bg-[#5a50ff] hover:bg-[#4a3ecc]"
+              >
+                <Landmark className="w-4 h-4 mr-2" />
+                Sync Bancaire
               </Button>
 
               <Button variant="outline" onClick={() => setAnimationCount(0)}>
                 <RotateCcw className="w-4 h-4 mr-2" />
-                Réinitialiser le compteur
+                Réinitialiser
               </Button>
             </div>
 
@@ -105,14 +126,17 @@ export default function TestAnimationPro() {
             </h3>
             <ul className="space-y-2 text-sm text-blue-800 dark:text-blue-200">
               <li>
-                • Cliquez sur "Déclencher l'animation" pour voir l'overlay
+                • <strong>Animation Pro</strong> : Checkmark animé avec cercle
+                dégradé (~3s)
               </li>
-              <li>• L'animation dure environ 3 secondes</li>
-              <li>• L'overlay se ferme automatiquement avec un fade out</li>
               <li>
-                • Le contenu du dashboard reste visible en arrière-plan
-                (légèrement flouté)
+                • <strong>Sync Bancaire</strong> : Loader circulaire avec
+                message de synchronisation
               </li>
+              <li>
+                • Les overlays se ferment automatiquement avec un fade out
+              </li>
+              <li>• Le contenu du dashboard reste visible en arrière-plan</li>
               <li>• Testez plusieurs fois pour vérifier la fluidité</li>
             </ul>
           </div>
@@ -122,28 +146,41 @@ export default function TestAnimationPro() {
             <h3 className="text-lg font-semibold text-amber-900 dark:text-amber-100 mb-3">
               🎯 Comportement attendu en production
             </h3>
-            <ul className="space-y-2 text-sm text-amber-800 dark:text-amber-200">
-              <li>
-                • Après paiement Stripe → redirection vers
-                /dashboard?payment_success=true
-              </li>
-              <li>
-                • Détection du paramètre → déclenchement automatique de
-                l'overlay
-              </li>
-              <li>• Animation de 2-3 secondes → fade out progressif</li>
-              <li>• Dashboard accessible normalement après l'animation</li>
-              <li>• Le PricingModal n'est PAS déclenché si l'animation joue</li>
-            </ul>
+            <div className="space-y-3">
+              <div>
+                <p className="font-semibold text-amber-900 dark:text-amber-100 mb-1">
+                  Animation Pro :
+                </p>
+                <ul className="space-y-1 text-sm text-amber-800 dark:text-amber-200 ml-4">
+                  <li>
+                    • Après paiement Stripe → /dashboard?payment_success=true
+                  </li>
+                  <li>• Animation checkmark (~3s) → fade out</li>
+                  <li>• Le PricingModal n'est PAS déclenché</li>
+                </ul>
+              </div>
+              <div>
+                <p className="font-semibold text-amber-900 dark:text-amber-100 mb-1">
+                  Sync Bancaire :
+                </p>
+                <ul className="space-y-1 text-sm text-amber-800 dark:text-amber-200 ml-4">
+                  <li>• Après connexion Bridge → /dashboard?item_id=xxx</li>
+                  <li>• Loader circulaire pendant la sync des transactions</li>
+                  <li>• Fermeture automatique après sync complète</li>
+                </ul>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Overlay d'animation */}
+      {/* Overlays d'animation */}
       <ProSubscriptionOverlay
         isVisible={showOverlay}
         onComplete={handleAnimationComplete}
       />
+
+      <BankSyncOverlay isVisible={showBankSync} />
     </div>
   );
 }

@@ -59,6 +59,7 @@ import { useSearchParams } from "next/navigation";
 import { useInvoices } from "@/src/graphql/invoiceQueries";
 import { PricingModal } from "@/src/components/pricing-modal";
 import { ProSubscriptionOverlay } from "@/src/components/pro-subscription-overlay";
+import { BankSyncOverlay } from "@/src/components/bank-sync-overlay";
 import {
   processIncomeForCharts,
   processExpensesWithBankForCharts,
@@ -93,6 +94,9 @@ function DashboardContent() {
 
   const { workspaceId } = useWorkspace();
 
+  // État pour l'overlay de synchronisation bancaire
+  const [isBankSyncing, setIsBankSyncing] = useState(false);
+
   // Gérer le retour de Bridge Connect (sync automatique des comptes bancaires)
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -102,6 +106,9 @@ function DashboardContent() {
       console.log(
         "🏦 Retour de Bridge détecté, synchronisation des comptes..."
       );
+
+      // Afficher l'overlay de chargement immédiatement
+      setIsBankSyncing(true);
 
       const syncBankAccounts = async () => {
         try {
@@ -133,6 +140,9 @@ function DashboardContent() {
           window.history.replaceState({}, "", cleanUrl);
         } catch (error) {
           console.error("❌ Erreur lors de la sync bancaire:", error);
+        } finally {
+          // Masquer l'overlay après la sync
+          setIsBankSyncing(false);
         }
       };
 
@@ -245,6 +255,10 @@ function DashboardContent() {
       <Head>
         <meta name="robots" content="noindex,nofollow,noarchive" />
       </Head>
+
+      {/* Overlay de synchronisation bancaire */}
+      <BankSyncOverlay isVisible={isBankSyncing} />
+
       <div className="flex flex-col gap-4 py-8 sm:p-6 md:gap-6 md:py-6 p-4 md:p-6">
         <div className="flex items-center justify-between w-full mb-4 md:mb-6">
           <div className="flex flex-col">
