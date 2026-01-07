@@ -219,7 +219,9 @@ function DashboardContent({ children }) {
       />
 
       {/* Animation de succès d'abonnement Pro */}
-      <ProSubscriptionOverlayHandler />
+      <Suspense fallback={null}>
+        <ProSubscriptionOverlayHandler />
+      </Suspense>
 
       {/* Gestionnaire d'activation d'organisation après création */}
       <Suspense fallback={null}>
