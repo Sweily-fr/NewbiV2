@@ -1,6 +1,7 @@
 "use client";
 import React from "react";
 import { Check, ChevronRight } from "lucide-react";
+import Link from "next/link";
 
 const DashedLine = ({ position, orientation = "horizontal", style = {} }) => {
   const baseStyle = {
@@ -59,14 +60,6 @@ const ImageCard = ({
   />
 );
 
-const gradientTextStyle = {
-  textWrap: "nowrap",
-  background: "linear-gradient(90deg, #5A50FF 0%, #8B7FFF 100%)",
-  backgroundClip: "text",
-  WebkitBackgroundClip: "text",
-  color: "transparent",
-};
-
 const FeatureBlock = ({
   badge,
   title,
@@ -107,10 +100,13 @@ const FeatureBlock = ({
             ))}
           </ul>
 
-          <button className="mt-8 inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-medium text-white bg-[#202020] rounded-lg hover:bg-[#333333] transition-colors">
-            Démarrer
+          <Link
+            href="/auth/signup"
+            className="mt-8 inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-medium text-white bg-[#202020] rounded-lg hover:bg-[#333333] transition-colors"
+          >
+            Essayer gratuitement
             <ChevronRight className="w-4 h-4" />
-          </button>
+          </Link>
         </div>
 
         {/* Image Content */}
@@ -122,8 +118,8 @@ const FeatureBlock = ({
           {badgeImage && (
             <img
               src={badgeImage}
-              alt="Badge Facturation Électronique"
-              className="absolute top-4 right-4 w-[100px] xl:w-[120px] h-auto object-contain drop-shadow-lg z-20"
+              alt="Badge"
+              className="absolute top-4 right-4 w-[100px] xl:w-[120px] h-auto object-contain drop-shadow-lg z-50"
             />
           )}
           <ImageCard
@@ -140,72 +136,90 @@ const FeatureBlock = ({
   );
 };
 
-export default function ComponentsSection() {
+export default function GestionAchatsComponentsSection() {
   const sections = [
     {
-      badge: "SOLUTION TOUT-EN-UN",
-      title: "Gardez le contrôle de votre entreprise",
+      badge: "COMMANDES",
+      title: "Créez et suivez vos bons de commande",
       description:
-        "Centralisez toutes vos opérations financières et administratives sur une seule plateforme intuitive. Prenez des décisions éclairées grâce à une vue d'ensemble complète de votre activité.",
+        "Simplifiez votre processus d'achat : créez des bons de commande professionnels, suivez leur statut et gardez un historique complet de toutes vos commandes fournisseurs.",
       features: [
-        "Tableau de bord en temps réel avec tous vos indicateurs clés",
-        "Suivi automatique de votre trésorerie et de vos flux",
-        "Rapports personnalisés pour piloter votre croissance",
-        "Accès sécurisé depuis n'importe quel appareil",
-        "Gestion multi-comptes et multi-entreprises",
-        "Notifications intelligentes sur vos échéances",
-        "Historique complet de toutes vos opérations",
-        "Support client réactif et personnalisé",
+        "Création rapide de bons de commande en quelques clics",
+        "Suivi en temps réel du statut des commandes",
+        "Validation multi-niveaux selon les montants",
+        "Historique complet et recherche avancée",
+        "Modèles de commandes réutilisables",
+        "Envoi automatique aux fournisseurs par email",
+        "Gestion des réceptions partielles",
+        "Export PDF et archivage sécurisé",
       ],
       imageSrc: "/sectionComponents1.png",
-      imageAlt: "Dashboard newbi",
+      imageAlt: "Gestion des commandes - Bons de commande fournisseurs",
       reversed: false,
     },
     {
-      badge: "OUTIL DE GESTION SIMPLE ET EFFICACE",
-      title: "Gagnez en efficacité, simplifiez-vous le quotidien",
+      badge: "FOURNISSEURS",
+      title: "Centralisez votre base fournisseurs",
       description:
-        "Automatisez les tâches répétitives et concentrez-vous sur ce qui compte vraiment : développer votre activité. Notre interface intuitive vous fait gagner un temps précieux chaque jour.",
+        "Gérez tous vos fournisseurs depuis une interface unique. Consultez l'historique, les conditions commerciales et évaluez les performances de chaque partenaire.",
       features: [
-        "Facturation automatisée et envoi en un clic",
-        "Relances clients automatiques et personnalisables",
-        "Synchronisation bancaire en temps réel",
-        "Gestion simplifiée de vos devis et contrats",
-        "Modèles de documents personnalisables",
-        "Signature électronique intégrée",
-        "Suivi des paiements en temps réel",
-        "Intégration avec vos outils favoris",
+        "Fiche détaillée par fournisseur avec contacts",
+        "Conditions commerciales et délais de paiement",
+        "Historique complet des achats par fournisseur",
+        "Évaluation et notation des performances",
+        "Gestion des catalogues produits",
+        "Documents et contrats centralisés",
+        "Alertes sur les échéances de contrats",
+        "Import/export de votre base fournisseurs",
       ],
       imageSrc: "/sectionComponents2.png",
-      imageAlt: "Gestion efficace newbi",
-      badgeImage: "/badgeFacturation.png",
+      imageAlt: "Base fournisseurs - Gestion centralisée",
       reversed: true,
     },
     {
-      badge: "GESTION DES DÉPENSES",
-      title: "Gérez l'ensemble de vos dépenses",
+      badge: "FACTURES D'ACHAT",
+      title: "Gérez vos factures fournisseurs",
       description:
-        "Gardez un œil sur chaque euro dépensé. Catégorisez automatiquement vos dépenses, suivez vos budgets et optimisez vos coûts pour maximiser votre rentabilité.",
+        "Rapprochez automatiquement vos factures avec vos commandes et réceptions. Simplifiez la validation et accélérez vos paiements tout en gardant le contrôle.",
       features: [
-        "Catégorisation automatique de vos dépenses",
-        "Scan et archivage de vos justificatifs",
-        "Alertes budget et suivi des écarts",
-        "Export comptable simplifié pour votre expert-comptable",
-        "Gestion des notes de frais collaborateurs",
-        "Rapprochement bancaire automatique",
-        "Analyse des dépenses par catégorie",
-        "Prévisions budgétaires intelligentes",
+        "Rapprochement automatique commande/réception/facture",
+        "Workflow de validation personnalisable",
+        "Échéancier de paiement fournisseurs",
+        "Alertes sur les échéances à venir",
+        "Gestion des litiges et avoirs",
+        "Archivage numérique conforme",
+        "Intégration comptable automatique",
+        "Reporting des dépenses par catégorie",
       ],
       imageSrc: "/sectionComponents3.png",
-      imageAlt: "Gestion des dépenses newbi",
+      imageAlt: "Factures fournisseurs - Rapprochement automatique",
       reversed: false,
+    },
+    {
+      badge: "ANALYSE",
+      title: "Optimisez vos coûts d'achat",
+      description:
+        "Analysez vos dépenses et identifiez les opportunités d'économies. Tableaux de bord en temps réel et rapports détaillés pour piloter efficacement vos achats.",
+      features: [
+        "Tableau de bord avec KPIs achats en temps réel",
+        "Analyse des dépenses par catégorie et fournisseur",
+        "Comparaison des prix entre fournisseurs",
+        "Alertes sur les dépassements de budget",
+        "Suivi des économies réalisées",
+        "Rapports personnalisables et exports",
+        "Prévisions de trésorerie fournisseurs",
+        "Données hébergées en France (RGPD compliant)",
+      ],
+      imageSrc: "/sectionComponents1.png",
+      imageAlt: "Analyse achats - Optimisation des coûts",
+      reversed: true,
     },
   ];
 
   return (
     <section
-      id="components"
-      className="relative isolate overflow-hidden pt-10 sm:pt-32"
+      id="features"
+      className="relative isolate overflow-hidden pt-10 sm:pt-20 bg-white"
     >
       <div className="flex flex-col gap-20 sm:gap-32">
         {sections.map((section, index) => (
@@ -217,6 +231,7 @@ export default function ComponentsSection() {
             features={section.features}
             imageSrc={section.imageSrc}
             imageAlt={section.imageAlt}
+            badgeImage={section.badgeImage}
             reversed={section.reversed}
           />
         ))}

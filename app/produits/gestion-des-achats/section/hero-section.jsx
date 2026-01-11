@@ -1,9 +1,8 @@
 "use client";
 import React from "react";
 import { Button } from "@/src/components/ui/button";
-import { TrustedCompaniesSection } from "@/src/components/trusted-companies-section";
 import Link from "next/link";
-import { FacturesAnimation } from "./FacturesAnimation";
+import { GestionAchatsAnimation } from "./GestionAchatsAnimation";
 
 export function HeroSection() {
   return (
@@ -15,23 +14,13 @@ export function HeroSection() {
               {/* Contenu texte à gauche */}
               <div className="space-y-6">
                 <h1 className="text-balance font-normal text-4xl md:text-5xl lg:text-[3.2rem] leading-tight tracking-tight">
-                  Votre outil de facturation tout-en-un
+                  Optimisez la gestion de vos achats
                 </h1>
 
-                {/* Badge 100% conforme à refaire plus tard */}
-                {/* <div className="flex items-center gap-3">
-                  <div className="bg-[#1D1D1B] text-white px-4 py-2 rounded-lg text-sm font-medium">
-                    100 % conforme
-                  </div>
-                  <span className="text-gray-600 text-sm">
-                    Plateforme Agréée par l'État
-                  </span>
-                </div> */}
-
                 <h2 className="text-md font-normal tracking-tight text-gray-600 dark:text-gray-300 mx-auto mb-8 max-w-3xl">
-                  Créez et gérez vos factures en un clic.{" "}
+                  Centralisez vos fournisseurs, commandes et factures d'achat.{" "}
                   <strong className="font-medium text-gray-900">
-                    Suivez vos paiements et relancez vos clients
+                    Suivez vos dépenses et optimisez votre trésorerie
                   </strong>{" "}
                   depuis une seule interface.
                 </h2>
@@ -43,26 +32,17 @@ export function HeroSection() {
                       size="lg"
                       className="bg-[#1D1D1B] hover:bg-[#2D2D2B] text-white font-normal rounded-lg px-6"
                     >
-                      Faites vos premières factures avec newbi
+                      Démarrer maintenant
                     </Button>
                   </Link>
-                  {/* <Link href="/produits/factures#features">
-                    <Button
-                      size="lg"
-                      variant="outline"
-                      className="border-gray-300 text-gray-900 rounded-lg px-6"
-                    >
-                      Découvrir l'outil de facturation
-                    </Button>
-                  </Link> */}
                 </div>
                 <div className="flex flex-col gap-1">
                   <p className="text-gray-500 text-sm pt-2">
-                    Facturation électronique incluse sans surcoût dans toutes
-                    les offres newbi.
+                    Gestion des achats incluse sans surcoût dans toutes les
+                    offres newbi.
                   </p>
                   <p className="text-gray-500 text-xs pt-2">
-                    🇫🇷 newbi, votre partenaire facture électronique
+                    🇫🇷 newbi, votre partenaire gestion d'entreprise
                   </p>
                 </div>
               </div>
@@ -70,7 +50,7 @@ export function HeroSection() {
               {/* Animation SVG à droite */}
               <div className="relative flex items-end justify-end overflow-visible pt-24">
                 <div className="relative w-[700px] xl:w-[800px] -mr-32 xl:-mr-48">
-                  <FacturesAnimation />
+                  <GestionAchatsAnimation />
                   {/* Gradient flou en bas */}
                   <div
                     className="absolute bottom-0 left-0 right-0 h-22 pointer-events-none"
