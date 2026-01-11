@@ -32,8 +32,63 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
   const [showAllActivities, setShowAllActivities] = useState(false);
   const [pendingImages, setPendingImages] = useState([]);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef(null);
+  const textareaRef = useRef(null);
   const { data: session } = useSession();
+
+  // Gestion du drag-and-drop sur le textarea
+  const handleDragOver = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+  }, []);
+
+  const handleDrop = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+
+    const files = Array.from(e.dataTransfer.files).filter(file => 
+      file.type.startsWith('image/')
+    );
+
+    if (files.length > 0) {
+      const newImages = files.map(file => ({
+        file,
+        preview: URL.createObjectURL(file)
+      }));
+      setPendingImages(prev => [...prev, ...newImages]);
+    }
+  }, []);
+
+  const handlePaste = useCallback((e) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    const imageFiles = [];
+    for (const item of items) {
+      if (item.type.startsWith('image/')) {
+        const file = item.getAsFile();
+        if (file) {
+          imageFiles.push({
+            file,
+            preview: URL.createObjectURL(file)
+          });
+        }
+      }
+    }
+
+    if (imageFiles.length > 0) {
+      setPendingImages(prev => [...prev, ...imageFiles]);
+    }
+  }, []);
 
   // Récupérer les membres de l'organisation directement via GraphQL (même procédé que MemberSelector)
   const { data: membersData } = useQuery(GET_ORGANIZATION_MEMBERS, {
@@ -518,6 +573,37 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
                                   )}
                                 </div>
                                 <p className="text-sm whitespace-pre-wrap">{item.content}</p>
+                                {/* Affichage des images du commentaire dans le fil "Tout" */}
+                                {item.images && item.images.length > 0 && (
+                                  <div className="grid grid-cols-2 gap-2 mt-2">
+                                    {item.images.map((image) => (
+                                      <Dialog key={image.id}>
+                                        <DialogTrigger asChild>
+                                          <div className="relative cursor-pointer group overflow-hidden rounded-md border border-border hover:border-primary/50 transition-colors">
+                                            <img
+                                              src={image.url}
+                                              alt={image.fileName}
+                                              className="w-full h-20 object-cover"
+                                            />
+                                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                                              <ZoomIn className="h-5 w-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                            </div>
+                                          </div>
+                                        </DialogTrigger>
+                                        <DialogContent className="max-w-4xl p-0 overflow-hidden">
+                                          <VisuallyHidden>
+                                            <DialogTitle>Aperçu de l'image</DialogTitle>
+                                          </VisuallyHidden>
+                                          <img
+                                            src={image.url}
+                                            alt={image.fileName}
+                                            className="w-full h-auto max-h-[80vh] object-contain"
+                                          />
+                                        </DialogContent>
+                                      </Dialog>
+                                    ))}
+                                  </div>
+                                )}
                               </>
                             )}
                           </div>
@@ -818,18 +904,35 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
 
         {/* Zone de saisie de commentaire - Sticky en bas */}
         <div className="pb-3 pl-3 pr-3 pt-1 space-y-2 flex-shrink-0">
-          <Textarea
-            value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
-            placeholder="Ajouter un commentaire..."
-            className="min-h-[80px] text-sm bg-background border-border"
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-                e.preventDefault();
-                handleAddComment();
-              }
-            }}
-          />
+          <div
+            className={`relative transition-all ${isDragOver ? 'ring-2 ring-primary ring-offset-2 rounded-md' : ''}`}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+          >
+            <Textarea
+              ref={textareaRef}
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              onPaste={handlePaste}
+              placeholder={isDragOver ? "Déposez vos images ici..." : "Ajouter un commentaire... (glissez-déposez des images)"}
+              className={`min-h-[80px] text-sm bg-background border-border ${isDragOver ? 'border-primary' : ''}`}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                  e.preventDefault();
+                  handleAddComment();
+                }
+              }}
+            />
+            {isDragOver && (
+              <div className="absolute inset-0 bg-primary/10 rounded-md flex items-center justify-center pointer-events-none">
+                <div className="text-primary font-medium text-sm flex items-center gap-2">
+                  <ImagePlus className="h-5 w-5" />
+                  Déposez vos images ici
+                </div>
+              </div>
+            )}
+          </div>
           
           {/* Images en attente */}
           {pendingImages.length > 0 && (
