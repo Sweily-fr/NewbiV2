@@ -1,6 +1,7 @@
 "use client";
 import React from "react";
 import { Check, ChevronRight } from "lucide-react";
+import Link from "next/link";
 
 const DashedLine = ({ position, orientation = "horizontal", style = {} }) => {
   const baseStyle = {
@@ -59,14 +60,6 @@ const ImageCard = ({
   />
 );
 
-const gradientTextStyle = {
-  textWrap: "nowrap",
-  background: "linear-gradient(90deg, #5A50FF 0%, #8B7FFF 100%)",
-  backgroundClip: "text",
-  WebkitBackgroundClip: "text",
-  color: "transparent",
-};
-
 const FeatureBlock = ({
   badge,
   title,
@@ -107,10 +100,13 @@ const FeatureBlock = ({
             ))}
           </ul>
 
-          <button className="mt-8 inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-medium text-white bg-[#202020] rounded-lg hover:bg-[#333333] transition-colors">
-            Démarrer
+          <Link
+            href="/auth/signup"
+            className="mt-8 inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-medium text-white bg-[#202020] rounded-lg hover:bg-[#333333] transition-colors"
+          >
+            Essayer gratuitement
             <ChevronRight className="w-4 h-4" />
-          </button>
+          </Link>
         </div>
 
         {/* Image Content */}
@@ -123,7 +119,7 @@ const FeatureBlock = ({
             <img
               src={badgeImage}
               alt="Badge Facturation Électronique"
-              className="absolute top-4 right-4 w-[100px] xl:w-[120px] h-auto object-contain drop-shadow-lg z-20"
+              className="absolute top-4 right-4 w-[100px] xl:w-[120px] h-auto object-contain drop-shadow-lg z-50"
             />
           )}
           <ImageCard
@@ -140,72 +136,91 @@ const FeatureBlock = ({
   );
 };
 
-export default function ComponentsSection() {
+export default function FacturationElectroniqueComponentsSection() {
   const sections = [
     {
-      badge: "SOLUTION TOUT-EN-UN",
-      title: "Gardez le contrôle de votre entreprise",
+      badge: "RÉFORME 2026",
+      title: "Préparez-vous à l'obligation de facturation électronique",
       description:
-        "Centralisez toutes vos opérations financières et administratives sur une seule plateforme intuitive. Prenez des décisions éclairées grâce à une vue d'ensemble complète de votre activité.",
+        "La réforme de la facturation électronique entre en vigueur progressivement à partir de 2026. Anticipez dès maintenant cette obligation légale avec newbi et assurez la conformité de votre entreprise.",
       features: [
-        "Tableau de bord en temps réel avec tous vos indicateurs clés",
-        "Suivi automatique de votre trésorerie et de vos flux",
-        "Rapports personnalisés pour piloter votre croissance",
-        "Accès sécurisé depuis n'importe quel appareil",
-        "Gestion multi-comptes et multi-entreprises",
-        "Notifications intelligentes sur vos échéances",
-        "Historique complet de toutes vos opérations",
-        "Support client réactif et personnalisé",
+        "Conformité avec la réforme de la facturation électronique 2026",
+        "Formats standards : Factur-X, UBL, CII",
+        "Transmission automatique vers le Portail Public de Facturation (PPF)",
+        "Archivage légal des factures pendant 10 ans",
+        "Certificat d'authenticité et d'intégrité des documents",
+        "Mise à jour automatique selon les évolutions réglementaires",
+        "Accompagnement personnalisé pour la transition",
+        "Formation et support inclus",
       ],
       imageSrc: "/sectionComponents1.png",
-      imageAlt: "Dashboard newbi",
+      imageAlt: "Facturation électronique 2026 - Conformité réforme",
       reversed: false,
     },
     {
-      badge: "OUTIL DE GESTION SIMPLE ET EFFICACE",
-      title: "Gagnez en efficacité, simplifiez-vous le quotidien",
+      badge: "E-INVOICING",
+      title: "Émettez et recevez vos factures au format électronique",
       description:
-        "Automatisez les tâches répétitives et concentrez-vous sur ce qui compte vraiment : développer votre activité. Notre interface intuitive vous fait gagner un temps précieux chaque jour.",
+        "Simplifiez vos échanges B2B avec la facturation électronique. Envoyez et recevez des factures dématérialisées conformes aux normes en vigueur, directement depuis votre interface newbi.",
       features: [
-        "Facturation automatisée et envoi en un clic",
-        "Relances clients automatiques et personnalisables",
-        "Synchronisation bancaire en temps réel",
-        "Gestion simplifiée de vos devis et contrats",
-        "Modèles de documents personnalisables",
-        "Signature électronique intégrée",
-        "Suivi des paiements en temps réel",
-        "Intégration avec vos outils favoris",
+        "Création de factures électroniques en quelques clics",
+        "Réception et traitement automatique des factures fournisseurs",
+        "Validation automatique des données obligatoires",
+        "Signature électronique qualifiée intégrée",
+        "Piste d'audit fiable (PAF) automatisée",
+        "Interopérabilité avec les plateformes partenaires",
+        "Notification en temps réel des statuts de factures",
+        "Tableau de bord de suivi des flux e-invoicing",
       ],
       imageSrc: "/sectionComponents2.png",
-      imageAlt: "Gestion efficace newbi",
+      imageAlt: "E-invoicing - Factures électroniques B2B",
       badgeImage: "/badgeFacturation.png",
       reversed: true,
     },
     {
-      badge: "GESTION DES DÉPENSES",
-      title: "Gérez l'ensemble de vos dépenses",
+      badge: "E-REPORTING",
+      title: "Transmettez vos données de transaction à l'administration",
       description:
-        "Gardez un œil sur chaque euro dépensé. Catégorisez automatiquement vos dépenses, suivez vos budgets et optimisez vos coûts pour maximiser votre rentabilité.",
+        "L'e-reporting est obligatoire pour les transactions B2C et internationales. newbi automatise la transmission de vos données fiscales vers l'administration, en toute conformité.",
       features: [
-        "Catégorisation automatique de vos dépenses",
-        "Scan et archivage de vos justificatifs",
-        "Alertes budget et suivi des écarts",
-        "Export comptable simplifié pour votre expert-comptable",
-        "Gestion des notes de frais collaborateurs",
-        "Rapprochement bancaire automatique",
-        "Analyse des dépenses par catégorie",
-        "Prévisions budgétaires intelligentes",
+        "Transmission automatique des données de transaction",
+        "Conformité e-reporting pour les ventes B2C",
+        "Déclaration des opérations internationales",
+        "Génération automatique des fichiers de reporting",
+        "Historique complet des transmissions",
+        "Alertes en cas d'anomalie ou de rejet",
+        "Rapports de conformité exportables",
+        "Intégration avec votre comptabilité",
       ],
       imageSrc: "/sectionComponents3.png",
-      imageAlt: "Gestion des dépenses newbi",
+      imageAlt: "E-reporting - Transmission données fiscales",
       reversed: false,
+    },
+    {
+      badge: "SÉCURITÉ & ARCHIVAGE",
+      title: "Archivez vos factures électroniques en toute sécurité",
+      description:
+        "La conservation des factures électroniques est une obligation légale. newbi garantit un archivage sécurisé, conforme aux exigences fiscales, avec une traçabilité complète.",
+      features: [
+        "Archivage à valeur probante certifié NF Z42-013",
+        "Conservation légale pendant 10 ans minimum",
+        "Coffre-fort numérique sécurisé",
+        "Horodatage qualifié des documents",
+        "Accès rapide et recherche avancée",
+        "Export des archives sur demande",
+        "Hébergement des données en France (RGPD)",
+        "Sauvegarde redondante et plan de reprise",
+      ],
+      imageSrc: "/sectionComponents1.png",
+      imageAlt: "Archivage factures électroniques - Coffre-fort numérique",
+      reversed: true,
     },
   ];
 
   return (
     <section
-      id="components"
-      className="relative isolate overflow-hidden pt-10 sm:pt-32"
+      id="features"
+      className="relative isolate overflow-hidden pt-10 sm:pt-20 bg-white"
     >
       <div className="flex flex-col gap-20 sm:gap-32">
         {sections.map((section, index) => (
@@ -217,6 +232,7 @@ export default function ComponentsSection() {
             features={section.features}
             imageSrc={section.imageSrc}
             imageAlt={section.imageAlt}
+            badgeImage={section.badgeImage}
             reversed={section.reversed}
           />
         ))}

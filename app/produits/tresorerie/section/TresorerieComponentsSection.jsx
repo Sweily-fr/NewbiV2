@@ -1,6 +1,7 @@
 "use client";
 import React from "react";
 import { Check, ChevronRight } from "lucide-react";
+import Link from "next/link";
 
 const DashedLine = ({ position, orientation = "horizontal", style = {} }) => {
   const baseStyle = {
@@ -59,14 +60,6 @@ const ImageCard = ({
   />
 );
 
-const gradientTextStyle = {
-  textWrap: "nowrap",
-  background: "linear-gradient(90deg, #5A50FF 0%, #8B7FFF 100%)",
-  backgroundClip: "text",
-  WebkitBackgroundClip: "text",
-  color: "transparent",
-};
-
 const FeatureBlock = ({
   badge,
   title,
@@ -107,10 +100,13 @@ const FeatureBlock = ({
             ))}
           </ul>
 
-          <button className="mt-8 inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-medium text-white bg-[#202020] rounded-lg hover:bg-[#333333] transition-colors">
-            Démarrer
+          <Link
+            href="/auth/signup"
+            className="mt-8 inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-medium text-white bg-[#202020] rounded-lg hover:bg-[#333333] transition-colors"
+          >
+            Essayer gratuitement
             <ChevronRight className="w-4 h-4" />
-          </button>
+          </Link>
         </div>
 
         {/* Image Content */}
@@ -122,8 +118,8 @@ const FeatureBlock = ({
           {badgeImage && (
             <img
               src={badgeImage}
-              alt="Badge Facturation Électronique"
-              className="absolute top-4 right-4 w-[100px] xl:w-[120px] h-auto object-contain drop-shadow-lg z-20"
+              alt="Badge"
+              className="absolute top-4 right-4 w-[100px] xl:w-[120px] h-auto object-contain drop-shadow-lg z-50"
             />
           )}
           <ImageCard
@@ -140,72 +136,91 @@ const FeatureBlock = ({
   );
 };
 
-export default function ComponentsSection() {
+export default function TresorerieComponentsSection() {
   const sections = [
     {
-      badge: "SOLUTION TOUT-EN-UN",
-      title: "Gardez le contrôle de votre entreprise",
+      badge: "TABLEAU DE BORD TRÉSORERIE",
+      title: "Visualisez votre trésorerie en temps réel",
       description:
-        "Centralisez toutes vos opérations financières et administratives sur une seule plateforme intuitive. Prenez des décisions éclairées grâce à une vue d'ensemble complète de votre activité.",
+        "Gardez un œil sur votre cash flow grâce à un tableau de bord intuitif. Suivez vos soldes bancaires, vos encaissements et décaissements pour une vision claire de votre situation financière.",
       features: [
-        "Tableau de bord en temps réel avec tous vos indicateurs clés",
-        "Suivi automatique de votre trésorerie et de vos flux",
-        "Rapports personnalisés pour piloter votre croissance",
-        "Accès sécurisé depuis n'importe quel appareil",
-        "Gestion multi-comptes et multi-entreprises",
-        "Notifications intelligentes sur vos échéances",
-        "Historique complet de toutes vos opérations",
-        "Support client réactif et personnalisé",
+        "Solde de trésorerie actualisé en temps réel",
+        "Graphiques d'évolution de votre cash flow",
+        "Consolidation multi-comptes et multi-banques",
+        "Indicateurs clés de performance financière",
+        "Alertes personnalisées sur vos seuils de trésorerie",
+        "Vue synthétique de vos flux entrants et sortants",
+        "Historique complet de vos mouvements bancaires",
+        "Export des données pour votre expert-comptable",
       ],
       imageSrc: "/sectionComponents1.png",
-      imageAlt: "Dashboard newbi",
+      imageAlt: "Tableau de bord gestion de trésorerie - Suivi cash flow",
       reversed: false,
     },
     {
-      badge: "OUTIL DE GESTION SIMPLE ET EFFICACE",
-      title: "Gagnez en efficacité, simplifiez-vous le quotidien",
+      badge: "PRÉVISIONS FINANCIÈRES",
+      title: "Anticipez vos besoins de trésorerie",
       description:
-        "Automatisez les tâches répétitives et concentrez-vous sur ce qui compte vraiment : développer votre activité. Notre interface intuitive vous fait gagner un temps précieux chaque jour.",
+        "Ne subissez plus les imprévus financiers. Grâce à nos outils de prévision de trésorerie, anticipez vos besoins en fonds de roulement et planifiez sereinement votre croissance.",
       features: [
-        "Facturation automatisée et envoi en un clic",
-        "Relances clients automatiques et personnalisables",
-        "Synchronisation bancaire en temps réel",
-        "Gestion simplifiée de vos devis et contrats",
-        "Modèles de documents personnalisables",
-        "Signature électronique intégrée",
-        "Suivi des paiements en temps réel",
-        "Intégration avec vos outils favoris",
+        "Prévisions de trésorerie à 30, 60 et 90 jours",
+        "Scénarios prévisionnels personnalisables",
+        "Intégration automatique des factures à venir",
+        "Prise en compte des charges récurrentes",
+        "Alertes sur les risques de découvert",
+        "Simulation d'impact des décisions financières",
+        "Planification des investissements",
+        "Rapports prévisionnels exportables",
       ],
       imageSrc: "/sectionComponents2.png",
-      imageAlt: "Gestion efficace newbi",
-      badgeImage: "/badgeFacturation.png",
+      imageAlt: "Prévision de trésorerie - Anticipation besoins financiers",
       reversed: true,
     },
     {
-      badge: "GESTION DES DÉPENSES",
-      title: "Gérez l'ensemble de vos dépenses",
+      badge: "SYNCHRONISATION BANCAIRE",
+      title: "Connectez vos comptes bancaires automatiquement",
       description:
-        "Gardez un œil sur chaque euro dépensé. Catégorisez automatiquement vos dépenses, suivez vos budgets et optimisez vos coûts pour maximiser votre rentabilité.",
+        "Centralisez tous vos comptes bancaires professionnels sur une seule plateforme. La synchronisation automatique vous fait gagner du temps et élimine les erreurs de saisie manuelle.",
       features: [
-        "Catégorisation automatique de vos dépenses",
-        "Scan et archivage de vos justificatifs",
-        "Alertes budget et suivi des écarts",
-        "Export comptable simplifié pour votre expert-comptable",
-        "Gestion des notes de frais collaborateurs",
-        "Rapprochement bancaire automatique",
-        "Analyse des dépenses par catégorie",
-        "Prévisions budgétaires intelligentes",
+        "Connexion sécurisée avec plus de 300 banques",
+        "Synchronisation automatique quotidienne",
+        "Catégorisation intelligente des transactions",
+        "Rapprochement bancaire automatisé",
+        "Détection des doublons et anomalies",
+        "Historique illimité de vos opérations",
+        "Multi-devises pour l'international",
+        "Conformité RGPD et sécurité bancaire",
       ],
       imageSrc: "/sectionComponents3.png",
-      imageAlt: "Gestion des dépenses newbi",
+      imageAlt:
+        "Synchronisation bancaire automatique - Connexion multi-banques",
       reversed: false,
+    },
+    {
+      badge: "PILOTAGE FINANCIER",
+      title: "Prenez les bonnes décisions pour votre entreprise",
+      description:
+        "Transformez vos données financières en insights actionnables. Analysez vos performances, identifiez les opportunités d'optimisation et pilotez votre entreprise avec confiance.",
+      features: [
+        "Analyse des délais de paiement clients et fournisseurs",
+        "Suivi du besoin en fonds de roulement (BFR)",
+        "Indicateurs de rentabilité par activité",
+        "Comparaison budget vs réalisé",
+        "Rapports financiers personnalisables",
+        "Partage sécurisé avec votre comptable",
+        "Tableaux de bord collaboratifs",
+        "Accès mobile pour décider partout",
+      ],
+      imageSrc: "/sectionComponents1.png",
+      imageAlt: "Pilotage financier entreprise - Analyse trésorerie PME",
+      reversed: true,
     },
   ];
 
   return (
     <section
-      id="components"
-      className="relative isolate overflow-hidden pt-10 sm:pt-32"
+      id="features"
+      className="relative isolate overflow-hidden pt-10 sm:pt-20 bg-white"
     >
       <div className="flex flex-col gap-20 sm:gap-32">
         {sections.map((section, index) => (
@@ -217,6 +232,7 @@ export default function ComponentsSection() {
             features={section.features}
             imageSrc={section.imageSrc}
             imageAlt={section.imageAlt}
+            badgeImage={section.badgeImage}
             reversed={section.reversed}
           />
         ))}

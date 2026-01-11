@@ -1,6 +1,7 @@
 "use client";
 import React from "react";
 import { Check, ChevronRight } from "lucide-react";
+import Link from "next/link";
 
 const DashedLine = ({ position, orientation = "horizontal", style = {} }) => {
   const baseStyle = {
@@ -59,14 +60,6 @@ const ImageCard = ({
   />
 );
 
-const gradientTextStyle = {
-  textWrap: "nowrap",
-  background: "linear-gradient(90deg, #5A50FF 0%, #8B7FFF 100%)",
-  backgroundClip: "text",
-  WebkitBackgroundClip: "text",
-  color: "transparent",
-};
-
 const FeatureBlock = ({
   badge,
   title,
@@ -78,7 +71,7 @@ const FeatureBlock = ({
   reversed = false,
 }) => {
   return (
-    <div className="max-w-7xl mx-auto pt-6 pb-4 px-6 lg:px-12">
+    <div className="max-w-7xl mx-auto pt-6 pb-4">
       <div
         className={`grid grid-cols-1 lg:grid-cols-2 gap-12 items-start ${reversed ? "" : ""}`}
       >
@@ -107,10 +100,13 @@ const FeatureBlock = ({
             ))}
           </ul>
 
-          <button className="mt-8 inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-medium text-white bg-[#202020] rounded-lg hover:bg-[#333333] transition-colors">
-            Démarrer
+          <Link
+            href="/auth/signup"
+            className="mt-8 inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-medium text-white bg-[#202020] rounded-lg hover:bg-[#333333] transition-colors"
+          >
+            Essayer gratuitement
             <ChevronRight className="w-4 h-4" />
-          </button>
+          </Link>
         </div>
 
         {/* Image Content */}
@@ -119,13 +115,13 @@ const FeatureBlock = ({
         >
           <DashedLine position="-top-px" orientation="horizontal" />
           <DashedLine position="-left-px" orientation="vertical" />
-          {badgeImage && (
+          {/* {badgeImage && (
             <img
               src={badgeImage}
               alt="Badge Facturation Électronique"
-              className="absolute top-4 right-4 w-[100px] xl:w-[120px] h-auto object-contain drop-shadow-lg z-20"
+              className="absolute top-4 right-[20px] w-[100px] xl:w-[120px] h-auto object-contain drop-shadow-lg z-50"
             />
-          )}
+          )} */}
           <ImageCard
             src={imageSrc}
             alt={imageAlt}
@@ -140,72 +136,91 @@ const FeatureBlock = ({
   );
 };
 
-export default function ComponentsSection() {
+export default function FacturesComponentsSection() {
   const sections = [
     {
-      badge: "SOLUTION TOUT-EN-UN",
-      title: "Gardez le contrôle de votre entreprise",
+      badge: "GESTION COMPLÈTE",
+      title: "Gérez facilement devis, factures et paiements",
       description:
-        "Centralisez toutes vos opérations financières et administratives sur une seule plateforme intuitive. Prenez des décisions éclairées grâce à une vue d'ensemble complète de votre activité.",
+        "Simplifiez votre cycle de vente complet : créez des devis professionnels, convertissez-les en factures en un clic et suivez vos encaissements. Une solution de facturation intuitive pour les entrepreneurs et PME.",
       features: [
-        "Tableau de bord en temps réel avec tous vos indicateurs clés",
-        "Suivi automatique de votre trésorerie et de vos flux",
-        "Rapports personnalisés pour piloter votre croissance",
-        "Accès sécurisé depuis n'importe quel appareil",
-        "Gestion multi-comptes et multi-entreprises",
-        "Notifications intelligentes sur vos échéances",
-        "Historique complet de toutes vos opérations",
-        "Support client réactif et personnalisé",
+        "Création de devis et factures professionnels en quelques clics",
+        "Conversion automatique des devis en factures",
+        "Personnalisation complète de vos documents commerciaux",
+        "Gestion des acomptes et factures d'avoir",
+        "Numérotation automatique conforme à la réglementation",
+        "Envoi par email avec suivi de lecture",
+        "Paiement en ligne intégré pour vos clients",
+        "Export PDF et archivage sécurisé",
       ],
-      imageSrc: "/sectionComponents1.png",
-      imageAlt: "Dashboard newbi",
+      imageSrc: "/lp/factures/facture1.png",
+      imageAlt: "Logiciel de facturation - Création de devis et factures",
       reversed: false,
     },
     {
-      badge: "OUTIL DE GESTION SIMPLE ET EFFICACE",
-      title: "Gagnez en efficacité, simplifiez-vous le quotidien",
+      badge: "AUTOMATISATION",
+      title: "Automatisez vos processus de facturation",
       description:
-        "Automatisez les tâches répétitives et concentrez-vous sur ce qui compte vraiment : développer votre activité. Notre interface intuitive vous fait gagner un temps précieux chaque jour.",
+        "Gagnez du temps grâce à l'automatisation intelligente. Factures récurrentes, relances automatiques et rappels de paiement : concentrez-vous sur votre activité pendant que newbi gère votre facturation.",
       features: [
-        "Facturation automatisée et envoi en un clic",
+        "Factures récurrentes et abonnements automatisés",
         "Relances clients automatiques et personnalisables",
-        "Synchronisation bancaire en temps réel",
-        "Gestion simplifiée de vos devis et contrats",
-        "Modèles de documents personnalisables",
-        "Signature électronique intégrée",
-        "Suivi des paiements en temps réel",
-        "Intégration avec vos outils favoris",
+        "Rappels de paiement programmés avant échéance",
+        "Modèles de factures réutilisables",
+        "Calcul automatique de la TVA et des remises",
+        "Duplication rapide de documents existants",
+        "Workflows de validation personnalisables",
+        "Intégration avec votre logiciel comptable",
       ],
-      imageSrc: "/sectionComponents2.png",
-      imageAlt: "Gestion efficace newbi",
+      imageSrc: "/lp/factures/facture2.png",
+      imageAlt: "Automatisation facturation - Factures récurrentes et relances",
       badgeImage: "/badgeFacturation.png",
       reversed: true,
     },
     {
-      badge: "GESTION DES DÉPENSES",
-      title: "Gérez l'ensemble de vos dépenses",
+      badge: "SUIVI EN TEMPS RÉEL",
+      title: "Suivez vos factures et vos encaissements",
       description:
-        "Gardez un œil sur chaque euro dépensé. Catégorisez automatiquement vos dépenses, suivez vos budgets et optimisez vos coûts pour maximiser votre rentabilité.",
+        "Gardez une vision claire de votre trésorerie. Tableau de bord en temps réel, suivi des paiements et rapports détaillés pour piloter efficacement votre activité de facturation.",
       features: [
-        "Catégorisation automatique de vos dépenses",
-        "Scan et archivage de vos justificatifs",
-        "Alertes budget et suivi des écarts",
-        "Export comptable simplifié pour votre expert-comptable",
-        "Gestion des notes de frais collaborateurs",
-        "Rapprochement bancaire automatique",
-        "Analyse des dépenses par catégorie",
-        "Prévisions budgétaires intelligentes",
+        "Tableau de bord avec indicateurs clés de facturation",
+        "Suivi du statut de chaque facture en temps réel",
+        "Alertes sur les factures impayées et en retard",
+        "Rapports de chiffre d'affaires et de TVA",
+        "Historique complet des transactions clients",
+        "Balance âgée pour anticiper les impayés",
+        "Statistiques de délais de paiement",
+        "Export des données pour votre expert-comptable",
       ],
-      imageSrc: "/sectionComponents3.png",
-      imageAlt: "Gestion des dépenses newbi",
+      imageSrc: "/lp/factures/facture3.png",
+      imageAlt: "Suivi facturation - Tableau de bord et encaissements",
       reversed: false,
+    },
+    {
+      badge: "MOBILITÉ",
+      title: "Accédez à votre logiciel de facturation où que vous soyez",
+      description:
+        "Facturez depuis n'importe où, à tout moment. Application web responsive et sécurisée accessible sur tous vos appareils. Idéal pour les entrepreneurs en déplacement.",
+      features: [
+        "Application web accessible sur mobile, tablette et ordinateur",
+        "Création de factures en déplacement",
+        "Synchronisation automatique sur tous vos appareils",
+        "Accès sécurisé avec authentification renforcée",
+        "Consultation des factures hors connexion",
+        "Notifications push sur les paiements reçus",
+        "Scan de documents et justificatifs",
+        "Données hébergées en France (RGPD compliant)",
+      ],
+      imageSrc: "/sectionComponents1.png",
+      imageAlt: "Facturation mobile - Logiciel accessible partout",
+      reversed: true,
     },
   ];
 
   return (
     <section
-      id="components"
-      className="relative isolate overflow-hidden pt-10 sm:pt-32"
+      id="features"
+      className="relative isolate overflow-hidden pt-10 sm:pt-20 bg-white"
     >
       <div className="flex flex-col gap-20 sm:gap-32">
         {sections.map((section, index) => (
@@ -217,6 +232,7 @@ export default function ComponentsSection() {
             features={section.features}
             imageSrc={section.imageSrc}
             imageAlt={section.imageAlt}
+            badgeImage={section.badgeImage}
             reversed={section.reversed}
           />
         ))}

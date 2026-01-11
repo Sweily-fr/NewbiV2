@@ -33,22 +33,10 @@ const menuItems = [
         title: "OUTILS FINANCIERS",
         items: [
           {
-            name: "Gestion des achats",
-            description: "Gérez vos achats simplement. Contrôlez vos dépenses.",
-            icon: <Landmark size={18} />,
-            href: "/produits/banque",
-          },
-          {
             name: "Facturation et devis",
             description: "Automatisez et suivez facilement votre facturation",
             icon: <FileText size={18} />,
-            href: "/produits/facturation",
-          },
-          {
-            name: "Gestion des dépenses",
-            description: "Catégorisez et suivez vos dépenses automatiquement",
-            icon: <HandCoins size={18} />,
-            href: "/produits/depenses",
+            href: "/produits/factures",
           },
           {
             name: "Suivi de trésorerie",
@@ -57,10 +45,22 @@ const menuItems = [
             href: "/produits/tresorerie",
           },
           {
+            name: "Gestion des achats",
+            description: "Gérez vos achats simplement. Contrôlez vos dépenses.",
+            icon: <Landmark size={18} />,
+            href: "/produits/gestion-des-achats",
+          },
+          {
             name: "Synchronisation bancaire",
             description: "Connectez vos comptes bancaires en temps réel",
             icon: <CreditCard size={18} />,
             href: "/produits/banque",
+          },
+          {
+            name: "Facturation électronique",
+            description: "Conformité 2026 garantie avec l'e-invoicing",
+            icon: <Receipt size={18} />,
+            href: "/produits/facturation-electronique",
           },
         ],
       },
@@ -145,7 +145,7 @@ const menuItems = [
   },
 ];
 
-export const NewHeroNavbar = () => {
+export function NewHeroNavbar({ hasBanner = false }) {
   const [menuState, setMenuState] = React.useState(false);
   const [isScrolled, setIsScrolled] = React.useState(false);
   const [openDropdown, setOpenDropdown] = React.useState(null);
@@ -166,7 +166,9 @@ export const NewHeroNavbar = () => {
     <header>
       <nav
         data-state={menuState && "active"}
-        className="fixed left-0 w-full z-50 transition-all duration-300"
+        className={`fixed left-0 w-full z-100 transition-all duration-300 ${
+          hasBanner ? (isScrolled ? "top-0" : "top-[58px]") : "top-0"
+        }`}
       >
         <div
           className={cn(
@@ -304,11 +306,11 @@ export const NewHeroNavbar = () => {
                               </div>
 
                               <Link
-                                href="/apporteur-affaire"
+                                href="https://partenaire.newbi.fr/"
                                 className="inline-block text-center px-4 py-2 bg-[#202020] text-white text-sm font-medium rounded-md hover:bg-[#202020] transition-colors"
                                 onClick={() => setOpenDropdown(null)}
                               >
-                                En savoir plus
+                                Commencer avec newbi
                               </Link>
                             </div>
                           )}
@@ -371,4 +373,4 @@ export const NewHeroNavbar = () => {
       </nav>
     </header>
   );
-};
+}

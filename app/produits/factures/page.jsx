@@ -1,13 +1,16 @@
 import React from "react";
-import HeroHeader from "@/src/components/blocks/hero-header";
+import { NewHeroNavbar } from "@/app/(main)/new/lp-home/NewHeroNavbar";
 import Footer7 from "@/src/components/footer7";
 import { HeroSection } from "./section/hero-section";
-import SectionAvantages from "./section/section-avantages";
 import { Poppins } from "next/font/google";
 import FAQ from "./section/faq";
-import TestimonialsSection from "./section/testimonial";
-import BusinessAgility from "@/app/(main)/section/business-agility";
 import { generateNextMetadata } from "@/src/utils/seo-data";
+import { FacturationBanner } from "./section/FacturationBanner";
+import TrustedBySection from "@/app/(main)/new/lp-home/TrustedBySection";
+import FacturesComponentsSection from "./section/FacturesComponentsSection";
+import FacturationElectroniqueBanner from "./section/FacturationElectroniqueBanner";
+import { TestimonialsSplit } from "./section/TestimonialsSplit";
+import EncaissementBanner from "./section/EncaissementBanner";
 
 // Configuration de Poppins uniquement pour les landing pages
 const poppins = Poppins({
@@ -24,12 +27,18 @@ export default function FacturesPage() {
   return (
     <>
       <div className={`${poppins.variable} font-poppins`}>
-        <HeroHeader />
+        <FacturationBanner />
+        <NewHeroNavbar hasBanner={true} />
         <main>
           {/* Hero Section */}
           <HeroSection />
-          <SectionAvantages />
-          <BusinessAgility />
+          <TrustedBySection />
+          <FacturesComponentsSection />
+          <EncaissementBanner />
+          <TestimonialsSplit />
+          <FacturationElectroniqueBanner />
+          {/* <SectionAvantages />
+          <BusinessAgility /> */}
           {/* <TestimonialsSection /> */}
           <FAQ />
           {/* <section className="min-h-screen py-20 flex flex-col justify-between">

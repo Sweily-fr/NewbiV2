@@ -1,58 +1,46 @@
 "use client";
 import React from "react";
 
-export default function TrustedBySection() {
-  const companies = [
-    { name: "Open AI", logo: "https://assets.aceternity.com/logos/openai.png" },
-    {
-      name: "Hello Patient",
-      logo: "https://assets.aceternity.com/logos/hello-patient.png",
-    },
-    {
-      name: "Granola",
-      logo: "https://assets.aceternity.com/logos/granola.png",
-    },
-    {
-      name: "Character AI",
-      logo: "https://assets.aceternity.com/logos/characterai.png",
-    },
-    { name: "Oracle", logo: "https://assets.aceternity.com/logos/oracle.png" },
-    {
-      name: "Portola",
-      logo: "https://assets.aceternity.com/logos/portola.png",
-    },
-  ];
+const logos = [
+  { name: "Ninth", src: "/lp/factures/primer.png", height: "h-4" },
+  { name: "Eighth", src: "/lp/factures/primer.png", height: "h-4" },
+  { name: "Third", src: "/lp/factures/primer.png", height: "h-4" },
+  { name: "Sixth", src: "/lp/factures/primer.png", height: "h-4" },
+  { name: "First", src: "/lp/factures/primer.png", height: "h-4" },
+  { name: "Fourth", src: "/lp/factures/primer.png", height: "h4" },
+  { name: "Seventh", src: "/lp/factures/primer.png", height: "h-4" },
+  { name: "Tenth", src: "/lp/factures/primer.png", height: "h-4" },
+];
 
+export default function TrustedBySection() {
   return (
-    <section className="pt-22 bg-[#FDFDFD]">
-      <h2 className="text-neutral-600 font-medium dark:text-neutral-400 text-lg text-center max-w-xl mx-auto">
-        Adopté par des dirigeants et entrepreneurs modernes.{" "}
-        <br className="hidden md:block" />
-        <span className="text-neutral-400">
-          Du lancement à la croissance sans complexité.
-        </span>
-      </h2>
-      <div className="grid grid-cols-2 md:grid-cols-3 max-w-3xl mx-auto mt-10">
-        {companies.map((company, index) => (
-          <div
-            key={index}
-            style={{
-              opacity: 1,
-              filter: "blur(0px)",
-              transform: "none",
-            }}
-          >
-            <img
-              alt={company.name}
-              loading="lazy"
-              width="100"
-              height="100"
-              decoding="async"
-              className="size-20 object-contain mx-auto dark:filter dark:invert"
-              src={company.logo}
-            />
-          </div>
-        ))}
+    <section className="bg-[#FDFDFD]">
+      <div className="border-gray-200 grid grid-cols-2 border-t border-b md:grid-cols-4">
+        {logos.map((logo, index) => {
+          const isLastRow = index >= 4;
+          const isLastInRow = (index + 1) % 4 === 0;
+          const isSecondInMobileRow = (index + 1) % 2 === 0;
+
+          return (
+            <div
+              key={logo.name}
+              className={`group relative overflow-hidden border-gray-200
+                ${isSecondInMobileRow ? "border-r-0 md:border-r" : "border-r"}
+                ${isLastRow ? "md:border-b-0" : "border-b"}
+                ${isLastInRow ? "md:border-r-0" : "md:border-r"}
+              `}
+            >
+              <div className="bg-indigo-500/5 absolute inset-x-0 bottom-0 h-full translate-y-full transition-all duration-200 group-hover:translate-y-0"></div>
+              <div className="group flex min-h-32 items-center justify-center p-4 py-10 grayscale hover:grayscale-0 transition-all duration-300">
+                <img
+                  alt={logo.name}
+                  className={`object-contain transition-all duration-500 dark:invert dark:filter ${logo.height} w-auto`}
+                  src={logo.src}
+                />
+              </div>
+            </div>
+          );
+        })}
       </div>
     </section>
   );
