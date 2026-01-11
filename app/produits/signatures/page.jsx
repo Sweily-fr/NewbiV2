@@ -6,7 +6,6 @@ import SectionAvantages from "./section/section-avantages";
 import { Poppins } from "next/font/google";
 import FAQ from "./section/faq";
 import TestimonialsSection from "./section/testimonial";
-import BusinessAgility from "@/app/(main)/section/business-agility";
 import { generateNextMetadata } from "@/src/utils/seo-data";
 
 // Configuration de Poppins uniquement pour les landing pages
@@ -29,7 +28,6 @@ export default function SignaturesPage() {
           {/* Hero Section */}
           <HeroSection />
           <SectionAvantages />
-          <BusinessAgility />
           {/* <TestimonialsSection /> */}
           <FAQ />
           {/* <section className="min-h-screen py-20 flex flex-col justify-between">
