@@ -149,6 +149,7 @@ export function NewHeroNavbar({ hasBanner = false }) {
   const [menuState, setMenuState] = React.useState(false);
   const [isScrolled, setIsScrolled] = React.useState(false);
   const [openDropdown, setOpenDropdown] = React.useState(null);
+  const [mobileDropdownOpen, setMobileDropdownOpen] = React.useState(null);
 
   React.useEffect(() => {
     const handleScroll = () => {
@@ -182,7 +183,7 @@ export function NewHeroNavbar({ hasBanner = false }) {
               <Link
                 href="/"
                 aria-label="home"
-                className="flex gap-2 items-center"
+                className="flex gap-2 items-center -ml-2 lg:ml-0"
               >
                 <img
                   src="/newbiLetter.png"
@@ -194,7 +195,10 @@ export function NewHeroNavbar({ hasBanner = false }) {
               </Link>
 
               <button
-                onClick={() => setMenuState(!menuState)}
+                onClick={() => {
+                  setMenuState(!menuState);
+                  if (menuState) setMobileDropdownOpen(null);
+                }}
                 aria-label={menuState == true ? "Close Menu" : "Open Menu"}
                 className="relative z-20 -m-2.5 -mr-4 block cursor-pointer p-2.5 lg:hidden"
               >
@@ -322,54 +326,182 @@ export function NewHeroNavbar({ hasBanner = false }) {
               </ul>
             </div>
 
-            <div className="bg-background in-data-[state=active]:block lg:in-data-[state=active]:flex mb-6 hidden w-full flex-wrap items-center justify-end space-y-8 rounded-3xl border p-6 shadow-2xl shadow-zinc-300/20 md:flex-nowrap lg:m-0 lg:flex lg:w-fit lg:gap-6 lg:space-y-0 lg:border-transparent lg:bg-transparent lg:p-0 lg:shadow-none dark:shadow-none dark:lg:bg-transparent">
-              <div className="lg:hidden">
-                <ul className="space-y-6 text-base">
-                  {menuItems.map((item, index) => (
-                    <li key={index}>
-                      <Link
-                        href={item.href}
-                        className="text-muted-foreground hover:text-accent-foreground block duration-150"
-                      >
-                        <span>{item.name}</span>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div className="flex w-full flex-col space-y-3 sm:flex-row sm:gap-2 sm:space-y-0 md:w-fit">
-                <Button
-                  asChild
-                  variant="outline"
-                  size="md"
-                  className={cn(isScrolled && "lg:hidden")}
-                >
-                  <Link href="/auth/signin">
-                    <span>Connexion</span>
-                  </Link>
-                </Button>
-                <Button
-                  asChild
-                  size="md"
-                  className={cn(isScrolled && "lg:hidden")}
-                >
-                  <Link href="/auth/signup">
-                    <span>Inscription</span>
-                  </Link>
-                </Button>
-                <Button
-                  asChild
-                  size="md"
-                  className={cn(isScrolled ? "lg:inline-flex" : "hidden")}
-                >
-                  <Link href="/auth/signup">
-                    <span>Démarrer</span>
-                  </Link>
-                </Button>
-              </div>
+            {/* Desktop buttons */}
+            <div className="hidden lg:flex lg:items-center lg:gap-2">
+              <Button
+                asChild
+                variant="outline"
+                size="md"
+                className={cn(isScrolled && "lg:hidden")}
+              >
+                <Link href="/auth/signin">
+                  <span>Connexion</span>
+                </Link>
+              </Button>
+              <Button
+                asChild
+                size="md"
+                className={cn(isScrolled && "lg:hidden")}
+              >
+                <Link href="/auth/signup">
+                  <span>Inscription</span>
+                </Link>
+              </Button>
+              <Button
+                asChild
+                size="md"
+                className={cn(isScrolled ? "lg:inline-flex" : "hidden")}
+              >
+                <Link href="/auth/signup">
+                  <span>Démarrer</span>
+                </Link>
+              </Button>
             </div>
           </div>
         </div>
+
+        {/* Mobile menu overlay - Fullscreen */}
+        {menuState && (
+          <div className="lg:hidden fixed inset-0 top-[72px] bg-gray-50 z-50 overflow-hidden">
+            <div className="flex flex-col h-full">
+              {/* Menu content - Scrollable */}
+              <div className="flex-1 overflow-y-auto">
+                <div className="divide-y divide-gray-100">
+                  {menuItems.map((item, index) => (
+                    <div key={index}>
+                      {item.hasDropdown ? (
+                        <div>
+                          {/* Accordion Header */}
+                          <button
+                            onClick={() =>
+                              setMobileDropdownOpen(
+                                mobileDropdownOpen === index ? null : index
+                              )
+                            }
+                            className="flex items-center justify-between w-full px-6 py-5 text-left border-b border-gray-100"
+                          >
+                            <span className="text-xl font-normal text-black">
+                              {item.name}
+                            </span>
+                            <svg
+                              className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${mobileDropdownOpen === index ? "rotate-180" : ""}`}
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 9l-7 7-7-7"
+                              />
+                            </svg>
+                          </button>
+
+                          {/* Accordion Content */}
+                          {mobileDropdownOpen === index && (
+                            <div className="bg-gray-50 border-b border-gray-100">
+                              {item.dropdownColumns?.map((column, colIdx) => (
+                                <div key={colIdx} className="px-6 py-4">
+                                  <h3 className="text-xs font-normal text-gray-400 uppercase tracking-wider mb-4">
+                                    {column.title}
+                                  </h3>
+                                  <div className="space-y-1">
+                                    {column.items.map((dropdownItem, idx) => (
+                                      <Link
+                                        key={idx}
+                                        href={dropdownItem.href}
+                                        className="flex items-center gap-4 py-3 hover:bg-gray-100 rounded-lg px-2 -mx-2 transition-colors duration-200"
+                                        onClick={() => {
+                                          setMenuState(false);
+                                          setMobileDropdownOpen(null);
+                                        }}
+                                      >
+                                        <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0">
+                                          <span className="text-gray-600">
+                                            {dropdownItem.icon}
+                                          </span>
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                          <h4 className="text-sm font-medium text-black">
+                                            {dropdownItem.name}
+                                          </h4>
+                                          <p className="text-sm text-gray-500 mt-0.5">
+                                            {dropdownItem.description}
+                                          </p>
+                                        </div>
+                                      </Link>
+                                    ))}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <Link
+                          href={item.href}
+                          className="flex items-center justify-between w-full px-6 py-5 border-b border-gray-100"
+                          onClick={() => setMenuState(false)}
+                        >
+                          <span className="text-xl font-normal text-black">
+                            {item.name}
+                          </span>
+                          <svg
+                            className="w-5 h-5 text-gray-400"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 9l-7 7-7-7"
+                            />
+                          </svg>
+                        </Link>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Buttons at bottom - Fixed */}
+              <div className="px-6 pb-8 pt-6 bg-gray-50 border-t border-gray-100">
+                <div className="flex flex-col space-y-3">
+                  <Button
+                    asChild
+                    size="lg"
+                    className="w-full rounded-xl py-6 text-base bg-black hover:bg-gray-800"
+                  >
+                    <Link
+                      href="/auth/signup"
+                      className="flex items-center justify-center"
+                      onClick={() => setMenuState(false)}
+                    >
+                      <span>Ouvrir un compte</span>
+                    </Link>
+                  </Button>
+                  <Button
+                    asChild
+                    variant="outline"
+                    size="lg"
+                    className="w-full rounded-xl py-6 text-base border-gray-300"
+                  >
+                    <Link
+                      href="/auth/login"
+                      className="flex items-center justify-center"
+                      onClick={() => setMenuState(false)}
+                    >
+                      <span>Se connecter</span>
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </nav>
     </header>
   );

@@ -154,8 +154,35 @@ export default function HeroSection() {
             <FranceIcon />
             <div className="flex items-center gap-0">
               {[...Array(5)].map((_, i) => (
-                <div key={i} style={{ opacity: 1 }}>
-                  <StarIcon />
+                <div
+                  key={i}
+                  style={{
+                    opacity: 1,
+                    color: i < 4 ? "#FFC062" : "#000000",
+                    position: "relative",
+                    display: "inline-flex",
+                  }}
+                >
+                  {i === 4 ? (
+                    <>
+                      <StarIcon />
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: 0,
+                          left: 0,
+                          width: "50%",
+                          height: "100%",
+                          overflow: "hidden",
+                          color: "#FFC062",
+                        }}
+                      >
+                        <StarIcon />
+                      </div>
+                    </>
+                  ) : (
+                    <StarIcon />
+                  )}
                 </div>
               ))}
             </div>
