@@ -51,19 +51,19 @@ export default function FeaturedOnSection() {
                   href={platform.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="p-8 flex flex-col h-full"
+                  className="p-8 flex flex-col h-full items-center md:items-start text-center md:text-left"
                 >
                   {/* Logo en haut à gauche */}
                   <div className="mb-6">
                     <img
                       src={platform.logo}
                       alt={`${platform.name} logo`}
-                      className="h-8 w-auto object-contain object-left"
+                      className="h-8 w-auto object-contain"
                     />
                   </div>
 
                   {/* Content */}
-                  <div className="flex flex-col">
+                  <div className="flex flex-col items-center md:items-start">
                     <div className="flex items-center gap-2 mb-2">
                       <h3 className="text-lg font-normal text-foreground">
                         {platform.name}

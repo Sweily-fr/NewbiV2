@@ -245,7 +245,7 @@ function GridItem({ img, icon }) {
 
 function ApprovalQueue() {
   return (
-    <div className="md:border-r border-neutral-200 dark:border-neutral-800">
+    <div className="border-b md:border-b-0 md:border-r border-neutral-200 dark:border-neutral-800">
       <div className="p-4 md:p-8">
         <h2 className="text-lg font-medium text-neutral-800 dark:text-neutral-200">
           Transfert de fichiers

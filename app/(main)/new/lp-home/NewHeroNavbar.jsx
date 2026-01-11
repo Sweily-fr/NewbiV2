@@ -175,7 +175,8 @@ export function NewHeroNavbar({ hasBanner = false }) {
           className={cn(
             "w-full px-6 lg:px-12 transition-all duration-300",
             isScrolled &&
-              "bg-[#FDFDFD] dark:bg-background border-b border-gray-200 dark:border-neutral-800"
+              "bg-[#FDFDFD] dark:bg-background border-b border-gray-200 dark:border-neutral-800",
+            openDropdown !== null && "bg-gray-50"
           )}
         >
           <div className="relative flex flex-wrap items-center justify-between gap-6 lg:gap-0 py-4 max-w-7xl mx-auto">
@@ -183,7 +184,7 @@ export function NewHeroNavbar({ hasBanner = false }) {
               <Link
                 href="/"
                 aria-label="home"
-                className="flex gap-2 items-center -ml-2 lg:ml-0"
+                className="flex gap-2 items-center -ml-3.5 lg:ml-0"
               >
                 <img
                   src="/newbiLetter.png"
@@ -230,7 +231,7 @@ export function NewHeroNavbar({ hasBanner = false }) {
                     {/* Dropdown Menu */}
                     {item.hasDropdown && openDropdown === index && (
                       <div
-                        className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-[850px] bg-white dark:bg-background border rounded-xl shadow-sm p-6 z-50"
+                        className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-[850px] bg-gray-50 dark:bg-background border rounded-xl shadow-sm p-6 z-50"
                         onMouseEnter={() => setOpenDropdown(index)}
                         onMouseLeave={() => setOpenDropdown(null)}
                       >
@@ -473,14 +474,14 @@ export function NewHeroNavbar({ hasBanner = false }) {
                   <Button
                     asChild
                     size="lg"
-                    className="w-full rounded-xl py-6 text-base bg-black hover:bg-gray-800"
+                    className="w-full rounded-xl py-6 text-base bg-[#202020]"
                   >
                     <Link
                       href="/auth/signup"
                       className="flex items-center justify-center"
                       onClick={() => setMenuState(false)}
                     >
-                      <span>Ouvrir un compte</span>
+                      <span>Inscription</span>
                     </Link>
                   </Button>
                   <Button

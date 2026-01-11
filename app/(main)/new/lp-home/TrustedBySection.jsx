@@ -7,7 +7,7 @@ const logos = [
   { name: "Third", src: "/lp/factures/primer.png", height: "h-4" },
   { name: "Sixth", src: "/lp/factures/primer.png", height: "h-4" },
   { name: "First", src: "/lp/factures/primer.png", height: "h-4" },
-  { name: "Fourth", src: "/lp/factures/primer.png", height: "h4" },
+  { name: "Fourth", src: "/lp/factures/primer.png", height: "h-4" },
   { name: "Seventh", src: "/lp/factures/primer.png", height: "h-4" },
   { name: "Tenth", src: "/lp/factures/primer.png", height: "h-4" },
 ];

@@ -131,7 +131,7 @@ const FeatureBlock = ({
             alt={imageAlt}
             width={1760}
             height={1408}
-            className={`object-cover min-h-[600px] w-full ${reversed ? "object-[-32%_100%]" : "object-left"}`}
+            className={`object-cover min-h-[400px] lg:min-h-[600px] w-full ${reversed ? "object-left lg:object-[-32%_100%]" : "object-left"}`}
             priority
           />
         </div>
