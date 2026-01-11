@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import * as React from 'react';
 import { Button } from '@/src/components/ui/button';
 import { Textarea } from '@/src/components/ui/textarea';
-import { Send, Edit2, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Send, Edit2, Trash2, ChevronDown, ChevronUp, ImagePlus, X, ZoomIn, Loader2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogTrigger, DialogTitle } from '@/src/components/ui/dialog';
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/src/components/ui/tabs';
 import { UserAvatar } from '@/src/components/ui/user-avatar';
 import {
@@ -16,7 +18,7 @@ import {
 } from '@/src/components/ui/alert-dialog';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { useMutation, useQuery } from '@apollo/client';
+import { useMutation, useQuery, gql } from '@apollo/client';
 import { ADD_COMMENT, UPDATE_COMMENT, DELETE_COMMENT, GET_ORGANIZATION_MEMBERS } from '@/src/graphql/kanbanQueries';
 import { useSession } from '@/src/lib/auth-client';
 import { useAssignedMembersInfo } from '@/src/hooks/useAssignedMembersInfo';
@@ -28,6 +30,9 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
   const [editingContent, setEditingContent] = useState('');
   const [commentToDelete, setCommentToDelete] = useState(null);
   const [showAllActivities, setShowAllActivities] = useState(false);
+  const [pendingImages, setPendingImages] = useState([]);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const fileInputRef = useRef(null);
   const { data: session } = useSession();
 
   // Récupérer les membres de l'organisation directement via GraphQL (même procédé que MemberSelector)
@@ -87,6 +92,28 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
     return item;
   };
 
+  // Mutation pour uploader les images de commentaires
+  const UPLOAD_COMMENT_IMAGE = gql`
+    mutation UploadCommentImage($taskId: ID!, $commentId: ID!, $file: Upload!, $workspaceId: ID) {
+      uploadCommentImage(taskId: $taskId, commentId: $commentId, file: $file, workspaceId: $workspaceId) {
+        success
+        image {
+          id
+          key
+          url
+          fileName
+          fileSize
+          contentType
+          uploadedBy
+          uploadedAt
+        }
+        message
+      }
+    }
+  `;
+
+  const [uploadCommentImage] = useMutation(UPLOAD_COMMENT_IMAGE);
+
   const [addComment, { loading: addingComment }] = useMutation(ADD_COMMENT, {
     onCompleted: (data) => {
       if (data?.addComment) {
@@ -115,7 +142,8 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
   });
 
   const handleAddComment = async () => {
-    if (!newComment.trim()) return;
+    // Permettre l'envoi si texte OU images
+    if (!newComment.trim() && pendingImages.length === 0) return;
 
     const taskId = task.id || task._id;
 
@@ -125,18 +153,78 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
     }
 
     try {
-      await addComment({
+      setIsUploadingImage(true);
+      
+      // 1. Créer le commentaire (avec texte vide si seulement des images)
+      const result = await addComment({
         variables: {
           taskId,
-          input: { content: newComment },
+          input: { content: newComment || ' ' }, // Espace si vide pour éviter erreur
           workspaceId
         },
         refetchQueries: ['GetBoard'],
         awaitRefetchQueries: true,
       });
+
+      // 2. Si des images sont en attente, les uploader
+      if (pendingImages.length > 0 && result.data?.addComment?.comments) {
+        // Trouver le commentaire qu'on vient de créer (le dernier)
+        const comments = result.data.addComment.comments;
+        const newCommentData = comments[comments.length - 1];
+        
+        if (newCommentData?.id) {
+          // Collecter les images uploadées
+          const uploadedImages = [];
+          
+          // Uploader chaque image
+          for (const img of pendingImages) {
+            try {
+              const uploadResult = await uploadCommentImage({
+                variables: {
+                  taskId,
+                  commentId: newCommentData.id,
+                  file: img.file,
+                  workspaceId
+                },
+                refetchQueries: ['GetBoard'],
+              });
+              
+              // Collecter l'image uploadée
+              if (uploadResult.data?.uploadCommentImage?.success) {
+                uploadedImages.push(uploadResult.data.uploadCommentImage.image);
+              }
+            } catch (uploadError) {
+              console.error('Error uploading comment image:', uploadError);
+            }
+            // Libérer l'URL de preview
+            URL.revokeObjectURL(img.preview);
+          }
+          
+          // Mettre à jour le state local avec les images uploadées
+          if (uploadedImages.length > 0) {
+            setTask(prevTask => {
+              const updatedComments = prevTask.comments.map(c => {
+                if (c.id === newCommentData.id) {
+                  return {
+                    ...c,
+                    images: [...(c.images || []), ...uploadedImages]
+                  };
+                }
+                return c;
+              });
+              return { ...prevTask, comments: updatedComments };
+            });
+          }
+        }
+      }
+
+      // 3. Nettoyer
       setNewComment('');
+      setPendingImages([]);
     } catch (error) {
       console.error('Error adding comment:', error);
+    } finally {
+      setIsUploadingImage(false);
     }
   };
 
@@ -601,6 +689,37 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
                             )}
                           </div>
                           <p className="text-sm whitespace-pre-wrap">{comment.content}</p>
+                          {/* Affichage des images du commentaire */}
+                          {comment.images && comment.images.length > 0 && (
+                            <div className="grid grid-cols-2 gap-2 mt-2">
+                              {comment.images.map((image) => (
+                                <Dialog key={image.id}>
+                                  <DialogTrigger asChild>
+                                    <div className="relative cursor-pointer group overflow-hidden rounded-md border border-border hover:border-primary/50 transition-colors">
+                                      <img
+                                        src={image.url}
+                                        alt={image.fileName}
+                                        className="w-full h-20 object-cover"
+                                      />
+                                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                                        <ZoomIn className="h-5 w-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                      </div>
+                                    </div>
+                                  </DialogTrigger>
+                                  <DialogContent className="max-w-4xl p-0 overflow-hidden">
+                                    <VisuallyHidden>
+                                      <DialogTitle>Aperçu de l'image</DialogTitle>
+                                    </VisuallyHidden>
+                                    <img
+                                      src={image.url}
+                                      alt={image.fileName}
+                                      className="w-full h-auto max-h-[80vh] object-contain"
+                                    />
+                                  </DialogContent>
+                                </Dialog>
+                              ))}
+                            </div>
+                          )}
                         </>
                       )}
                     </div>
@@ -698,32 +817,89 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
         </TabsList>
 
         {/* Zone de saisie de commentaire - Sticky en bas */}
-        <div className=" pb-3 pl-3 pr-3 pt-1 space-y-2 flex-shrink-0">
-        <Textarea
-          value={newComment}
-          onChange={(e) => setNewComment(e.target.value)}
-          placeholder="Ajouter un commentaire..."
-          className="min-h-[80px] text-sm bg-background border-border"
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-              e.preventDefault();
-              handleAddComment();
-            }
-          }}
-        />
-        <div className="flex justify-between items-center">
-          <span className="text-xs text-muted-foreground">
-            Cmd/Ctrl + Entrée pour envoyer
-          </span>
-          <Button
-            size="sm"
-            onClick={handleAddComment}
-            disabled={!newComment.trim() || addingComment}
-          >
-            <Send className="h-3 w-3 mr-2" />
-            Envoyer
-          </Button>
-        </div>
+        <div className="pb-3 pl-3 pr-3 pt-1 space-y-2 flex-shrink-0">
+          <Textarea
+            value={newComment}
+            onChange={(e) => setNewComment(e.target.value)}
+            placeholder="Ajouter un commentaire..."
+            className="min-h-[80px] text-sm bg-background border-border"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                e.preventDefault();
+                handleAddComment();
+              }
+            }}
+          />
+          
+          {/* Images en attente */}
+          {pendingImages.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {pendingImages.map((img, index) => (
+                <div key={index} className="relative group">
+                  <img
+                    src={img.preview}
+                    alt={img.file.name}
+                    className="w-16 h-16 object-cover rounded-md border border-border"
+                  />
+                  <button
+                    onClick={() => {
+                      setPendingImages(prev => prev.filter((_, i) => i !== index));
+                      URL.revokeObjectURL(img.preview);
+                    }}
+                    className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/gif,image/webp"
+                multiple
+                onChange={(e) => {
+                  const files = Array.from(e.target.files || []);
+                  const newImages = files.map(file => ({
+                    file,
+                    preview: URL.createObjectURL(file)
+                  }));
+                  setPendingImages(prev => [...prev, ...newImages]);
+                  e.target.value = '';
+                }}
+                className="hidden"
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploadingImage}
+                className="h-8 px-2"
+              >
+                {isUploadingImage ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <ImagePlus className="h-4 w-4" />
+                )}
+              </Button>
+              <span className="text-xs text-muted-foreground">
+                Cmd/Ctrl + Entrée pour envoyer
+              </span>
+            </div>
+            <Button
+              size="sm"
+              onClick={handleAddComment}
+              disabled={(!newComment.trim() && pendingImages.length === 0) || addingComment || isUploadingImage}
+            >
+              <Send className="h-3 w-3 mr-2" />
+              Envoyer
+            </Button>
+          </div>
         </div>
       </Tabs>
     </div>

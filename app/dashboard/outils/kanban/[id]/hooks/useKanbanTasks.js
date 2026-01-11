@@ -22,6 +22,7 @@ export const useKanbanTasks = (boardId, board) => {
     tags: [],
     checklist: [],
     assignedMembers: [],
+    images: [], // Images de la tâche
     newTag: "",
     newChecklistItem: "",
     pendingComments: [], // Commentaires en attente de création
@@ -494,6 +495,7 @@ export const useKanbanTasks = (boardId, board) => {
       assignedMembers: Array.isArray(task?.assignedMembers) ? task.assignedMembers : [],
       comments: Array.isArray(task?.comments) ? task.comments : [],
       activity: Array.isArray(task?.activity) ? task.activity : [],
+      images: Array.isArray(task?.images) ? task.images : [], // Images de la tâche
       timeTracking: task?.timeTracking || null, // Données du timer
       userId: task?.userId,
       createdAt: task?.createdAt,

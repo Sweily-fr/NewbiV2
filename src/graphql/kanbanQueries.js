@@ -92,12 +92,32 @@ export const GET_BOARD = gql`
           hourlyRate
           roundingOption
         }
+        images {
+          id
+          key
+          url
+          fileName
+          fileSize
+          contentType
+          uploadedBy
+          uploadedAt
+        }
         comments {
           id
           userId
           userName
           userImage
           content
+          images {
+            id
+            key
+            url
+            fileName
+            fileSize
+            contentType
+            uploadedBy
+            uploadedAt
+          }
           createdAt
           updatedAt
         }
@@ -242,6 +262,16 @@ export const CREATE_TASK = gql`
         text
         completed
       }
+      images {
+        id
+        key
+        url
+        fileName
+        fileSize
+        contentType
+        uploadedBy
+        uploadedAt
+      }
     }
   }
 `;
@@ -269,6 +299,16 @@ export const UPDATE_TASK = gql`
         id
         text
         completed
+      }
+      images {
+        id
+        key
+        url
+        fileName
+        fileSize
+        contentType
+        uploadedBy
+        uploadedAt
       }
     }
   }
@@ -337,12 +377,32 @@ export const TASK_FRAGMENT = gql`
       hourlyRate
       roundingOption
     }
+    images {
+      id
+      key
+      url
+      fileName
+      fileSize
+      contentType
+      uploadedBy
+      uploadedAt
+    }
     comments {
       id
       userId
       userName
       userImage
       content
+      images {
+        id
+        key
+        url
+        fileName
+        fileSize
+        contentType
+        uploadedBy
+        uploadedAt
+      }
       createdAt
       updatedAt
     }
