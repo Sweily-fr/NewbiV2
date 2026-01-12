@@ -321,7 +321,7 @@ export function ShareBoardDialog({ boardId, boardTitle, workspaceId }) {
     <>
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogTrigger asChild>
-          <Button variant="outline" size="sm" className="gap-2 relative">
+          <Button variant="outline" className="gap-2 relative">
             <Share2 className="h-4 w-4" />
             Partager
             {pendingRequestsCount > 0 && (
@@ -789,7 +789,7 @@ export function ShareBoardDialog({ boardId, boardTitle, workspaceId }) {
               onClick={() => deleteShare({ 
                 variables: { id: deleteShareId, workspaceId } 
               })}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-destructive text-white hover:bg-destructive/90"
             >
               {deleting ? (
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -823,7 +823,7 @@ export function ShareBoardDialog({ boardId, boardTitle, workspaceId }) {
                   workspaceId 
                 } 
               })}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-destructive text-white hover:bg-destructive/90"
             >
               {revokingVisitor ? (
                 <Loader2 className="h-4 w-4 animate-spin mr-2" />

@@ -1964,63 +1964,6 @@ function PublicTaskModal({ task, isOpen, onClose, columns, visitorEmail, visitor
                 </div>
               </div>
 
-              {/* Images de la tâche (lecture seule) */}
-              {task.images?.length > 0 && (
-                <div className="space-y-3 mt-6">
-                  <div className="flex items-center gap-2">
-                    <ImagePlus className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">Images</span>
-                    <span className="text-xs text-muted-foreground">({task.images.length})</span>
-                  </div>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 pl-6">
-                    {task.images.map((image, index) => (
-                      <Dialog key={image.id || index}>
-                        <DialogTrigger asChild>
-                          <div className="relative group cursor-pointer rounded-lg overflow-hidden border border-border hover:border-primary/50 transition-colors">
-                            <img
-                              src={image.url}
-                              alt={image.fileName || `Image ${index + 1}`}
-                              className="w-full h-24 object-cover"
-                            />
-                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                              <ZoomIn className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                            </div>
-                          </div>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-4xl p-0">
-                          <img
-                            src={image.url}
-                            alt={image.fileName || `Image ${index + 1}`}
-                            className="w-full h-auto max-h-[80vh] object-contain"
-                          />
-                        </DialogContent>
-                      </Dialog>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Checklist */}
-              {task.checklist?.length > 0 && (
-                <div className="space-y-3 mt-6">
-                  <div className="flex items-center gap-2">
-                    <CheckSquare className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">Checklist</span>
-                    <span className="text-xs text-muted-foreground">({checklistProgress.completed}/{checklistProgress.total})</span>
-                  </div>
-                  <div className="space-y-2 pl-6">
-                    {task.checklist.map((item, index) => (
-                      <div key={item.id || index} className="flex items-center gap-2">
-                        <div className={`w-4 h-4 rounded border flex items-center justify-center ${item.completed ? 'bg-primary border-primary' : 'border-input'}`}>
-                          {item.completed && <CheckCircle className="h-3 w-3 text-primary-foreground" />}
-                        </div>
-                        <span className={`text-sm ${item.completed ? 'line-through text-muted-foreground' : ''}`}>{item.text}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
               {/* Gestion du temps (lecture seule) - Style identique à TimerControls */}
               {task.timeTracking && (
                 <div className="mt-6 space-y-3">
@@ -2076,6 +2019,63 @@ function PublicTaskModal({ task, isOpen, onClose, columns, visitorEmail, visitor
                         </span>
                       </div>
                     )}
+                  </div>
+                </div>
+              )}
+
+              {/* Checklist */}
+              {task.checklist?.length > 0 && (
+                <div className="space-y-3 mt-6">
+                  <div className="flex items-center gap-2">
+                    <CheckSquare className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">Checklist</span>
+                    <span className="text-xs text-muted-foreground">({checklistProgress.completed}/{checklistProgress.total})</span>
+                  </div>
+                  <div className="space-y-2 pl-6">
+                    {task.checklist.map((item, index) => (
+                      <div key={item.id || index} className="flex items-center gap-2">
+                        <div className={`w-4 h-4 rounded border flex items-center justify-center ${item.completed ? 'bg-primary border-primary' : 'border-input'}`}>
+                          {item.completed && <CheckCircle className="h-3 w-3 text-primary-foreground" />}
+                        </div>
+                        <span className={`text-sm ${item.completed ? 'line-through text-muted-foreground' : ''}`}>{item.text}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Images de la tâche (lecture seule) */}
+              {task.images?.length > 0 && (
+                <div className="space-y-3 mt-6">
+                  <div className="flex items-center gap-2">
+                    <ImagePlus className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">Images</span>
+                    <span className="text-xs text-muted-foreground">({task.images.length})</span>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 pl-6">
+                    {task.images.map((image, index) => (
+                      <Dialog key={image.id || index}>
+                        <DialogTrigger asChild>
+                          <div className="relative group cursor-pointer rounded-lg overflow-hidden border border-border hover:border-primary/50 transition-colors">
+                            <img
+                              src={image.url}
+                              alt={image.fileName || `Image ${index + 1}`}
+                              className="w-full h-24 object-cover"
+                            />
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                              <ZoomIn className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </div>
+                          </div>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-4xl p-0">
+                          <img
+                            src={image.url}
+                            alt={image.fileName || `Image ${index + 1}`}
+                            className="w-full h-auto max-h-[80vh] object-contain"
+                          />
+                        </DialogContent>
+                      </Dialog>
+                    ))}
                   </div>
                 </div>
               )}
@@ -2239,6 +2239,40 @@ function PublicTaskModal({ task, isOpen, onClose, columns, visitorEmail, visitor
                   </div>
                 )}
 
+                {/* Gestion du temps (mobile) */}
+                {task.timeTracking && (
+                  <div className="space-y-2">
+                    <Label className="text-sm font-normal flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      Gestion du temps
+                    </Label>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <div className={`w-4 h-4 rounded-full flex items-center justify-center ${
+                        task.timeTracking.isRunning ? 'bg-red-500 animate-pulse' : 'bg-gray-300'
+                      }`}>
+                        <div className={`w-1.5 h-1.5 rounded-full ${task.timeTracking.isRunning ? 'bg-white' : 'bg-gray-600'}`} />
+                      </div>
+                      <div className="px-2 py-1 bg-muted/50 rounded-md border border-border">
+                        <span className="text-sm font-mono tabular-nums">
+                          <LiveTimer timeTracking={task.timeTracking} />
+                        </span>
+                      </div>
+                      {task.timeTracking.hourlyRate && (
+                        <div className="px-2 py-1 bg-muted/50 rounded-md border border-border">
+                          <span className="text-xs text-muted-foreground">{task.timeTracking.hourlyRate}€/h</span>
+                        </div>
+                      )}
+                      {task.timeTracking.hourlyRate && (
+                        <div className="px-2 py-1 bg-muted/50 rounded-md border border-border">
+                          <span className="text-sm font-semibold">
+                            <LivePrice timeTracking={task.timeTracking} />
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {/* Checklist */}
                 {task.checklist?.length > 0 && (
                   <div className="space-y-2">
@@ -2251,6 +2285,41 @@ function PublicTaskModal({ task, isOpen, onClose, columns, visitorEmail, visitor
                           </div>
                           <span className={`text-sm ${item.completed ? 'line-through text-muted-foreground' : ''}`}>{item.text}</span>
                         </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Images (mobile) */}
+                {task.images?.length > 0 && (
+                  <div className="space-y-2">
+                    <Label className="text-sm font-normal flex items-center gap-2">
+                      <ImagePlus className="h-4 w-4 text-muted-foreground" />
+                      Images ({task.images.length})
+                    </Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {task.images.map((image, index) => (
+                        <Dialog key={image.id || index}>
+                          <DialogTrigger asChild>
+                            <div className="relative group cursor-pointer rounded-lg overflow-hidden border border-border">
+                              <img
+                                src={image.url}
+                                alt={image.fileName || `Image ${index + 1}`}
+                                className="w-full h-20 object-cover"
+                              />
+                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                                <ZoomIn className="h-5 w-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                              </div>
+                            </div>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-4xl p-0">
+                            <img
+                              src={image.url}
+                              alt={image.fileName || `Image ${index + 1}`}
+                              className="w-full h-auto max-h-[80vh] object-contain"
+                            />
+                          </DialogContent>
+                        </Dialog>
                       ))}
                     </div>
                   </div>

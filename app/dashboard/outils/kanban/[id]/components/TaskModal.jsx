@@ -499,25 +499,6 @@ export function TaskModal({
               )}
             </div>
 
-            {/* Images de la description (uniquement en mode édition) */}
-            {isEditing && taskId && (
-              <div className="space-y-2 mb-6">
-                <Label className="text-sm font-normal flex items-center gap-2">
-                  <ImagePlus className="h-4 w-4 text-muted-foreground" />
-                  Images
-                </Label>
-                <TaskImageUpload
-                  images={taskForm.images || []}
-                  onUpload={handleDescriptionImageUpload}
-                  onDelete={handleDeleteImage}
-                  isUploading={isUploadingImage}
-                  uploadProgress={uploadProgress}
-                  maxImages={10}
-                  placeholder="Glissez des images ici ou cliquez pour ajouter"
-                />
-              </div>
-            )}
-
             {/* Grille 2 colonnes : Status à Tags */}
             <div className="grid grid-cols-2 gap-x-6 gap-y-6">
               {/* Colonne 1 */}
@@ -958,17 +939,9 @@ export function TaskModal({
               </div>
             </div>
 
-            {/* Checklist */}
-            <div className="space-y-3 mt-12">
-              <Checklist 
-                items={taskForm.checklist}
-                onChange={handleChecklistChange}
-              />
-            </div>
-
             {/* Timer et facturation (uniquement en mode édition) */}
             {isEditing && (taskForm.id || taskForm._id) && (
-              <div className="mt-6">
+              <div className="mt-12">
                 <TimerControls
                   taskId={taskForm.id || taskForm._id}
                   timeTracking={taskForm.timeTracking}
@@ -978,6 +951,33 @@ export function TaskModal({
                       timeTracking: newTimeTracking
                     }));
                   }}
+                />
+              </div>
+            )}
+
+            {/* Checklist */}
+            <div className="space-y-3 mt-6">
+              <Checklist 
+                items={taskForm.checklist}
+                onChange={handleChecklistChange}
+              />
+            </div>
+
+            {/* Images de la tâche (uniquement en mode édition) */}
+            {isEditing && taskId && (
+              <div className="space-y-2 mt-6">
+                <Label className="text-sm font-normal flex items-center gap-2">
+                  <ImagePlus className="h-4 w-4 text-muted-foreground" />
+                  Images
+                </Label>
+                <TaskImageUpload
+                  images={taskForm.images || []}
+                  onUpload={handleDescriptionImageUpload}
+                  onDelete={handleDeleteImage}
+                  isUploading={isUploadingImage}
+                  uploadProgress={uploadProgress}
+                  maxImages={10}
+                  placeholder="Glissez des images ici ou cliquez pour ajouter"
                 />
               </div>
             )}
@@ -1561,14 +1561,6 @@ export function TaskModal({
                   </div>
                 </div>
 
-                {/* Checklist */}
-                <div className="space-y-3">
-                  <Checklist 
-                    items={taskForm.checklist}
-                    onChange={handleChecklistChange}
-                  />
-                </div>
-
                 {/* Timer et facturation (uniquement en mode édition) */}
                 {isEditing && (taskForm.id || taskForm._id) && (
                   <div className="mt-6">
@@ -1581,6 +1573,33 @@ export function TaskModal({
                           timeTracking: newTimeTracking
                         }));
                       }}
+                    />
+                  </div>
+                )}
+
+                {/* Checklist */}
+                <div className="space-y-3 mt-6">
+                  <Checklist 
+                    items={taskForm.checklist}
+                    onChange={handleChecklistChange}
+                  />
+                </div>
+
+                {/* Images de la tâche (uniquement en mode édition) */}
+                {isEditing && (taskForm.id || taskForm._id) && (
+                  <div className="space-y-2 mt-6">
+                    <Label className="text-sm font-normal flex items-center gap-2">
+                      <ImagePlus className="h-4 w-4 text-muted-foreground" />
+                      Images
+                    </Label>
+                    <TaskImageUpload
+                      images={taskForm.images || []}
+                      onUpload={handleDescriptionImageUpload}
+                      onDelete={handleDeleteImage}
+                      isUploading={isUploadingImage}
+                      uploadProgress={uploadProgress}
+                      maxImages={10}
+                      placeholder="Glissez des images ici ou cliquez pour ajouter"
                     />
                   </div>
                 )}
