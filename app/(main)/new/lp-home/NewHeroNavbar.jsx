@@ -168,7 +168,11 @@ export function NewHeroNavbar({ hasBanner = false }) {
       <nav
         data-state={menuState && "active"}
         className={`fixed left-0 w-full z-100 transition-all duration-300 ${
-          hasBanner ? (isScrolled ? "top-0" : "top-[58px]") : "top-0"
+          hasBanner
+            ? isScrolled
+              ? "top-0"
+              : "top-[80px] sm:top-[58px]"
+            : "top-0"
         }`}
       >
         <div

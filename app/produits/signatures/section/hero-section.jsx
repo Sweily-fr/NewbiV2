@@ -8,10 +8,10 @@ export function HeroSection() {
   return (
     <>
       <main className="overflow-hidden">
-        <section className="h-[120vh] flex flex-col bg-[#FF4D4D]/10 rounded-[15px] md:rounded-[18px] lg:rounded-[18px] shadow-xs mx-2 mt-2 pt-20">
+        <section className="min-h-screen lg:h-[120vh] flex flex-col bg-[#FF4D4D]/10 rounded-[15px] md:rounded-[18px] lg:rounded-[18px] shadow-xs mx-2 mt-2 pt-20">
           <div className="flex-1 flex flex-col items-center justify-center relative w-full px-4 md:px-8 pt-8 md:pt-16">
-            <div className="flex flex-col items-center justify-center z-10 gap-6 max-w-4xl text-center">
-              <h1 className="max-w-4xl text-center mx-auto text-balance font-medium font-Poppins text-3xl md:text-7xl xl:text-[2.7rem] font-['Poppins'] leading-tight">
+            <div className="flex flex-col items-center justify-center z-10 gap-4 sm:gap-6 max-w-4xl text-center">
+              <h1 className="max-w-4xl text-center mx-auto text-balance font-medium font-Poppins text-2xl sm:text-3xl md:text-5xl xl:text-[2.7rem] font-['Poppins'] leading-tight">
                 La <span className="text-[#FF4D4D]">Signature de mail</span> qui
                 professionnalise vraiment vos{" "}
                 <span className="text-[#FF4D4D]">échanges</span>
@@ -39,7 +39,7 @@ export function HeroSection() {
               </div>
             </div>
           </div>
-          <div className="relative -mr-56 overflow-hidden px-2 sm:mr-0 sm:mt-12 md:mt-20">
+          <div className="relative overflow-hidden px-2 sm:mt-12 md:mt-20">
             <div
               aria-hidden
               className="bg-gradient-to-b to-background absolute inset-0 z-10 from-transparent from-35%"
@@ -59,7 +59,7 @@ export function HeroSection() {
                 width="2700"
                 height="1440"
               />
-            </div> 
+            </div>
           </div>
         </section>
         <TrustedCompaniesSection />

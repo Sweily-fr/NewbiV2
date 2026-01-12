@@ -8,4 +8,5 @@ export { default as GovernanceSection } from "./GovernanceSection";
 export { default as PricingSection } from "./PricingSection";
 export { default as NewPricingSection } from "./NewPricingSection";
 export { default as FeaturedOnSection } from "./FeaturedOnSection";
+export { default as TestimonialsSplit } from "./TestimonialsSplit";
 export { default as FAQSection } from "./FAQSection";

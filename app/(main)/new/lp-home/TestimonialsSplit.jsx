@@ -36,7 +36,7 @@ const testimonials = [
   },
 ];
 
-export function TestimonialsSplit() {
+export default function TestimonialsSplit() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [isHovering, setIsHovering] = useState(false);
 
@@ -47,8 +47,8 @@ export function TestimonialsSplit() {
   };
 
   return (
-    <section className="w-full py-20 pb-12 lg:pb-32 bg-white">
-      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-12">
+    <section className="w-full py-20 pb-12 lg:pb-32 bg-[#202020]">
+      <div className="w-full max-w-7xl mx-auto px-6 lg:px-12">
         <div
           className="relative flex flex-col lg:grid lg:grid-cols-[1fr_auto] gap-8 lg:gap-12 items-center cursor-pointer group"
           onClick={nextTestimonial}
@@ -65,9 +65,9 @@ export function TestimonialsSplit() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.3 }}
-                className="inline-flex items-center gap-2 text-xs tracking-[0.2em] uppercase text-muted-foreground"
+                className="inline-flex items-center gap-2 text-xs tracking-[0.2em] uppercase text-gray-400"
               >
-                <span className="w-8 h-px bg-muted-foreground/50" />
+                <span className="w-8 h-px bg-gray-500" />
                 {active.company}
               </motion.div>
             </AnimatePresence>
@@ -81,7 +81,7 @@ export function TestimonialsSplit() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -40 }}
                   transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                  className="text-3xl md:text-4xl font-light leading-[1.3] tracking-tight text-foreground"
+                  className="text-3xl md:text-4xl font-light leading-[1.3] tracking-tight text-white"
                 >
                   {active.quote}
                 </motion.blockquote>
@@ -98,12 +98,12 @@ export function TestimonialsSplit() {
                 transition={{ duration: 0.3, delay: 0.2 }}
                 className="flex items-center gap-4"
               >
-                <div className="w-10 h-px bg-foreground/20" />
+                <div className="w-10 h-px bg-gray-500" />
                 <div>
-                  <p className="text-sm font-medium text-foreground">
+                  <p className="text-sm font-medium text-white">
                     {active.name}
                   </p>
-                  <p className="text-xs text-muted-foreground">{active.role}</p>
+                  <p className="text-xs text-gray-400">{active.role}</p>
                 </div>
               </motion.div>
             </AnimatePresence>
@@ -120,7 +120,7 @@ export function TestimonialsSplit() {
                 transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
                 className="absolute inset-0"
               >
-                <div className="w-full h-full rounded-2xl overflow-hidden border border-border/50">
+                <div className="w-full h-full rounded-2xl overflow-hidden border border-gray-600">
                   <img
                     src={active.image || "/placeholder.svg"}
                     alt={active.name}
@@ -137,7 +137,7 @@ export function TestimonialsSplit() {
                 scale: isHovering ? 1 : 0.8,
               }}
               transition={{ duration: 0.2 }}
-              className="absolute -bottom-12 left-1/2 -translate-x-1/2 flex items-center gap-2 text-xs text-muted-foreground"
+              className="absolute -bottom-12 left-1/2 -translate-x-1/2 flex items-center gap-2 text-xs text-gray-400"
             >
               <span>Next</span>
               <ArrowUpRight className="w-3 h-3" />
@@ -160,15 +160,15 @@ export function TestimonialsSplit() {
                     block w-2 h-2 rounded-full transition-all duration-300
                     ${
                       index === activeIndex
-                        ? "bg-foreground scale-100"
-                        : "bg-muted-foreground/30 scale-75 hover:bg-muted-foreground/50 hover:scale-100"
+                        ? "bg-white scale-100"
+                        : "bg-gray-500 scale-75 hover:bg-gray-400 hover:scale-100"
                     }
                   `}
                 />
                 {index === activeIndex && (
                   <motion.span
                     layoutId="activeDot"
-                    className="absolute inset-0 border border-foreground/30 rounded-full"
+                    className="absolute inset-0 border border-white/30 rounded-full"
                     transition={{ duration: 0.3 }}
                   />
                 )}

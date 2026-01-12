@@ -16,6 +16,7 @@ import {
   PricingSection,
   FeaturedOnSection,
   NewPricingSection,
+  TestimonialsSplit,
   FAQSection,
 } from "./new/lp-home";
 
@@ -37,6 +38,7 @@ export default function Home() {
         {/* <NewPricingSection /> */}
         <PricingSection />
         <FeaturedOnSection />
+        <TestimonialsSplit />
         <FAQSection />
       </div>
     </>

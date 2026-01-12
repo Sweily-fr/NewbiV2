@@ -36,7 +36,7 @@ export function FacturationBanner() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Link href="/produits/factures#features">
+          <Link href="/produits/factures#features" className="hidden sm:block">
             <Button size="sm">Découvrir</Button>
           </Link>
           <button
