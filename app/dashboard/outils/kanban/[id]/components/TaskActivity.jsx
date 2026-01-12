@@ -210,11 +210,11 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
     try {
       setIsUploadingImage(true);
       
-      // 1. Créer le commentaire (avec texte vide si seulement des images)
+      // 1. Créer le commentaire (contenu vide autorisé si images présentes)
       const result = await addComment({
         variables: {
           taskId,
-          input: { content: newComment || ' ' }, // Espace si vide pour éviter erreur
+          input: { content: newComment.trim() || (pendingImages.length > 0 ? '' : ' ') },
           workspaceId
         },
         refetchQueries: ['GetBoard'],
@@ -522,8 +522,8 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
                                       {formatDate(item.createdAt)}
                                     </span>
                                   </div>
-                                  {item.userId === currentUser?.id && (
-                                    <div className="flex gap-1">
+                                  <div className="flex gap-1">
+                                    {item.userId === currentUser?.id && (
                                       <Button
                                         size="sm"
                                         variant="ghost"
@@ -538,39 +538,39 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
                                       >
                                         <Edit2 className="h-3.5 w-3.5" />
                                       </Button>
-                                      <AlertDialog open={commentToDelete === item.id} onOpenChange={(open) => !open && setCommentToDelete(null)}>
-                                        <AlertDialogTrigger asChild>
-                                          <Button
-                                            size="sm"
-                                            variant="ghost"
-                                            className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
-                                            onClick={() => setCommentToDelete(item.id)}
+                                    )}
+                                    <AlertDialog open={commentToDelete === item.id} onOpenChange={(open) => !open && setCommentToDelete(null)}>
+                                      <AlertDialogTrigger asChild>
+                                        <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+                                          onClick={() => setCommentToDelete(item.id)}
+                                        >
+                                          <Trash2 className="h-3.5 w-3.5" />
+                                        </Button>
+                                      </AlertDialogTrigger>
+                                      <AlertDialogContent>
+                                        <AlertDialogTitle>Supprimer le commentaire</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          Êtes-vous sûr de vouloir supprimer ce commentaire ? Cette action ne peut pas être annulée.
+                                        </AlertDialogDescription>
+                                        <div className="flex gap-2 justify-end">
+                                          <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                          <AlertDialogAction
+                                            onClick={() => {
+                                              handleDeleteComment(item.id);
+                                              setCommentToDelete(null);
+                                            }}
+                                            disabled={deletingComment}
+                                            className="bg-destructive text-white hover:bg-destructive/90"
                                           >
-                                            <Trash2 className="h-3.5 w-3.5" />
-                                          </Button>
-                                        </AlertDialogTrigger>
-                                        <AlertDialogContent>
-                                          <AlertDialogTitle>Supprimer le commentaire</AlertDialogTitle>
-                                          <AlertDialogDescription>
-                                            Êtes-vous sûr de vouloir supprimer ce commentaire ? Cette action ne peut pas être annulée.
-                                          </AlertDialogDescription>
-                                          <div className="flex gap-2 justify-end">
-                                            <AlertDialogCancel>Annuler</AlertDialogCancel>
-                                            <AlertDialogAction
-                                              onClick={() => {
-                                                handleDeleteComment(item.id);
-                                                setCommentToDelete(null);
-                                              }}
-                                              disabled={deletingComment}
-                                              className="bg-destructive text-white hover:bg-destructive/90"
-                                            >
-                                              Supprimer
-                                            </AlertDialogAction>
-                                          </div>
-                                        </AlertDialogContent>
-                                      </AlertDialog>
-                                    </div>
-                                  )}
+                                            Supprimer
+                                          </AlertDialogAction>
+                                        </div>
+                                      </AlertDialogContent>
+                                    </AlertDialog>
+                                  </div>
                                 </div>
                                 <p className="text-sm whitespace-pre-wrap">{item.content}</p>
                                 {/* Affichage des images du commentaire dans le fil "Tout" */}
@@ -724,8 +724,8 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
                                 {formatDate(comment.createdAt)}
                               </span>
                             </div>
-                            {comment.userId === currentUser?.id && (
-                              <div className="flex gap-1">
+                            <div className="flex gap-1">
+                              {comment.userId === currentUser?.id && (
                                 <Button
                                   size="sm"
                                   variant="ghost"
@@ -740,39 +740,39 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
                                 >
                                   <Edit2 className="h-3.5 w-3.5" />
                                 </Button>
-                                <AlertDialog open={commentToDelete === comment.id} onOpenChange={(open) => !open && setCommentToDelete(null)}>
-                                  <AlertDialogTrigger asChild>
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
-                                      onClick={() => setCommentToDelete(comment.id)}
+                              )}
+                              <AlertDialog open={commentToDelete === comment.id} onOpenChange={(open) => !open && setCommentToDelete(null)}>
+                                <AlertDialogTrigger asChild>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+                                    onClick={() => setCommentToDelete(comment.id)}
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogTitle>Supprimer le commentaire</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Êtes-vous sûr de vouloir supprimer ce commentaire ? Cette action ne peut pas être annulée.
+                                  </AlertDialogDescription>
+                                  <div className="flex gap-2 justify-end">
+                                    <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() => {
+                                        handleDeleteComment(comment.id);
+                                        setCommentToDelete(null);
+                                      }}
+                                      disabled={deletingComment}
+                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                     >
-                                      <Trash2 className="h-3.5 w-3.5" />
-                                    </Button>
-                                  </AlertDialogTrigger>
-                                  <AlertDialogContent>
-                                    <AlertDialogTitle>Supprimer le commentaire</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      Êtes-vous sûr de vouloir supprimer ce commentaire ? Cette action ne peut pas être annulée.
-                                    </AlertDialogDescription>
-                                    <div className="flex gap-2 justify-end">
-                                      <AlertDialogCancel>Annuler</AlertDialogCancel>
-                                      <AlertDialogAction
-                                        onClick={() => {
-                                          handleDeleteComment(comment.id);
-                                          setCommentToDelete(null);
-                                        }}
-                                        disabled={deletingComment}
-                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                      >
-                                        Supprimer
-                                      </AlertDialogAction>
-                                    </div>
-                                  </AlertDialogContent>
-                                </AlertDialog>
-                              </div>
-                            )}
+                                      Supprimer
+                                    </AlertDialogAction>
+                                  </div>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </div>
                           </div>
                           <p className="text-sm whitespace-pre-wrap">{comment.content}</p>
                           {/* Affichage des images du commentaire */}
@@ -949,7 +949,7 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
                       setPendingImages(prev => prev.filter((_, i) => i !== index));
                       URL.revokeObjectURL(img.preview);
                     }}
-                    className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-white text-black border border-gray-200 shadow-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-100"
                   >
                     <X className="h-3 w-3" />
                   </button>

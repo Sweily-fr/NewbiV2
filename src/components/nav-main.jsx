@@ -1,6 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
+import { useQuery } from "@apollo/client";
+import { GET_BOARDS } from "@/src/graphql/kanbanQueries";
+import { useWorkspace } from "@/src/hooks/useWorkspace";
 import {
   IconReceipt,
   IconFileText,
@@ -17,7 +20,10 @@ import {
   FileText,
   MessageSquare,
   Plus,
+  Search,
+  LayoutGrid,
 } from "lucide-react";
+import { Input } from "@/src/components/ui/input";
 
 import {
   SidebarGroup,
@@ -64,6 +70,33 @@ export function NavMain({
   const isCollapsed = state === "collapsed";
   const { getUserRole } = usePermissions();
   const userRole = getUserRole();
+  const { workspaceId } = useWorkspace();
+
+  // État pour la recherche des tableaux Kanban
+  const [kanbanSearchTerm, setKanbanSearchTerm] = useState("");
+
+  // Récupérer les tableaux Kanban
+  const { data: kanbanData } = useQuery(GET_BOARDS, {
+    variables: { workspaceId },
+    skip: !workspaceId,
+    fetchPolicy: "cache-and-network",
+  });
+
+  // Filtrer et trier les tableaux Kanban (tous les dossiers, filtrés par recherche)
+  const filteredKanbanBoards = useMemo(() => {
+    const boards = kanbanData?.boards || [];
+    // Trier par date de création (plus récent en premier)
+    const sortedBoards = [...boards].sort(
+      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+    );
+    // Filtrer par terme de recherche si présent, sinon afficher tous
+    const filtered = kanbanSearchTerm
+      ? sortedBoards.filter((board) =>
+          board.title.toLowerCase().includes(kanbanSearchTerm.toLowerCase())
+        )
+      : sortedBoards; // Afficher tous les dossiers
+    return filtered;
+  }, [kanbanData?.boards, kanbanSearchTerm]);
 
   // Définir les onglets qui nécessitent un abonnement Pro
   const proTabs = ["Dashboard", "Catalogue", "Transactions"];
@@ -84,7 +117,7 @@ export function NavMain({
 
   // États pour les menus collapsibles
   const [isVentesOpen, setIsVentesOpen] = useState(isVentesSubActive);
-  const [isProjetsOpen, setIsProjetsOpen] = useState(isProjetsSubActive);
+  const [isProjetsOpen, setIsProjetsOpen] = useState(true); // Toujours ouvert par défaut pour voir les tableaux
   const [isDocumentsOpen, setIsDocumentsOpen] = useState(isDocumentsSubActive);
   const [isCommunicationOpen, setIsCommunicationOpen] = useState(
     isCommunicationSubActive
@@ -317,6 +350,203 @@ export function NavMain({
                   </SidebarMenuSubItem>
                 );
               })}
+            </SidebarMenuSub>
+          </CollapsibleContent>
+        </SidebarMenuItem>
+      </Collapsible>
+    );
+  };
+
+  // Fonction pour rendre le menu Projets avec barre de recherche et tableaux Kanban
+  const renderProjetsMenu = () => {
+    const isKanbanActive = pathname?.startsWith("/dashboard/outils/kanban");
+
+    if (isCollapsed) {
+      return (
+        <DropdownMenu key="projets">
+          <SidebarMenuItem>
+            <DropdownMenuTrigger asChild>
+              <SidebarMenuButton
+                tooltip="Projets"
+                className={cn(
+                  "bg-transparent w-full cursor-pointer",
+                  isKanbanActive &&
+                    "bg-[#F0F0F0] dark:bg-sidebar-accent text-sidebar-foreground"
+                )}
+              >
+                <FolderKanban />
+                <span>Projets</span>
+                <ChevronRight className="ml-auto h-4 w-4" />
+              </SidebarMenuButton>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              side="right"
+              align="start"
+              className="min-w-[200px]"
+            >
+              {/* Lien vers tous les dossiers */}
+              <DropdownMenuItem asChild>
+                <Link
+                  href="/dashboard/outils/kanban"
+                  onClick={handleLinkClick}
+                  className="cursor-pointer font-medium"
+                >
+                  <LayoutGrid className="h-4 w-4 mr-2" />
+                  Tous les dossiers
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              {/* Barre de recherche */}
+              <div className="px-2 py-2">
+                <div className="relative">
+                  <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder="Rechercher..."
+                    value={kanbanSearchTerm}
+                    onChange={(e) => setKanbanSearchTerm(e.target.value)}
+                    className="h-7 pl-7 text-xs"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </div>
+              </div>
+              {/* Liste des dossiers avec scroll */}
+              <div className="max-h-[200px] overflow-y-auto">
+                {filteredKanbanBoards.length > 0 ? (
+                  filteredKanbanBoards.map((board) => (
+                    <DropdownMenuItem key={board.id} asChild>
+                      <Link
+                        href={`/dashboard/outils/kanban/${board.id}`}
+                        onClick={handleLinkClick}
+                        className={cn(
+                          "cursor-pointer",
+                          pathname === `/dashboard/outils/kanban/${board.id}` &&
+                            "bg-accent font-medium"
+                        )}
+                      >
+                        {board.title}
+                      </Link>
+                    </DropdownMenuItem>
+                  ))
+                ) : (
+                  <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                    {kanbanSearchTerm ? "Aucun résultat" : "Aucun dossier"}
+                  </div>
+                )}
+              </div>
+            </DropdownMenuContent>
+          </SidebarMenuItem>
+        </DropdownMenu>
+      );
+    }
+
+    return (
+      <Collapsible
+        key="projets"
+        open={isProjetsOpen}
+        onOpenChange={setIsProjetsOpen}
+      >
+        <SidebarMenuItem>
+          <div
+            className={cn(
+              "flex items-center w-full rounded-md transition-colors",
+              isKanbanActive && "bg-[#F0F0F0] dark:bg-sidebar-accent"
+            )}
+          >
+            <SidebarMenuButton
+              tooltip="Projets"
+              className={cn(
+                "bg-transparent w-full cursor-pointer hover:bg-transparent",
+                isKanbanActive && "text-sidebar-foreground"
+              )}
+              onClick={() => setIsProjetsOpen(!isProjetsOpen)}
+            >
+              <FolderKanban />
+              <span>Projets</span>
+            </SidebarMenuButton>
+            <CollapsibleTrigger asChild>
+              <button
+                className="p-2 hover:bg-transparent transition-colors cursor-pointer"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <ChevronRight
+                  className={cn(
+                    "h-4 w-4 transition-transform",
+                    isProjetsOpen && "rotate-90"
+                  )}
+                />
+              </button>
+            </CollapsibleTrigger>
+          </div>
+          <CollapsibleContent>
+            <SidebarMenuSub>
+              {/* Lien vers tous les dossiers */}
+              <SidebarMenuSubItem>
+                <Link
+                  href="/dashboard/outils/kanban"
+                  onClick={handleLinkClick}
+                  className="w-full"
+                >
+                  <SidebarMenuSubButton
+                    isActive={pathname === "/dashboard/outils/kanban"}
+                    className={cn(
+                      "w-full cursor-pointer",
+                      pathname === "/dashboard/outils/kanban" &&
+                        "bg-[#F0F0F0] dark:bg-sidebar-accent text-sidebar-foreground font-medium"
+                    )}
+                  >
+                    <LayoutGrid className="h-3.5 w-3.5 mr-1.5" />
+                    <span className="text-sm">Tous les dossiers</span>
+                  </SidebarMenuSubButton>
+                </Link>
+              </SidebarMenuSubItem>
+
+              {/* Barre de recherche */}
+              <li className="px-2 py-2">
+                <div className="relative">
+                  <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder="Rechercher..."
+                    value={kanbanSearchTerm}
+                    onChange={(e) => setKanbanSearchTerm(e.target.value)}
+                    className="h-7 pl-7 text-xs"
+                  />
+                </div>
+              </li>
+
+              {/* Liste des dossiers Kanban avec scroll */}
+              <div className="max-h-[200px] overflow-y-auto">
+                {filteredKanbanBoards.length > 0 ? (
+                  filteredKanbanBoards.map((board) => {
+                    const isBoardActive = pathname === `/dashboard/outils/kanban/${board.id}`;
+                    return (
+                      <SidebarMenuSubItem key={board.id}>
+                        <Link
+                          href={`/dashboard/outils/kanban/${board.id}`}
+                          onClick={handleLinkClick}
+                          className="w-full"
+                        >
+                          <SidebarMenuSubButton
+                            isActive={isBoardActive}
+                            className={cn(
+                              "w-full cursor-pointer truncate",
+                              isBoardActive &&
+                                "bg-[#F0F0F0] dark:bg-sidebar-accent text-sidebar-foreground font-medium"
+                            )}
+                          >
+                            <span className="text-sm truncate">{board.title}</span>
+                          </SidebarMenuSubButton>
+                        </Link>
+                      </SidebarMenuSubItem>
+                    );
+                  })
+                ) : (
+                  <li className="px-3 py-2 text-xs text-muted-foreground">
+                    {kanbanSearchTerm ? "Aucun résultat" : "Aucun dossier"}
+                  </li>
+                )}
+              </div>
             </SidebarMenuSub>
           </CollapsibleContent>
         </SidebarMenuItem>
@@ -698,17 +928,8 @@ export function NavMain({
         <div className="my-2" />
 
         <SidebarMenu>
-          {/* Menu Projets avec sous-menus */}
-          {userRole !== "accountant" &&
-            navProjets.length > 0 &&
-            renderCollapsibleMenu(
-              "Projets",
-              FolderKanban,
-              navProjets,
-              isProjetsOpen,
-              setIsProjetsOpen,
-              isProjetsSubActive
-            )}
+          {/* Menu Projets avec tableaux Kanban */}
+          {userRole !== "accountant" && renderProjetsMenu()}
 
           {/* Menu Documents avec sous-menus */}
           {userRole !== "accountant" &&

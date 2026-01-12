@@ -141,16 +141,7 @@ const data = {
       title: "Kanban",
       url: "/dashboard/outils/kanban",
       isPro: false,
-    },
-    {
-      title: "Tâches",
-      url: "/dashboard/outils/taches",
-      isPro: false,
-    },
-    {
-      title: "Timer",
-      url: "/dashboard/outils/timer",
-      isPro: false,
+      hasKanbanBoards: true,
     },
   ],
   navDocuments: [
