@@ -949,7 +949,7 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
                       setPendingImages(prev => prev.filter((_, i) => i !== index));
                       URL.revokeObjectURL(img.preview);
                     }}
-                    className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-white text-black border border-gray-200 shadow-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-100"
                   >
                     <X className="h-3 w-3" />
                   </button>

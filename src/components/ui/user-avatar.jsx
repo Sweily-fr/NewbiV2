@@ -58,10 +58,11 @@ function getInitials(name) {
  * @param {Object} props
  * @param {string} props.src - URL de l'image
  * @param {string} props.name - Nom de l'utilisateur
+ * @param {string} props.colorKey - Clé stable pour la couleur (ex: email), utilise name si non fourni
  * @param {string} props.className - Classes CSS additionnelles
  * @param {string} props.size - Taille de l'avatar (sm, md, lg, xl)
  */
-export function UserAvatar({ src, name, className, size = "md" }) {
+export function UserAvatar({ src, name, colorKey, className, size = "md" }) {
   const sizeClasses = {
     xs: "h-6 w-6 text-[10px]",
     sm: "h-8 w-8 text-xs",
@@ -70,7 +71,7 @@ export function UserAvatar({ src, name, className, size = "md" }) {
     xl: "h-16 w-16 text-lg",
   };
   
-  const bgColor = getAvatarColor(name);
+  const bgColor = getAvatarColor(colorKey || name);
   const initials = getInitials(name);
   
   return (

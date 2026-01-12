@@ -493,6 +493,14 @@ export const TASK_UPDATED_SUBSCRIPTION = gql`
       taskId
       boardId
       workspaceId
+      visitor {
+        id
+        email
+        firstName
+        lastName
+        name
+        image
+      }
     }
   }
   ${TASK_FRAGMENT}
@@ -668,6 +676,13 @@ export const GET_PUBLIC_BOARD = gql`
             name
             image
           }
+          images {
+            id
+            key
+            url
+            fileName
+            contentType
+          }
           comments {
             id
             userName
@@ -675,12 +690,25 @@ export const GET_PUBLIC_BOARD = gql`
             userImage
             content
             isExternal
+            images {
+              id
+              key
+              url
+              fileName
+              contentType
+            }
             createdAt
           }
           timeTracking {
             totalSeconds
             isRunning
+            currentStartTime
             hourlyRate
+            startedBy {
+              userId
+              userName
+              userImage
+            }
           }
           userId
           createdAt
@@ -933,14 +961,68 @@ export const ADD_EXTERNAL_COMMENT = gql`
       message
       task {
         id
+        title
+        description
+        status
+        priority
+        tags {
+          name
+          className
+          bg
+          text
+          border
+        }
+        startDate
+        dueDate
+        columnId
+        position
+        checklist {
+          id
+          text
+          completed
+        }
+        images {
+          id
+          key
+          url
+          fileName
+          contentType
+        }
+        assignedMembers {
+          id
+          name
+          image
+        }
+        timeTracking {
+          totalSeconds
+          isRunning
+          currentStartTime
+          hourlyRate
+          startedBy {
+            userId
+            userName
+            userImage
+          }
+        }
         comments {
           id
           userName
           userEmail
+          userImage
           content
           isExternal
+          images {
+            id
+            key
+            url
+            fileName
+            contentType
+          }
           createdAt
         }
+        userId
+        createdAt
+        updatedAt
       }
     }
   }
@@ -959,6 +1041,34 @@ export const UPDATE_VISITOR_PROFILE = gql`
         lastName
         name
         image
+      }
+    }
+  }
+`;
+
+// Mutation pour uploader l'image de profil d'un visiteur sur Cloudflare
+export const UPLOAD_VISITOR_IMAGE = gql`
+  mutation UploadVisitorImage($token: String!, $email: String!, $file: Upload!) {
+    uploadVisitorImage(token: $token, email: $email, file: $file) {
+      success
+      message
+      imageUrl
+    }
+  }
+`;
+
+// Mutation pour uploader une image dans un commentaire externe (visiteur)
+export const UPLOAD_EXTERNAL_COMMENT_IMAGE = gql`
+  mutation UploadExternalCommentImage($token: String!, $taskId: ID!, $file: Upload!, $visitorEmail: String!) {
+    uploadExternalCommentImage(token: $token, taskId: $taskId, file: $file, visitorEmail: $visitorEmail) {
+      success
+      message
+      image {
+        id
+        key
+        url
+        fileName
+        contentType
       }
     }
   }
@@ -992,6 +1102,13 @@ export const PUBLIC_TASK_UPDATED_SUBSCRIPTION = gql`
           name
           image
         }
+        images {
+          id
+          key
+          url
+          fileName
+          contentType
+        }
         comments {
           id
           userName
@@ -999,12 +1116,25 @@ export const PUBLIC_TASK_UPDATED_SUBSCRIPTION = gql`
           userImage
           content
           isExternal
+          images {
+            id
+            key
+            url
+            fileName
+            contentType
+          }
           createdAt
         }
         timeTracking {
           totalSeconds
           isRunning
+          currentStartTime
           hourlyRate
+          startedBy {
+            userId
+            userName
+            userImage
+          }
         }
         userId
         createdAt
@@ -1012,6 +1142,14 @@ export const PUBLIC_TASK_UPDATED_SUBSCRIPTION = gql`
       }
       taskId
       boardId
+      visitor {
+        id
+        email
+        firstName
+        lastName
+        name
+        image
+      }
     }
   }
 `;

@@ -47,17 +47,22 @@ export const useKanbanTasks = (boardId, board) => {
     const updatedTask = board.tasks.find(t => t.id === editingTask.id);
     if (!updatedTask) return;
     
-    // Comparer les commentaires pour détecter les changements
-    const currentCommentsCount = taskForm.comments?.length || 0;
-    const updatedCommentsCount = updatedTask.comments?.length || 0;
+    // Créer une clé de comparaison incluant le contenu des commentaires (userName, userImage)
+    const getCommentsKey = (comments) => {
+      if (!comments || comments.length === 0) return '';
+      return comments.map(c => `${c.id}-${c.userName}-${c.userImage}`).join('|');
+    };
+    
+    const currentCommentsKey = getCommentsKey(taskForm.comments);
+    const updatedCommentsKey = getCommentsKey(updatedTask.comments);
     
     // Éviter les mises à jour en boucle
-    const updateKey = `${updatedTask.id}-${updatedCommentsCount}-${updatedTask.updatedAt}`;
+    const updateKey = `${updatedTask.id}-${updatedCommentsKey}-${updatedTask.updatedAt}`;
     if (lastUpdateRef.current === updateKey) return;
     
-    // Si les commentaires ont changé, mettre à jour le taskForm
-    if (currentCommentsCount !== updatedCommentsCount) {
-      console.log('🔄 [TaskForm] Mise à jour des commentaires:', currentCommentsCount, '→', updatedCommentsCount);
+    // Si les commentaires ont changé (nombre OU contenu), mettre à jour le taskForm
+    if (currentCommentsKey !== updatedCommentsKey) {
+      console.log('🔄 [TaskForm] Mise à jour des commentaires (contenu changé)');
       lastUpdateRef.current = updateKey;
       
       setTaskForm(prev => ({
@@ -67,7 +72,7 @@ export const useKanbanTasks = (boardId, board) => {
         updatedAt: updatedTask.updatedAt
       }));
     }
-  }, [board?.tasks, editingTask?.id, isEditTaskOpen, taskForm.comments?.length]);
+  }, [board?.tasks, editingTask?.id, isEditTaskOpen, taskForm.comments]);
 
   // Task mutations
   const [addComment] = useMutation(ADD_COMMENT);

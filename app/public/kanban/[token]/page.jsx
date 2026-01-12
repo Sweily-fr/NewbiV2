@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState, useEffect, useMemo, useCallback } from "react";
+import { use, useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useQuery, useMutation, useLazyQuery, useSubscription } from "@apollo/client";
 import { 
   GET_PUBLIC_BOARD, 
@@ -10,7 +10,9 @@ import {
   PUBLIC_TASK_UPDATED_SUBSCRIPTION,
   REQUEST_ACCESS,
   ACCESS_APPROVED_SUBSCRIPTION,
-  ACCESS_REVOKED_SUBSCRIPTION
+  ACCESS_REVOKED_SUBSCRIPTION,
+  UPLOAD_EXTERNAL_COMMENT_IMAGE,
+  UPLOAD_VISITOR_IMAGE
 } from "@/src/graphql/kanbanQueries";
 import { toast } from "@/src/components/ui/sonner";
 import { Button } from "@/src/components/ui/button";
@@ -18,7 +20,7 @@ import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { Badge } from "@/src/components/ui/badge";
 import { Textarea } from "@/src/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/src/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/src/components/ui/dialog";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/src/components/ui/popover";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/src/components/ui/tabs";
@@ -28,10 +30,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { 
   Mail, Eye, Calendar, CheckSquare, Flag, User, Send, Loader2, AlertCircle, ExternalLink,
   LayoutGrid, List, AlignLeft, Search, X, GanttChart, ChevronLeft, ChevronRight, Users,
-  Tag, Columns, Clock, CheckCircle, ChevronUp, ChevronDown, Settings, Edit2, Camera, Upload
+  Tag, Columns, Clock, CheckCircle, ChevronUp, ChevronDown, Settings, Edit2, Camera, Upload,
+  ImagePlus, ZoomIn
 } from "lucide-react";
-import { format, addDays, startOfWeek, endOfWeek, eachDayOfInterval, parseISO, differenceInDays, startOfDay, isWithinInterval } from "date-fns";
+import { format, addDays, startOfWeek, endOfWeek, eachDayOfInterval, parseISO, differenceInDays, startOfDay, isWithinInterval, isSameDay, getWeek } from "date-fns";
 import { fr } from "date-fns/locale";
+import { TimerDisplay } from "@/app/dashboard/outils/kanban/[id]/components/TimerDisplay";
 
 const scrollbarStyles = `
   .kanban-column-scroll::-webkit-scrollbar { width: 6px; }
@@ -219,18 +223,20 @@ function BannedAccessPage({ email, token, onAccessApproved }) {
 }
 
 // ProfileModal Component
-function ProfileModal({ isOpen, onClose, visitorProfile, onSave, loading }) {
+function ProfileModal({ isOpen, onClose, visitorProfile, onSave, loading, token, visitorEmail }) {
   const [firstName, setFirstName] = useState(visitorProfile?.firstName || "");
   const [lastName, setLastName] = useState(visitorProfile?.lastName || "");
   const [imagePreview, setImagePreview] = useState(visitorProfile?.image || null);
-  const [imageBase64, setImageBase64] = useState(null);
+  const [imageUrl, setImageUrl] = useState(visitorProfile?.image || null);
   const [uploadingImage, setUploadingImage] = useState(false);
+
+  const [uploadVisitorImage] = useMutation(UPLOAD_VISITOR_IMAGE);
 
   useEffect(() => {
     setFirstName(visitorProfile?.firstName || "");
     setLastName(visitorProfile?.lastName || "");
     setImagePreview(visitorProfile?.image || null);
-    setImageBase64(null);
+    setImageUrl(visitorProfile?.image || null);
   }, [visitorProfile]);
 
   const handleImageChange = async (e) => {
@@ -251,30 +257,46 @@ function ProfileModal({ isOpen, onClose, visitorProfile, onSave, loading }) {
 
     setUploadingImage(true);
     try {
-      // Convertir en base64 pour le stockage
+      // Afficher un aperçu local pendant l'upload
       const reader = new FileReader();
       reader.onloadend = () => {
-        const base64 = reader.result;
-        setImagePreview(base64);
-        setImageBase64(base64);
-        setUploadingImage(false);
-      };
-      reader.onerror = () => {
-        toast.error("Erreur lors de la lecture de l'image");
-        setUploadingImage(false);
+        setImagePreview(reader.result);
       };
       reader.readAsDataURL(file);
+
+      // Uploader directement sur Cloudflare
+      const result = await uploadVisitorImage({
+        variables: {
+          token,
+          email: visitorEmail,
+          file
+        }
+      });
+
+      if (result.data?.uploadVisitorImage?.success) {
+        const cloudflareUrl = result.data.uploadVisitorImage.imageUrl;
+        setImageUrl(cloudflareUrl);
+        setImagePreview(cloudflareUrl);
+        toast.success("Image uploadée avec succès");
+      } else {
+        toast.error(result.data?.uploadVisitorImage?.message || "Erreur lors de l'upload");
+        setImagePreview(visitorProfile?.image || null);
+      }
     } catch (error) {
-      toast.error("Erreur lors du traitement de l'image");
+      console.error("Erreur upload image:", error);
+      toast.error("Erreur lors de l'upload de l'image");
+      setImagePreview(visitorProfile?.image || null);
+    } finally {
       setUploadingImage(false);
     }
   };
 
   const handleSave = () => {
+    // On envoie l'URL Cloudflare (pas de base64)
     onSave({ 
       firstName, 
       lastName, 
-      image: imageBase64 || visitorProfile?.image || null 
+      image: imageUrl
     });
   };
 
@@ -295,7 +317,7 @@ function ProfileModal({ isOpen, onClose, visitorProfile, onSave, loading }) {
                 {imagePreview ? (
                   <img src={imagePreview} alt="Photo de profil" className="w-full h-full object-cover" />
                 ) : (
-                  <UserAvatar name={displayName} size="lg" className="w-full h-full" />
+                  <UserAvatar name={displayName} colorKey={visitorEmail} size="lg" className="w-full h-full" />
                 )}
               </div>
               <label 
@@ -340,7 +362,7 @@ function ProfileModal({ isOpen, onClose, visitorProfile, onSave, loading }) {
   );
 }
 
-// TaskCard Component
+// TaskCard Component - Style identique à l'interface utilisateur connecté
 function PublicTaskCard({ task, onEdit }) {
   const [showDescPopover, setShowDescPopover] = useState(false);
   const checklistProgress = useMemo(() => {
@@ -349,24 +371,95 @@ function PublicTaskCard({ task, onEdit }) {
   }, [task.checklist]);
 
   return (
-    <div onClick={() => onEdit(task)} className="bg-card text-card-foreground rounded-lg border border-border p-3 sm:p-4 shadow-xs hover:shadow-sm hover:bg-accent/10 flex flex-col cursor-pointer transition-opacity">
+    <div 
+      onClick={() => onEdit(task)} 
+      className="bg-card text-card-foreground rounded-lg border border-border p-3 sm:p-4 shadow-xs hover:shadow-sm hover:bg-accent/10 flex flex-col cursor-pointer transition-opacity"
+    >
+      {/* En-tête avec titre */}
       <div className="flex items-start justify-between">
-        <Tooltip><TooltipTrigger asChild><h4 className="font-medium text-sm text-foreground line-clamp-2">{task.title}</h4></TooltipTrigger><TooltipContent side="top" className="max-w-xs">{task.title}</TooltipContent></Tooltip>
+        <div className="flex-1 min-w-0">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <h4 className="font-medium text-sm text-foreground line-clamp-2">{task.title}</h4>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-xs">{task.title}</TooltipContent>
+          </Tooltip>
+        </div>
       </div>
+      
+      {/* Pied de carte - Organisé sur 2 lignes */}
       <div className="mt-auto pt-2 sm:pt-3 space-y-1.5">
+        {/* Ligne 1: Icônes (description, checklist) */}
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          {/* Icône description avec Popover */}
           {task.description && (
             <Popover open={showDescPopover} onOpenChange={setShowDescPopover}>
-              <PopoverTrigger asChild><div className="cursor-pointer text-muted-foreground/70 hover:text-foreground" onClick={(e) => { e.stopPropagation(); setShowDescPopover(!showDescPopover); }}><AlignLeft className="h-4 w-4" /></div></PopoverTrigger>
-              <PopoverContent className="w-80" side="top"><div className="space-y-2"><h4 className="font-medium text-sm">Description</h4><p className="text-sm text-muted-foreground whitespace-pre-wrap break-words">{task.description}</p></div></PopoverContent>
+              <PopoverTrigger asChild>
+                <div 
+                  className="cursor-pointer text-muted-foreground/70 hover:text-foreground transition-colors" 
+                  onClick={(e) => { e.stopPropagation(); setShowDescPopover(!showDescPopover); }}
+                >
+                  <AlignLeft className="h-4 w-4" />
+                </div>
+              </PopoverTrigger>
+              <PopoverContent className="w-80" side="top">
+                <div className="space-y-2">
+                  <h4 className="font-medium text-sm">Description</h4>
+                  <p className="text-sm text-muted-foreground whitespace-pre-wrap break-words">{task.description}</p>
+                </div>
+              </PopoverContent>
             </Popover>
           )}
-          {checklistProgress.total > 0 && <Tooltip><TooltipTrigger asChild><div className="flex items-center gap-0.5"><CheckCircle className="h-3.5 w-3.5" /><span>{checklistProgress.completed}/{checklistProgress.total}</span></div></TooltipTrigger><TooltipContent side="top">Checklist: {checklistProgress.completed}/{checklistProgress.total}</TooltipContent></Tooltip>}
+          
+          {/* Checklist */}
+          {checklistProgress.total > 0 && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-0.5">
+                  <CheckCircle className="h-3.5 w-3.5" />
+                  <span>{checklistProgress.completed}/{checklistProgress.total}</span>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="top">Checklist: {checklistProgress.completed}/{checklistProgress.total}</TooltipContent>
+            </Tooltip>
+          )}
         </div>
+        
+        {/* Ligne 2: Timer + Avatar + Date d'échéance + Priorité */}
         <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
-          {task.assignedMembers?.length > 0 && <AvatarGroup users={task.assignedMembers} max={2} size="xs" />}
-          {task.dueDate && (() => { try { const d = new Date(task.dueDate); if (isNaN(d.getTime())) return null; return <Badge variant="outline" className="inline-flex items-center gap-1 py-1 px-2.5 text-xs font-medium rounded-md text-muted-foreground"><Calendar className="h-4 w-4" /><span>{d.toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}</span></Badge>; } catch { return null; } })()}
-          {task.priority && task.priority !== "none" && <Badge variant="outline" className="inline-flex items-center gap-1 py-1 px-2.5 text-xs font-medium rounded-md text-muted-foreground"><Flag className={`h-4 w-4 ${task.priority.toLowerCase() === "high" ? "text-red-500 fill-red-500" : task.priority.toLowerCase() === "medium" ? "text-yellow-500 fill-yellow-500" : "text-green-500 fill-green-500"}`} /><span>{task.priority.toLowerCase() === "high" ? "Urgent" : task.priority.toLowerCase() === "medium" ? "Moyen" : "Faible"}</span></Badge>}
+          {/* Timer Display */}
+          <TimerDisplay timeTracking={task.timeTracking} />
+          
+          {/* Membres assignés */}
+          {task.assignedMembers?.length > 0 && (
+            <AvatarGroup users={task.assignedMembers} max={2} size="xs" />
+          )}
+          
+          {/* Date d'échéance */}
+          {task.dueDate && (() => { 
+            try { 
+              const d = new Date(task.dueDate); 
+              if (isNaN(d.getTime())) return null; 
+              return (
+                <Badge variant="outline" className="inline-flex items-center gap-1 py-1 px-2.5 text-xs font-medium rounded-md text-muted-foreground">
+                  <Calendar className="h-4 w-4" />
+                  <span>{d.toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}</span>
+                </Badge>
+              ); 
+            } catch { return null; } 
+          })()}
+          
+          {/* Priorité */}
+          {task.priority && task.priority !== "none" && (
+            <Badge variant="outline" className="inline-flex items-center gap-1 py-1 px-2.5 text-xs font-medium rounded-md text-muted-foreground">
+              <Flag className={`h-4 w-4 ${
+                task.priority.toLowerCase() === "high" ? "text-red-500 fill-red-500" : 
+                task.priority.toLowerCase() === "medium" ? "text-yellow-500 fill-yellow-500" : 
+                "text-green-500 fill-green-500"
+              }`} />
+              <span>{task.priority.toLowerCase() === "high" ? "Urgent" : task.priority.toLowerCase() === "medium" ? "Moyen" : "Faible"}</span>
+            </Badge>
+          )}
         </div>
       </div>
     </div>
@@ -409,8 +502,66 @@ function PublicTaskActivity({ task, visitorEmail, visitorProfile, token, onComme
   const [newComment, setNewComment] = useState("");
   const [showAllActivities, setShowAllActivities] = useState(false);
   const [addingComment, setAddingComment] = useState(false);
+  const [pendingImages, setPendingImages] = useState([]);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const fileInputRef = useRef(null);
   
   const [addExternalComment] = useMutation(ADD_EXTERNAL_COMMENT);
+  const [uploadExternalCommentImage] = useMutation(UPLOAD_EXTERNAL_COMMENT_IMAGE);
+  const [uploadingImages, setUploadingImages] = useState(false);
+
+  // Gestion du drag-and-drop sur le textarea
+  const handleDragOver = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+  }, []);
+
+  const handleDrop = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+
+    const files = Array.from(e.dataTransfer.files).filter(file => 
+      file.type.startsWith('image/')
+    );
+
+    if (files.length > 0) {
+      const newImages = files.map(file => ({
+        file,
+        preview: URL.createObjectURL(file)
+      }));
+      setPendingImages(prev => [...prev, ...newImages]);
+    }
+  }, []);
+
+  const handlePaste = useCallback((e) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    const imageFiles = [];
+    for (const item of items) {
+      if (item.type.startsWith('image/')) {
+        const file = item.getAsFile();
+        if (file) {
+          imageFiles.push({
+            file,
+            preview: URL.createObjectURL(file)
+          });
+        }
+      }
+    }
+
+    if (imageFiles.length > 0) {
+      setPendingImages(prev => [...prev, ...imageFiles]);
+    }
+  }, []);
 
   const comments = useMemo(() => {
     return [...(task?.comments || [])].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
@@ -444,14 +595,52 @@ function PublicTaskActivity({ task, visitorEmail, visitorProfile, token, onComme
   };
 
   const handleAddComment = async () => {
-    if (!newComment.trim() || !canComment) return;
+    if ((!newComment.trim() && pendingImages.length === 0) || !canComment) return;
     setAddingComment(true);
+    
     try {
+      // Upload des images en premier si présentes
+      let uploadedImageUrls = [];
+      if (pendingImages.length > 0) {
+        setUploadingImages(true);
+        for (const imageData of pendingImages) {
+          try {
+            const result = await uploadExternalCommentImage({
+              variables: { 
+                token, 
+                taskId: task.id, 
+                file: imageData.file, 
+                visitorEmail 
+              }
+            });
+            if (result.data?.uploadExternalCommentImage?.success) {
+              uploadedImageUrls.push(result.data.uploadExternalCommentImage.image);
+            }
+          } catch (uploadError) {
+            console.error('Erreur upload image:', uploadError);
+          }
+        }
+        setUploadingImages(false);
+      }
+
+      // Construire le contenu du commentaire avec les images
+      let commentContent = newComment.trim();
+      if (uploadedImageUrls.length > 0) {
+        const imageMarkdown = uploadedImageUrls.map(img => `![${img.fileName}](${img.url})`).join('\n');
+        commentContent = commentContent ? `${commentContent}\n\n${imageMarkdown}` : imageMarkdown;
+      }
+
+      if (!commentContent) {
+        toast.error("Veuillez ajouter du texte ou des images");
+        return;
+      }
+
       const result = await addExternalComment({
-        variables: { token, taskId: task.id, content: newComment.trim(), visitorEmail }
+        variables: { token, taskId: task.id, content: commentContent, visitorEmail }
       });
       if (result.data?.addExternalComment?.success) {
         setNewComment("");
+        setPendingImages([]);
         toast.success("Commentaire ajouté");
         onCommentAdded?.(result.data.addExternalComment.task);
       } else {
@@ -461,7 +650,29 @@ function PublicTaskActivity({ task, visitorEmail, visitorProfile, token, onComme
       toast.error("Erreur lors de l'ajout du commentaire");
     } finally {
       setAddingComment(false);
+      setUploadingImages(false);
     }
+  };
+
+  const handleFileSelect = (e) => {
+    const files = Array.from(e.target.files).filter(file => file.type.startsWith('image/'));
+    if (files.length > 0) {
+      const newImages = files.map(file => ({
+        file,
+        preview: URL.createObjectURL(file)
+      }));
+      setPendingImages(prev => [...prev, ...newImages]);
+    }
+    e.target.value = '';
+  };
+
+  const removeImage = (index) => {
+    setPendingImages(prev => {
+      const newImages = [...prev];
+      URL.revokeObjectURL(newImages[index].preview);
+      newImages.splice(index, 1);
+      return newImages;
+    });
   };
 
   const getDisplayName = (item) => {
@@ -469,8 +680,20 @@ function PublicTaskActivity({ task, visitorEmail, visitorProfile, token, onComme
     if (item.isExternal && item.userEmail === visitorEmail && visitorProfile?.name) {
       return visitorProfile.name;
     }
-    // Sinon utiliser le userName stocké
-    return item.userName || "Utilisateur";
+    // Si le userName est déjà défini et valide
+    if (item.userName && item.userName !== 'Utilisateur' && item.userName !== 'unknown') {
+      return item.userName;
+    }
+    // Pour les commentaires non-externes, chercher dans boardMembers
+    if (!item.isExternal && item.userId && boardMembers.length > 0) {
+      const member = boardMembers.find(m => m.id === item.userId || m.userId === item.userId);
+      if (member?.name) return member.name;
+    }
+    // Fallback: utiliser l'email si disponible
+    if (item.userEmail) {
+      return item.userEmail.split('@')[0];
+    }
+    return "Utilisateur";
   };
 
   const getDisplayImage = (item) => {
@@ -478,8 +701,16 @@ function PublicTaskActivity({ task, visitorEmail, visitorProfile, token, onComme
     if (item.isExternal && item.userEmail === visitorEmail && visitorProfile?.image) {
       return visitorProfile.image;
     }
-    // Sinon utiliser l'image stockée dans le commentaire
-    return item.userImage || null;
+    // Si l'image est déjà définie
+    if (item.userImage) {
+      return item.userImage;
+    }
+    // Pour les commentaires non-externes, chercher dans boardMembers
+    if (!item.isExternal && item.userId && boardMembers.length > 0) {
+      const member = boardMembers.find(m => m.id === item.userId || m.userId === item.userId);
+      if (member?.image) return member.image;
+    }
+    return null;
   };
 
   const getActivityDisplay = (activity) => {
@@ -519,7 +750,7 @@ function PublicTaskActivity({ task, visitorEmail, visitorProfile, token, onComme
   const renderCommentItem = (comment) => (
     <div key={comment.id} className="bg-background rounded-lg p-3 border border-border">
       <div className="flex gap-3">
-        <UserAvatar src={getDisplayImage(comment)} name={getDisplayName(comment)} size="sm" className="flex-shrink-0" />
+        <UserAvatar src={getDisplayImage(comment)} name={getDisplayName(comment)} colorKey={comment.userEmail} size="sm" className="flex-shrink-0" />
         <div className="flex-1 space-y-2">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
@@ -529,6 +760,35 @@ function PublicTaskActivity({ task, visitorEmail, visitorProfile, token, onComme
             </div>
           </div>
           <p className="text-sm whitespace-pre-wrap">{comment.content}</p>
+          {/* Affichage des images du commentaire */}
+          {comment.images && comment.images.length > 0 && (
+            <div className="grid grid-cols-2 gap-2 mt-2">
+              {comment.images.map((image) => (
+                <Dialog key={image.id}>
+                  <DialogTrigger asChild>
+                    <div className="relative cursor-pointer group overflow-hidden rounded-md border border-border hover:border-primary/50 transition-colors">
+                      <img
+                        src={image.url}
+                        alt={image.fileName}
+                        className="w-full h-20 object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                        <ZoomIn className="h-5 w-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </div>
+                    </div>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-4xl p-0 overflow-hidden">
+                    <DialogTitle className="sr-only">Aperçu de l'image</DialogTitle>
+                    <img
+                      src={image.url}
+                      alt={image.fileName}
+                      className="w-full h-auto max-h-[80vh] object-contain"
+                    />
+                  </DialogContent>
+                </Dialog>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -642,22 +902,97 @@ function PublicTaskActivity({ task, visitorEmail, visitorProfile, token, onComme
         {/* Zone de saisie de commentaire */}
         {canComment && (
           <div className="pb-3 pl-3 pr-3 pt-1 space-y-2 flex-shrink-0">
-            <Textarea 
-              value={newComment} 
-              onChange={(e) => setNewComment(e.target.value)} 
-              placeholder="Ajouter un commentaire..." 
-              className="min-h-[80px] text-sm bg-background border-border" 
-              onKeyDown={(e) => { 
-                if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { 
-                  e.preventDefault(); 
-                  handleAddComment(); 
-                } 
-              }} 
-            />
+            <div
+              className={`relative transition-all ${isDragOver ? 'ring-2 ring-primary ring-offset-2 rounded-md' : ''}`}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+            >
+              <Textarea 
+                value={newComment} 
+                onChange={(e) => setNewComment(e.target.value)} 
+                onPaste={handlePaste}
+                placeholder={isDragOver ? "Déposez vos images ici..." : "Ajouter un commentaire... (glissez-déposez des images)"} 
+                className={`min-h-[80px] text-sm bg-background border-border ${isDragOver ? 'border-primary' : ''}`}
+                onKeyDown={(e) => { 
+                  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { 
+                    e.preventDefault(); 
+                    handleAddComment(); 
+                  } 
+                }} 
+              />
+              {isDragOver && (
+                <div className="absolute inset-0 bg-primary/10 rounded-md flex items-center justify-center pointer-events-none">
+                  <div className="text-primary font-medium text-sm flex items-center gap-2">
+                    <ImagePlus className="h-5 w-5" />
+                    Déposez vos images ici
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            {/* Images en attente */}
+            {pendingImages.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {pendingImages.map((img, index) => (
+                  <div key={index} className="relative group">
+                    <img
+                      src={img.preview}
+                      alt={img.file.name}
+                      className="w-16 h-16 object-cover rounded-md border border-border"
+                    />
+                    <button
+                      onClick={() => {
+                        setPendingImages(prev => prev.filter((_, i) => i !== index));
+                        URL.revokeObjectURL(img.preview);
+                      }}
+                      className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-white text-black border border-gray-200 shadow-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-100"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            
             <div className="flex justify-between items-center">
-              <span className="text-xs text-muted-foreground">Cmd/Ctrl + Entrée pour envoyer</span>
-              <Button size="sm" onClick={handleAddComment} disabled={!newComment.trim() || addingComment}>
-                <Send className="h-3 w-3 mr-2" />Envoyer
+              <div className="flex items-center gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/gif,image/webp"
+                  multiple
+                  onChange={(e) => {
+                    const files = Array.from(e.target.files || []);
+                    const newImages = files.map(file => ({
+                      file,
+                      preview: URL.createObjectURL(file)
+                    }));
+                    setPendingImages(prev => [...prev, ...newImages]);
+                    e.target.value = '';
+                  }}
+                  className="hidden"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={addingComment}
+                  className="h-8 px-2"
+                >
+                  <ImagePlus className="h-4 w-4" />
+                </Button>
+                <span className="text-xs text-muted-foreground">Cmd/Ctrl + Entrée pour envoyer</span>
+              </div>
+              <Button size="sm" onClick={handleAddComment} disabled={(!newComment.trim() && pendingImages.length === 0) || addingComment || uploadingImages}>
+                {uploadingImages ? (
+                  <><Loader2 className="h-3 w-3 mr-2 animate-spin" />Upload...</>
+                ) : addingComment ? (
+                  <><Loader2 className="h-3 w-3 mr-2 animate-spin" />Envoi...</>
+                ) : (
+                  <><Send className="h-3 w-3 mr-2" />Envoyer</>
+                )}
               </Button>
             </div>
           </div>
@@ -667,36 +1002,187 @@ function PublicTaskActivity({ task, visitorEmail, visitorProfile, token, onComme
   );
 }
 
-// ListView Component
+// ListView Component - Style identique à l'interface utilisateur connecté
 function PublicListView({ columns, tasksByColumn, onEditTask }) {
-  const [collapsedColumns, setCollapsedColumns] = useState({});
-  const toggleCollapse = (columnId) => setCollapsedColumns(prev => ({ ...prev, [columnId]: !prev[columnId] }));
+  const [collapsedColumns, setCollapsedColumns] = useState(new Set());
+  const toggleCollapse = (columnId) => {
+    setCollapsedColumns(prev => {
+      const next = new Set(prev);
+      if (next.has(columnId)) {
+        next.delete(columnId);
+      } else {
+        next.add(columnId);
+      }
+      return next;
+    });
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
+  const getPriorityBadge = (priority) => {
+    if (!priority || priority.toLowerCase() === "none") return null;
+    const isHigh = priority.toLowerCase() === "high";
+    const isMedium = priority.toLowerCase() === "medium";
+    const label = isHigh ? "Urgent" : isMedium ? "Moyen" : "Faible";
+    const flagColor = isHigh ? "text-red-500 fill-red-500" : isMedium ? "text-yellow-500 fill-yellow-500" : "text-green-500 fill-green-500";
+    return (
+      <Badge variant="outline" className="inline-flex items-center gap-1 py-1 px-2.5 text-xs font-medium rounded-md text-muted-foreground">
+        <Flag className={`h-4 w-4 ${flagColor}`} />
+        <span className="text-muted-foreground">{label}</span>
+      </Badge>
+    );
+  };
 
   return (
-    <div className="space-y-4 p-4">
+    <div className="space-y-4 bg-background pb-24 md:pb-12 lg:pb-16">
       {columns.map((column) => {
         const tasks = tasksByColumn[column.id] || [];
-        const isCollapsed = collapsedColumns[column.id];
+        const isCollapsed = collapsedColumns.has(column.id) || (tasks.length === 0 && !collapsedColumns.has(column.id));
+
         return (
-          <div key={column.id} className="border border-border rounded-lg overflow-hidden">
-            <div className="flex items-center justify-between px-4 py-3 bg-muted/30 cursor-pointer" onClick={() => toggleCollapse(column.id)}>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: column.color }} />
-                <span className="font-medium">{column.title}</span>
-                <Badge variant="secondary" className="ml-2">{tasks.length}</Badge>
+          <div key={column.id} className="space-y-0">
+            {/* En-tête de colonne */}
+            <div 
+              className={`flex items-center gap-3 py-2 ${isCollapsed ? 'bg-muted/10 hover:bg-muted/20' : 'bg-muted/5 hover:bg-muted/10'} cursor-pointer transition-all group`}
+              onClick={() => toggleCollapse(column.id)}
+            >
+              <Button variant="ghost" size="sm" className="h-4 w-4 p-0 hover:bg-transparent">
+                {isCollapsed ? (
+                  <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                ) : (
+                  <ChevronDown className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
+                )}
+              </Button>
+              <div className="flex items-center gap-2 flex-1">
+                <div
+                  className="px-2 py-1 rounded-md flex-shrink-0 text-xs font-medium border flex items-center gap-1"
+                  style={{
+                    backgroundColor: `${column.color || "#94a3b8"}20`,
+                    borderColor: `${column.color || "#94a3b8"}20`,
+                    color: column.color || "#94a3b8"
+                  }}
+                >
+                  <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: column.color || "#94a3b8" }} />
+                  <span>{column.title}</span>
+                </div>
+                <span className="text-[10px] text-muted-foreground/60 font-medium" style={{ color: column.color || "#94a3b8" }}>
+                  {tasks.length}
+                </span>
               </div>
-              {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </div>
-            {!isCollapsed && tasks.length > 0 && (
-              <div className="divide-y divide-border">
-                {tasks.map((task) => (
-                  <div key={task.id} onClick={() => onEditTask(task)} className="px-4 py-3 hover:bg-muted/20 cursor-pointer flex items-center gap-4">
-                    <span className="flex-1 truncate">{task.title}</span>
-                    {task.priority && task.priority !== "none" && <Flag className={`h-4 w-4 ${task.priority === "high" ? "text-red-500" : task.priority === "medium" ? "text-yellow-500" : "text-green-500"}`} />}
-                    {task.dueDate && <span className="text-xs text-muted-foreground">{new Date(task.dueDate).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}</span>}
-                    {task.assignedMembers?.length > 0 && <AvatarGroup users={task.assignedMembers} max={2} size="xs" />}
+
+            {/* Contenu de la colonne */}
+            {!isCollapsed && (
+              <div className="w-full overflow-x-auto scrollbar-hide">
+                <div className="w-max min-w-full">
+                  {/* Header de section avec colonnes */}
+                  <div className="grid px-2 py-2 text-xs font-normal text-muted-foreground/70 tracking-wide border-b border-border/60" style={{ gridTemplateColumns: '2.5fr 1fr 1fr 1fr 1fr', gap: '2rem' }}>
+                    <div className="flex items-center gap-2">Nom de la tâche</div>
+                    <div className="flex items-center">Assigné à</div>
+                    <div className="flex items-center">Status</div>
+                    <div className="flex items-center">Échéance</div>
+                    <div className="flex items-center">Priorité</div>
                   </div>
-                ))}
+
+                  {/* Liste des tâches */}
+                  {tasks.length === 0 ? (
+                    <div className="px-4 py-8 text-center text-sm text-muted-foreground">Aucune tâche</div>
+                  ) : (
+                    tasks.map((task) => (
+                      <div
+                        key={task.id}
+                        className="grid px-2 py-1.5 items-center hover:bg-accent/5 cursor-pointer group relative overflow-hidden border-b border-border/60"
+                        style={{ gridTemplateColumns: '2.5fr 1fr 1fr 1fr 1fr', gap: '2rem' }}
+                        onClick={() => onEditTask(task)}
+                      >
+                        {/* Nom */}
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="flex-shrink-0 w-3.5 h-3.5 rounded-full"
+                              style={{ 
+                                backgroundColor: column.color || "#94a3b8",
+                                border: `2px solid ${column.color || "#94a3b8"}60`,
+                                outline: `2px solid ${column.color || "#94a3b8"}30`,
+                                outlineOffset: '2px'
+                              }}
+                            />
+                            <div className="flex-1 w-0 flex items-center gap-1 min-w-0">
+                              <p className="text-sm truncate font-normal text-foreground/90 group-hover:text-foreground">{task.title}</p>
+                              {task.description && (
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <button
+                                      className="cursor-pointer text-muted-foreground/70 hover:text-foreground transition-colors flex-shrink-0 ml-4"
+                                      onClick={(e) => e.stopPropagation()}
+                                      title="Afficher la description"
+                                    >
+                                      <AlignLeft className="h-4 w-4" />
+                                    </button>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-80" side="top">
+                                    <div className="space-y-2">
+                                      <h4 className="font-medium text-sm">Description</h4>
+                                      <p className="text-sm text-muted-foreground whitespace-pre-wrap break-words">{task.description}</p>
+                                    </div>
+                                  </PopoverContent>
+                                </Popover>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Assignée */}
+                        <div className="flex items-center gap-0.5 min-w-0">
+                          {task.assignedMembers && task.assignedMembers.length > 0 ? (
+                            <AvatarGroup users={task.assignedMembers} max={3} size="xs" />
+                          ) : (
+                            <span className="text-muted-foreground/50 text-xs">-</span>
+                          )}
+                        </div>
+
+                        {/* Status */}
+                        <div className="flex items-center gap-1 min-w-0">
+                          <div 
+                            className="px-2 py-1 rounded-md flex-shrink-0 text-xs font-medium border flex items-center gap-1"
+                            style={{
+                              backgroundColor: `${column.color || "#94a3b8"}20`,
+                              borderColor: `${column.color || "#94a3b8"}20`,
+                              color: column.color || "#94a3b8"
+                            }}
+                          >
+                            <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: column.color || "#94a3b8" }} />
+                            <span>{column.title}</span>
+                          </div>
+                        </div>
+
+                        {/* Échéance */}
+                        <div className="flex items-center min-w-0">
+                          {task.dueDate ? (
+                            <Badge variant="outline" className="inline-flex items-center gap-1 py-1 px-2.5 text-xs font-medium rounded-md text-muted-foreground">
+                              <Calendar className="h-4 w-4" />
+                              <span>{formatDate(task.dueDate)}</span>
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground/50 text-xs">-</span>
+                          )}
+                        </div>
+
+                        {/* Priorité */}
+                        <div className="flex items-center min-w-0">
+                          {getPriorityBadge(task.priority) || <span className="text-muted-foreground/50 text-xs">-</span>}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -704,6 +1190,534 @@ function PublicListView({ columns, tasksByColumn, onEditTask }) {
       })}
     </div>
   );
+}
+
+// GanttView Component - Style identique à l'interface utilisateur connecté
+function PublicGanttView({ columns, tasksByColumn, onEditTask, boardMembers = [] }) {
+  const [currentWeekStart, setCurrentWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
+  const [viewMode, setViewMode] = useState("week");
+  const [hoveredTaskId, setHoveredTaskId] = useState(null);
+  const scrollContainerRef = useRef(null);
+  const leftColumnRef = useRef(null);
+  const headerTimelineRef = useRef(null);
+
+  // Récupérer toutes les tâches
+  const allTasks = useMemo(() => {
+    const tasks = [];
+    columns.forEach(column => {
+      const columnTasks = tasksByColumn[column.id] || [];
+      columnTasks.forEach(task => {
+        tasks.push({ ...task, column });
+      });
+    });
+    return tasks.sort((a, b) => {
+      const hasBothDatesA = a.startDate && a.dueDate;
+      const hasBothDatesB = b.startDate && b.dueDate;
+      const hasOneDateA = (a.startDate || a.dueDate) && !hasBothDatesA;
+      const hasOneDateB = (b.startDate || b.dueDate) && !hasBothDatesB;
+      
+      if (hasBothDatesA && !hasBothDatesB) return -1;
+      if (!hasBothDatesA && hasBothDatesB) return 1;
+      if (hasBothDatesA && hasBothDatesB) {
+        return new Date(a.startDate) - new Date(b.startDate);
+      }
+      if (hasOneDateA && !hasOneDateB && !hasBothDatesB) return -1;
+      if (!hasOneDateA && !hasBothDatesA && hasOneDateB) return 1;
+      if (hasOneDateA && hasOneDateB) {
+        const dateA = a.startDate ? new Date(a.startDate) : new Date(a.dueDate);
+        const dateB = b.startDate ? new Date(b.startDate) : new Date(b.dueDate);
+        return dateA - dateB;
+      }
+      return 0;
+    });
+  }, [columns, tasksByColumn]);
+
+  // Générer les jours à afficher selon le mode
+  const daysToDisplay = useMemo(() => {
+    if (viewMode === "week") {
+      const weekEnd = endOfWeek(currentWeekStart, { weekStartsOn: 1 });
+      return eachDayOfInterval({ start: currentWeekStart, end: weekEnd });
+    } else if (viewMode === "month") {
+      return eachDayOfInterval({ start: currentWeekStart, end: addDays(currentWeekStart, 29) });
+    } else {
+      return eachDayOfInterval({ start: currentWeekStart, end: addDays(currentWeekStart, 89) });
+    }
+  }, [currentWeekStart, viewMode]);
+
+  // Grouper les jours par semaine pour l'affichage de l'en-tête
+  const weekGroups = useMemo(() => {
+    const groups = [];
+    let currentGroup = null;
+    daysToDisplay.forEach((day, index) => {
+      const weekNum = getWeek(day, { weekStartsOn: 1 });
+      const weekStart = startOfWeek(day, { weekStartsOn: 1 });
+      const weekEnd = endOfWeek(day, { weekStartsOn: 1 });
+      if (!currentGroup || currentGroup.weekNum !== weekNum) {
+        currentGroup = { weekNum, weekStart, weekEnd, startIndex: index, days: [] };
+        groups.push(currentGroup);
+      }
+      currentGroup.days.push(day);
+    });
+    return groups;
+  }, [daysToDisplay]);
+
+  // Navigation
+  const goToPrevious = () => {
+    if (viewMode === "week") setCurrentWeekStart(prev => addDays(prev, -7));
+    else if (viewMode === "month") setCurrentWeekStart(prev => addDays(prev, -30));
+    else setCurrentWeekStart(prev => addDays(prev, -90));
+  };
+
+  const goToNext = () => {
+    if (viewMode === "week") setCurrentWeekStart(prev => addDays(prev, 7));
+    else if (viewMode === "month") setCurrentWeekStart(prev => addDays(prev, 30));
+    else setCurrentWeekStart(prev => addDays(prev, 90));
+  };
+
+  const goToToday = () => {
+    setCurrentWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }));
+  };
+
+  const dayWidth = viewMode === "week" ? 120 : viewMode === "month" ? 40 : 30;
+
+  // Calculer la position et la largeur d'une barre de tâche
+  const getTaskBarStyle = (task) => {
+    let startDate = task.startDate ? startOfDay(parseISO(task.startDate)) : null;
+    let endDate = task.dueDate ? startOfDay(parseISO(task.dueDate)) : null;
+    if (!startDate && !endDate) return null;
+
+    const firstDay = daysToDisplay[0];
+    const lastDay = daysToDisplay[daysToDisplay.length - 1];
+    const taskStart = startDate || endDate;
+    const taskEnd = endDate || startDate;
+
+    const isVisible = isWithinInterval(taskStart, { start: firstDay, end: lastDay }) ||
+                      isWithinInterval(taskEnd, { start: firstDay, end: lastDay }) ||
+                      (taskStart < firstDay && taskEnd > lastDay);
+    if (!isVisible) return null;
+
+    const startOffset = Math.max(0, differenceInDays(taskStart, firstDay));
+    const duration = startDate && endDate ? Math.max(1, differenceInDays(taskEnd, taskStart) + 1) : 1;
+    const visibleDuration = Math.min(duration, daysToDisplay.length - startOffset);
+    const horizontalMargin = 12;
+
+    return {
+      left: `${startOffset * dayWidth + horizontalMargin}px`,
+      width: `${visibleDuration * dayWidth - (horizontalMargin * 2)}px`,
+      visible: true
+    };
+  };
+
+  const formatDateRange = (task) => {
+    const start = task.startDate ? format(parseISO(task.startDate), "d MMM", { locale: fr }) : null;
+    const end = task.dueDate ? format(parseISO(task.dueDate), "d MMM", { locale: fr }) : null;
+    if (start && end) return `${start} - ${end}`;
+    else if (start) return `Début: ${start}`;
+    else if (end) return `Fin: ${end}`;
+    return "";
+  };
+
+  const getPriorityLabel = (priority) => {
+    switch (priority?.toLowerCase()) {
+      case "high": return "Urgent";
+      case "medium": return "Moyen";
+      case "low": return "Faible";
+      default: return "Aucune";
+    }
+  };
+
+  // Récupérer les infos d'un membre
+  const getMemberInfo = (memberId) => {
+    if (typeof memberId === 'object') return memberId;
+    return boardMembers?.find(m => m.id === memberId || m.userId === memberId) || { id: memberId, name: memberId };
+  };
+
+  // Synchroniser le scroll horizontal entre header et timeline
+  useEffect(() => {
+    const scrollContainer = scrollContainerRef.current;
+    const headerTimeline = headerTimelineRef.current;
+    if (!scrollContainer || !headerTimeline) return;
+
+    const handleScroll = () => {
+      headerTimeline.scrollLeft = scrollContainer.scrollLeft;
+    };
+    scrollContainer.addEventListener('scroll', handleScroll);
+    return () => scrollContainer.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  return (
+    <div className="flex flex-col h-[calc(100vh-10rem)] md:h-[calc(100vh-10rem)] bg-background">
+      {/* Header avec contrôles */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-3 sm:px-4 py-2 gap-2 sm:gap-0 bg-background/95 backdrop-blur-sm sticky top-0 z-20">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon" onClick={goToPrevious} className="h-7 w-7">
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="sm" onClick={goToToday} className="h-7 px-3 text-xs">
+              Aujourd'hui
+            </Button>
+            <Button variant="ghost" size="icon" onClick={goToNext} className="h-7 w-7">
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="text-sm font-semibold text-foreground">
+            {viewMode === "week" && format(currentWeekStart, "MMMM yyyy", { locale: fr })}
+            {viewMode === "month" && format(currentWeekStart, "MMMM yyyy", { locale: fr })}
+            {viewMode === "quarter" && `Q${Math.floor(currentWeekStart.getMonth() / 3) + 1} ${currentWeekStart.getFullYear()}`}
+          </div>
+        </div>
+        <div className="flex items-center gap-2 mr-2">
+          <Select value={viewMode} onValueChange={setViewMode}>
+            <SelectTrigger className="w-28 h-7 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="week">Semaine</SelectItem>
+              <SelectItem value="month">Mois</SelectItem>
+              <SelectItem value="quarter">Trimestre</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {/* Gantt Chart */}
+      <div className="flex-1 overflow-hidden border-t border-border">
+        {/* Headers fixes */}
+        <div className="flex border-b border-border">
+          {/* Header gauche */}
+          <div className="w-32 sm:w-48 md:w-72 border-r border-border bg-background px-2 sm:px-3 md:px-4 flex items-start pt-2 flex-shrink-0" style={{ height: '74px' }}>
+            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              Tâches · {allTasks.length}
+            </div>
+          </div>
+          
+          {/* Header timeline - semaines et jours */}
+          <div ref={headerTimelineRef} className="flex-1 overflow-x-auto bg-background" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+            <div style={{ minWidth: `${daysToDisplay.length * dayWidth}px` }}>
+              {/* Ligne des semaines */}
+              <div className="flex border-b border-border">
+                {weekGroups.map((week, weekIndex) => (
+                  <div
+                    key={weekIndex}
+                    className="border-r border-border px-3 h-9 bg-background flex items-center justify-between"
+                    style={{ width: `${week.days.length * dayWidth}px` }}
+                  >
+                    <div className="text-[10px] text-muted-foreground/80">
+                      {format(week.weekStart, "MMM d", { locale: fr })} - {format(week.weekEnd, "d", { locale: fr })}
+                    </div>
+                    <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                      S{week.weekNum}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              {/* Ligne des jours */}
+              <div className="flex">
+                {daysToDisplay.map((day, index) => {
+                  const isToday = isSameDay(day, new Date());
+                  const isWeekend = day.getDay() === 0 || day.getDay() === 6;
+                  return (
+                    <div
+                      key={index}
+                      className={`border-r border-border flex-shrink-0 px-2 h-9 flex items-center justify-center text-center transition-colors ${isToday ? "bg-primary/5" : ""} ${isWeekend ? "bg-muted/30" : ""}`}
+                      style={{ width: `${dayWidth}px` }}
+                    >
+                      <div className={`text-sm font-normal ${isToday ? "text-primary" : "text-foreground"}`}>
+                        {format(day, "d", { locale: fr })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Conteneur de scroll partagé */}
+        <div className="grid grid-cols-[128px_1fr] sm:grid-cols-[192px_1fr] md:grid-cols-[288px_1fr] h-[calc(100%-74px)] overflow-y-auto" ref={leftColumnRef}>
+          {/* Colonne des tâches */}
+          <div className="border-r border-border bg-muted/20" style={{ minHeight: `${Math.max(allTasks.length, 20) * 45}px` }}>
+            <div className="divide-y divide-border">
+              {allTasks.length === 0 ? (
+                <div className="px-4 py-12 text-center text-sm text-muted-foreground">
+                  <Calendar className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p>Aucune tâche</p>
+                </div>
+              ) : (
+                allTasks.map((task) => (
+                  <div
+                    key={task.id}
+                    className={`h-[45px] cursor-pointer transition-all group overflow-x-auto scrollbar-hide ${hoveredTaskId === task.id ? "bg-primary/2" : "hover:bg-accent/5"}`}
+                    onClick={() => onEditTask(task)}
+                    onMouseEnter={() => setHoveredTaskId(task.id)}
+                    onMouseLeave={() => setHoveredTaskId(null)}
+                    style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                  >
+                    <div className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 h-full min-w-max">
+                      <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: task.column.color }} />
+                      <div className="text-[10px] sm:text-xs font-medium whitespace-nowrap group-hover:text-primary transition-colors truncate max-w-[80px] sm:max-w-none">
+                        {task.title}
+                      </div>
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        {task.priority && task.priority.toLowerCase() !== 'none' && (
+                          <Flag className={`h-2.5 w-2.5 ${
+                            task.priority.toLowerCase() === 'high' ? 'text-red-500 fill-red-500' :
+                            task.priority.toLowerCase() === 'medium' ? 'text-yellow-500 fill-yellow-500' :
+                            'text-green-500 fill-green-500'
+                          }`} />
+                        )}
+                        {task.assignedMembers && task.assignedMembers.length > 0 && (
+                          <div className="flex -space-x-1">
+                            {task.assignedMembers.slice(0, 2).map((memberId) => {
+                              const memberInfo = getMemberInfo(memberId);
+                              return (
+                                <UserAvatar
+                                  key={memberInfo.id || memberId}
+                                  src={memberInfo?.image}
+                                  name={memberInfo?.name || memberId}
+                                  size="xs"
+                                  className="border border-background w-4 h-4"
+                                />
+                              );
+                            })}
+                            {task.assignedMembers.length > 2 && (
+                              <div className="w-4 h-4 rounded-full bg-muted border border-background flex items-center justify-center text-[8px] font-semibold text-muted-foreground">
+                                +{task.assignedMembers.length - 2}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Timeline */}
+          <div className="bg-background overflow-x-auto" ref={scrollContainerRef}>
+            <div className="relative" style={{ minWidth: `${daysToDisplay.length * dayWidth}px`, minHeight: `${Math.max(allTasks.length, 20) * 45}px` }}>
+              {/* Grille de fond */}
+              <div className="absolute inset-0 top-0 flex pointer-events-none" style={{ minHeight: `${Math.max(allTasks.length, 20) * 45}px` }}>
+                {daysToDisplay.map((day, index) => {
+                  const isToday = isSameDay(day, new Date());
+                  const isWeekend = day.getDay() === 0 || day.getDay() === 6;
+                  return (
+                    <div
+                      key={index}
+                      className={`border-r border-dashed border-border flex-shrink-0 h-full ${isWeekend ? "bg-muted/10" : ""} ${isToday ? "bg-primary/5 border-primary/20" : ""}`}
+                      style={{ width: `${dayWidth}px` }}
+                    />
+                  );
+                })}
+              </div>
+
+              {/* Barres de tâches */}
+              <div className="relative min-h-full">
+                {/* Lignes de fond pour toutes les tâches avec hover */}
+                <div className="absolute inset-0">
+                  {allTasks.map((task) => (
+                    <div 
+                      key={`line-${task.id}`} 
+                      className={`h-[45px] transition-colors ${hoveredTaskId === task.id ? "bg-primary/2" : ""}`}
+                      onMouseEnter={() => setHoveredTaskId(task.id)}
+                      onMouseLeave={() => setHoveredTaskId(null)}
+                    />
+                  ))}
+                  {Array.from({ length: Math.max(0, 20 - allTasks.length) }).map((_, index) => (
+                    <div key={`empty-line-${index}`} className="h-[45px]" />
+                  ))}
+                </div>
+
+                {/* Barres de tâches par-dessus */}
+                <div className="relative pointer-events-none">
+                  {allTasks.map((task) => {
+                    const barStyle = getTaskBarStyle(task);
+                    if (!barStyle || !barStyle.visible) {
+                      return <div key={task.id} className="relative h-[45px]" />;
+                    }
+
+                    return (
+                      <div key={task.id} className="relative h-[45px]">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div
+                              className="absolute top-1/2 -translate-y-1/2 h-9 rounded-md cursor-pointer transition-all hover:shadow-md group border pointer-events-auto"
+                              style={{
+                                left: barStyle.left,
+                                width: barStyle.width,
+                                backgroundColor: `${task.column.color}20`,
+                                borderColor: `${task.column.color}60`,
+                              }}
+                              onClick={() => onEditTask(task)}
+                              onMouseEnter={() => setHoveredTaskId(task.id)}
+                              onMouseLeave={() => setHoveredTaskId(null)}
+                            >
+                              <div className="px-2 py-0.5 flex items-center gap-1.5 h-full overflow-hidden">
+                                {task.assignedMembers && task.assignedMembers.length > 0 && (
+                                  <div className="flex -space-x-1 flex-shrink-0">
+                                    {task.assignedMembers.slice(0, 1).map((memberId) => {
+                                      const memberInfo = getMemberInfo(memberId);
+                                      return (
+                                        <UserAvatar
+                                          key={memberInfo.id || memberId}
+                                          src={memberInfo?.image}
+                                          name={memberInfo?.name || memberId}
+                                          size="xs"
+                                          className="border border-background w-5 h-5"
+                                        />
+                                      );
+                                    })}
+                                    {task.assignedMembers.length > 1 && (
+                                      <div className="w-5 h-5 rounded-full bg-muted border border-background flex items-center justify-center text-[8px] font-semibold text-muted-foreground">
+                                        +{task.assignedMembers.length - 1}
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                                <span className="text-[11px] font-semibold truncate" style={{ color: task.column.color }}>
+                                  {task.title}
+                                </span>
+                                {task.priority && task.priority.toLowerCase() !== 'none' && (
+                                  <Flag className={`h-2.5 w-2.5 flex-shrink-0 ${
+                                    task.priority.toLowerCase() === 'high' ? 'text-red-500 fill-red-500' :
+                                    task.priority.toLowerCase() === 'medium' ? 'text-yellow-500 fill-yellow-500' :
+                                    'text-green-500 fill-green-500'
+                                  }`} />
+                                )}
+                              </div>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-xs">
+                            <div className="space-y-2">
+                              <div className="font-normal text-sm">{task.title}</div>
+                              <div className="flex items-center gap-3">
+                                {task.assignedMembers && task.assignedMembers.length > 0 && (
+                                  <div className="flex items-center gap-1">
+                                    {task.assignedMembers.map((memberId) => {
+                                      const memberInfo = getMemberInfo(memberId);
+                                      return (
+                                        <UserAvatar
+                                          key={memberInfo.id || memberId}
+                                          src={memberInfo?.image}
+                                          name={memberInfo?.name || memberId}
+                                          size="sm"
+                                          className="border border-background"
+                                        />
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                                <div className="text-xs opacity-70 flex items-center gap-1">
+                                  <Clock className="h-3 w-3" />
+                                  {formatDateRange(task)}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <div 
+                                  className="px-2 py-1 rounded-md flex-shrink-0 text-xs font-medium border flex items-center gap-1"
+                                  style={{
+                                    backgroundColor: `${task.column.color || "#94a3b8"}20`,
+                                    borderColor: `${task.column.color || "#94a3b8"}20`,
+                                    color: task.column.color || "#94a3b8"
+                                  }}
+                                >
+                                  <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: task.column.color || "#94a3b8" }} />
+                                  <span>{task.column.title}</span>
+                                </div>
+                                {task.priority && task.priority.toLowerCase() !== 'none' && (
+                                  <Badge variant="outline" className="inline-flex items-center gap-1 py-1 px-2.5 text-xs font-medium rounded-md text-muted-foreground">
+                                    <Flag className={`h-4 w-4 ${
+                                      task.priority.toLowerCase() === 'high' ? 'text-red-500 fill-red-500' :
+                                      task.priority.toLowerCase() === 'medium' ? 'text-yellow-500 fill-yellow-500' :
+                                      'text-green-500 fill-green-500'
+                                    }`} />
+                                    <span className="text-muted-foreground">{getPriorityLabel(task.priority)}</span>
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Composant pour afficher le timer en temps réel
+function LiveTimer({ timeTracking }) {
+  const [currentTime, setCurrentTime] = useState(0);
+
+  useEffect(() => {
+    if (!timeTracking) return;
+
+    const updateTime = () => {
+      let total = timeTracking.totalSeconds || 0;
+      if (timeTracking.isRunning && timeTracking.currentStartTime) {
+        const startTime = new Date(timeTracking.currentStartTime);
+        const now = new Date();
+        const elapsedSeconds = Math.floor((now - startTime) / 1000);
+        if (elapsedSeconds > 0) total += elapsedSeconds;
+      }
+      setCurrentTime(Math.max(0, total));
+    };
+
+    updateTime();
+
+    if (timeTracking.isRunning) {
+      const interval = setInterval(updateTime, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [timeTracking]);
+
+  const hours = Math.floor(currentTime / 3600);
+  const minutes = Math.floor((currentTime % 3600) / 60);
+  const seconds = currentTime % 60;
+
+  return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+}
+
+// Composant pour afficher le prix en temps réel
+function LivePrice({ timeTracking }) {
+  const [currentTime, setCurrentTime] = useState(0);
+
+  useEffect(() => {
+    if (!timeTracking) return;
+
+    const updateTime = () => {
+      let total = timeTracking.totalSeconds || 0;
+      if (timeTracking.isRunning && timeTracking.currentStartTime) {
+        const startTime = new Date(timeTracking.currentStartTime);
+        const now = new Date();
+        const elapsedSeconds = Math.floor((now - startTime) / 1000);
+        if (elapsedSeconds > 0) total += elapsedSeconds;
+      }
+      setCurrentTime(Math.max(0, total));
+    };
+
+    updateTime();
+
+    if (timeTracking.isRunning) {
+      const interval = setInterval(updateTime, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [timeTracking]);
+
+  if (!timeTracking?.hourlyRate) return null;
+  
+  const price = (currentTime / 3600 * timeTracking.hourlyRate).toFixed(2);
+  return `${price}€`;
 }
 
 // TaskModal Component - Reproduit exactement le visuel du dashboard (mode lecture seule)
@@ -950,6 +1964,42 @@ function PublicTaskModal({ task, isOpen, onClose, columns, visitorEmail, visitor
                 </div>
               </div>
 
+              {/* Images de la tâche (lecture seule) */}
+              {task.images?.length > 0 && (
+                <div className="space-y-3 mt-6">
+                  <div className="flex items-center gap-2">
+                    <ImagePlus className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">Images</span>
+                    <span className="text-xs text-muted-foreground">({task.images.length})</span>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 pl-6">
+                    {task.images.map((image, index) => (
+                      <Dialog key={image.id || index}>
+                        <DialogTrigger asChild>
+                          <div className="relative group cursor-pointer rounded-lg overflow-hidden border border-border hover:border-primary/50 transition-colors">
+                            <img
+                              src={image.url}
+                              alt={image.fileName || `Image ${index + 1}`}
+                              className="w-full h-24 object-cover"
+                            />
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                              <ZoomIn className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </div>
+                          </div>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-4xl p-0">
+                          <img
+                            src={image.url}
+                            alt={image.fileName || `Image ${index + 1}`}
+                            className="w-full h-auto max-h-[80vh] object-contain"
+                          />
+                        </DialogContent>
+                      </Dialog>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Checklist */}
               {task.checklist?.length > 0 && (
                 <div className="space-y-3 mt-6">
@@ -971,37 +2021,60 @@ function PublicTaskModal({ task, isOpen, onClose, columns, visitorEmail, visitor
                 </div>
               )}
 
-              {/* Gestion du temps (lecture seule) */}
+              {/* Gestion du temps (lecture seule) - Style identique à TimerControls */}
               {task.timeTracking && (
-                <div className="mt-6 p-4 border border-border rounded-lg bg-muted/20">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">Gestion du temps</span>
-                    {task.timeTracking.isRunning && (
-                      <span className="px-2 py-0.5 text-xs bg-green-500/20 text-green-600 rounded-full">En cours</span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-6">
-                    <div className="flex items-center gap-2">
-                      <span className="text-2xl font-mono font-semibold">
-                        {(() => {
-                          const totalSeconds = task.timeTracking.totalSeconds || 0;
-                          const hours = Math.floor(totalSeconds / 3600);
-                          const minutes = Math.floor((totalSeconds % 3600) / 60);
-                          const seconds = totalSeconds % 60;
-                          return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-                        })()}
+                <div className="mt-6 space-y-3">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    {/* Label avec icône */}
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-normal">Gestion du temps</span>
+                    </div>
+
+                    {/* Indicateur d'état (cercle rouge si actif) */}
+                    <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${
+                      task.timeTracking.isRunning 
+                        ? 'bg-red-500 animate-pulse' 
+                        : 'bg-gray-300'
+                    }`}>
+                      <div className={`w-2 h-2 rounded-full ${task.timeTracking.isRunning ? 'bg-white' : 'bg-gray-600'}`} />
+                    </div>
+                    
+                    {/* Affichage du temps en temps réel */}
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/50 rounded-md border border-border flex-shrink-0">
+                      <span className="text-sm font-mono tabular-nums">
+                        <LiveTimer timeTracking={task.timeTracking} />
                       </span>
                     </div>
+
+                    {/* Prix à l'heure */}
                     {task.timeTracking.hourlyRate && (
-                      <>
-                        <div className="text-sm text-muted-foreground">
-                          {task.timeTracking.hourlyRate}€/h
-                        </div>
-                        <div className="text-sm font-medium">
-                          € {((task.timeTracking.totalSeconds || 0) / 3600 * task.timeTracking.hourlyRate).toFixed(2)}
-                        </div>
-                      </>
+                      <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/50 rounded-md border border-border flex-shrink-0">
+                        <span className="text-sm text-muted-foreground">{task.timeTracking.hourlyRate}€/h</span>
+                      </div>
+                    )}
+
+                    {/* Lancé par - Affiché quand le timer est actif */}
+                    {task.timeTracking.isRunning && task.timeTracking.startedBy && (
+                      <div className="flex items-center gap-2 px-2 py-1 text-xs text-muted-foreground flex-shrink-0">
+                        <span>Lancé par</span>
+                        <UserAvatar
+                          src={task.timeTracking.startedBy.userImage}
+                          name={task.timeTracking.startedBy.userName}
+                          size="xs"
+                          className="w-5 h-5"
+                        />
+                        <span className="font-medium text-foreground">{task.timeTracking.startedBy.userName}</span>
+                      </div>
+                    )}
+
+                    {/* Prix estimé en temps réel */}
+                    {task.timeTracking.hourlyRate && (
+                      <div className="px-3 py-1.5 bg-muted/50 rounded-md border border-border inline-flex items-center gap-1.5 flex-shrink-0 ml-auto">
+                        <span className="text-sm font-semibold">
+                          <LivePrice timeTracking={task.timeTracking} />
+                        </span>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -1242,6 +2315,39 @@ export default function PublicKanbanPage({ params }) {
       if (!payload) return;
       
       console.log('📡 [Public] Mise à jour temps réel reçue:', payload.type, payload.taskId);
+      
+      // Gérer les mises à jour de profil visiteur
+      if (payload.type === 'VISITOR_PROFILE_UPDATED' && payload.visitor) {
+        const visitor = payload.visitor;
+        setBoardData(prev => {
+          if (!prev?.tasks) return prev;
+          // Mettre à jour les commentaires de toutes les tâches avec le nouveau profil visiteur
+          const updatedTasks = prev.tasks.map(t => ({
+            ...t,
+            comments: (t.comments || []).map(c => 
+              c.userEmail?.toLowerCase() === visitor.email?.toLowerCase()
+                ? { ...c, userName: visitor.name, userImage: visitor.image }
+                : c
+            )
+          }));
+          return { ...prev, tasks: updatedTasks };
+        });
+        
+        // Mettre à jour la tâche sélectionnée si elle a des commentaires de ce visiteur
+        if (selectedTask) {
+          setSelectedTask(prev => ({
+            ...prev,
+            comments: (prev.comments || []).map(c => 
+              c.userEmail?.toLowerCase() === visitor.email?.toLowerCase()
+                ? { ...c, userName: visitor.name, userImage: visitor.image }
+                : c
+            )
+          }));
+        }
+        
+        console.log('✅ [Public] Profil visiteur mis à jour:', visitor.name);
+        return;
+      }
       
       // Gérer la suppression
       if (payload.type === 'DELETED') {
@@ -1580,43 +2686,54 @@ export default function PublicKanbanPage({ params }) {
   return (
     <div className="min-h-screen bg-background">
       <EmailModal isOpen={showEmailModal} onSubmit={handleEmailSubmit} loading={loadingBoard} error={accessError} />
-      <ProfileModal isOpen={showProfileModal} onClose={() => setShowProfileModal(false)} visitorProfile={visitorProfile} onSave={handleProfileSave} loading={updatingProfile} />
+      <ProfileModal isOpen={showProfileModal} onClose={() => setShowProfileModal(false)} visitorProfile={visitorProfile} onSave={handleProfileSave} loading={updatingProfile} token={token} visitorEmail={visitorEmail} />
       
       {boardData && (
         <>
-          {/* Header */}
-          <div className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-40">
-            <div className="flex items-center justify-between px-4 py-3">
-              <div className="flex items-center gap-4">
-                <h1 className="text-lg font-semibold">{boardData.title}</h1>
-                {boardData.description && (
-                  <Tooltip>
-                    <TooltipTrigger><AlignLeft className="h-4 w-4 text-muted-foreground" /></TooltipTrigger>
-                    <TooltipContent side="bottom" className="max-w-xs">{boardData.description}</TooltipContent>
-                  </Tooltip>
-                )}
-              </div>
+          {/* Header - Style identique à l'interface utilisateur connecté */}
+          <div className="sticky top-0 bg-background z-40">
+            {/* Ligne 1: Titre du board */}
+            <div className="flex items-center gap-2 pt-2 pb-2 border-b px-4 sm:px-6">
+              <h1 className="text-base font-semibold">{boardData.title}</h1>
+              {boardData.description && (
+                <Tooltip>
+                  <TooltipTrigger>
+                    <AlignLeft className="h-4 w-4 text-muted-foreground/70 hover:text-foreground cursor-pointer transition-colors" />
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="max-w-xs">{boardData.description}</TooltipContent>
+                </Tooltip>
+              )}
+            </div>
+            
+            {/* Ligne 2: Onglets Board/List + Profil visiteur */}
+            <div className="flex items-center justify-between gap-3 py-3 border-b px-4 sm:px-6">
+              <Tabs value={viewMode} onValueChange={setViewMode} className="w-auto items-center">
+                <TabsList className="h-auto rounded-none bg-transparent p-0">
+                  <TabsTrigger
+                    value="board"
+                    className="data-[state=active]:after:bg-primary cursor-pointer relative rounded-none py-2 px-3 md:px-4 after:absolute after:inset-x-0 after:-bottom-3 after:h-0.5 data-[state=active]:bg-transparent data-[state=active]:shadow-none font-normal text-xs md:text-sm gap-2 hidden md:inline-flex hover:bg-[#5b50ff]/10 hover:text-[#5b50ff] rounded-md transition-colors"
+                  >
+                    <LayoutGrid className="h-4 w-4" />
+                    <span>Board</span>
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="list"
+                    className="data-[state=active]:after:bg-primary cursor-pointer relative rounded-none py-2 px-3 md:px-4 after:absolute after:inset-x-0 after:-bottom-3 after:h-0.5 data-[state=active]:bg-transparent data-[state=active]:shadow-none font-normal text-xs md:text-sm gap-2 hover:bg-[#5b50ff]/10 hover:text-[#5b50ff] rounded-md transition-colors"
+                  >
+                    <List className="h-4 w-4 md:inline hidden" />
+                    <span>List</span>
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="gantt"
+                    className="data-[state=active]:after:bg-primary cursor-pointer relative rounded-none py-2 px-3 md:px-4 after:absolute after:inset-x-0 after:-bottom-3 after:h-0.5 data-[state=active]:bg-transparent data-[state=active]:shadow-none font-normal text-xs md:text-sm gap-2 hidden md:inline-flex hover:bg-[#5b50ff]/10 hover:text-[#5b50ff] rounded-md transition-colors"
+                  >
+                    <GanttChart className="h-4 w-4" />
+                    <span>Gantt</span>
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
               
               <div className="flex items-center gap-2">
-                {/* Search */}
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input placeholder="Rechercher..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9 w-48" />
-                  {searchQuery && (
-                    <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6" onClick={() => setSearchQuery("")}>
-                      <X className="h-3 w-3" />
-                    </Button>
-                  )}
-                </div>
-
-                {/* View toggle */}
-                <Tabs value={viewMode} onValueChange={setViewMode}>
-                  <TabsList className="h-9">
-                    <TabsTrigger value="board" className="px-3"><LayoutGrid className="h-4 w-4" /></TabsTrigger>
-                    <TabsTrigger value="list" className="px-3"><List className="h-4 w-4" /></TabsTrigger>
-                  </TabsList>
-                </Tabs>
-
                 {/* Profile button */}
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -1629,11 +2746,31 @@ export default function PublicKanbanPage({ params }) {
 
                 {/* Visitor info */}
                 <div className="flex items-center gap-2 pl-2 border-l border-border">
-                  <UserAvatar src={visitorProfile?.image} name={visitorProfile?.name || visitorEmail} size="sm" />
+                  <UserAvatar src={visitorProfile?.image} name={visitorProfile?.name || visitorEmail} colorKey={visitorEmail} size="sm" />
                   <span className="text-sm text-muted-foreground hidden sm:inline">{visitorProfile?.name || visitorEmail}</span>
                 </div>
               </div>
             </div>
+            
+            {/* Ligne 3: Barre de recherche (visible en mode board) */}
+            {viewMode === "board" && (
+              <div className="px-4 sm:px-6 py-3 bg-background flex items-center gap-4">
+                <div className="relative flex-1 max-w-xs">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input 
+                    placeholder="Rechercher des tâches..." 
+                    value={searchQuery} 
+                    onChange={(e) => setSearchQuery(e.target.value)} 
+                    className="pl-9 h-9" 
+                  />
+                  {searchQuery && (
+                    <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6" onClick={() => setSearchQuery("")}>
+                      <X className="h-3 w-3" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Content */}
@@ -1651,8 +2788,10 @@ export default function PublicKanbanPage({ params }) {
                   />
                 ))}
               </div>
-            ) : (
+            ) : viewMode === "list" ? (
               <PublicListView columns={columns} tasksByColumn={filteredTasksByColumn} onEditTask={setSelectedTask} />
+            ) : (
+              <PublicGanttView columns={columns} tasksByColumn={filteredTasksByColumn} onEditTask={setSelectedTask} boardMembers={boardData?.members || []} />
             )}
           </div>
 

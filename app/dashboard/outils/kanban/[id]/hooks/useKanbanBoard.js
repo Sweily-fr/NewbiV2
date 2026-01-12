@@ -57,9 +57,22 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
     variables: { boardId: id, workspaceId },
     skip: !workspaceId || !id || !isReady || sessionLoading || isRedirecting,
     onData: ({ data: subscriptionData }) => {
-      console.log('📡 [Subscription] Données reçues:', subscriptionData?.data?.taskUpdated?.type);
+      console.log('📡 [Subscription] Données reçues:', subscriptionData?.data?.taskUpdated?.type, 'visitor:', subscriptionData?.data?.taskUpdated?.visitor);
       if (subscriptionData?.data?.taskUpdated) {
-        const { type, task, taskId } = subscriptionData.data.taskUpdated;
+        const { type, task, taskId, visitor } = subscriptionData.data.taskUpdated;
+        
+        // Traiter immédiatement les mises à jour de profil visiteur
+        if (type === 'VISITOR_PROFILE_UPDATED' && visitor) {
+          console.log('👤 [Subscription] Mise à jour profil visiteur détectée:', visitor.email, visitor.name);
+          // Refetch pour récupérer les données mises à jour depuis le serveur
+          // Les commentaires sont déjà mis à jour en base de données par le backend
+          refetch().then(() => {
+            console.log("✅ [Subscription] Board rechargé avec le nouveau profil visiteur:", visitor.name);
+          }).catch(error => {
+            console.error("❌ [Subscription] Erreur refetch après mise à jour profil visiteur:", error);
+          });
+          return; // Sortir après traitement
+        }
         
         
         // Pour les créations, mettre à jour le cache Apollo manuellement

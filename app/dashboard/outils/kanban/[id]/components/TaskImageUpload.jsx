@@ -51,7 +51,7 @@ function ImagePreview({ image, onDelete, isDeleting }) {
             onDelete(image.id);
           }}
           disabled={isDeleting}
-          className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/90 disabled:opacity-50"
+          className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-white text-black border border-gray-200 shadow-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-100 disabled:opacity-50"
         >
           {isDeleting ? (
             <Loader2 className="h-3 w-3 animate-spin" />
