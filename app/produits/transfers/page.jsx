@@ -1,5 +1,5 @@
 import React from "react";
-import HeroHeader from "@/src/components/blocks/hero-header";
+import { NewHeroNavbar } from "@/app/(main)/new/lp-home/NewHeroNavbar";
 import Footer7 from "@/src/components/footer7";
 import { HeroSection } from "./section/hero-section";
 import SectionAvantages from "./section/section-avantages";
@@ -23,7 +23,7 @@ export default function TransfersPage() {
   return (
     <>
       <div className={`${poppins.variable} font-poppins`}>
-        <HeroHeader />
+        <NewHeroNavbar />
         <main>
           {/* Hero Section */}
           <HeroSection />

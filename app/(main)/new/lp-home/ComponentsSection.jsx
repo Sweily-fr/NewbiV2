@@ -108,7 +108,7 @@ const FeatureBlock = ({
           </ul>
 
           <button className="mt-8 inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-medium text-white bg-[#202020] rounded-lg hover:bg-[#333333] transition-colors">
-            Démarrer
+            Démarrer maintenant
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>
@@ -131,7 +131,7 @@ const FeatureBlock = ({
             alt={imageAlt}
             width={1760}
             height={1408}
-            className={`object-cover min-h-[400px] lg:min-h-[600px] w-full ${reversed ? "object-left lg:object-[-32%_100%]" : "object-left"}`}
+            className={`object-cover min-h-[400px] lg:min-h-[600px] w-full ${reversed ? "object-left lg:object-[0%_100%]" : "object-left"}`}
             priority
           />
         </div>
