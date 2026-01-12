@@ -367,7 +367,9 @@ export function NewHeroNavbar({ hasBanner = false }) {
 
         {/* Mobile menu overlay - Fullscreen */}
         {menuState && (
-          <div className="lg:hidden fixed inset-0 top-[72px] bg-gray-50 z-50 overflow-hidden">
+          <div
+            className={`lg:hidden fixed inset-0 bg-white z-50 overflow-hidden transition-all duration-300 ${hasBanner && !isScrolled ? "top-[152px] sm:top-[130px]" : "top-[72px]"}`}
+          >
             <div className="flex flex-col h-full">
               {/* Menu content - Scrollable */}
               <div className="flex-1 overflow-y-auto">

@@ -9,16 +9,16 @@ export function HeroSection() {
   return (
     <>
       <main className="overflow-hidden">
-        <section className="min-h-screen flex items-center bg-white pt-24 mb-20 px-6 lg:px-12">
+        <section className="min-h-[80vh] lg:min-h-screen flex items-center bg-white pt-48 sm:pt-40 lg:pt-24 mb-10 lg:mb-20 px-4 sm:px-6 lg:px-12">
           <div className="mx-auto max-w-7xl w-full">
-            <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
               {/* Contenu texte à gauche */}
-              <div className="space-y-6">
-                <h1 className="text-balance font-normal text-4xl md:text-5xl lg:text-[3.2rem] leading-tight tracking-tight">
+              <div className="space-y-4 lg:space-y-6 text-center lg:text-left">
+                <h1 className="text-balance font-normal text-4xl sm:text-5xl md:text-5xl lg:text-[3.2rem] leading-tight tracking-tight">
                   Passez à la facturation électronique
                 </h1>
 
-                <h2 className="text-md font-normal tracking-tight text-gray-600 dark:text-gray-300 mx-auto mb-8 max-w-3xl">
+                <h2 className="text-sm sm:text-md font-normal tracking-tight text-gray-600 dark:text-gray-300 mb-6 lg:mb-8 max-w-xl mx-auto lg:mx-0">
                   Anticipez la réforme 2026 et envoyez vos factures au format
                   électronique.{" "}
                   <strong className="font-medium text-gray-900">
@@ -28,7 +28,7 @@ export function HeroSection() {
                 </h2>
 
                 {/* Boutons CTA */}
-                <div className="flex flex-col sm:flex-row gap-4 pt-4">
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-2 lg:pt-4 justify-center lg:justify-start">
                   <Link href="/auth/signup">
                     <Button
                       size="lg"
@@ -50,8 +50,8 @@ export function HeroSection() {
               </div>
 
               {/* Animation SVG à droite */}
-              <div className="relative flex items-end justify-end overflow-visible pt-24">
-                <div className="relative w-[700px] xl:w-[800px] -mr-32 xl:-mr-48">
+              <div className="relative flex items-center justify-center lg:items-end lg:justify-end overflow-visible pt-8 lg:pt-24">
+                <div className="relative w-full lg:w-[700px] xl:w-[800px] lg:-mr-32 xl:-mr-48">
                   <FacturationElectroniqueAnimation />
 
                   {/* iPhone Animation en bas à gauche */}

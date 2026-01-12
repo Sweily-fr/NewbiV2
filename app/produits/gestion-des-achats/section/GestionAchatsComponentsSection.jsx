@@ -71,9 +71,9 @@ const FeatureBlock = ({
   reversed = false,
 }) => {
   return (
-    <div className="max-w-7xl mx-auto pt-6 pb-4 px-6 lg:px-12">
+    <div className="max-w-7xl mx-auto pt-6 pb-4 px-4 sm:px-6 lg:px-12">
       <div
-        className={`grid grid-cols-1 lg:grid-cols-2 gap-12 items-start ${reversed ? "" : ""}`}
+        className={`grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-start ${reversed ? "" : ""}`}
       >
         {/* Text Content */}
         <div className={`${reversed ? "lg:order-2 lg:pl-12" : "lg:order-1"}`}>
@@ -127,7 +127,7 @@ const FeatureBlock = ({
             alt={imageAlt}
             width={1760}
             height={1408}
-            className={`object-cover min-h-[600px] w-full ${reversed ? "object-[-32%_100%]" : "object-left"}`}
+            className={`object-cover min-h-[300px] sm:min-h-[400px] lg:min-h-[600px] w-full ${reversed ? "object-left lg:object-[-32%_100%]" : "object-left"}`}
             priority
           />
         </div>

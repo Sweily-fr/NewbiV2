@@ -9,12 +9,12 @@ export function HeroSection() {
   return (
     <>
       <main className="overflow-hidden">
-        <section className="min-h-[80vh] lg:min-h-screen flex items-center bg-white pt-40 sm:pt-36 lg:pt-24 mb-10 lg:mb-20 px-4 sm:px-6 lg:px-12">
+        <section className="min-h-[80vh] lg:min-h-screen flex items-center bg-white pt-48 sm:pt-40 lg:pt-24 mb-10 lg:mb-20 px-4 sm:px-6 lg:px-12">
           <div className="mx-auto max-w-7xl w-full">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
               {/* Contenu texte à gauche */}
               <div className="space-y-4 lg:space-y-6 text-center lg:text-left">
-                <h1 className="text-balance font-normal text-3xl sm:text-4xl md:text-5xl lg:text-[3.2rem] leading-tight tracking-tight">
+                <h1 className="text-balance font-normal text-4xl sm:text-5xl md:text-5xl lg:text-[3.2rem] leading-tight tracking-tight">
                   Votre outil de facturation tout-en-un
                 </h1>
 
@@ -50,7 +50,7 @@ export function HeroSection() {
 
               {/* Animation SVG à droite */}
               <div className="relative flex items-center justify-center lg:items-end lg:justify-end overflow-visible pt-8 lg:pt-24">
-                <div className="relative w-full max-w-[500px] lg:max-w-none lg:w-[700px] xl:w-[800px] lg:-mr-32 xl:-mr-48">
+                <div className="relative w-full lg:w-[700px] xl:w-[800px] lg:-mr-32 xl:-mr-48">
                   <FacturesAnimation />
                   {/* Gradient flou en bas */}
                   <div
