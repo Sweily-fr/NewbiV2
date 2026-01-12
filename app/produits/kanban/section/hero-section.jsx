@@ -11,7 +11,7 @@ export function HeroSection() {
         <section className="min-h-screen lg:h-[120vh] flex flex-col bg-[#4D5F78]/5 rounded-[15px] md:rounded-[18px] lg:rounded-[18px] shadow-xs mx-2 mt-2 pt-20">
           <div className="flex-1 flex flex-col items-center justify-center relative w-full px-4 md:px-8 pt-8 md:pt-16">
             <div className="flex flex-col items-center justify-center z-10 gap-4 sm:gap-6 max-w-6xl text-center">
-              <h1 className="max-w-6xl text-center mx-auto text-balance font-medium font-Poppins text-2xl sm:text-3xl md:text-5xl xl:text-[2.7rem] font-['Poppins'] leading-tight">
+              <h1 className="max-w-6xl text-center mx-auto text-balance font-medium font-Poppins text-4xl sm:text-5xl md:text-5xl xl:text-[2.7rem] font-['Poppins'] leading-tight">
                 Le tableau <span className="text-[#4D5F78]">Kanban</span> qui
                 structure vraiment votre{" "}
                 <span className="text-[#4D5F78]">organisation</span>

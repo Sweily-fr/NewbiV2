@@ -1,4 +1,3 @@
-"use client";
 import React from "react";
 import {
   Accordion,
@@ -52,35 +51,46 @@ const faqData = [
 
 export default function FAQ() {
   return (
-    <section className="py-20 bg-white">
-      <div className="max-w-4xl mx-auto px-6 lg:px-12">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl lg:text-4xl font-normal tracking-tight text-gray-950 mb-4">
-            Questions fréquentes sur la gestion de trésorerie
-          </h2>
-          <p className="text-gray-600 max-w-2xl mx-auto">
-            Tout ce que vous devez savoir sur notre logiciel de suivi de
-            trésorerie et de cash flow pour les PME et entrepreneurs.
-          </p>
-        </div>
-
-        <Accordion type="single" collapsible className="w-full space-y-4">
-          {faqData.map((item, index) => (
-            <AccordionItem
-              key={index}
-              value={`item-${index}`}
-              className="border border-gray-200 rounded-lg px-6"
-            >
-              <AccordionTrigger className="text-left font-medium text-gray-900 hover:no-underline py-4">
-                {item.question}
-              </AccordionTrigger>
-              <AccordionContent className="text-gray-600 pb-4">
-                {item.answer}
-              </AccordionContent>
-            </AccordionItem>
-          ))}
-        </Accordion>
+    <div className="mx-auto w-full max-w-3xl space-y-7 px-4 pt-16 pb-16">
+      <div className="space-y-2 text-center">
+        <h2 className="text-3xl md:text-4xl tracking-tight font-normal">
+          Questions fréquentes
+        </h2>
+        <p className="text-muted-foreground max-w-2xl mx-auto">
+          Nous sommes là pour répondre à toutes vos questions. Si vous ne
+          trouvez pas l'information recherchée, n'hésitez pas à nous contacter.
+        </p>
       </div>
-    </section>
+      <Accordion
+        type="single"
+        collapsible
+        className="bg-card dark:bg-card/50 w-full -space-y-px rounded-lg"
+        defaultValue="item-0"
+      >
+        {faqData.map((item, index) => (
+          <AccordionItem
+            value={`item-${index}`}
+            key={index}
+            className="relative border-x first:rounded-t-lg first:border-t last:rounded-b-lg last:border-b"
+          >
+            <AccordionTrigger className="px-4 py-4 text-[15px] leading-6 hover:no-underline font-normal">
+              {item.question}
+            </AccordionTrigger>
+            <AccordionContent className="text-muted-foreground pb-4 px-4 whitespace-pre-line">
+              {item.answer}
+            </AccordionContent>
+          </AccordionItem>
+        ))}
+      </Accordion>
+      <p className="text-muted-foreground">
+        Vous ne trouvez pas ce que vous cherchez ? Contactez notre{" "}
+        <a
+          href="mailto:contact@newbi.fr"
+          className="text-primary hover:underline"
+        >
+          équipe support
+        </a>
+      </p>
+    </div>
   );
 }

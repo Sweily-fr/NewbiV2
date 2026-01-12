@@ -28,15 +28,15 @@ export function HeroSection() {
         <section className="min-h-[80vh] lg:min-h-screen flex flex-col items-center bg-white pt-32 sm:pt-28 lg:pt-38 pb-0 mb-10 lg:mb-20 px-4 sm:px-6 lg:px-12">
           {/* Contenu texte centré */}
           <div className="max-w-4xl mx-auto text-center space-y-6">
-            <h1 className="text-balance font-normal text-3xl sm:text-4xl md:text-5xl lg:text-[3.2rem] leading-tight tracking-tight">
-              Solution de gestion de trésorerie pour votre entreprise
+            <h1 className="text-balance font-normal text-4xl sm:text-5xl md:text-5xl lg:text-[3.2rem] leading-tight tracking-tight">
+              Gérez votre trésorerie en toute simplicité
             </h1>
 
-            <p className="text-md font-normal tracking-tight text-gray-600 max-w-3xl mx-auto">
-              Obtenez la clarté financière nécessaire pour prendre des décisions
-              stratégiques grâce à des graphiques prêts à l'analyse, plusieurs
-              scénarios de prévision, et une intégration en temps réel.
-            </p>
+            <h2 className="text-sm sm:text-md font-normal tracking-tight text-gray-600 dark:text-gray-300 mb-6 lg:mb-8 max-w-xl mx-auto">
+              Pilotez votre trésorerie en temps réel avec des graphiques
+              intuitifs, des prévisions automatiques et une synchronisation
+              bancaire complète.
+            </h2>
 
             {/* Boutons CTA */}
             <div className="flex flex-col sm:flex-row gap-4 pt-4 justify-center">
@@ -63,14 +63,14 @@ export function HeroSection() {
               Essayer 14 jours gratuit
             </p>
 
-            <p className="text-gray-600 text-sm flex items-center justify-center gap-2">
-              <Smartphone />
-              Sur web ou mobile, suivez en temps réel vos indicateurs
-            </p>
+            <div className="flex flex-col items-center justify-center gap-2 text-gray-600 text-sm">
+              <Smartphone className="w-5 h-5" />
+              <p>Sur web ou mobile, suivez en temps réel vos indicateurs</p>
+            </div>
           </div>
 
           {/* Animation SVG en bas avec inclinaison */}
-          <div className="relative w-full max-w-6xl mx-auto pt-8">
+          <div className="relative w-full max-w-6xl mx-auto pt-4 lg:pt-8">
             <div
               className="relative transition-transform duration-300 ease-out"
               style={{
