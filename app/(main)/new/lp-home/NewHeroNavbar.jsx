@@ -18,6 +18,8 @@ import {
   Info,
   Award,
   ArrowRight,
+  HelpCircle,
+  Quote,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import React from "react";
@@ -54,7 +56,7 @@ const menuItems = [
             name: "Synchronisation bancaire",
             description: "Connectez vos comptes bancaires en temps réel",
             icon: <CreditCard size={18} />,
-            href: "/produits/banque",
+            href: "/produits/synchronisation-bancaire",
           },
           {
             name: "Facturation électronique",
@@ -77,19 +79,19 @@ const menuItems = [
             name: "Signature de mail",
             description: "Créez des signatures professionnelles",
             icon: <Mail size={18} />,
-            href: "/produits/signature",
+            href: "/produits/signatures",
           },
           {
             name: "Transfert de fichiers",
             description: "Envoyez vos fichiers en toute sécurité",
             icon: <Zap size={18} />,
-            href: "/produits/transfert",
+            href: "/produits/transfers",
           },
           {
             name: "Gestion de projets",
             description: "Organisez vos projets avec des tableaux Kanban",
             icon: <Kanban size={18} />,
-            href: "/produits/projets",
+            href: "/produits/kanban",
           },
         ],
       },
@@ -108,7 +110,7 @@ const menuItems = [
             name: "Documentation",
             description: "Guides et tutoriels pour maîtriser newbi",
             icon: <BookOpen size={18} />,
-            href: "/documentation",
+            href: "https://docs.newbi.fr/",
           },
           {
             name: "Blog",
@@ -120,7 +122,13 @@ const menuItems = [
             name: "Communauté",
             description: "Échangez avec d'autres utilisateurs newbi",
             icon: <Users size={18} />,
-            href: "/communaute",
+            href: "https://chat.whatsapp.com/FGLms8EYhpv1o5rkrnIldL",
+          },
+          {
+            name: "Questions fréquentes",
+            description: "Tout ce que vous devez savoir avant de commencer",
+            icon: <HelpCircle size={18} />,
+            href: "/faq",
           },
         ],
       },
@@ -131,13 +139,27 @@ const menuItems = [
             name: "Qui sommes-nous",
             description: "Découvrez l'équipe et la vision de newbi",
             icon: <Info size={18} />,
-            href: "/about",
+            href: "/qui-sommes-nous",
           },
           {
             name: "Pourquoi choisir Newbi",
-            description: "Les avantages qui font la différence",
+            description:
+              "Les avantages qui font vraiment la différence au quotidien.",
             icon: <Award size={18} />,
             href: "/pourquoi-newbi",
+          },
+          {
+            name: "Apporteur d'affaire",
+            description: "Devenez partenaire et gagnez des commissions",
+            icon: <HandCoins size={18} />,
+            href: "/apporteur-affaire",
+          },
+          {
+            name: "Témoignages clients",
+            description:
+              "Découvrez comment nos clients améliorent leur crédibilité",
+            icon: <Quote size={18} />,
+            href: "/temoignages",
           },
         ],
       },
@@ -179,8 +201,7 @@ export function NewHeroNavbar({ hasBanner = false }) {
           className={cn(
             "w-full px-6 lg:px-12 transition-all duration-300",
             isScrolled &&
-              "bg-[#FDFDFD] dark:bg-background border-b border-gray-200 dark:border-neutral-800",
-            openDropdown !== null && "bg-gray-50"
+              "bg-[#FDFDFD] dark:bg-background border-b border-gray-200 dark:border-neutral-800"
           )}
         >
           <div className="relative flex flex-wrap items-center justify-between gap-6 lg:gap-0 py-4 max-w-7xl mx-auto">
@@ -251,7 +272,7 @@ export function NewHeroNavbar({ hasBanner = false }) {
                                   <Link
                                     key={idx}
                                     href={dropdownItem.href}
-                                    className="flex items-start gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-muted transition-colors"
+                                    className="flex items-start gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-muted transition-colors"
                                     onClick={() => setOpenDropdown(null)}
                                   >
                                     <div className="text-gray-600 dark:text-gray-400 mt-0.5">
@@ -339,7 +360,7 @@ export function NewHeroNavbar({ hasBanner = false }) {
                 size="md"
                 className={cn(isScrolled && "lg:hidden")}
               >
-                <Link href="/auth/signin">
+                <Link href="/auth/login">
                   <span>Connexion</span>
                 </Link>
               </Button>

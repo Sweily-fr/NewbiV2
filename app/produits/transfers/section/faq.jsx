@@ -9,33 +9,46 @@ import {
 const questions = [
   {
     id: "item-1",
-    title: "Comment transférer un fichier avec Newbi ?",
+    title: "Comment transférer un fichier avec newbi ?",
     content:
-      "Ouvrez l'outil de transfert de fichiers, sélectionnez vos fichiers (jusqu'à 2 Go), définissez une date d'expiration et un mot de passe optionnel, puis partagez le lien généré.",
+      "C'est très simple : glissez-déposez vos fichiers dans l'interface ou cliquez pour les sélectionner. Vous pouvez ensuite personnaliser le lien de partage, ajouter un mot de passe optionnel et définir une date d'expiration. Une fois validé, partagez le lien généré avec vos destinataires par email ou copier-coller.",
   },
   {
     id: "item-2",
-    title: "Quelle est la taille maximale des fichiers que je peux transférer ?",
+    title:
+      "Quelle est la taille maximale des fichiers que je peux transférer ?",
     content:
-      "Vous pouvez transférer des fichiers jusqu'à 2 Go par envoi.",
+      "Vous pouvez transférer des fichiers jusqu'à 5 Go par envoi avec newbi. Il n'y a aucune limite sur le nombre de transferts que vous pouvez effectuer. Pour des fichiers encore plus volumineux, contactez notre équipe pour une solution sur mesure.",
   },
   {
     id: "item-3",
     title: "Combien de temps mes fichiers restent-ils disponibles ?",
     content:
-      "Par défaut, vos fichiers sont disponibles pendant 7 jours. Vous pouvez personnaliser cette durée lors du transfert.",
+      "Par défaut, vos fichiers sont disponibles pendant 7 jours. Vous pouvez personnaliser cette durée lors du transfert (de 1 à 30 jours). Une fois la date d'expiration atteinte, les fichiers sont automatiquement supprimés de nos serveurs pour garantir votre confidentialité.",
   },
   {
     id: "item-4",
-    title: "Puis-je protéger mes transferts par mot de passe ?",
+    title: "Mes transferts sont-ils sécurisés ?",
     content:
-      "Oui, vous pouvez ajouter un mot de passe pour sécuriser l'accès à vos fichiers transférés.",
+      "Absolument. Tous vos transferts sont protégés par un chiffrement SSL/TLS de bout en bout. Vous pouvez ajouter un mot de passe pour sécuriser l'accès aux fichiers. Vos données sont hébergées en France sur des serveurs sécurisés et nous sommes conformes au RGPD. Aucune publicité ni tracking tiers.",
   },
   {
     id: "item-5",
-    title: "Qui contacter si j'ai une question ou un problème avec mon outil ?",
+    title: "Les destinataires doivent-ils avoir un compte newbi ?",
     content:
-      "Rejoignez la communauté Newbi sur Whatsapp. Il suffit d'y accéder pour rejoindre les groupes thématiques et poser vos questions directement à la communauté et à l'équipe.",
+      "Non, aucune inscription n'est requise pour télécharger les fichiers que vous partagez. Vos destinataires reçoivent simplement un lien qu'ils peuvent ouvrir dans leur navigateur pour télécharger les fichiers. Seul l'expéditeur a besoin d'un compte newbi.",
+  },
+  {
+    id: "item-6",
+    title: "Puis-je suivre qui a téléchargé mes fichiers ?",
+    content:
+      "Oui, vous avez accès à un tableau de bord complet qui vous permet de suivre tous vos transferts. Vous pouvez voir combien de fois chaque fichier a été téléchargé, par qui (si vous avez demandé l'email), et quand. Vous recevez également des notifications par email à chaque téléchargement.",
+  },
+  {
+    id: "item-7",
+    title: "Puis-je annuler un transfert après l'avoir envoyé ?",
+    content:
+      "Oui, vous pouvez désactiver un lien de partage à tout moment depuis votre tableau de bord. Une fois désactivé, le lien ne fonctionnera plus et les fichiers ne seront plus accessibles, même si la date d'expiration n'est pas encore atteinte.",
   },
 ];
 

@@ -59,11 +59,11 @@ export function HeroSection() {
               </Link>
             </div>
 
-            <p className="text-gray-500 text-sm pt-2">
+            {/* <p className="text-gray-500 text-sm pt-2">
               Essayer 14 jours gratuit
-            </p>
+            </p> */}
 
-            <div className="flex flex-col items-center justify-center gap-2 text-gray-600 text-sm">
+            <div className="flex flex-col lg:flex-row items-center justify-center gap-2 text-gray-600 text-sm">
               <Smartphone className="w-5 h-5" />
               <p>Sur web ou mobile, suivez en temps réel vos indicateurs</p>
             </div>
@@ -71,8 +71,11 @@ export function HeroSection() {
 
           {/* Animation SVG en bas avec inclinaison */}
           <div className="relative w-full max-w-6xl mx-auto pt-4 lg:pt-8">
+            <div className="relative lg:hidden">
+              <TresorerieAnimation />
+            </div>
             <div
-              className="relative transition-transform duration-300 ease-out"
+              className="relative hidden lg:block transition-transform duration-300 ease-out"
               style={{
                 transform: `perspective(1000px) rotateX(${rotation}deg) translateY(${translateY}px)`,
               }}

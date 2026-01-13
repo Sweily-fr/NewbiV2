@@ -76,7 +76,7 @@ export default function SignUpPage() {
         <div className="hidden md:flex h-screen">
           <div className="w-1/2 flex items-center justify-center p-8">
             <div className="mx-auto sm:max-w-md w-full">
-              <h3 className="text-3xl font-semibold text-foreground dark:text-foreground">
+              <h3 className="text-3xl font-medium text-foreground dark:text-foreground">
                 Inscrivez-vous
               </h3>
               <p className="mt-2 text-sm text-muted-foreground dark:text-muted-foreground">
@@ -131,13 +131,10 @@ export default function SignUpPage() {
               <RegisterForm />
             </div>
           </div>
-          <div className="w-1/2 p-5 flex items-center min-h-screen justify-center">
+          <div className="w-1/2 p-2 flex items-center min-h-screen justify-center">
             <div
-              className="flex p-6 items-center justify-center w-full h-full rounded-lg relative"
+              className="flex p-5 items-center justify-center w-full h-full rounded-lg bg-[#5A50FF]/30 relative"
               style={{
-                backgroundImage: "url('/BackgroundAuth.svg')",
-                backgroundSize: "cover",
-                backgroundPosition: "center",
                 transform: "rotate(180deg)",
               }}
             >
@@ -166,7 +163,7 @@ export default function SignUpPage() {
               <img
                 src="/ni.svg"
                 alt="Newbi Logo"
-                className="absolute top-2 left-3 w-5 h-auto filter brightness-0 invert"
+                className="absolute bottom-2 right-3 w-5 h-auto filter brightness-0 invert"
                 style={{ opacity: 0.9 }}
               />
             </div>

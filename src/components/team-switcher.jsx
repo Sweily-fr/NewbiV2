@@ -360,6 +360,7 @@ export function TeamSwitcher() {
             <DropdownMenuTrigger asChild>
               <SidebarMenuButton
                 size="lg"
+                data-tutorial="team-switcher"
                 className={`data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground cursor-pointer ${isCollapsed ? "justify-center" : ""}`}
               >
                 <img

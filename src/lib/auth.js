@@ -419,6 +419,15 @@ export const auth = betterAuth({
         required: false,
         defaultValue: false,
       },
+      hasCompletedTutorial: {
+        type: "boolean",
+        required: false,
+        defaultValue: false,
+      },
+      tutorialCompletedAt: {
+        type: "date",
+        required: false,
+      },
       referralCode: {
         type: "string",
         required: false,

@@ -332,7 +332,10 @@ export function SidebarTrialCard() {
     // Mode étendu : afficher la card complète
     return (
       <>
-        <Card className="mb-2 bg-transparent shadow-xs py-3 rounded-md">
+        <Card
+          className="mb-2 bg-transparent shadow-xs py-3 rounded-md"
+          data-tutorial="trial-card"
+        >
           <CardContent className="px-3">
             <div className="flex items-start gap-2">
               {/* Icône en haut à gauche */}

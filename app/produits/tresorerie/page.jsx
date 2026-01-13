@@ -8,6 +8,8 @@ import { TresorerieBanner } from "./section/TresorerieBanner";
 import TrustedBySection from "@/app/(main)/new/lp-home/TrustedBySection";
 import TresorerieComponentsSection from "./section/TresorerieComponentsSection";
 import TresorerieInfoBanner from "./section/TresorerieInfoBanner";
+import { TestimonialsSplit } from "./section/TestimonialsSplit";
+import TresorerieFeaturesBanner from "./section/TresorerieFeaturesBanner";
 
 // Configuration de Poppins uniquement pour les landing pages
 const poppins = Poppins({
@@ -44,6 +46,8 @@ export default function TresoreriePage() {
           <HeroSection />
           <TrustedBySection />
           <TresorerieComponentsSection />
+          <TresorerieFeaturesBanner />
+          <TestimonialsSplit />
           {/* <TresorerieInfoBanner /> */}
           <FAQ />
         </main>

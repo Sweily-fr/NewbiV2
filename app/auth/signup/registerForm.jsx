@@ -183,7 +183,7 @@ const RegisterFormContent = () => {
 
 const RegisterForm = () => {
   return (
-    <Suspense fallback={<div>Chargement...</div>}>
+    <Suspense fallback={null}>
       <RegisterFormContent />
     </Suspense>
   );

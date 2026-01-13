@@ -326,3 +326,19 @@
     padding-bottom: max(1rem, env(safe-area-inset-bottom));
   }
 }
+
+/* Animation pour le tutoriel Joyride - effet de pulsation subtil */
+@keyframes tutorial-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(90, 84, 250, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(90, 84, 250, 0);
+  }
+}
+
+/* Appliquer l'animation au spotlight de Joyride */
+[class*="react-joyride__spotlight"] {
+  animation: tutorial-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}

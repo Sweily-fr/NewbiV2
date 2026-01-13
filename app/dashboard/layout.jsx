@@ -34,6 +34,8 @@ import { AccountingViewProvider } from "@/src/contexts/accounting-view-context";
 import { FloatingTimer } from "@/src/components/FloatingTimer";
 import { OAuthCallbackHandler } from "@/src/components/oauth-callback-handler";
 import { EInvoicingPromoModal } from "@/src/components/e-invoicing-promo-modal";
+import { TutorialProvider } from "@/src/contexts/tutorial-context";
+import { TutorialOverlay } from "@/src/components/tutorial/tutorial-overlay";
 
 // Composant interne qui utilise le contexte
 function DashboardContent({ children }) {
@@ -257,6 +259,9 @@ function DashboardContent({ children }) {
         onOpenChange={setEInvoicingPromoOpen}
       />
 
+      {/* Tutoriel interactif */}
+      <TutorialOverlay />
+
       {/* Bouton de test pour le modal (à retirer en production) */}
       {/* {process.env.NODE_ENV === "development" && (
         <button
@@ -285,12 +290,14 @@ export default function DashboardLayout({ children }) {
   const content = (
     <DashboardLayoutProvider>
       <AccountingViewProvider>
-        <ToastProvider>
-          <ToastManagerInitializer />
-          <ReconciliationToastProvider>
-            <DashboardContent>{children}</DashboardContent>
-          </ReconciliationToastProvider>
-        </ToastProvider>
+        <TutorialProvider>
+          <ToastProvider>
+            <ToastManagerInitializer />
+            <ReconciliationToastProvider>
+              <DashboardContent>{children}</DashboardContent>
+            </ReconciliationToastProvider>
+          </ToastProvider>
+        </TutorialProvider>
       </AccountingViewProvider>
     </DashboardLayoutProvider>
   );

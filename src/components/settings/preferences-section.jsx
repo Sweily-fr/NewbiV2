@@ -36,10 +36,16 @@ import { useEmailPreferences } from "@/src/hooks/useEmailPreferences";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import { Checkbox } from "@/src/components/ui/checkbox";
+import { useTutorial } from "@/src/contexts/tutorial-context";
 
 export function PreferencesSection() {
   const { isActive } = useSubscription();
   const { data: session, refetch: refetchSession } = useSession();
+  const {
+    resetTutorial,
+    hasCompletedTutorial,
+    isLoading: tutorialLoading,
+  } = useTutorial();
 
   // État pour les préférences de cookies
   const [cookiePreferences, setCookiePreferences] = useState({
@@ -801,6 +807,26 @@ export function PreferencesSection() {
               defaultChecked={true}
               className="ml-4 flex-shrink-0 scale-75 data-[state=checked]:!bg-[#5b4eff]"
             />
+          </div>
+
+          {/* Tutoriel interactif */}
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <h3 className="text-sm font-normal mb-1">Tutoriel interactif</h3>
+              <p className="text-xs text-gray-400">
+                Relancez le tutoriel pour découvrir les fonctionnalités de Newbi
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={resetTutorial}
+              disabled={tutorialLoading}
+              className="ml-4 flex-shrink-0 font-normal cursor-pointer"
+            >
+              {tutorialLoading ? "Chargement..." : "Relancer le tutoriel"}
+            </Button>
           </div>
 
           {/* Visibilité du profil */}

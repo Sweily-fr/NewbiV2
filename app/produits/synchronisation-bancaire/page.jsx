@@ -5,11 +5,11 @@ import { HeroSection } from "./section/hero-section";
 import { Poppins } from "next/font/google";
 import FAQ from "./section/faq";
 import { generateNextMetadata } from "@/src/utils/seo-data";
+import { SynchronisationBanner } from "./section/SynchronisationBanner";
 import TrustedBySection from "@/app/(main)/new/lp-home/TrustedBySection";
-import GestionAchatsComponentsSection from "./section/GestionAchatsComponentsSection";
+import SynchronisationComponentsSection from "./section/SynchronisationComponentsSection";
 import { TestimonialsSplit } from "./section/TestimonialsSplit";
 
-// Configuration de Poppins uniquement pour les landing pages
 const poppins = Poppins({
   weight: ["400", "500", "600", "700"],
   subsets: ["latin"],
@@ -17,19 +17,18 @@ const poppins = Poppins({
   display: "swap",
 });
 
-// Export des metadata pour le SEO
-export const metadata = generateNextMetadata("gestion-des-achats");
+export const metadata = generateNextMetadata("synchronisation-bancaire");
 
-export default function GestionDesAchatsPage() {
+export default function SynchronisationBancairePage() {
   return (
     <>
       <div className={`${poppins.variable} font-poppins`}>
-        <NewHeroNavbar />
+        {/* <SynchronisationBanner /> */}
+        <NewHeroNavbar hasBanner={false} />
         <main>
-          {/* Hero Section */}
           <HeroSection />
           <TrustedBySection />
-          <GestionAchatsComponentsSection />
+          <SynchronisationComponentsSection />
           <TestimonialsSplit />
           <FAQ />
         </main>

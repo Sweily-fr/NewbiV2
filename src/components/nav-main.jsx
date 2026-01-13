@@ -283,6 +283,7 @@ export function NavMain({
       >
         <SidebarMenuItem>
           <div
+            data-tutorial="nav-ventes"
             className={cn(
               "flex items-center w-full rounded-md transition-colors",
               isVentesSubActive && "bg-[#F0F0F0] dark:bg-sidebar-accent"
@@ -519,7 +520,8 @@ export function NavMain({
               <div className="max-h-[200px] overflow-y-auto">
                 {filteredKanbanBoards.length > 0 ? (
                   filteredKanbanBoards.map((board) => {
-                    const isBoardActive = pathname === `/dashboard/outils/kanban/${board.id}`;
+                    const isBoardActive =
+                      pathname === `/dashboard/outils/kanban/${board.id}`;
                     return (
                       <SidebarMenuSubItem key={board.id}>
                         <Link
@@ -535,7 +537,9 @@ export function NavMain({
                                 "bg-[#F0F0F0] dark:bg-sidebar-accent text-sidebar-foreground font-medium"
                             )}
                           >
-                            <span className="text-sm truncate">{board.title}</span>
+                            <span className="text-sm truncate">
+                              {board.title}
+                            </span>
                           </SidebarMenuSubButton>
                         </Link>
                       </SidebarMenuSubItem>
@@ -876,6 +880,13 @@ export function NavMain({
       );
     }
 
+    // Déterminer l'attribut data-tutorial selon le titre
+    const getTutorialAttribute = () => {
+      if (item.title === "Dashboard") return "nav-dashboard";
+      if (item.title === "Transactions") return "nav-transactions";
+      return undefined;
+    };
+
     return (
       <SidebarMenuItem key={item.title}>
         <Link
@@ -884,6 +895,7 @@ export function NavMain({
           onClick={hasAccess ? handleLinkClick : undefined}
         >
           <SidebarMenuButton
+            data-tutorial={getTutorialAttribute()}
             className={cn(
               "bg-transparent w-full cursor-pointer relative",
               !hasAccess && "opacity-60 cursor-not-allowed",
@@ -932,16 +944,18 @@ export function NavMain({
           {userRole !== "accountant" && renderProjetsMenu()}
 
           {/* Menu Documents avec sous-menus */}
-          {userRole !== "accountant" &&
-            navDocuments.length > 0 &&
-            renderCollapsibleMenu(
-              "Documents",
-              FileText,
-              navDocuments,
-              isDocumentsOpen,
-              setIsDocumentsOpen,
-              isDocumentsSubActive
-            )}
+          {userRole !== "accountant" && navDocuments.length > 0 && (
+            <div data-tutorial="nav-documents">
+              {renderCollapsibleMenu(
+                "Documents",
+                FileText,
+                navDocuments,
+                isDocumentsOpen,
+                setIsDocumentsOpen,
+                isDocumentsSubActive
+              )}
+            </div>
+          )}
 
           {/* Menu Communication avec sous-menus */}
           {userRole !== "accountant" &&
