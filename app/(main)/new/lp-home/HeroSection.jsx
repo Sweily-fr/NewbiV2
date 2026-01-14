@@ -48,160 +48,163 @@ const FranceIcon = () => (
 
 export default function HeroSection() {
   return (
-    <div className="relative w-full h-screen mb-10 lg:mb-45 bg-[#FDFDFD]">
-      <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
-        {/* Mockup iPhone - Position absolue à gauche, sort de l'écran */}
-        <div
-          className="hidden lg:block absolute -left-0 xl:-left-[-100px] bottom-[-30px] z-0"
-          style={{ bottom: "-160px" }}
-        >
-          <div className="relative w-[200px] xl:w-[240px]">
-            <img
-              src="/mockup-iphone-hero.png"
-              alt="Application mobile Newbi"
-              className="w-full h-auto object-contain"
-            />
-            {/* Gradient blanc en bas */}
-            <div
-              className="absolute bottom-0 left-0 right-0 h-70 pointer-events-none"
+    <div className="relative w-full overflow-hidden bg-[#FDFDFD] px-5 pb-20 md:pb-54 lg:pb-0">
+      {/* Conteneur principal avec max-width comme Qonto */}
+      <div className="max-w-[1200px] mx-auto relative lg:block flex flex-col md:flex-row">
+        {/* Grille pour le contenu texte - Structure Qonto */}
+        <div className="grid grid-cols-12 gap-x-8 md:gap-x-24 pt-32 md:pt-24 lg:pt-32 md:flex-1">
+          {/* Contenu central */}
+          <div className="col-span-12 lg:col-span-10 lg:col-start-2 text-center">
+            {/* Badge animé */}
+            <p
+              className="relative inline-block bg-[length:250%_100%,auto] bg-clip-text text-transparent [background-repeat:no-repeat,padding-box] text-sm font-normal mb-6"
               style={{
-                background:
-                  "linear-gradient(to top, #FDFDFD 0%, #FDFDFD 60%, transparent 100%)",
+                "--spread": "68px",
+                "--base-color": "#6366f1",
+                "--base-gradient-color": "#ffffff",
+                backgroundImage:
+                  "linear-gradient(90deg, transparent calc(50% - 68px), #ffffff, transparent calc(50% + 68px)), linear-gradient(#6366f1, #6366f1)",
+                backgroundPosition: "0% center",
+                animation: "shimmer 3s ease-in-out infinite",
               }}
-            />
-          </div>
-        </div>
-
-        {/* Mockup Mac - Position absolue à droite, sort de l'écran */}
-        <div
-          className="hidden lg:block absolute -right-8 xl:-right-90 z-0"
-          style={{ bottom: "-150px" }}
-        >
-          <div className="relative w-[700px] xl:w-[800px]">
-            <img
-              src="/mockup-mac-hero-section.png"
-              alt="Dashboard Newbi sur Mac"
-              className="w-full h-auto object-contain"
-            />
-
-            {/* Badge Facturation - Coin haut gauche */}
-            {/* <img
-              src="/badgeFacturation.png"
-              alt="Badge Facturation"
-              className="absolute top-1 left-[-50px] w-[120px] xl:w-[140px] h-auto object-contain drop-shadow-lg z-10"
-            /> */}
-
-            {/* Gradient blanc en bas */}
-            <div
-              className="absolute bottom-0 left-0 right-0 h-70 pointer-events-none"
-              style={{
-                background:
-                  "linear-gradient(to top, #FDFDFD 0%, #FDFDFD 60%, transparent 100%)",
-              }}
-            />
-          </div>
-        </div>
-
-        {/* Contenu central - Au-dessus des mockups */}
-        <div className="relative z-10 max-w-4xl mx-auto px-4 pb-10 lg:pb-40 text-center">
-          {/* Badge animé */}
-          <p
-            className="relative inline-block bg-[length:250%_100%,auto] bg-clip-text text-transparent [background-repeat:no-repeat,padding-box] text-sm font-normal mb-6"
-            style={{
-              "--spread": "68px",
-              "--base-color": "#6366f1",
-              "--base-gradient-color": "#ffffff",
-              backgroundImage:
-                "linear-gradient(90deg, transparent calc(50% - 68px), #ffffff, transparent calc(50% + 68px)), linear-gradient(#6366f1, #6366f1)",
-              backgroundPosition: "0% center",
-              animation: "shimmer 3s ease-in-out infinite",
-            }}
-          >
-            Pour les entrepreneurs et PME françaises.
-          </p>
-
-          {/* Titre principal H1 */}
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-normal tracking-tight text-black dark:text-white mb-6">
-            La plateforme tout-en-un pour <br className="hidden sm:block" />{" "}
-            piloter votre <span className="text-indigo-600">entreprise</span>
-          </h1>
-
-          {/* Sous-titre */}
-          <h2 className="text-md font-normal tracking-tight text-gray-600 dark:text-gray-300 mx-auto mb-8 max-w-3xl">
-            Gérez votre comptabilité, vos factures, vos projets et votre
-            communication professionnelle depuis une seule plateforme. Simple,
-            puissant et made in France.
-          </h2>
-
-          {/* Boutons CTA */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
-            <Link
-              href="/auth/signup"
-              className="block rounded-xl px-8 py-3 text-center text-base font-normal transition duration-150 active:scale-[0.98] bg-[#202020] text-white dark:bg-white dark:text-black w-full sm:w-auto"
             >
-              Démarrer gratuitement
-            </Link>
-            <Link
-              href="/#pricing"
-              className="block rounded-xl px-8 py-3 text-center text-base font-normal active:scale-[0.98] border border-gray-200 bg-white text-black transition duration-200 hover:bg-gray-100 dark:border-neutral-700 dark:bg-neutral-950 dark:text-white dark:hover:bg-neutral-800 w-full sm:w-auto"
-            >
-              Voir les tarifs
-            </Link>
-          </div>
+              Pour les entrepreneurs et PME françaises.
+            </p>
 
-          {/* Section avis / social proof */}
-          <div className="flex flex-wrap items-center justify-center gap-3">
-            <FranceIcon />
-            <div className="flex items-center gap-0">
-              {[...Array(5)].map((_, i) => (
-                <div
-                  key={i}
-                  style={{
-                    opacity: 1,
-                    color: i < 4 ? "#FFC062" : "#000000",
-                    position: "relative",
-                    display: "inline-flex",
-                  }}
-                >
-                  {i === 4 ? (
-                    <>
-                      <StarIcon />
-                      <div
-                        style={{
-                          position: "absolute",
-                          top: 0,
-                          left: 0,
-                          width: "50%",
-                          height: "100%",
-                          overflow: "hidden",
-                          color: "#FFC062",
-                        }}
-                      >
-                        <StarIcon />
-                      </div>
-                    </>
-                  ) : (
-                    <StarIcon />
-                  )}
-                </div>
-              ))}
+            {/* Titre principal H1 */}
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-normal tracking-tight text-black dark:text-white mb-6">
+              La plateforme tout-en-un pour <br className="hidden sm:block" />{" "}
+              piloter votre <span className="text-indigo-600">entreprise</span>
+            </h1>
+
+            {/* Sous-titre */}
+            <h2 className="text-md font-normal tracking-tight text-gray-600 dark:text-gray-300 mx-auto mb-8 max-w-3xl">
+              Gérez votre comptabilité, vos factures, vos projets et votre
+              communication professionnelle depuis une seule plateforme. Simple,
+              puissant et made in France.
+            </h2>
+
+            {/* Boutons CTA */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
+              <Link
+                href="/auth/signup"
+                className="block rounded-xl px-8 py-3 text-center text-base font-normal transition duration-150 active:scale-[0.98] bg-[#202020] text-white dark:bg-white dark:text-black w-full sm:w-auto"
+              >
+                Démarrer gratuitement
+              </Link>
+              <Link
+                href="/#pricing"
+                className="block rounded-xl px-8 py-3 text-center text-base font-normal active:scale-[0.98] border border-gray-200 bg-white text-black transition duration-200 hover:bg-gray-100 dark:border-neutral-700 dark:bg-neutral-950 dark:text-white dark:hover:bg-neutral-800 w-full sm:w-auto"
+              >
+                Voir les tarifs
+              </Link>
             </div>
-            <span className="border-l border-gray-500 pl-3 text-xs sm:text-sm text-gray-600">
-              Solution innovante 2026 par
-            </span>
-            <img
-              src="/newbiLetter.png"
-              alt="newbi logo"
-              className="w-[70px] ml-[-12px] h-auto object-contain"
-            />
+
+            {/* Section avis / social proof */}
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <FranceIcon />
+              <div className="flex items-center gap-0">
+                {[...Array(5)].map((_, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      opacity: 1,
+                      color: i < 4 ? "#FFC062" : "#000000",
+                      position: "relative",
+                      display: "inline-flex",
+                    }}
+                  >
+                    {i === 4 ? (
+                      <>
+                        <StarIcon />
+                        <div
+                          style={{
+                            position: "absolute",
+                            top: 0,
+                            left: 0,
+                            width: "50%",
+                            height: "100%",
+                            overflow: "hidden",
+                            color: "#FFC062",
+                          }}
+                        >
+                          <StarIcon />
+                        </div>
+                      </>
+                    ) : (
+                      <StarIcon />
+                    )}
+                  </div>
+                ))}
+              </div>
+              <span className="border-l border-gray-500 pl-3 text-xs sm:text-sm text-gray-600">
+                Solution innovante 2026 par
+              </span>
+              <img
+                src="/newbiLetter.png"
+                alt="newbi logo"
+                className="w-[70px] ml-[-12px] h-auto object-contain"
+              />
+            </div>
           </div>
+        </div>
+
+        {/* Conteneur des images - Hauteur fixe sur desktop comme Qonto */}
+        <div className="hidden lg:block h-[500px]">
+          {/* Mockup Mac - Position absolue à droite, en bas */}
+          <img
+            src="/mockup-mac-hero-section.png"
+            alt="Dashboard Newbi sur Mac"
+            className="absolute object-contain rounded-md"
+            style={{
+              bottom: "110px",
+              right: "-35%",
+              width: "60%",
+            }}
+          />
+          {/* Gradient blanc en bas du Mac */}
+          <div
+            className="absolute pointer-events-none"
+            style={{
+              bottom: "110px",
+              right: "-35%",
+              width: "60%",
+              height: "190px",
+              background:
+                "linear-gradient(to top, #FDFDFD 0%, #FDFDFD 60%, transparent 100%)",
+            }}
+          />
+
+          {/* Mockup iPhone - Position absolue à gauche, en bas */}
+          <img
+            src="/mockup-iphone-hero.png"
+            alt="Application mobile Newbi"
+            className="absolute object-contain rounded-md"
+            style={{
+              bottom: "40px",
+              left: "-2.5%",
+              width: "21%",
+            }}
+          />
+          {/* Gradient blanc en bas de l'iPhone */}
+          <div
+            className="absolute pointer-events-none"
+            style={{
+              bottom: "40px",
+              left: "-2.5%",
+              width: "21%",
+              height: "300px",
+              background:
+                "linear-gradient(to top, #FDFDFD 0%, #FDFDFD 60%, transparent 100%)",
+            }}
+          />
         </div>
       </div>
 
       {/* Carte Activité récente - Style Qonto pastel - EN DEHORS du conteneur overflow-hidden */}
       <div
         className="hidden lg:block absolute left-1/2 -translate-x-1/2 z-50"
-        style={{ bottom: "-20px" }}
+        style={{ bottom: "180px" }}
       >
         <div className="relative" style={{ overflow: "visible" }}>
           <div className="w-[400px] rounded-2xl bg-[#2F2F2D] border border-gray-700 shadow-xs overflow-hidden">
@@ -301,7 +304,10 @@ export default function HeroSection() {
           </div>
 
           {/* Petite carte flottante 1 - Facturation électronique (style Qonto) */}
-          <div className="absolute -top-9 -left-20 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden min-w-[320px]">
+          <div
+            className="absolute -left-20 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden min-w-[320px]"
+            style={{ top: "clamp(-30px, -7vh, 0px)" }}
+          >
             {/* Header gris clair */}
             <div className="bg-gray-50 border-b border-gray-200 px-3 py-3.5 flex items-center justify-between">
               {/* Icône drapeau FR */}

@@ -2,14 +2,14 @@
 import React from "react";
 
 const logos = [
-  { name: "Ninth", src: "/lp/factures/primer.png", height: "h-4" },
-  { name: "Eighth", src: "/lp/factures/primer.png", height: "h-4" },
-  { name: "Third", src: "/lp/factures/primer.png", height: "h-4" },
-  { name: "Sixth", src: "/lp/factures/primer.png", height: "h-4" },
-  { name: "First", src: "/lp/factures/primer.png", height: "h-4" },
-  { name: "Fourth", src: "/lp/factures/primer.png", height: "h-4" },
-  { name: "Seventh", src: "/lp/factures/primer.png", height: "h-4" },
-  { name: "Tenth", src: "/lp/factures/primer.png", height: "h-4" },
+  { name: "Company 1", src: "/lp/company/1.png", height: "h-10" },
+  { name: "Company 2", src: "/lp/company/2.png", height: "h-10" },
+  { name: "Company 3", src: "/lp/company/3.png", height: "h-10" },
+  { name: "Company 4", src: "/lp/company/4.png", height: "h-10" },
+  { name: "Company 5", src: "/lp/company/5.png", height: "h-10" },
+  { name: "Company 6", src: "/lp/company/6.png", height: "h-10" },
+  { name: "Company 1", src: "/lp/company/1.png", height: "h-10" },
+  { name: "Company 2", src: "/lp/company/2.png", height: "h-10" },
 ];
 
 export default function TrustedBySection() {
