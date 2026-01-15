@@ -59,10 +59,23 @@ export function TutorialProvider({ children }) {
     setIsRunning(true);
   }, []);
 
-  // Arrêter le tutoriel (skip)
-  const stopTutorial = useCallback(() => {
+  // Arrêter le tutoriel (skip) - Persiste aussi en base de données pour éviter que le tutoriel se réaffiche
+  const stopTutorial = useCallback(async () => {
     setIsRunning(false);
     setStepIndex(0);
+    setHasCompletedTutorial(true);
+
+    // Persister en base de données pour éviter que le tutoriel se réaffiche après rechargement
+    try {
+      await fetch("/api/tutorial/complete", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+    } catch (error) {
+      console.error("Erreur lors de la sauvegarde du tutoriel (skip):", error);
+    }
   }, []);
 
   // Marquer le tutoriel comme complété

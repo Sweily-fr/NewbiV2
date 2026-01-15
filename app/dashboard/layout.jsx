@@ -182,7 +182,7 @@ function DashboardContent({ children }) {
       />
       <SidebarInset className="md:pt-0 pt-10">
         <SiteHeader />
-        <div className="flex flex-1 flex-col">
+        <div className="flex flex-1 flex-col overflow-y-auto">
           {showTrialBanner && (
             <div className="p-4 pb-0">
               <TrialBanner

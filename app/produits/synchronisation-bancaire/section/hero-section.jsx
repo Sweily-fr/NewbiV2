@@ -3,6 +3,7 @@ import React from "react";
 import { Button } from "@/src/components/ui/button";
 import Link from "next/link";
 import { SynchronisationAnimation } from "./SynchronisationAnimation";
+import { ConnectionBancaireIphone } from "./ConnectionBancaireIphone";
 
 export function HeroSection() {
   return (
@@ -48,8 +49,23 @@ export function HeroSection() {
               <div className="relative flex items-center justify-center lg:items-end lg:justify-end overflow-visible pt-8 lg:pt-24">
                 <div className="relative w-full lg:w-[700px] xl:w-[800px] lg:-mr-32 xl:-mr-48">
                   <SynchronisationAnimation />
+
+                  {/* iPhone Connection Bancaire en bas à gauche */}
+                  <div className="absolute -bottom-8 -left-10 xl:-left-15 w-[260px] xl:w-280px] z-50">
+                    <ConnectionBancaireIphone />
+                    {/* Gradient flou en bas de l'iPhone */}
+                    <div
+                      className="absolute bottom-0 left-0 right-0 h-40 pointer-events-none"
+                      style={{
+                        background:
+                          "linear-gradient(to top, #ffffff 0%, #ffffff 40%, transparent 100%)",
+                      }}
+                    />
+                  </div>
+
+                  {/* Gradient flou en bas du Mac */}
                   <div
-                    className="absolute bottom-0 left-0 right-0 h-16 lg:h-22 pointer-events-none"
+                    className="absolute bottom-0 left-0 right-0 h-22 pointer-events-none z-40"
                     style={{
                       background:
                         "linear-gradient(to top, #ffffff 0%, #ffffff 40%, transparent 100%)",

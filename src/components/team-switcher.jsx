@@ -18,6 +18,7 @@ import {
   Trash2,
   Archive,
   Building2,
+  Boxes,
   Store,
   Factory,
   Construction,
@@ -390,57 +391,22 @@ export function TeamSwitcher() {
               side={isMobile ? "bottom" : "right"}
               sideOffset={4}
             >
-              <DropdownMenuLabel className="text-muted-foreground text-xs flex items-center justify-between">
-                <span>Organisations</span>
-                <Badge
-                  variant="outline"
-                  className={`text-xs px-2 py-0.5 ${
-                    isActive()
-                      ? "bg-[#5b4fff]/10 text-[#5b4fff] border-[#5b4fff]/20"
-                      : "bg-gray-50 text-gray-600 border-gray-200"
-                  }`}
-                >
-                  <Crown className="w-3 h-3 mr-1" />
-                  {isActive() ? "Pro" : "Free"}
-                </Badge>
+              <DropdownMenuLabel className="text-muted-foreground text-xs">
+                Organisation active
               </DropdownMenuLabel>
-              <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragEnd={handleDragEnd}
-                onDragStart={handleDragStart}
-              >
-                <SortableContext
-                  items={sortedOrganizations.map((org) => org.id)}
-                  strategy={verticalListSortingStrategy}
-                >
-                  <div className="max-h-[180px] overflow-y-auto">
-                    {sortedOrganizations.map((org) => (
-                      <SortableOrganizationItem
-                        key={org.id}
-                        org={org}
-                        isActive={activeOrganization?.id === org.id}
-                        onSelect={handleSetActiveOrganization}
-                        disabled={isChangingOrg}
-                        onRename={(org) => {
-                          setSelectedOrganization(org);
-                          setRenameModalOpen(true);
-                        }}
-                        setSortedOrganizations={setSortedOrganizations}
-                        setInviteDialogOpen={setInviteDialogOpen}
-                        setSettingsModalOpen={setSettingsModalOpen}
-                      />
-                    ))}
-                  </div>
-                </SortableContext>
-              </DndContext>
+              <DropdownMenuItem className="gap-2 p-2">
+                <Boxes className="size-3 text-[#707070]" />
+                <span className="text-xs font-normal text-[#202020]">
+                  {currentOrganization.name}
+                </span>
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={() => setCreateWorkspaceOpen(true)}
                 className="gap-2 p-2 cursor-pointer text-[#5b4fff]"
               >
-                <Plus className="h-2 w-2 text-[#5b4fff]" />
-                <span className="text-xs text-[#5b4fff]">
+                <Plus className="h-2 w-2 text-[#202020]" />
+                <span className="text-xs text-[#202020]">
                   Ajouter un espace de travail
                 </span>
                 {!isActive() && (
@@ -691,7 +657,9 @@ function SortableOrganizationItem({
         </div>
 
         <div className="flex flex-col flex-1">
-          <span className="font-normal text-xs">{org.name}</span>
+          <span className="font-normal text-xs text-muted-foreground">
+            {org.name}
+          </span>
         </div>
 
         {/* Bouton 3 points */}

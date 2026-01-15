@@ -52,13 +52,13 @@ export function HeroSection() {
                 <div className="relative w-full lg:w-[700px] xl:w-[800px] lg:-mr-32 xl:-mr-48">
                   <GestionAchatsAnimation />
                   {/* Gradient flou en bas */}
-                  <div
+                  {/* <div
                     className="absolute bottom-0 left-0 right-0 h-22 pointer-events-none"
                     style={{
                       background:
                         "linear-gradient(to top, #ffffff 0%, #ffffff 40%, transparent 100%)",
                     }}
-                  />
+                  /> */}
                 </div>
               </div>
             </div>

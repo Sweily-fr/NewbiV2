@@ -88,11 +88,9 @@ export const auth = betterAuth({
               user.name || `Espace ${user.email.split("@")[0]}'s`;
             const organizationSlug = `org-${user.id.slice(-8)}`;
 
-            // Calculer les dates de trial (180 jours - 6 mois)
+            // Calculer les dates de trial (14 jours)
             const now = new Date();
-            const trialEnd = new Date(
-              now.getTime() + 180 * 24 * 60 * 60 * 1000
-            );
+            const trialEnd = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
 
             // Créer l'organisation avec onboardingCompleted: false
             // L'onboarding définira le type d'organisation (business ou accounting_firm)
@@ -253,7 +251,7 @@ export const auth = betterAuth({
 
   emailAndPassword: {
     enabled: true,
-    requireEmailVerification: true,
+    requireEmailVerification: false, // ✅ Désactivé pour permettre l'accès au dashboard sans validation email
     async signInRateLimit() {
       return {
         window: 60,
@@ -271,12 +269,9 @@ export const auth = betterAuth({
         );
       }
 
-      // Vérifier si l'email est vérifié (Better Auth gère cela automatiquement avec requireEmailVerification: true)
-      if (!user.emailVerified) {
-        throw new Error(
-          "Veuillez vérifier votre adresse email avant de vous connecter."
-        );
-      }
+      // ✅ Ne plus bloquer la connexion si l'email n'est pas vérifié
+      // L'utilisateur peut accéder au dashboard et vérifier son email plus tard
+      // Note: On peut ajouter un bandeau d'avertissement dans le dashboard si nécessaire
 
       return user;
     },

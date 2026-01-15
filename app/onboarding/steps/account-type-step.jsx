@@ -1,7 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { Button } from "@/src/components/ui/button";
-import { Lock } from "lucide-react";
+import { Lock, Loader2 } from "lucide-react";
 
 const accountTypes = [
   {
@@ -24,7 +25,10 @@ export default function AccountTypeStep({
   updateFormData,
   onNext,
   onSkip,
+  onNoCompany, // Nouvelle prop pour gérer "Je n'ai pas d'entreprise" avec redirection directe
 }) {
+  const [isProcessingNoCompany, setIsProcessingNoCompany] = useState(false);
+
   const handleSelectType = (typeId) => {
     updateFormData({
       accountType: typeId,
@@ -34,6 +38,24 @@ export default function AccountTypeStep({
     setTimeout(() => {
       onNext();
     }, 300);
+  };
+
+  // Gestion de "Je n'ai pas d'entreprise" - redirection directe vers le dashboard
+  const handleNoCompany = async () => {
+    setIsProcessingNoCompany(true);
+    updateFormData({
+      accountType: "business", // Type par défaut
+      hasNoCompany: true,
+    });
+
+    // Appeler la fonction de complétion directe si fournie
+    if (onNoCompany) {
+      await onNoCompany();
+    } else {
+      // Fallback vers onSkip si onNoCompany n'est pas fourni
+      await onSkip();
+    }
+    setIsProcessingNoCompany(false);
   };
 
   const selectedType = formData.accountType;
@@ -126,49 +148,62 @@ export default function AccountTypeStep({
         })}
       </div>
 
-      {/* Option "Je n'ai pas d'entreprise" */}
+      {/* Option "Je n'ai pas d'entreprise" - Redirection directe vers le dashboard */}
       <button
-        onClick={() => handleSelectType("no_company")}
+        onClick={handleNoCompany}
+        disabled={isProcessingNoCompany}
         className={`w-full p-4 rounded-xl border transition-all duration-200 flex items-center gap-4 ${
-          formData.hasNoCompany
-            ? "border-[#5A50FF] bg-[#5A50FF]/5"
-            : "border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 bg-white dark:bg-gray-950"
+          isProcessingNoCompany
+            ? "border-[#5A50FF] bg-[#5A50FF]/5 cursor-wait"
+            : formData.hasNoCompany
+              ? "border-[#5A50FF] bg-[#5A50FF]/5"
+              : "border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 bg-white dark:bg-gray-950"
         }`}
       >
         <div className="flex-shrink-0">
           <div
             className={`w-10 h-10 rounded-full flex items-center justify-center ${
-              formData.hasNoCompany
+              formData.hasNoCompany || isProcessingNoCompany
                 ? "bg-[#5A50FF] text-white"
                 : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"
             }`}
           >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-            </svg>
+            {isProcessingNoCompany ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+              </svg>
+            )}
           </div>
         </div>
         <div className="flex-1 text-left">
           <h3
             className={`text-sm font-medium ${
-              formData.hasNoCompany ? "text-[#5A50FF]" : "text-foreground"
+              formData.hasNoCompany || isProcessingNoCompany
+                ? "text-[#5A50FF]"
+                : "text-foreground"
             }`}
           >
-            Je n'ai pas d'entreprise
+            {isProcessingNoCompany
+              ? "Configuration en cours..."
+              : "Je n'ai pas d'entreprise"}
           </h3>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Continuer sans associer d'entreprise
+            {isProcessingNoCompany
+              ? "Redirection vers votre espace..."
+              : "Continuer sans associer d'entreprise"}
           </p>
         </div>
-        {formData.hasNoCompany && (
+        {(formData.hasNoCompany || isProcessingNoCompany) && (
           <div className="ml-auto w-2 h-2 rounded-full bg-[#5A50FF]" />
         )}
       </button>

@@ -79,9 +79,9 @@ export default function MembersTable({
     if (!orgLoading && organization) {
       loadData();
     } else if (!orgLoading && !organization) {
-      // Si pas d'organisation après le chargement, afficher un message d'erreur
-      console.error("Aucune organisation active trouvée");
-      toast.error("Aucune organisation active trouvée");
+      // Si pas d'organisation après le chargement, ne pas afficher d'erreur immédiatement
+      // L'organisation peut être en cours de création ou de définition
+      console.warn("⚠️ Organisation non disponible, en attente...");
       setLoading(false);
     }
   }, [refreshTrigger, orgLoading, organization]);

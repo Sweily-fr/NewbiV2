@@ -478,7 +478,7 @@ export function SettingsModal({
             {/* Desktop Layout */}
             <div className="flex h-full">
               {/* Sidebar Desktop */}
-              <div className="w-60 bg-gray-50 dark:bg-[#171717] overflow-y-auto">
+              <div className="w-60 bg-gray-50 dark:bg-[#171717] overflow-y-auto max-h-[92vh]">
                 <div className="p-4">
                   <h2 className="text-sm font-medium text-gray-500 mb-4">
                     Paramètres

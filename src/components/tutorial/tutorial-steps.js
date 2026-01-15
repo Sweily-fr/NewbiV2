@@ -35,15 +35,7 @@ export const tutorialSteps = [
     placement: "right",
     title: "Transactions",
   },
-  // Étape 5 : Carte Trial/Abonnement
-  {
-    target: '[data-tutorial="trial-card"]',
-    content:
-      "Suivez l'état de votre période d'essai ou de votre abonnement. Passez à Pro pour débloquer toutes les fonctionnalités !",
-    placement: "right",
-    title: "Votre abonnement",
-  },
-  // Étape 6 : Menu utilisateur
+  // Étape 5 : Menu utilisateur
   {
     target: '[data-tutorial="nav-user"]',
     content:

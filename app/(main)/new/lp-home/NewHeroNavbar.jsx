@@ -124,12 +124,12 @@ const menuItems = [
             icon: <Users size={18} />,
             href: "https://chat.whatsapp.com/FGLms8EYhpv1o5rkrnIldL",
           },
-          {
-            name: "Questions fréquentes",
-            description: "Tout ce que vous devez savoir avant de commencer",
-            icon: <HelpCircle size={18} />,
-            href: "/faq",
-          },
+          // {
+          //   name: "Questions fréquentes",
+          //   description: "Tout ce que vous devez savoir avant de commencer",
+          //   icon: <HelpCircle size={18} />,
+          //   href: "/faq",
+          // },
         ],
       },
       {
@@ -141,26 +141,26 @@ const menuItems = [
             icon: <Info size={18} />,
             href: "/qui-sommes-nous",
           },
-          {
-            name: "Pourquoi choisir Newbi",
-            description:
-              "Les avantages qui font vraiment la différence au quotidien.",
-            icon: <Award size={18} />,
-            href: "/pourquoi-newbi",
-          },
+          // {
+          //   name: "Pourquoi choisir Newbi",
+          //   description:
+          //     "Les avantages qui font vraiment la différence au quotidien.",
+          //   icon: <Award size={18} />,
+          //   href: "/pourquoi-newbi",
+          // },
           {
             name: "Apporteur d'affaire",
             description: "Devenez partenaire et gagnez des commissions",
             icon: <HandCoins size={18} />,
             href: "/apporteur-affaire",
           },
-          {
-            name: "Témoignages clients",
-            description:
-              "Découvrez comment nos clients améliorent leur crédibilité",
-            icon: <Quote size={18} />,
-            href: "/temoignages",
-          },
+          // {
+          //   name: "Témoignages clients",
+          //   description:
+          //     "Découvrez comment nos clients améliorent leur crédibilité",
+          //   icon: <Quote size={18} />,
+          //   href: "/temoignages",
+          // },
         ],
       },
     ],

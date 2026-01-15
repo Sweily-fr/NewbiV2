@@ -11,7 +11,7 @@ export function GestionAchatsAnimation() {
       style={{ background: "transparent" }}
     >
       <Image
-        src="/mockup-mac-hero-section.png"
+        src="/lp/achats/Illustration_ordi_tel.png"
         alt="Gestion des achats Dashboard"
         width={1200}
         height={700}

@@ -302,7 +302,7 @@ export function SubscriptionSection({
   // Récupérer le prix depuis Stripe (TTC)
   const getSubscriptionPrice = () => {
     const prices = {
-      freelance: 14.59,
+      freelance: 17.99,
       pme: 48.99,
       entreprise: 94.99,
       pro: 17.99, // Legacy
@@ -313,8 +313,8 @@ export function SubscriptionSection({
   const plans = [
     {
       name: "Freelance",
-      monthlyPrice: "14,59 €/mois",
-      annualPrice: "13,13 €/mois",
+      monthlyPrice: "17,99 €/mois",
+      annualPrice: "16,19 €/mois",
       annualTotal: "157,56 € TTC/an",
       description: "Parfait pour les indépendants et freelances",
       features: [

@@ -138,9 +138,9 @@ const ensureActiveOrganization = async () => {
           user.name || `Espace ${user.email.split("@")[0]}'s`;
         const organizationSlug = `org-${user.id.slice(-8)}`;
 
-        // Calculer les dates de trial (180 jours - 6 mois)
+        // Calculer les dates de trial (14 jours)
         const now = new Date();
-        const trialEnd = new Date(now.getTime() + 180 * 24 * 60 * 60 * 1000);
+        const trialEnd = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
 
         console.log(
           `🔄 Création organisation pour ${user.email} avec trial...`

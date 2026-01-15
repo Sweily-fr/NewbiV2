@@ -11,7 +11,7 @@ const Joyride = dynamic(() => import("react-joyride"), { ssr: false });
 // Styles personnalisés pour correspondre à la charte graphique Newbi
 const joyrideStyles = {
   options: {
-    arrowColor: "#ffffff",
+    arrowColor: "transparent",
     backgroundColor: "#ffffff",
     overlayColor: "rgba(0, 0, 0, 0.5)",
     primaryColor: "#5a54fa",

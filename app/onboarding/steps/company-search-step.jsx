@@ -76,26 +76,6 @@ export default function CompanySearchStep({
     });
   };
 
-  const handleNoCompany = () => {
-    setSelectedCompany(null);
-    updateFormData({
-      companyName: "",
-      siret: "",
-      siren: "",
-      legalForm: "",
-      addressStreet: "",
-      addressCity: "",
-      addressZipCode: "",
-      activitySector: "",
-      hasNoCompany: true,
-    });
-
-    // Passer automatiquement à l'étape suivante
-    setTimeout(() => {
-      onNext();
-    }, 300);
-  };
-
   const handleContinue = () => {
     onNext();
   };
@@ -206,49 +186,6 @@ export default function CompanySearchStep({
         </div>
       )}
 
-      {/* Option "Je n'ai pas d'entreprise" */}
-      <button
-        onClick={handleNoCompany}
-        className={`w-full p-4 rounded-xl border transition-all duration-200 text-left ${
-          formData.hasNoCompany
-            ? "border-[#5A50FF] bg-[#5A50FF]/5"
-            : "border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 bg-white dark:bg-gray-950"
-        }`}
-      >
-        <div className="flex items-center gap-3">
-          <div
-            className={`p-2 rounded-lg ${
-              formData.hasNoCompany
-                ? "bg-[#5A50FF]"
-                : "bg-gray-100 dark:bg-gray-900"
-            }`}
-          >
-            <Building2
-              className={`w-4 h-4 ${
-                formData.hasNoCompany
-                  ? "text-white"
-                  : "text-gray-600 dark:text-gray-400"
-              }`}
-            />
-          </div>
-          <div>
-            <h3
-              className={`text-sm font-medium ${
-                formData.hasNoCompany ? "text-[#5A50FF]" : "text-foreground"
-              }`}
-            >
-              Je n'ai pas d'entreprise
-            </h3>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Continuer sans associer d'entreprise
-            </p>
-          </div>
-          {formData.hasNoCompany && (
-            <div className="ml-auto w-2 h-2 rounded-full bg-[#5A50FF]" />
-          )}
-        </div>
-      </button>
-
       {/* Texte informatif */}
       <div className="text-center pt-2">
         <p className="text-xs text-muted-foreground">
@@ -275,10 +212,7 @@ export default function CompanySearchStep({
             Passer cette étape
           </Button>
         </div>
-        <Button
-          onClick={handleContinue}
-          disabled={!selectedCompany && !formData.hasNoCompany}
-        >
+        <Button onClick={handleContinue} disabled={!selectedCompany}>
           Continuer
         </Button>
       </div>

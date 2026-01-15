@@ -13,11 +13,15 @@ import { getAssetUrl } from "@/src/lib/image-utils";
 function OnboardingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { organization, updateOrganization } = useActiveOrganization();
+  const {
+    organization,
+    updateOrganization,
+    loading: orgLoading,
+  } = useActiveOrganization();
   const [currentStep, setCurrentStep] = useState(1);
   const [isChecking, setIsChecking] = useState(true);
 
-  // Vérifier si l'utilisateur a déjà complété l'onboarding
+  // Vérifier si l'utilisateur a déjà complété l'onboarding et s'assurer qu'une organisation active existe
   useEffect(() => {
     const checkOnboardingStatus = async () => {
       try {
@@ -30,6 +34,36 @@ function OnboardingContent() {
           );
           router.push("/dashboard");
           return;
+        }
+
+        // ✅ S'assurer qu'une organisation active est définie
+        const { data: activeOrg } = await authClient.organization.getActive();
+
+        if (!activeOrg) {
+          console.log(
+            "⚠️ [ONBOARDING] Aucune organisation active, tentative de définition..."
+          );
+
+          // Récupérer les organisations de l'utilisateur
+          const { data: organizations } = await authClient.organization.list();
+
+          if (organizations && organizations.length > 0) {
+            // Définir la première organisation comme active
+            await authClient.organization.setActive({
+              organizationId: organizations[0].id,
+            });
+            console.log(
+              `✅ [ONBOARDING] Organisation active définie: ${organizations[0].id}`
+            );
+          } else {
+            console.warn(
+              "⚠️ [ONBOARDING] Aucune organisation trouvée pour l'utilisateur"
+            );
+          }
+        } else {
+          console.log(
+            `✅ [ONBOARDING] Organisation active existante: ${activeOrg.id}`
+          );
         }
 
         setIsChecking(false);
@@ -632,6 +666,7 @@ function OnboardingContent() {
                 updateFormData={updateFormData}
                 onNext={handleNext}
                 onSkip={handleSkip}
+                onNoCompany={handleComplete}
               />
             )}
 
@@ -669,6 +704,7 @@ function OnboardingContent() {
               updateFormData={updateFormData}
               onNext={handleNext}
               onSkip={handleSkip}
+              onNoCompany={handleComplete}
             />
           )}
 
