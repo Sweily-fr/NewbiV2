@@ -76,7 +76,6 @@ const joyrideStyles = {
   },
   spotlight: {
     borderRadius: "0.5rem",
-    padding: 2,
   },
   beacon: {
     display: "none",
@@ -155,6 +154,7 @@ export function TutorialOverlay() {
       disableCloseOnEsc={false}
       scrollToFirstStep
       spotlightClicks={false}
+      spotlightPadding={10}
       callback={handleJoyrideCallback}
       styles={joyrideStyles}
       locale={locale}

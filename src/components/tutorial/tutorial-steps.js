@@ -11,12 +11,12 @@ export const tutorialSteps = [
     disableBeacon: true,
     title: "Bienvenue sur Newbi",
   },
-  // Étape 2 : Team Switcher (en haut de la sidebar)
+  // Étape 2 : Sélecteur d'espace (dans le header)
   {
-    target: '[data-tutorial="team-switcher"]',
+    target: '[data-tutorial="organization-switcher-header"]',
     content:
       "Ici, vous pouvez voir et changer d'espace de travail. Cliquez pour accéder à vos différentes organisations.",
-    placement: "right",
+    placement: "bottom",
     title: "Sélecteur d'espace",
   },
   // Étape 3 : Navigation principale - Dashboard

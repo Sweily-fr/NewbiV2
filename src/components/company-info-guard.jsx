@@ -131,7 +131,7 @@ export function CompanyInfoGuard({ children }) {
               </div>
             </AlertDialogHeader>
 
-            <div className="text-sm leading-relaxed space-y-6 text-muted-foreground">
+            <div className="space-y-4">
               {/* Callout d'information */}
               <Callout type="info" noMargin>
                 <p className="text-sm font-normal">
@@ -140,111 +140,80 @@ export function CompanyInfoGuard({ children }) {
                 </p>
               </Callout>
 
-              {/* Tableau des champs manquants */}
-              <div className="overflow-hidden">
-                <Table className="bg-background">
-                  <TableHeader>
-                    <TableRow className="border-y-0 *:border-border hover:bg-transparent [&>:not(:last-child)]:border-r">
-                      <TableCell className="w-48"></TableCell>
-                      <TableHead
-                        className="border-b border-border text-center font-medium text-foreground"
-                        colSpan={fieldsInfo.generalFields?.length || 0}
-                      >
-                        Informations générales
-                      </TableHead>
-                      <TableHead
-                        className="border-b border-border text-center font-medium text-foreground"
-                        colSpan={fieldsInfo.legalFields?.length || 0}
-                      >
-                        Informations légales
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableHeader>
-                    <TableRow className="*:border-border hover:bg-transparent [&>:not(:last-child)]:border-r">
-                      <TableCell></TableCell>
-                      {fieldsInfo.generalFields?.map((field, index) => (
-                        <TableHead
-                          key={`general-header-${index}`}
-                          className="h-auto rotate-180 text-xs py-3 text-foreground [writing-mode:vertical-lr]"
-                        >
-                          {field.name}
-                        </TableHead>
-                      ))}
-                      {fieldsInfo.legalFields?.map((field, index) => (
-                        <TableHead
-                          key={`legal-header-${index}`}
-                          className="h-auto rotate-180 text-xs py-3 text-foreground [writing-mode:vertical-lr]"
-                        >
-                          {field.name}
-                        </TableHead>
-                      ))}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    <TableRow className="*:border-border [&>:not(:last-child)]:border-r">
-                      <TableHead className="font-medium text-foreground">
-                        Statut
-                      </TableHead>
-                      {fieldsInfo.generalFields?.map((field, index) => (
-                        <TableCell
-                          key={`general-status-${index}`}
-                          className="text-center"
-                        >
-                          {field.completed ? (
-                            <>
-                              <Check
-                                className="inline-flex stroke-emerald-500"
-                                size={16}
-                                strokeWidth={2}
-                                aria-hidden="true"
-                              />
-                              <span className="sr-only">Complété</span>
-                            </>
-                          ) : (
-                            <>
-                              <X
-                                className="inline-flex stroke-red-500"
-                                size={16}
-                                strokeWidth={2}
-                                aria-hidden="true"
-                              />
-                              <span className="sr-only">Manquant</span>
-                            </>
-                          )}
-                        </TableCell>
-                      ))}
-                      {fieldsInfo.legalFields?.map((field, index) => (
-                        <TableCell
-                          key={`legal-status-${index}`}
-                          className="text-center"
-                        >
-                          {field.completed ? (
-                            <>
-                              <Check
-                                className="inline-flex stroke-emerald-500"
-                                size={16}
-                                strokeWidth={2}
-                                aria-hidden="true"
-                              />
-                              <span className="sr-only">Complété</span>
-                            </>
-                          ) : (
-                            <>
-                              <X
-                                className="inline-flex stroke-red-500"
-                                size={16}
-                                strokeWidth={2}
-                                aria-hidden="true"
-                              />
-                              <span className="sr-only">Manquant</span>
-                            </>
-                          )}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  </TableBody>
-                </Table>
+              {/* Section Informations générales */}
+              <div className="space-y-1">
+                <h3 className="text-xs font-medium text-muted-foreground px-1 mb-2">
+                  Informations générales
+                </h3>
+                <div className="space-y-0 border border-border/40 rounded-lg overflow-hidden">
+                  {fieldsInfo.generalFields?.map((field, index) => (
+                    <div
+                      key={`general-${index}`}
+                      className={`flex items-center justify-between px-4 py-3 hover:bg-accent/50 transition-colors ${
+                        index !== fieldsInfo.generalFields.length - 1
+                          ? "border-b border-border/40"
+                          : ""
+                      }`}
+                    >
+                      <span className="text-sm text-foreground">
+                        {field.name}
+                      </span>
+                      {field.completed ? (
+                        <Check
+                          className="stroke-emerald-500 shrink-0"
+                          size={16}
+                          strokeWidth={2}
+                          aria-hidden="true"
+                        />
+                      ) : (
+                        <X
+                          className="stroke-red-500 shrink-0"
+                          size={16}
+                          strokeWidth={2}
+                          aria-hidden="true"
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Section Informations légales */}
+              <div className="space-y-1">
+                <h3 className="text-xs font-medium text-muted-foreground px-1 mb-2">
+                  Informations légales
+                </h3>
+                <div className="space-y-0 border border-border/40 rounded-lg overflow-hidden">
+                  {fieldsInfo.legalFields?.map((field, index) => (
+                    <div
+                      key={`legal-${index}`}
+                      className={`flex items-center justify-between px-4 py-3 hover:bg-accent/50 transition-colors ${
+                        index !== fieldsInfo.legalFields.length - 1
+                          ? "border-b border-border/40"
+                          : ""
+                      }`}
+                    >
+                      <span className="text-sm text-foreground">
+                        {field.name}
+                      </span>
+                      {field.completed ? (
+                        <Check
+                          className="stroke-emerald-500 shrink-0"
+                          size={16}
+                          strokeWidth={2}
+                          aria-hidden="true"
+                        />
+                      ) : (
+                        <X
+                          className="stroke-red-500 shrink-0"
+                          size={16}
+                          strokeWidth={2}
+                          aria-hidden="true"
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
 

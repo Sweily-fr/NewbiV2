@@ -31,7 +31,7 @@ function SiteHeaderContent() {
 
   return (
     <header
-      className={`flex h-10 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear sticky top-0 z-50 w-full ${!isEmailVerified ? "bg-amber-500/10 dark:bg-amber-500/10" : "bg-background"}`}
+      className={`flex h-10 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear sticky top-0 z-30 w-full ${!isEmailVerified ? "bg-amber-500/10 dark:bg-amber-500/10" : "bg-background"}`}
     >
       <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
         <SidebarTrigger className="-ml-1" />
@@ -55,7 +55,7 @@ function SiteHeaderContent() {
 // Composant de fallback pour le loading
 function SiteHeaderFallback() {
   return (
-    <header className="flex h-10 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear sticky top-0 z-50 bg-background w-full">
+    <header className="flex h-10 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear sticky top-0 z-30 bg-background w-full">
       <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
         <SidebarTrigger className="-ml-1" />
         <Separator

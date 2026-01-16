@@ -235,7 +235,10 @@ export function OrganizationSwitcherHeader() {
   return (
     <>
       <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
-        <DropdownMenuTrigger asChild>
+        <DropdownMenuTrigger
+          asChild
+          data-tutorial="organization-switcher-header"
+        >
           <div className="flex items-center gap-2">
             {/* Nom de l'organisation */}
             <Boxes className="size-3 text-[#707070]" />

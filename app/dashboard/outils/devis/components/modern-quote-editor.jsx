@@ -176,7 +176,7 @@ export default function ModernQuoteEditor({
   };
 
   return (
-    <div className="fixed inset-0 flex flex-col overflow-hidden bg-background">
+    <div className="fixed inset-0 z-40 flex flex-col overflow-hidden bg-background">
       <div className="grid grid-cols-1 lg:grid-cols-[2fr_3fr] h-full">
         {/* Left Panel - Enhanced Form */}
         <div className="pl-4 pt-18 pr-2 pb-4 md:pl-6 md:pt-6 md:pr-6 flex flex-col h-full overflow-hidden">

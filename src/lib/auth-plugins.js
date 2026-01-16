@@ -1058,87 +1058,11 @@ export const stripePlugin = stripe({
 
         case "invoice.upcoming":
           // Facture à venir (7 jours avant le renouvellement)
-          const upcomingInvoice = event.data.object;
-
-          // Déduplication pour éviter les emails multiples
-          if (!global._processedStripeEvents) {
-            global._processedStripeEvents = new Set();
-          }
-
-          // Clé unique basée sur l'abonnement et la période (pour éviter les doublons sur retry)
-          const renewalKey = `renewal_${upcomingInvoice.subscription}_${upcomingInvoice.period_end}`;
-          if (global._processedStripeEvents.has(renewalKey)) {
-            console.log(
-              `⏭️ [STRIPE WEBHOOK] Email de rappel déjà envoyé pour ${renewalKey}, skip`
-            );
-            break;
-          }
-
-          // Marquer comme traité (expire après 24h)
-          global._processedStripeEvents.add(renewalKey);
-          setTimeout(
-            () => {
-              global._processedStripeEvents?.delete(renewalKey);
-            },
-            24 * 60 * 60 * 1000
-          ); // 24 heures
-
+          // ℹ️ Email de rappel de renouvellement DÉSACTIVÉ
+          // On ne garde que l'email de confirmation de paiement (invoice.paid)
           console.log(
-            `📅 [STRIPE WEBHOOK] Facture à venir pour ${upcomingInvoice.customer}`
+            `📅 [STRIPE WEBHOOK] Facture à venir - pas d'email de rappel envoyé (désactivé)`
           );
-
-          try {
-            const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
-            const customer = await stripe.customers.retrieve(
-              upcomingInvoice.customer
-            );
-
-            // Récupérer l'abonnement
-            const subscription = await stripe.subscriptions.retrieve(
-              upcomingInvoice.subscription
-            );
-
-            const { sendRenewalReminderEmail } = await import(
-              "./auth-utils.js"
-            );
-
-            const planName = subscription.metadata?.planName || "FREELANCE";
-            // Formater la date de renouvellement avec vérification
-            let renewalDate = "Date non disponible";
-            if (subscription.current_period_end) {
-              const renewalTimestamp = subscription.current_period_end * 1000;
-              if (!isNaN(renewalTimestamp) && renewalTimestamp > 0) {
-                renewalDate = new Date(renewalTimestamp).toLocaleDateString(
-                  "fr-FR",
-                  {
-                    day: "numeric",
-                    month: "long",
-                    year: "numeric",
-                  }
-                );
-              }
-            }
-
-            // Formater le montant
-            const amount = `${(upcomingInvoice.amount_due / 100).toFixed(2)}€`;
-
-            await sendRenewalReminderEmail({
-              to: customer.email,
-              customerName: customer.name || customer.email,
-              plan: planName.toUpperCase(),
-              renewalDate: renewalDate,
-              amount: amount,
-            });
-
-            console.log(
-              `✅ [STRIPE WEBHOOK] Email de rappel renouvellement envoyé à ${customer.email}`
-            );
-          } catch (emailError) {
-            console.error(
-              `⚠️ [STRIPE WEBHOOK] Erreur envoi email rappel:`,
-              emailError
-            );
-          }
           break;
 
         case "invoice.paid":

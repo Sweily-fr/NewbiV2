@@ -7,6 +7,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/src/components/ui/table";
+import BankingConnectButton from "@/src/components/banking/BankingConnectButton";
 
 export function MobileTable({ table, columns, error, loading, onRowClick }) {
   return (
@@ -68,8 +69,13 @@ export function MobileTable({ table, columns, error, loading, onRowClick }) {
             </TableRow>
           ) : (
             <TableRow>
-              <TableCell colSpan={columns.length} className="h-24 text-center">
-                Aucune transaction trouvée.
+              <TableCell colSpan={columns.length} className="h-32 text-center">
+                <div className="flex flex-col items-center gap-3">
+                  <p className="text-muted-foreground">
+                    Aucune transaction trouvée.
+                  </p>
+                  <BankingConnectButton />
+                </div>
               </TableCell>
             </TableRow>
           )}

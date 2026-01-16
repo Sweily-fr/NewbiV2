@@ -9,8 +9,15 @@ import {
   TableRow,
 } from "@/src/components/ui/table";
 import { cn } from "@/src/lib/utils";
+import BankingConnectButton from "@/src/components/banking/BankingConnectButton";
 
-export function DesktopTable({ table, columns, error, handleRefresh, onRowClick }) {
+export function DesktopTable({
+  table,
+  columns,
+  error,
+  handleRefresh,
+  onRowClick,
+}) {
   return (
     <div className="hidden md:block bg-background overflow-hidden rounded-md border">
       <Table className="table-fixed">
@@ -110,8 +117,13 @@ export function DesktopTable({ table, columns, error, handleRefresh, onRowClick 
             </TableRow>
           ) : (
             <TableRow>
-              <TableCell colSpan={columns.length} className="h-24 text-center">
-                Aucune transaction trouvée.
+              <TableCell colSpan={columns.length} className="h-32 text-center">
+                <div className="flex flex-col items-center gap-3">
+                  <p className="text-muted-foreground">
+                    Aucune transaction trouvée.
+                  </p>
+                  <BankingConnectButton />
+                </div>
               </TableCell>
             </TableRow>
           )}
