@@ -26,7 +26,7 @@ export default function ContentTab() {
         signatureData={signatureData}
         updateSignatureData={updateSignatureData}
       /> */}
-      <Separator />
+      {/* <Separator /> */}
 
       <StructureSection
         signatureData={signatureData}
@@ -883,4 +883,3 @@ export default function ContentTab() {
 
 //         </div>
 //       </div>
-

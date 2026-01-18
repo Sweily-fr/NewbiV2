@@ -19,11 +19,13 @@ import HorizontalSignature from "../components/preview/HorizontalSignature";
 import VerticalSignature from "../components/preview/VerticalSignature";
 import OrientationSelector from "../components/OrientationSelector";
 import { SignatureSidebar } from "@/src/components/signature-sidebar";
+import { SignatureToolbar } from "../components/SignatureToolbar";
 
 // Aperçu de l'email avec édition inline
 const EmailPreview = ({ signatureData, editingSignatureId, isEditMode }) => {
   const { updateSignatureData } = useSignatureData();
-  const { generateHTML: generateSignatureHTMLFromHook } = useSignatureGenerator();
+  const { generateHTML: generateSignatureHTMLFromHook } =
+    useSignatureGenerator();
   const { uploadImageFile } = useImageUpload();
   const [isCopying, setIsCopying] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
@@ -132,7 +134,7 @@ const EmailPreview = ({ signatureData, editingSignatureId, isEditMode }) => {
               clearTimeout(timeout);
               console.error(
                 "❌ Erreur chargement image pour compression:",
-                error
+                error,
               );
               reject(error);
             };
@@ -218,14 +220,14 @@ const EmailPreview = ({ signatureData, editingSignatureId, isEditMode }) => {
   //         `
   //             : ""
   //         }
-          
+
   //         <!-- Informations empilées verticalement à droite -->
   //         <td style="width: ${signatureData.columnWidths?.content || 75}%; vertical-align: top;">
   //           <!-- Nom et prénom -->
   //           <div style="font-size: ${signatureData.typography?.fullName?.fontSize || 16}px; font-weight: ${signatureData.typography?.fullName?.fontWeight || "bold"}; font-style: ${signatureData.typography?.fullName?.fontStyle || "normal"}; text-decoration: ${signatureData.typography?.fullName?.textDecoration || "none"}; color: ${signatureData.typography?.fullName?.color || primaryColor}; line-height: 1.2; margin-bottom: 2px; font-family: ${signatureData.typography?.fullName?.fontFamily || "Arial, sans-serif"};">
   //             ${signatureData.fullName || ""}
   //           </div>
-            
+
   //           <!-- Profession -->
   //           ${
   //             signatureData.position
@@ -236,7 +238,7 @@ const EmailPreview = ({ signatureData, editingSignatureId, isEditMode }) => {
   //           `
   //               : ""
   //           }
-            
+
   //           <!-- Contacts -->
   //           ${
   //             signatureData.phone
@@ -248,7 +250,7 @@ const EmailPreview = ({ signatureData, editingSignatureId, isEditMode }) => {
   //           `
   //               : ""
   //           }
-            
+
   //           ${
   //             signatureData.mobile
   //               ? `
@@ -259,7 +261,7 @@ const EmailPreview = ({ signatureData, editingSignatureId, isEditMode }) => {
   //           `
   //               : ""
   //           }
-            
+
   //           ${
   //             signatureData.email
   //               ? `
@@ -270,7 +272,7 @@ const EmailPreview = ({ signatureData, editingSignatureId, isEditMode }) => {
   //           `
   //               : ""
   //           }
-            
+
   //           ${
   //             signatureData.website
   //               ? `
@@ -281,7 +283,7 @@ const EmailPreview = ({ signatureData, editingSignatureId, isEditMode }) => {
   //           `
   //               : ""
   //           }
-            
+
   //           ${
   //             signatureData.address
   //               ? `
@@ -292,12 +294,12 @@ const EmailPreview = ({ signatureData, editingSignatureId, isEditMode }) => {
   //           `
   //               : ""
   //           }
-            
+
   //           <!-- Logo/Nom entreprise -->
   //           ${signatureData.companyName || logoSrc ? "" : ""}
   //         </td>
   //       </tr>
-        
+
   //       <!-- Séparateur horizontal -->
   //       ${
   //         signatureData.separators?.horizontal?.enabled
@@ -310,7 +312,7 @@ const EmailPreview = ({ signatureData, editingSignatureId, isEditMode }) => {
   //       `
   //           : ""
   //       }
-        
+
   //       <!-- Logo entreprise après le séparateur -->
   //       ${
   //         logoSrc
@@ -323,7 +325,7 @@ const EmailPreview = ({ signatureData, editingSignatureId, isEditMode }) => {
   //       `
   //           : ""
   //       }
-        
+
   //       <!-- Logos sociaux -->
   //       ${
   //         signatureData.socialLinks?.linkedin ||
@@ -448,692 +450,685 @@ const EmailPreview = ({ signatureData, editingSignatureId, isEditMode }) => {
   // `;
   // };
 
-//   const generateHorizontalHTML = (
-//   signatureData,
-//   primaryColor,
-//   facebookImageUrl = null,
-//   photoSrc,
-//   logoSrc
-// ) => {
-//   const facebookImgUrl = facebookImageUrl || "";
-//   const imageSize = signatureData.imageSize || 70;
-//   const borderRadius = signatureData.imageShape === "square" ? "8px" : "50%";
-//   const separatorHorizontalWidth =
-//     signatureData.separators?.horizontal?.width || 1;
-//   const separatorHorizontalColor =
-//     signatureData.separators?.horizontal?.color || "#e0e0e0";
-//   const spacings = signatureData.spacings || {};
-//   const logoSize = signatureData.logoSize || 60;
+  //   const generateHorizontalHTML = (
+  //   signatureData,
+  //   primaryColor,
+  //   facebookImageUrl = null,
+  //   photoSrc,
+  //   logoSrc
+  // ) => {
+  //   const facebookImgUrl = facebookImageUrl || "";
+  //   const imageSize = signatureData.imageSize || 70;
+  //   const borderRadius = signatureData.imageShape === "square" ? "8px" : "50%";
+  //   const separatorHorizontalWidth =
+  //     signatureData.separators?.horizontal?.width || 1;
+  //   const separatorHorizontalColor =
+  //     signatureData.separators?.horizontal?.color || "#e0e0e0";
+  //   const spacings = signatureData.spacings || {};
+  //   const logoSize = signatureData.logoSize || 60;
 
-//   const mainFontFamily =
-//     signatureData.typography?.baseFontFamily || "Arial, sans-serif";
+  //   const mainFontFamily =
+  //     signatureData.typography?.baseFontFamily || "Arial, sans-serif";
 
-//   // Petit helper pour une ligne "icône + texte" compatible email
-//   const renderIconRow = (iconUrl, alt, text, style = "") => {
-//     if (!text) return "";
-//     return `
-//       <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse; margin:0; padding:0;">
-//         <tr>
-//           <td style="padding:0; padding-right:8px; vertical-align:middle;">
-//             <img src="${iconUrl}" alt="${alt}" width="12" height="12" style="display:block; border:0;" />
-//           </td>
-//           <td style="padding:0; vertical-align:middle; font-size:12px; color:#666666; font-family:${mainFontFamily}; ${style}">
-//             ${text}
-//           </td>
-//         </tr>
-//       </table>
-//     `;
-//   };
+  //   // Petit helper pour une ligne "icône + texte" compatible email
+  //   const renderIconRow = (iconUrl, alt, text, style = "") => {
+  //     if (!text) return "";
+  //     return `
+  //       <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse; margin:0; padding:0;">
+  //         <tr>
+  //           <td style="padding:0; padding-right:8px; vertical-align:middle;">
+  //             <img src="${iconUrl}" alt="${alt}" width="12" height="12" style="display:block; border:0;" />
+  //           </td>
+  //           <td style="padding:0; vertical-align:middle; font-size:12px; color:#666666; font-family:${mainFontFamily}; ${style}">
+  //             ${text}
+  //           </td>
+  //         </tr>
+  //       </table>
+  //     `;
+  //   };
 
-//   // Typo helpers
-//   const fullNameStyle = `
-//     font-size:${signatureData.typography?.fullName?.fontSize || 16}px;
-//     font-weight:${signatureData.typography?.fullName?.fontWeight || "bold"};
-//     font-style:${signatureData.typography?.fullName?.fontStyle || "normal"};
-//     text-decoration:${signatureData.typography?.fullName?.textDecoration || "none"};
-//     color:${signatureData.typography?.fullName?.color || primaryColor};
-//     line-height:1.2;
-//     font-family:${signatureData.typography?.fullName?.fontFamily || mainFontFamily};
-//   `;
+  //   // Typo helpers
+  //   const fullNameStyle = `
+  //     font-size:${signatureData.typography?.fullName?.fontSize || 16}px;
+  //     font-weight:${signatureData.typography?.fullName?.fontWeight || "bold"};
+  //     font-style:${signatureData.typography?.fullName?.fontStyle || "normal"};
+  //     text-decoration:${signatureData.typography?.fullName?.textDecoration || "none"};
+  //     color:${signatureData.typography?.fullName?.color || primaryColor};
+  //     line-height:1.2;
+  //     font-family:${signatureData.typography?.fullName?.fontFamily || mainFontFamily};
+  //   `;
 
-//   const positionStyle = `
-//     font-size:${signatureData.typography?.position?.fontSize || 14}px;
-//     font-weight:${signatureData.typography?.position?.fontWeight || "normal"};
-//     font-style:${signatureData.typography?.position?.fontStyle || "normal"};
-//     text-decoration:${signatureData.typography?.position?.textDecoration || "none"};
-//     color:${signatureData.typography?.position?.color || "rgb(102,102,102)"};
-//     font-family:${signatureData.typography?.position?.fontFamily || mainFontFamily};
-//   `;
+  //   const positionStyle = `
+  //     font-size:${signatureData.typography?.position?.fontSize || 14}px;
+  //     font-weight:${signatureData.typography?.position?.fontWeight || "normal"};
+  //     font-style:${signatureData.typography?.position?.fontStyle || "normal"};
+  //     text-decoration:${signatureData.typography?.position?.textDecoration || "none"};
+  //     color:${signatureData.typography?.position?.color || "rgb(102,102,102)"};
+  //     font-family:${signatureData.typography?.position?.fontFamily || mainFontFamily};
+  //   `;
 
-//   const contactBaseStyle = (key) => `
-//     font-size:${signatureData.typography?.[key]?.fontSize || 12}px;
-//     font-weight:${signatureData.typography?.[key]?.fontWeight || "normal"};
-//     font-style:${signatureData.typography?.[key]?.fontStyle || "normal"};
-//     text-decoration:${signatureData.typography?.[key]?.textDecoration || "none"};
-//     color:${signatureData.typography?.[key]?.color || "rgb(102,102,102)"};
-//     font-family:${signatureData.typography?.[key]?.fontFamily || mainFontFamily};
-//   `;
+  //   const contactBaseStyle = (key) => `
+  //     font-size:${signatureData.typography?.[key]?.fontSize || 12}px;
+  //     font-weight:${signatureData.typography?.[key]?.fontWeight || "normal"};
+  //     font-style:${signatureData.typography?.[key]?.fontStyle || "normal"};
+  //     text-decoration:${signatureData.typography?.[key]?.textDecoration || "none"};
+  //     color:${signatureData.typography?.[key]?.color || "rgb(102,102,102)"};
+  //     font-family:${signatureData.typography?.[key]?.fontFamily || mainFontFamily};
+  //   `;
 
-//   return `
-// <table cellpadding="0" cellspacing="0" border="0" width="500" style="border-collapse:collapse; max-width:500px;">
-//   <tr>
-//     ${
-//       photoSrc
-//         ? `
-//     <!-- Colonne photo -->
-//     <td style="width:${signatureData.columnWidths?.photo || 25}%; padding-right:${spacings.photoRight || 16}px; vertical-align:top;">
-//       <img src="${photoSrc}"
-//            alt="${signatureData.fullName || "Photo"}"
-//            width="${imageSize}"
-//            height="${imageSize}"
-//            style="display:block; border-radius:${borderRadius}; border:0;" />
-//     </td>
-//     `
-//         : ""
-//     }
+  //   return `
+  // <table cellpadding="0" cellspacing="0" border="0" width="500" style="border-collapse:collapse; max-width:500px;">
+  //   <tr>
+  //     ${
+  //       photoSrc
+  //         ? `
+  //     <!-- Colonne photo -->
+  //     <td style="width:${signatureData.columnWidths?.photo || 25}%; padding-right:${spacings.photoRight || 16}px; vertical-align:top;">
+  //       <img src="${photoSrc}"
+  //            alt="${signatureData.fullName || "Photo"}"
+  //            width="${imageSize}"
+  //            height="${imageSize}"
+  //            style="display:block; border-radius:${borderRadius}; border:0;" />
+  //     </td>
+  //     `
+  //         : ""
+  //     }
 
-//     <!-- Colonne contenu -->
-//     <td style="width:${signatureData.columnWidths?.content || 75}%; vertical-align:top;">
+  //     <!-- Colonne contenu -->
+  //     <td style="width:${signatureData.columnWidths?.content || 75}%; vertical-align:top;">
 
-//       <!-- Nom -->
-//       ${
-//         signatureData.fullName
-//           ? `
-//       <div style="${fullNameStyle} margin:0; padding:0; margin-bottom:2px;">
-//         ${signatureData.fullName}
-//       </div>
-//       `
-//           : ""
-//       }
+  //       <!-- Nom -->
+  //       ${
+  //         signatureData.fullName
+  //           ? `
+  //       <div style="${fullNameStyle} margin:0; padding:0; margin-bottom:2px;">
+  //         ${signatureData.fullName}
+  //       </div>
+  //       `
+  //           : ""
+  //       }
 
-//       <!-- Poste -->
-//       ${
-//         signatureData.position
-//           ? `
-//       <div style="${positionStyle} margin:0; padding:0; margin-bottom:4px;">
-//         ${signatureData.position}
-//       </div>
-//       `
-//           : ""
-//       }
+  //       <!-- Poste -->
+  //       ${
+  //         signatureData.position
+  //           ? `
+  //       <div style="${positionStyle} margin:0; padding:0; margin-bottom:4px;">
+  //         ${signatureData.position}
+  //       </div>
+  //       `
+  //           : ""
+  //       }
 
-//       <!-- Coordonnées -->
-//       <div style="margin:0; padding:0;">
+  //       <!-- Coordonnées -->
+  //       <div style="margin:0; padding:0;">
 
-//         ${
-//           signatureData.phone
-//             ? renderIconRow(
-//                 "https://cdn-icons-png.flaticon.com/512/126/126509.png",
-//                 "Téléphone",
-//                 signatureData.phone,
-//                 contactBaseStyle("phone")
-//               )
-//             : ""
-//         }
+  //         ${
+  //           signatureData.phone
+  //             ? renderIconRow(
+  //                 "https://cdn-icons-png.flaticon.com/512/126/126509.png",
+  //                 "Téléphone",
+  //                 signatureData.phone,
+  //                 contactBaseStyle("phone")
+  //               )
+  //             : ""
+  //         }
 
-//         ${
-//           signatureData.mobile
-//             ? renderIconRow(
-//                 "https://cdn-icons-png.flaticon.com/512/597/597177.png",
-//                 "Mobile",
-//                 signatureData.mobile,
-//                 contactBaseStyle("mobile")
-//               )
-//             : ""
-//         }
+  //         ${
+  //           signatureData.mobile
+  //             ? renderIconRow(
+  //                 "https://cdn-icons-png.flaticon.com/512/597/597177.png",
+  //                 "Mobile",
+  //                 signatureData.mobile,
+  //                 contactBaseStyle("mobile")
+  //               )
+  //             : ""
+  //         }
 
-//         ${
-//           signatureData.email
-//             ? renderIconRow(
-//                 "https://cdn-icons-png.flaticon.com/512/561/561127.png",
-//                 "Email",
-//                 `<a href="mailto:${signatureData.email}" style="color:inherit; text-decoration:none;">${signatureData.email}</a>`,
-//                 contactBaseStyle("email")
-//               )
-//             : ""
-//         }
+  //         ${
+  //           signatureData.email
+  //             ? renderIconRow(
+  //                 "https://cdn-icons-png.flaticon.com/512/561/561127.png",
+  //                 "Email",
+  //                 `<a href="mailto:${signatureData.email}" style="color:inherit; text-decoration:none;">${signatureData.email}</a>`,
+  //                 contactBaseStyle("email")
+  //               )
+  //             : ""
+  //         }
 
-//         ${
-//           signatureData.website
-//             ? renderIconRow(
-//                 "https://cdn-icons-png.flaticon.com/512/535/535193.png",
-//                 "Site web",
-//                 `<a href="${signatureData.website}" style="color:${primaryColor}; text-decoration:none;" target="_blank" rel="noopener noreferrer">${signatureData.website}</a>`,
-//                 contactBaseStyle("website")
-//               )
-//             : ""
-//         }
+  //         ${
+  //           signatureData.website
+  //             ? renderIconRow(
+  //                 "https://cdn-icons-png.flaticon.com/512/535/535193.png",
+  //                 "Site web",
+  //                 `<a href="${signatureData.website}" style="color:${primaryColor}; text-decoration:none;" target="_blank" rel="noopener noreferrer">${signatureData.website}</a>`,
+  //                 contactBaseStyle("website")
+  //               )
+  //             : ""
+  //         }
 
-//         ${
-//           signatureData.address
-//             ? renderIconRow(
-//                 "https://cdn-icons-png.flaticon.com/512/684/684908.png",
-//                 "Adresse",
-//                 signatureData.address,
-//                 contactBaseStyle("address")
-//               )
-//             : ""
-//         }
+  //         ${
+  //           signatureData.address
+  //             ? renderIconRow(
+  //                 "https://cdn-icons-png.flaticon.com/512/684/684908.png",
+  //                 "Adresse",
+  //                 signatureData.address,
+  //                 contactBaseStyle("address")
+  //               )
+  //             : ""
+  //         }
 
-//       </div>
+  //       </div>
 
-//       <!-- Séparateur horizontal -->
-//       ${
-//         signatureData.separators?.horizontal?.enabled !== false
-//           ? `
-//       <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse; margin-top:${spacings.separatorTop || 8}px; margin-bottom:${spacings.separatorBottom || 8}px;">
-//         <tr>
-//           <td style="border-top:${separatorHorizontalWidth}px solid ${separatorHorizontalColor}; font-size:0; line-height:0;">
-//             &nbsp;
-//           </td>
-//         </tr>
-//       </table>
-//       `
-//           : ""
-//       }
+  //       <!-- Séparateur horizontal -->
+  //       ${
+  //         signatureData.separators?.horizontal?.enabled !== false
+  //           ? `
+  //       <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse; margin-top:${spacings.separatorTop || 8}px; margin-bottom:${spacings.separatorBottom || 8}px;">
+  //         <tr>
+  //           <td style="border-top:${separatorHorizontalWidth}px solid ${separatorHorizontalColor}; font-size:0; line-height:0;">
+  //             &nbsp;
+  //           </td>
+  //         </tr>
+  //       </table>
+  //       `
+  //           : ""
+  //       }
 
-//       <!-- Logo + réseaux sociaux -->
-//       <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
-//         <tr>
-//           ${
-//             logoSrc
-//               ? `
-//           <td style="padding:0; padding-right:${spacings.logoRight || 12}px; vertical-align:middle;">
-//             <img src="${logoSrc}" alt="Logo" width="${logoSize}" style="display:block; border:0; height:auto;" />
-//           </td>
-//           `
-//               : ""
-//           }
+  //       <!-- Logo + réseaux sociaux -->
+  //       <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
+  //         <tr>
+  //           ${
+  //             logoSrc
+  //               ? `
+  //           <td style="padding:0; padding-right:${spacings.logoRight || 12}px; vertical-align:middle;">
+  //             <img src="${logoSrc}" alt="Logo" width="${logoSize}" style="display:block; border:0; height:auto;" />
+  //           </td>
+  //           `
+  //               : ""
+  //           }
 
-//           ${
-//             signatureData.socialLinks
-//               ? `
-//           <td style="padding:0; vertical-align:middle;">
-//             <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
-//               <tr>
-//                 ${
-//                   signatureData.socialLinks.facebook
-//                     ? `
-//                 <td style="padding:0; padding-right:8px;">
-//                   <a href="${signatureData.socialLinks.facebook}" target="_blank" rel="noopener noreferrer">
-//                     ${
-//                       signatureData.socialBackground?.enabled
-//                         ? `
-//                     <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
-//                       <tr>
-//                         <td style="background-color:${
-//                           signatureData.socialBackground?.color || "#f3f4f6"
-//                         }; border-radius:${
-//                             signatureData.socialBackground?.shape === "round"
-//                               ? "50%"
-//                               : "4px"
-//                           }; padding:6px;">
-//                           <img src="${
-//                             facebookImgUrl ||
-//                             `https://img.icons8.com/color/${
-//                               signatureData.socialSize || 24
-//                             }/facebook.png`
-//                           }"
-//                                alt="Facebook"
-//                                width="${
-//                                  signatureData.socialSize || 24
-//                                }"
-//                                height="${
-//                                  signatureData.socialSize || 24
-//                                }"
-//                                style="display:block; border:0;" />
-//                         </td>
-//                       </tr>
-//                     </table>
-//                     `
-//                         : `
-//                     <img src="${
-//                       facebookImgUrl ||
-//                       `https://img.icons8.com/color/${
-//                         signatureData.socialSize || 24
-//                       }/facebook.png`
-//                     }"
-//                          alt="Facebook"
-//                          width="${signatureData.socialSize || 24}"
-//                          height="${signatureData.socialSize || 24}"
-//                          style="display:block; border:0;" />
-//                     `
-//                     }
-//                   </a>
-//                 </td>
-//                 `
-//                     : ""
-//                 }
+  //           ${
+  //             signatureData.socialLinks
+  //               ? `
+  //           <td style="padding:0; vertical-align:middle;">
+  //             <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
+  //               <tr>
+  //                 ${
+  //                   signatureData.socialLinks.facebook
+  //                     ? `
+  //                 <td style="padding:0; padding-right:8px;">
+  //                   <a href="${signatureData.socialLinks.facebook}" target="_blank" rel="noopener noreferrer">
+  //                     ${
+  //                       signatureData.socialBackground?.enabled
+  //                         ? `
+  //                     <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
+  //                       <tr>
+  //                         <td style="background-color:${
+  //                           signatureData.socialBackground?.color || "#f3f4f6"
+  //                         }; border-radius:${
+  //                             signatureData.socialBackground?.shape === "round"
+  //                               ? "50%"
+  //                               : "4px"
+  //                           }; padding:6px;">
+  //                           <img src="${
+  //                             facebookImgUrl ||
+  //                             `https://img.icons8.com/color/${
+  //                               signatureData.socialSize || 24
+  //                             }/facebook.png`
+  //                           }"
+  //                                alt="Facebook"
+  //                                width="${
+  //                                  signatureData.socialSize || 24
+  //                                }"
+  //                                height="${
+  //                                  signatureData.socialSize || 24
+  //                                }"
+  //                                style="display:block; border:0;" />
+  //                         </td>
+  //                       </tr>
+  //                     </table>
+  //                     `
+  //                         : `
+  //                     <img src="${
+  //                       facebookImgUrl ||
+  //                       `https://img.icons8.com/color/${
+  //                         signatureData.socialSize || 24
+  //                       }/facebook.png`
+  //                     }"
+  //                          alt="Facebook"
+  //                          width="${signatureData.socialSize || 24}"
+  //                          height="${signatureData.socialSize || 24}"
+  //                          style="display:block; border:0;" />
+  //                     `
+  //                     }
+  //                   </a>
+  //                 </td>
+  //                 `
+  //                     : ""
+  //                 }
 
-//                 ${
-//                   signatureData.socialLinks.twitter
-//                     ? `
-//                 <td style="padding:0; padding-right:8px;">
-//                   <a href="${signatureData.socialLinks.twitter}" target="_blank" rel="noopener noreferrer">
-//                     ${
-//                       signatureData.socialBackground?.enabled
-//                         ? `
-//                     <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
-//                       <tr>
-//                         <td style="background-color:${
-//                           signatureData.socialBackground?.color || "#f3f4f6"
-//                         }; border-radius:${
-//                             signatureData.socialBackground?.shape === "round"
-//                               ? "50%"
-//                               : "4px"
-//                           }; padding:6px;">
-//                           <img src="https://img.icons8.com/color/${
-//                             signatureData.socialSize || 24
-//                           }/x.png"
-//                                alt="X (Twitter)"
-//                                width="${
-//                                  signatureData.socialSize || 24
-//                                }"
-//                                height="${
-//                                  signatureData.socialSize || 24
-//                                }"
-//                                style="display:block; border:0;" />
-//                         </td>
-//                       </tr>
-//                     </table>
-//                     `
-//                         : `
-//                     <img src="https://img.icons8.com/color/${
-//                       signatureData.socialSize || 24
-//                     }/x.png"
-//                          alt="X (Twitter)"
-//                          width="${signatureData.socialSize || 24}"
-//                          height="${signatureData.socialSize || 24}"
-//                          style="display:block; border:0;" />
-//                     `
-//                     }
-//                   </a>
-//                 </td>
-//                 `
-//                     : ""
-//                 }
+  //                 ${
+  //                   signatureData.socialLinks.twitter
+  //                     ? `
+  //                 <td style="padding:0; padding-right:8px;">
+  //                   <a href="${signatureData.socialLinks.twitter}" target="_blank" rel="noopener noreferrer">
+  //                     ${
+  //                       signatureData.socialBackground?.enabled
+  //                         ? `
+  //                     <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
+  //                       <tr>
+  //                         <td style="background-color:${
+  //                           signatureData.socialBackground?.color || "#f3f4f6"
+  //                         }; border-radius:${
+  //                             signatureData.socialBackground?.shape === "round"
+  //                               ? "50%"
+  //                               : "4px"
+  //                           }; padding:6px;">
+  //                           <img src="https://img.icons8.com/color/${
+  //                             signatureData.socialSize || 24
+  //                           }/x.png"
+  //                                alt="X (Twitter)"
+  //                                width="${
+  //                                  signatureData.socialSize || 24
+  //                                }"
+  //                                height="${
+  //                                  signatureData.socialSize || 24
+  //                                }"
+  //                                style="display:block; border:0;" />
+  //                         </td>
+  //                       </tr>
+  //                     </table>
+  //                     `
+  //                         : `
+  //                     <img src="https://img.icons8.com/color/${
+  //                       signatureData.socialSize || 24
+  //                     }/x.png"
+  //                          alt="X (Twitter)"
+  //                          width="${signatureData.socialSize || 24}"
+  //                          height="${signatureData.socialSize || 24}"
+  //                          style="display:block; border:0;" />
+  //                     `
+  //                     }
+  //                   </a>
+  //                 </td>
+  //                 `
+  //                     : ""
+  //                 }
 
-//                 ${
-//                   signatureData.socialLinks.instagram
-//                     ? `
-//                 <td style="padding:0;">
-//                   <a href="${signatureData.socialLinks.instagram}" target="_blank" rel="noopener noreferrer">
-//                     ${
-//                       signatureData.socialBackground?.enabled
-//                         ? `
-//                     <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
-//                       <tr>
-//                         <td style="background-color:${
-//                           signatureData.socialBackground?.color || "#f3f4f6"
-//                         }; border-radius:${
-//                             signatureData.socialBackground?.shape === "round"
-//                               ? "50%"
-//                               : "4px"
-//                           }; padding:6px;">
-//                           <img src="https://img.icons8.com/fluency/${
-//                             signatureData.socialSize || 24
-//                           }/instagram-new.png"
-//                                alt="Instagram"
-//                                width="${
-//                                  signatureData.socialSize || 24
-//                                }"
-//                                height="${
-//                                  signatureData.socialSize || 24
-//                                }"
-//                                style="display:block; border:0;" />
-//                         </td>
-//                       </tr>
-//                     </table>
-//                     `
-//                         : `
-//                     <img src="https://img.icons8.com/fluency/${
-//                       signatureData.socialSize || 24
-//                     }/instagram-new.png"
-//                          alt="Instagram"
-//                          width="${signatureData.socialSize || 24}"
-//                          height="${signatureData.socialSize || 24}"
-//                          style="display:block; border:0;" />
-//                     `
-//                     }
-//                   </a>
-//                 </td>
-//                 `
-//                     : ""
-//                 }
-//               </tr>
-//             </table>
-//           </td>
-//           `
-//               : ""
-//           }
-//         </tr>
-//       </table>
+  //                 ${
+  //                   signatureData.socialLinks.instagram
+  //                     ? `
+  //                 <td style="padding:0;">
+  //                   <a href="${signatureData.socialLinks.instagram}" target="_blank" rel="noopener noreferrer">
+  //                     ${
+  //                       signatureData.socialBackground?.enabled
+  //                         ? `
+  //                     <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
+  //                       <tr>
+  //                         <td style="background-color:${
+  //                           signatureData.socialBackground?.color || "#f3f4f6"
+  //                         }; border-radius:${
+  //                             signatureData.socialBackground?.shape === "round"
+  //                               ? "50%"
+  //                               : "4px"
+  //                           }; padding:6px;">
+  //                           <img src="https://img.icons8.com/fluency/${
+  //                             signatureData.socialSize || 24
+  //                           }/instagram-new.png"
+  //                                alt="Instagram"
+  //                                width="${
+  //                                  signatureData.socialSize || 24
+  //                                }"
+  //                                height="${
+  //                                  signatureData.socialSize || 24
+  //                                }"
+  //                                style="display:block; border:0;" />
+  //                         </td>
+  //                       </tr>
+  //                     </table>
+  //                     `
+  //                         : `
+  //                     <img src="https://img.icons8.com/fluency/${
+  //                       signatureData.socialSize || 24
+  //                     }/instagram-new.png"
+  //                          alt="Instagram"
+  //                          width="${signatureData.socialSize || 24}"
+  //                          height="${signatureData.socialSize || 24}"
+  //                          style="display:block; border:0;" />
+  //                     `
+  //                     }
+  //                   </a>
+  //                 </td>
+  //                 `
+  //                     : ""
+  //                 }
+  //               </tr>
+  //             </table>
+  //           </td>
+  //           `
+  //               : ""
+  //           }
+  //         </tr>
+  //       </table>
 
-//     </td>
-//   </tr>
-// </table>
-//   `;
-// };
+  //     </td>
+  //   </tr>
+  // </table>
+  //   `;
+  // };
 
-// const generateHorizontalHTML = (
-//   signatureData,
-//   primaryColor,
-//   photoSrc,
-//   logoSrc
-// ) => {
-//   const imageSize = signatureData.imageSize || 70;
-//   const borderRadius = signatureData.imageShape === "square" ? "8px" : "50%";
-//   const mainFontFamily =
-//     signatureData.typography?.baseFontFamily || "Arial, sans-serif";
-//   const layoutWidth = signatureData.layoutWidth || 600;
+  // const generateHorizontalHTML = (
+  //   signatureData,
+  //   primaryColor,
+  //   photoSrc,
+  //   logoSrc
+  // ) => {
+  //   const imageSize = signatureData.imageSize || 70;
+  //   const borderRadius = signatureData.imageShape === "square" ? "8px" : "50%";
+  //   const mainFontFamily =
+  //     signatureData.typography?.baseFontFamily || "Arial, sans-serif";
+  //   const layoutWidth = signatureData.layoutWidth || 600;
 
-//   const fullName = signatureData.fullName || "";
-//   const position = signatureData.position || "";
+  //   const fullName = signatureData.fullName || "";
+  //   const position = signatureData.position || "";
 
-//   const phone = signatureData.phone || "";
-//   const mobile = signatureData.mobile || "";
-//   const email = signatureData.email || "";
-//   const website = signatureData.website || "";
-//   const address = signatureData.address || "";
+  //   const phone = signatureData.phone || "";
+  //   const mobile = signatureData.mobile || "";
+  //   const email = signatureData.email || "";
+  //   const website = signatureData.website || "";
+  //   const address = signatureData.address || "";
 
-//   const separatorColor =
-//     signatureData.separators?.horizontal?.color || "#ff2d54";
-//   const separatorWidth =
-//     signatureData.separators?.horizontal?.width || 1;
-//   const verticalSeparatorColor =
-//     signatureData.separators?.vertical?.color || primaryColor || "#604520";
+  //   const separatorColor =
+  //     signatureData.separators?.horizontal?.color || "#ff2d54";
+  //   const separatorWidth =
+  //     signatureData.separators?.horizontal?.width || 1;
+  //   const verticalSeparatorColor =
+  //     signatureData.separators?.vertical?.color || primaryColor || "#604520";
 
-//   // Icônes - tu peux les rendre configurables via signatureData.icons.*
-//   const icons = {
-//     phone:
-//       signatureData.icons?.phone ||
-//       "https://ton-cdn.com/icons/smartphone.png",
-//     mobile:
-//       signatureData.icons?.mobile ||
-//       "https://ton-cdn.com/icons/phone.png",
-//     email:
-//       signatureData.icons?.email ||
-//       "https://ton-cdn.com/icons/mail.png",
-//     website:
-//       signatureData.icons?.website ||
-//       "https://ton-cdn.com/icons/globe.png",
-//     address:
-//       signatureData.icons?.address ||
-//       "https://ton-cdn.com/icons/map-pin.png",
-//   };
+  //   // Icônes - tu peux les rendre configurables via signatureData.icons.*
+  //   const icons = {
+  //     phone:
+  //       signatureData.icons?.phone ||
+  //       "https://ton-cdn.com/icons/smartphone.png",
+  //     mobile:
+  //       signatureData.icons?.mobile ||
+  //       "https://ton-cdn.com/icons/phone.png",
+  //     email:
+  //       signatureData.icons?.email ||
+  //       "https://ton-cdn.com/icons/mail.png",
+  //     website:
+  //       signatureData.icons?.website ||
+  //       "https://ton-cdn.com/icons/globe.png",
+  //     address:
+  //       signatureData.icons?.address ||
+  //       "https://ton-cdn.com/icons/map-pin.png",
+  //   };
 
-//   const sanitizeTelHref = (num) =>
-//     num ? num.replace(/\s+/g, "") : "";
+  //   const sanitizeTelHref = (num) =>
+  //     num ? num.replace(/\s+/g, "") : "";
 
-//   const phoneHref = sanitizeTelHref(phone);
-//   const mobileHref = sanitizeTelHref(mobile);
+  //   const phoneHref = sanitizeTelHref(phone);
+  //   const mobileHref = sanitizeTelHref(mobile);
 
-//   const renderContactRow = (iconUrl, alt, contentHtml) => {
-//     if (!contentHtml) return "";
-//     return `
-//       <tr>
-//         <td colspan="2" style="padding-bottom:8px">
-//           <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse">
-//             <tbody>
-//               <tr>
-//                 <td style="padding-right:8px;vertical-align:middle">
-//                   <img src="${iconUrl}"
-//                        alt="${alt}"
-//                        width="16"
-//                        height="16"
-//                        style="width:16px;height:16px;display:block;border:0;">
-//                 </td>
-//                 <td style="font-size:12px;color:rgb(102,102,102);vertical-align:middle;font-family:${mainFontFamily}">
-//                   ${contentHtml}
-//                 </td>
-//               </tr>
-//             </tbody>
-//           </table>
-//         </td>
-//       </tr>
-//     `;
-//   };
+  //   const renderContactRow = (iconUrl, alt, contentHtml) => {
+  //     if (!contentHtml) return "";
+  //     return `
+  //       <tr>
+  //         <td colspan="2" style="padding-bottom:8px">
+  //           <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse">
+  //             <tbody>
+  //               <tr>
+  //                 <td style="padding-right:8px;vertical-align:middle">
+  //                   <img src="${iconUrl}"
+  //                        alt="${alt}"
+  //                        width="16"
+  //                        height="16"
+  //                        style="width:16px;height:16px;display:block;border:0;">
+  //                 </td>
+  //                 <td style="font-size:12px;color:rgb(102,102,102);vertical-align:middle;font-family:${mainFontFamily}">
+  //                   ${contentHtml}
+  //                 </td>
+  //               </tr>
+  //             </tbody>
+  //           </table>
+  //         </td>
+  //       </tr>
+  //     `;
+  //   };
 
-//   const phoneHtml =
-//     phone && phoneHref
-//       ? `<a href="tel:${phoneHref}" style="color:rgb(102,102,102);text-decoration:none;" target="_blank">${phone}</a>`
-//       : "";
+  //   const phoneHtml =
+  //     phone && phoneHref
+  //       ? `<a href="tel:${phoneHref}" style="color:rgb(102,102,102);text-decoration:none;" target="_blank">${phone}</a>`
+  //       : "";
 
-//   const mobileHtml =
-//     mobile && mobileHref
-//       ? `<a href="tel:${mobileHref}" style="color:rgb(102,102,102);text-decoration:none;" target="_blank">${mobile}</a>`
-//       : "";
+  //   const mobileHtml =
+  //     mobile && mobileHref
+  //       ? `<a href="tel:${mobileHref}" style="color:rgb(102,102,102);text-decoration:none;" target="_blank">${mobile}</a>`
+  //       : "";
 
-//   const emailHtml = email
-//     ? `<a href="mailto:${email}" style="color:rgb(102,102,102);text-decoration:none;" target="_blank">${email}</a>`
-//     : "";
+  //   const emailHtml = email
+  //     ? `<a href="mailto:${email}" style="color:rgb(102,102,102);text-decoration:none;" target="_blank">${email}</a>`
+  //     : "";
 
-//   const websiteHtml = website
-//     ? `<a href="${website}" style="color:rgb(102,102,102);text-decoration:none;" target="_blank">${website.replace(
-//         /^https?:\/\//,
-//         ""
-//       )}</a>`
-//     : "";
+  //   const websiteHtml = website
+  //     ? `<a href="${website}" style="color:rgb(102,102,102);text-decoration:none;" target="_blank">${website.replace(
+  //         /^https?:\/\//,
+  //         ""
+  //       )}</a>`
+  //     : "";
 
-//   const addressHtml = address || "";
+  //   const addressHtml = address || "";
 
-//   // Bloc photo + nom + poste
-//   const leftColumn = `
-//     <td style="vertical-align:top;padding-right:8px">
-//       <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;width:auto">
-//         <tbody>
+  //   // Bloc photo + nom + poste
+  //   const leftColumn = `
+  //     <td style="vertical-align:top;padding-right:8px">
+  //       <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;width:auto">
+  //         <tbody>
 
-//           ${
-//             photoSrc
-//               ? `
-//           <tr>
-//             <td style="padding-bottom:8px">
-//               <table cellpadding="0" cellspacing="0" border="0" style="margin:0;padding:0;border-collapse:collapse;">
-//                 <tbody>
-//                   <tr>
-//                     <td width="${imageSize}" height="${imageSize}" style="width:${imageSize}px;height:${imageSize}px;overflow:hidden;border-radius:${borderRadius};">
-//                       <img src="${photoSrc}"
-//                            alt="${fullName || "Photo de profil"}"
-//                            width="${imageSize}"
-//                            height="${imageSize}"
-//                            style="width:${imageSize}px;height:${imageSize}px;min-width:${imageSize}px;min-height:${imageSize}px;display:block;border:0;margin:0;padding:0;border-radius:${borderRadius};">
-//                     </td>
-//                   </tr>
-//                 </tbody>
-//               </table>
-//             </td>
-//           </tr>
-//           `
-//               : ""
-//           }
+  //           ${
+  //             photoSrc
+  //               ? `
+  //           <tr>
+  //             <td style="padding-bottom:8px">
+  //               <table cellpadding="0" cellspacing="0" border="0" style="margin:0;padding:0;border-collapse:collapse;">
+  //                 <tbody>
+  //                   <tr>
+  //                     <td width="${imageSize}" height="${imageSize}" style="width:${imageSize}px;height:${imageSize}px;overflow:hidden;border-radius:${borderRadius};">
+  //                       <img src="${photoSrc}"
+  //                            alt="${fullName || "Photo de profil"}"
+  //                            width="${imageSize}"
+  //                            height="${imageSize}"
+  //                            style="width:${imageSize}px;height:${imageSize}px;min-width:${imageSize}px;min-height:${imageSize}px;display:block;border:0;margin:0;padding:0;border-radius:${borderRadius};">
+  //                     </td>
+  //                   </tr>
+  //                 </tbody>
+  //               </table>
+  //             </td>
+  //           </tr>
+  //           `
+  //               : ""
+  //           }
 
-//           ${
-//             fullName
-//               ? `
-//           <tr>
-//             <td colspan="2" style="padding-bottom:8px">
-//               <div style="font-size:16px;color:rgb(23,23,23);line-height:1.2;font-family:${mainFontFamily}">
-//                 ${fullName}
-//               </div>
-//             </td>
-//           </tr>
-//           `
-//               : ""
-//           }
+  //           ${
+  //             fullName
+  //               ? `
+  //           <tr>
+  //             <td colspan="2" style="padding-bottom:8px">
+  //               <div style="font-size:16px;color:rgb(23,23,23);line-height:1.2;font-family:${mainFontFamily}">
+  //                 ${fullName}
+  //               </div>
+  //             </td>
+  //           </tr>
+  //           `
+  //               : ""
+  //           }
 
-//           ${
-//             position
-//               ? `
-//           <tr>
-//             <td colspan="2" style="padding-bottom:8px">
-//               <div style="font-size:14px;color:rgb(102,102,102);font-family:${mainFontFamily}">
-//                 ${position}
-//               </div>
-//             </td>
-//           </tr>
-//           `
-//               : ""
-//           }
+  //           ${
+  //             position
+  //               ? `
+  //           <tr>
+  //             <td colspan="2" style="padding-bottom:8px">
+  //               <div style="font-size:14px;color:rgb(102,102,102);font-family:${mainFontFamily}">
+  //                 ${position}
+  //               </div>
+  //             </td>
+  //           </tr>
+  //           `
+  //               : ""
+  //           }
 
-//         </tbody>
-//       </table>
-//     </td>
-//   `;
+  //         </tbody>
+  //       </table>
+  //     </td>
+  //   `;
 
-//   // Séparateur vertical
-//   const verticalSeparator = `
-//     <td style="width:8px">&nbsp;</td>
-//     <td style="width:1px;background-color:${verticalSeparatorColor};border-radius:0px;padding:0px;font-size:1px;line-height:1px;vertical-align:top;height:100%;min-height:200px">&nbsp;</td>
-//     <td style="width:8px">&nbsp;</td>
-//   `;
+  //   // Séparateur vertical
+  //   const verticalSeparator = `
+  //     <td style="width:8px">&nbsp;</td>
+  //     <td style="width:1px;background-color:${verticalSeparatorColor};border-radius:0px;padding:0px;font-size:1px;line-height:1px;vertical-align:top;height:100%;min-height:200px">&nbsp;</td>
+  //     <td style="width:8px">&nbsp;</td>
+  //   `;
 
-//   // Colonne droite : coordonnées
-//   const rightColumn = `
-//     <td style="vertical-align:top;padding-left:8px">
-//       <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;width:auto">
-//         <tbody>
-//           ${renderContactRow(icons.phone, "Téléphone", phoneHtml)}
-//           ${renderContactRow(icons.mobile, "Mobile", mobileHtml)}
-//           ${renderContactRow(icons.email, "Email", emailHtml)}
-//           ${renderContactRow(icons.website, "Site web", websiteHtml)}
+  //   // Colonne droite : coordonnées
+  //   const rightColumn = `
+  //     <td style="vertical-align:top;padding-left:8px">
+  //       <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;width:auto">
+  //         <tbody>
+  //           ${renderContactRow(icons.phone, "Téléphone", phoneHtml)}
+  //           ${renderContactRow(icons.mobile, "Mobile", mobileHtml)}
+  //           ${renderContactRow(icons.email, "Email", emailHtml)}
+  //           ${renderContactRow(icons.website, "Site web", websiteHtml)}
 
-//           ${
-//             addressHtml
-//               ? `
-//           <tr>
-//             <td colspan="2" style="padding-bottom:8px">
-//               <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse">
-//                 <tbody>
-//                   <tr>
-//                     <td style="padding-right:8px;vertical-align:top">
-//                       <img src="${icons.address}"
-//                            alt="Adresse"
-//                            width="16"
-//                            height="16"
-//                            style="width:16px;height:16px;display:block;margin-top:1px;border:0;">
-//                     </td>
-//                     <td style="font-size:12px;color:rgb(102,102,102);vertical-align:top;font-family:${mainFontFamily}">
-//                       ${addressHtml}
-//                     </td>
-//                   </tr>
-//                 </tbody>
-//               </table>
-//             </td>
-//           </tr>
-//           `
-//               : ""
-//           }
+  //           ${
+  //             addressHtml
+  //               ? `
+  //           <tr>
+  //             <td colspan="2" style="padding-bottom:8px">
+  //               <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse">
+  //                 <tbody>
+  //                   <tr>
+  //                     <td style="padding-right:8px;vertical-align:top">
+  //                       <img src="${icons.address}"
+  //                            alt="Adresse"
+  //                            width="16"
+  //                            height="16"
+  //                            style="width:16px;height:16px;display:block;margin-top:1px;border:0;">
+  //                     </td>
+  //                     <td style="font-size:12px;color:rgb(102,102,102);vertical-align:top;font-family:${mainFontFamily}">
+  //                       ${addressHtml}
+  //                     </td>
+  //                   </tr>
+  //                 </tbody>
+  //               </table>
+  //             </td>
+  //           </tr>
+  //           `
+  //               : ""
+  //           }
 
-//         </tbody>
-//       </table>
-//     </td>
-//   `;
+  //         </tbody>
+  //       </table>
+  //     </td>
+  //   `;
 
-//   // Séparateur horizontal + logo
-//   const bottomSeparatorAndLogo = `
-//     <tr>
-//       <td colspan="5" style="padding-top:8px;padding-bottom:8px">
-//         <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;width:100%">
-//           <tbody>
-//             <tr>
-//               <td style="border-top:${separatorWidth}px solid ${separatorColor};line-height:1px;font-size:1px">&nbsp;</td>
-//             </tr>
-//           </tbody>
-//         </table>
-//       </td>
-//     </tr>
+  //   // Séparateur horizontal + logo
+  //   const bottomSeparatorAndLogo = `
+  //     <tr>
+  //       <td colspan="5" style="padding-top:8px;padding-bottom:8px">
+  //         <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;width:100%">
+  //           <tbody>
+  //             <tr>
+  //               <td style="border-top:${separatorWidth}px solid ${separatorColor};line-height:1px;font-size:1px">&nbsp;</td>
+  //             </tr>
+  //           </tbody>
+  //         </table>
+  //       </td>
+  //     </tr>
 
-//     ${
-//       logoSrc
-//         ? `
-//     <tr>
-//       <td colspan="5" style="padding:8px 0px 0px">
-//         <img src="${logoSrc}"
-//              alt="${signatureData.companyName || "Logo entreprise"}"
-//              style="width:${signatureData.logoSize || 60}px;height:auto;max-height:${signatureData.logoSize || 60}px;display:block;margin:0;padding:0;font-size:0;line-height:0;border:0;">
-//       </td>
-//     </tr>
-//     `
-//         : ""
-//     }
-//   `;
+  //     ${
+  //       logoSrc
+  //         ? `
+  //     <tr>
+  //       <td colspan="5" style="padding:8px 0px 0px">
+  //         <img src="${logoSrc}"
+  //              alt="${signatureData.companyName || "Logo entreprise"}"
+  //              style="width:${signatureData.logoSize || 60}px;height:auto;max-height:${signatureData.logoSize || 60}px;display:block;margin:0;padding:0;font-size:0;line-height:0;border:0;">
+  //       </td>
+  //     </tr>
+  //     `
+  //         : ""
+  //     }
+  //   `;
 
-//   // Table principale (fragment uniquement, pas de <html>, <body>, etc.)
-//   return `
-// <table cellpadding="0" cellspacing="0" border="0" width="${layoutWidth}" style="border-collapse:collapse;max-width:${layoutWidth}px;font-family:${mainFontFamily}">
-//   <tbody>
-//     <tr>
-//       ${leftColumn}
-//       ${verticalSeparator}
-//       ${rightColumn}
-//     </tr>
-//     ${bottomSeparatorAndLogo}
-//   </tbody>
-// </table>
-//   `.trim();
-// };
+  //   // Table principale (fragment uniquement, pas de <html>, <body>, etc.)
+  //   return `
+  // <table cellpadding="0" cellspacing="0" border="0" width="${layoutWidth}" style="border-collapse:collapse;max-width:${layoutWidth}px;font-family:${mainFontFamily}">
+  //   <tbody>
+  //     <tr>
+  //       ${leftColumn}
+  //       ${verticalSeparator}
+  //       ${rightColumn}
+  //     </tr>
+  //     ${bottomSeparatorAndLogo}
+  //   </tbody>
+  // </table>
+  //   `.trim();
+  // };
 
-const generateHorizontalHTML = (
-  signatureData,
-  primaryColor,
-  photoSrc,
-  logoSrc
-) => {
-  const imageSize = signatureData.imageSize || 70;
-  const borderRadius = signatureData.imageShape === "square" ? "8px" : "50%";
-  const mainFontFamily =
-    signatureData.typography?.baseFontFamily || "Arial, sans-serif";
-  const layoutWidth = signatureData.layoutWidth || 600;
+  const generateHorizontalHTML = (
+    signatureData,
+    primaryColor,
+    photoSrc,
+    logoSrc,
+  ) => {
+    const imageSize = signatureData.imageSize || 70;
+    const borderRadius = signatureData.imageShape === "square" ? "8px" : "50%";
+    const mainFontFamily =
+      signatureData.typography?.baseFontFamily || "Arial, sans-serif";
+    const layoutWidth = signatureData.layoutWidth || 600;
 
-  const fullName = signatureData.fullName || "";
-  const position = signatureData.position || "";
+    const fullName = signatureData.fullName || "";
+    const position = signatureData.position || "";
 
-  const phone = signatureData.phone || "";
-  const mobile = signatureData.mobile || "";
-  const email = signatureData.email || "";
-  const website = signatureData.website || "";
-  const address = signatureData.address || "";
+    const phone = signatureData.phone || "";
+    const mobile = signatureData.mobile || "";
+    const email = signatureData.email || "";
+    const website = signatureData.website || "";
+    const address = signatureData.address || "";
 
-  const separatorColor =
-    signatureData.separators?.horizontal?.color || "#ff2d54";
-  const separatorWidth =
-    signatureData.separators?.horizontal?.width || 1;
-  const verticalSeparatorColor =
-    signatureData.separators?.vertical?.color || primaryColor || "#604520";
+    const separatorColor =
+      signatureData.separators?.horizontal?.color || "#ff2d54";
+    const separatorWidth = signatureData.separators?.horizontal?.width || 1;
+    const verticalSeparatorColor =
+      signatureData.separators?.vertical?.color || primaryColor || "#604520";
 
-  // Couleur de texte par défaut (configurable si tu veux plus tard)
-  const baseTextColor = signatureData.colors?.text || "#444444";
-  const nameColor = signatureData.colors?.name || "#171717";
-  const roleColor = signatureData.colors?.role || baseTextColor;
+    // Couleur de texte par défaut (configurable si tu veux plus tard)
+    const baseTextColor = signatureData.colors?.text || "#444444";
+    const nameColor = signatureData.colors?.name || "#171717";
+    const roleColor = signatureData.colors?.role || baseTextColor;
 
-  // Icônes
-  const icons = {
-    phone:
-      signatureData.icons?.phone ||
-      "https://ton-cdn.com/icons/smartphone.png",
-    mobile:
-      signatureData.icons?.mobile ||
-      "https://ton-cdn.com/icons/phone.png",
-    email:
-      signatureData.icons?.email ||
-      "https://ton-cdn.com/icons/mail.png",
-    website:
-      signatureData.icons?.website ||
-      "https://ton-cdn.com/icons/globe.png",
-    address:
-      signatureData.icons?.address ||
-      "https://ton-cdn.com/icons/map-pin.png",
-  };
+    // Icônes
+    const icons = {
+      phone:
+        signatureData.icons?.phone ||
+        "https://ton-cdn.com/icons/smartphone.png",
+      mobile:
+        signatureData.icons?.mobile || "https://ton-cdn.com/icons/phone.png",
+      email: signatureData.icons?.email || "https://ton-cdn.com/icons/mail.png",
+      website:
+        signatureData.icons?.website || "https://ton-cdn.com/icons/globe.png",
+      address:
+        signatureData.icons?.address || "https://ton-cdn.com/icons/map-pin.png",
+    };
 
-  const sanitizeTelHref = (num) =>
-    num ? num.replace(/\s+/g, "") : "";
+    const sanitizeTelHref = (num) => (num ? num.replace(/\s+/g, "") : "");
 
-  const phoneHref = sanitizeTelHref(phone);
-  const mobileHref = sanitizeTelHref(mobile);
+    const phoneHref = sanitizeTelHref(phone);
+    const mobileHref = sanitizeTelHref(mobile);
 
-  const renderContactRow = (iconUrl, alt, contentHtml) => {
-    if (!contentHtml) return "";
-    return `
+    const renderContactRow = (iconUrl, alt, contentHtml) => {
+      if (!contentHtml) return "";
+      return `
       <tr>
         <td colspan="2" style="padding-bottom:8px">
           <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse">
@@ -1155,35 +1150,35 @@ const generateHorizontalHTML = (
         </td>
       </tr>
     `;
-  };
+    };
 
-  const linkColor = baseTextColor;
+    const linkColor = baseTextColor;
 
-  const phoneHtml =
-    phone && phoneHref
-      ? `<a href="tel:${phoneHref}" style="color:${linkColor};text-decoration:none;" target="_blank">${phone}</a>`
+    const phoneHtml =
+      phone && phoneHref
+        ? `<a href="tel:${phoneHref}" style="color:${linkColor};text-decoration:none;" target="_blank">${phone}</a>`
+        : "";
+
+    const mobileHtml =
+      mobile && mobileHref
+        ? `<a href="tel:${mobileHref}" style="color:${linkColor};text-decoration:none;" target="_blank">${mobile}</a>`
+        : "";
+
+    const emailHtml = email
+      ? `<a href="mailto:${email}" style="color:${linkColor};text-decoration:none;" target="_blank">${email}</a>`
       : "";
 
-  const mobileHtml =
-    mobile && mobileHref
-      ? `<a href="tel:${mobileHref}" style="color:${linkColor};text-decoration:none;" target="_blank">${mobile}</a>`
+    const websiteHtml = website
+      ? `<a href="${website}" style="color:${linkColor};text-decoration:none;" target="_blank">${website.replace(
+          /^https?:\/\//,
+          "",
+        )}</a>`
       : "";
 
-  const emailHtml = email
-    ? `<a href="mailto:${email}" style="color:${linkColor};text-decoration:none;" target="_blank">${email}</a>`
-    : "";
+    const addressHtml = address || "";
 
-  const websiteHtml = website
-    ? `<a href="${website}" style="color:${linkColor};text-decoration:none;" target="_blank">${website.replace(
-        /^https?:\/\//,
-        ""
-      )}</a>`
-    : "";
-
-  const addressHtml = address || "";
-
-  // Bloc photo + nom + poste
-  const leftColumn = `
+    // Bloc photo + nom + poste
+    const leftColumn = `
     <td style="padding-right:8px">
       <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;width:auto">
         <tbody>
@@ -1245,8 +1240,8 @@ const generateHorizontalHTML = (
     </td>
   `;
 
-  // Séparateur vertical
-  const verticalSeparator = `
+    // Séparateur vertical
+    const verticalSeparator = `
     <td style="width:8px">&nbsp;</td>
     <td style="width:1px;background-color:${verticalSeparatorColor};border-radius:0px;padding:0px;font-size:1px;line-height:1px;vertical-align:top;height:100%;min-height:200px">
       &nbsp;
@@ -1254,8 +1249,8 @@ const generateHorizontalHTML = (
     <td style="width:8px">&nbsp;</td>
   `;
 
-  // Colonne droite : coordonnées
-  const rightColumn = `
+    // Colonne droite : coordonnées
+    const rightColumn = `
     <td style="vertical-align:top;padding-left:8px">
       <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;width:auto">
         <tbody>
@@ -1296,8 +1291,8 @@ const generateHorizontalHTML = (
     </td>
   `;
 
-  // Séparateur horizontal + logo
-  const bottomSeparatorAndLogo = `
+    // Séparateur horizontal + logo
+    const bottomSeparatorAndLogo = `
     <tr>
       <td colspan="5" style="padding-top:8px;padding-bottom:8px">
         <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;width:100%">
@@ -1327,8 +1322,8 @@ const generateHorizontalHTML = (
     }
   `;
 
-  // Table principale : carte blanche, couleurs inchangées quel que soit le thème
-  return `
+    // Table principale : carte blanche, couleurs inchangées quel que soit le thème
+    return `
 <table cellpadding="0" cellspacing="0" border="0"
        width="${layoutWidth}" bgcolor="#ffffff"
        style="border-collapse:collapse;max-width:${layoutWidth}px;font-family:${mainFontFamily};background-color:#ffffff;border:1px solid #e0e0e0;">
@@ -1342,11 +1337,7 @@ const generateHorizontalHTML = (
   </tbody>
 </table>
   `.trim();
-};
-
-
-
-
+  };
 
   // Fonction pour copier la signature dans le presse-papier
   const handleCopySignature = async () => {
@@ -1355,7 +1346,7 @@ const generateHorizontalHTML = (
     try {
       // Générer le HTML optimisé pour Gmail (même générateur que la preview)
       const html = generateSignatureHTMLFromHook();
-      
+
       // Copier dans le presse-papiers
       await navigator.clipboard.write([
         new ClipboardItem({
@@ -1446,7 +1437,10 @@ const generateHorizontalHTML = (
   };
 
   return (
-    <div className="rounded-lg border w-full">
+    <div
+      className="rounded-2xl border w-[70%] overflow-hidden"
+      data-signature-preview
+    >
       <div className="bg-[#171717] text-white px-4 py-2 rounded-t-lg flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="flex gap-1">
@@ -1456,17 +1450,21 @@ const generateHorizontalHTML = (
           </div>
           <span className="text-sm">Nouveau message</span>
           {isEditMode && (
-            <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+            <Badge
+              variant="secondary"
+              className="text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+            >
               Modification
             </Badge>
           )}
         </div>
-        <Button
+        {/* <Button
           size="sm"
           variant="secondary"
           onClick={handleCopySignature}
           disabled={isCopying}
           className="text-xs font-normal cursor-pointer"
+          title="Copier la signature"
         >
           {isCopied ? (
             <Check className="w-3 h-3 mr-1 text-green-600" />
@@ -1478,11 +1476,11 @@ const generateHorizontalHTML = (
             : isCopied
               ? "Copiée !"
               : "Copier la signature"}
-        </Button>
+        </Button> */}
       </div>
 
-      <div className="p-4 space-y-3 text-sm dark:bg-white">
-        <div className="flex items-center gap-2">
+      <div className="p-4 space-y-3 text-sm bg-[#FAFAFA] dark:bg-white">
+        {/* <div className="flex items-center gap-2">
           <span className="text-xs dark:text-black">De :</span>
           <span className="text-xs dark:text-black">
             {signatureData.email || "newbi@contact.fr"}
@@ -1497,9 +1495,9 @@ const generateHorizontalHTML = (
           <span className="text-xs dark:text-black">
             Votre demande de renseignements
           </span>
-        </div>
+        </div> */}
 
-        <div className="border-t pt-4 mt-4 flex justify-start">
+        <div className="pt-4 mt-4 flex justify-start">
           {/* Signature dynamique selon l'orientation */}
           {(() => {
             const templateProps = {
@@ -1808,23 +1806,44 @@ export default function NewSignaturePage() {
     );
   }
 
+  // Handler pour copier depuis la toolbar
+  const handleCopyFromToolbar = async () => {
+    // Utiliser la même logique que le bouton de copie dans EmailPreview
+    const emailPreviewElement = document.querySelector(
+      "[data-signature-preview]",
+    );
+    if (emailPreviewElement) {
+      const copyButton = emailPreviewElement.querySelector(
+        'button[title="Copier la signature"]',
+      );
+      if (copyButton) {
+        copyButton.click();
+      }
+    }
+  };
+
   return (
-    <div className="flex gap-0 w-full h-[calc(100vh-64px)] overflow-hidden">
-      <div className="flex-1 p-6 flex items-center justify-center overflow-hidden">
+    <div className="flex gap-0 w-full h-[calc(100vh-64px)] overflow-hidden bg-white dark:bg-neutral-950 bg-[radial-gradient(circle,#d1d5db_1px,transparent_1px)] dark:bg-[radial-gradient(circle,#404040_1px,transparent_1px)] bg-[size:20px_20px]">
+      <div className="relative flex-1 p-6 flex items-center justify-center overflow-hidden">
         <EmailPreview
           signatureData={signatureData}
           editingSignatureId={editingSignatureId}
           isEditMode={isEditMode}
         />
+
+        {/* Barre d'outils flottante */}
+        <SignatureToolbar onCopy={handleCopyFromToolbar} isCopying={false} />
       </div>
-      {(orientationChosen || isEditMode) && (
+      {/* Ancienne sidebar - Désormais remplacée par SignatureSidebarRight dans le layout principal */}
+      {/* À supprimer plus tard une fois que la nouvelle sidebar est validée */}
+      {/* {(orientationChosen || isEditMode) && (
         <SignatureSidebar
           key={editingSignatureId || "new-signature"}
           signatureData={signatureData}
           updateSignatureData={updateSignatureData}
           editingSignatureId={editingSignatureId}
         />
-      )}
+      )} */}
     </div>
   );
 }

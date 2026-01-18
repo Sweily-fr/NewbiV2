@@ -4,7 +4,12 @@ import React from "react";
 import { Label } from "@/src/components/ui/label";
 import { Slider } from "@/src/components/ui/slider";
 import { Input } from "@/src/components/ui/input";
-import { Switch } from "@/src/components/ui/switch";
+import { RotateCcw, Plus, X } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/src/components/ui/popover";
 import DetailedPaddingSection from "./DetailedPaddingSection";
 
 export default function SpacingSection({ signatureData, updateSignatureData }) {
@@ -13,7 +18,7 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
     if (checked) {
       // Toujours réinitialiser les paddings avec la valeur actuelle de globalSpacing
       const globalSpacing = signatureData.spacings?.global || 8;
-      
+
       const defaultPaddings = {
         photo: { top: 0, right: 0, bottom: globalSpacing, left: 0 },
         name: { top: 0, right: 0, bottom: globalSpacing, left: 0 },
@@ -24,12 +29,17 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
         email: { top: 0, right: 0, bottom: globalSpacing, left: 0 },
         website: { top: 0, right: 0, bottom: globalSpacing, left: 0 },
         address: { top: 0, right: 0, bottom: globalSpacing, left: 0 },
-        separatorHorizontal: { top: globalSpacing, right: 0, bottom: globalSpacing, left: 0 },
+        separatorHorizontal: {
+          top: globalSpacing,
+          right: 0,
+          bottom: globalSpacing,
+          left: 0,
+        },
         separatorVertical: { top: 0, right: 4, bottom: 0, left: 4 },
         logo: { top: globalSpacing, right: 0, bottom: 0, left: 0 },
         social: { top: globalSpacing, right: 0, bottom: 0, left: 0 },
       };
-      
+
       // Initialiser les paddings d'abord
       updateSignatureData("paddings", defaultPaddings);
       // Puis activer le mode détaillé
@@ -92,42 +102,67 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
     }
   };
 
+  const [isAdvancedOpen, setIsAdvancedOpen] = React.useState(false);
+
+  // Gérer l'ouverture/fermeture du Popover et activer/désactiver le mode détaillé
+  const handlePopoverChange = (open) => {
+    setIsAdvancedOpen(open);
+    if (open) {
+      // Activer le mode détaillé quand on ouvre le Popover
+      handleDetailedSpacingToggle(true);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-medium">Espacements</h2>
-        <div className="flex items-center gap-2">
-          <Label className="text-xs text-muted-foreground cursor-pointer">Mode avancé</Label>
-          <div className="relative inline-flex items-center">
-            <Switch
-              className="ml-2 flex-shrink-0 scale-75 data-[state=checked]:!bg-[#5b4eff] cursor-pointer"
-              checked={signatureData.detailedSpacing || false}
-              onCheckedChange={handleDetailedSpacingToggle}
-            />
-          </div>
-        </div>
+        <Popover open={isAdvancedOpen} onOpenChange={handlePopoverChange}>
+          <PopoverTrigger asChild>
+            <button
+              className="h-6 w-6 flex items-center justify-center rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              title="Mode avancé"
+            >
+              <Plus className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent
+            className="w-72 p-0 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-lg"
+            side="left"
+            align="start"
+            sideOffset={300}
+          >
+            <div className="flex items-center justify-between px-3 py-2 border-b border-gray-100 dark:border-gray-800">
+              <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                Mode avancé
+              </span>
+              <button
+                onClick={() => setIsAdvancedOpen(false)}
+                className="h-5 w-5 flex items-center justify-center rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              >
+                <X className="w-3 h-3 text-gray-400" />
+              </button>
+            </div>
+            <div className="p-4 max-h-96 overflow-y-auto">
+              <DetailedPaddingSection
+                signatureData={signatureData}
+                updateSignatureData={updateSignatureData}
+              />
+            </div>
+          </PopoverContent>
+        </Popover>
       </div>
 
       <div className="flex flex-col gap-3">
-        {!signatureData.detailedSpacing ? (
-          // Mode espacement global
-          <div className="flex items-center justify-between ml-4">
-            <Label className="text-xs text-muted-foreground">
-              Espacement global
-            </Label>
-            <div className="flex items-center gap-2 w-48">
-              <button
-                onClick={() => handleGlobalSpacingChange(8)}
-                className="h-8 w-8 flex items-center justify-center rounded-md bg-gradient-to-br from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 border border-blue-200 hover:border-blue-300 transition-all shadow-sm hover:shadow-md flex-shrink-0"
-                title="Réinitialiser à 8"
-              >
-                <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-              </button>
+        {/* Mode espacement global - toujours affiché */}
+        <div className="flex items-center justify-between ml-4">
+          <Label className="text-xs text-muted-foreground font-normal">
+            Global
+          </Label>
+          <div className="flex items-center gap-2 w-40">
+            <div className="relative flex-shrink-0">
               <Input
-                className="h-8 px-2 py-1 min-w-12"
-                style={{ width: `${Math.max(48, (signatureData.spacings?.global?.toString().length || 2) * 8 + 16)}px` }}
+                className="h-8 pl-2 pr-7 py-1 w-16 bg-white dark:bg-white"
                 type="text"
                 inputMode="decimal"
                 value={signatureData.spacings?.global ?? 8}
@@ -141,26 +176,26 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
                 aria-label="Espacement global"
                 placeholder="8"
               />
-              <Slider
-                className="grow h-4"
-                value={[signatureData.spacings?.global || 8]}
-                onValueChange={(value) => handleGlobalSpacingChange(value[0])}
-                min={0}
-                max={30}
-                step={2}
-                aria-label="Espacement global"
-              />
+              <button
+                onClick={() => handleGlobalSpacingChange(8)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 hover:opacity-70 transition-opacity"
+                title="Réinitialiser à 8"
+                type="button"
+              >
+                <RotateCcw className="w-3 h-3 text-gray-400" />
+              </button>
             </div>
-          </div>
-        ) : (
-          // Mode espacement détaillé - Uniquement DetailedPaddingSection
-          <div className="flex flex-col gap-3">
-            <DetailedPaddingSection
-              signatureData={signatureData}
-              updateSignatureData={updateSignatureData}
+            <Slider
+              className="grow h-4"
+              value={[signatureData.spacings?.global || 8]}
+              onValueChange={(value) => handleGlobalSpacingChange(value[0])}
+              min={0}
+              max={30}
+              step={2}
+              aria-label="Espacement global"
             />
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

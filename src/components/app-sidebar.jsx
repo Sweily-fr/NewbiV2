@@ -419,6 +419,10 @@ export function AppSidebar({
   const isCollapsed = sidebarState === "collapsed";
 
   // Déterminer si on est sur une page d'outil qui nécessite la sidebar masquée
+  // Exception : la page de signature doit avoir la sidebar en mode rétréci (icon)
+  const isSignaturePage = pathname?.startsWith(
+    "/dashboard/outils/signatures-mail/new"
+  );
   const isToolPage =
     pathname?.includes("/dashboard/outils/") &&
     (pathname?.includes("/new") ||
@@ -426,9 +430,10 @@ export function AppSidebar({
       pathname?.includes("/edit") ||
       pathname?.includes("/editer") ||
       pathname?.includes("/view") ||
-      pathname?.includes("/avoir/"));
+      pathname?.includes("/avoir/")) &&
+    !isSignaturePage; // Exception pour la page de signature
 
-  // Utiliser offcanvas pour les pages d'outils, icon pour les autres
+  // Utiliser offcanvas pour les pages d'outils (sauf signature), icon pour les autres
   const collapsibleMode = isToolPage ? "offcanvas" : "icon";
 
   // Récupérer le nombre de notifications

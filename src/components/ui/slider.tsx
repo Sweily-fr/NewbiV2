@@ -1,15 +1,15 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { Slider as SliderPrimitive } from "radix-ui"
+import * as React from "react";
+import { Slider as SliderPrimitive } from "radix-ui";
 
-import { cn } from "@/src/lib/utils"
+import { cn } from "@/src/lib/utils";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/src/components/ui/tooltip"
+} from "@/src/components/ui/tooltip";
 
 function Slider({
   className,
@@ -21,8 +21,8 @@ function Slider({
   tooltipContent,
   ...props
 }: React.ComponentProps<typeof SliderPrimitive.Root> & {
-  showTooltip?: boolean
-  tooltipContent?: (value: number) => React.ReactNode
+  showTooltip?: boolean;
+  tooltipContent?: (value: number) => React.ReactNode;
 }) {
   const [internalValues, setInternalValues] = React.useState<number[]>(
     Array.isArray(value)
@@ -30,52 +30,52 @@ function Slider({
       : Array.isArray(defaultValue)
         ? defaultValue
         : [min, max]
-  )
+  );
 
   React.useEffect(() => {
     if (value !== undefined) {
-      setInternalValues(Array.isArray(value) ? value : [value])
+      setInternalValues(Array.isArray(value) ? value : [value]);
     }
-  }, [value])
+  }, [value]);
 
   const handleValueChange = (newValue: number[]) => {
-    setInternalValues(newValue)
-    props.onValueChange?.(newValue)
-  }
+    setInternalValues(newValue);
+    props.onValueChange?.(newValue);
+  };
 
-  const [showTooltipState, setShowTooltipState] = React.useState(false)
+  const [showTooltipState, setShowTooltipState] = React.useState(false);
 
   const handlePointerDown = () => {
     if (showTooltip) {
-      setShowTooltipState(true)
+      setShowTooltipState(true);
     }
-  }
+  };
 
   const handlePointerUp = React.useCallback(() => {
     if (showTooltip) {
-      setShowTooltipState(false)
+      setShowTooltipState(false);
     }
-  }, [showTooltip])
+  }, [showTooltip]);
 
   React.useEffect(() => {
     if (showTooltip) {
-      document.addEventListener("pointerup", handlePointerUp)
+      document.addEventListener("pointerup", handlePointerUp);
       return () => {
-        document.removeEventListener("pointerup", handlePointerUp)
-      }
+        document.removeEventListener("pointerup", handlePointerUp);
+      };
     }
-  }, [showTooltip, handlePointerUp])
+  }, [showTooltip, handlePointerUp]);
 
   const renderThumb = (value: number) => {
     const thumb = (
       <SliderPrimitive.Thumb
         data-slot="slider-thumb"
-        className="block size-4 shrink-0 rounded-full border border-primary bg-background shadow-sm ring-ring/50 transition-[color,box-shadow] outline-none hover:ring-4 focus-visible:ring-4 disabled:pointer-events-none disabled:opacity-50"
+        className="bg-white block size-4 shrink-0 rounded-full border-0 shadow-md transition-shadow outline-none hover:shadow-lg focus-visible:shadow-lg disabled:pointer-events-none disabled:opacity-50"
         onPointerDown={handlePointerDown}
       />
-    )
+    );
 
-    if (!showTooltip) return thumb
+    if (!showTooltip) return thumb;
 
     return (
       <TooltipProvider>
@@ -90,8 +90,8 @@ function Slider({
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
-    )
-  }
+    );
+  };
 
   return (
     <SliderPrimitive.Root
@@ -110,17 +110,14 @@ function Slider({
       <SliderPrimitive.Track
         data-slot="slider-track"
         className={cn(
-          "relative grow overflow-hidden rounded-full bg-muted data-[orientation=horizontal]:h-1.5 data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-1.5"
+          "bg-gray-200 dark:bg-gray-700 relative grow overflow-hidden rounded-full data-[orientation=horizontal]:h-1 data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-1"
         )}
       >
         <SliderPrimitive.Range
           data-slot="slider-range"
           className={cn(
-            "absolute data-[orientation=horizontal]:h-full data-[orientation=vertical]:w-full"
+            "bg-[#5B4EFF] absolute data-[orientation=horizontal]:h-full data-[orientation=vertical]:w-full"
           )}
-          style={{
-            backgroundColor: 'var(--slider-color, hsl(var(--primary)))'
-          }}
         />
       </SliderPrimitive.Track>
       {Array.from({ length: internalValues.length }, (_, index) => (
@@ -129,7 +126,7 @@ function Slider({
         </React.Fragment>
       ))}
     </SliderPrimitive.Root>
-  )
+  );
 }
 
-export { Slider }
+export { Slider };

@@ -311,7 +311,15 @@ function SignatureProviderContent({ children }) {
       address: "123 Avenue des Champs-Élysées, 75008 Paris, France",
       contactElementsOrder: [],
       // Ordre des éléments de la signature verticale (drag & drop)
-      elementsOrder: ["photo", "fullName", "position", "separator", "contact", "logo", "social"],
+      elementsOrder: [
+        "photo",
+        "fullName",
+        "position",
+        "separator",
+        "contact",
+        "logo",
+        "social",
+      ],
       // Ordre des éléments pour la signature horizontale (3 zones)
       horizontalLayout: {
         leftColumn: ["photo", "fullName", "position"],
@@ -491,13 +499,18 @@ function SignatureProviderContent({ children }) {
         contact: 12, // Taille de police pour les contacts
       },
     }),
-    []
+    [],
   );
 
   // Hook pour récupérer une signature spécifique
-  const [getSignature, { data: signatureQueryData, error: signatureQueryError, loading: loadingSignature }] = useLazyQuery(
-    GET_EMAIL_SIGNATURE
-  );
+  const [
+    getSignature,
+    {
+      data: signatureQueryData,
+      error: signatureQueryError,
+      loading: loadingSignature,
+    },
+  ] = useLazyQuery(GET_EMAIL_SIGNATURE);
 
   const [signatureData, setSignatureData] = useState(defaultSignatureData);
   const [editingSignatureId, setEditingSignatureId] = useState(null);
@@ -514,8 +527,12 @@ function SignatureProviderContent({ children }) {
           fetchedSignature.contactElementsOrder ||
           defaultSignatureData.contactElementsOrder,
         // S'assurer que photoVisible a toujours une valeur booléenne
-        photoVisible: fetchedSignature.photoVisible !== undefined ? fetchedSignature.photoVisible : defaultSignatureData.photoVisible,
-        orientation: fetchedSignature.orientation || defaultSignatureData.orientation,
+        photoVisible:
+          fetchedSignature.photoVisible !== undefined
+            ? fetchedSignature.photoVisible
+            : defaultSignatureData.photoVisible,
+        orientation:
+          fetchedSignature.orientation || defaultSignatureData.orientation,
         colors: {
           ...defaultSignatureData.colors,
           ...(fetchedSignature.colors || {}),
@@ -641,7 +658,8 @@ function SignatureProviderContent({ children }) {
       setSignatureData(mergedData);
 
       if (!fetchedSignature.fullName) {
-        const computedFullName = `${fetchedSignature.firstName || ""} ${fetchedSignature.lastName || ""}`.trim();
+        const computedFullName =
+          `${fetchedSignature.firstName || ""} ${fetchedSignature.lastName || ""}`.trim();
         if (computedFullName) {
           setSignatureData((prev) => ({
             ...prev,
@@ -658,7 +676,7 @@ function SignatureProviderContent({ children }) {
       // Mode édition avec ID dans l'URL - charger via GraphQL
       console.log(
         "🔍 [SIGNATURE_DATA] Mode édition avec ID:",
-        signatureIdFromUrl
+        signatureIdFromUrl,
       );
       setEditingSignatureId(signatureIdFromUrl);
       getSignature({ variables: { id: signatureIdFromUrl } });
@@ -672,7 +690,7 @@ function SignatureProviderContent({ children }) {
 
           console.log(
             "🔍 [SIGNATURE_DATA] Données récupérées de localStorage (fallback):",
-            parsedData
+            parsedData,
           );
 
           // Merger les données existantes avec les données par défaut
@@ -680,7 +698,8 @@ function SignatureProviderContent({ children }) {
             ...defaultSignatureData,
             ...parsedData,
             contactElementsOrder:
-              parsedData.contactElementsOrder || defaultSignatureData.contactElementsOrder,
+              parsedData.contactElementsOrder ||
+              defaultSignatureData.contactElementsOrder,
             // S'assurer que les objets imbriqués sont bien mergés
             colors: {
               ...defaultSignatureData.colors,
@@ -799,13 +818,13 @@ function SignatureProviderContent({ children }) {
           localStorage.removeItem("editingSignature");
         } else {
           console.log(
-            "⚠️ [SIGNATURE_PROVIDER] Aucune donnée d'édition trouvée"
+            "⚠️ [SIGNATURE_PROVIDER] Aucune donnée d'édition trouvée",
           );
         }
       } catch (error) {
         console.error(
           "❌ [SIGNATURE_PROVIDER] Erreur lors du chargement:",
-          error
+          error,
         );
       }
     } else {
@@ -848,7 +867,7 @@ function SignatureProviderContent({ children }) {
           const parsedDraft = JSON.parse(draftData);
           console.log(
             "📋 [DRAFT] Chargement du brouillon depuis localStorage:",
-            parsedDraft
+            parsedDraft,
           );
 
           // Merger avec les données par défaut pour éviter les champs manquants
@@ -920,7 +939,7 @@ function SignatureProviderContent({ children }) {
         } catch (error) {
           console.error(
             "❌ [DRAFT] Erreur lors du chargement du brouillon:",
-            error
+            error,
           );
           localStorage.removeItem("draftSignature");
         }
@@ -931,13 +950,13 @@ function SignatureProviderContent({ children }) {
   const updateSignatureData = (key, value) => {
     setSignatureData((prev) => {
       // Si c'est un objet avec plusieurs clés, mettre à jour tout en une fois
-      if (typeof key === 'object' && key !== null) {
+      if (typeof key === "object" && key !== null) {
         return {
           ...prev,
           ...key,
         };
       }
-      
+
       // Handle nested object updates for spacings, colors, etc.
       if (
         key === "spacings" ||
@@ -1000,7 +1019,8 @@ function SignatureProviderContent({ children }) {
       ...defaultSignatureData,
       ...editData,
       contactElementsOrder:
-        editData.contactElementsOrder || defaultSignatureData.contactElementsOrder,
+        editData.contactElementsOrder ||
+        defaultSignatureData.contactElementsOrder,
       colors: {
         ...defaultSignatureData.colors,
         ...(editData.colors || {}),
@@ -1065,6 +1085,16 @@ function SignatureProviderContent({ children }) {
 
   // Fonction supprimée car redondante avec resetSignatureData
 
+  // États et fonctions pour les actions de la toolbar
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showSaveModal, setShowSaveModal] = useState(false);
+
+  // Fonctions pour ouvrir les modals depuis la toolbar
+  const openCancelModal = () => setShowCancelModal(true);
+  const closeCancelModal = () => setShowCancelModal(false);
+  const openSaveModal = () => setShowSaveModal(true);
+  const closeSaveModal = () => setShowSaveModal(false);
+
   const value = {
     signatureData,
     updateSignatureData,
@@ -1074,6 +1104,15 @@ function SignatureProviderContent({ children }) {
     isEditMode,
     editingSignatureId,
     loadingSignature,
+    // Actions pour la toolbar
+    showCancelModal,
+    setShowCancelModal,
+    showSaveModal,
+    setShowSaveModal,
+    openCancelModal,
+    closeCancelModal,
+    openSaveModal,
+    closeSaveModal,
   };
 
   return (

@@ -13,39 +13,41 @@ import {
 // Convertir n'importe quelle couleur en HEX
 const toHex = (color) => {
   if (!color) return "#000000";
-  
+
   // Si déjà en HEX
   if (color.startsWith("#")) {
     return color.length === 7 ? color.toUpperCase() : "#000000";
   }
-  
+
   // Si en HSL
   if (color.startsWith("hsl")) {
-    const match = color.match(/hsl\((\d+\.?\d*),\s*(\d+\.?\d*)%,\s*(\d+\.?\d*)%\)/);
+    const match = color.match(
+      /hsl\((\d+\.?\d*),\s*(\d+\.?\d*)%,\s*(\d+\.?\d*)%\)/
+    );
     if (match) {
       const h = parseFloat(match[1]) / 360;
       const s = parseFloat(match[2]) / 100;
       const l = parseFloat(match[3]) / 100;
-      
+
       const hue2rgb = (p, q, t) => {
         if (t < 0) t += 1;
         if (t > 1) t -= 1;
-        if (t < 1/6) return p + (q - p) * 6 * t;
-        if (t < 1/2) return q;
-        if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+        if (t < 1 / 6) return p + (q - p) * 6 * t;
+        if (t < 1 / 2) return q;
+        if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
         return p;
       };
-      
+
       const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
       const p = 2 * l - q;
-      const r = Math.round(hue2rgb(p, q, h + 1/3) * 255);
+      const r = Math.round(hue2rgb(p, q, h + 1 / 3) * 255);
       const g = Math.round(hue2rgb(p, q, h) * 255);
-      const b = Math.round(hue2rgb(p, q, h - 1/3) * 255);
-      
-      return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`.toUpperCase();
+      const b = Math.round(hue2rgb(p, q, h - 1 / 3) * 255);
+
+      return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`.toUpperCase();
     }
   }
-  
+
   return "#000000";
 };
 
@@ -80,7 +82,15 @@ const hexToHue = (hex) => {
   return Math.round(h * 360);
 };
 
-export function ColorPicker({ color, onChange, className = "", align = "center", sideOffset = 0, sideOffsetVw }) {
+export function ColorPicker({
+  color,
+  onChange,
+  className = "",
+  align = "center",
+  side = "bottom",
+  sideOffset = 0,
+  sideOffsetVw,
+}) {
   // Convertir HEX en HSV pour initialisation
   const getInitialHsv = (hexColor) => {
     const hex = toHex(hexColor);
@@ -94,34 +104,43 @@ export function ColorPicker({ color, onChange, className = "", align = "center",
     const max = Math.max(r, g, b);
     const min = Math.min(r, g, b);
     const d = max - min;
-    
+
     let h = 0;
     const s = max === 0 ? 0 : d / max;
     const v = max;
 
     if (max !== min) {
       switch (max) {
-        case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
-        case g: h = ((b - r) / d + 2) / 6; break;
-        case b: h = ((r - g) / d + 4) / 6; break;
+        case r:
+          h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+          break;
+        case g:
+          h = ((b - r) / d + 2) / 6;
+          break;
+        case b:
+          h = ((r - g) / d + 4) / 6;
+          break;
       }
     }
 
     return {
       h: Math.round(h * 360),
       s: s * 100,
-      v: v * 100
+      v: v * 100,
     };
   };
 
   const initialHsv = getInitialHsv(color);
-  
+
   const [currentColor, setCurrentColor] = useState(() => toHex(color));
   const [hexInput, setHexInput] = useState(() => toHex(color));
   const [isOpen, setIsOpen] = useState(false);
   const [hue, setHue] = useState(initialHsv.h);
   const [isDragging, setIsDragging] = useState(false);
-  const [cursorPosition, setCursorPosition] = useState({ x: initialHsv.s, y: 100 - initialHsv.v });
+  const [cursorPosition, setCursorPosition] = useState({
+    x: initialHsv.s,
+    y: 100 - initialHsv.v,
+  });
   const [colorFormat, setColorFormat] = useState("HEX"); // HEX, RGB, HSL
   const colorInputRef = useRef(null);
   const pickerRef = useRef(null);
@@ -137,11 +156,13 @@ export function ColorPicker({ color, onChange, className = "", align = "center",
   // Convertir HEX en RGB
   const hexToRgb = (hex) => {
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-    return result ? {
-      r: parseInt(result[1], 16),
-      g: parseInt(result[2], 16),
-      b: parseInt(result[3], 16)
-    } : { r: 0, g: 0, b: 0 };
+    return result
+      ? {
+          r: parseInt(result[1], 16),
+          g: parseInt(result[2], 16),
+          b: parseInt(result[3], 16),
+        }
+      : { r: 0, g: 0, b: 0 };
   };
 
   // Convertir HEX en HSL
@@ -153,22 +174,30 @@ export function ColorPicker({ color, onChange, className = "", align = "center",
 
     const max = Math.max(rNorm, gNorm, bNorm);
     const min = Math.min(rNorm, gNorm, bNorm);
-    let h = 0, s = 0, l = (max + min) / 2;
+    let h = 0,
+      s = 0,
+      l = (max + min) / 2;
 
     if (max !== min) {
       const d = max - min;
       s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
       switch (max) {
-        case rNorm: h = ((gNorm - bNorm) / d + (gNorm < bNorm ? 6 : 0)) / 6; break;
-        case gNorm: h = ((bNorm - rNorm) / d + 2) / 6; break;
-        case bNorm: h = ((rNorm - gNorm) / d + 4) / 6; break;
+        case rNorm:
+          h = ((gNorm - bNorm) / d + (gNorm < bNorm ? 6 : 0)) / 6;
+          break;
+        case gNorm:
+          h = ((bNorm - rNorm) / d + 2) / 6;
+          break;
+        case bNorm:
+          h = ((rNorm - gNorm) / d + 4) / 6;
+          break;
       }
     }
 
     return {
       h: Math.round(h * 360),
       s: Math.round(s * 100),
-      l: Math.round(l * 100)
+      l: Math.round(l * 100),
     };
   };
 
@@ -198,23 +227,29 @@ export function ColorPicker({ color, onChange, className = "", align = "center",
     const max = Math.max(r, g, b);
     const min = Math.min(r, g, b);
     const d = max - min;
-    
+
     let h = 0;
     const s = max === 0 ? 0 : d / max;
     const v = max;
 
     if (max !== min) {
       switch (max) {
-        case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
-        case g: h = ((b - r) / d + 2) / 6; break;
-        case b: h = ((r - g) / d + 4) / 6; break;
+        case r:
+          h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+          break;
+        case g:
+          h = ((b - r) / d + 2) / 6;
+          break;
+        case b:
+          h = ((r - g) / d + 4) / 6;
+          break;
       }
     }
 
     return {
       h: Math.round(h * 360),
       s: s * 100,
-      v: v * 100
+      v: v * 100,
     };
   };
 
@@ -222,17 +257,17 @@ export function ColorPicker({ color, onChange, className = "", align = "center",
   const handleColorInputChange = (e) => {
     const value = e.target.value;
     setHexInput(value);
-    
+
     if (colorFormat === "HEX") {
       let hex = value.toUpperCase();
-      if (!hex.startsWith('#')) hex = '#' + hex;
-      hex = '#' + hex.slice(1).replace(/[^0-9A-F]/g, '');
+      if (!hex.startsWith("#")) hex = "#" + hex;
+      hex = "#" + hex.slice(1).replace(/[^0-9A-F]/g, "");
       hex = hex.slice(0, 7);
-      
+
       if (/^#[0-9A-F]{6}$/.test(hex)) {
         setCurrentColor(hex);
         onChange(hex);
-        
+
         // Mettre à jour le bloc de couleur et le curseur
         const hsv = hexToHsv(hex);
         setHue(hsv.h);
@@ -244,10 +279,11 @@ export function ColorPicker({ color, onChange, className = "", align = "center",
         const r = Math.min(255, parseInt(match[1]));
         const g = Math.min(255, parseInt(match[2]));
         const b = Math.min(255, parseInt(match[3]));
-        const hex = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`.toUpperCase();
+        const hex =
+          `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`.toUpperCase();
         setCurrentColor(hex);
         onChange(hex);
-        
+
         // Mettre à jour le bloc de couleur et le curseur
         const hsv = hexToHsv(hex);
         setHue(hsv.h);
@@ -263,26 +299,28 @@ export function ColorPicker({ color, onChange, className = "", align = "center",
         const hNorm = h / 360;
         const sNorm = s / 100;
         const lNorm = l / 100;
-        
+
         const hue2rgb = (p, q, t) => {
           if (t < 0) t += 1;
           if (t > 1) t -= 1;
-          if (t < 1/6) return p + (q - p) * 6 * t;
-          if (t < 1/2) return q;
-          if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+          if (t < 1 / 6) return p + (q - p) * 6 * t;
+          if (t < 1 / 2) return q;
+          if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
           return p;
         };
-        
-        const q = lNorm < 0.5 ? lNorm * (1 + sNorm) : lNorm + sNorm - lNorm * sNorm;
+
+        const q =
+          lNorm < 0.5 ? lNorm * (1 + sNorm) : lNorm + sNorm - lNorm * sNorm;
         const p = 2 * lNorm - q;
-        const r = Math.round(hue2rgb(p, q, hNorm + 1/3) * 255);
+        const r = Math.round(hue2rgb(p, q, hNorm + 1 / 3) * 255);
         const g = Math.round(hue2rgb(p, q, hNorm) * 255);
-        const b = Math.round(hue2rgb(p, q, hNorm - 1/3) * 255);
-        
-        const hex = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`.toUpperCase();
+        const b = Math.round(hue2rgb(p, q, hNorm - 1 / 3) * 255);
+
+        const hex =
+          `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`.toUpperCase();
         setCurrentColor(hex);
         onChange(hex);
-        
+
         // Mettre à jour le bloc de couleur et le curseur
         const hsv = hexToHsv(hex);
         setHue(hsv.h);
@@ -297,7 +335,7 @@ export function ColorPicker({ color, onChange, className = "", align = "center",
     const currentIndex = formats.indexOf(colorFormat);
     const nextFormat = formats[(currentIndex + 1) % formats.length];
     setColorFormat(nextFormat);
-    
+
     // Mettre à jour hexInput avec le nouveau format
     if (nextFormat === "HEX") {
       setHexInput(currentColor);
@@ -326,10 +364,12 @@ export function ColorPicker({ color, onChange, className = "", align = "center",
   // EyeDropper API
   const handleEyeDropper = async () => {
     if (!window.EyeDropper) {
-      alert("L'outil pipette n'est pas supporté par votre navigateur. Essayez Chrome ou Edge.");
+      alert(
+        "L'outil pipette n'est pas supporté par votre navigateur. Essayez Chrome ou Edge."
+      );
       return;
     }
-    
+
     try {
       const eyeDropper = new window.EyeDropper();
       const result = await eyeDropper.open();
@@ -352,27 +392,41 @@ export function ColorPicker({ color, onChange, className = "", align = "center",
     const c = v * s;
     const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
     const m = v - c;
-    
-    let r = 0, g = 0, b = 0;
-    
+
+    let r = 0,
+      g = 0,
+      b = 0;
+
     if (h >= 0 && h < 60) {
-      r = c; g = x; b = 0;
+      r = c;
+      g = x;
+      b = 0;
     } else if (h >= 60 && h < 120) {
-      r = x; g = c; b = 0;
+      r = x;
+      g = c;
+      b = 0;
     } else if (h >= 120 && h < 180) {
-      r = 0; g = c; b = x;
+      r = 0;
+      g = c;
+      b = x;
     } else if (h >= 180 && h < 240) {
-      r = 0; g = x; b = c;
+      r = 0;
+      g = x;
+      b = c;
     } else if (h >= 240 && h < 300) {
-      r = x; g = 0; b = c;
+      r = x;
+      g = 0;
+      b = c;
     } else if (h >= 300 && h < 360) {
-      r = c; g = 0; b = x;
+      r = c;
+      g = 0;
+      b = x;
     }
-    
+
     return [
       Math.round((r + m) * 255),
       Math.round((g + m) * 255),
-      Math.round((b + m) * 255)
+      Math.round((b + m) * 255),
     ];
   };
 
@@ -384,26 +438,27 @@ export function ColorPicker({ color, onChange, className = "", align = "center",
 
   const updateColorFromPicker = (e) => {
     if (!pickerRef.current) return;
-    
+
     const rect = pickerRef.current.getBoundingClientRect();
     const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
     const y = Math.max(0, Math.min(e.clientY - rect.top, rect.height));
-    
+
     // Mettre à jour la position du curseur en pourcentage
     const xPercent = (x / rect.width) * 100;
     const yPercent = (y / rect.height) * 100;
     setCursorPosition({ x: xPercent, y: yPercent });
-    
+
     // Calculer saturation (0-1) et value (0-1) depuis la position
     const saturation = x / rect.width;
-    const value = 1 - (y / rect.height);
-    
+    const value = 1 - y / rect.height;
+
     // Convertir HSV en RGB
     const [r, g, b] = hsvToRgb(hue, saturation, value);
-    
+
     // Convertir en HEX
-    const hex = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`.toUpperCase();
-    
+    const hex =
+      `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`.toUpperCase();
+
     setCurrentColor(hex);
     setHexInput(hex);
     onChange(hex);
@@ -422,11 +477,11 @@ export function ColorPicker({ color, onChange, className = "", align = "center",
   // Attacher les événements globaux pour le drag
   React.useEffect(() => {
     if (isDragging) {
-      document.addEventListener('mousemove', handlePickerMouseMove);
-      document.addEventListener('mouseup', handlePickerMouseUp);
+      document.addEventListener("mousemove", handlePickerMouseMove);
+      document.addEventListener("mouseup", handlePickerMouseUp);
       return () => {
-        document.removeEventListener('mousemove', handlePickerMouseMove);
-        document.removeEventListener('mouseup', handlePickerMouseUp);
+        document.removeEventListener("mousemove", handlePickerMouseMove);
+        document.removeEventListener("mouseup", handlePickerMouseUp);
       };
     }
   }, [isDragging, hue]);
@@ -435,23 +490,33 @@ export function ColorPicker({ color, onChange, className = "", align = "center",
   React.useEffect(() => {
     // Calculer saturation et value depuis la position actuelle du curseur
     const saturation = cursorPosition.x / 100;
-    const value = 1 - (cursorPosition.y / 100);
-    
+    const value = 1 - cursorPosition.y / 100;
+
     // Convertir HSV en RGB
     const [r, g, b] = hsvToRgb(hue, saturation, value);
-    
+
     // Convertir en HEX
-    const hex = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`.toUpperCase();
-    
+    const hex =
+      `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`.toUpperCase();
+
     setCurrentColor(hex);
     setHexInput(hex);
     onChange(hex);
   }, [hue]);
 
   const colorPresets = [
-    "#1d1d1b", "#FFFFFF", "#FF3B30", "#FF9500", 
-    "#FFCC00", "#4CD964", "#5AC8FA", "#007AFF", 
-    "#5856D6", "#FF2D55", "#8E8E93", "#E5E5EA"
+    "#1d1d1b",
+    "#FFFFFF",
+    "#FF3B30",
+    "#FF9500",
+    "#FFCC00",
+    "#4CD964",
+    "#5AC8FA",
+    "#007AFF",
+    "#5856D6",
+    "#FF2D55",
+    "#8E8E93",
+    "#E5E5EA",
   ];
 
   return (
@@ -465,16 +530,17 @@ export function ColorPicker({ color, onChange, className = "", align = "center",
             className="w-4 h-4 rounded border border-gray-300"
             style={{ backgroundColor: currentColor }}
           />
-          <span className="text-xs font-mono">
-            {currentColor.slice(1)}
-          </span>
+          <span className="text-xs font-mono">{currentColor.slice(1)}</span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent 
-        className="w-[280px] p-4 rounded-lg" 
-        align={align} 
+      <PopoverContent
+        className="w-[280px] p-4 rounded-xl"
+        align={align}
+        side={side}
         sideOffset={sideOffset}
-        style={sideOffsetVw ? { transform: `translateX(${sideOffsetVw}vw)` } : {}}
+        style={
+          sideOffsetVw ? { transform: `translateX(${sideOffsetVw}vw)` } : {}
+        }
       >
         <div className="space-y-4">
           {/* Input natif caché */}
@@ -496,17 +562,17 @@ export function ColorPicker({ color, onChange, className = "", align = "center",
             }}
           >
             {/* Gradient blanc à transparent (saturation) */}
-            <div 
+            <div
               className="absolute inset-0 pointer-events-none"
               style={{
-                background: 'linear-gradient(to right, #fff, transparent)',
+                background: "linear-gradient(to right, #fff, transparent)",
               }}
             />
             {/* Gradient transparent à noir (value/brightness) */}
-            <div 
+            <div
               className="absolute inset-0 pointer-events-none"
               style={{
-                background: 'linear-gradient(to bottom, transparent, #000)',
+                background: "linear-gradient(to bottom, transparent, #000)",
               }}
             />
             {/* Curseur */}
@@ -515,9 +581,10 @@ export function ColorPicker({ color, onChange, className = "", align = "center",
               style={{
                 left: `${cursorPosition.x}%`,
                 top: `${cursorPosition.y}%`,
-                transform: 'translate(-50%, -50%)',
+                transform: "translate(-50%, -50%)",
                 backgroundColor: currentColor,
-                boxShadow: '0 0 0 1px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.2)',
+                boxShadow:
+                  "0 0 0 1px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.2)",
               }}
             />
           </div>
@@ -556,7 +623,13 @@ export function ColorPicker({ color, onChange, className = "", align = "center",
                 value={hexInput}
                 onChange={handleColorInputChange}
                 className="flex-1 h-9 px-3 font-mono text-sm"
-                placeholder={colorFormat === "HEX" ? "#000000" : colorFormat === "RGB" ? "255, 255, 255" : "0°, 0%, 0%"}
+                placeholder={
+                  colorFormat === "HEX"
+                    ? "#000000"
+                    : colorFormat === "RGB"
+                      ? "255, 255, 255"
+                      : "0°, 0%, 0%"
+                }
               />
               <Button
                 type="button"
@@ -577,7 +650,9 @@ export function ColorPicker({ color, onChange, className = "", align = "center",
 
           {/* Couleurs prédéfinies */}
           <div>
-            <p className="text-xs text-gray-500 mb-2 font-medium">Couleurs rapides</p>
+            <p className="text-xs text-gray-500 mb-2 font-medium">
+              Couleurs rapides
+            </p>
             <div className="grid grid-cols-6 gap-2">
               {colorPresets.map((preset) => (
                 <button

@@ -36,12 +36,15 @@ import { OAuthCallbackHandler } from "@/src/components/oauth-callback-handler";
 import { EInvoicingPromoModal } from "@/src/components/e-invoicing-promo-modal";
 import { TutorialProvider } from "@/src/contexts/tutorial-context";
 import { TutorialOverlay } from "@/src/components/tutorial/tutorial-overlay";
+import { SignatureSidebarRight } from "@/src/components/signature-sidebar-right";
 
 // Composant interne qui utilise le contexte
 function DashboardContent({ children }) {
   const pathname = usePathname();
   const router = useRouter();
-  const isSignaturePage = pathname === "/dashboard/outils/signatures-mail/new";
+  const isSignaturePage = pathname?.startsWith(
+    "/dashboard/outils/signatures-mail/new"
+  );
   const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
   const [isCommunitySidebarOpen, setIsCommunitySidebarOpen] = useState(false);
@@ -114,6 +117,7 @@ function DashboardContent({ children }) {
   }, [isHydrated, layoutInitialized, isActive, isOnboardingOpen]);
 
   // Déterminer si on est sur une page d'outil qui nécessite la sidebar fermée
+  // Exception : la page de signature doit avoir la sidebar en mode rétréci (icon)
   const isToolPage =
     pathname.includes("/dashboard/outils/") &&
     (pathname.includes("/new") ||
@@ -121,7 +125,8 @@ function DashboardContent({ children }) {
       pathname.includes("/edit") ||
       pathname.includes("/editer") ||
       pathname.includes("/view") ||
-      pathname.includes("/avoir/"));
+      pathname.includes("/avoir/")) &&
+    !isSignaturePage; // Exception pour la page de signature
 
   // Clé localStorage pour persister l'état de la sidebar
   const SIDEBAR_STORAGE_KEY = "sidebar_collapsed";
@@ -154,9 +159,12 @@ function DashboardContent({ children }) {
     }
   };
 
-  // Forcer la sidebar fermée sur les pages d'outils
+  // Forcer la sidebar fermée sur les pages d'outils (sauf page de signature)
   useEffect(() => {
     if (isToolPage) {
+      setSidebarOpen(false);
+    } else if (isSignaturePage) {
+      // Pour la page de signature, forcer en mode rétréci (false = collapsed)
       setSidebarOpen(false);
     }
   }, [isToolPage]);
@@ -199,6 +207,10 @@ function DashboardContent({ children }) {
           </div>
         </div>
       </SidebarInset>
+
+      {/* Sidebar droite miroir - Affichée uniquement sur la page de signature */}
+      {isSignaturePage && <SignatureSidebarRight />}
+
       <SearchCommand />
 
       {/* Modal de pricing pour upgrade - DÉSACTIVÉ car géré dans chaque page */}
@@ -284,7 +296,9 @@ function DashboardContent({ children }) {
 
 export default function DashboardLayout({ children }) {
   const pathname = usePathname();
-  const isSignaturePage = pathname === "/dashboard/outils/signatures-mail/new";
+  const isSignaturePage = pathname?.startsWith(
+    "/dashboard/outils/signatures-mail/new"
+  );
 
   // Wrapper avec le provider de layout optimisé
   const content = (

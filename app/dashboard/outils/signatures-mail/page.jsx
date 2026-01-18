@@ -268,7 +268,7 @@ function SignatureTableSkeleton() {
 
 export default function EmailSignaturesPage() {
   return (
-    <RoleRouteGuard 
+    <RoleRouteGuard
       roles={["owner", "admin", "member", "viewer"]}
       fallbackUrl="/dashboard"
       toastMessage="Vous n'avez pas accès aux signatures de mail. Cette fonctionnalité est réservée aux membres de l'équipe."

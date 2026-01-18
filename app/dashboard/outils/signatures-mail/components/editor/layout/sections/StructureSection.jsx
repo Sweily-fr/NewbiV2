@@ -19,8 +19,8 @@ export default function StructureSection({
         {signatureData.orientation !== "vertical" && (
           <>
             <div className="flex items-center justify-between">
-              <Label className="text-xs text-muted-foreground">
-                Séparateur vertical
+              <Label className="text-xs font-normal text-muted-foreground">
+                Séparateur
               </Label>
               <Switch
                 checked={signatureData.separatorVerticalEnabled || false}
@@ -36,24 +36,27 @@ export default function StructureSection({
               <>
                 {/* Épaisseur du séparateur vertical */}
                 <div className="flex items-center justify-between">
-                  <Label className="text-xs text-muted-foreground">
-                    Épaisseur verticale
+                  <Label className="text-xs font-normal text-muted-foreground">
+                    Épaisseur
                   </Label>
-                  <div className="flex items-center gap-3 w-30">
+                  <div className="flex items-center gap-3 w-40">
                     <Input
-                      className="h-8 w-16 px-2 py-1"
+                      className="h-8 w-16 px-2 py-1 bg-white dark:bg-white"
                       type="text"
                       inputMode="decimal"
                       value={signatureData.separatorVerticalWidth || 1}
                       onChange={(e) => {
                         const numValue = parseInt(e.target.value) || 1;
-                        updateSignatureData("separatorVerticalWidth", Math.max(1, Math.min(10, numValue)));
+                        updateSignatureData(
+                          "separatorVerticalWidth",
+                          Math.max(1, Math.min(10, numValue))
+                        );
                       }}
                       aria-label="Épaisseur du séparateur vertical"
                       placeholder="1"
                     />
                     <Slider
-                      className="grow"
+                      className="grow h-4"
                       value={[signatureData.separatorVerticalWidth || 1]}
                       onValueChange={(value) =>
                         updateSignatureData("separatorVerticalWidth", value[0])
@@ -68,21 +71,26 @@ export default function StructureSection({
 
                 {/* Couleur du séparateur vertical */}
                 <div className="flex items-center justify-between">
-                  <Label className="text-xs text-muted-foreground">
-                    Couleur verticale
+                  <Label className="text-xs font-normal text-muted-foreground">
+                    Couleur
                   </Label>
-                  <ColorPicker
-                    color={signatureData.colors?.separatorVertical || "#e0e0e0"}
-                    onChange={(color) => {
-                      updateSignatureData("colors", {
-                        ...signatureData.colors,
-                        separatorVertical: color,
-                      });
-                    }}
-                    align="end"
-                    sideOffset={5}
-                    className="w-auto"
-                  />
+                  <div className="w-40">
+                    <ColorPicker
+                      color={
+                        signatureData.colors?.separatorVertical || "#e0e0e0"
+                      }
+                      onChange={(color) => {
+                        updateSignatureData("colors", {
+                          ...signatureData.colors,
+                          separatorVertical: color,
+                        });
+                      }}
+                      align="start"
+                      side="left"
+                      sideOffset={0}
+                      className="w-full"
+                    />
+                  </div>
                 </div>
               </>
             )}
@@ -91,8 +99,8 @@ export default function StructureSection({
 
         {/* Séparateur horizontal */}
         <div className="flex items-center justify-between">
-          <Label className="text-xs text-muted-foreground">
-            Séparateur horizontal
+          <Label className="text-xs font-normal text-muted-foreground">
+            Séparateur
           </Label>
           <Switch
             checked={signatureData.separatorHorizontalEnabled || false}
@@ -108,24 +116,27 @@ export default function StructureSection({
           <>
             {/* Épaisseur du séparateur horizontal */}
             <div className="flex items-center justify-between">
-              <Label className="text-xs text-muted-foreground">
-                Épaisseur horizontale
+              <Label className="text-xs font-normal text-muted-foreground">
+                Épaisseur
               </Label>
-              <div className="flex items-center gap-3 w-30">
+              <div className="flex items-center gap-3 w-40">
                 <Input
-                  className="h-8 w-16 px-2 py-1"
+                  className="h-8 w-16 px-2 py-1 bg-white dark:bg-white"
                   type="text"
                   inputMode="decimal"
                   value={signatureData.separatorHorizontalWidth || 1}
                   onChange={(e) => {
                     const numValue = parseInt(e.target.value) || 1;
-                    updateSignatureData("separatorHorizontalWidth", Math.max(1, Math.min(10, numValue)));
+                    updateSignatureData(
+                      "separatorHorizontalWidth",
+                      Math.max(1, Math.min(10, numValue))
+                    );
                   }}
                   aria-label="Épaisseur du séparateur horizontal"
                   placeholder="1"
                 />
                 <Slider
-                  className="grow"
+                  className="grow h-4"
                   value={[signatureData.separatorHorizontalWidth || 1]}
                   onValueChange={(value) =>
                     updateSignatureData("separatorHorizontalWidth", value[0])
@@ -140,21 +151,24 @@ export default function StructureSection({
 
             {/* Couleur du séparateur horizontal */}
             <div className="flex items-center justify-between">
-              <Label className="text-xs text-muted-foreground">
-                Couleur horizontale
+              <Label className="text-xs font-normal text-muted-foreground">
+                Couleur
               </Label>
-              <ColorPicker
-                color={signatureData.colors?.separatorHorizontal || "#e0e0e0"}
-                onChange={(color) => {
-                  updateSignatureData("colors", {
-                    ...signatureData.colors,
-                    separatorHorizontal: color,
-                  });
-                }}
-                align="end"
-                sideOffset={5}
-                className="w-auto"
-              />
+              <div className="w-40">
+                <ColorPicker
+                  color={signatureData.colors?.separatorHorizontal || "#e0e0e0"}
+                  onChange={(color) => {
+                    updateSignatureData("colors", {
+                      ...signatureData.colors,
+                      separatorHorizontal: color,
+                    });
+                  }}
+                  align="start"
+                  side="left"
+                  sideOffset={300}
+                  className="w-full"
+                />
+              </div>
             </div>
           </>
         )}

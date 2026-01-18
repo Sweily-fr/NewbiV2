@@ -7,12 +7,12 @@ import { AlertTriangle, X } from "lucide-react";
 /**
  * Modal de confirmation pour l'annulation de la création/modification d'une signature
  */
-export default function CancelConfirmationModal({ 
-  isOpen, 
-  onClose, 
-  onConfirm, 
+export default function CancelConfirmationModal({
+  isOpen,
+  onClose,
+  onConfirm,
   title = "Annuler les modifications ?",
-  message = "Êtes-vous sûr de vouloir annuler ? Toutes les modifications non sauvegardées seront perdues."
+  message = "Êtes-vous sûr de vouloir annuler ? Toutes les modifications non sauvegardées seront perdues.",
 }) {
   if (!isOpen) return null;
 
@@ -22,10 +22,10 @@ export default function CancelConfirmationModal({
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-orange-100 dark:bg-orange-900/20 rounded-full">
+            {/* <div className="p-2 bg-orange-100 dark:bg-orange-900/20 rounded-full">
               <AlertTriangle className="w-5 h-5 text-orange-600 dark:text-orange-400" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+            </div> */}
+            <h3 className="text-md font-medium text-gray-900 dark:text-gray-100">
               {title}
             </h3>
           </div>
@@ -41,18 +41,14 @@ export default function CancelConfirmationModal({
 
         {/* Message */}
         <div className="mb-6">
-          <p className="text-gray-600 dark:text-gray-300 leading-relaxed">
+          <p className="text-gray-600 text-sm dark:text-gray-300 leading-relaxed">
             {message}
           </p>
         </div>
 
         {/* Actions */}
         <div className="flex justify-end gap-3">
-          <Button
-            variant="outline"
-            onClick={onClose}
-            className="font-normal"
-          >
+          <Button variant="outline" onClick={onClose} className="font-normal">
             Continuer l'édition
           </Button>
           <Button
