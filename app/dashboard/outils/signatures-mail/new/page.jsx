@@ -1347,22 +1347,34 @@ const EmailPreview = ({ signatureData, editingSignatureId, isEditMode }) => {
       // Générer le HTML optimisé pour Gmail (même générateur que la preview)
       const html = generateSignatureHTMLFromHook();
 
-      // Copier dans le presse-papiers
-      await navigator.clipboard.write([
-        new ClipboardItem({
-          "text/html": new Blob([html], { type: "text/html" }),
-          "text/plain": new Blob([html.replace(/<[^>]*>/g, "")], {
-            type: "text/plain",
-          }),
-        }),
-      ]);
+      if (!html || html.trim() === "") {
+        toast.error("Erreur: signature vide");
+        setIsCopying(false);
+        return;
+      }
 
-      toast.success("Signature copiée avec succès !");
+      // Copier dans le presse-papiers avec ClipboardItem (HTML + texte)
+      if (typeof ClipboardItem !== "undefined") {
+        await navigator.clipboard.write([
+          new ClipboardItem({
+            "text/html": new Blob([html], { type: "text/html" }),
+            "text/plain": new Blob([html.replace(/<[^>]*>/g, "")], {
+              type: "text/plain",
+            }),
+          }),
+        ]);
+        toast.success("Signature copiée avec succès !");
+      } else {
+        // Fallback pour les navigateurs qui ne supportent pas ClipboardItem
+        await navigator.clipboard.writeText(html);
+        toast.success("Signature copiée (texte brut)");
+      }
+
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2000);
     } catch (error) {
       console.error("❌ Erreur copie signature:", error);
-      // Fallback pour les navigateurs qui ne supportent pas ClipboardItem
+      // Fallback ultime
       try {
         const html = generateSignatureHTMLFromHook();
         await navigator.clipboard.writeText(html);
@@ -1370,6 +1382,7 @@ const EmailPreview = ({ signatureData, editingSignatureId, isEditMode }) => {
         setIsCopied(true);
         setTimeout(() => setIsCopied(false), 2000);
       } catch (fallbackError) {
+        console.error("❌ Erreur fallback:", fallbackError);
         toast.error("Erreur lors de la copie de la signature");
       }
     } finally {
@@ -1458,7 +1471,7 @@ const EmailPreview = ({ signatureData, editingSignatureId, isEditMode }) => {
             </Badge>
           )}
         </div>
-        {/* <Button
+        <Button
           size="sm"
           variant="secondary"
           onClick={handleCopySignature}
@@ -1476,7 +1489,7 @@ const EmailPreview = ({ signatureData, editingSignatureId, isEditMode }) => {
             : isCopied
               ? "Copiée !"
               : "Copier la signature"}
-        </Button> */}
+        </Button>
       </div>
 
       <div className="p-4 space-y-3 text-sm bg-[#FAFAFA] dark:bg-white">

@@ -21,11 +21,11 @@ export default function ContentTab() {
       />
       <Separator />
 
-      <CompanyLogoSection
+      {/* <CompanyLogoSection
         signatureData={signatureData}
         updateSignatureData={updateSignatureData}
       />
-      <Separator />
+      <Separator /> */}
 
       <SocialNetworksSection
         signatureData={signatureData}

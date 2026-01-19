@@ -326,15 +326,8 @@ function SignatureProviderContent({ children }) {
         rightColumn: ["contact"],
         bottomRow: ["separator", "logo", "social"],
       },
-      // Réseaux sociaux
-      socialNetworks: {
-        facebook: "",
-        instagram: "",
-        linkedin: "",
-        x: "",
-        github: "",
-        youtube: "",
-      },
+      // Réseaux sociaux (vide par défaut, l'utilisateur ajoute ceux qu'il veut)
+      socialNetworks: {},
       // Couleur globale et taille des icônes sociales
       socialGlobalColor: null, // null = couleurs par défaut de chaque réseau
       socialSize: 24, // Taille par défaut des icônes sociales

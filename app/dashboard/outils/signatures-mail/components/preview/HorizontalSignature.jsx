@@ -36,32 +36,40 @@ const HorizontalSignature = ({
   logoSrc,
 }) => {
   const spacings = signatureData.spacings ?? {};
-  
+
   // Récupérer le layout ou utiliser le layout par défaut
   const layout = signatureData.horizontalLayout || DEFAULT_HORIZONTAL_LAYOUT;
   const leftColumn = layout.leftColumn || DEFAULT_HORIZONTAL_LAYOUT.leftColumn;
-  const rightColumn = layout.rightColumn || DEFAULT_HORIZONTAL_LAYOUT.rightColumn;
+  const rightColumn =
+    layout.rightColumn || DEFAULT_HORIZONTAL_LAYOUT.rightColumn;
   const bottomRow = layout.bottomRow || DEFAULT_HORIZONTAL_LAYOUT.bottomRow;
 
   // Fonction pour rendre un élément selon son type
   const renderElement = (elementId, isInColumn = true) => {
     switch (elementId) {
       case "photo":
-        if (!signatureData.photo || signatureData.photoVisible === false) return null;
+        if (!signatureData.photo || signatureData.photoVisible === false)
+          return null;
         return (
           <tr key={elementId}>
             <td
               style={{
                 ...(signatureData.detailedSpacing
-                  ? getIndividualPaddingStyles(signatureData, "photo", { bottom: spacings.global || 8 })
-                  : { paddingBottom: `${getSpacing(signatureData, spacings.photoBottom, spacings.global || 8)}px` }),
+                  ? getIndividualPaddingStyles(signatureData, "photo", {
+                      bottom: spacings.global || 8,
+                    })
+                  : {
+                      paddingBottom: `${getSpacing(signatureData, spacings.photoBottom, spacings.global || 8)}px`,
+                    }),
               }}
             >
               <ProfileImage
                 photoSrc={signatureData.photo}
                 size={signatureData.imageSize || 70}
                 shape={signatureData.imageShape || "round"}
-                onImageChange={(imageUrl) => handleImageChange("photo", imageUrl)}
+                onImageChange={(imageUrl) =>
+                  handleImageChange("photo", imageUrl)
+                }
                 isEditable={true}
                 spacing={0}
                 wrapInTd={false}
@@ -173,8 +181,16 @@ const HorizontalSignature = ({
             enabled={signatureData.separatorHorizontalEnabled}
             color={signatureData.colors?.separatorHorizontal || "#e0e0e0"}
             width={signatureData.separatorHorizontalWidth || 1}
-            topSpacing={getSpacing(signatureData, spacings.separatorTop, spacings.global || 8)}
-            bottomSpacing={getSpacing(signatureData, spacings.separatorBottom, spacings.global || 8)}
+            topSpacing={getSpacing(
+              signatureData,
+              spacings.separatorTop,
+              spacings.global || 8,
+            )}
+            bottomSpacing={getSpacing(
+              signatureData,
+              spacings.separatorBottom,
+              spacings.global || 8,
+            )}
             radius={0}
             colSpan={signatureData.separatorVerticalEnabled ? 5 : 2}
             signatureData={signatureData}
@@ -188,7 +204,11 @@ const HorizontalSignature = ({
             key={elementId}
             logoSrc={logoSrc}
             size={signatureData.logoSize || 60}
-            spacing={getSpacing(signatureData, spacings.logoBottom, spacings.global || 8)}
+            spacing={getSpacing(
+              signatureData,
+              spacings.logoBottom,
+              spacings.global || 8,
+            )}
             alignment="left"
             signatureData={signatureData}
           />
@@ -201,6 +221,7 @@ const HorizontalSignature = ({
             socialNetworks={signatureData.socialNetworks || {}}
             customSocialIcons={signatureData.customSocialIcons || {}}
             size={signatureData.socialSize || 24}
+            socialSizes={signatureData.socialSizes || {}}
             globalColor={signatureData.socialGlobalColor}
             socialColors={signatureData.socialColors || {}}
             spacing={getSpacing(signatureData, spacings.logoToSocial, 15)}

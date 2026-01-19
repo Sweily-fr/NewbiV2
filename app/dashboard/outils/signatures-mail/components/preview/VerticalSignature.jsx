@@ -19,7 +19,15 @@ import "@/src/styles/signature-text-selection.css";
 import "./signature-preview.css";
 
 // Ordre par défaut des éléments
-const DEFAULT_ORDER = ["photo", "fullName", "position", "separator", "contact", "logo", "social"];
+const DEFAULT_ORDER = [
+  "photo",
+  "fullName",
+  "position",
+  "separator",
+  "contact",
+  "logo",
+  "social",
+];
 
 const VerticalSignature = ({
   signatureData,
@@ -31,26 +39,32 @@ const VerticalSignature = ({
   logoSrc,
 }) => {
   const spacings = signatureData.spacings ?? {};
-  
+
   // Récupérer l'ordre des éléments ou utiliser l'ordre par défaut
-  const elementsOrder = signatureData.elementsOrder?.length > 0 
-    ? signatureData.elementsOrder 
-    : DEFAULT_ORDER;
+  const elementsOrder =
+    signatureData.elementsOrder?.length > 0
+      ? signatureData.elementsOrder
+      : DEFAULT_ORDER;
 
   // Fonction pour rendre un élément selon son type
   const renderElement = (elementId, index) => {
     const isLast = index === elementsOrder.length - 1;
-    
+
     switch (elementId) {
       case "photo":
-        if (!signatureData.photo || signatureData.photoVisible === false) return null;
+        if (!signatureData.photo || signatureData.photoVisible === false)
+          return null;
         return (
           <tr key={elementId}>
             <td
               style={{
                 ...(signatureData.detailedSpacing
-                  ? getIndividualPaddingStyles(signatureData, "photo", { bottom: spacings.global || 8 })
-                  : { paddingBottom: `${getSpacing(signatureData, spacings.photoBottom, spacings.global || 8)}px` }),
+                  ? getIndividualPaddingStyles(signatureData, "photo", {
+                      bottom: spacings.global || 8,
+                    })
+                  : {
+                      paddingBottom: `${getSpacing(signatureData, spacings.photoBottom, spacings.global || 8)}px`,
+                    }),
                 textAlign: "center",
                 display: "block",
               }}
@@ -60,7 +74,9 @@ const VerticalSignature = ({
                   photoSrc={signatureData.photo}
                   size={signatureData.imageSize || 120}
                   shape={signatureData.imageShape || "round"}
-                  onImageChange={(imageUrl) => handleImageChange("photo", imageUrl)}
+                  onImageChange={(imageUrl) =>
+                    handleImageChange("photo", imageUrl)
+                  }
                   isEditable={true}
                   spacing={0}
                   wrapInTd={false}
@@ -140,8 +156,16 @@ const VerticalSignature = ({
             enabled={signatureData.separatorHorizontalEnabled}
             color={signatureData.colors?.separatorHorizontal || "#e0e0e0"}
             width={signatureData.separatorHorizontalWidth || 1}
-            topSpacing={getSpacing(signatureData, spacings.separatorTop, spacings.global || 8)}
-            bottomSpacing={getSpacing(signatureData, spacings.separatorBottom, spacings.global || 8)}
+            topSpacing={getSpacing(
+              signatureData,
+              spacings.separatorTop,
+              spacings.global || 8,
+            )}
+            bottomSpacing={getSpacing(
+              signatureData,
+              spacings.separatorBottom,
+              spacings.global || 8,
+            )}
             radius={0}
             colSpan={1}
             signatureData={signatureData}
@@ -189,7 +213,11 @@ const VerticalSignature = ({
             key={elementId}
             logoSrc={logoSrc}
             size={signatureData.logoSize || 80}
-            spacing={getSpacing(signatureData, spacings.logoBottom, spacings.global || 8)}
+            spacing={getSpacing(
+              signatureData,
+              spacings.logoBottom,
+              spacings.global || 8,
+            )}
             alignment="center"
             signatureData={signatureData}
           />
@@ -202,6 +230,7 @@ const VerticalSignature = ({
             socialNetworks={signatureData.socialNetworks || {}}
             customSocialIcons={signatureData.customSocialIcons || {}}
             size={signatureData.socialSize || 28}
+            socialSizes={signatureData.socialSizes || {}}
             globalColor={signatureData.socialGlobalColor}
             socialColors={signatureData.socialColors || {}}
             spacing={getSpacing(signatureData, spacings.logoToSocial, 16)}
@@ -231,7 +260,9 @@ const VerticalSignature = ({
       }}
     >
       <tbody>
-        {elementsOrder.map((elementId, index) => renderElement(elementId, index))}
+        {elementsOrder.map((elementId, index) =>
+          renderElement(elementId, index),
+        )}
       </tbody>
     </table>
   );

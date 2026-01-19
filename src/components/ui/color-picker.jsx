@@ -22,7 +22,7 @@ const toHex = (color) => {
   // Si en HSL
   if (color.startsWith("hsl")) {
     const match = color.match(
-      /hsl\((\d+\.?\d*),\s*(\d+\.?\d*)%,\s*(\d+\.?\d*)%\)/
+      /hsl\((\d+\.?\d*),\s*(\d+\.?\d*)%,\s*(\d+\.?\d*)%\)/,
     );
     if (match) {
       const h = parseFloat(match[1]) / 360;
@@ -365,7 +365,7 @@ export function ColorPicker({
   const handleEyeDropper = async () => {
     if (!window.EyeDropper) {
       alert(
-        "L'outil pipette n'est pas supporté par votre navigateur. Essayez Chrome ou Edge."
+        "L'outil pipette n'est pas supporté par votre navigateur. Essayez Chrome ou Edge.",
       );
       return;
     }

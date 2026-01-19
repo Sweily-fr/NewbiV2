@@ -13,6 +13,7 @@ const SocialNetworks = ({
   socialNetworks = {},
   customSocialIcons = {},
   size = 24,
+  socialSizes = {}, // Tailles individuelles par réseau
   globalColor = null,
   socialColors = {},
   spacing = 15,
@@ -31,9 +32,9 @@ const SocialNetworks = ({
     { key: "github", label: "GitHub" },
   ];
 
-  // Filtrer les réseaux configurés
-  const configuredNetworks = availableSocialNetworks.filter(
-    (social) => socialNetworks?.hasOwnProperty(social.key) && socialNetworks[social.key]
+  // Filtrer les réseaux configurés (afficher dès qu'ils sont ajoutés, même sans URL)
+  const configuredNetworks = availableSocialNetworks.filter((social) =>
+    socialNetworks?.hasOwnProperty(social.key),
   );
 
   // Ne rien afficher si aucun réseau configuré
@@ -56,7 +57,7 @@ const SocialNetworks = ({
 
     // Récupérer la couleur pour ce réseau (priorité: couleur spécifique > couleur globale)
     const color = socialColors?.[platform] || globalColor;
-    
+
     // Construire l'URL Cloudflare avec la couleur si disponible
     if (color) {
       // Convertir la couleur hex en nom (ex: #0077b5 -> blue, #25D366 -> green)
@@ -76,18 +77,29 @@ const SocialNetworks = ({
   // Fonction pour convertir une couleur hex ou nom en nom Cloudflare
   const getColorName = (colorInput) => {
     if (!colorInput) return null;
-    
+
     const color = colorInput.toLowerCase().trim();
-    
+
     // Si c'est déjà un nom de couleur, le retourner directement
-    const validColorNames = ["blue", "pink", "purple", "black", "red", "green", "yellow", "orange", "indigo", "sky"];
+    const validColorNames = [
+      "blue",
+      "pink",
+      "purple",
+      "black",
+      "red",
+      "green",
+      "yellow",
+      "orange",
+      "indigo",
+      "sky",
+    ];
     if (validColorNames.includes(color)) {
       return color;
     }
-    
+
     // Sinon, convertir le hex en nom
     const hexColor = color.replace("#", "");
-    
+
     // Mapping des couleurs hex vers les noms Cloudflare
     const colorMap = {
       // LinkedIn blue
@@ -95,22 +107,22 @@ const SocialNetworks = ({
       // Facebook blue
       "1877f2": "blue",
       // Instagram gradient (rose/purple)
-      "e4405f": "pink",
+      e4405f: "pink",
       "833ab4": "purple",
       // X (Twitter) black
       "000000": "black",
       "1da1f2": "blue",
       // YouTube red
-      "ff0000": "red",
+      ff0000: "red",
       // GitHub black
-      "333333": "black",
+      333333: "black",
       // Couleurs communes
       "00ff00": "green",
-      "ff00ff": "purple",
-      "ffff00": "yellow",
-      "ff6600": "orange",
+      ff00ff: "purple",
+      ffff00: "yellow",
+      ff6600: "orange",
     };
-    
+
     return colorMap[hexColor] || null;
   };
 
@@ -121,7 +133,9 @@ const SocialNetworks = ({
         style={{
           // Padding détaillé ou espacement par défaut
           ...(signatureData.detailedSpacing
-            ? getIndividualPaddingStyles(signatureData, "social", { top: spacing })
+            ? getIndividualPaddingStyles(signatureData, "social", {
+                top: spacing,
+              })
             : { paddingTop: `${spacing}px` }),
           textAlign: centered ? "center" : "left",
         }}
@@ -130,7 +144,7 @@ const SocialNetworks = ({
           cellPadding="0"
           cellSpacing="0"
           border="0"
-          style={{ 
+          style={{
             borderCollapse: "collapse",
             margin: centered ? "0 auto" : "0",
           }}
@@ -140,8 +154,11 @@ const SocialNetworks = ({
               {configuredNetworks.map((social, index) => {
                 const url = socialNetworks[social.key];
                 const iconUrl = getSocialIconUrl(social.key);
+                // Utiliser la taille individuelle si elle existe, sinon la taille globale
+                const iconSize = socialSizes?.[social.key] || size;
                 // Créer une clé unique basée sur la couleur pour forcer le rechargement
-                const colorKey = socialColors?.[social.key] || globalColor || "default";
+                const colorKey =
+                  socialColors?.[social.key] || globalColor || "default";
                 const uniqueKey = `${social.key}-${colorKey}`;
 
                 return (
@@ -167,11 +184,11 @@ const SocialNetworks = ({
                         key={uniqueKey}
                         src={iconUrl}
                         alt={social.label}
-                        width={size}
-                        height={size}
+                        width={iconSize}
+                        height={iconSize}
                         style={{
-                          width: `${size}px`,
-                          height: `${size}px`,
+                          width: `${iconSize}px`,
+                          height: `${iconSize}px`,
                           display: "block",
                           border: "none",
                         }}

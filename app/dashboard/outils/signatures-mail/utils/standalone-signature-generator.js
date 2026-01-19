@@ -4,12 +4,14 @@
  */
 
 export function generateSignatureHTML(signatureData) {
-  console.log("🔥 GÉNÉRATEUR APPELÉ - standalone-signature-generator.js", { orientation: signatureData.orientation });
-  
+  console.log("🔥 GÉNÉRATEUR APPELÉ - standalone-signature-generator.js", {
+    orientation: signatureData.orientation,
+  });
+
   // Fonction helper pour obtenir l'espacement approprié (identique à spacing-helper.js)
   const getSpacing = (specificSpacing, fallbackSpacing = 12) => {
     let result;
-    
+
     // Si le mode détaillé est activé, utiliser l'espacement spécifique
     if (signatureData.detailedSpacing && specificSpacing !== undefined) {
       result = specificSpacing;
@@ -17,7 +19,7 @@ export function generateSignatureHTML(signatureData) {
       // Sinon, utiliser l'espacement global
       result = signatureData.spacings?.global ?? fallbackSpacing;
     }
-    
+
     return result;
   };
 
@@ -43,29 +45,27 @@ export function generateSignatureHTML(signatureData) {
   // Utilise Word Joiner (&#8288;) qui est invisible et empêche la détection
   const escapeForGmail = (text, type) => {
     if (!text) return text;
-    
+
     // Word Joiner - caractère invisible qui empêche la détection de liens
-    const wj = '&#8288;';
-    const zwsp = '&#8203;';
-    
+    const wj = "&#8288;";
+    const zwsp = "&#8203;";
+
     // Pour les emails : ajouter word joiner après @ et après chaque .
-    if (type === 'email') {
-      return text
-        .replace(/@/g, `@${wj}`)
-        .replace(/\./g, `.${wj}`);
+    if (type === "email") {
+      return text.replace(/@/g, `@${wj}`).replace(/\./g, `.${wj}`);
     }
-    
+
     // Pour les URLs : supprimer https:// et ajouter word joiner après chaque .
-    if (type === 'website') {
-      let cleanUrl = text.replace(/^https?:\/\//i, ''); // Supprimer https:// ou http://
+    if (type === "website") {
+      let cleanUrl = text.replace(/^https?:\/\//i, ""); // Supprimer https:// ou http://
       return cleanUrl.replace(/\./g, `.${wj}`);
     }
-    
+
     // Pour les téléphones : ajouter zwsp après chaque chiffre (fonctionne déjà bien)
-    if (type === 'phone') {
+    if (type === "phone") {
       return text.replace(/(\d)/g, `$1${zwsp}`);
     }
-    
+
     return text;
   };
 
@@ -73,9 +73,15 @@ export function generateSignatureHTML(signatureData) {
   const getTypography = (field, property, fallback) => {
     // Priorité absolue à la nouvelle structure détaillée
     const detailedValue = signatureData.typography?.[field]?.[property];
-    if (detailedValue !== undefined && detailedValue !== null && detailedValue !== "") {
+    if (
+      detailedValue !== undefined &&
+      detailedValue !== null &&
+      detailedValue !== ""
+    ) {
       if (property === "textDecoration") {
-        console.log(` getTypography(${field}, textDecoration) = "${detailedValue}"`);
+        console.log(
+          ` getTypography(${field}, textDecoration) = "${detailedValue}"`,
+        );
       }
       return detailedValue;
     }
@@ -120,21 +126,23 @@ export function generateSignatureHTML(signatureData) {
     return fallback;
   };
 
-  const profileImageHTML = signatureData.photo && signatureData.photoVisible !== false
-    ? (() => {
-        const size = signatureData.imageSize || 70;
-        const mask = signatureData.imageShape === "square" ? "square" : "circle";
-        
-        let imageUrl = signatureData.photo;
-        
-        // Si c'est une data URL, ne pas l'utiliser (elle ne fonctionne pas bien dans Gmail)
-        if (imageUrl && imageUrl.startsWith('data:')) {
-          return ''; // Ne pas inclure les data URLs dans le HTML copié
-        }
-        
-        // ✅ Utiliser VML pour Outlook + fallback img pour Gmail (compatible tous clients mail)
-        const borderRadius = mask === 'circle' ? '50%' : '0';
-        return `<table cellpadding="0" cellspacing="0" border="0" style="margin:0;padding:0;">
+  const profileImageHTML =
+    signatureData.photo && signatureData.photoVisible !== false
+      ? (() => {
+          const size = signatureData.imageSize || 70;
+          const mask =
+            signatureData.imageShape === "square" ? "square" : "circle";
+
+          let imageUrl = signatureData.photo;
+
+          // Si c'est une data URL, ne pas l'utiliser (elle ne fonctionne pas bien dans Gmail)
+          if (imageUrl && imageUrl.startsWith("data:")) {
+            return ""; // Ne pas inclure les data URLs dans le HTML copié
+          }
+
+          // ✅ Utiliser VML pour Outlook + fallback img pour Gmail (compatible tous clients mail)
+          const borderRadius = mask === "circle" ? "50%" : "0";
+          return `<table cellpadding="0" cellspacing="0" border="0" style="margin:0;padding:0;">
   <tr>
     <td width="${size}" height="${size}" style="width:${size}px;height:${size}px;border-radius:${borderRadius};overflow:hidden;display:block;">
       <!--[if gte mso 9]>
@@ -148,8 +156,8 @@ export function generateSignatureHTML(signatureData) {
     </td>
   </tr>
 </table>`;
-      })()
-    : "";
+        })()
+      : "";
 
   const logoHTML = signatureData.logo
     ? (() => {
@@ -171,33 +179,44 @@ export function generateSignatureHTML(signatureData) {
   // Fonction pour convertir une couleur hex ou nom en nom Cloudflare
   const getColorName = (colorInput) => {
     if (!colorInput) return null;
-    
+
     const color = colorInput.toLowerCase().trim();
-    
+
     // Si c'est déjà un nom de couleur, le retourner directement
-    const validColorNames = ["blue", "pink", "purple", "black", "red", "green", "yellow", "orange", "indigo", "sky"];
+    const validColorNames = [
+      "blue",
+      "pink",
+      "purple",
+      "black",
+      "red",
+      "green",
+      "yellow",
+      "orange",
+      "indigo",
+      "sky",
+    ];
     if (validColorNames.includes(color)) {
       return color;
     }
-    
+
     // Sinon, convertir le hex en nom
     const hexColor = color.replace("#", "");
-    
+
     const colorMap = {
       "0077b5": "blue",
       "1877f2": "blue",
-      "e4405f": "pink",
+      e4405f: "pink",
       "833ab4": "purple",
       "000000": "black",
       "1da1f2": "blue",
-      "ff0000": "red",
-      "333333": "black",
+      ff0000: "red",
+      333333: "black",
       "00ff00": "green",
-      "ff00ff": "purple",
-      "ffff00": "yellow",
-      "ff6600": "orange",
+      ff00ff: "purple",
+      ffff00: "yellow",
+      ff6600: "orange",
     };
-    
+
     return colorMap[hexColor] || null;
   };
 
@@ -216,8 +235,10 @@ export function generateSignatureHTML(signatureData) {
       }
 
       // Récupérer la couleur pour ce réseau (priorité: couleur spécifique > couleur globale)
-      const color = signatureData.socialColors?.[platform] || signatureData.socialGlobalColor;
-      
+      const color =
+        signatureData.socialColors?.[platform] ||
+        signatureData.socialGlobalColor;
+
       // Construire l'URL Cloudflare avec la couleur si disponible
       if (color) {
         const colorName = getColorName(color);
@@ -230,12 +251,17 @@ export function generateSignatureHTML(signatureData) {
 
       // Fallback vers l'icône par défaut
       const defaultIconUrls = {
-        linkedin: "https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/social/linkedin/linkedin.png",
-        facebook: "https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/social/facebook/facebook.png",
-        instagram: "https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/social/instagram/instagram.png",
+        linkedin:
+          "https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/social/linkedin/linkedin.png",
+        facebook:
+          "https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/social/facebook/facebook.png",
+        instagram:
+          "https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/social/instagram/instagram.png",
         x: "https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/social/twitter/twitter.png",
-        youtube: "https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/social/youtube/youtube.png",
-        github: "https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/social/github/github.png",
+        youtube:
+          "https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/social/youtube/youtube.png",
+        github:
+          "https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/social/github/github.png",
       };
       return defaultIconUrls[platform];
     };
@@ -249,11 +275,9 @@ export function generateSignatureHTML(signatureData) {
       { key: "youtube", label: "YouTube" },
     ];
 
-    const activeNetworks = availableSocialNetworks.filter(
-      (social) =>
-        signatureData.socialNetworks?.hasOwnProperty(social.key) &&
-        signatureData.socialNetworks[social.key] &&
-        signatureData.socialNetworks[social.key].trim() !== ""
+    // Filtrer les réseaux activés (afficher dès qu'ils sont ajoutés, même sans URL)
+    const activeNetworks = availableSocialNetworks.filter((social) =>
+      signatureData.socialNetworks?.hasOwnProperty(social.key),
     );
 
     if (activeNetworks.length === 0) return "";
@@ -261,11 +285,16 @@ export function generateSignatureHTML(signatureData) {
     const iconsHTML = activeNetworks
       .map((social, index) => {
         const iconUrl = getSocialIconUrl(social.key);
-        const iconSize = signatureData.socialSize || 24;
+        const url = signatureData.socialNetworks[social.key] || "#";
+        // Utiliser la taille individuelle si elle existe, sinon la taille globale
+        const iconSize =
+          signatureData.socialSizes?.[social.key] ||
+          signatureData.socialSize ||
+          24;
         // 🔥 OPTIMISATION: Utiliser wsrv.nl pour les icônes
         const optimizedIconUrl = `https://wsrv.nl/?url=${encodeURIComponent(iconUrl)}&w=${iconSize * 2}&h=${iconSize * 2}&fit=cover&sharp=2&q=90`;
         return `
-        <a href="${signatureData.socialNetworks[social.key]}" style="text-decoration: none; margin-right: ${index < activeNetworks.length - 1 ? "8px" : "0"}; display: inline-block;">
+        <a href="${url}" style="text-decoration: none; margin-right: ${index < activeNetworks.length - 1 ? "8px" : "0"}; display: inline-block;">
           <img src="${optimizedIconUrl}" alt="${social.label}" style="width: ${iconSize}px; height: ${iconSize}px; display: block;" />
         </a>`;
       })
@@ -275,26 +304,28 @@ export function generateSignatureHTML(signatureData) {
   };
 
   const socialIconsHTML = generateSocialIconsHTML();
-  
+
   // Vérifier l'orientation
   const isVertical = signatureData.orientation === "vertical";
-  
+
   // Calculer le colspan dynamique basé sur le séparateur vertical
   const colSpan = signatureData.separatorVerticalEnabled ? 5 : 2;
-  
+
   // Générer le séparateur vertical si activé
-  const verticalSeparatorHTML = signatureData.separatorVerticalEnabled ? `
+  const verticalSeparatorHTML = signatureData.separatorVerticalEnabled
+    ? `
 <td style="width: ${getSpacing(signatureData.spacings?.global, 12)}px;">&nbsp;</td>
 <td style="width: ${signatureData.separatorVerticalWidth || 1}px; background-color: ${signatureData.colors?.separatorVertical || "#e0e0e0"}; border-radius: 0px; padding: 0px; font-size: 1px; line-height: 1px; height: 100%; min-height: 200px;">&nbsp;</td>
-<td style="width: ${getSpacing(signatureData.spacings?.global, 12)}px;">&nbsp;</td>` : '';
+<td style="width: ${getSpacing(signatureData.spacings?.global, 12)}px;">&nbsp;</td>`
+    : "";
 
   // ========== FONCTIONS HELPER POUR GÉNÉRER CHAQUE ÉLÉMENT ==========
-  
+
   // Générer l'élément photo
   const generatePhotoElement = () => {
     if (!signatureData.photo || signatureData.photoVisible === false) return "";
     return `<tr>
-<td style="padding: ${getPaddingStyle('photo', { bottom: getSpacing(signatureData.spacings?.photoBottom, 12) })};">
+<td style="padding: ${getPaddingStyle("photo", { bottom: getSpacing(signatureData.spacings?.photoBottom, 12) })};">
 ${profileImageHTML}
 </td>
 </tr>`;
@@ -303,7 +334,7 @@ ${profileImageHTML}
   // Générer l'élément nom complet
   const generateFullNameElement = () => {
     return `<tr>
-<td colspan="2" style="text-align: ${signatureData.nameAlignment || "left"}; padding: ${getPaddingStyle('name', { bottom: 8 })};">
+<td colspan="2" style="text-align: ${signatureData.nameAlignment || "left"}; padding: ${getPaddingStyle("name", { bottom: 8 })};">
 <span style="font-size: ${getTypography("fullName", "fontSize", 16)}px; font-weight: ${getTypography("fullName", "fontWeight", "bold")}; color: ${getTypography("fullName", "color", signatureData.primaryColor || "#171717")}; line-height: 1.2; font-family: ${getTypography("fullName", "fontFamily", "Arial, sans-serif")}; font-style: ${getTypography("fullName", "fontStyle", "normal")}; display: inline-block;">
 ${getTypography("fullName", "textDecoration", "none") === "underline" ? `<u>${signatureData.fullName || ""}</u>` : signatureData.fullName || ""}
 </span>
@@ -315,7 +346,7 @@ ${getTypography("fullName", "textDecoration", "none") === "underline" ? `<u>${si
   const generatePositionElement = () => {
     if (!signatureData.position) return "";
     return `<tr>
-<td colspan="2" style="padding: ${getPaddingStyle('position', { bottom: getSpacing(signatureData.spacings?.positionBottom, 8) })}; text-align: ${signatureData.nameAlignment || "left"};">
+<td colspan="2" style="padding: ${getPaddingStyle("position", { bottom: getSpacing(signatureData.spacings?.positionBottom, 8) })}; text-align: ${signatureData.nameAlignment || "left"};">
 <span style="font-size: ${getTypography("position", "fontSize", 14)}px; color: ${getTypography("position", "color", "rgb(102,102,102)")}; font-family: ${getTypography("position", "fontFamily", "Arial, sans-serif")}; font-weight: ${getTypography("position", "fontWeight", "normal")}; font-style: ${getTypography("position", "fontStyle", "normal")}; white-space: nowrap; display: inline-block;">
 ${getTypography("position", "textDecoration", "none") === "underline" ? `<u>${signatureData.position}</u>` : signatureData.position}
 </span>
@@ -326,18 +357,18 @@ ${getTypography("position", "textDecoration", "none") === "underline" ? `<u>${si
   // Générer l'élément contact (téléphone, mobile, email, site web, adresse)
   const generateContactElement = () => {
     let contactHTML = "";
-    
+
     if (signatureData.phone && (signatureData.showPhoneIcon ?? true)) {
       contactHTML += `<tr>
-<td colspan="2" style="padding: ${getPaddingStyle('phone', { bottom: getSpacing(signatureData.spacings?.phoneToMobile, 8) })};">
+<td colspan="2" style="padding: ${getPaddingStyle("phone", { bottom: getSpacing(signatureData.spacings?.phoneToMobile, 8) })};">
 <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
 <tbody>
 <tr>
 <td style="padding-right: 8px; vertical-align: middle;">
-<img src="${getOptimizedIconUrl('https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/info/smartphone.png', 16)}" alt="Téléphone" width="16" height="16" style="width: 16px; height: 16px; display: block;" />
+<img src="${getOptimizedIconUrl("https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/info/smartphone.png", 16)}" alt="Téléphone" width="16" height="16" style="width: 16px; height: 16px; display: block;" />
 </td>
 <td style="font-size: ${getTypography("phone", "fontSize", 12)}px; color: ${getTypography("phone", "color", "rgb(102,102,102)")}; font-weight: ${getTypography("phone", "fontWeight", "normal")}; vertical-align: middle; font-family: ${getTypography("phone", "fontFamily", "Arial, sans-serif")}; font-style: ${getTypography("phone", "fontStyle", "normal")};">
-${getTypography("phone", "textDecoration", "none") === "underline" ? `<u>${escapeForGmail(signatureData.phone, 'phone')}</u>` : escapeForGmail(signatureData.phone, 'phone')}
+${getTypography("phone", "textDecoration", "none") === "underline" ? `<u>${escapeForGmail(signatureData.phone, "phone")}</u>` : escapeForGmail(signatureData.phone, "phone")}
 </td>
 </tr>
 </tbody>
@@ -345,18 +376,18 @@ ${getTypography("phone", "textDecoration", "none") === "underline" ? `<u>${escap
 </td>
 </tr>`;
     }
-    
+
     if (signatureData.mobile && (signatureData.showMobileIcon ?? true)) {
       contactHTML += `<tr>
-<td colspan="2" style="padding: ${getPaddingStyle('mobile', { bottom: getSpacing(signatureData.spacings?.mobileToEmail, 8) })};">
+<td colspan="2" style="padding: ${getPaddingStyle("mobile", { bottom: getSpacing(signatureData.spacings?.mobileToEmail, 8) })};">
 <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
 <tbody>
 <tr>
 <td style="padding-right: 8px; vertical-align: middle;">
-<img src="${getOptimizedIconUrl('https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/info/phone.png', 16)}" alt="Mobile" width="16" height="16" style="width: 16px; height: 16px; display: block;" />
+<img src="${getOptimizedIconUrl("https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/info/phone.png", 16)}" alt="Mobile" width="16" height="16" style="width: 16px; height: 16px; display: block;" />
 </td>
 <td style="font-size: ${getTypography("mobile", "fontSize", 12)}px; color: ${getTypography("mobile", "color", "rgb(102,102,102)")}; font-weight: ${getTypography("mobile", "fontWeight", "normal")}; vertical-align: middle; font-family: ${getTypography("mobile", "fontFamily", "Arial, sans-serif")}; font-style: ${getTypography("mobile", "fontStyle", "normal")};">
-${getTypography("mobile", "textDecoration", "none") === "underline" ? `<u>${escapeForGmail(signatureData.mobile, 'phone')}</u>` : escapeForGmail(signatureData.mobile, 'phone')}
+${getTypography("mobile", "textDecoration", "none") === "underline" ? `<u>${escapeForGmail(signatureData.mobile, "phone")}</u>` : escapeForGmail(signatureData.mobile, "phone")}
 </td>
 </tr>
 </tbody>
@@ -364,18 +395,18 @@ ${getTypography("mobile", "textDecoration", "none") === "underline" ? `<u>${esca
 </td>
 </tr>`;
     }
-    
+
     if (signatureData.email && (signatureData.showEmailIcon ?? true)) {
       contactHTML += `<tr>
-<td colspan="2" style="padding: ${getPaddingStyle('email', { bottom: getSpacing(signatureData.spacings?.emailToWebsite, 8) })};">
+<td colspan="2" style="padding: ${getPaddingStyle("email", { bottom: getSpacing(signatureData.spacings?.emailToWebsite, 8) })};">
 <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
 <tbody>
 <tr>
 <td style="padding-right: 8px; vertical-align: middle;">
-<img src="${getOptimizedIconUrl('https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/info/mail.png', 16)}" alt="Email" width="16" height="16" style="width: 16px; height: 16px; display: block;" />
+<img src="${getOptimizedIconUrl("https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/info/mail.png", 16)}" alt="Email" width="16" height="16" style="width: 16px; height: 16px; display: block;" />
 </td>
 <td style="font-size: ${getTypography("email", "fontSize", 12)}px; color: ${getTypography("email", "color", "rgb(102,102,102)")}; font-weight: ${getTypography("email", "fontWeight", "normal")}; vertical-align: middle; font-family: ${getTypography("email", "fontFamily", "Arial, sans-serif")}; font-style: ${getTypography("email", "fontStyle", "normal")};">
-${getTypography("email", "textDecoration", "none") === "underline" ? `<u>${escapeForGmail(signatureData.email, 'email')}</u>` : escapeForGmail(signatureData.email, 'email')}
+${getTypography("email", "textDecoration", "none") === "underline" ? `<u>${escapeForGmail(signatureData.email, "email")}</u>` : escapeForGmail(signatureData.email, "email")}
 </td>
 </tr>
 </tbody>
@@ -383,18 +414,18 @@ ${getTypography("email", "textDecoration", "none") === "underline" ? `<u>${escap
 </td>
 </tr>`;
     }
-    
+
     if (signatureData.website && (signatureData.showWebsiteIcon ?? true)) {
       contactHTML += `<tr>
-<td colspan="2" style="padding: ${getPaddingStyle('website', { bottom: getSpacing(signatureData.spacings?.websiteToAddress, 8) })};">
+<td colspan="2" style="padding: ${getPaddingStyle("website", { bottom: getSpacing(signatureData.spacings?.websiteToAddress, 8) })};">
 <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
 <tbody>
 <tr>
 <td style="padding-right: 8px; vertical-align: middle;">
-<img src="${getOptimizedIconUrl('https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/info/globe.png', 16)}" alt="Site web" width="16" height="16" style="width: 16px; height: 16px; display: block;" />
+<img src="${getOptimizedIconUrl("https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/info/globe.png", 16)}" alt="Site web" width="16" height="16" style="width: 16px; height: 16px; display: block;" />
 </td>
 <td style="font-size: ${getTypography("website", "fontSize", 12)}px; color: ${getTypography("website", "color", "rgb(102,102,102)")}; font-weight: ${getTypography("website", "fontWeight", "normal")}; vertical-align: middle; font-family: ${getTypography("website", "fontFamily", "Arial, sans-serif")}; font-style: ${getTypography("website", "fontStyle", "normal")};">
-${getTypography("website", "textDecoration", "none") === "underline" ? `<u>${escapeForGmail(signatureData.website, 'website')}</u>` : escapeForGmail(signatureData.website, 'website')}
+${getTypography("website", "textDecoration", "none") === "underline" ? `<u>${escapeForGmail(signatureData.website, "website")}</u>` : escapeForGmail(signatureData.website, "website")}
 </td>
 </tr>
 </tbody>
@@ -402,15 +433,15 @@ ${getTypography("website", "textDecoration", "none") === "underline" ? `<u>${esc
 </td>
 </tr>`;
     }
-    
+
     if (signatureData.address && (signatureData.showAddressIcon ?? true)) {
       contactHTML += `<tr>
-<td colspan="2" style="padding: ${getPaddingStyle('address', { bottom: getSpacing(signatureData.spacings?.contactBottom, 8) })};">
+<td colspan="2" style="padding: ${getPaddingStyle("address", { bottom: getSpacing(signatureData.spacings?.contactBottom, 8) })};">
 <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse;">
 <tbody>
 <tr>
 <td style="padding-right: 8px;">
-<img src="${getOptimizedIconUrl('https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/info/map-pin.png', 16)}" alt="Adresse" width="16" height="16" style="width: 16px; height: 16px; display: block; margin-top: 1px;" />
+<img src="${getOptimizedIconUrl("https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/info/map-pin.png", 16)}" alt="Adresse" width="16" height="16" style="width: 16px; height: 16px; display: block; margin-top: 1px;" />
 </td>
 <td style="font-size: ${getTypography("address", "fontSize", 12)}px; color: ${getTypography("address", "color", "rgb(102,102,102)")}; font-weight: ${getTypography("address", "fontWeight", "normal")}; font-family: ${getTypography("address", "fontFamily", "Arial, sans-serif")}; font-style: ${getTypography("address", "fontStyle", "normal")};">
 ${getTypography("address", "textDecoration", "none") === "underline" ? `<u>${signatureData.address}</u>` : signatureData.address}
@@ -421,7 +452,7 @@ ${getTypography("address", "textDecoration", "none") === "underline" ? `<u>${sig
 </td>
 </tr>`;
     }
-    
+
     return contactHTML;
   };
 
@@ -464,14 +495,22 @@ ${socialIconsHTML}
   // Fonction pour générer un élément selon son ID
   const generateElementById = (elementId, isFullWidth = false) => {
     switch (elementId) {
-      case "photo": return generatePhotoElement();
-      case "fullName": return generateFullNameElement();
-      case "position": return generatePositionElement();
-      case "contact": return generateContactElement();
-      case "separator": return generateSeparatorElement(isFullWidth);
-      case "logo": return generateLogoElement(isFullWidth);
-      case "social": return generateSocialElement(isFullWidth);
-      default: return "";
+      case "photo":
+        return generatePhotoElement();
+      case "fullName":
+        return generateFullNameElement();
+      case "position":
+        return generatePositionElement();
+      case "contact":
+        return generateContactElement();
+      case "separator":
+        return generateSeparatorElement(isFullWidth);
+      case "logo":
+        return generateLogoElement(isFullWidth);
+      case "social":
+        return generateSocialElement(isFullWidth);
+      default:
+        return "";
     }
   };
 
@@ -487,42 +526,56 @@ ${socialIconsHTML}
     const htmlResult = `
 <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; width: auto; max-width: 400px; margin: 0 auto; table-layout: auto; font-family: ${signatureData.fontFamily || "Arial, sans-serif"};">
 <tbody>
-${signatureData.photo && signatureData.photoVisible !== false ? `
+${
+  signatureData.photo && signatureData.photoVisible !== false
+    ? `
 <!-- Photo de profil (centrée) -->
 <tr>
-<td style="padding: ${getPaddingStyle('photo', { bottom: getSpacing(signatureData.spacings?.photoBottom, 16) })}; text-align: center;">
+<td style="padding: ${getPaddingStyle("photo", { bottom: getSpacing(signatureData.spacings?.photoBottom, 16) })}; text-align: center;">
 <div style="margin: 0 auto; width: fit-content;">
 ${profileImageHTML}
 </div>
 </td>
-</tr>` : ""}
+</tr>`
+    : ""
+}
 <!-- Nom complet (centré) -->
 <tr>
-<td style="text-align: center; padding: ${getPaddingStyle('name', { bottom: 8 })};">
+<td style="text-align: center; padding: ${getPaddingStyle("name", { bottom: 8 })};">
 <span style="font-family: ${getTypography("fullName", "fontFamily", "Arial, sans-serif")}; font-size: ${getTypography("fullName", "fontSize", 16)}px; font-weight: ${getTypography("fullName", "fontWeight", "bold")}; color: ${getTypography("fullName", "color", signatureData.primaryColor || "#171717")}; line-height: 1.2; font-style: ${getTypography("fullName", "fontStyle", "normal")}; display: inline-block;">
 ${getTypography("fullName", "textDecoration", "none") === "underline" ? `<u>${signatureData.fullName || ""}</u>` : signatureData.fullName || ""}
 </span>
 </td>
 </tr>
-${signatureData.position ? `
+${
+  signatureData.position
+    ? `
 <!-- Poste (centré) -->
 <tr>
-<td style="padding: ${getPaddingStyle('position', { bottom: getSpacing(signatureData.spacings?.positionBottom, 8) })}; white-space: nowrap; text-align: center;">
+<td style="padding: ${getPaddingStyle("position", { bottom: getSpacing(signatureData.spacings?.positionBottom, 8) })}; white-space: nowrap; text-align: center;">
 <span style="font-family: ${getTypography("position", "fontFamily", "Arial, sans-serif")}; font-size: ${getTypography("position", "fontSize", 14)}px; color: ${getTypography("position", "color", "#666666")}; font-weight: ${getTypography("position", "fontWeight", "normal")}; font-style: ${getTypography("position", "fontStyle", "normal")}; display: inline-block;">
 ${getTypography("position", "textDecoration", "none") === "underline" ? `<u>${signatureData.position}</u>` : signatureData.position}
 </span>
 </td>
-</tr>` : ""}
-${signatureData.companyName ? `
+</tr>`
+    : ""
+}
+${
+  signatureData.companyName
+    ? `
 <!-- Entreprise (centré) -->
 <tr>
-<td style="padding: ${getPaddingStyle('company', { bottom: 12 })}; text-align: center;">
+<td style="padding: ${getPaddingStyle("company", { bottom: 12 })}; text-align: center;">
 <span style="font-family: ${getTypography("company", "fontFamily", "Arial, sans-serif")}; font-size: ${getTypography("company", "fontSize", 14)}px; font-weight: ${getTypography("company", "fontWeight", "bold")}; color: ${getTypography("company", "color", signatureData.primaryColor || "#171717")}; font-style: ${getTypography("company", "fontStyle", "normal")}; text-decoration: ${getTypography("company", "textDecoration", "none")}; display: inline-block;">
 ${signatureData.companyName}
 </span>
 </td>
-</tr>` : ""}
-${signatureData.separatorHorizontalEnabled ? `
+</tr>`
+    : ""
+}
+${
+  signatureData.separatorHorizontalEnabled
+    ? `
 <!-- Séparateur horizontal (centré) -->
 <tr>
 <td style="padding-top: ${getSpacing(signatureData.spacings?.separatorTop, 12)}px; padding-bottom: ${getSpacing(signatureData.spacings?.separatorBottom, 12)}px; text-align: center;">
@@ -534,15 +587,19 @@ ${signatureData.separatorHorizontalEnabled ? `
 </tbody>
 </table>
 </td>
-</tr>` : ""}
+</tr>`
+    : ""
+}
 <!-- Informations de contact (centrées) -->
 <tr>
 <td style="text-align: center;">
 <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; margin: 0 auto;">
 <tbody>
-${signatureData.phone && (signatureData.showPhoneIcon ?? true) ? `
+${
+  signatureData.phone && (signatureData.showPhoneIcon ?? true)
+    ? `
 <tr>
-<td style="padding: ${getPaddingStyle('phone', { bottom: getSpacing(signatureData.spacings?.phoneToMobile, 8) })}; text-align: center;">
+<td style="padding: ${getPaddingStyle("phone", { bottom: getSpacing(signatureData.spacings?.phoneToMobile, 8) })}; text-align: center;">
 <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; margin: 0 auto;">
 <tbody>
 <tr>
@@ -550,16 +607,20 @@ ${signatureData.phone && (signatureData.showPhoneIcon ?? true) ? `
 <img src="https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/info/smartphone.png" alt="Téléphone" width="16" height="16" style="width: 16px; height: 16px; display: block; margin-top: 0px;" />
 </td>
 <td style="font-size: ${getTypography("phone", "fontSize", 12)}px; color: ${getTypography("phone", "color", "rgb(102,102,102)")}; font-family: ${getTypography("phone", "fontFamily", "Arial, sans-serif")}; font-weight: ${getTypography("phone", "fontWeight", "normal")}; font-style: ${getTypography("phone", "fontStyle", "normal")}; vertical-align: middle;">
-${getTypography("phone", "textDecoration", "none") === "underline" ? `<u>${escapeForGmail(signatureData.phone, 'phone')}</u>` : escapeForGmail(signatureData.phone, 'phone')}
+${getTypography("phone", "textDecoration", "none") === "underline" ? `<u>${escapeForGmail(signatureData.phone, "phone")}</u>` : escapeForGmail(signatureData.phone, "phone")}
 </td>
 </tr>
 </tbody>
 </table>
 </td>
-</tr>` : ""}
-${signatureData.mobile && (signatureData.showMobileIcon ?? true) ? `
+</tr>`
+    : ""
+}
+${
+  signatureData.mobile && (signatureData.showMobileIcon ?? true)
+    ? `
 <tr>
-<td style="padding: ${getPaddingStyle('mobile', { bottom: getSpacing(signatureData.spacings?.mobileToEmail, 8) })}; text-align: center;">
+<td style="padding: ${getPaddingStyle("mobile", { bottom: getSpacing(signatureData.spacings?.mobileToEmail, 8) })}; text-align: center;">
 <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; margin: 0 auto;">
 <tbody>
 <tr>
@@ -567,16 +628,20 @@ ${signatureData.mobile && (signatureData.showMobileIcon ?? true) ? `
 <img src="https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/info/phone.png" alt="Mobile" width="16" height="16" style="width: 16px; height: 16px; display: block; margin-top: 0px;" />
 </td>
 <td style="font-size: ${getTypography("mobile", "fontSize", 12)}px; color: ${getTypography("mobile", "color", "rgb(102,102,102)")}; font-family: ${getTypography("mobile", "fontFamily", "Arial, sans-serif")}; font-weight: ${getTypography("mobile", "fontWeight", "normal")}; font-style: ${getTypography("mobile", "fontStyle", "normal")}; vertical-align: middle;">
-${getTypography("mobile", "textDecoration", "none") === "underline" ? `<u>${escapeForGmail(signatureData.mobile, 'phone')}</u>` : escapeForGmail(signatureData.mobile, 'phone')}
+${getTypography("mobile", "textDecoration", "none") === "underline" ? `<u>${escapeForGmail(signatureData.mobile, "phone")}</u>` : escapeForGmail(signatureData.mobile, "phone")}
 </td>
 </tr>
 </tbody>
 </table>
 </td>
-</tr>` : ""}
-${signatureData.email && (signatureData.showEmailIcon ?? true) ? `
+</tr>`
+    : ""
+}
+${
+  signatureData.email && (signatureData.showEmailIcon ?? true)
+    ? `
 <tr>
-<td style="padding: ${getPaddingStyle('email', { bottom: getSpacing(signatureData.spacings?.emailToWebsite, 8) })}; text-align: center;">
+<td style="padding: ${getPaddingStyle("email", { bottom: getSpacing(signatureData.spacings?.emailToWebsite, 8) })}; text-align: center;">
 <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; margin: 0 auto;">
 <tbody>
 <tr>
@@ -584,16 +649,20 @@ ${signatureData.email && (signatureData.showEmailIcon ?? true) ? `
 <img src="https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/info/mail.png" alt="Email" width="16" height="16" style="width: 16px; height: 16px; display: block; margin-top: 0px;" />
 </td>
 <td style="font-size: ${getTypography("email", "fontSize", 12)}px; color: ${getTypography("email", "color", "rgb(102,102,102)")}; font-family: ${getTypography("email", "fontFamily", "Arial, sans-serif")}; font-weight: ${getTypography("email", "fontWeight", "normal")}; font-style: ${getTypography("email", "fontStyle", "normal")}; vertical-align: middle;">
-${getTypography("email", "textDecoration", "none") === "underline" ? `<u>${escapeForGmail(signatureData.email, 'email')}</u>` : escapeForGmail(signatureData.email, 'email')}
+${getTypography("email", "textDecoration", "none") === "underline" ? `<u>${escapeForGmail(signatureData.email, "email")}</u>` : escapeForGmail(signatureData.email, "email")}
 </td>
 </tr>
 </tbody>
 </table>
 </td>
-</tr>` : ""}
-${signatureData.website && (signatureData.showWebsiteIcon ?? true) ? `
+</tr>`
+    : ""
+}
+${
+  signatureData.website && (signatureData.showWebsiteIcon ?? true)
+    ? `
 <tr>
-<td style="padding: ${getPaddingStyle('website', { bottom: getSpacing(signatureData.spacings?.websiteToAddress, 8) })}; text-align: center;">
+<td style="padding: ${getPaddingStyle("website", { bottom: getSpacing(signatureData.spacings?.websiteToAddress, 8) })}; text-align: center;">
 <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; margin: 0 auto;">
 <tbody>
 <tr>
@@ -601,16 +670,20 @@ ${signatureData.website && (signatureData.showWebsiteIcon ?? true) ? `
 <img src="https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/info/globe.png" alt="Site web" width="16" height="16" style="width: 16px; height: 16px; display: block; margin-top: 0px;" />
 </td>
 <td style="font-size: ${getTypography("website", "fontSize", 12)}px; color: ${getTypography("website", "color", "rgb(102,102,102)")}; font-family: ${getTypography("website", "fontFamily", "Arial, sans-serif")}; font-weight: ${getTypography("website", "fontWeight", "normal")}; font-style: ${getTypography("website", "fontStyle", "normal")}; vertical-align: middle;">
-${getTypography("website", "textDecoration", "none") === "underline" ? `<u>${escapeForGmail(signatureData.website, 'website')}</u>` : escapeForGmail(signatureData.website, 'website')}
+${getTypography("website", "textDecoration", "none") === "underline" ? `<u>${escapeForGmail(signatureData.website, "website")}</u>` : escapeForGmail(signatureData.website, "website")}
 </td>
 </tr>
 </tbody>
 </table>
 </td>
-</tr>` : ""}
-${signatureData.address && (signatureData.showAddressIcon ?? true) ? `
+</tr>`
+    : ""
+}
+${
+  signatureData.address && (signatureData.showAddressIcon ?? true)
+    ? `
 <tr>
-<td style="padding: ${getPaddingStyle('address', { bottom: getSpacing(signatureData.spacings?.contactBottom, 8) })}; text-align: center;">
+<td style="padding: ${getPaddingStyle("address", { bottom: getSpacing(signatureData.spacings?.contactBottom, 8) })}; text-align: center;">
 <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; margin: 0 auto;">
 <tbody>
 <tr>
@@ -624,12 +697,16 @@ ${getTypography("address", "textDecoration", "none") === "underline" ? `<u>${sig
 </tbody>
 </table>
 </td>
-</tr>` : ""}
+</tr>`
+    : ""
+}
 </tbody>
 </table>
 </td>
 </tr>
-${logoHTML && signatureData.logoVisible !== false ? `
+${
+  logoHTML && signatureData.logoVisible !== false
+    ? `
 <!-- Logo entreprise (centré) -->
 <tr>
 <td style="padding-top: ${getSpacing(signatureData.spacings?.logoBottom, signatureData.spacings?.global || 8)}px; text-align: center;">
@@ -637,14 +714,20 @@ ${logoHTML && signatureData.logoVisible !== false ? `
 ${logoHTML}
 </div>
 </td>
-</tr>` : ""}
-${socialIconsHTML ? `
+</tr>`
+    : ""
+}
+${
+  socialIconsHTML
+    ? `
 <!-- Réseaux sociaux (centrés) -->
 <tr>
 <td style="padding-top: ${getSpacing(signatureData.spacings?.logoToSocial, 16)}px; text-align: center;">
 ${socialIconsHTML}
 </td>
-</tr>` : ""}
+</tr>`
+    : ""
+}
 </tbody>
 </table>
 `;
@@ -654,13 +737,20 @@ ${socialIconsHTML}
   // Structure horizontale dynamique basée sur horizontalLayout
   const layout = signatureData.horizontalLayout || DEFAULT_HORIZONTAL_LAYOUT;
   const leftColumn = layout.leftColumn || DEFAULT_HORIZONTAL_LAYOUT.leftColumn;
-  const rightColumn = layout.rightColumn || DEFAULT_HORIZONTAL_LAYOUT.rightColumn;
+  const rightColumn =
+    layout.rightColumn || DEFAULT_HORIZONTAL_LAYOUT.rightColumn;
   const bottomRow = layout.bottomRow || DEFAULT_HORIZONTAL_LAYOUT.bottomRow;
 
   // Générer le HTML pour chaque colonne
-  const leftColumnHTML = leftColumn.map(elementId => generateElementById(elementId, false)).join("");
-  const rightColumnHTML = rightColumn.map(elementId => generateElementById(elementId, false)).join("");
-  const bottomRowHTML = bottomRow.map(elementId => generateElementById(elementId, true)).join("");
+  const leftColumnHTML = leftColumn
+    .map((elementId) => generateElementById(elementId, false))
+    .join("");
+  const rightColumnHTML = rightColumn
+    .map((elementId) => generateElementById(elementId, false))
+    .join("");
+  const bottomRowHTML = bottomRow
+    .map((elementId) => generateElementById(elementId, true))
+    .join("");
 
   const htmlResult = `
 <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; width: auto; max-width: 600px; table-layout: auto; font-family: ${signatureData.fontFamily || "Arial, sans-serif"};">
@@ -689,6 +779,6 @@ ${bottomRowHTML}
 </tbody>
 </table>
 `;
-  
+
   return htmlResult;
 }
