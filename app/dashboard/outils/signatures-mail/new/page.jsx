@@ -1471,7 +1471,7 @@ const EmailPreview = ({ signatureData, editingSignatureId, isEditMode }) => {
             </Badge>
           )}
         </div>
-        <Button
+        {/* <Button
           size="sm"
           variant="secondary"
           onClick={handleCopySignature}
@@ -1489,7 +1489,7 @@ const EmailPreview = ({ signatureData, editingSignatureId, isEditMode }) => {
             : isCopied
               ? "Copiée !"
               : "Copier la signature"}
-        </Button>
+        </Button> */}
       </div>
 
       <div className="p-4 space-y-3 text-sm bg-[#FAFAFA] dark:bg-white">

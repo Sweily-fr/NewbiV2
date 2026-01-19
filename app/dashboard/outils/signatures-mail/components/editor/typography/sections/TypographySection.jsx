@@ -219,7 +219,7 @@ export default function TypographySection({
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
-                      className="h-8 w-40 px-1.5 justify-between gap-1.5"
+                      className="h-8 w-40 px-1.5 justify-start gap-1.5"
                     >
                       <div className="flex items-center gap-2">
                         <Type className="w-4 h-4" />
@@ -227,16 +227,6 @@ export default function TypographySection({
                           {fieldLabels[fieldKey]}
                         </span>
                       </div>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleRemoveField(fieldKey);
-                        }}
-                        className="p-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                        title="Supprimer"
-                      >
-                        <X className="w-2 h-2 text-gray-400 hover:text-gray-600" />
-                      </button>
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent
