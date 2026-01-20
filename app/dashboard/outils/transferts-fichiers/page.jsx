@@ -424,7 +424,7 @@ function TransfertsContent() {
 
           {/* Modal Content */}
           <div
-            className="relative z-50 max-w-6xl w-[95vw] h-[95vh] overflow-hidden bg-background rounded-xl border border-border p-6 flex flex-col"
+            className="relative z-50 max-w-6xl w-[95vw] h-[90vh] bg-background rounded-xl border border-border p-6 flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Close Button - Caché pendant l'upload */}
@@ -451,7 +451,7 @@ function TransfertsContent() {
             </div>
 
             {/* Content - flex-1 pour prendre tout l'espace restant */}
-            <div className="flex-1 min-h-0 overflow-hidden">
+            <div className="flex-1 min-h-0">
               <FileUploadNew
                 onTransferCreated={handleTransferCreated}
                 refetchTransfers={refetchTransfers}

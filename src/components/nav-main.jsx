@@ -381,60 +381,82 @@ export function NavMain({
               </SidebarMenuButton>
             </DropdownMenuTrigger>
             <DropdownMenuContent
+              className="w-80 rounded-lg"
               side="right"
               align="start"
-              className="min-w-[200px]"
+              sideOffset={8}
             >
-              {/* Lien vers tous les dossiers */}
-              <DropdownMenuItem asChild>
-                <Link
-                  href="/dashboard/outils/kanban"
-                  onClick={handleLinkClick}
-                  className="cursor-pointer font-medium"
-                >
-                  <LayoutGrid className="h-4 w-4 mr-2" />
-                  Tous les dossiers
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
               {/* Barre de recherche */}
-              <div className="px-2 py-2">
-                <div className="relative">
-                  <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                  <Input
-                    type="text"
-                    placeholder="Rechercher..."
-                    value={kanbanSearchTerm}
-                    onChange={(e) => setKanbanSearchTerm(e.target.value)}
-                    className="h-7 pl-7 text-xs"
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                </div>
+              <div className="flex items-center px-4 mb-1 border-b">
+                <Search className="h-4 w-4 shrink-0 opacity-50" />
+                <Input
+                  placeholder="Rechercher un dossier..."
+                  value={kanbanSearchTerm}
+                  onChange={(e) => setKanbanSearchTerm(e.target.value)}
+                  onClick={(e) => e.stopPropagation()}
+                  className="flex h-9 w-full rounded-md shadow-none bg-transparent py-3 text-sm outline-none placeholder:text-xs border-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                />
               </div>
+
               {/* Liste des dossiers avec scroll */}
               <div className="max-h-[200px] overflow-y-auto">
                 {filteredKanbanBoards.length > 0 ? (
-                  filteredKanbanBoards.map((board) => (
-                    <DropdownMenuItem key={board.id} asChild>
-                      <Link
-                        href={`/dashboard/outils/kanban/${board.id}`}
-                        onClick={handleLinkClick}
-                        className={cn(
-                          "cursor-pointer",
-                          pathname === `/dashboard/outils/kanban/${board.id}` &&
-                            "bg-accent font-medium"
-                        )}
+                  filteredKanbanBoards.map((board) => {
+                    const isBoardActive =
+                      pathname === `/dashboard/outils/kanban/${board.id}`;
+                    return (
+                      <DropdownMenuItem
+                        key={board.id}
+                        asChild
+                        className="flex items-center gap-2 px-2 py-2 cursor-pointer"
                       >
-                        {board.title}
-                      </Link>
-                    </DropdownMenuItem>
-                  ))
+                        <Link
+                          href={`/dashboard/outils/kanban/${board.id}`}
+                          onClick={handleLinkClick}
+                        >
+                          <span className="flex-1 text-xs truncate">
+                            {board.title}
+                          </span>
+                          {isBoardActive && (
+                            <ChevronRight className="h-4 w-4 text-[#5b4fff]" />
+                          )}
+                        </Link>
+                      </DropdownMenuItem>
+                    );
+                  })
                 ) : (
                   <div className="px-2 py-1.5 text-xs text-muted-foreground">
                     {kanbanSearchTerm ? "Aucun résultat" : "Aucun dossier"}
                   </div>
                 )}
               </div>
+
+              <DropdownMenuSeparator className="my-1" />
+
+              {/* Lien vers tous les dossiers */}
+              <DropdownMenuItem asChild>
+                <Link
+                  href="/dashboard/outils/kanban"
+                  onClick={handleLinkClick}
+                  className="flex items-center gap-2 px-2 py-2 cursor-pointer text-muted-foreground"
+                >
+                  <span className="text-xs">Tous les dossiers</span>
+                </Link>
+              </DropdownMenuItem>
+
+              <DropdownMenuSeparator className="my-1" />
+
+              {/* Créer un nouveau dossier */}
+              <DropdownMenuItem asChild>
+                <Link
+                  href="/dashboard/outils/kanban?new=true"
+                  onClick={handleLinkClick}
+                  className="flex items-center gap-2 px-2 py-2 cursor-pointer"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span className="text-xs">Nouveau dossier</span>
+                </Link>
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </SidebarMenuItem>
         </DropdownMenu>
