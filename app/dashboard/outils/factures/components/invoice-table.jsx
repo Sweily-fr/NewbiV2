@@ -417,7 +417,7 @@ export default function InvoiceTable({
             </thead>
           </table>
         </div>
-        {/* Body scrollable */}
+        {/* Table Body - Scrollable */}
         <div className="flex-1 overflow-auto">
           <table className="w-full table-fixed">
             <tbody>
@@ -672,7 +672,7 @@ export default function InvoiceTable({
                 table.setPageSize(Number(value));
               }}
             >
-              <SelectTrigger className="h-7 w-[60px] text-xs">
+              <SelectTrigger className="h-7 w-[70px] text-xs">
                 <SelectValue
                   placeholder={table.getState().pagination.pageSize}
                 />

@@ -442,119 +442,101 @@ export function NavMain({
     }
 
     return (
-      <Collapsible
-        key="projets"
-        open={isProjetsOpen}
-        onOpenChange={setIsProjetsOpen}
-      >
+      <DropdownMenu key="projets-expanded">
         <SidebarMenuItem>
-          <div
-            className={cn(
-              "flex items-center w-full rounded-md transition-colors",
-              isKanbanActive && "bg-[#F0F0F0] dark:bg-sidebar-accent"
-            )}
-          >
+          <DropdownMenuTrigger asChild>
             <SidebarMenuButton
               tooltip="Projets"
               className={cn(
-                "bg-transparent w-full cursor-pointer hover:bg-transparent",
-                isKanbanActive && "text-sidebar-foreground"
+                "bg-transparent w-full cursor-pointer",
+                isKanbanActive &&
+                  "bg-[#F0F0F0] dark:bg-sidebar-accent text-sidebar-foreground"
               )}
-              onClick={() => setIsProjetsOpen(!isProjetsOpen)}
             >
               <FolderKanban />
               <span>Projets</span>
+              <ChevronRight className="ml-auto h-4 w-4" />
             </SidebarMenuButton>
-            <CollapsibleTrigger asChild>
-              <button
-                className="p-2 hover:bg-transparent transition-colors cursor-pointer"
-                onClick={(e) => e.stopPropagation()}
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            side="right"
+            align="start"
+            className="w-64 rounded-lg"
+            sideOffset={8}
+          >
+            {/* Lien vers tous les dossiers - Style comme organization switcher */}
+            <DropdownMenuItem asChild>
+              <Link
+                href="/dashboard/outils/kanban"
+                onClick={handleLinkClick}
+                className="cursor-pointer flex items-center gap-2 font-medium"
               >
-                <ChevronRight
-                  className={cn(
-                    "h-4 w-4 transition-transform",
-                    isProjetsOpen && "rotate-90"
-                  )}
-                />
-              </button>
-            </CollapsibleTrigger>
-          </div>
-          <CollapsibleContent>
-            <SidebarMenuSub>
-              {/* Lien vers tous les dossiers */}
-              <SidebarMenuSubItem>
-                <Link
-                  href="/dashboard/outils/kanban"
-                  onClick={handleLinkClick}
-                  className="w-full"
-                >
-                  <SidebarMenuSubButton
-                    isActive={pathname === "/dashboard/outils/kanban"}
-                    className={cn(
-                      "w-full cursor-pointer",
-                      pathname === "/dashboard/outils/kanban" &&
-                        "bg-[#F0F0F0] dark:bg-sidebar-accent text-sidebar-foreground font-medium"
-                    )}
-                  >
-                    <LayoutGrid className="h-3.5 w-3.5 mr-1.5" />
-                    <span className="text-sm">Tous les dossiers</span>
-                  </SidebarMenuSubButton>
-                </Link>
-              </SidebarMenuSubItem>
+                <LayoutGrid className="h-4 w-4" />
+                <span className="text-sm">Tous les dossiers</span>
+              </Link>
+            </DropdownMenuItem>
 
-              {/* Barre de recherche */}
-              <li className="px-2 py-2">
-                <div className="relative">
-                  <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                  <Input
-                    type="text"
-                    placeholder="Rechercher..."
-                    value={kanbanSearchTerm}
-                    onChange={(e) => setKanbanSearchTerm(e.target.value)}
-                    className="h-7 pl-7 text-xs"
-                  />
+            {/* Barre de recherche - Style comme organization switcher */}
+            <div className="flex items-center px-2 py-2 border-b border-t mt-1">
+              <Search className="h-4 w-4 shrink-0 opacity-50" />
+              <Input
+                type="text"
+                placeholder="Rechercher..."
+                value={kanbanSearchTerm}
+                onChange={(e) => setKanbanSearchTerm(e.target.value)}
+                onClick={(e) => e.stopPropagation()}
+                className="flex h-8 w-full rounded-md shadow-none bg-transparent py-2 text-sm outline-none placeholder:text-xs border-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+              />
+            </div>
+
+            {/* Liste des dossiers Kanban avec scroll */}
+            <div className="max-h-[200px] overflow-y-auto">
+              {filteredKanbanBoards.length > 0 ? (
+                filteredKanbanBoards.map((board) => {
+                  const isBoardActive =
+                    pathname === `/dashboard/outils/kanban/${board.id}`;
+                  return (
+                    <DropdownMenuItem key={board.id} asChild>
+                      <Link
+                        href={`/dashboard/outils/kanban/${board.id}`}
+                        onClick={handleLinkClick}
+                        className={cn(
+                          "cursor-pointer flex items-center gap-2 px-2 py-2",
+                          isBoardActive && "bg-accent font-medium"
+                        )}
+                      >
+                        <span className="text-xs truncate flex-1">
+                          {board.title}
+                        </span>
+                        {isBoardActive && (
+                          <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                        )}
+                      </Link>
+                    </DropdownMenuItem>
+                  );
+                })
+              ) : (
+                <div className="px-2 py-2 text-xs text-muted-foreground">
+                  {kanbanSearchTerm ? "Aucun résultat" : "Aucun dossier"}
                 </div>
-              </li>
+              )}
+            </div>
 
-              {/* Liste des dossiers Kanban avec scroll */}
-              <div className="max-h-[200px] overflow-y-auto">
-                {filteredKanbanBoards.length > 0 ? (
-                  filteredKanbanBoards.map((board) => {
-                    const isBoardActive =
-                      pathname === `/dashboard/outils/kanban/${board.id}`;
-                    return (
-                      <SidebarMenuSubItem key={board.id}>
-                        <Link
-                          href={`/dashboard/outils/kanban/${board.id}`}
-                          onClick={handleLinkClick}
-                          className="w-full"
-                        >
-                          <SidebarMenuSubButton
-                            isActive={isBoardActive}
-                            className={cn(
-                              "w-full cursor-pointer truncate",
-                              isBoardActive &&
-                                "bg-[#F0F0F0] dark:bg-sidebar-accent text-sidebar-foreground font-medium"
-                            )}
-                          >
-                            <span className="text-sm truncate">
-                              {board.title}
-                            </span>
-                          </SidebarMenuSubButton>
-                        </Link>
-                      </SidebarMenuSubItem>
-                    );
-                  })
-                ) : (
-                  <li className="px-3 py-2 text-xs text-muted-foreground">
-                    {kanbanSearchTerm ? "Aucun résultat" : "Aucun dossier"}
-                  </li>
-                )}
-              </div>
-            </SidebarMenuSub>
-          </CollapsibleContent>
+            <DropdownMenuSeparator className="my-1" />
+
+            {/* Lien vers tous les dossiers en bas - Style comme organization switcher */}
+            <DropdownMenuItem asChild>
+              <Link
+                href="/dashboard/outils/kanban"
+                onClick={handleLinkClick}
+                className="cursor-pointer flex items-center gap-2 px-2 py-2 text-muted-foreground"
+              >
+                <span className="text-xs">Tous les dossiers</span>
+              </Link>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
         </SidebarMenuItem>
-      </Collapsible>
+      </DropdownMenu>
     );
   };
 

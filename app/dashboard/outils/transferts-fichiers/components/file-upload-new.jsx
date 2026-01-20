@@ -503,7 +503,7 @@ export default function FileUploadNew({
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 h-[75vh]">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 flex-1 min-h-0">
       {/* Upload Section - Fixe */}
       <div className="flex flex-col gap-2 h-full overflow-hidden">
         {/* Drop area ou Progress */}

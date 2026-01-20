@@ -443,8 +443,8 @@ export function ShareBoardDialog({ boardId, boardTitle, workspaceId }) {
             ) : shares.length > 0 ? (
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Liens existants</Label>
-                <ScrollArea className="max-h-[300px]">
-                  <div className="space-y-2">
+                <ScrollArea className="max-h-[350px]">
+                  <div className="space-y-2 pb-4">
                     {shares.map((share) => (
                       <div 
                         key={share.id} 

@@ -156,7 +156,7 @@ const columns = (
         aria-label="Select row"
       />
     ),
-    size: 28,
+    size: 40,
     enableSorting: false,
     enableHiding: false,
   },
@@ -312,6 +312,7 @@ export default function TableClients({
   workspaceId,
   externalGlobalFilter = "",
   externalSelectedTypes = [],
+  selectedList = null,
   hideSearchBar = false,
 }) {
   const id = useId();
@@ -350,9 +351,19 @@ export default function TableClients({
   } = hookResult;
 
   // Utiliser les clients passés en props si disponibles
-  const clients = useProvidedClients ? clientsProp || [] : hookClients;
+  const rawClients = useProvidedClients ? clientsProp || [] : hookClients;
+  
+  // Filtrer les clients par liste sélectionnée
+  const clients = useMemo(() => {
+    if (!selectedList || !rawClients) return rawClients;
+    // Filtrer les clients qui appartiennent à la liste sélectionnée
+    return rawClients.filter(client => 
+      client.lists?.some(list => list.id === selectedList.id)
+    );
+  }, [rawClients, selectedList]);
+  
   const totalItems = useProvidedClients
-    ? clientsProp?.length || 0
+    ? clients?.length || 0
     : hookTotalItems;
   const currentPage = useProvidedClients ? 1 : hookCurrentPage;
   const totalPages = useProvidedClients ? 1 : hookTotalPages;
@@ -838,7 +849,7 @@ export default function TableClients({
                   table.setPageSize(Number(value));
                 }}
               >
-                <SelectTrigger className="h-7 w-[60px] text-xs">
+                <SelectTrigger className="h-7 w-[70px] text-xs">
                   <SelectValue placeholder="Select number of results" />
                 </SelectTrigger>
                 <SelectContent side="top">

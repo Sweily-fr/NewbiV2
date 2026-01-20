@@ -830,7 +830,7 @@ export default function TransferTable({
                 table.setPageSize(Number(value));
               }}
             >
-              <SelectTrigger className="h-7 w-[60px] text-xs">
+              <SelectTrigger className="h-7 w-[70px] text-xs">
                 <SelectValue
                   placeholder={table.getState().pagination.pageSize}
                 />

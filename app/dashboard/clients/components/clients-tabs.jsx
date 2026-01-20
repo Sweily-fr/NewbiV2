@@ -12,6 +12,7 @@ import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { useClients } from "@/src/hooks/useClients";
 import ClientsTable from "./clients-table";
 import ClientListsView from "./client-lists-view";
+import ListClientsView from "./list-clients-view";
 import ClientFilters from "./client-filters";
 import { Loader2, Search, CircleXIcon } from "lucide-react";
 import { Input } from "@/src/components/ui/input";
@@ -48,13 +49,22 @@ export default function ClientsTabs() {
 
   const handleSelectList = (list) => {
     setSelectedList(list);
+    // Rester sur l'onglet "lists" pour afficher la vue de détail de la liste
     setActiveTab("lists");
+  };
+
+  // Réinitialiser selectedList quand on clique sur "Mes listes"
+  const handleTabChange = (value) => {
+    if (value === "lists") {
+      setSelectedList(null);
+    }
+    setActiveTab(value);
   };
 
   return (
     <Tabs
       value={activeTab}
-      onValueChange={setActiveTab}
+      onValueChange={handleTabChange}
       className="flex flex-col flex-1 min-h-0"
     >
       {/* Search and Filters - Au dessus des tabs */}
@@ -142,19 +152,26 @@ export default function ClientsTabs() {
 
       <TabsContent
         value="lists"
-        className="flex-1 min-h-0 mt-0 px-4 sm:px-6 py-4 overflow-auto data-[state=inactive]:hidden"
+        className="flex-1 min-h-0 mt-0 overflow-hidden data-[state=inactive]:hidden"
       >
         {listsLoading ? (
           <div className="flex items-center justify-center h-96">
             <Loader2 className="w-8 h-8 animate-spin" />
           </div>
+        ) : selectedList ? (
+          <ListClientsView
+            workspaceId={workspaceId}
+            list={selectedList}
+            onBack={() => setSelectedList(null)}
+            onListUpdated={refetchLists}
+          />
         ) : (
           <ClientListsView
             workspaceId={workspaceId}
             lists={lists}
             onListsUpdated={refetchLists}
             selectedList={selectedList}
-            onSelectListChange={setSelectedList}
+            onSelectListChange={handleSelectList}
           />
         )}
       </TabsContent>

@@ -175,10 +175,10 @@ function SignaturesContent() {
         </div>
       </div>
 
-      {/* Desktop Content */}
-      <div className="hidden lg:block space-y-6 p-6">
+      {/* Desktop Content - Pleine largeur */}
+      <div className="hidden lg:flex lg:flex-col h-[calc(100vh-64px)] overflow-hidden md:h-[calc(100vh-64px)]">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between px-4 sm:px-6 pt-4 sm:pt-6 flex-shrink-0">
           <div>
             <h1 className="text-2xl font-medium mb-2">Signatures Mail</h1>
             <p className="text-muted-foreground text-sm">
@@ -187,16 +187,18 @@ function SignaturesContent() {
           </div>
           <Button
             onClick={handleCreateSignature}
-            className="gap-2 font-normal cursor-pointer"
+            className="font-normal bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
           >
             Créer une signature
           </Button>
         </div>
 
-        {/* Table */}
-        <Suspense fallback={<SignatureTableSkeleton />}>
-          <SignatureTable />
-        </Suspense>
+        {/* Table - Pleine largeur */}
+        <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+          <Suspense fallback={<SignatureTableSkeleton />}>
+            <SignatureTable />
+          </Suspense>
+        </div>
       </div>
     </>
   );

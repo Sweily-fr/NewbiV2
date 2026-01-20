@@ -51,6 +51,7 @@ import {
 } from "../../hooks/use-signature-table";
 import SignatureRowActions from "./signature-row-actions";
 import { Skeleton } from "@/src/components/ui/skeleton";
+import { Label } from "@/src/components/ui/label";
 import { useRouter } from "next/navigation";
 
 const SIGNATURE_STATUS_LABELS = {
@@ -103,9 +104,9 @@ export default function SignatureTable() {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-200px)] overflow-hidden">
+    <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
       {/* Search Bar */}
-      <div className="flex items-center justify-between gap-3 py-4 flex-shrink-0">
+      <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-4 flex-shrink-0">
         <div className="relative max-w-md">
           <Input
             placeholder="Rechercher une signature..."
@@ -150,9 +151,9 @@ export default function SignatureTable() {
         )}
       </div>
 
-      {/* Table */}
+      {/* Table - Style identique à Transactions */}
       <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
-        {/* Table Header */}
+        {/* Header fixe */}
         <div className="flex-shrink-0 border-b border-gray-200 dark:border-gray-800">
           <table className="w-full table-fixed">
             <thead>
@@ -162,7 +163,7 @@ export default function SignatureTable() {
                     <th
                       key={header.id}
                       style={{ width: header.getSize() }}
-                      className={`h-10 p-2 text-left align-middle font-normal text-xs text-muted-foreground ${index === 0 ? "pl-4" : ""} ${index === arr.length - 1 ? "pr-4" : ""}`}
+                      className={`h-10 p-2 text-left align-middle font-normal text-xs text-muted-foreground ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
                     >
                       {header.isPlaceholder
                         ? null
@@ -178,7 +179,7 @@ export default function SignatureTable() {
           </table>
         </div>
 
-        {/* Table Body - Scrollable */}
+        {/* Body scrollable */}
         <div className="flex-1 overflow-auto">
           <table className="w-full table-fixed">
             <tbody>
@@ -205,7 +206,7 @@ export default function SignatureTable() {
                       <td
                         key={cell.id}
                         style={{ width: cell.column.getSize() }}
-                        className={`p-2 align-middle text-sm ${index === 0 ? "pl-4" : ""} ${index === arr.length - 1 ? "pr-4" : ""}`}
+                        className={`p-2 align-middle text-sm ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
                       >
                         {flexRender(
                           cell.column.columnDef.cell,
@@ -230,95 +231,93 @@ export default function SignatureTable() {
             </tbody>
           </table>
         </div>
+      </div>
 
-        {/* Pagination */}
-        <div className="flex items-center justify-between py-2 border-t border-gray-200 dark:border-gray-800 bg-background flex-shrink-0">
-          <div className="flex-1 text-xs font-normal text-muted-foreground">
-            {table.getFilteredSelectedRowModel().rows.length} sur{" "}
-            {table.getFilteredRowModel().rows.length} ligne(s) sélectionnée(s).
+      {/* Pagination - Style identique à Transactions */}
+      <div className="flex items-center justify-between px-4 sm:px-6 py-2 border-t border-gray-200 dark:border-gray-800 bg-background flex-shrink-0">
+        <div className="flex-1 text-xs font-normal text-muted-foreground">
+          {table.getFilteredSelectedRowModel().rows.length} sur{" "}
+          {table.getFilteredRowModel().rows.length} ligne(s) sélectionnée(s).
+        </div>
+        <div className="flex items-center space-x-4 lg:space-x-6">
+          <div className="flex items-center gap-1.5">
+            <p className="whitespace-nowrap text-xs font-normal">
+              Lignes par page
+            </p>
+            <Select
+              value={`${table.getState().pagination.pageSize}`}
+              onValueChange={(value) => {
+                table.setPageSize(Number(value));
+              }}
+            >
+              <SelectTrigger className="h-7 w-[70px] text-xs">
+                <SelectValue placeholder={table.getState().pagination.pageSize} />
+              </SelectTrigger>
+              <SelectContent side="top">
+                {[10, 20, 30, 40, 50].map((pageSize) => (
+                  <SelectItem key={pageSize} value={`${pageSize}`}>
+                    {pageSize}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-          <div className="flex items-center space-x-4 lg:space-x-6">
-            <div className="flex items-center gap-1.5">
-              <p className="whitespace-nowrap text-xs font-normal">
-                Lignes par page
-              </p>
-              <Select
-                value={`${table.getState().pagination.pageSize}`}
-                onValueChange={(value) => {
-                  table.setPageSize(Number(value));
-                }}
-              >
-                <SelectTrigger className="h-7 w-[60px] text-xs">
-                  <SelectValue
-                    placeholder={table.getState().pagination.pageSize}
-                  />
-                </SelectTrigger>
-                <SelectContent side="top">
-                  {[10, 20, 30, 40, 50].map((pageSize) => (
-                    <SelectItem key={pageSize} value={`${pageSize}`}>
-                      {pageSize}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center whitespace-nowrap text-xs font-normal">
-              Page {table.getState().pagination.pageIndex + 1} sur{" "}
-              {table.getPageCount() || 1}
-            </div>
-            <Pagination>
-              <PaginationContent>
-                <PaginationItem>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-7 w-7 disabled:pointer-events-none disabled:opacity-50"
-                    onClick={() => table.setPageIndex(0)}
-                    disabled={!table.getCanPreviousPage()}
-                    aria-label="Première page"
-                  >
-                    <ChevronFirstIcon size={14} aria-hidden="true" />
-                  </Button>
-                </PaginationItem>
-                <PaginationItem>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-7 w-7 disabled:pointer-events-none disabled:opacity-50"
-                    onClick={() => table.previousPage()}
-                    disabled={!table.getCanPreviousPage()}
-                    aria-label="Page précédente"
-                  >
-                    <ChevronLeftIcon size={14} aria-hidden="true" />
-                  </Button>
-                </PaginationItem>
-                <PaginationItem>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-7 w-7 disabled:pointer-events-none disabled:opacity-50"
-                    onClick={() => table.nextPage()}
-                    disabled={!table.getCanNextPage()}
-                    aria-label="Page suivante"
-                  >
-                    <ChevronRightIcon size={14} aria-hidden="true" />
-                  </Button>
-                </PaginationItem>
-                <PaginationItem>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-7 w-7 disabled:pointer-events-none disabled:opacity-50"
-                    onClick={() => table.lastPage()}
-                    disabled={!table.getCanNextPage()}
-                    aria-label="Dernière page"
-                  >
-                    <ChevronLastIcon size={14} aria-hidden="true" />
-                  </Button>
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
+          <div className="flex items-center whitespace-nowrap text-xs font-normal">
+            Page {table.getState().pagination.pageIndex + 1} sur{" "}
+            {table.getPageCount() || 1}
           </div>
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-7 w-7 disabled:pointer-events-none disabled:opacity-50"
+                  onClick={() => table.setPageIndex(0)}
+                  disabled={!table.getCanPreviousPage()}
+                  aria-label="Première page"
+                >
+                  <ChevronFirstIcon size={14} aria-hidden="true" />
+                </Button>
+              </PaginationItem>
+              <PaginationItem>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-7 w-7 disabled:pointer-events-none disabled:opacity-50"
+                  onClick={() => table.previousPage()}
+                  disabled={!table.getCanPreviousPage()}
+                  aria-label="Page précédente"
+                >
+                  <ChevronLeftIcon size={14} aria-hidden="true" />
+                </Button>
+              </PaginationItem>
+              <PaginationItem>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-7 w-7 disabled:pointer-events-none disabled:opacity-50"
+                  onClick={() => table.nextPage()}
+                  disabled={!table.getCanNextPage()}
+                  aria-label="Page suivante"
+                >
+                  <ChevronRightIcon size={14} aria-hidden="true" />
+                </Button>
+              </PaginationItem>
+              <PaginationItem>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-7 w-7 disabled:pointer-events-none disabled:opacity-50"
+                  onClick={() => table.lastPage()}
+                  disabled={!table.getCanNextPage()}
+                  aria-label="Dernière page"
+                >
+                  <ChevronLastIcon size={14} aria-hidden="true" />
+                </Button>
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
         </div>
       </div>
     </div>
@@ -372,7 +371,7 @@ function useSignatureTable({ data, onRefetch, actions }) {
           const signature = row.original;
           return (
             <div className="min-h-[40px] flex flex-col justify-center">
-              <div className="font-medium">{signature.signatureName}</div>
+              <div>{signature.signatureName}</div>
               {signature.companyName && (
                 <div className="text-xs text-muted-foreground truncate max-w-[200px]">
                   {signature.companyName}
@@ -537,9 +536,9 @@ function useSignatureTable({ data, onRefetch, actions }) {
 
 function SignatureTableSkeleton() {
   return (
-    <div className="flex flex-col h-[calc(100vh-200px)] overflow-hidden">
+    <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
       {/* Search Bar Skeleton */}
-      <div className="flex items-center justify-between gap-3 py-4 flex-shrink-0">
+      <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-4 flex-shrink-0">
         <Skeleton className="h-9 w-[400px]" />
       </div>
 
@@ -577,18 +576,22 @@ function SignatureTableSkeleton() {
           ))}
         </div>
 
-        {/* Pagination Skeleton */}
-        <div className="flex items-center justify-between py-2 border-t border-gray-200 dark:border-gray-800 flex-shrink-0">
-          <Skeleton className="h-4 w-[150px]" />
-          <div className="flex items-center gap-4">
-            <Skeleton className="h-7 w-[100px]" />
+      </div>
+
+      {/* Pagination Skeleton - Style identique à Transactions */}
+      <div className="flex items-center justify-between px-4 sm:px-6 py-2 border-t border-gray-200 dark:border-gray-800 flex-shrink-0">
+        <Skeleton className="h-4 w-[150px]" />
+        <div className="flex items-center space-x-4 lg:space-x-6">
+          <div className="flex items-center gap-1.5">
             <Skeleton className="h-4 w-[80px]" />
-            <div className="flex gap-1">
-              <Skeleton className="h-7 w-7" />
-              <Skeleton className="h-7 w-7" />
-              <Skeleton className="h-7 w-7" />
-              <Skeleton className="h-7 w-7" />
-            </div>
+            <Skeleton className="h-7 w-[70px]" />
+          </div>
+          <Skeleton className="h-4 w-[80px]" />
+          <div className="flex gap-1">
+            <Skeleton className="h-7 w-7" />
+            <Skeleton className="h-7 w-7" />
+            <Skeleton className="h-7 w-7" />
+            <Skeleton className="h-7 w-7" />
           </div>
         </div>
       </div>

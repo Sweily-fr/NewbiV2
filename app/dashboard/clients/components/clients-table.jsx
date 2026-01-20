@@ -115,6 +115,7 @@ export default function ClientsTable({
   defaultListId = null,
   globalFilter = "",
   selectedTypes = [],
+  selectedList = null,
   hideSearchBar = false,
 }) {
   const [selectedClients, setSelectedClients] = useState(new Set());
@@ -272,6 +273,7 @@ export default function ClientsTable({
         workspaceId={workspaceId}
         externalGlobalFilter={globalFilter}
         externalSelectedTypes={selectedTypes}
+        selectedList={selectedList}
         hideSearchBar={hideSearchBar}
       />
 
