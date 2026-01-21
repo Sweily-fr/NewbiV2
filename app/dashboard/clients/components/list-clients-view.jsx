@@ -11,35 +11,37 @@ export default function ListClientsView({ workspaceId, list, onBack, onListUpdat
   const { clients, totalItems, loading } = useClientsInList(workspaceId, list.id, 1, 10);
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-4">
+    <div className="flex flex-col flex-1 min-h-0">
+      {/* Header avec marges alignées sur "Gestion des contacts" */}
+      <div className="px-4 sm:px-6 pt-4 pb-2 space-y-3 flex-shrink-0">
         <Button
           variant="outline"
           size="sm"
           onClick={onBack}
-          className="gap-2 w-full sm:w-auto"
+          className="gap-2"
         >
           <ArrowLeft className="w-4 h-4" />
           Retour aux listes
         </Button>
-        <div className="space-y-2">
+        <div className="space-y-1">
           <div className="flex items-center gap-3">
             <div
               className="w-4 h-4 rounded-full flex-shrink-0"
               style={{ backgroundColor: list.color }}
             />
-            <h2 className="text-lg sm:text-xl font-medium tracking-tight break-words">{list.name}</h2>
+            <h2 className="text-2xl font-medium">{list.name}</h2>
           </div>
           {list.description && (
-            <p className="text-xs sm:text-sm text-muted-foreground break-words">{list.description}</p>
+            <p className="text-sm text-muted-foreground">{list.description}</p>
           )}
+          <p className="text-sm text-muted-foreground">
+            {totalItems} contact{totalItems !== 1 ? 's' : ''}
+          </p>
         </div>
       </div>
 
-      <div>
-        <p className="text-sm text-muted-foreground mb-6">
-          {totalItems} contact{totalItems !== 1 ? 's' : ''}
-        </p>
+      {/* Tableau */}
+      <div className="flex-1 min-h-0">
         {loading ? (
           <div className="flex items-center justify-center h-96">
             <Loader2 className="w-8 h-8 animate-spin" />

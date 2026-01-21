@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -205,6 +206,7 @@ const columns = [
 ];
 
 export default function TableClients({ handleAddUser }) {
+  const router = useRouter();
   const id = useId();
   const [columnFilters, setColumnFilters] = useState([]);
   const [columnVisibility, setColumnVisibility] = useState({});
@@ -536,18 +538,19 @@ export default function TableClients({ handleAddUser }) {
         </div>
       </div>
 
-      {/* Table */}
-      <div className="bg-background overflow-hidden rounded-md border">
-        <Table className="table-fixed">
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id} className="hover:bg-transparent">
-                {headerGroup.headers.map((header) => {
-                  return (
-                    <TableHead
+      {/* Table - Style identique à Transactions */}
+      <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+        {/* Header fixe */}
+        <div className="flex-shrink-0 border-b border-gray-200 dark:border-gray-800">
+          <table className="w-full table-fixed">
+            <thead>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <tr key={headerGroup.id}>
+                  {headerGroup.headers.map((header, index, arr) => (
+                    <th
                       key={header.id}
                       style={{ width: `${header.getSize()}px` }}
-                      className="h-11"
+                      className={`h-10 p-2 text-left align-middle font-normal text-xs text-muted-foreground ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
                     >
                       {header.isPlaceholder ? null : header.column.getCanSort() ? (
                         <div
@@ -557,7 +560,6 @@ export default function TableClients({ handleAddUser }) {
                           )}
                           onClick={header.column.getToggleSortingHandler()}
                           onKeyDown={(e) => {
-                            // Enhanced keyboard handling for sorting
                             if (
                               header.column.getCanSort() &&
                               (e.key === "Enter" || e.key === " ")
@@ -595,156 +597,158 @@ export default function TableClients({ handleAddUser }) {
                           header.getContext()
                         )
                       )}
-                    </TableHead>
-                  );
-                })}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="last:py-0">
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
+                    </th>
                   ))}
-                </TableRow>
-              ))
-            ) : error ? (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center text-red-500"
-                >
-                  <div className="flex flex-col items-center gap-2">
-                    <span>Erreur lors du chargement des clients</span>
-                    <button
-                      onClick={handleRefresh}
-                      className="text-blue-600 hover:text-blue-800 underline"
-                    >
-                      Réessayer
-                    </button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
-                >
-                  Aucun client trouvé.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+                </tr>
+              ))}
+            </thead>
+          </table>
+        </div>
+
+        {/* Body scrollable */}
+        <div className="flex-1 overflow-auto">
+          <table className="w-full table-fixed">
+            <tbody>
+              {table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <tr
+                    key={row.id}
+                    data-state={row.getIsSelected() && "selected"}
+                    className="border-b hover:bg-muted/50 data-[state=selected]:bg-muted cursor-pointer transition-colors"
+                    onClick={(e) => {
+                      if (e.target.closest("[data-actions-cell]")) {
+                        return;
+                      }
+                      router.push(`/dashboard/catalogues/clients/${row.original.id}`);
+                    }}
+                  >
+                    {row.getVisibleCells().map((cell, index, arr) => (
+                      <td
+                        key={cell.id}
+                        style={{ width: `${cell.column.getSize()}px` }}
+                        className={`p-2 align-middle text-sm ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
+                      >
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </td>
+                    ))}
+                  </tr>
+                ))
+              ) : error ? (
+                <tr>
+                  <td
+                    colSpan={columns.length}
+                    className="h-24 text-center p-2 text-red-500"
+                  >
+                    <div className="flex flex-col items-center gap-2">
+                      <span>Erreur lors du chargement des clients</span>
+                      <button
+                        onClick={handleRefresh}
+                        className="text-blue-600 hover:text-blue-800 underline"
+                      >
+                        Réessayer
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                <tr>
+                  <td
+                    colSpan={columns.length}
+                    className="h-24 text-center p-2"
+                  >
+                    Aucun client trouvé.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      {/* Pagination */}
-      <div className="flex items-center justify-between gap-8">
-        {/* Results per page */}
-        <div className="flex items-center gap-3">
-          <Label htmlFor={id} className="max-sm:sr-only">
-            Rows per page
-          </Label>
-          <Select
-            value={table.getState().pagination.pageSize.toString()}
-            onValueChange={(value) => {
-              table.setPageSize(Number(value));
-            }}
-          >
-            <SelectTrigger id={id} className="w-fit whitespace-nowrap">
-              <SelectValue placeholder="Select number of results" />
-            </SelectTrigger>
-            <SelectContent className="[&_*[role=option]]:ps-2 [&_*[role=option]]:pe-8 [&_*[role=option]>span]:start-auto [&_*[role=option]>span]:end-2">
-              {[5, 10, 25, 50].map((pageSize) => (
-                <SelectItem key={pageSize} value={pageSize.toString()}>
-                  {pageSize}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+      {/* Pagination - Style identique à Transactions */}
+      <div className="flex items-center justify-between px-4 sm:px-6 py-2 border-t border-gray-200 dark:border-gray-800 bg-background flex-shrink-0">
+        <div className="flex-1 text-xs font-normal text-muted-foreground">
+          {table.getFilteredSelectedRowModel().rows.length} sur{" "}
+          {table.getFilteredRowModel().rows.length} ligne(s) sélectionnée(s).
         </div>
-        {/* Page number information */}
-        <div className="text-muted-foreground flex grow justify-end text-sm whitespace-nowrap">
-          <p
-            className="text-muted-foreground text-sm whitespace-nowrap"
-            aria-live="polite"
-          >
-            <span className="text-foreground">
-              {pagination.pageIndex * pagination.pageSize + 1}-
-              {Math.min(
-                (pagination.pageIndex + 1) * pagination.pageSize,
-                totalItems || 0
-              )}
-            </span>{" "}
-            sur <span className="text-foreground">{totalItems || 0}</span>
-          </p>
-        </div>
-
-        {/* Pagination buttons */}
-        <div>
+        <div className="flex items-center space-x-4 lg:space-x-6">
+          <div className="flex items-center gap-1.5">
+            <p className="whitespace-nowrap text-xs font-normal">
+              Lignes par page
+            </p>
+            <Select
+              value={`${table.getState().pagination.pageSize}`}
+              onValueChange={(value) => {
+                table.setPageSize(Number(value));
+              }}
+            >
+              <SelectTrigger className="h-7 w-[70px] text-xs">
+                <SelectValue placeholder={table.getState().pagination.pageSize} />
+              </SelectTrigger>
+              <SelectContent side="top">
+                {[10, 20, 30, 40, 50].map((pageSize) => (
+                  <SelectItem key={pageSize} value={`${pageSize}`}>
+                    {pageSize}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center whitespace-nowrap text-xs font-normal">
+            Page {table.getState().pagination.pageIndex + 1} sur{" "}
+            {table.getPageCount() || 1}
+          </div>
           <Pagination>
             <PaginationContent>
-              {/* First page button */}
               <PaginationItem>
                 <Button
                   size="icon"
-                  variant="outline"
-                  className="disabled:pointer-events-none disabled:opacity-50"
+                  variant="ghost"
+                  className="h-7 w-7 disabled:pointer-events-none disabled:opacity-50"
                   onClick={() => table.firstPage()}
                   disabled={!table.getCanPreviousPage()}
-                  aria-label="Go to first page"
+                  aria-label="Première page"
                 >
-                  <ChevronFirstIcon size={16} aria-hidden="true" />
+                  <ChevronFirstIcon size={14} aria-hidden="true" />
                 </Button>
               </PaginationItem>
-              {/* Previous page button */}
               <PaginationItem>
                 <Button
                   size="icon"
-                  variant="outline"
-                  className="disabled:pointer-events-none disabled:opacity-50"
+                  variant="ghost"
+                  className="h-7 w-7 disabled:pointer-events-none disabled:opacity-50"
                   onClick={() => table.previousPage()}
                   disabled={!table.getCanPreviousPage()}
-                  aria-label="Go to previous page"
+                  aria-label="Page précédente"
                 >
-                  <ChevronLeftIcon size={16} aria-hidden="true" />
+                  <ChevronLeftIcon size={14} aria-hidden="true" />
                 </Button>
               </PaginationItem>
-              {/* Next page button */}
               <PaginationItem>
                 <Button
                   size="icon"
-                  variant="outline"
-                  className="disabled:pointer-events-none disabled:opacity-50"
+                  variant="ghost"
+                  className="h-7 w-7 disabled:pointer-events-none disabled:opacity-50"
                   onClick={() => table.nextPage()}
                   disabled={!table.getCanNextPage()}
-                  aria-label="Go to next page"
+                  aria-label="Page suivante"
                 >
-                  <ChevronRightIcon size={16} aria-hidden="true" />
+                  <ChevronRightIcon size={14} aria-hidden="true" />
                 </Button>
               </PaginationItem>
-              {/* Last page button */}
               <PaginationItem>
                 <Button
                   size="icon"
-                  variant="outline"
-                  className="disabled:pointer-events-none disabled:opacity-50"
+                  variant="ghost"
+                  className="h-7 w-7 disabled:pointer-events-none disabled:opacity-50"
                   onClick={() => table.lastPage()}
                   disabled={!table.getCanNextPage()}
-                  aria-label="Go to last page"
+                  aria-label="Dernière page"
                 >
-                  <ChevronLastIcon size={16} aria-hidden="true" />
+                  <ChevronLastIcon size={14} aria-hidden="true" />
                 </Button>
               </PaginationItem>
             </PaginationContent>

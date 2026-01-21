@@ -503,9 +503,10 @@ export default function FileUploadNew({
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 h-[75vh]">
-      {/* Upload Section - Fixe */}
-      <div className="flex flex-col gap-2 h-full overflow-hidden">
+    <>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 h-full min-h-0">
+      {/* Upload Section */}
+      <div className="flex flex-col gap-2 min-h-0">
         {/* Drop area ou Progress */}
         {isUploading ? (
           <div className="border-input flex min-h-60 flex-col items-center justify-center rounded-xl border border-dashed p-4 animate-in fade-in duration-300">
@@ -675,9 +676,9 @@ export default function FileUploadNew({
 
         {/* File list */}
         {selectedFiles.length > 0 && (
-          <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+          <div className="flex-1 flex flex-col min-h-0">
             {/* Liste des fichiers avec scroll */}
-            <div className="flex-1 overflow-y-auto space-y-3 pr-1 min-h-0">
+            <div className="flex-1 overflow-y-auto space-y-3 pr-1">
               {selectedFiles.map((fileItem) => (
                 <FileUploadItem
                   key={fileItem.id}
@@ -727,7 +728,7 @@ export default function FileUploadNew({
         )}
       </div>
       {/* Options Panel */}
-      <div className="flex flex-col h-full overflow-hidden">
+      <div className="flex flex-col min-h-0">
         {/* Header fixe */}
         <div className="flex items-center justify-between pb-4 flex-shrink-0">
           <h3 className="text-lg font-medium">Options d'envoi</h3>
@@ -1124,7 +1125,7 @@ export default function FileUploadNew({
         </div>
 
         {/* Create Transfer Button - Fixe en bas */}
-        <div className="flex justify-end mt-2 pt-3 border-t bg-background flex-shrink-0">
+        <div className="flex justify-end mt-4 pt-4 border-t bg-background flex-shrink-0">
           <ButtonGroup>
             <Button
               onClick={handleCreateTransfer}
@@ -1152,7 +1153,9 @@ export default function FileUploadNew({
           </ButtonGroup>
         </div>
       </div>
-      {/* Modal Stripe Connect Onboarding */}
+    </div>
+
+      {/* Modal Stripe Connect Onboarding - En dehors du grid */}
       <StripeConnectOnboarding
         isOpen={showStripeOnboarding}
         onClose={() => setShowStripeOnboarding(false)}
@@ -1160,7 +1163,6 @@ export default function FileUploadNew({
         userEmail={user?.user?.email}
         onSuccess={() => {
           setShowStripeOnboarding(false);
-          // Optionnel: afficher une notification de succès
         }}
       />
       {/* Modal Settings pour configurer Stripe Connect */}
@@ -1169,6 +1171,6 @@ export default function FileUploadNew({
         onOpenChange={setSettingsModalOpen}
         initialTab="user-info"
       />
-    </div>
+    </>
   );
 }

@@ -1,33 +1,65 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { toast } from '@/src/components/ui/sonner';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/src/components/ui/card';
 import { Button } from '@/src/components/ui/button';
 import { ButtonGroup, ButtonGroupSeparator } from '@/src/components/ui/button-group';
 import { Badge } from '@/src/components/ui/badge';
 import { Input } from '@/src/components/ui/input';
-import { Plus, Edit2, Trash2, Users, Search, CircleXIcon } from 'lucide-react';
+import { Plus, Edit2, Trash2, Users, Search, CircleXIcon, MoreHorizontal, ChevronFirstIcon, ChevronLastIcon, ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
 import { cn } from '@/src/lib/utils';
 import CreateListDialog from './create-list-dialog';
 import EditListDialog from './edit-list-dialog';
 import DeleteListDialog from './delete-list-dialog';
 import ListClientsView from './list-clients-view';
 import { useDeleteClientList } from '@/src/hooks/useClientLists';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/src/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/src/components/ui/alert-dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/src/components/ui/select';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+} from '@/src/components/ui/pagination';
+import {
+  useReactTable,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  flexRender,
+} from '@tanstack/react-table';
 
 export default function ClientListsView({ workspaceId, lists, onListsUpdated, selectedList: initialSelectedList, onSelectListChange }) {
+  const router = useRouter();
   const [selectedList, setSelectedList] = useState(initialSelectedList || null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [editingList, setEditingList] = useState(null);
   const [deletingList, setDeletingList] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [globalFilter, setGlobalFilter] = useState('');
   const { deleteList } = useDeleteClientList();
-
-  // Filtrer les listes selon la recherche
-  const filteredLists = lists.filter(list =>
-    list.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (list.description && list.description.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
 
   // Mettre à jour selectedList quand initialSelectedList change
   useEffect(() => {
@@ -46,6 +78,152 @@ export default function ClientListsView({ workspaceId, lists, onListsUpdated, se
     }
   };
 
+  // État pour les lignes sélectionnées
+  const [rowSelection, setRowSelection] = useState({});
+  const [isDeleteMultipleOpen, setIsDeleteMultipleOpen] = useState(false);
+  const [isDeletingMultiple, setIsDeletingMultiple] = useState(false);
+
+  // Colonnes du tableau - Style identique au Kanban
+  const columns = useMemo(
+    () => [
+      {
+        id: 'select',
+        header: ({ table }) => {
+          const checkboxRef = React.useRef(null);
+          React.useEffect(() => {
+            if (checkboxRef.current) {
+              checkboxRef.current.indeterminate = table.getIsSomeRowsSelected() && !table.getIsAllRowsSelected();
+            }
+          }, [table.getIsSomeRowsSelected(), table.getIsAllRowsSelected()]);
+          return (
+            <input
+              ref={checkboxRef}
+              type="checkbox"
+              checked={table.getIsAllRowsSelected()}
+              onChange={table.getToggleAllRowsSelectedHandler()}
+              className="cursor-pointer"
+              role="checkbox"
+            />
+          );
+        },
+        cell: ({ row }) => (
+          <input
+            type="checkbox"
+            checked={row.getIsSelected()}
+            onChange={row.getToggleSelectedHandler()}
+            className="cursor-pointer"
+            role="checkbox"
+          />
+        ),
+        size: 40,
+        enableSorting: false,
+        enableHiding: false,
+      },
+      {
+        accessorKey: 'name',
+        header: 'Nom',
+        size: 300,
+        cell: (info) => {
+          const list = info.row.original;
+          return (
+            <div className="flex items-center gap-3">
+              <div
+                className="w-3 h-3 rounded-full flex-shrink-0"
+                style={{ backgroundColor: list.color }}
+              />
+              <span className="font-medium truncate">{list.name}</span>
+              {list.isDefault && (
+                <Badge variant="outline" className="text-xs font-normal">
+                  Par défaut
+                </Badge>
+              )}
+            </div>
+          );
+        },
+      },
+      {
+        accessorKey: 'description',
+        header: 'Description',
+        size: 300,
+        cell: (info) => (
+          <span className="text-muted-foreground truncate">{info.getValue() || '-'}</span>
+        ),
+      },
+      {
+        accessorKey: 'clientCount',
+        header: 'Contacts',
+        size: 150,
+        cell: (info) => (
+          <Badge variant="secondary" className="gap-1 font-normal w-fit">
+            <Users className="w-3 h-3" />
+            {info.getValue()}
+          </Badge>
+        ),
+      },
+      {
+        id: 'actions',
+        header: 'Actions',
+        size: 100,
+        cell: (info) => {
+          const list = info.row.original;
+          if (list.isDefault) return null;
+          return (
+            <div onClick={(e) => e.stopPropagation()}>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onClick={() => setEditingList(list)}
+                    className="cursor-pointer"
+                  >
+                    <Edit2 className="w-4 h-4 mr-2" />
+                    Modifier
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setDeletingList(list)}
+                    className="cursor-pointer text-red-600 focus:text-red-600"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Supprimer
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          );
+        },
+      },
+    ],
+    []
+  );
+
+  // Créer la table avec React Table
+  const table = useReactTable({
+    data: lists,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    state: {
+      globalFilter,
+      rowSelection,
+    },
+    onRowSelectionChange: setRowSelection,
+    onGlobalFilterChange: setGlobalFilter,
+    globalFilterFn: (row, columnId, filterValue) => {
+      const name = row.original.name?.toLowerCase() || '';
+      const description = row.original.description?.toLowerCase() || '';
+      return name.includes(filterValue.toLowerCase()) || description.includes(filterValue.toLowerCase());
+    },
+  });
+
+  // Récupérer les lignes sélectionnées
+  const selectedRowsData = table.getSelectedRowModel().rows.map(row => row.original);
+
   if (selectedList) {
     return (
       <ListClientsView
@@ -58,139 +236,282 @@ export default function ClientListsView({ workspaceId, lists, onListsUpdated, se
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-        <div className="relative w-full sm:w-60">
-          <Input
-            placeholder="Rechercher..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className={cn(
-              "peer ps-9",
-              Boolean(searchQuery) && "pe-9"
-            )}
-          />
-          <div className="text-muted-foreground/80 pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3 peer-disabled:opacity-50">
-            <Search size={16} aria-hidden="true" />
-          </div>
-          {Boolean(searchQuery) && (
-            <button
-              className="text-muted-foreground/80 hover:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 absolute inset-y-0 end-0 flex h-full w-9 items-center justify-center transition-[color,box-shadow] outline-none focus:z-10 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
-              aria-label="Clear filter"
-              onClick={() => setSearchQuery("")}
-            >
-              <CircleXIcon size={16} aria-hidden="true" />
-            </button>
-          )}
+    <div className="flex flex-col h-[calc(100vh-64px)] overflow-hidden">
+      {/* Header */}
+      <div className="flex items-start justify-between px-4 sm:px-6 pt-4 sm:pt-6 flex-shrink-0">
+        <div>
+          <h1 className="text-2xl font-medium mb-2">Mes listes</h1>
         </div>
         <ButtonGroup>
-          <Button onClick={() => setShowCreateDialog(true)} variant="secondary" className="h-9 cursor-pointer whitespace-nowrap font-normal dark:bg-white dark:text-black dark:hover:bg-white/90">
+          <Button onClick={() => setShowCreateDialog(true)} className="font-normal bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90">
+            <Plus className="h-4 w-4 mr-2" />
             Nouvelle liste
           </Button>
           <ButtonGroupSeparator />
-          <Button onClick={() => setShowCreateDialog(true)} variant="secondary" size="icon" className="h-9 w-9 cursor-pointer dark:bg-white dark:text-black dark:hover:bg-white/90">
-            <Plus className="w-4 h-4" />
+          <Button onClick={() => setShowCreateDialog(true)} size="icon" className="bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90">
+            <Plus size={16} aria-hidden="true" />
           </Button>
         </ButtonGroup>
       </div>
 
-      {filteredLists.length === 0 && lists.length === 0 ? (
-        <Card className="shadow-none border-none">
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Users className="w-12 h-12 text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">Aucune liste créée</p>
-            <Button
-              variant="outline"
-              onClick={() => setShowCreateDialog(true)}
-              className="mt-4"
-            >
-              Créer la première liste
-            </Button>
-          </CardContent>
-        </Card>
-      ) : filteredLists.length === 0 ? (
-        <Card className="shadow-none border-none">
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Search className="w-12 h-12 text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">Aucune liste ne correspond à votre recherche</p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredLists.map((list) => (
-            <Card 
-              key={list.id} 
-              className="shadow-none cursor-pointer"
-              onClick={() => setSelectedList(list)}
-            >
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex gap-3 items-center">
-                      <div
-                        className="w-3 h-3 rounded-full flex-shrink-0"
-                        style={{ backgroundColor: list.color }}
-                      />
-                      <CardTitle className="text-lg font-medium truncate">{list.name}</CardTitle>
-                    </div>
-                    {list.description && (
-                      <CardDescription className="line-clamp-2 mt-1">
-                        {list.description}
-                      </CardDescription>
-                    )}
-                  </div>
-                </div>
-              </CardHeader>
+      {/* Search Bar */}
+      <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-4 flex-shrink-0">
+        <div className="relative max-w-md">
+          <Input
+            placeholder="Rechercher une liste..."
+            value={globalFilter ?? ""}
+            onChange={(event) => setGlobalFilter(event.target.value)}
+            className="w-full sm:w-[400px] ps-9"
+          />
+          <div className="text-muted-foreground/80 pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3">
+            <Search size={16} aria-hidden="true" />
+          </div>
+        </div>
 
-              <CardContent className="flex flex-col justify-between h-full">
-                <div></div>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <Badge variant="secondary" className="gap-1 font-normal">
-                      <Users className="w-3 h-3" />
-                      {list.clientCount} contact{list.clientCount !== 1 ? 's' : ''}
-                    </Badge>
-                    {list.isDefault && (
-                      <Badge variant="outline" className="text-xs">
-                        Par défaut
-                      </Badge>
-                    )}
-                  </div>
-
-                  <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-                  {!list.isDefault && (
+        {/* Bulk delete */}
+        {selectedRowsData.length > 0 && (
+          <AlertDialog open={isDeleteMultipleOpen} onOpenChange={setIsDeleteMultipleOpen}>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive">
+                <Trash2 className="mr-2 h-4 w-4" />
+                Supprimer ({selectedRowsData.length})
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Supprimer les listes</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Êtes-vous sûr de vouloir supprimer {selectedRowsData.length} liste(s) ?
+                  Cette action est irréversible.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Annuler</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={async () => {
+                    setIsDeletingMultiple(true);
+                    try {
+                      for (const list of selectedRowsData) {
+                        await handleDeleteList(list.id);
+                      }
+                      table.resetRowSelection();
+                    } finally {
+                      setIsDeletingMultiple(false);
+                      setIsDeleteMultipleOpen(false);
+                    }
+                  }}
+                  className="bg-destructive text-white hover:bg-destructive/90"
+                  disabled={isDeletingMultiple}
+                >
+                  {isDeletingMultiple ? (
                     <>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1 gap-2 cursor-pointer font-normal"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setEditingList(list);
-                        }}
-                      >
-                        <Edit2 className="w-3 h-3" />
-                        Modifier
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1 gap-2 text-red-600 hover:text-red-700 cursor-pointer font-normal"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setDeletingList(list);
-                        }}
-                      >
-                        <Trash2 className="w-3 h-3" />
-                        Supprimer
-                      </Button>
+                      <Trash2 className="mr-2 h-4 w-4 animate-spin" />
+                      Suppression...
                     </>
+                  ) : (
+                    "Supprimer définitivement"
                   )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
+      </div>
+
+      {/* Table */}
+      {lists?.length === 0 && !globalFilter ? (
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="text-foreground mb-6 text-center">
+              <h3 className="text-xl font-medium mb-2">
+                Commencez votre organisation
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                Créez votre première liste pour organiser vos contacts
+              </p>
+            </div>
+            <Button
+              onClick={() => setShowCreateDialog(true)}
+              className="flex items-center gap-2 font-normal"
+            >
+              Créer votre première liste
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+          {/* Table Header */}
+          <div className="flex-shrink-0 border-b border-gray-200 dark:border-gray-800">
+            <table className="w-full table-fixed">
+              <thead>
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <tr key={headerGroup.id}>
+                    {headerGroup.headers.map((header, index, arr) => (
+                      <th
+                        key={header.id}
+                        style={{ width: header.getSize() }}
+                        className={`h-10 p-2 text-left align-middle font-normal text-xs text-muted-foreground ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
+                      >
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                      </th>
+                    ))}
+                  </tr>
+                ))}
+              </thead>
+            </table>
+          </div>
+
+          {/* Table Body - Scrollable */}
+          <div className="flex-1 overflow-auto">
+            <table className="w-full table-fixed">
+              <tbody>
+                {table.getRowModel().rows?.length ? (
+                  table.getRowModel().rows.map((row) => (
+                    <tr
+                      key={row.id}
+                      data-state={row.getIsSelected() && "selected"}
+                      className="border-b hover:bg-muted/50 data-[state=selected]:bg-muted cursor-pointer transition-colors"
+                      onClick={(e) => {
+                        // Ne pas naviguer si on clique sur la checkbox ou les actions
+                        const isCheckbox = e.target.closest('[role="checkbox"]');
+                        const isButton = e.target.closest('[role="button"]');
+                        const isActionsCell = e.target.closest('[data-actions-cell="true"]');
+                        const isInput = e.target.closest('input');
+                        
+                        if (isCheckbox || isButton || isActionsCell || isInput) {
+                          return;
+                        }
+                        
+                        // Appeler le callback pour changer d'onglet
+                        if (onSelectListChange) {
+                          onSelectListChange(row.original);
+                        }
+                      }}
+                    >
+                      {row.getVisibleCells().map((cell, index, arr) => (
+                        <td
+                          key={cell.id}
+                          style={{ width: cell.column.getSize() }}
+                          className={`p-2 align-middle text-sm ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
+                          data-actions-cell={cell.column.id === 'actions' ? "true" : undefined}
+                        >
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext()
+                          )}
+                        </td>
+                      ))}
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td
+                      colSpan={table.getAllColumns().length}
+                      className="h-24 text-center p-2"
+                    >
+                      {globalFilter
+                        ? "Aucune liste trouvée."
+                        : "Aucune liste créée."}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination */}
+          <div className="flex items-center justify-between px-4 sm:px-6 py-2 border-t border-gray-200 dark:border-gray-800 bg-background flex-shrink-0">
+            <div className="flex-1 text-xs font-normal text-muted-foreground">
+              {table.getFilteredRowModel().rows.length} liste(s)
+            </div>
+            <div className="flex items-center space-x-4 lg:space-x-6">
+              <div className="flex items-center gap-1.5">
+                <p className="whitespace-nowrap text-xs font-normal">
+                  Lignes par page
+                </p>
+                <Select
+                  value={`${table.getState().pagination.pageSize}`}
+                  onValueChange={(value) => {
+                    table.setPageSize(Number(value));
+                  }}
+                >
+                  <SelectTrigger className="h-7 w-[70px] text-xs">
+                    <SelectValue
+                      placeholder={table.getState().pagination.pageSize}
+                    />
+                  </SelectTrigger>
+                  <SelectContent side="top">
+                    {[10, 20, 30, 40, 50].map((pageSize) => (
+                      <SelectItem key={pageSize} value={`${pageSize}`}>
+                        {pageSize}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center whitespace-nowrap text-xs font-normal">
+                Page {table.getState().pagination.pageIndex + 1} sur{" "}
+                {table.getPageCount() || 1}
+              </div>
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7 disabled:pointer-events-none disabled:opacity-50"
+                      onClick={() => table.setPageIndex(0)}
+                      disabled={!table.getCanPreviousPage()}
+                      aria-label="Première page"
+                    >
+                      <ChevronFirstIcon size={14} aria-hidden="true" />
+                    </Button>
+                  </PaginationItem>
+                  <PaginationItem>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7 disabled:pointer-events-none disabled:opacity-50"
+                      onClick={() => table.previousPage()}
+                      disabled={!table.getCanPreviousPage()}
+                      aria-label="Page précédente"
+                    >
+                      <ChevronLeftIcon size={14} aria-hidden="true" />
+                    </Button>
+                  </PaginationItem>
+                  <PaginationItem>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7 disabled:pointer-events-none disabled:opacity-50"
+                      onClick={() => table.nextPage()}
+                      disabled={!table.getCanNextPage()}
+                      aria-label="Page suivante"
+                    >
+                      <ChevronRightIcon size={14} aria-hidden="true" />
+                    </Button>
+                  </PaginationItem>
+                  <PaginationItem>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7 disabled:pointer-events-none disabled:opacity-50"
+                      onClick={() => table.lastPage()}
+                      disabled={!table.getCanNextPage()}
+                      aria-label="Dernière page"
+                    >
+                      <ChevronLastIcon size={14} aria-hidden="true" />
+                    </Button>
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          </div>
         </div>
       )}
 

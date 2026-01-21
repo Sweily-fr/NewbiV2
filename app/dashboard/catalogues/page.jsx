@@ -17,42 +17,20 @@ function CataloguesContent() {
 
   return (
     <>
-      {/* Desktop Layout */}
-      <div className="hidden md:block space-y-6 p-4 sm:p-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-medium mb-2">Gestion du Catalogue</h1>
-            <p className="text-muted-foreground text-sm">
-              Gérez efficacement vos produits et services en un seul endroit.
-            </p>
-          </div>
-        </div>
-        <TableProduct handleAddProduct={handleOpenProductDialog} />
-      </div>
-
-      {/* Mobile Layout - Style Notion */}
-      <div className="md:hidden">
-        {/* Header - Style Notion sur mobile */}
-        <div className="px-4 py-6">
-          <div>
-            <h1 className="text-2xl font-medium mb-2">Catalogue</h1>
-            <p className="text-muted-foreground text-sm">
-              Gérez efficacement vos produits et services en un seul endroit.
-            </p>
-          </div>
+      {/* Layout - Pleine largeur */}
+      <div className="flex flex-col h-[calc(100vh-64px)] overflow-hidden">
+        {/* Header - Aligné comme Signature de mail */}
+        <div className="px-4 sm:px-6 pt-4 sm:pt-6 pb-4 flex-shrink-0">
+          <h1 className="text-2xl font-medium mb-2">Gestion du Catalogue</h1>
+          <p className="text-muted-foreground text-sm">
+            Gérez efficacement vos produits et services en un seul endroit.
+          </p>
         </div>
 
-        {/* Table */}
-        <TableProduct handleAddProduct={handleOpenProductDialog} />
-
-        {/* Bouton flottant mobile */}
-        <Button
-          onClick={handleOpenProductDialog}
-          className="fixed bottom-6 bg-[#5a50ff] right-6 h-14 w-14 rounded-full shadow-lg z-50 md:hidden"
-          size="icon"
-        >
-          <Plus className="h-6 w-6" />
-        </Button>
+        {/* Table - Pleine largeur */}
+        <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+          <TableProduct handleAddProduct={handleOpenProductDialog} />
+        </div>
       </div>
 
       {/* Modal unique pour desktop et mobile */}
