@@ -1802,6 +1802,9 @@ export default function NewSignaturePage() {
     loadingSignature,
   } = useSignatureData();
 
+  const { copyToClipboard } = useSignatureGenerator();
+  const [isCopying, setIsCopying] = React.useState(false);
+
   // Appliquer le preset du template depuis sessionStorage au montage de la page
   React.useEffect(() => {
     if (!isEditMode) {
@@ -1940,17 +1943,20 @@ export default function NewSignaturePage() {
 
   // Handler pour copier depuis la toolbar
   const handleCopyFromToolbar = async () => {
-    // Utiliser la même logique que le bouton de copie dans EmailPreview
-    const emailPreviewElement = document.querySelector(
-      "[data-signature-preview]",
-    );
-    if (emailPreviewElement) {
-      const copyButton = emailPreviewElement.querySelector(
-        'button[title="Copier la signature"]',
-      );
-      if (copyButton) {
-        copyButton.click();
+    setIsCopying(true);
+    try {
+      const result = await copyToClipboard();
+      console.log('[handleCopyFromToolbar] Result:', result);
+      if (result.success) {
+        toast.success(result.message);
+      } else {
+        toast.error(result.message);
       }
+    } catch (error) {
+      console.error('[handleCopyFromToolbar] Error:', error);
+      toast.error(`Erreur lors de la copie: ${error.message}`);
+    } finally {
+      setIsCopying(false);
     }
   };
 
@@ -1987,7 +1993,7 @@ export default function NewSignaturePage() {
         {/* Barre d'outils flottante */}
         <SignatureToolbar
           onCopy={handleCopyFromToolbar}
-          isCopying={false}
+          isCopying={isCopying}
           zoom={zoom}
           onZoomChange={setZoom}
         />

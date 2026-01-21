@@ -334,36 +334,51 @@ export default function ContainerNode({
   const renderElements = () => {
     if (!hasElements) return null;
 
+    // Pour un conteneur avec séparateur dans un parent horizontal,
+    // ne pas forcer la largeur - laisser le séparateur définir sa propre largeur
+    const isVerticalSeparatorContainer = shouldStretch && parentLayout === "horizontal";
+
     return (
       <div
         className={cn(
-          "flex",
+          "flex h-full",
           container.layout === "horizontal" ? "flex-row items-stretch" : "flex-col",
+          // Largeur 100% seulement pour les conteneurs verticaux (non-séparateur vertical)
+          !isVerticalSeparatorContainer && container.layout !== "horizontal" && "w-full",
           getAlignmentClasses(),
           // Stretch when has separator
-          shouldStretch && "h-full w-full flex-1"
+          shouldStretch && "flex-1"
         )}
         style={getGapStyle()}
       >
-        {container.elements.map((element) => (
-          <BlockElement
-            key={element.id}
-            element={element}
-            blockId={container.id}
-            isSelected={selectedElementId === element.id}
-            onSelect={() => onElementSelect(element.id, container.id)}
-            onUpdate={(newProps) => onElementUpdate(container.id, element.id, newProps)}
-            onDelete={() => onElementDelete(container.id, element.id)}
-            onMoveElement={onMoveElement}
-            onReorderElement={(draggedId, targetId, position) =>
-              onReorderElement && onReorderElement(container.id, draggedId, targetId, position)
-            }
-            signatureData={signatureData}
-            onFieldChange={onFieldChange}
-            isSingleElement={container.elements.length === 1}
-            parentLayout={container.layout}
-          />
-        ))}
+        {container.elements.map((element) => {
+          // Pour les séparateurs seuls dans leur conteneur, utiliser le layout du parent (grandparent)
+          // car le séparateur doit s'adapter à la position de son conteneur, pas à son layout interne
+          const isSeparatorElement = element.type === 'separator-line';
+          const effectiveParentLayout = (isSeparatorElement && container.elements.length === 1)
+            ? parentLayout  // Layout du grandparent
+            : container.layout;  // Layout du conteneur actuel
+
+          return (
+            <BlockElement
+              key={element.id}
+              element={element}
+              blockId={container.id}
+              isSelected={selectedElementId === element.id}
+              onSelect={() => onElementSelect(element.id, container.id)}
+              onUpdate={(newProps) => onElementUpdate(container.id, element.id, newProps)}
+              onDelete={() => onElementDelete(container.id, element.id)}
+              onMoveElement={onMoveElement}
+              onReorderElement={(draggedId, targetId, position) =>
+                onReorderElement && onReorderElement(container.id, draggedId, targetId, position)
+              }
+              signatureData={signatureData}
+              onFieldChange={onFieldChange}
+              isSingleElement={container.elements.length === 1}
+              parentLayout={effectiveParentLayout}
+            />
+          );
+        })}
       </div>
     );
   };
@@ -458,6 +473,11 @@ export default function ContainerNode({
   // Regular containers default to 12px padding if not specified
   const containerPadding = container.padding ?? 12;
 
+  // For separator containers: stretch based on parent layout
+  // - In horizontal parent: stretch height only, width stays minimal
+  // - In vertical parent: stretch width
+  const isInHorizontalParent = parentLayout === "horizontal";
+
   return (
     <div
       ref={containerRef}
@@ -467,8 +487,11 @@ export default function ContainerNode({
         getBorderColor(),
         isDragging && "opacity-50",
         isResizing && "select-none",
-        // Separators need to stretch, others fit content (unless width is set)
-        !container.width && (shouldStretch ? "self-stretch" : "w-fit")
+        // Separators: dans un parent horizontal, stretch en hauteur seulement
+        // Dans un parent vertical, stretch en largeur
+        shouldStretch && (isInHorizontalParent ? "self-stretch" : "w-full"),
+        // Others fit content (unless width is set)
+        !shouldStretch && !container.width && "w-fit"
       )}
       style={{
         padding: `${containerPadding}px`,
@@ -598,12 +621,12 @@ export default function ContainerNode({
       {/* Content */}
       <div
         className={cn(
-          "flex",
+          "flex h-full",
           // Use items-stretch for horizontal to allow children to stretch vertically
           container.layout === "horizontal" ? "flex-row items-stretch" : "flex-col",
           getAlignmentClasses(),
-          // Stretch content when container has separator
-          shouldStretch && "h-full w-full"
+          // Stretch content: largeur 100% seulement si pas un séparateur vertical
+          shouldStretch && !isInHorizontalParent && "w-full"
         )}
         style={getGapStyle()}
       >

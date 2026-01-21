@@ -460,21 +460,23 @@ export default function BlockElement({
         // Separator adapts automatically to parent layout:
         // - If parent is horizontal → separator is vertical (perpendicular)
         // - If parent is vertical → separator is horizontal (perpendicular)
-        const isVerticalSeparator = parentLayout === "horizontal";
+        const isVerticalSep = parentLayout === "horizontal";
+        const separatorThickness = props.thickness || 1;
         return (
           <div
             className="flex-shrink-0"
-            style={isVerticalSeparator ? {
-              width: props.thickness || 1,
-              // Use 100% to adapt to parent height
-              height: props.height || "100%",
-              minHeight: props.height ? undefined : "40px",
-              alignSelf: "stretch",
+            style={isVerticalSep ? {
+              // Séparateur vertical: largeur fixe, hauteur 100%
+              width: separatorThickness,
+              minWidth: separatorThickness,
+              height: "100%",
+              minHeight: "30px",
               backgroundColor: props.color || "#e0e0e0",
             } : {
-              width: props.width || "100%",
-              height: props.thickness || 1,
-              alignSelf: "stretch",
+              // Séparateur horizontal: hauteur fixe, largeur 100%
+              width: "100%",
+              height: separatorThickness,
+              minHeight: separatorThickness,
               backgroundColor: props.color || "#e0e0e0",
             }}
           />
@@ -550,6 +552,9 @@ export default function BlockElement({
 
   // Check if element is a separator - separators need to stretch
   const isSeparator = element.type === ELEMENT_TYPES.SEPARATOR_LINE;
+  // For separators: in horizontal parent = vertical separator (needs height stretch)
+  // In vertical parent = horizontal separator (needs width stretch)
+  const isVerticalSeparator = isSeparator && parentLayout === "horizontal";
 
   // If single element, show selection on the element itself (not the parent block)
   // Still draggable for moving to other blocks
@@ -566,8 +571,9 @@ export default function BlockElement({
         className={cn(
           "group/element relative cursor-grab active:cursor-grabbing transition-transform duration-200",
           isDragging && "opacity-50 scale-95",
-          // Separators need to stretch to fill parent
-          isSeparator && "self-stretch flex-1"
+          // Séparateur vertical: hauteur 100%, largeur auto
+          // Séparateur horizontal: largeur 100%
+          isSeparator && (isVerticalSeparator ? "h-full" : "w-full")
         )}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
@@ -589,8 +595,9 @@ export default function BlockElement({
               : isHovered && !isEditing
               ? "border-neutral-300/70 bg-neutral-50/50"
               : "border-transparent",
-            // Separators need to stretch
-            isSeparator && "h-full w-full flex items-stretch"
+            // Séparateur vertical: hauteur 100%, largeur auto (pas de stretch horizontal)
+            // Séparateur horizontal: largeur 100%
+            isSeparator && (isVerticalSeparator ? "h-full flex items-stretch" : "w-full flex items-stretch")
           )}
         >
           {renderContent()}
@@ -612,8 +619,9 @@ export default function BlockElement({
         "group/element relative transition-transform duration-200 cursor-pointer",
         isDragging && "opacity-50 scale-95",
         isSelected && "z-10",
-        // Separators need to stretch to fill parent
-        isSeparator && "self-stretch flex-1"
+        // Séparateur vertical: hauteur 100%, largeur auto
+        // Séparateur horizontal: largeur 100%
+        isSeparator && (isVerticalSeparator ? "h-full" : "w-full")
       )}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -634,8 +642,9 @@ export default function BlockElement({
             : isHovered && !isEditing
             ? "border-neutral-300/70 bg-neutral-50/50"
             : "border-neutral-200/50",
-          // Separators need to stretch
-          isSeparator && "h-full w-full flex items-stretch p-0"
+          // Séparateur vertical: hauteur 100%, pas de stretch horizontal
+          // Séparateur horizontal: largeur 100%
+          isSeparator && (isVerticalSeparator ? "h-full flex items-stretch p-0" : "w-full flex items-stretch p-0")
         )}
       >
         {/* Element drag handle indicator - positioned closer */}

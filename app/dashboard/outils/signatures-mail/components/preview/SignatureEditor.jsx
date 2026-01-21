@@ -70,30 +70,24 @@ export default function SignatureEditor({
   // Global click listener to deselect when clicking outside containers
   useEffect(() => {
     const handleGlobalClick = (e) => {
+      // Only deselect if clicking directly on the signature canvas area
+      const isSignatureCanvas = e.target.closest('.signature-editor-container');
+
+      // If not clicking in the signature canvas area, don't do anything
+      if (!isSignatureCanvas) {
+        return;
+      }
+
       // Check if click is on a container element
       const isContainerElement = e.target.closest('[data-container-id]');
 
-      // Check if click is inside the sidebar (right panel with settings)
-      const isSidebarContent = e.target.closest('[data-sidebar-content]') ||
-                               e.target.closest('[data-sidebar]') ||
-                               e.target.closest('.sidebar');
-
-      // Check for palette items
-      const isBlockPalette = e.target.closest('[data-palette-item]');
-
-      // Check for Radix UI components (popovers, selects, dialogs rendered in portals)
-      const isRadixUI = e.target.closest('[data-radix-popper-content-wrapper]') ||
-                        e.target.closest('[data-radix-select-content]') ||
-                        e.target.closest('[data-radix-menu-content]') ||
-                        e.target.closest('[role="dialog"]') ||
-                        e.target.closest('[role="listbox"]') ||
-                        e.target.closest('[role="menu"]') ||
-                        e.target.closest('[role="combobox"]');
-
-      // Don't deselect if clicking on interactive UI elements
-      if (!isContainerElement && !isSidebarContent && !isBlockPalette && !isRadixUI) {
-        clearSelection();
+      // Don't deselect if clicking on a container
+      if (isContainerElement) {
+        return;
       }
+
+      // Only deselect if clicking on empty canvas area
+      clearSelection();
     };
 
     document.addEventListener('click', handleGlobalClick);

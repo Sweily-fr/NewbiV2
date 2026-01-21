@@ -843,7 +843,7 @@ function TextSettings({ props, onUpdate }) {
   return (
     <div className="space-y-3">
       {/* Police */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
         <Label className="text-xs text-neutral-600 dark:text-neutral-400">
           Police
         </Label>
@@ -865,7 +865,7 @@ function TextSettings({ props, onUpdate }) {
       </div>
 
       {/* Graisse */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
         <Label className="text-xs text-neutral-600 dark:text-neutral-400">
           Graisse
         </Label>
@@ -997,7 +997,7 @@ function ContactSettings({ props, onUpdate }) {
       </div>
 
       {/* Police */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
         <Label className="text-xs text-neutral-600 dark:text-neutral-400">
           Police
         </Label>
@@ -1019,7 +1019,7 @@ function ContactSettings({ props, onUpdate }) {
       </div>
 
       {/* Graisse */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
         <Label className="text-xs text-neutral-600 dark:text-neutral-400">
           Graisse
         </Label>
