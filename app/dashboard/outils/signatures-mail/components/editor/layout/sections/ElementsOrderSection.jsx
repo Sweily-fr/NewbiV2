@@ -14,14 +14,19 @@ import {
   ArrowLeftRight,
   Plus,
   X,
+  Eye,
+  EyeOff,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { Label } from "@/src/components/ui/label";
+import { Switch } from "@/src/components/ui/switch";
 import { cn } from "@/src/lib/utils";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/src/components/ui/popover";
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/src/components/ui/collapsible";
 
 // Configuration des éléments disponibles
 const ELEMENTS_CONFIG = {
@@ -156,7 +161,7 @@ const DroppableZone = ({ droppableId, title, items, className }) => {
 };
 
 const ElementsOrderSection = ({ signatureData, updateSignatureData }) => {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
   const isHorizontal = signatureData.orientation === "horizontal";
 
   // Données pour le mode vertical
@@ -168,6 +173,20 @@ const ElementsOrderSection = ({ signatureData, updateSignatureData }) => {
   // Données pour le mode horizontal
   const horizontalLayout =
     signatureData.horizontalLayout || DEFAULT_HORIZONTAL_LAYOUT;
+
+  // Éléments masqués
+  const hiddenElements = signatureData.hiddenElements || [];
+
+  // Toggle visibility d'un élément
+  const toggleElementVisibility = (elementId) => {
+    const newHidden = hiddenElements.includes(elementId)
+      ? hiddenElements.filter((id) => id !== elementId)
+      : [...hiddenElements, elementId];
+    updateSignatureData("hiddenElements", newHidden);
+  };
+
+  // Vérifier si un élément est visible
+  const isElementVisible = (elementId) => !hiddenElements.includes(elementId);
 
   // Gestion du drag pour le mode vertical
   const handleVerticalDragEnd = (result) => {
@@ -242,6 +261,7 @@ const ElementsOrderSection = ({ signatureData, updateSignatureData }) => {
     } else {
       updateSignatureData("elementsOrder", DEFAULT_VERTICAL_ORDER);
     }
+    updateSignatureData("hiddenElements", []);
   };
 
   // Contenu du mode vertical
@@ -259,6 +279,7 @@ const ElementsOrderSection = ({ signatureData, updateSignatureData }) => {
               .map((elementId, index) => {
                 const element = ELEMENTS_CONFIG[elementId];
                 const Icon = element.icon;
+                const isVisible = isElementVisible(elementId);
 
                 return (
                   <Draggable
@@ -274,7 +295,8 @@ const ElementsOrderSection = ({ signatureData, updateSignatureData }) => {
                           "flex items-center gap-2 px-2 py-1.5 rounded transition-all",
                           snapshot.isDragging
                             ? "shadow-md bg-white dark:bg-gray-800"
-                            : "bg-[#FAFAFA] dark:bg-gray-800/50"
+                            : "bg-[#FAFAFA] dark:bg-gray-800/50",
+                          !isVisible && "opacity-50"
                         )}
                       >
                         <div
@@ -286,13 +308,33 @@ const ElementsOrderSection = ({ signatureData, updateSignatureData }) => {
 
                         <Icon className="h-3.5 w-3.5 text-gray-500" />
 
-                        <span className="text-xs font-medium text-gray-700 dark:text-gray-300 flex-1">
+                        <span className={cn(
+                          "text-xs font-medium flex-1",
+                          isVisible ? "text-gray-700 dark:text-gray-300" : "text-gray-400 dark:text-gray-500 line-through"
+                        )}>
                           {element.label}
                         </span>
 
-                        <span className="text-[10px] text-gray-400 font-mono">
-                          {index + 1}
-                        </span>
+                        {/* Visibility toggle */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleElementVisibility(elementId);
+                          }}
+                          className={cn(
+                            "p-1 rounded transition-colors",
+                            isVisible
+                              ? "text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700"
+                              : "text-gray-300 hover:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
+                          )}
+                          title={isVisible ? "Masquer" : "Afficher"}
+                        >
+                          {isVisible ? (
+                            <Eye className="h-3.5 w-3.5" />
+                          ) : (
+                            <EyeOff className="h-3.5 w-3.5" />
+                          )}
+                        </button>
                       </div>
                     )}
                   </Draggable>
@@ -395,50 +437,37 @@ const ElementsOrderSection = ({ signatureData, updateSignatureData }) => {
     );
   };
 
-  // Rendu principal avec Popover
+  // Rendu principal avec Collapsible
   return (
-    <div className="flex items-center justify-between">
-      <h2 className="text-sm font-medium">Ordre des éléments</h2>
-      <Popover open={isOpen} onOpenChange={setIsOpen}>
-        <PopoverTrigger asChild>
-          <button
-            className="h-6 w-6 flex items-center justify-center rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-            title="Réorganiser les éléments"
-          >
-            <Plus className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+      <div className="flex items-center justify-between">
+        <CollapsibleTrigger asChild>
+          <button className="flex items-center gap-2 text-sm font-medium hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
+            {isOpen ? (
+              <ChevronUp className="w-4 h-4 text-gray-400" />
+            ) : (
+              <ChevronDown className="w-4 h-4 text-gray-400" />
+            )}
+            Éléments de la signature
           </button>
-        </PopoverTrigger>
-        <PopoverContent
-          className="w-64 p-0 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-lg"
-          side="left"
-          align="start"
-          sideOffset={300}
+        </CollapsibleTrigger>
+        <button
+          onClick={resetOrder}
+          className="text-[10px] text-gray-400 hover:text-gray-600 transition-colors px-1.5 py-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
         >
-          <div className="flex items-center justify-between px-3 py-2 border-b border-gray-100 dark:border-gray-800">
-            <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
-              {isHorizontal ? "Disposition" : "Ordre"}
-            </span>
-            <div className="flex items-center gap-1">
-              <button
-                onClick={resetOrder}
-                className="text-[10px] text-gray-400 hover:text-gray-600 transition-colors px-1.5 py-0.5 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
-              >
-                Réinitialiser
-              </button>
-              <button
-                onClick={() => setIsOpen(false)}
-                className="h-5 w-5 flex items-center justify-center rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-              >
-                <X className="w-3 h-3 text-gray-400" />
-              </button>
-            </div>
-          </div>
-          <div className="p-3 max-h-80 overflow-y-auto">
-            {isHorizontal ? <HorizontalContent /> : <VerticalContent />}
-          </div>
-        </PopoverContent>
-      </Popover>
-    </div>
+          Réinitialiser
+        </button>
+      </div>
+
+      <CollapsibleContent className="mt-3">
+        <div className="space-y-2">
+          <p className="text-[10px] text-gray-400">
+            Glissez pour réorganiser. Cliquez sur l'oeil pour masquer/afficher.
+          </p>
+          {isHorizontal ? <HorizontalContent /> : <VerticalContent />}
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
   );
 };
 

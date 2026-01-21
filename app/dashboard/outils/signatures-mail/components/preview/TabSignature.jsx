@@ -1,9 +1,11 @@
 import {
-  LayoutDashboard,
-  Palette,
+  Users,
   Save,
   LoaderCircleIcon,
   AlertCircle,
+  Blocks,
+  Settings2,
+  MousePointerClick,
 } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import { useMutation } from "@apollo/client";
@@ -26,8 +28,11 @@ import { useSignatureData } from "@/src/hooks/use-signature-data";
 import { useQuery } from "@apollo/client";
 
 // Import des composants d'édition
-import LayoutContent from "../editor/layout/LayoutContent";
-import TypographyContent from "../editor/typography/TypographyContent";
+import BlockPalette from "../blocks/BlockPalette";
+import { useOrganizationInvitations } from "@/src/hooks/useOrganizationInvitations";
+import { useSession } from "@/src/lib/auth-client";
+import BlockSettings from "../blocks/BlockSettings";
+import { createContainerFromWidget } from "../../utils/block-registry";
 import CancelConfirmationModal from "../modals/CancelConfirmationModal";
 // Mutation GraphQL pour créer une signature
 const CREATE_EMAIL_SIGNATURE = gql`
@@ -133,6 +138,154 @@ const cleanGraphQLData = (obj) => {
   return cleaned;
 };
 
+// Composant pour afficher les utilisateurs de l'organisation
+function UsersTab() {
+  const { getAllCollaborators, loading } = useOrganizationInvitations();
+  const { data: session } = useSession();
+  const [users, setUsers] = useState([]);
+  const [selectedUsers, setSelectedUsers] = useState([]);
+  const [hasFetched, setHasFetched] = useState(false);
+
+  useEffect(() => {
+    if (hasFetched) return;
+
+    const fetchUsers = async () => {
+      const result = await getAllCollaborators();
+      if (result.success) {
+        // Filtrer pour ne garder que les membres (pas les invitations en attente)
+        // et exclure l'utilisateur connecté
+        const currentUserId = session?.user?.id;
+        const members = result.data.filter(
+          (item) => item.type === "member" && item.userId !== currentUserId
+        );
+        setUsers(members);
+        setHasFetched(true);
+      }
+    };
+    fetchUsers();
+  }, [hasFetched, session?.user?.id]);
+
+  const toggleUserSelection = (userId) => {
+    setSelectedUsers((prev) =>
+      prev.includes(userId)
+        ? prev.filter((id) => id !== userId)
+        : [...prev, userId]
+    );
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <LoaderCircleIcon className="w-6 h-6 animate-spin text-neutral-400" />
+      </div>
+    );
+  }
+
+  if (users.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 text-center">
+        <div className="w-12 h-12 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center mb-4">
+          <Users className="w-6 h-6 text-neutral-400" />
+        </div>
+        <h3 className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+          Aucun utilisateur
+        </h3>
+        <p className="text-xs text-neutral-500 max-w-[200px]">
+          Invitez des membres à votre organisation pour leur attribuer cette signature
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="text-xs text-neutral-500 mb-2">
+        Sélectionnez les utilisateurs à qui attribuer cette signature
+      </div>
+      {users.map((user) => {
+        const email = user.email || user.user?.email || "";
+        const name = user.user?.name || email.split("@")[0];
+        const avatar = user.user?.image || user.user?.avatar;
+        const isSelected = selectedUsers.includes(user.id);
+
+        return (
+          <div
+            key={user.id}
+            onClick={() => toggleUserSelection(user.id)}
+            className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
+              isSelected
+                ? "border-[#5a50ff] bg-[#5a50ff]/5"
+                : "border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600"
+            }`}
+          >
+            {/* Avatar */}
+            <div className="w-9 h-9 rounded-full bg-neutral-200 dark:bg-neutral-700 flex items-center justify-center overflow-hidden flex-shrink-0">
+              {avatar ? (
+                <img
+                  src={avatar}
+                  alt={name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
+                  {name.charAt(0).toUpperCase()}
+                </span>
+              )}
+            </div>
+
+            {/* User info */}
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-medium text-neutral-800 dark:text-neutral-200 truncate">
+                {name}
+              </div>
+              <div className="text-xs text-neutral-500 truncate">{email}</div>
+            </div>
+
+            {/* Role badge */}
+            <div className="text-xs px-2 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300">
+              {user.role === "owner" ? "Admin" : user.role === "admin" ? "Admin" : "Membre"}
+            </div>
+
+            {/* Checkbox indicator */}
+            <div
+              className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                isSelected
+                  ? "border-[#5a50ff] bg-[#5a50ff]"
+                  : "border-neutral-300 dark:border-neutral-600"
+              }`}
+            >
+              {isSelected && (
+                <svg
+                  className="w-3 h-3 text-white"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={3}
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+              )}
+            </div>
+          </div>
+        );
+      })}
+
+      {selectedUsers.length > 0 && (
+        <div className="mt-4 p-3 bg-[#5a50ff]/5 rounded-lg border border-[#5a50ff]/20">
+          <div className="text-xs text-neutral-600 dark:text-neutral-400">
+            <span className="font-medium text-[#5a50ff]">{selectedUsers.length}</span>{" "}
+            utilisateur{selectedUsers.length > 1 ? "s" : ""} sélectionné{selectedUsers.length > 1 ? "s" : ""}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function TabSignature({ existingSignatureId = null }) {
   const {
     signatureData,
@@ -177,8 +330,6 @@ export function TabSignature({ existingSignatureId = null }) {
         // Redirection après un court délai pour laisser voir la notification
         setTimeout(() => {
           setSaveStatus(null);
-          // Nettoyer le brouillon après sauvegarde réussie
-          localStorage.removeItem("draftSignature");
           router.push("/dashboard/outils/signatures-mail");
         }, 1500);
       },
@@ -205,8 +356,6 @@ export function TabSignature({ existingSignatureId = null }) {
 
         // Redirection après un court délai pour laisser voir la notification
         setTimeout(() => {
-          // Nettoyer le brouillon après sauvegarde réussie
-          localStorage.removeItem("draftSignature");
           router.push("/dashboard/outils/signatures-mail");
         }, 1500);
       },
@@ -733,7 +882,7 @@ export function TabSignature({ existingSignatureId = null }) {
     setShowCancelModal(false);
   };
 
-  const [activeTab, setActiveTab] = useState("tab-1");
+  const [activeTab, setActiveTab] = useState("tab-widgets");
 
   // Debug: vérifier si le composant se rend plusieurs fois
   console.log(
@@ -741,22 +890,102 @@ export function TabSignature({ existingSignatureId = null }) {
     existingSignatureId,
   );
 
+  // Container system from context
+  const {
+    rootContainer,
+    selectedContainerId,
+    selectedBlockId, // Alias for backward compatibility
+    selectedElementId,
+    addContainer,
+    updateContainer,
+    deleteContainer,
+    selectContainer,
+    selectBlock, // Alias
+    selectElement,
+    getSelectedContainer,
+    getSelectedBlock, // Alias
+    getSelectedElement,
+    updateElement,
+    deleteElement,
+    updateSignatureData,
+  } = useSignatureData();
+
+  const selectedBlock = getSelectedContainer();
+  const selectedElement = getSelectedElement();
+
+  // Handle adding a widget from the palette (click fallback)
+  const handleAddBlock = (widgetId) => {
+    if (!rootContainer) return;
+    const newContainer = createContainerFromWidget(widgetId);
+    if (newContainer) {
+      addContainer(rootContainer.id, newContainer);
+      selectContainer(newContainer.id);
+    }
+  };
+
+  // Handle updating an element's props
+  const handleUpdateElement = (props) => {
+    if (selectedContainerId && selectedElementId) {
+      updateElement(selectedContainerId, selectedElementId, props);
+    }
+  };
+
+  // Handle deleting an element
+  const handleDeleteElement = () => {
+    if (selectedContainerId && selectedElementId) {
+      deleteElement(selectedContainerId, selectedElementId);
+    }
+  };
+
+  // Handle updating container props
+  const handleUpdateBlock = (props) => {
+    if (selectedContainerId) {
+      updateContainer(selectedContainerId, props);
+    }
+  };
+
+  // Handle deleting the selected container
+  const handleDeleteBlock = () => {
+    if (selectedContainerId) {
+      deleteContainer(selectedContainerId);
+    }
+  };
+
+  // Auto-switch to selection tab when an element or container is selected
+  useEffect(() => {
+    if (selectedContainerId || selectedElementId) {
+      setActiveTab("tab-selection");
+    }
+  }, [selectedContainerId, selectedElementId]);
+
   return (
     <>
       <Tabs
         value={activeTab}
         onValueChange={setActiveTab}
         className="flex flex-col h-full overflow-hidden"
+        data-sidebar-content="true"
       >
         {/* Header fixe avec les onglets */}
         <div className="flex-shrink-0 p-5 pb-0">
           <ScrollArea className="w-full">
             <TabsList className="mb-3 w-full">
-              <TabsTrigger value="tab-1" className="flex-1">
-                <LayoutDashboard size={16} aria-hidden="true" />
+              <TabsTrigger value="tab-widgets" className="flex-1" title="Widgets">
+                <Blocks size={16} aria-hidden="true" />
               </TabsTrigger>
-              <TabsTrigger value="tab-2" className="group flex-1">
-                <Palette size={16} aria-hidden="true" />
+              <TabsTrigger
+                value="tab-selection"
+                className="flex-1 relative"
+                title="Sélection"
+                disabled={!selectedBlockId && !selectedElementId}
+              >
+                <MousePointerClick size={16} aria-hidden="true" />
+                {(selectedBlockId || selectedElementId) && (
+                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-[#5a50ff] rounded-full" />
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="tab-users" className="flex-1" title="Utilisateurs">
+                <Users size={16} aria-hidden="true" />
               </TabsTrigger>
             </TabsList>
             <ScrollBar orientation="horizontal" />
@@ -765,14 +994,43 @@ export function TabSignature({ existingSignatureId = null }) {
 
         {/* Contenu scrollable - prend l'espace restant automatiquement */}
         <div className="flex-1 overflow-y-auto px-5 min-h-0">
-          {activeTab === "tab-1" && (
-            <div className="w-full space-y-6 mt-4">
-              <LayoutContent />
+          {activeTab === "tab-widgets" && (
+            <div className="w-full mt-4">
+              {/* Bibliothèque de blocs */}
+              <BlockPalette onAddBlock={handleAddBlock} />
             </div>
           )}
-          {activeTab === "tab-2" && (
-            <div className="w-full space-y-6 mt-4">
-              <TypographyContent />
+          {activeTab === "tab-selection" && (
+            <div className="w-full mt-4">
+              {selectedElement || selectedBlock ? (
+                // Panneau de propriétés dynamique pour l'élément/bloc sélectionné
+                <BlockSettings
+                  selectedBlock={selectedBlock}
+                  selectedElement={selectedElement}
+                  onUpdateBlock={handleUpdateBlock}
+                  onUpdateElement={handleUpdateElement}
+                  onDeleteBlock={handleDeleteBlock}
+                  onDeleteElement={handleDeleteElement}
+                />
+              ) : (
+                // Message quand rien n'est sélectionné
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <div className="w-12 h-12 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center mb-4">
+                    <MousePointerClick className="w-6 h-6 text-neutral-400" />
+                  </div>
+                  <h3 className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                    Aucune sélection
+                  </h3>
+                  <p className="text-xs text-neutral-500 max-w-[200px]">
+                    Cliquez sur un bloc ou un élément dans la signature pour voir ses propriétés
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+          {activeTab === "tab-users" && (
+            <div className="w-full mt-4">
+              <UsersTab />
             </div>
           )}
         </div>

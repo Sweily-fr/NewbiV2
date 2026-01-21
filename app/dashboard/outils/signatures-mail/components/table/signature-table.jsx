@@ -15,7 +15,7 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   CircleAlertIcon,
-  FilterIcon,
+  Search,
   TrashIcon,
   ArrowUpDown,
 } from "lucide-react";
@@ -103,55 +103,59 @@ export default function SignatureTable() {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-200px)] overflow-hidden">
-      {/* Search Bar */}
-      <div className="flex items-center justify-between gap-3 py-4 flex-shrink-0">
+    <div className="flex flex-col flex-1 min-h-0">
+      {/* Filters and Search - Fixe en haut */}
+      <div className="flex items-center justify-between gap-3 hidden md:flex px-4 sm:px-6 py-4 flex-shrink-0">
+        {/* Search */}
         <div className="relative max-w-md">
           <Input
-            placeholder="Rechercher une signature..."
+            placeholder="Recherchez par nom de signature, nom complet ou email..."
             value={globalFilter ?? ""}
             onChange={(event) => setGlobalFilter(event.target.value)}
-            className="w-full sm:w-[400px] ps-9"
+            className="w-full sm:w-[490px] lg:w-[490px] ps-9"
           />
           <div className="text-muted-foreground/80 pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3">
-            <FilterIcon size={16} aria-hidden="true" />
+            <Search size={16} aria-hidden="true" />
           </div>
         </div>
 
-        {/* Bulk delete */}
-        {table.getSelectedRowModel().rows.length > 0 && (
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive" size="sm" className="text-white">
-                <TrashIcon className="mr-2 h-4 w-4" />
-                Supprimer ({table.getSelectedRowModel().rows.length})
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Êtes-vous sûr de vouloir supprimer{" "}
-                  {table.getSelectedRowModel().rows.length} signature(s) ? Cette
-                  action est irréversible.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Annuler</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={() => handleDeleteSelected()}
-                  className="bg-destructive text-white hover:bg-destructive/90"
-                >
-                  Supprimer
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        )}
+        {/* Actions à droite */}
+        <div className="flex items-center gap-2">
+          {/* Bulk delete */}
+          {table.getSelectedRowModel().rows.length > 0 && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="sm" className="text-white">
+                  <TrashIcon className="mr-2 h-4 w-4" />
+                  Supprimer ({table.getSelectedRowModel().rows.length})
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Êtes-vous sûr de vouloir supprimer{" "}
+                    {table.getSelectedRowModel().rows.length} signature(s) ?
+                    Cette action est irréversible.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Annuler</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => handleDeleteSelected()}
+                    className="bg-destructive text-white hover:bg-destructive/90"
+                  >
+                    Supprimer
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+        </div>
       </div>
 
-      {/* Table */}
-      <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+      {/* Table - Desktop style avec header fixe et body scrollable */}
+      <div className="hidden md:flex md:flex-col flex-1 min-h-0 overflow-hidden">
         {/* Table Header */}
         <div className="flex-shrink-0 border-b border-gray-200 dark:border-gray-800">
           <table className="w-full table-fixed">
@@ -162,13 +166,13 @@ export default function SignatureTable() {
                     <th
                       key={header.id}
                       style={{ width: header.getSize() }}
-                      className={`h-10 p-2 text-left align-middle font-normal text-xs text-muted-foreground ${index === 0 ? "pl-4" : ""} ${index === arr.length - 1 ? "pr-4" : ""}`}
+                      className={`h-10 p-2 text-left align-middle font-normal text-xs text-muted-foreground ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
                     >
                       {header.isPlaceholder
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
-                            header.getContext()
+                            header.getContext(),
                           )}
                     </th>
                   ))}
@@ -197,7 +201,7 @@ export default function SignatureTable() {
                         return;
                       }
                       router.push(
-                        `/dashboard/outils/signatures-mail/${row.original.id}`
+                        `/dashboard/outils/signatures-mail/${row.original.id}`,
                       );
                     }}
                   >
@@ -205,11 +209,11 @@ export default function SignatureTable() {
                       <td
                         key={cell.id}
                         style={{ width: cell.column.getSize() }}
-                        className={`p-2 align-middle text-sm ${index === 0 ? "pl-4" : ""} ${index === arr.length - 1 ? "pr-4" : ""}`}
+                        className={`p-2 align-middle text-sm ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
                       >
                         {flexRender(
                           cell.column.columnDef.cell,
-                          cell.getContext()
+                          cell.getContext(),
                         )}
                       </td>
                     ))}
@@ -231,94 +235,95 @@ export default function SignatureTable() {
           </table>
         </div>
 
-        {/* Pagination */}
-        <div className="flex items-center justify-between py-2 border-t border-gray-200 dark:border-gray-800 bg-background flex-shrink-0">
-          <div className="flex-1 text-xs font-normal text-muted-foreground">
-            {table.getFilteredSelectedRowModel().rows.length} sur{" "}
-            {table.getFilteredRowModel().rows.length} ligne(s) sélectionnée(s).
+      </div>
+
+      {/* Pagination - Fixe en bas sur desktop */}
+      <div className="hidden md:flex items-center justify-between px-4 sm:px-6 py-2 border-t border-gray-200 dark:border-gray-800 bg-background flex-shrink-0">
+        <div className="flex-1 text-xs font-normal text-muted-foreground">
+          {table.getFilteredSelectedRowModel().rows.length} sur{" "}
+          {table.getFilteredRowModel().rows.length} ligne(s) sélectionnée(s).
+        </div>
+        <div className="flex items-center space-x-4 lg:space-x-6">
+          <div className="flex items-center gap-1.5">
+            <p className="whitespace-nowrap text-xs font-normal">
+              Lignes par page
+            </p>
+            <Select
+              value={`${table.getState().pagination.pageSize}`}
+              onValueChange={(value) => {
+                table.setPageSize(Number(value));
+              }}
+            >
+              <SelectTrigger className="h-7 w-[60px] text-xs">
+                <SelectValue
+                  placeholder={table.getState().pagination.pageSize}
+                />
+              </SelectTrigger>
+              <SelectContent side="top">
+                {[10, 20, 30, 40, 50].map((pageSize) => (
+                  <SelectItem key={pageSize} value={`${pageSize}`}>
+                    {pageSize}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-          <div className="flex items-center space-x-4 lg:space-x-6">
-            <div className="flex items-center gap-1.5">
-              <p className="whitespace-nowrap text-xs font-normal">
-                Lignes par page
-              </p>
-              <Select
-                value={`${table.getState().pagination.pageSize}`}
-                onValueChange={(value) => {
-                  table.setPageSize(Number(value));
-                }}
-              >
-                <SelectTrigger className="h-7 w-[60px] text-xs">
-                  <SelectValue
-                    placeholder={table.getState().pagination.pageSize}
-                  />
-                </SelectTrigger>
-                <SelectContent side="top">
-                  {[10, 20, 30, 40, 50].map((pageSize) => (
-                    <SelectItem key={pageSize} value={`${pageSize}`}>
-                      {pageSize}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center whitespace-nowrap text-xs font-normal">
-              Page {table.getState().pagination.pageIndex + 1} sur{" "}
-              {table.getPageCount() || 1}
-            </div>
-            <Pagination>
-              <PaginationContent>
-                <PaginationItem>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-7 w-7 disabled:pointer-events-none disabled:opacity-50"
-                    onClick={() => table.setPageIndex(0)}
-                    disabled={!table.getCanPreviousPage()}
-                    aria-label="Première page"
-                  >
-                    <ChevronFirstIcon size={14} aria-hidden="true" />
-                  </Button>
-                </PaginationItem>
-                <PaginationItem>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-7 w-7 disabled:pointer-events-none disabled:opacity-50"
-                    onClick={() => table.previousPage()}
-                    disabled={!table.getCanPreviousPage()}
-                    aria-label="Page précédente"
-                  >
-                    <ChevronLeftIcon size={14} aria-hidden="true" />
-                  </Button>
-                </PaginationItem>
-                <PaginationItem>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-7 w-7 disabled:pointer-events-none disabled:opacity-50"
-                    onClick={() => table.nextPage()}
-                    disabled={!table.getCanNextPage()}
-                    aria-label="Page suivante"
-                  >
-                    <ChevronRightIcon size={14} aria-hidden="true" />
-                  </Button>
-                </PaginationItem>
-                <PaginationItem>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-7 w-7 disabled:pointer-events-none disabled:opacity-50"
-                    onClick={() => table.lastPage()}
-                    disabled={!table.getCanNextPage()}
-                    aria-label="Dernière page"
-                  >
-                    <ChevronLastIcon size={14} aria-hidden="true" />
-                  </Button>
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
+          <div className="flex items-center whitespace-nowrap text-xs font-normal">
+            Page {table.getState().pagination.pageIndex + 1} sur{" "}
+            {table.getPageCount()}
           </div>
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-7 w-7 disabled:pointer-events-none disabled:opacity-50"
+                  onClick={() => table.setPageIndex(0)}
+                  disabled={!table.getCanPreviousPage()}
+                  aria-label="Go to first page"
+                >
+                  <ChevronFirstIcon size={14} aria-hidden="true" />
+                </Button>
+              </PaginationItem>
+              <PaginationItem>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-7 w-7 disabled:pointer-events-none disabled:opacity-50"
+                  onClick={() => table.previousPage()}
+                  disabled={!table.getCanPreviousPage()}
+                  aria-label="Go to previous page"
+                >
+                  <ChevronLeftIcon size={14} aria-hidden="true" />
+                </Button>
+              </PaginationItem>
+              <PaginationItem>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-7 w-7 disabled:pointer-events-none disabled:opacity-50"
+                  onClick={() => table.nextPage()}
+                  disabled={!table.getCanNextPage()}
+                  aria-label="Go to next page"
+                >
+                  <ChevronRightIcon size={14} aria-hidden="true" />
+                </Button>
+              </PaginationItem>
+              <PaginationItem>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-7 w-7 disabled:pointer-events-none disabled:opacity-50"
+                  onClick={() => table.lastPage()}
+                  disabled={!table.getCanNextPage()}
+                  aria-label="Go to last page"
+                >
+                  <ChevronLastIcon size={14} aria-hidden="true" />
+                </Button>
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
         </div>
       </div>
     </div>
@@ -374,7 +379,7 @@ function useSignatureTable({ data, onRefetch, actions }) {
             <div className="min-h-[40px] flex flex-col justify-center">
               <div className="font-medium">{signature.signatureName}</div>
               {signature.companyName && (
-                <div className="text-xs text-muted-foreground truncate max-w-[200px]">
+                <div className="text-xs font-normal text-muted-foreground truncate max-w-[200px]">
                   {signature.companyName}
                 </div>
               )}
@@ -400,7 +405,9 @@ function useSignatureTable({ data, onRefetch, actions }) {
           const lastName = row.original.lastName || "";
           const fullName = `${firstName} ${lastName}`.trim() || "Non défini";
           return (
-            <div className={!firstName && !lastName ? "text-muted-foreground" : ""}>
+            <div
+              className={!firstName && !lastName ? "text-muted-foreground" : ""}
+            >
               {fullName}
             </div>
           );
@@ -442,7 +449,11 @@ function useSignatureTable({ data, onRefetch, actions }) {
         cell: ({ row }) => {
           const email = row.getValue("email");
           return (
-            <div className={!email ? "text-muted-foreground" : "truncate max-w-[200px]"}>
+            <div
+              className={
+                !email ? "text-muted-foreground" : "truncate max-w-[200px]"
+              }
+            >
               {email || "Non défini"}
             </div>
           );
@@ -468,7 +479,7 @@ function useSignatureTable({ data, onRefetch, actions }) {
         size: 80,
       },
     ],
-    [actions]
+    [actions],
   );
 
   const filteredData = useMemo(() => {
@@ -506,10 +517,12 @@ function useSignatureTable({ data, onRefetch, actions }) {
 
   const handleDeleteSelected = async () => {
     if (!table.getSelectedRowModel().rows.length) return;
-    
+
     setIsDeleting(true);
     try {
-      const selectedIds = table.getSelectedRowModel().rows.map(row => row.original.id);
+      const selectedIds = table
+        .getSelectedRowModel()
+        .rows.map((row) => row.original.id);
       await actions.handleDeleteMultiple(selectedIds);
       table.resetRowSelection();
       // Ne pas faire de refetch - le cache Apollo est mis à jour directement

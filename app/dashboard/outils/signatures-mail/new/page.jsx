@@ -15,14 +15,20 @@ import { useSignatureGenerator } from "../hooks/useSignatureGenerator";
 import { useCustomSocialIcons } from "../hooks/useCustomSocialIcons";
 import { useImageUpload } from "../hooks/useImageUpload";
 import "@/src/styles/signature-text-selection.css";
-import HorizontalSignature from "../components/preview/HorizontalSignature";
-import VerticalSignature from "../components/preview/VerticalSignature";
-import OrientationSelector from "../components/OrientationSelector";
+import SignatureTemplate from "../components/preview/SignatureTemplate";
+import SignatureEditor from "../components/preview/SignatureEditor";
 import { SignatureSidebar } from "@/src/components/signature-sidebar";
 import { SignatureToolbar } from "../components/SignatureToolbar";
 
 // Aperçu de l'email avec édition inline
-const EmailPreview = ({ signatureData, editingSignatureId, isEditMode }) => {
+const EmailPreview = ({
+  signatureData,
+  editingSignatureId,
+  isEditMode,
+  templateId,
+  onDragStart,
+  isDragging,
+}) => {
   const { updateSignatureData } = useSignatureData();
   const { generateHTML: generateSignatureHTMLFromHook } =
     useSignatureGenerator();
@@ -1451,17 +1457,22 @@ const EmailPreview = ({ signatureData, editingSignatureId, isEditMode }) => {
 
   return (
     <div
-      className="rounded-2xl border w-[70%] overflow-hidden"
+      className="rounded-2xl border w-[700px] overflow-hidden"
       data-signature-preview
     >
-      <div className="bg-[#171717] text-white px-4 py-2 rounded-t-lg flex items-center justify-between">
+      <div
+        className={`bg-[#171717] text-white px-4 py-2 rounded-t-lg flex items-center justify-between ${
+          isDragging ? "cursor-grabbing" : "cursor-grab"
+        }`}
+        onMouseDown={onDragStart}
+      >
         <div className="flex items-center gap-2">
           <div className="flex gap-1">
             <div className="w-3 h-3 bg-red-500 rounded-full"></div>
             <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
             <div className="w-3 h-3 bg-green-500 rounded-full"></div>
           </div>
-          <span className="text-sm">Nouveau message</span>
+          <span className="text-sm select-none">Nouveau message</span>
           {isEditMode && (
             <Badge
               variant="secondary"
@@ -1511,25 +1522,18 @@ const EmailPreview = ({ signatureData, editingSignatureId, isEditMode }) => {
         </div> */}
 
         <div className="pt-4 mt-4 flex justify-start">
-          {/* Signature dynamique selon l'orientation */}
-          {(() => {
-            const templateProps = {
-              signatureData,
-              handleFieldChange,
-              handleImageChange,
-              validatePhone,
-              validateEmail,
-              validateUrl,
-              logoSrc: signatureData.logo,
-            };
-
-            // Afficher le bon composant selon l'orientation
-            if (signatureData.orientation === "vertical") {
-              return <VerticalSignature {...templateProps} />;
-            } else {
-              return <HorizontalSignature {...templateProps} />;
-            }
-          })()}
+          {/* Signature avec système de widgets - drag & drop et sélection */}
+          <SignatureEditor
+            signatureData={signatureData}
+            onImageUpload={async (field, file) => {
+              const reader = new FileReader();
+              reader.onload = (e) => {
+                handleFieldChange(field, e.target.result);
+              };
+              reader.readAsDataURL(file);
+            }}
+            templateId={templateId}
+          />
         </div>
       </div>
     </div>
@@ -1783,17 +1787,141 @@ const MobilePreview = ({ signatureData }) => {
   );
 };
 
+// Niveaux de zoom disponibles
+const ZOOM_LEVELS = [50, 75, 100, 125, 150, 200];
+
 // Composant principal de la page
 export default function NewSignaturePage() {
   const {
     signatureData,
     updateSignatureData,
+    resetSignatureData,
+    checkAndApplyTemplatePreset,
     isEditMode,
     editingSignatureId,
     loadingSignature,
   } = useSignatureData();
 
-  const [orientationChosen, setOrientationChosen] = React.useState(false);
+  // Appliquer le preset du template depuis sessionStorage au montage de la page
+  React.useEffect(() => {
+    if (!isEditMode) {
+      checkAndApplyTemplatePreset();
+    }
+  }, [isEditMode, checkAndApplyTemplatePreset]);
+
+  // États pour le zoom et le pan
+  const [zoom, setZoom] = React.useState(100);
+  const [pan, setPan] = React.useState({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = React.useState(false);
+  const [isSpacePressed, setIsSpacePressed] = React.useState(false);
+  const panStartRef = React.useRef({ x: 0, y: 0 });
+  const canvasRef = React.useRef(null);
+
+  // Gestion du zoom (pinch) et du pan (deux doigts) avec le trackpad
+  React.useEffect(() => {
+    const handleWheel = (e) => {
+      // Pinch zoom (Ctrl + scroll ou gesture trackpad)
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        const delta = e.deltaY > 0 ? -1 : 1;
+        setZoom((prevZoom) => {
+          const currentIndex = ZOOM_LEVELS.indexOf(prevZoom);
+          const newIndex = Math.max(
+            0,
+            Math.min(ZOOM_LEVELS.length - 1, currentIndex + delta),
+          );
+          return ZOOM_LEVELS[newIndex];
+        });
+      } else {
+        // Pan avec deux doigts (scroll normal sur trackpad)
+        e.preventDefault();
+        setPan((prevPan) => ({
+          x: prevPan.x - e.deltaX,
+          y: prevPan.y - e.deltaY,
+        }));
+      }
+    };
+
+    const canvas = canvasRef.current;
+    if (canvas) {
+      canvas.addEventListener("wheel", handleWheel, { passive: false });
+    }
+
+    return () => {
+      if (canvas) {
+        canvas.removeEventListener("wheel", handleWheel);
+      }
+    };
+  }, []);
+
+  // Gestion de la touche Espace pour le pan
+  React.useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.code === "Space" && !e.repeat) {
+        e.preventDefault();
+        setIsSpacePressed(true);
+      }
+    };
+
+    const handleKeyUp = (e) => {
+      if (e.code === "Space") {
+        setIsSpacePressed(false);
+        setIsPanning(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+    };
+  }, []);
+
+  // Gestion du pan (déplacement) via Espace + drag ou clic molette
+  const handleMouseDown = (e) => {
+    if (isSpacePressed || e.button === 1) {
+      e.preventDefault();
+      setIsPanning(true);
+      panStartRef.current = {
+        x: e.clientX - pan.x,
+        y: e.clientY - pan.y,
+      };
+    }
+  };
+
+  // Gestion du drag depuis la barre noire "Nouveau message"
+  const handleHeaderDragStart = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsPanning(true);
+    panStartRef.current = {
+      x: e.clientX - pan.x,
+      y: e.clientY - pan.y,
+    };
+  };
+
+  const handleMouseMove = (e) => {
+    if (isPanning) {
+      setPan({
+        x: e.clientX - panStartRef.current.x,
+        y: e.clientY - panStartRef.current.y,
+      });
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsPanning(false);
+  };
+
+  // Reset du pan au double-clic sur le canvas (pas sur le bloc)
+  const handleDoubleClick = (e) => {
+    if (e.target === canvasRef.current) {
+      setPan({ x: 0, y: 0 });
+      setZoom(100);
+    }
+  };
 
   // Afficher un indicateur de chargement pendant le chargement des données d'édition
   if (isEditMode && loadingSignature) {
@@ -1807,17 +1935,8 @@ export default function NewSignaturePage() {
     );
   }
 
-  // Si on est en mode création (pas édition) et qu'aucune orientation n'a été choisie
-  if (!isEditMode && !orientationChosen) {
-    return (
-      <OrientationSelector
-        onSelect={(orientation) => {
-          updateSignatureData("orientation", orientation);
-          setOrientationChosen(true);
-        }}
-      />
-    );
-  }
+  // Note: Le templateId est maintenant toujours défini via le preset (dans use-signature-data.js)
+  // ou via les données par défaut. Pas besoin de vérification supplémentaire.
 
   // Handler pour copier depuis la toolbar
   const handleCopyFromToolbar = async () => {
@@ -1837,26 +1956,42 @@ export default function NewSignaturePage() {
 
   return (
     <div className="flex gap-0 w-full h-[calc(100vh-64px)] overflow-hidden bg-white dark:bg-neutral-950 bg-[radial-gradient(circle,#d1d5db_1px,transparent_1px)] dark:bg-[radial-gradient(circle,#404040_1px,transparent_1px)] bg-[size:20px_20px]">
-      <div className="relative flex-1 p-6 flex items-center justify-center overflow-hidden">
-        <EmailPreview
-          signatureData={signatureData}
-          editingSignatureId={editingSignatureId}
-          isEditMode={isEditMode}
-        />
+      <div
+        ref={canvasRef}
+        className={`relative flex-1 p-6 flex items-center justify-center overflow-hidden ${
+          isSpacePressed ? "cursor-grab" : ""
+        } ${isPanning ? "cursor-grabbing" : ""}`}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+        onDoubleClick={handleDoubleClick}
+      >
+        {/* Container zoomable et déplaçable */}
+        <div
+          style={{
+            transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom / 100})`,
+            transformOrigin: "center center",
+          }}
+        >
+          <EmailPreview
+            signatureData={signatureData}
+            editingSignatureId={editingSignatureId}
+            isEditMode={isEditMode}
+            templateId={signatureData.templateId || "template1"}
+            onDragStart={handleHeaderDragStart}
+            isDragging={isPanning}
+          />
+        </div>
 
         {/* Barre d'outils flottante */}
-        <SignatureToolbar onCopy={handleCopyFromToolbar} isCopying={false} />
-      </div>
-      {/* Ancienne sidebar - Désormais remplacée par SignatureSidebarRight dans le layout principal */}
-      {/* À supprimer plus tard une fois que la nouvelle sidebar est validée */}
-      {/* {(orientationChosen || isEditMode) && (
-        <SignatureSidebar
-          key={editingSignatureId || "new-signature"}
-          signatureData={signatureData}
-          updateSignatureData={updateSignatureData}
-          editingSignatureId={editingSignatureId}
+        <SignatureToolbar
+          onCopy={handleCopyFromToolbar}
+          isCopying={false}
+          zoom={zoom}
+          onZoomChange={setZoom}
         />
-      )} */}
+      </div>
     </div>
   );
 }

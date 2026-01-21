@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
-import { Input } from "@/src/components/ui/input";
-import { Textarea } from "@/src/components/ui/textarea";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 
 /**
- * Composant d'édition inline pour les champs de texte
- * Permet de cliquer sur un texte pour l'éditer directement
+ * Composant d'édition inline style Framer
+ * - Clic simple : sélectionne l'élément (bordure visible)
+ * - Double-clic : entre en mode édition
+ * - Clic ailleurs : désélectionne
  */
 export function InlineEdit({
   value,
@@ -23,86 +23,86 @@ export function InlineEdit({
   validation,
   style = {},
 }) {
-  const [isEditing, setIsEditing] = useState(false);
+  const [state, setState] = useState("normal"); // "normal" | "selected" | "editing"
   const [editValue, setEditValue] = useState(value || "");
   const [error, setError] = useState("");
-  const [inputWidth, setInputWidth] = useState("auto");
-  const inputRef = useRef(null);
-  const measureRef = useRef(null);
-  const displayRef = useRef(null);
+  const containerRef = useRef(null);
+  const editableRef = useRef(null);
 
   useEffect(() => {
     setEditValue(value || "");
   }, [value]);
 
-  // Fonction pour calculer la largeur exacte du texte affiché
-  const calculateTextWidth = (text) => {
-    if (measureRef.current && displayRef.current) {
-      // Copier exactement les styles du texte affiché
-      const computedStyle = window.getComputedStyle(displayRef.current);
-      measureRef.current.style.fontSize = computedStyle.fontSize;
-      measureRef.current.style.fontFamily = computedStyle.fontFamily;
-      measureRef.current.style.fontWeight = computedStyle.fontWeight;
-      measureRef.current.style.letterSpacing = computedStyle.letterSpacing;
-      measureRef.current.style.textTransform = computedStyle.textTransform;
+  // Gérer les clics en dehors pour désélectionner
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        if (state === "editing") {
+          handleSave();
+        } else if (state === "selected") {
+          setState("normal");
+        }
+      }
+    };
 
-      // Utiliser le texte exact ou le placeholder
-      const textToMeasure = text || placeholder;
-      measureRef.current.textContent = textToMeasure;
-
-      // Obtenir les dimensions exactes du texte affiché
-      const rect = displayRef.current.getBoundingClientRect();
-      return Math.max(rect.width, 30) + "px";
+    if (state !== "normal") {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
     }
-    return "auto";
+  }, [state]);
+
+  // Focus sur l'élément éditable quand on entre en mode édition
+  useEffect(() => {
+    if (state === "editing" && editableRef.current) {
+      editableRef.current.focus();
+      // Sélectionner tout le texte
+      const range = document.createRange();
+      range.selectNodeContents(editableRef.current);
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+    }
+  }, [state]);
+
+  const handleClick = (e) => {
+    if (disabled) return;
+    e.stopPropagation();
+
+    if (state === "normal") {
+      setState("selected");
+    }
   };
 
-  useEffect(() => {
-    if (isEditing && inputRef.current) {
-      inputRef.current.focus();
-      inputRef.current.select();
-    }
-  }, [isEditing]);
-
-  // Effet séparé pour mettre à jour la largeur en temps réel
-  useEffect(() => {
-    if (isEditing && measureRef.current) {
-      setInputWidth(calculateTextWidth(editValue));
-    }
-  }, [isEditing, editValue]);
-
-  const handleStartEdit = () => {
+  const handleDoubleClick = (e) => {
     if (disabled) return;
+    e.stopPropagation();
 
-    // Pré-calculer la largeur exacte avant d'entrer en mode édition
-    // pour garantir zéro décalage visuel
-    const initialWidth = calculateTextWidth(value || "");
-    setInputWidth(initialWidth);
-
-    setIsEditing(true);
+    setState("editing");
     setEditValue(value || "");
     setError("");
   };
 
-  const handleSave = () => {
+  const handleSave = useCallback(() => {
+    const newValue = editableRef.current?.innerText || editValue;
+
     // Validation
     if (validation) {
-      const validationResult = validation(editValue);
+      const validationResult = validation(newValue);
       if (validationResult !== true) {
         setError(validationResult);
         return;
       }
     }
 
-    onChange(editValue);
-    setIsEditing(false);
+    onChange(newValue);
+    setState("normal");
     setError("");
-    onSave?.(editValue);
-  };
+    onSave?.(newValue);
+  }, [editValue, onChange, onSave, validation]);
 
   const handleCancel = () => {
     setEditValue(value || "");
-    setIsEditing(false);
+    setState("normal");
     setError("");
     onCancel?.();
   };
@@ -118,125 +118,90 @@ export function InlineEdit({
     }
   };
 
-  const handleBlur = () => {
-    // Petit délai pour permettre aux boutons d'être cliqués
-    setTimeout(() => {
-      if (isEditing) {
-        handleSave();
-      }
-    }, 150);
+  const handleInput = (e) => {
+    setEditValue(e.target.innerText);
   };
 
   const displayValue = value || placeholder;
   const isEmpty = !value || value.trim() === "";
 
-  if (isEditing) {
-    const InputComponent = multiline ? Textarea : Input;
+  // Styles selon l'état
+  const getContainerStyle = () => {
+    const baseStyle = {
+      display: "inline-block",
+      position: "relative",
+      cursor: disabled ? "not-allowed" : "pointer",
+      ...style,
+    };
 
-    return (
-      <span
-        style={{
-          display: "inline-block",
-          verticalAlign: "baseline",
-          position: "relative",
-        }}
-      >
-        {/* Élément invisible pour mesurer la largeur du texte */}
-        <span
-          ref={measureRef}
-          style={{
-            position: "absolute",
-            visibility: "hidden",
-            whiteSpace: "pre",
-            fontSize: "inherit",
-            fontFamily: "inherit",
-            fontWeight: "inherit",
-            letterSpacing: "inherit",
-            textTransform: "inherit",
-            padding: "0",
-            border: "0",
-            margin: "0",
-            overflow: "hidden",
-            top: "-9999px",
-          }}
-        >
-          {editValue || placeholder}
-        </span>
-        <InputComponent
-          ref={inputRef}
-          value={editValue}
-          onChange={(e) => {
-            setEditValue(e.target.value);
-          }}
-          onKeyDown={handleKeyDown}
-          onBlur={handleBlur}
-          className={`${inputClassName} ${error ? "border-red-500 shadow-red-100" : "border-blue-200 shadow-blue-50"} 
-            transition-all duration-200 ease-in-out
-            focus:border-blue-400 focus:shadow-blue-100 focus:shadow-md
-            hover:border-blue-300 hover:shadow-blue-50 hover:shadow-sm
-            bg-white/80 backdrop-blur-sm
-            rounded-md px-2 py-1
-            selection:bg-[#5b4fff]/50 selection:bg-[#5b4fff]/90`}
-          style={{
-            width: inputWidth,
-            minWidth: "60px",
-            fontSize: style.fontSize || "inherit",
-            fontFamily: style.fontFamily || "inherit",
-            fontWeight: style.fontWeight || "inherit",
-            color: style.color || "inherit",
-            lineHeight: "inherit",
-            verticalAlign: "baseline",
-            display: "inline-block",
-            outline: "none",
-            border: "1px solid",
-            fontStyle: style.fontStyle || "inherit",
-            textDecoration: style.textDecoration || "inherit",
-          }}
-          maxLength={maxLength}
-          rows={multiline ? 3 : undefined}
-        />
-        {error && (
-          <div className="absolute top-full left-0 mt-1 text-xs text-red-500">
-            {error}
-          </div>
-        )}
-      </span>
-    );
-  }
+    switch (state) {
+      case "selected":
+        return {
+          ...baseStyle,
+          outline: "1px solid #5b4fff",
+        };
+      case "editing":
+        return {
+          ...baseStyle,
+          outline: "1px solid #5b4fff",
+        };
+      default:
+        return baseStyle;
+    }
+  };
 
   return (
-    <div
-      ref={displayRef}
-      onClick={handleStartEdit}
+    <span
+      ref={containerRef}
+      onClick={handleClick}
+      onDoubleClick={handleDoubleClick}
       className={`
-        ${className} 
+        ${className}
         ${displayClassName}
-        ${isEmpty ? "text-gray-400 italic" : ""}
-        ${disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"}
+        ${isEmpty && state !== "editing" ? "text-gray-400 italic" : ""}
+        ${disabled ? "opacity-50" : ""}
+        ${state === "normal" ? "hover:outline hover:outline-1 hover:outline-[#5b4fff]" : ""}
       `}
-      style={{
-        margin: "0",
-        padding: "0",
-        border: "none",
-        outline: "none",
-        background: "transparent",
-        transition: "all 0.15s ease-in-out",
-        ...style,
-      }}
-      onMouseEnter={(e) => {
-        if (!disabled && !isEditing) {
-          e.target.style.backgroundColor = "rgba(91, 79, 255, 0.15)";
-        }
-      }}
-      onMouseLeave={(e) => {
-        if (!disabled && !isEditing) {
-          e.target.style.backgroundColor = "transparent";
-        }
-      }}
-      title={disabled ? "" : "Cliquez pour éditer"}
+      style={getContainerStyle()}
+      title={disabled ? "" : state === "normal" ? "Cliquez pour sélectionner" : state === "selected" ? "Double-cliquez pour éditer" : ""}
     >
-      {displayValue}
-    </div>
+      {state === "editing" ? (
+        <>
+          <span
+            ref={editableRef}
+            contentEditable
+            suppressContentEditableWarning
+            onInput={handleInput}
+            onKeyDown={handleKeyDown}
+            style={{
+              outline: "none",
+              minWidth: "20px",
+              display: "inline-block",
+              ...style,
+            }}
+          >
+            {editValue}
+          </span>
+          {error && (
+            <span
+              style={{
+                position: "absolute",
+                top: "100%",
+                left: "0",
+                marginTop: "4px",
+                fontSize: "11px",
+                color: "#ef4444",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {error}
+            </span>
+          )}
+        </>
+      ) : (
+        <span style={{ ...style }}>{displayValue}</span>
+      )}
+    </span>
   );
 }
 

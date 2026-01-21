@@ -52,10 +52,8 @@ const fontOptions = [
 ];
 
 const weightOptions = [
-  { value: "normal", label: "Normal" },
-  { value: "medium", label: "Medium" },
-  { value: "semibold", label: "Semi-bold" },
-  { value: "bold", label: "Bold" },
+  { value: "400", label: "Normal" },
+  { value: "700", label: "Bold" },
 ];
 
 const fieldLabels = {

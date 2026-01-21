@@ -11,7 +11,7 @@ export function SignatureSidebar({
   ...props
 }) {
   return (
-    <Sidebar side="right" collapsible="none" className="w-80 h-full" {...props}>
+    <Sidebar side="right" collapsible="none" className="w-72 h-full" {...props}>
       <TabSignature existingSignatureId={editingSignatureId} />
     </Sidebar>
   );

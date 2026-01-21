@@ -1,0 +1,193 @@
+"use client";
+
+import React, { useEffect, useRef } from "react";
+import { useSignatureData } from "@/src/hooks/use-signature-data";
+import BlockCanvasAdvanced from "../blocks/BlockCanvasAdvanced";
+import { createContainerFromWidget, getDefaultBlocksForTemplate } from "../../utils/block-registry";
+import "@/src/styles/signature-text-selection.css";
+import "./signature-preview.css";
+
+/**
+ * SignatureEditor - Modular signature editor with container-based system
+ * Renders a drag & drop editable signature preview using nested containers
+ */
+export default function SignatureEditor({
+  onImageUpload,
+  templateId: templateIdProp,
+  signatureData: signatureDataProp,
+}) {
+  const {
+    signatureData: contextSignatureData,
+    updateSignatureData,
+    // Container system (new unified structure)
+    rootContainer,
+    setRootContainer,
+    selectedContainerId,
+    selectedElementId,
+    hoveredContainerId,
+    setHoveredContainerId,
+    selectContainer,
+    selectElement,
+    addContainer,
+    updateContainer,
+    deleteContainer,
+    updateElement,
+    deleteElement,
+    moveContainer,
+    moveElement,
+    reorderContainer,
+    reorderElement,
+    clearSelection,
+  } = useSignatureData();
+
+  // Use prop or context
+  const signatureData = signatureDataProp || contextSignatureData;
+  const templateId = templateIdProp || signatureData.templateId || "template1";
+
+  // Track the last initialized template to detect changes
+  const lastTemplateRef = useRef(null);
+
+  // Initialize default structure based on template
+  const initializeFromTemplate = (template) => {
+    console.log("🎨 [SignatureEditor] Initializing root container for template:", template);
+    const rootStructure = getDefaultBlocksForTemplate(template);
+    console.log("🎨 [SignatureEditor] Generated root container:", rootStructure);
+    setRootContainer(rootStructure);
+  };
+
+  // Initialize when template changes
+  useEffect(() => {
+    console.log("🔄 [SignatureEditor] useEffect triggered - templateId:", templateId, "lastTemplate:", lastTemplateRef.current, "rootContainer:", rootContainer?.id);
+
+    // Initialize if rootContainer is null OR if template has changed
+    if (!rootContainer || lastTemplateRef.current !== templateId) {
+      console.log("✅ [SignatureEditor] Reinitializing for template:", templateId);
+      initializeFromTemplate(templateId);
+      lastTemplateRef.current = templateId;
+    }
+  }, [templateId, setRootContainer]);
+
+  // Global click listener to deselect when clicking outside containers
+  useEffect(() => {
+    const handleGlobalClick = (e) => {
+      // Check if click is on a container element
+      const isContainerElement = e.target.closest('[data-container-id]');
+
+      // Check if click is inside the sidebar (right panel with settings)
+      const isSidebarContent = e.target.closest('[data-sidebar-content]') ||
+                               e.target.closest('[data-sidebar]') ||
+                               e.target.closest('.sidebar');
+
+      // Check for palette items
+      const isBlockPalette = e.target.closest('[data-palette-item]');
+
+      // Check for Radix UI components (popovers, selects, dialogs rendered in portals)
+      const isRadixUI = e.target.closest('[data-radix-popper-content-wrapper]') ||
+                        e.target.closest('[data-radix-select-content]') ||
+                        e.target.closest('[data-radix-menu-content]') ||
+                        e.target.closest('[role="dialog"]') ||
+                        e.target.closest('[role="listbox"]') ||
+                        e.target.closest('[role="menu"]') ||
+                        e.target.closest('[role="combobox"]');
+
+      // Don't deselect if clicking on interactive UI elements
+      if (!isContainerElement && !isSidebarContent && !isBlockPalette && !isRadixUI) {
+        clearSelection();
+      }
+    };
+
+    document.addEventListener('click', handleGlobalClick);
+    return () => document.removeEventListener('click', handleGlobalClick);
+  }, [clearSelection]);
+
+  // Handle field changes from inline editing
+  const handleFieldChange = (field, value) => {
+    updateSignatureData(field, value);
+  };
+
+  // Handle container selection
+  const handleContainerSelect = (containerId) => {
+    selectContainer(containerId);
+  };
+
+  // Handle element selection
+  const handleElementSelect = (elementId, containerId) => {
+    selectElement(elementId, containerId);
+  };
+
+  // Handle adding a container as child of another container
+  const handleAddContainer = (parentId, newContainer) => {
+    addContainer(parentId, newContainer);
+  };
+
+  // Handle container update
+  const handleContainerUpdate = (containerId, updates) => {
+    updateContainer(containerId, updates);
+  };
+
+  // Handle container delete
+  const handleContainerDelete = (containerId) => {
+    deleteContainer(containerId);
+  };
+
+  // Handle element update
+  const handleElementUpdate = (containerId, elementId, newProps) => {
+    updateElement(containerId, elementId, newProps);
+  };
+
+  // Handle element delete
+  const handleElementDelete = (containerId, elementId) => {
+    deleteElement(containerId, elementId);
+  };
+
+  // Handle moving a container to another container
+  const handleMoveContainer = (containerId, targetContainerId) => {
+    moveContainer(containerId, targetContainerId);
+  };
+
+  // Handle moving an element to another container
+  const handleMoveElement = (elementId, sourceContainerId, targetContainerId) => {
+    moveElement(elementId, sourceContainerId, targetContainerId);
+  };
+
+  // Handle reordering elements within the same container
+  const handleReorderElement = (containerId, draggedElementId, targetElementId, position) => {
+    reorderElement(containerId, draggedElementId, targetElementId, position);
+  };
+
+  // Handle reordering containers within the same parent
+  const handleReorderContainer = (draggedContainerId, targetContainerId, position) => {
+    reorderContainer(draggedContainerId, targetContainerId, position);
+  };
+
+  return (
+    <div
+      className="signature-editor-container relative w-full"
+      style={{
+        fontFamily: signatureData?.fontFamily || "Arial, sans-serif",
+      }}
+    >
+      <BlockCanvasAdvanced
+        rootContainer={rootContainer}
+        onRootContainerChange={setRootContainer}
+        selectedContainerId={selectedContainerId}
+        onContainerSelect={handleContainerSelect}
+        selectedElementId={selectedElementId}
+        onElementSelect={handleElementSelect}
+        hoveredContainerId={hoveredContainerId}
+        onContainerHover={setHoveredContainerId}
+        onContainerUpdate={handleContainerUpdate}
+        onContainerDelete={handleContainerDelete}
+        onElementUpdate={handleElementUpdate}
+        onElementDelete={handleElementDelete}
+        onAddContainer={handleAddContainer}
+        onMoveContainer={handleMoveContainer}
+        onMoveElement={handleMoveElement}
+        onReorderContainer={handleReorderContainer}
+        onReorderElement={handleReorderElement}
+        signatureData={signatureData}
+        onFieldChange={handleFieldChange}
+      />
+    </div>
+  );
+}

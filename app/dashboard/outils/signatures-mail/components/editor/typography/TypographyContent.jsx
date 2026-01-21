@@ -13,13 +13,20 @@ import TypographySection from "./sections/TypographySection";
 export default function ContentTab() {
   const { signatureData, updateSignatureData } = useSignatureData();
 
+  // Afficher la section photo seulement si photoVisible est true (défini par le preset du template)
+  const showProfileImage = signatureData.photoVisible === true;
+
   return (
     <div className="flex flex-col gap-6">
-      <ProfileImageSection
-        signatureData={signatureData}
-        updateSignatureData={updateSignatureData}
-      />
-      <Separator />
+      {showProfileImage && (
+        <>
+          <ProfileImageSection
+            signatureData={signatureData}
+            updateSignatureData={updateSignatureData}
+          />
+          <Separator />
+        </>
+      )}
 
       {/* <CompanyLogoSection
         signatureData={signatureData}

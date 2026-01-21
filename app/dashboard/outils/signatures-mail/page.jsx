@@ -1,13 +1,17 @@
 "use client";
 
-import { Suspense } from "react";
-import { Plus, Monitor, Smartphone } from "lucide-react";
+import { Suspense, useState } from "react";
+import { Plus, Monitor } from "lucide-react";
 import { RoleRouteGuard } from "@/src/components/rbac/RBACRouteGuard";
 import { Button } from "@/src/components/ui/button";
+import {
+  ButtonGroup,
+  ButtonGroupSeparator,
+} from "@/src/components/ui/button-group";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { Card, CardContent } from "@/src/components/ui/card";
 import SignatureTable from "./components/table/signature-table";
-import { useRouter } from "next/navigation";
+import { TemplateSelector } from "./components/modals/TemplateSelector";
 import { gql } from "@apollo/client";
 
 // Query pour récupérer toutes les signatures de l'utilisateur
@@ -132,10 +136,10 @@ const CREATE_EMAIL_SIGNATURE = gql`
 `;
 
 function SignaturesContent() {
-  const router = useRouter();
+  const [isTemplateSelectorOpen, setIsTemplateSelectorOpen] = useState(false);
 
   const handleCreateSignature = () => {
-    router.push("/dashboard/outils/signatures-mail/new");
+    setIsTemplateSelectorOpen(true);
   };
 
   return (
@@ -148,9 +152,6 @@ function SignaturesContent() {
               <div className="flex justify-center">
                 <div className="relative">
                   <Monitor className="h-16 w-16 text-primary" />
-                  {/* <div className="absolute -bottom-2 -right-2 bg-background border-2 border-border rounded-full p-1">
-                    <Smartphone className="h-4 w-4 text-muted-foreground" />
-                  </div> */}
                 </div>
               </div>
 
@@ -175,22 +176,31 @@ function SignaturesContent() {
         </div>
       </div>
 
-      {/* Desktop Content */}
-      <div className="hidden lg:block space-y-6 p-6">
+      {/* Desktop Layout - Full height avec scroll uniquement sur le tableau */}
+      <div className="hidden lg:flex lg:flex-col lg:h-[calc(100vh-64px)] overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-start justify-between px-4 sm:px-6 pt-4 sm:pt-6">
           <div>
             <h1 className="text-2xl font-medium mb-2">Signatures Mail</h1>
-            <p className="text-muted-foreground text-sm">
-              Gérez vos signatures mail et suivez les modifications
-            </p>
           </div>
-          <Button
-            onClick={handleCreateSignature}
-            className="gap-2 font-normal cursor-pointer"
-          >
-            Créer une signature
-          </Button>
+          <div className="flex gap-2">
+            <ButtonGroup>
+              <Button
+                onClick={handleCreateSignature}
+                className="cursor-pointer font-normal bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
+              >
+                Nouvelle signature
+              </Button>
+              <ButtonGroupSeparator />
+              <Button
+                onClick={handleCreateSignature}
+                size="icon"
+                className="cursor-pointer bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
+              >
+                <Plus size={16} aria-hidden="true" />
+              </Button>
+            </ButtonGroup>
+          </div>
         </div>
 
         {/* Table */}
@@ -198,6 +208,12 @@ function SignaturesContent() {
           <SignatureTable />
         </Suspense>
       </div>
+
+      {/* Modal de sélection de template */}
+      <TemplateSelector
+        open={isTemplateSelectorOpen}
+        onOpenChange={setIsTemplateSelectorOpen}
+      />
     </>
   );
 }

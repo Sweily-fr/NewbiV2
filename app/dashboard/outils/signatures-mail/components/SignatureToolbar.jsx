@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { X, Copy, Save } from "lucide-react";
+import { X, Copy, Save, Minus, Plus } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import {
   Toolbar,
@@ -17,12 +17,41 @@ import {
 } from "@/src/components/ui/tooltip";
 import { useSignatureData } from "@/src/hooks/use-signature-data";
 
+const ZOOM_LEVELS = [50, 75, 100, 125, 150, 200];
+
 /**
  * Barre d'outils flottante pour la page de signature
- * Contient les actions : Annuler, Copier, Sauvegarder
+ * Contient les actions : Annuler, Zoom, Copier, Sauvegarder
  */
-export function SignatureToolbar({ onCopy, isCopying }) {
+export function SignatureToolbar({
+  onCopy,
+  isCopying,
+  zoom = 100,
+  onZoomChange,
+}) {
   const { openCancelModal, openSaveModal } = useSignatureData();
+
+  const handleZoomIn = () => {
+    const currentIndex = ZOOM_LEVELS.indexOf(zoom);
+    if (currentIndex < ZOOM_LEVELS.length - 1) {
+      onZoomChange?.(ZOOM_LEVELS[currentIndex + 1]);
+    }
+  };
+
+  const handleZoomOut = () => {
+    const currentIndex = ZOOM_LEVELS.indexOf(zoom);
+    if (currentIndex > 0) {
+      onZoomChange?.(ZOOM_LEVELS[currentIndex - 1]);
+    }
+  };
+
+  const handleZoomSelect = (e) => {
+    onZoomChange?.(parseInt(e.target.value));
+  };
+
+  const handleZoomReset = () => {
+    onZoomChange?.(100);
+  };
 
   return (
     <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-50">
@@ -46,6 +75,79 @@ export function SignatureToolbar({ onCopy, isCopying }) {
               </TooltipTrigger>
               <TooltipContent sideOffset={8}>Annuler</TooltipContent>
             </Tooltip>
+          </ToolbarGroup>
+
+          <ToolbarSeparator />
+
+          {/* Contrôles de zoom */}
+          <ToolbarGroup className="flex items-center gap-1">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <ToolbarButton
+                  aria-label="Dézoomer"
+                  render={
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={handleZoomOut}
+                      disabled={zoom <= ZOOM_LEVELS[0]}
+                      className="h-8 w-8"
+                    />
+                  }
+                >
+                  <Minus className="h-3 w-3" />
+                </ToolbarButton>
+              </TooltipTrigger>
+              <TooltipContent sideOffset={8}>Dézoomer</TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <select
+                  value={zoom}
+                  onChange={handleZoomSelect}
+                  onDoubleClick={handleZoomReset}
+                  className="h-8 px-2 text-xs font-medium bg-gray-100 dark:bg-gray-800 border-0 rounded cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-1 focus:ring-[#5b4fff] appearance-none text-center min-w-[60px]"
+                  style={{
+                    backgroundImage: 'none',
+                  }}
+                >
+                  {ZOOM_LEVELS.map((level) => (
+                    <option key={level} value={level}>
+                      {level}%
+                    </option>
+                  ))}
+                </select>
+              </TooltipTrigger>
+              <TooltipContent sideOffset={8}>
+                Double-clic pour réinitialiser
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <ToolbarButton
+                  aria-label="Zoomer"
+                  render={
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={handleZoomIn}
+                      disabled={zoom >= ZOOM_LEVELS[ZOOM_LEVELS.length - 1]}
+                      className="h-8 w-8"
+                    />
+                  }
+                >
+                  <Plus className="h-3 w-3" />
+                </ToolbarButton>
+              </TooltipTrigger>
+              <TooltipContent sideOffset={8}>Zoomer</TooltipContent>
+            </Tooltip>
+          </ToolbarGroup>
+
+          <ToolbarSeparator />
+
+          <ToolbarGroup>
             <Tooltip>
               <TooltipTrigger asChild>
                 <ToolbarButton
