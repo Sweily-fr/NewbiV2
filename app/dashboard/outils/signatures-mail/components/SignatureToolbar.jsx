@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { X, Copy, Save, Minus, Plus } from "lucide-react";
+import { X, Copy, Save, Minus, Plus, Check } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import {
   Toolbar,
@@ -16,6 +16,7 @@ import {
   TooltipTrigger,
 } from "@/src/components/ui/tooltip";
 import { useSignatureData } from "@/src/hooks/use-signature-data";
+import { cn } from "@/src/lib/utils";
 
 const ZOOM_LEVELS = [50, 75, 100, 125, 150, 200];
 
@@ -26,6 +27,7 @@ const ZOOM_LEVELS = [50, 75, 100, 125, 150, 200];
 export function SignatureToolbar({
   onCopy,
   isCopying,
+  copySuccess,
   zoom = 100,
   onZoomChange,
 }) {
@@ -158,14 +160,31 @@ export function SignatureToolbar({
                       variant="ghost"
                       onClick={onCopy}
                       disabled={isCopying}
+                      className={cn(
+                        "relative transition-colors duration-200",
+                        copySuccess && "text-green-600 dark:text-green-500"
+                      )}
                     />
                   }
                 >
-                  <Copy className="h-4 w-4" />
+                  <div className="relative h-4 w-4">
+                    <Copy
+                      className={cn(
+                        "h-4 w-4 absolute inset-0 transition-all duration-200",
+                        copySuccess ? "opacity-0 scale-50" : "opacity-100 scale-100"
+                      )}
+                    />
+                    <Check
+                      className={cn(
+                        "h-4 w-4 absolute inset-0 transition-all duration-200",
+                        copySuccess ? "opacity-100 scale-100" : "opacity-0 scale-50"
+                      )}
+                    />
+                  </div>
                 </ToolbarButton>
               </TooltipTrigger>
               <TooltipContent sideOffset={8}>
-                {isCopying ? "Copie..." : "Copier"}
+                {copySuccess ? "Copié !" : isCopying ? "Copie..." : "Copier"}
               </TooltipContent>
             </Tooltip>
           </ToolbarGroup>

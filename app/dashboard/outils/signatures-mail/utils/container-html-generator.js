@@ -235,13 +235,13 @@ function generateElementHTML(element, signatureData, parentLayout = 'vertical') 
     }
 
     case ELEMENT_TYPES.LOGO: {
-      const logoUrl = signatureData.logo;
+      const logoUrl = signatureData.logo || signatureData.companyLogo;
       if (!logoUrl) return '';
 
       const maxWidth = props.maxWidth || 100;
-      const maxHeight = props.maxHeight || 32;
+      const height = signatureData.logoSize || props.maxHeight || 32;
 
-      return `<img src="${logoUrl}" alt="Logo" style="max-width: ${maxWidth}px; max-height: ${maxHeight}px; height: auto; display: block;" />`;
+      return `<img src="${logoUrl}" alt="Logo" style="max-width: ${maxWidth}px; height: ${height}px; object-fit: contain; display: block;" />`;
     }
 
     case ELEMENT_TYPES.SEPARATOR_LINE: {

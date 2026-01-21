@@ -8,15 +8,6 @@ import React, {
   useEffect,
 } from "react";
 import {
-  createOnDropHandler,
-  dragAndDropFeature,
-  hotkeysCoreFeature,
-  keyboardDragAndDropFeature,
-  selectionFeature,
-  syncDataLoaderFeature,
-} from "@headless-tree/core";
-import { AssistiveTreeDescription, useTree } from "@headless-tree/react";
-import {
   useSharedDocuments,
   useSharedFolders,
   useSharedDocumentsStats,
@@ -27,14 +18,16 @@ import {
   useDeleteSharedFolder,
   useRenameSharedDocument,
   useRenameSharedFolder,
+  useUpdateSharedDocument,
+  useMoveSharedFolder,
+  useCreateDefaultFolders,
 } from "@/src/hooks/useSharedDocuments";
-import {
-  Tree,
-  TreeItem,
-  TreeItemLabel,
-  TreeDragLine,
-} from "@/src/components/ui/tree";
+import { DraggableTree } from "./components/DraggableTree";
 import { Button } from "@/src/components/ui/button";
+import {
+  ButtonGroup,
+  ButtonGroupSeparator,
+} from "@/src/components/ui/button-group";
 import { Input } from "@/src/components/ui/input";
 import { Badge } from "@/src/components/ui/badge";
 import { Checkbox } from "@/src/components/ui/checkbox";
@@ -106,7 +99,20 @@ import {
   Eye,
   FolderClosed,
   Pencil,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  Home,
+  ChevronDown,
+  Tag,
+  MessageSquare,
+  User,
+  Calendar,
+  Info,
+  ExternalLink,
 } from "lucide-react";
+import { toast } from "@/src/components/ui/sonner";
+import { Progress } from "@/src/components/ui/progress";
 import { cn } from "@/src/lib/utils";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -164,6 +170,15 @@ export default function DocumentsPartagesPage() {
   const [isDragActive, setIsDragActive] = useState(false);
   const fileInputRef = useRef(null);
 
+  // Tri
+  const [sortBy, setSortBy] = useState("createdAt"); // "name", "fileSize", "createdAt"
+  const [sortOrder, setSortOrder] = useState("desc"); // "asc", "desc"
+
+  // Upload progress
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadingFiles, setUploadingFiles] = useState([]);
+  const [totalFilesToUpload, setTotalFilesToUpload] = useState(0);
+
   // Modals
   const [showNewFolderModal, setShowNewFolderModal] = useState(false);
   const [showMoveModal, setShowMoveModal] = useState(false);
@@ -177,17 +192,46 @@ export default function DocumentsPartagesPage() {
   const [itemToRename, setItemToRename] = useState(null); // { id, name, type: 'folder' | 'document' }
   const [newName, setNewName] = useState("");
 
+  // Document details panel
+  const [showDetailsPanel, setShowDetailsPanel] = useState(false);
+  const [selectedDocumentDetails, setSelectedDocumentDetails] = useState(null);
+  const [newTag, setNewTag] = useState("");
+
+  // Debounced search
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const searchTimeoutRef = useRef(null);
+
+  // Debounce search input
+  useEffect(() => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    searchTimeoutRef.current = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 300);
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [searchQuery]);
+
   // Hooks
   // Documents du dossier sélectionné (pour la zone de droite)
   const {
     documents,
+    total: totalDocuments,
+    hasMore,
     loading: docsLoading,
     isInitialLoading: docsInitialLoading,
     isRefetching: docsRefetching,
     refetch: refetchDocs,
+    loadMore,
   } = useSharedDocuments({
     folderId: selectedFolder,
-    search: searchQuery || undefined,
+    search: debouncedSearch || undefined, // Use debounced search for server-side filtering
+    sortBy,
+    sortOrder,
   });
 
   // Tous les documents (pour le tree)
@@ -218,6 +262,47 @@ export default function DocumentsPartagesPage() {
     useRenameSharedDocument();
   const { rename: renameFolder, loading: renameFolderLoading } =
     useRenameSharedFolder();
+  const { update: updateDocument, loading: updateDocLoading } =
+    useUpdateSharedDocument();
+  const { moveFolder, loading: moveFolderLoading } = useMoveSharedFolder();
+  const { createDefaultFolders, isCreating: isCreatingDefaultFolders, workspaceId } =
+    useCreateDefaultFolders();
+
+  // Créer les dossiers par défaut si aucun dossier n'existe
+  const [defaultFoldersCreated, setDefaultFoldersCreated] = useState(false);
+
+  useEffect(() => {
+    const initDefaultFolders = async () => {
+      // Ne créer les dossiers par défaut que si:
+      // 1. workspaceId est disponible
+      // 2. Les dossiers ont été chargés (pas en loading initial)
+      // 3. On n'a pas déjà essayé de les créer
+      if (
+        workspaceId &&
+        !foldersInitialLoading &&
+        !defaultFoldersCreated &&
+        !isCreatingDefaultFolders
+      ) {
+        setDefaultFoldersCreated(true);
+        // Passer les noms des dossiers existants pour éviter les doublons
+        const existingNames = folders.map((f) => f.name);
+        const created = await createDefaultFolders(existingNames);
+        if (created.length > 0) {
+          refetchFolders();
+        }
+      }
+    };
+
+    initDefaultFolders();
+  }, [
+    workspaceId,
+    foldersInitialLoading,
+    folders,
+    defaultFoldersCreated,
+    isCreatingDefaultFolders,
+    createDefaultFolders,
+    refetchFolders,
+  ]);
 
   // Filtrer les documents par recherche
   const filteredDocuments = useMemo(() => {
@@ -231,131 +316,112 @@ export default function DocumentsPartagesPage() {
     );
   }, [documents, searchQuery]);
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Don't trigger if user is typing in an input
+      if (
+        e.target.tagName === "INPUT" ||
+        e.target.tagName === "TEXTAREA" ||
+        e.target.isContentEditable
+      ) {
+        return;
+      }
+
+      // Delete key - delete selected documents
+      if (e.key === "Delete" && selectedDocuments.length > 0) {
+        e.preventDefault();
+        setShowDeleteModal(true);
+      }
+
+      // Escape - clear selection or close panels
+      if (e.key === "Escape") {
+        if (showDetailsPanel) {
+          setShowDetailsPanel(false);
+          setSelectedDocumentDetails(null);
+        } else if (selectedDocuments.length > 0) {
+          setSelectedDocuments([]);
+        }
+      }
+
+      // Ctrl/Cmd + A - select all documents
+      if ((e.ctrlKey || e.metaKey) && e.key === "a") {
+        e.preventDefault();
+        if (filteredDocuments.length > 0) {
+          setSelectedDocuments(filteredDocuments.map((doc) => doc.id));
+        }
+      }
+
+      // Ctrl/Cmd + F - focus search
+      if ((e.ctrlKey || e.metaKey) && e.key === "f") {
+        e.preventDefault();
+        document.querySelector('input[placeholder="Rechercher..."]')?.focus();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedDocuments, filteredDocuments, showDetailsPanel]);
+
   // Compter les documents "à classer"
   const pendingCount = stats?.pendingDocuments || 0;
 
   // État pour le parent du nouveau dossier
   const [newFolderParentId, setNewFolderParentId] = useState(null);
 
-  // Construire les données du tree pour headless-tree (utilise allDocuments pour l'arborescence complète)
-  const treeItems = useMemo(() => {
-    const items = {
-      root: {
-        name: "Racine",
-        children: [
-          "inbox",
-          ...folders.filter((f) => !f.parentId).map((f) => f.id),
-        ],
-        isFolder: true,
-      },
-      inbox: {
-        name: "Documents à classer",
-        children: allDocuments
-          .filter((d) => !d.folderId)
-          .map((d) => `doc-${d.id}`),
-        isFolder: true,
-        isInbox: true,
-        count: pendingCount,
-      },
-    };
-
-    // Ajouter les dossiers
-    folders.forEach((folder) => {
-      const childFolders = folders
-        .filter((f) => f.parentId === folder.id)
-        .map((f) => f.id);
-      const childDocs = allDocuments
-        .filter((d) => d.folderId === folder.id)
-        .map((d) => `doc-${d.id}`);
-
-      items[folder.id] = {
-        name: folder.name,
-        children: [...childFolders, ...childDocs],
-        isFolder: true,
-        color: folder.color,
-        documentsCount: folder.documentsCount || childDocs.length,
-        parentId: folder.parentId,
-        data: folder,
-      };
-    });
-
-    // Ajouter les documents
-    allDocuments.forEach((doc) => {
-      items[`doc-${doc.id}`] = {
-        name: doc.name,
-        children: [],
-        isFolder: false,
-        mimeType: doc.mimeType,
-        fileExtension: doc.fileExtension,
-        fileSize: doc.fileSize,
-        fileUrl: doc.fileUrl,
-        createdAt: doc.createdAt,
-        data: doc,
-      };
-    });
-
-    return items;
-  }, [folders, allDocuments, pendingCount]);
-
-  // Configuration du tree headless-tree
-  const tree = useTree({
-    rootItemId: "root",
-    getItemName: (item) => item.getItemData()?.name ?? "Unknown",
-    isItemFolder: (item) => item.getItemData()?.isFolder ?? false,
-    dataLoader: {
-      getItem: (itemId) => {
-        const item = treeItems[itemId];
-        if (!item) {
-          // Retourner un item vide pour éviter l'erreur undefined
-          return { name: "", children: [], isFolder: false };
-        }
-        return item;
-      },
-      getChildren: (itemId) => treeItems[itemId]?.children ?? [],
-    },
-    features: [
-      syncDataLoaderFeature,
-      selectionFeature,
-      hotkeysCoreFeature,
-      dragAndDropFeature,
-      keyboardDragAndDropFeature,
-    ],
-    indent: 16,
-    onDrop: createOnDropHandler(async (parentItem, newChildrenIds) => {
-      // Gérer le déplacement des documents/dossiers
-      const parentId = parentItem.getId();
-      const targetFolderId =
-        parentId === "root" || parentId === "inbox" ? null : parentId;
-
-      for (const childId of newChildrenIds) {
-        if (childId.startsWith("doc-")) {
-          // C'est un document
-          const docId = childId.replace("doc-", "");
-          try {
-            await move([docId], targetFolderId);
-          } catch (error) {
-            console.error("Erreur déplacement document:", error);
-          }
-        }
+  // Handler pour le déplacement de documents via drag & drop
+  const handleTreeMove = useCallback(
+    async (docIds, targetFolderId) => {
+      try {
+        await move(docIds, targetFolderId, { silent: true });
+        refetchFolders();
+        refetchAllDocs();
+        refetchDocs();
+      } catch (error) {
+        console.error("Erreur déplacement document:", error);
       }
+    },
+    [move, refetchFolders, refetchAllDocs, refetchDocs]
+  );
 
-      refetchDocs();
-      refetchAllDocs();
-      refetchFolders();
-    }),
-  });
+  // Handler pour le déplacement de dossiers via drag & drop
+  const handleTreeMoveFolder = useCallback(
+    async (folderId, targetFolderId) => {
+      try {
+        await moveFolder(folderId, targetFolderId, { silent: true });
+        refetchFolders();
+        refetchAllDocs();
+        refetchDocs();
+      } catch (error) {
+        console.error("Erreur déplacement dossier:", error);
+      }
+    },
+    [moveFolder, refetchFolders, refetchAllDocs, refetchDocs]
+  );
 
-  // Gestion de l'upload
+  // État pour le context menu du tree
+  const [treeContextMenu, setTreeContextMenu] = useState(null);
+
+  // Gestion de l'upload avec progression
   const handleFileUpload = useCallback(
     async (files) => {
       if (!files || files.length === 0) return;
 
+      const fileArray = Array.from(files);
       setIsUploading(true);
+      setTotalFilesToUpload(fileArray.length);
+      setUploadingFiles(fileArray.map((f) => f.name));
+      setUploadProgress(0);
+
       try {
-        for (const file of files) {
+        for (let i = 0; i < fileArray.length; i++) {
+          const file = fileArray[i];
+          setUploadingFiles([file.name]);
           await upload(file, {
             folderId: selectedFolder,
           });
+          // Update progress after each file
+          setUploadProgress(Math.round(((i + 1) / fileArray.length) * 100));
         }
         refetchDocs();
         refetchAllDocs();
@@ -363,7 +429,13 @@ export default function DocumentsPartagesPage() {
       } catch (error) {
         console.error("Erreur upload:", error);
       } finally {
-        setIsUploading(false);
+        // Reset after a short delay to show 100%
+        setTimeout(() => {
+          setIsUploading(false);
+          setUploadProgress(0);
+          setUploadingFiles([]);
+          setTotalFilesToUpload(0);
+        }, 500);
       }
     },
     [upload, selectedFolder, refetchDocs, refetchAllDocs, refetchFolders]
@@ -508,12 +580,108 @@ export default function DocumentsPartagesPage() {
     window.open(doc.fileUrl, "_blank");
   };
 
+  // Open document details panel
+  const handleOpenDetails = (doc) => {
+    setSelectedDocumentDetails(doc);
+    setShowDetailsPanel(true);
+  };
+
+  // Add tag to document
+  const handleAddTag = async () => {
+    if (!newTag.trim() || !selectedDocumentDetails) return;
+    const currentTags = selectedDocumentDetails.tags || [];
+    if (currentTags.includes(newTag.trim())) {
+      toast.error("Ce tag existe déjà");
+      return;
+    }
+    try {
+      await updateDocument(selectedDocumentDetails.id, {
+        tags: [...currentTags, newTag.trim()],
+      });
+      // Update local state
+      setSelectedDocumentDetails({
+        ...selectedDocumentDetails,
+        tags: [...currentTags, newTag.trim()],
+      });
+      setNewTag("");
+      toast.success("Tag ajouté");
+      refetchDocs();
+      refetchAllDocs();
+    } catch (error) {
+      console.error("Erreur ajout tag:", error);
+    }
+  };
+
+  // Remove tag from document
+  const handleRemoveTag = async (tagToRemove) => {
+    if (!selectedDocumentDetails) return;
+    const currentTags = selectedDocumentDetails.tags || [];
+    try {
+      await updateDocument(selectedDocumentDetails.id, {
+        tags: currentTags.filter((t) => t !== tagToRemove),
+      });
+      // Update local state
+      setSelectedDocumentDetails({
+        ...selectedDocumentDetails,
+        tags: currentTags.filter((t) => t !== tagToRemove),
+      });
+      toast.success("Tag supprimé");
+      refetchDocs();
+      refetchAllDocs();
+    } catch (error) {
+      console.error("Erreur suppression tag:", error);
+    }
+  };
+
   // Nom du dossier sélectionné
   const selectedFolderName = useMemo(() => {
     if (selectedFolder === null) return "Documents à classer";
     const folder = folders.find((f) => f.id === selectedFolder);
     return folder?.name || "Dossier";
   }, [selectedFolder, folders]);
+
+  // Breadcrumb - chemin du dossier sélectionné
+  const breadcrumbPath = useMemo(() => {
+    const path = [];
+
+    if (selectedFolder === null) {
+      return [{ id: null, name: "Documents à classer", isInbox: true }];
+    }
+
+    // Remonter la hiérarchie des dossiers
+    let currentFolderId = selectedFolder;
+    while (currentFolderId) {
+      const folder = folders.find((f) => f.id === currentFolderId);
+      if (folder) {
+        path.unshift({ id: folder.id, name: folder.name, color: folder.color });
+        currentFolderId = folder.parentId;
+      } else {
+        break;
+      }
+    }
+
+    return path;
+  }, [selectedFolder, folders]);
+
+  // Toggle sort
+  const handleSort = (field) => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortBy(field);
+      setSortOrder("desc");
+    }
+  };
+
+  // Get sort icon
+  const getSortIcon = (field) => {
+    if (sortBy !== field) return <ArrowUpDown className="h-3 w-3 text-muted-foreground" />;
+    return sortOrder === "asc" ? (
+      <ArrowUp className="h-3 w-3" />
+    ) : (
+      <ArrowDown className="h-3 w-3" />
+    );
+  };
 
   return (
     <div
@@ -542,28 +710,47 @@ export default function DocumentsPartagesPage() {
               </p> */}
             </div>
             <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowNewFolderModal(true)}
-                className="font-normal"
-              >
-                <FolderPlus className="h-4 w-4 mr-1.5" />
-                Nouveau dossier
-              </Button>
-              <Button
-                size="sm"
-                onClick={openFileDialog}
-                disabled={isUploading || uploadLoading}
-                className="font-normal bg-[#5b4eff] hover:bg-[#4a3ecc]"
-              >
-                {isUploading || uploadLoading ? (
-                  <LoaderCircle className="h-4 w-4 mr-1.5 animate-spin" />
-                ) : (
-                  <Upload className="h-4 w-4 mr-1.5" />
-                )}
-                Ajouter
-              </Button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="secondary"
+                      size="icon"
+                      onClick={() => setShowNewFolderModal(true)}
+                    >
+                      <FolderPlus className="h-4 w-4" strokeWidth={1.5} />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="bottom"
+                    className="bg-[#202020] text-white border-0"
+                  >
+                    <p>Nouveau dossier</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <ButtonGroup>
+                <Button
+                  onClick={openFileDialog}
+                  disabled={isUploading || uploadLoading}
+                  className="cursor-pointer font-normal bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
+                >
+                  Ajouter
+                </Button>
+                <ButtonGroupSeparator />
+                <Button
+                  onClick={openFileDialog}
+                  disabled={isUploading || uploadLoading}
+                  size="icon"
+                  className="cursor-pointer bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
+                >
+                  {isUploading || uploadLoading ? (
+                    <LoaderCircle className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Plus size={16} aria-hidden="true" />
+                  )}
+                </Button>
+              </ButtonGroup>
             </div>
           </div>
 
@@ -588,15 +775,15 @@ export default function DocumentsPartagesPage() {
       {/* Main content */}
       <div className="flex-1 flex overflow-hidden">
         {/* Sidebar - Tree avec Dossiers et Documents */}
-        <div className="w-72 border-r bg-muted/30 flex-shrink-0 flex flex-col">
-          <div className="p-3 border-b flex items-center justify-between">
-            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+        <div className="w-64 border-r bg-muted/20 flex-shrink-0 flex flex-col">
+          <div className="px-3 h-14 border-b flex items-center justify-between">
+            <span className="text-xs font-medium text-muted-foreground/80 uppercase tracking-wide">
               Explorateur
             </span>
             <Button
               variant="ghost"
               size="sm"
-              className="h-6 w-6 p-0"
+              className="h-6 w-6 p-0 opacity-60 hover:opacity-100"
               onClick={() => {
                 setNewFolderParentId(selectedFolder);
                 setShowNewFolderModal(true);
@@ -606,219 +793,265 @@ export default function DocumentsPartagesPage() {
             </Button>
           </div>
           <ScrollArea className="flex-1">
-            <div className="pt-2 pl-0 pr-0 relative">
-              {/* Indicateur de chargement subtil pendant le refetch */}
-              {(foldersRefetching || docsRefetching) && (
-                <div className="absolute top-1 right-2 z-10">
-                  <LoaderCircle className="h-3 w-3 animate-spin text-muted-foreground" />
-                </div>
-              )}
-              {foldersInitialLoading || allDocsInitialLoading ? (
-                <div className="space-y-2 px-2">
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <Skeleton key={i} className="h-7 w-full" />
-                  ))}
-                </div>
-              ) : (
-                <TooltipProvider>
-                  <Tree indent={16} tree={tree}>
-                    <AssistiveTreeDescription tree={tree} />
-                    {tree.getItems().map((item) => {
-                      const itemData = item.getItemData();
-                      const itemId = item.getId();
-                      const isFolder = item.isFolder();
-                      const isInbox = itemData?.isInbox;
+            {foldersInitialLoading || allDocsInitialLoading ? (
+              <div className="space-y-2 p-2">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <Skeleton key={i} className="h-7 w-full" />
+                ))}
+              </div>
+            ) : (
+              <div className="pt-2">
+                <DraggableTree
+                  folders={folders}
+                  documents={allDocuments}
+                  pendingCount={pendingCount}
+                  selectedFolder={selectedFolder}
+                  onMove={handleTreeMove}
+                  onMoveFolder={handleTreeMoveFolder}
+                  onSelectFolder={setSelectedFolder}
+                  onSelectDocument={(docId) => setSelectedDocuments([docId])}
+                  onContextMenu={(e, itemId, item) => {
+                    e.preventDefault();
+                    setTreeContextMenu({ x: e.clientX, y: e.clientY, itemId, item });
+                  }}
+                />
 
-                      // Ne pas afficher la racine ni les items vides
-                      if (itemId === "root" || !itemData?.name) return null;
-
-                      return (
-                        <ContextMenu key={itemId}>
-                          <ContextMenuTrigger asChild>
-                            <TreeItem
-                              item={item}
-                              className="pb-0 overflow-hidden"
-                            >
-                              <TreeItemLabel
-                                className="rounded-none py-1 w-full cursor-pointer hover:bg-accent"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  if (isFolder) {
-                                    // Toggle expand/collapse
-                                    if (item.isExpanded()) {
-                                      item.collapse();
-                                    } else {
-                                      item.expand();
-                                    }
-                                    // Sélectionner le dossier pour afficher son contenu
-                                    if (isInbox) {
-                                      setSelectedFolder(null);
-                                    } else {
-                                      setSelectedFolder(itemId);
-                                    }
-                                  } else {
-                                    // Sélectionner le document (ajouter à la sélection)
-                                    const docId = itemId.replace("doc-", "");
-                                    setSelectedDocuments([docId]);
-                                  }
-                                }}
-                              >
-                                <span className="flex items-center gap-1.5 min-w-0 w-full">
-                                  {isFolder ? (
-                                    isInbox ? (
-                                      <Inbox className="size-4 text-amber-500 shrink-0" />
-                                    ) : (
-                                      <FolderClosed
-                                        className="size-4 shrink-0"
-                                        style={{
-                                          color: itemData?.color || "#6366f1",
-                                        }}
-                                      />
-                                    )
-                                  ) : (
-                                    getFileIcon(
-                                      itemData?.mimeType,
-                                      itemData?.fileExtension
-                                    )
-                                  )}
-                                  <Tooltip delayDuration={500}>
-                                    <TooltipTrigger asChild>
-                                      <span className="truncate flex-1 text-sm min-w-0">
-                                        {item.getItemName()}
-                                      </span>
-                                    </TooltipTrigger>
-                                    <TooltipContent
-                                      side="bottom"
-                                      align="start"
-                                      sideOffset={4}
-                                      className="max-w-[280px]"
-                                    >
-                                      <p className="text-xs break-all">
-                                        {item.getItemName()}
-                                      </p>
-                                    </TooltipContent>
-                                  </Tooltip>
-                                </span>
-                              </TreeItemLabel>
-                            </TreeItem>
-                          </ContextMenuTrigger>
-                          <ContextMenuContent>
-                            {isFolder && !isInbox && (
-                              <>
-                                <ContextMenuItem
-                                  onClick={() => {
-                                    setNewFolderParentId(itemId);
-                                    setShowNewFolderModal(true);
-                                  }}
-                                >
-                                  <FolderPlus className="size-4" />
-                                  Nouveau sous-dossier
-                                </ContextMenuItem>
-                                <ContextMenuSeparator />
-                              </>
-                            )}
-                            <ContextMenuItem
-                              onClick={() => {
-                                const type = isFolder ? "folder" : "document";
-                                const id = isFolder
-                                  ? itemId
-                                  : itemId.replace("doc-", "");
-                                setItemToRename({
-                                  id,
-                                  name: item.getItemName(),
-                                  type,
-                                });
-                                setNewName(item.getItemName());
-                                setShowRenameModal(true);
-                              }}
-                            >
-                              <Pencil className="size-4" />
-                              Renommer
-                            </ContextMenuItem>
-                            {!isFolder && (
-                              <ContextMenuItem
-                                onClick={() => {
-                                  if (itemData?.fileUrl) {
-                                    window.open(itemData.fileUrl, "_blank");
-                                  }
-                                }}
-                              >
-                                <Download className="size-4 mr-2" />
-                                Télécharger
-                              </ContextMenuItem>
-                            )}
-                            {!isInbox && (
-                              <>
-                                <ContextMenuSeparator />
-                                <ContextMenuItem
-                                  variant="destructive"
-                                  onClick={() => {
-                                    if (isFolder) {
-                                      setFolderToDelete(itemId);
-                                      setShowDeleteFolderModal(true);
-                                    } else {
-                                      const docId = itemId.replace("doc-", "");
-                                      setSelectedDocuments([docId]);
-                                      setShowDeleteModal(true);
-                                    }
-                                  }}
-                                >
-                                  <Trash2 className="size-4" />
-                                  Supprimer
-                                </ContextMenuItem>
-                              </>
-                            )}
-                          </ContextMenuContent>
-                        </ContextMenu>
-                      );
-                    })}
-                  </Tree>
-                </TooltipProvider>
-              )}
-            </div>
+                {/* Context Menu for tree items - using DropdownMenu for programmatic control */}
+                {treeContextMenu && (
+                  <DropdownMenu
+                    open={!!treeContextMenu}
+                    onOpenChange={(open) => !open && setTreeContextMenu(null)}
+                  >
+                    <DropdownMenuTrigger asChild>
+                      <div
+                        style={{
+                          position: "fixed",
+                          left: treeContextMenu.x,
+                          top: treeContextMenu.y,
+                          width: 1,
+                          height: 1,
+                          pointerEvents: "none",
+                        }}
+                      />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" side="bottom">
+                      {treeContextMenu.item.isFolder && !treeContextMenu.item.isInbox && (
+                        <>
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setNewFolderParentId(treeContextMenu.itemId);
+                              setShowNewFolderModal(true);
+                              setTreeContextMenu(null);
+                            }}
+                          >
+                            <FolderPlus className="size-4 mr-2" />
+                            Nouveau sous-dossier
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                        </>
+                      )}
+                      {/* Renommer - pas pour les dossiers système */}
+                      {!treeContextMenu.item.isSystem && (
+                        <DropdownMenuItem
+                          onClick={() => {
+                            const isFolder = treeContextMenu.item.isFolder;
+                            const itemId = treeContextMenu.itemId;
+                            const id = isFolder ? itemId : itemId.replace("doc-", "");
+                            setItemToRename({
+                              id,
+                              name: treeContextMenu.item.name,
+                              type: isFolder ? "folder" : "document",
+                            });
+                            setNewName(treeContextMenu.item.name);
+                            setShowRenameModal(true);
+                            setTreeContextMenu(null);
+                          }}
+                        >
+                          <Pencil className="size-4 mr-2" />
+                          Renommer
+                        </DropdownMenuItem>
+                      )}
+                      {!treeContextMenu.item.isFolder && (
+                        <DropdownMenuItem
+                          onClick={() => {
+                            if (treeContextMenu.item.data?.fileUrl) {
+                              window.open(treeContextMenu.item.data.fileUrl, "_blank");
+                            }
+                            setTreeContextMenu(null);
+                          }}
+                        >
+                          <Download className="size-4 mr-2" />
+                          Télécharger
+                        </DropdownMenuItem>
+                      )}
+                      {/* Supprimer - pas pour inbox ni dossiers système */}
+                      {!treeContextMenu.item.isInbox && !treeContextMenu.item.isSystem && (
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive"
+                            onClick={() => {
+                              if (treeContextMenu.item.isFolder) {
+                                setFolderToDelete(treeContextMenu.itemId);
+                                setShowDeleteFolderModal(true);
+                              } else {
+                                const docId = treeContextMenu.itemId.replace("doc-", "");
+                                setSelectedDocuments([docId]);
+                                setShowDeleteModal(true);
+                              }
+                              setTreeContextMenu(null);
+                            }}
+                          >
+                            <Trash2 className="size-4 mr-2" />
+                            Supprimer
+                          </DropdownMenuItem>
+                        </>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+              </div>
+            )}
           </ScrollArea>
         </div>
 
         {/* Content area */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Toolbar */}
-          <div className="flex-shrink-0 px-4 py-3 border-b bg-background">
+          <div className="flex-shrink-0 px-4 min-h-14 border-b bg-background flex flex-col justify-center py-2">
+            {/* Upload Progress Bar */}
+            {isUploading && (
+              <div className="mb-2 space-y-1.5">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">
+                    Upload en cours... {uploadingFiles[0] && `(${uploadingFiles[0]})`}
+                  </span>
+                  <span className="font-medium">{uploadProgress}%</span>
+                </div>
+                <Progress value={uploadProgress} className="h-1.5" />
+              </div>
+            )}
+
             <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-2">
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                <span className="font-normal">{selectedFolderName}</span>
-                <span className="text-sm text-muted-foreground">
-                  ({filteredDocuments.length})
+              {/* Breadcrumb */}
+              <div className="flex items-center gap-1 min-w-0 flex-1">
+                <button
+                  onClick={() => setSelectedFolder(null)}
+                  className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <Home className="h-4 w-4" />
+                </button>
+                {breadcrumbPath.map((item, index) => (
+                  <div key={item.id || "inbox"} className="flex items-center gap-1 min-w-0">
+                    <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                    <button
+                      onClick={() => setSelectedFolder(item.id)}
+                      className={cn(
+                        "truncate max-w-[150px] text-sm transition-colors",
+                        index === breadcrumbPath.length - 1
+                          ? "font-medium text-foreground"
+                          : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      {item.isInbox ? (
+                        <span className="flex items-center gap-1">
+                          <Inbox className="h-3.5 w-3.5 text-amber-500" />
+                          {item.name}
+                        </span>
+                      ) : (
+                        item.name
+                      )}
+                    </button>
+                  </div>
+                ))}
+                <span className="text-xs text-muted-foreground ml-1">
+                  ({filteredDocuments.length}{hasMore ? "+" : ""})
                 </span>
               </div>
 
               <div className="flex items-center gap-2">
-                {/* Actions de sélection - à gauche de la recherche */}
+                {/* Actions de sélection */}
                 {selectedDocuments.length > 0 && (
                   <>
-                    <span className="text-sm text-muted-foreground">
+                    <span className="text-xs font-normal text-muted-foreground">
                       {selectedDocuments.length} sélectionné(s)
                     </span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowMoveModal(true)}
-                      className="h-8 text-xs"
-                    >
-                      <FolderInput className="h-3.5 w-3.5 mr-1" />
-                      Déplacer
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowDeleteModal(true)}
-                      className="h-8 text-xs text-destructive hover:text-destructive"
-                    >
-                      <Trash2 className="h-3.5 w-3.5 mr-1" />
-                      Supprimer
-                    </Button>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="secondary"
+                            size="icon"
+                            onClick={() => setShowMoveModal(true)}
+                          >
+                            <FolderInput className="h-4 w-4" strokeWidth={1.5} />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent
+                          side="bottom"
+                          className="bg-[#202020] text-white border-0"
+                        >
+                          <p>Déplacer</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setShowDeleteModal(true)}
+                            className="bg-destructive/10 text-destructive hover:bg-destructive/20 hover:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" strokeWidth={1.5} />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent
+                          side="bottom"
+                          className="bg-[#202020] text-white border-0"
+                        >
+                          <p>Supprimer</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </>
                 )}
+
+                {/* Tri */}
+                <TooltipProvider>
+                  <DropdownMenu>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="secondary" size="icon">
+                            <ArrowUpDown className="h-4 w-4" strokeWidth={1.5} />
+                          </Button>
+                        </DropdownMenuTrigger>
+                      </TooltipTrigger>
+                      <TooltipContent
+                        side="bottom"
+                        className="bg-[#202020] text-white border-0"
+                      >
+                        <p>Trier</p>
+                      </TooltipContent>
+                    </Tooltip>
+                    <DropdownMenuContent align="end" className="w-40">
+                      <DropdownMenuItem onClick={() => handleSort("name")} className="justify-between">
+                        Nom
+                        {getSortIcon("name")}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleSort("createdAt")} className="justify-between">
+                        Date
+                        {getSortIcon("createdAt")}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleSort("fileSize")} className="justify-between">
+                        Taille
+                        {getSortIcon("fileSize")}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TooltipProvider>
 
                 {/* Recherche */}
                 <div className="relative">
@@ -829,28 +1062,6 @@ export default function DocumentsPartagesPage() {
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-8 w-48 h-8 text-sm"
                   />
-                </div>
-
-                {/* Vue */}
-                <div className="flex items-center border rounded-md">
-                  <button
-                    onClick={() => setViewMode("list")}
-                    className={cn(
-                      "p-1.5 rounded-l-md transition-colors",
-                      viewMode === "list" ? "bg-accent" : "hover:bg-accent/50"
-                    )}
-                  >
-                    <List className="h-4 w-4" />
-                  </button>
-                  <button
-                    onClick={() => setViewMode("grid")}
-                    className={cn(
-                      "p-1.5 rounded-r-md transition-colors",
-                      viewMode === "grid" ? "bg-accent" : "hover:bg-accent/50"
-                    )}
-                  >
-                    <Grid3X3 className="h-4 w-4" />
-                  </button>
                 </div>
               </div>
             </div>
@@ -876,7 +1087,7 @@ export default function DocumentsPartagesPage() {
             )}
 
             {docsInitialLoading ? (
-              <div className="p-4 space-y-2">
+              <div className="space-y-2 py-2">
                 {[1, 2, 3, 4, 5].map((i) => (
                   <Skeleton key={i} className="h-14 w-full" />
                 ))}
@@ -904,9 +1115,9 @@ export default function DocumentsPartagesPage() {
               </div>
             ) : viewMode === "list" ? (
               /* Vue liste */
-              <div className="p-4">
+              <div>
                 {/* Header */}
-                <div className="flex items-center gap-3 px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider border-b">
+                <div className="flex items-center gap-3 px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider border-b">
                   <Checkbox
                     checked={
                       selectedDocuments.length === filteredDocuments.length &&
@@ -915,9 +1126,27 @@ export default function DocumentsPartagesPage() {
                     onCheckedChange={toggleSelectAll}
                     className="h-4 w-4"
                   />
-                  <span className="flex-1">Nom</span>
-                  <span className="w-24 text-right">Taille</span>
-                  <span className="w-32 text-right">Date</span>
+                  <button
+                    className="flex-1 flex items-center gap-1 hover:text-foreground transition-colors text-left"
+                    onClick={() => handleSort("name")}
+                  >
+                    Nom
+                    {getSortIcon("name")}
+                  </button>
+                  <button
+                    className="w-24 flex items-center gap-1 justify-end hover:text-foreground transition-colors"
+                    onClick={() => handleSort("fileSize")}
+                  >
+                    Taille
+                    {getSortIcon("fileSize")}
+                  </button>
+                  <button
+                    className="w-32 flex items-center gap-1 justify-end hover:text-foreground transition-colors"
+                    onClick={() => handleSort("createdAt")}
+                  >
+                    Date
+                    {getSortIcon("createdAt")}
+                  </button>
                   <span className="w-10"></span>
                 </div>
 
@@ -927,7 +1156,7 @@ export default function DocumentsPartagesPage() {
                     <div
                       key={doc.id}
                       className={cn(
-                        "flex items-center gap-3 px-3 py-3 hover:bg-accent/50 transition-colors group",
+                        "flex items-center gap-3 px-4 py-3 hover:bg-accent/50 transition-colors group",
                         selectedDocuments.includes(doc.id) && "bg-accent/30"
                       )}
                     >
@@ -939,9 +1168,37 @@ export default function DocumentsPartagesPage() {
                       <div className="flex items-center gap-3 flex-1 min-w-0">
                         {getFileIcon(doc.mimeType, doc.fileExtension)}
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-normal truncate">
-                            {doc.name}
-                          </p>
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-normal truncate">
+                              {doc.name}
+                            </p>
+                            {/* Tags inline */}
+                            {doc.tags && doc.tags.length > 0 && (
+                              <div className="flex items-center gap-1 flex-shrink-0">
+                                {doc.tags.slice(0, 2).map((tag) => (
+                                  <Badge
+                                    key={tag}
+                                    variant="outline"
+                                    className="text-[10px] px-1.5 py-0 h-4"
+                                  >
+                                    {tag}
+                                  </Badge>
+                                ))}
+                                {doc.tags.length > 2 && (
+                                  <span className="text-[10px] text-muted-foreground">
+                                    +{doc.tags.length - 2}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                            {/* Comments indicator */}
+                            {doc.comments && doc.comments.length > 0 && (
+                              <div className="flex items-center gap-0.5 text-muted-foreground flex-shrink-0">
+                                <MessageSquare className="h-3 w-3" />
+                                <span className="text-[10px]">{doc.comments.length}</span>
+                              </div>
+                            )}
+                          </div>
                           {doc.description && (
                             <p className="text-xs text-muted-foreground truncate">
                               {doc.description}
@@ -968,6 +1225,11 @@ export default function DocumentsPartagesPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleOpenDetails(doc)}>
+                            <Info className="h-4 w-4 mr-2" />
+                            Détails
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
                           <DropdownMenuItem onClick={() => handleDownload(doc)}>
                             <Download className="h-4 w-4 mr-2" />
                             Télécharger
@@ -1004,10 +1266,31 @@ export default function DocumentsPartagesPage() {
                     </div>
                   ))}
                 </div>
+
+                {/* Load More Button - List View */}
+                {hasMore && (
+                  <div className="flex justify-center py-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={loadMore}
+                      disabled={docsLoading}
+                      className="gap-2"
+                    >
+                      {docsLoading ? (
+                        <LoaderCircle className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Plus className="h-4 w-4" />
+                      )}
+                      Charger plus de documents
+                    </Button>
+                  </div>
+                )}
               </div>
             ) : (
               /* Vue grille */
-              <div className="p-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              <div className="px-4 py-2">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                 {filteredDocuments.map((doc) => (
                   <div
                     key={doc.id}
@@ -1039,6 +1322,11 @@ export default function DocumentsPartagesPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleOpenDetails(doc)}>
+                            <Info className="h-4 w-4 mr-2" />
+                            Détails
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
                           <DropdownMenuItem onClick={() => handleDownload(doc)}>
                             <Download className="h-4 w-4 mr-2" />
                             Télécharger
@@ -1057,8 +1345,16 @@ export default function DocumentsPartagesPage() {
                       </DropdownMenu>
                     </div>
                     <div className="flex flex-col items-center pt-4">
-                      <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center mb-3">
+                      <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center mb-3 relative">
                         {getFileIcon(doc.mimeType, doc.fileExtension)}
+                        {/* Comments/Tags indicator on grid card */}
+                        {((doc.tags && doc.tags.length > 0) || (doc.comments && doc.comments.length > 0)) && (
+                          <div className="absolute -top-1 -right-1 w-4 h-4 bg-[#5b4eff] rounded-full flex items-center justify-center">
+                            <span className="text-[8px] text-white font-medium">
+                              {(doc.tags?.length || 0) + (doc.comments?.length || 0)}
+                            </span>
+                          </div>
+                        )}
                       </div>
                       <p className="text-sm font-medium text-center truncate w-full">
                         {doc.name}
@@ -1066,9 +1362,44 @@ export default function DocumentsPartagesPage() {
                       <p className="text-xs text-muted-foreground mt-1">
                         {formatFileSize(doc.fileSize)}
                       </p>
+                      {/* Tags on grid */}
+                      {doc.tags && doc.tags.length > 0 && (
+                        <div className="flex flex-wrap justify-center gap-1 mt-1.5">
+                          {doc.tags.slice(0, 2).map((tag) => (
+                            <Badge
+                              key={tag}
+                              variant="outline"
+                              className="text-[9px] px-1 py-0 h-3.5"
+                            >
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
+                </div>
+
+                {/* Load More Button - Grid View */}
+                {hasMore && (
+                  <div className="flex justify-center py-4 col-span-full">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={loadMore}
+                      disabled={docsLoading}
+                      className="gap-2"
+                    >
+                      {docsLoading ? (
+                        <LoaderCircle className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Plus className="h-4 w-4" />
+                      )}
+                      Charger plus de documents
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
           </ScrollArea>
@@ -1281,6 +1612,191 @@ export default function DocumentsPartagesPage() {
                 <LoaderCircle className="h-4 w-4 animate-spin mr-2" />
               ) : null}
               Renommer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Document Details Panel */}
+      <Dialog
+        open={showDetailsPanel}
+        onOpenChange={(open) => {
+          setShowDetailsPanel(open);
+          if (!open) {
+            setSelectedDocumentDetails(null);
+            setNewTag("");
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {selectedDocumentDetails &&
+                getFileIcon(
+                  selectedDocumentDetails.mimeType,
+                  selectedDocumentDetails.fileExtension,
+                  "size-5"
+                )}
+              <span className="truncate">{selectedDocumentDetails?.name}</span>
+            </DialogTitle>
+            <DialogDescription>
+              Détails et métadonnées du document
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedDocumentDetails && (
+            <div className="space-y-4 py-2">
+              {/* File Info */}
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <File className="h-4 w-4" />
+                  <span>Taille</span>
+                </div>
+                <div>{formatFileSize(selectedDocumentDetails.fileSize)}</div>
+
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Calendar className="h-4 w-4" />
+                  <span>Ajouté le</span>
+                </div>
+                <div>
+                  {format(
+                    new Date(selectedDocumentDetails.createdAt),
+                    "d MMMM yyyy à HH:mm",
+                    { locale: fr }
+                  )}
+                </div>
+
+                {selectedDocumentDetails.uploadedByName && (
+                  <>
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <User className="h-4 w-4" />
+                      <span>Par</span>
+                    </div>
+                    <div>{selectedDocumentDetails.uploadedByName}</div>
+                  </>
+                )}
+              </div>
+
+              <Separator />
+
+              {/* Tags Section */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <Tag className="h-4 w-4" />
+                  Tags
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {(selectedDocumentDetails.tags || []).length > 0 ? (
+                    (selectedDocumentDetails.tags || []).map((tag) => (
+                      <Badge
+                        key={tag}
+                        variant="secondary"
+                        className="gap-1 pr-1"
+                      >
+                        {tag}
+                        <button
+                          onClick={() => handleRemoveTag(tag)}
+                          className="ml-1 hover:text-destructive transition-colors"
+                          disabled={updateDocLoading}
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ))
+                  ) : (
+                    <span className="text-xs text-muted-foreground">
+                      Aucun tag
+                    </span>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Ajouter un tag..."
+                    value={newTag}
+                    onChange={(e) => setNewTag(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleAddTag()}
+                    className="h-8 text-sm"
+                  />
+                  <Button
+                    size="sm"
+                    onClick={handleAddTag}
+                    disabled={!newTag.trim() || updateDocLoading}
+                    className="h-8"
+                  >
+                    {updateDocLoading ? (
+                      <LoaderCircle className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <Plus className="h-3 w-3" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Comments Section */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <MessageSquare className="h-4 w-4" />
+                  Commentaires
+                  {(selectedDocumentDetails.comments || []).length > 0 && (
+                    <Badge variant="secondary" className="text-xs">
+                      {selectedDocumentDetails.comments.length}
+                    </Badge>
+                  )}
+                </div>
+                <ScrollArea className="max-h-40">
+                  {(selectedDocumentDetails.comments || []).length > 0 ? (
+                    <div className="space-y-2">
+                      {selectedDocumentDetails.comments.map((comment, idx) => (
+                        <div
+                          key={idx}
+                          className="bg-muted/50 rounded-lg p-3 text-sm"
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="font-medium text-xs">
+                              {comment.authorName || "Utilisateur"}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              {format(
+                                new Date(comment.createdAt),
+                                "d MMM yyyy",
+                                { locale: fr }
+                              )}
+                            </span>
+                          </div>
+                          <p className="text-muted-foreground">{comment.text}</p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      Aucun commentaire
+                    </p>
+                  )}
+                </ScrollArea>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleDownload(selectedDocumentDetails)}
+              className="gap-1"
+            >
+              <Download className="h-4 w-4" />
+              Télécharger
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => window.open(selectedDocumentDetails?.fileUrl, "_blank")}
+              className="gap-1"
+            >
+              <ExternalLink className="h-4 w-4" />
+              Ouvrir
             </Button>
           </DialogFooter>
         </DialogContent>

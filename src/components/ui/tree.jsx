@@ -1,13 +1,13 @@
 "use client";
 
 import * as React from "react";
-import { ChevronDownIcon } from "lucide-react";
+import { ChevronRightIcon } from "lucide-react";
 import { Slot } from "@radix-ui/react-slot";
 import { cn } from "@/src/lib/utils";
 
 const TreeContext = React.createContext({
   currentItem: undefined,
-  indent: 20,
+  indent: 16,
   tree: undefined,
 });
 
@@ -15,7 +15,7 @@ function useTreeContext() {
   return React.useContext(TreeContext);
 }
 
-function Tree({ indent = 20, tree, className, ...props }) {
+function Tree({ indent = 16, tree, className, ...props }) {
   const containerProps =
     tree && typeof tree.getContainerProps === "function"
       ? tree.getContainerProps()
@@ -56,19 +56,20 @@ function TreeItem({ item, className, asChild, children, ...props }) {
 
   const Comp = asChild ? Slot : "button";
 
+  const isDragTarget =
+    typeof item.isDragTarget === "function" ? item.isDragTarget() : false;
+
   return (
     <TreeContext.Provider value={{ currentItem: item, indent }}>
       <Comp
         aria-expanded={item.isExpanded()}
         className={cn(
-          "z-10 w-full text-left select-none ps-[var(--tree-padding)] pb-0.5 outline-none focus:z-20 data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+          "z-10 w-full text-left select-none ps-[var(--tree-padding)] outline-none focus:z-20",
+          "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+          "transition-[padding,opacity] duration-150 ease-out",
           className
         )}
-        data-drag-target={
-          typeof item.isDragTarget === "function"
-            ? item.isDragTarget() || false
-            : undefined
-        }
+        data-drag-target={isDragTarget || undefined}
         data-focus={
           typeof item.isFocused === "function"
             ? item.isFocused() || false
@@ -77,11 +78,6 @@ function TreeItem({ item, className, asChild, children, ...props }) {
         data-folder={
           typeof item.isFolder === "function"
             ? item.isFolder() || false
-            : undefined
-        }
-        data-search-match={
-          typeof item.isMatchingSearch === "function"
-            ? item.isMatchingSearch() || false
             : undefined
         }
         data-selected={
@@ -111,12 +107,12 @@ function TreeItemLabel({ item: propItem, children, className, ...props }) {
   return (
     <span
       className={cn(
-        "flex items-center gap-1 rounded-sm px-2 py-1.5 text-sm transition-colors hover:bg-accent overflow-hidden",
-        "[[data-drag-target=true]_&]:bg-accent",
-        "[[data-search-match=true]_&]:bg-blue-400/20",
+        "flex items-center gap-1.5 rounded px-2 py-1 text-sm",
+        "transition-colors duration-100 ease-out",
+        "hover:bg-accent/50",
+        "[[data-drag-target=true]_&]:bg-accent/70",
         "[[data-selected=true]_&]:bg-accent [[data-selected=true]_&]:text-accent-foreground",
-        "[[data-focus-visible]_&]:ring-[3px] [[data-focus-visible]_&]:ring-ring/50",
-        "[&:not([data-folder=true])]:ps-7",
+        "[&:not([data-folder=true])]:ps-5",
         "[&_svg]:pointer-events-none [&_svg]:shrink-0",
         className
       )}
@@ -124,7 +120,12 @@ function TreeItemLabel({ item: propItem, children, className, ...props }) {
       {...props}
     >
       {item.isFolder() && (
-        <ChevronDownIcon className="size-4 text-muted-foreground [[aria-expanded=false]_&]:-rotate-90 transition-transform" />
+        <ChevronRightIcon
+          className={cn(
+            "size-3 text-muted-foreground/60 transition-transform duration-100",
+            "[[aria-expanded=true]_&]:rotate-90"
+          )}
+        />
       )}
       {children ||
         (typeof item.getItemName === "function" ? item.getItemName() : null)}
@@ -133,27 +134,9 @@ function TreeItemLabel({ item: propItem, children, className, ...props }) {
 }
 
 function TreeDragLine({ className, ...props }) {
-  const { tree } = useTreeContext();
-
-  if (!tree || typeof tree.getDragLineStyle !== "function") {
-    console.warn(
-      "TreeDragLine: No tree provided via context or tree does not have getDragLineStyle method"
-    );
-    return null;
-  }
-
-  const dragLine = tree.getDragLineStyle();
-  return (
-    <div
-      className={cn(
-        "-mt-px absolute z-30 h-0.5 w-[unset] bg-primary",
-        "before:absolute before:-top-[3px] before:left-0 before:size-2 before:rounded-full before:border-2 before:border-primary before:bg-background",
-        className
-      )}
-      style={dragLine}
-      {...props}
-    />
-  );
+  // Hide drag line completely for a cleaner look
+  // Since we use folder highlighting instead
+  return null;
 }
 
 export { Tree, TreeItem, TreeItemLabel, TreeDragLine, useTreeContext };

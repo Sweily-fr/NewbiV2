@@ -1734,7 +1734,7 @@ function LogoSettings({ props, onUpdate }) {
       try {
         await uploadImageFile(
           optimizedFile,
-          "imgLogo",
+          "logoReseau",
           signatureId,
           (url, key) => {
             updateSignatureData("logo", url);

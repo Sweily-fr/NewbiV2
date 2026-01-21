@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { gql, useQuery, useMutation } from "@apollo/client";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { toast } from "@/src/components/ui/sonner";
@@ -222,6 +223,7 @@ export const UPDATE_SHARED_FOLDER = gql`
         color
         icon
         order
+        parentId
       }
     }
   }
@@ -236,7 +238,9 @@ export const DELETE_SHARED_FOLDER = gql`
   }
 `;
 
-// Hook principal
+// Hook principal avec pagination
+const DOCUMENTS_PER_PAGE = 50;
+
 export function useSharedDocuments(filter = {}) {
   const { workspaceId } = useWorkspace();
 
@@ -244,8 +248,10 @@ export function useSharedDocuments(filter = {}) {
   const folderId = filter.folderId;
   const search = filter.search;
   const status = filter.status;
+  const sortBy = filter.sortBy || "createdAt";
+  const sortOrder = filter.sortOrder || "desc";
 
-  const { data, loading, error, refetch, networkStatus } = useQuery(
+  const { data, loading, error, refetch, fetchMore, networkStatus } = useQuery(
     GET_SHARED_DOCUMENTS,
     {
       variables: {
@@ -255,7 +261,7 @@ export function useSharedDocuments(filter = {}) {
           search,
           status,
         },
-        limit: 100,
+        limit: DOCUMENTS_PER_PAGE,
         offset: 0,
       },
       skip: !workspaceId,
@@ -267,8 +273,62 @@ export function useSharedDocuments(filter = {}) {
   // Chargement initial (pas de données en cache)
   const isInitialLoading = loading && !data;
 
+  // Fonction pour charger plus de documents
+  const loadMore = async () => {
+    const currentLength = data?.sharedDocuments?.documents?.length || 0;
+    if (!data?.sharedDocuments?.hasMore) return;
+
+    try {
+      await fetchMore({
+        variables: {
+          offset: currentLength,
+        },
+        updateQuery: (prev, { fetchMoreResult }) => {
+          if (!fetchMoreResult) return prev;
+          return {
+            sharedDocuments: {
+              ...fetchMoreResult.sharedDocuments,
+              documents: [
+                ...(prev.sharedDocuments?.documents || []),
+                ...(fetchMoreResult.sharedDocuments?.documents || []),
+              ],
+            },
+          };
+        },
+      });
+    } catch (err) {
+      console.error("Error loading more documents:", err);
+    }
+  };
+
+  // Trier les documents côté client
+  const sortedDocuments = React.useMemo(() => {
+    const docs = [...(data?.sharedDocuments?.documents || [])];
+
+    docs.sort((a, b) => {
+      let comparison = 0;
+
+      switch (sortBy) {
+        case "name":
+          comparison = (a.name || "").localeCompare(b.name || "");
+          break;
+        case "fileSize":
+          comparison = (a.fileSize || 0) - (b.fileSize || 0);
+          break;
+        case "createdAt":
+        default:
+          comparison = new Date(a.createdAt) - new Date(b.createdAt);
+          break;
+      }
+
+      return sortOrder === "asc" ? comparison : -comparison;
+    });
+
+    return docs;
+  }, [data?.sharedDocuments?.documents, sortBy, sortOrder]);
+
   return {
-    documents: data?.sharedDocuments?.documents || [],
+    documents: sortedDocuments,
     total: data?.sharedDocuments?.total || 0,
     hasMore: data?.sharedDocuments?.hasMore || false,
     loading,
@@ -276,6 +336,7 @@ export function useSharedDocuments(filter = {}) {
     isRefetching: loading && !!data,
     error,
     refetch,
+    loadMore,
   };
 }
 
@@ -374,7 +435,7 @@ export function useMoveSharedDocuments() {
   const { workspaceId } = useWorkspace();
   const [moveMutation, { loading }] = useMutation(MOVE_SHARED_DOCUMENTS);
 
-  const move = async (ids, targetFolderId) => {
+  const move = async (ids, targetFolderId, { silent = false } = {}) => {
     try {
       const result = await moveMutation({
         variables: {
@@ -385,16 +446,19 @@ export function useMoveSharedDocuments() {
         refetchQueries: [
           {
             query: GET_SHARED_DOCUMENTS,
-            variables: { workspaceId, filter: {}, limit: 100, offset: 0 },
+            variables: { workspaceId, filter: {}, limit: 50, offset: 0 },
           },
           { query: GET_SHARED_FOLDERS, variables: { workspaceId } },
         ],
+        awaitRefetchQueries: false, // Don't wait for refetch to complete
       });
 
       if (result.data?.moveSharedDocuments?.success) {
-        toast.success(
-          `${result.data.moveSharedDocuments.movedCount} document(s) déplacé(s)`
-        );
+        if (!silent) {
+          toast.success(
+            `${result.data.moveSharedDocuments.movedCount} document(s) déplacé(s)`
+          );
+        }
         return true;
       } else {
         throw new Error(
@@ -451,7 +515,7 @@ export function useCreateSharedFolder() {
   const { workspaceId } = useWorkspace();
   const [createMutation, { loading }] = useMutation(CREATE_SHARED_FOLDER);
 
-  const create = async (input) => {
+  const create = async (input, { silent = false } = {}) => {
     try {
       const result = await createMutation({
         variables: { workspaceId, input },
@@ -462,7 +526,9 @@ export function useCreateSharedFolder() {
       });
 
       if (result.data?.createSharedFolder?.success) {
-        toast.success("Dossier créé");
+        if (!silent) {
+          toast.success("Dossier créé");
+        }
         return result.data.createSharedFolder.folder;
       } else {
         throw new Error(
@@ -470,12 +536,78 @@ export function useCreateSharedFolder() {
         );
       }
     } catch (error) {
-      toast.error(error.message || "Erreur lors de la création");
+      if (!silent) {
+        toast.error(error.message || "Erreur lors de la création");
+      }
       throw error;
     }
   };
 
   return { create, loading };
+}
+
+// Dossiers par défaut pour les documents partagés
+export const DEFAULT_SHARED_FOLDERS = [
+  { name: "Factures", color: "#6366f1", icon: "receipt" },
+  { name: "Devis", color: "#8b5cf6", icon: "file-text" },
+  { name: "Notes de frais", color: "#ec4899", icon: "wallet" },
+  { name: "Contrats", color: "#14b8a6", icon: "file-signature" },
+  { name: "Bulletins de paie", color: "#f59e0b", icon: "file-badge" },
+  { name: "Relevés bancaires", color: "#3b82f6", icon: "landmark" },
+];
+
+// Hook pour créer les dossiers par défaut
+export function useCreateDefaultFolders() {
+  const { workspaceId } = useWorkspace();
+  const [createMutation] = useMutation(CREATE_SHARED_FOLDER);
+  const [isCreating, setIsCreating] = React.useState(false);
+
+  const createDefaultFolders = async (existingFolderNames = []) => {
+    // Ne pas exécuter si workspaceId n'est pas disponible
+    if (!workspaceId) {
+      console.warn("createDefaultFolders: workspaceId not available");
+      return [];
+    }
+
+    setIsCreating(true);
+    const foldersToCreate = DEFAULT_SHARED_FOLDERS.filter(
+      (folder) => !existingFolderNames.includes(folder.name)
+    );
+
+    if (foldersToCreate.length === 0) {
+      setIsCreating(false);
+      return [];
+    }
+
+    const createdFolders = [];
+
+    for (const folder of foldersToCreate) {
+      try {
+        const result = await createMutation({
+          variables: {
+            workspaceId,
+            input: {
+              name: folder.name,
+              color: folder.color,
+              icon: folder.icon,
+              isSystem: true, // Dossiers par défaut non supprimables
+            },
+          },
+        });
+
+        if (result.data?.createSharedFolder?.success) {
+          createdFolders.push(result.data.createSharedFolder.folder);
+        }
+      } catch (error) {
+        console.error(`Erreur création dossier ${folder.name}:`, error);
+      }
+    }
+
+    setIsCreating(false);
+    return createdFolders;
+  };
+
+  return { createDefaultFolders, isCreating, workspaceId };
 }
 
 // Hook pour supprimer un dossier
@@ -585,4 +717,83 @@ export function useRenameSharedFolder() {
   };
 
   return { rename, loading };
+}
+
+// Hook pour mettre à jour un document (tags, description, etc.)
+export function useUpdateSharedDocument() {
+  const { workspaceId } = useWorkspace();
+  const [updateMutation, { loading }] = useMutation(UPDATE_SHARED_DOCUMENT);
+
+  const update = async (id, input) => {
+    try {
+      const result = await updateMutation({
+        variables: {
+          id,
+          workspaceId,
+          input,
+        },
+        refetchQueries: [
+          {
+            query: GET_SHARED_DOCUMENTS,
+            variables: { workspaceId, filter: {}, limit: 50, offset: 0 },
+          },
+        ],
+      });
+
+      if (result.data?.updateSharedDocument?.success) {
+        return result.data.updateSharedDocument.document;
+      } else {
+        throw new Error(
+          result.data?.updateSharedDocument?.message || "Erreur mise à jour"
+        );
+      }
+    } catch (error) {
+      toast.error(error.message || "Erreur lors de la mise à jour");
+      throw error;
+    }
+  };
+
+  return { update, loading };
+}
+
+// Hook pour déplacer un dossier (changer son parent)
+export function useMoveSharedFolder() {
+  const { workspaceId } = useWorkspace();
+  const [updateMutation, { loading }] = useMutation(UPDATE_SHARED_FOLDER);
+
+  const moveFolder = async (folderId, newParentId, { silent = false } = {}) => {
+    try {
+      const result = await updateMutation({
+        variables: {
+          id: folderId,
+          workspaceId,
+          input: { parentId: newParentId },
+        },
+        refetchQueries: [
+          { query: GET_SHARED_FOLDERS, variables: { workspaceId } },
+          {
+            query: GET_SHARED_DOCUMENTS,
+            variables: { workspaceId, filter: {}, limit: 50, offset: 0 },
+          },
+        ],
+        awaitRefetchQueries: false, // Don't wait for refetch to complete
+      });
+
+      if (result.data?.updateSharedFolder?.success) {
+        if (!silent) {
+          toast.success("Dossier déplacé");
+        }
+        return result.data.updateSharedFolder.folder;
+      } else {
+        throw new Error(
+          result.data?.updateSharedFolder?.message || "Erreur déplacement"
+        );
+      }
+    } catch (error) {
+      toast.error(error.message || "Erreur lors du déplacement");
+      throw error;
+    }
+  };
+
+  return { moveFolder, loading };
 }

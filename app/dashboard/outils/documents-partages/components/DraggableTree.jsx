@@ -1,0 +1,416 @@
+"use client";
+
+import React, { useState, useCallback, useMemo } from "react";
+import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  closestCenter,
+  pointerWithin,
+  rectIntersection,
+} from "@dnd-kit/core";
+import { useDraggable, useDroppable } from "@dnd-kit/core";
+import { CSS } from "@dnd-kit/utilities";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  ChevronRight,
+  Inbox,
+  FolderClosed,
+  FileText,
+  FileImage,
+  FileSpreadsheet,
+  File,
+  GripVertical,
+} from "lucide-react";
+import { cn } from "@/src/lib/utils";
+
+// Icône selon le type de fichier
+const getFileIcon = (mimeType, extension, className = "size-3.5 text-muted-foreground/70") => {
+  if (mimeType?.startsWith("image/")) {
+    return <FileImage className={className} />;
+  }
+  if (mimeType === "application/pdf") {
+    return <FileText className={className} />;
+  }
+  if (mimeType?.includes("spreadsheet") || mimeType?.includes("excel") || extension === "csv") {
+    return <FileSpreadsheet className={className} />;
+  }
+  if (mimeType?.includes("word") || mimeType?.includes("document")) {
+    return <FileText className={className} />;
+  }
+  return <File className={className} />;
+};
+
+// Composant d'item draggable
+function DraggableItem({ id, item, level, isExpanded, onToggle, onClick, onContextMenu, children }) {
+  const isFolder = item.isFolder;
+  const isInbox = item.isInbox;
+  const canDrag = !isInbox;
+
+  const {
+    attributes,
+    listeners,
+    setNodeRef: setDragRef,
+    transform,
+    isDragging,
+  } = useDraggable({
+    id,
+    data: { item, type: isFolder ? "folder" : "document" },
+    disabled: !canDrag,
+  });
+
+  const {
+    setNodeRef: setDropRef,
+    isOver,
+  } = useDroppable({
+    id: `drop-${id}`,
+    data: { item, acceptDrop: isFolder },
+    disabled: !isFolder,
+  });
+
+  const style = {
+    transform: CSS.Translate.toString(transform),
+    paddingLeft: `${level * 16 + 8}px`,
+  };
+
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, x: -10 }}
+      animate={{
+        opacity: isDragging ? 0.5 : 1,
+        x: 0,
+        scale: isOver && isFolder ? 1.02 : 1,
+      }}
+      exit={{ opacity: 0, x: -10 }}
+      transition={{ duration: 0.15, ease: "easeOut" }}
+    >
+      <div
+        ref={(node) => {
+          setDragRef(node);
+          if (isFolder) setDropRef(node);
+        }}
+        style={style}
+        className={cn(
+          "flex items-center gap-2 py-1.5 pr-2 rounded select-none",
+          "transition-all duration-100",
+          "hover:bg-accent/40",
+          isOver && isFolder && "bg-accent/50",
+          isDragging && "opacity-40",
+          canDrag ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"
+        )}
+        onClick={onClick}
+        onContextMenu={onContextMenu}
+        {...(canDrag ? { ...attributes, ...listeners } : {})}
+      >
+        {isFolder && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggle?.();
+            }}
+            className="p-0.5 hover:bg-accent rounded"
+          >
+            <ChevronRight
+              className={cn(
+                "size-3 text-muted-foreground/60 transition-transform duration-150",
+                isExpanded && "rotate-90"
+              )}
+            />
+          </button>
+        )}
+
+        {!isFolder && <div className="w-4" />}
+
+        {isFolder ? (
+          isInbox ? (
+            <Inbox className="size-3.5 text-amber-500/80 shrink-0" />
+          ) : (
+            <FolderClosed
+              className="size-3.5 shrink-0"
+              style={{ color: item.color || "currentColor", opacity: 0.7 }}
+            />
+          )
+        ) : (
+          getFileIcon(item.mimeType, item.fileExtension)
+        )}
+
+        <span className="truncate text-sm flex-1">{item.name}</span>
+
+        {item.count !== undefined && item.count > 0 && (
+          <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+            {item.count}
+          </span>
+        )}
+      </div>
+
+      {children}
+    </motion.div>
+  );
+}
+
+// Overlay affiché pendant le drag - compact et léger
+function DragOverlayContent({ item }) {
+  if (!item) return null;
+
+  return (
+    <div className="inline-flex items-center gap-1.5 px-2 py-1 bg-background/95 border border-border/40 shadow-sm rounded text-xs max-w-[140px]">
+      {item.isFolder ? (
+        item.isInbox ? (
+          <Inbox className="size-3 text-amber-500/80 shrink-0" />
+        ) : (
+          <FolderClosed
+            className="size-3 shrink-0"
+            style={{ color: item.color || "currentColor", opacity: 0.7 }}
+          />
+        )
+      ) : (
+        getFileIcon(item.mimeType, item.fileExtension, "size-3 text-muted-foreground/70 shrink-0")
+      )}
+      <span className="font-medium truncate">{item.name}</span>
+    </div>
+  );
+}
+
+export function DraggableTree({
+  folders,
+  documents,
+  pendingCount,
+  onMove,
+  onMoveFolder,
+  onSelectFolder,
+  onSelectDocument,
+  selectedFolder,
+  onContextMenu,
+}) {
+  const [expandedFolders, setExpandedFolders] = useState(new Set(["inbox"]));
+  const [activeItem, setActiveItem] = useState(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // Start drag after 8px movement
+      },
+    })
+  );
+
+  // Build tree structure
+  const treeData = useMemo(() => {
+    const items = {};
+
+    // Inbox
+    items["inbox"] = {
+      id: "inbox",
+      name: "Documents à classer",
+      isFolder: true,
+      isInbox: true,
+      count: pendingCount,
+      parentId: null,
+      children: documents
+        .filter((d) => !d.folderId)
+        .map((d) => `doc-${d.id}`),
+    };
+
+    // Folders
+    folders.forEach((folder) => {
+      items[folder.id] = {
+        id: folder.id,
+        name: folder.name,
+        isFolder: true,
+        isSystem: folder.isSystem || false,
+        color: folder.color,
+        parentId: folder.parentId,
+        data: folder,
+        children: [
+          ...folders.filter((f) => f.parentId === folder.id).map((f) => f.id),
+          ...documents.filter((d) => d.folderId === folder.id).map((d) => `doc-${d.id}`),
+        ],
+      };
+    });
+
+    // Documents
+    documents.forEach((doc) => {
+      items[`doc-${doc.id}`] = {
+        id: `doc-${doc.id}`,
+        name: doc.name,
+        isFolder: false,
+        mimeType: doc.mimeType,
+        fileExtension: doc.fileExtension,
+        folderId: doc.folderId,
+        data: doc,
+        children: [],
+      };
+    });
+
+    // Root level items
+    const rootItems = [
+      "inbox",
+      ...folders.filter((f) => !f.parentId).map((f) => f.id),
+    ];
+
+    return { items, rootItems };
+  }, [folders, documents, pendingCount]);
+
+  const toggleFolder = useCallback((folderId) => {
+    setExpandedFolders((prev) => {
+      const next = new Set(prev);
+      if (next.has(folderId)) {
+        next.delete(folderId);
+      } else {
+        next.add(folderId);
+      }
+      return next;
+    });
+  }, []);
+
+  const handleDragStart = useCallback((event) => {
+    const { active } = event;
+    setActiveItem(active.data.current?.item || null);
+  }, []);
+
+  const handleDragEnd = useCallback(
+    async (event) => {
+      const { active, over } = event;
+      setActiveItem(null);
+
+      if (!over) return;
+
+      const draggedId = active.id;
+      const droppedOnId = over.id.toString().replace("drop-", "");
+
+      // Don't drop on itself
+      if (draggedId === droppedOnId) return;
+
+      const draggedItem = treeData.items[draggedId];
+      const targetItem = treeData.items[droppedOnId];
+
+      if (!draggedItem || !targetItem || !targetItem.isFolder) return;
+
+      // Determine target folder ID
+      const targetFolderId = droppedOnId === "inbox" ? null : droppedOnId;
+
+      // Check if it's a document or folder being moved
+      if (draggedId.startsWith("doc-")) {
+        const docId = draggedId.replace("doc-", "");
+        await onMove?.([docId], targetFolderId);
+      } else {
+        // It's a folder
+        // Prevent circular reference
+        let currentId = targetFolderId;
+        while (currentId) {
+          if (currentId === draggedId) {
+            return; // Would create circular reference
+          }
+          const folder = folders.find((f) => f.id === currentId);
+          currentId = folder?.parentId;
+        }
+        await onMoveFolder?.(draggedId, targetFolderId);
+      }
+    },
+    [treeData, onMove, onMoveFolder, folders]
+  );
+
+  const handleDragCancel = useCallback(() => {
+    setActiveItem(null);
+  }, []);
+
+  // Render tree items recursively
+  const renderItem = useCallback(
+    (itemId, level = 0) => {
+      const item = treeData.items[itemId];
+      if (!item) return null;
+
+      const isExpanded = expandedFolders.has(itemId);
+      const isSelected = item.isFolder && !item.isInbox && itemId === selectedFolder;
+
+      return (
+        <DraggableItem
+          key={itemId}
+          id={itemId}
+          item={item}
+          level={level}
+          isExpanded={isExpanded}
+          onToggle={() => toggleFolder(itemId)}
+          onClick={() => {
+            if (item.isFolder) {
+              if (item.isInbox) {
+                onSelectFolder?.(null);
+              } else {
+                onSelectFolder?.(itemId);
+              }
+              if (!expandedFolders.has(itemId)) {
+                toggleFolder(itemId);
+              }
+            } else {
+              const docId = itemId.replace("doc-", "");
+              onSelectDocument?.(docId);
+            }
+          }}
+          onContextMenu={(e) => onContextMenu?.(e, itemId, item)}
+        >
+          <AnimatePresence initial={false}>
+            {isExpanded && item.children && item.children.length > 0 && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.15, ease: "easeOut" }}
+                style={{ overflow: "hidden" }}
+              >
+                {item.children.map((childId) => renderItem(childId, level + 1))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </DraggableItem>
+      );
+    },
+    [treeData, expandedFolders, selectedFolder, toggleFolder, onSelectFolder, onSelectDocument, onContextMenu]
+  );
+
+  // Custom collision detection that prefers folders
+  const collisionDetection = useCallback((args) => {
+    // First check pointer intersection
+    const pointerCollisions = pointerWithin(args);
+
+    if (pointerCollisions.length > 0) {
+      // Filter to only droppable folders
+      const folderCollisions = pointerCollisions.filter((collision) => {
+        const id = collision.id.toString().replace("drop-", "");
+        const item = treeData.items[id];
+        return item?.isFolder;
+      });
+
+      if (folderCollisions.length > 0) {
+        return folderCollisions;
+      }
+    }
+
+    // Fallback to rect intersection
+    return rectIntersection(args);
+  }, [treeData]);
+
+  return (
+    <DndContext
+      sensors={sensors}
+      collisionDetection={collisionDetection}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      onDragCancel={handleDragCancel}
+    >
+      <div className="py-1">
+        <AnimatePresence initial={false}>
+          {treeData.rootItems.map((itemId) => renderItem(itemId, 0))}
+        </AnimatePresence>
+      </div>
+
+      <DragOverlay dropAnimation={{
+        duration: 150,
+        easing: "ease-out",
+      }}>
+        {activeItem && <DragOverlayContent item={activeItem} />}
+      </DragOverlay>
+    </DndContext>
+  );
+}

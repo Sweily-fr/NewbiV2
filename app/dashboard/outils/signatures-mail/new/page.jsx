@@ -1941,20 +1941,23 @@ export default function NewSignaturePage() {
   // Note: Le templateId est maintenant toujours défini via le preset (dans use-signature-data.js)
   // ou via les données par défaut. Pas besoin de vérification supplémentaire.
 
+  // État pour le feedback visuel de copie réussie
+  const [copySuccess, setCopySuccess] = useState(false);
+
   // Handler pour copier depuis la toolbar
   const handleCopyFromToolbar = async () => {
     setIsCopying(true);
+    setCopySuccess(false);
     try {
       const result = await copyToClipboard();
       console.log('[handleCopyFromToolbar] Result:', result);
       if (result.success) {
-        toast.success(result.message);
-      } else {
-        toast.error(result.message);
+        setCopySuccess(true);
+        // Reset après 2 secondes
+        setTimeout(() => setCopySuccess(false), 2000);
       }
     } catch (error) {
       console.error('[handleCopyFromToolbar] Error:', error);
-      toast.error(`Erreur lors de la copie: ${error.message}`);
     } finally {
       setIsCopying(false);
     }
@@ -1994,6 +1997,7 @@ export default function NewSignaturePage() {
         <SignatureToolbar
           onCopy={handleCopyFromToolbar}
           isCopying={isCopying}
+          copySuccess={copySuccess}
           zoom={zoom}
           onZoomChange={setZoom}
         />
