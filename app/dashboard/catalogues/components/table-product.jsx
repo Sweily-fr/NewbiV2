@@ -21,12 +21,8 @@ import {
   ChevronRightIcon,
   ChevronUpIcon,
   CircleAlertIcon,
-  CircleXIcon,
-  Columns3Icon,
   EllipsisIcon,
-  FilterIcon,
   ListFilterIcon,
-  PlusIcon,
   Search,
   TrashIcon,
   AlertCircle,
@@ -46,7 +42,6 @@ import {
 } from "@/src/components/ui/alert-dialog";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
-import { ButtonGroup, ButtonGroupSeparator } from "@/src/components/ui/button-group";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import {
   DropdownMenu,
@@ -265,7 +260,7 @@ const columns = [
   },
 ];
 
-export default function TableProduct({ handleAddProduct }) {
+export default function TableProduct({ handleAddProduct, hideHeaderButtons = false }) {
   const id = useId();
   const [columnFilters, setColumnFilters] = useState([]);
   const [columnVisibility, setColumnVisibility] = useState({});
@@ -441,98 +436,39 @@ export default function TableProduct({ handleAddProduct }) {
     <>
       {/* Desktop Layout */}
       <div className="hidden md:flex md:flex-col h-full overflow-hidden">
-        {/* Filters */}
-        <div className="flex flex-wrap items-center justify-between gap-3 flex-shrink-0 px-4 sm:px-6 py-4">
-          <div className="flex items-center gap-3">
-            {/* First Button Group: Search, Category, Columns */}
-            <ButtonGroup>
-            {/* Filter by name or reference */}
-            <div className="relative flex-1">
-              <Input
-                id={`${id}-input`}
-                ref={inputRef}
-                className={cn(
-                  "peer min-w-60 ps-9 rounded-r-none",
-                  Boolean(table.getColumn("name")?.getFilterValue()) && "pe-9"
-                )}
-                value={globalFilter}
-                onChange={(e) => {
-                  setGlobalFilter(e.target.value);
-                  table.getColumn("name")?.setFilterValue(e.target.value);
-                }}
-                placeholder="Filtrer par nom ou référence..."
-                type="text"
-                aria-label="Filter by name or reference"
-              />
-              <div className="text-muted-foreground/80 pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3 peer-disabled:opacity-50">
-                <Search size={16} aria-hidden="true" />
-              </div>
-              {Boolean(globalFilter) && (
-                <button
-                  className="text-muted-foreground/80 hover:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 absolute inset-y-0 end-0 flex h-full w-9 items-center justify-center transition-[color,box-shadow] outline-none focus:z-10 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
-                  aria-label="Clear filter"
-                  onClick={() => {
-                    setGlobalFilter("");
-                    table.getColumn("name")?.setFilterValue("");
-                    if (inputRef.current) {
-                      inputRef.current.focus();
-                    }
-                  }}
-                >
-                  <CircleXIcon size={16} aria-hidden="true" />
-                </button>
-              )}
+        {/* Filters - Structure comme page factures */}
+        <div className="flex items-center justify-between gap-3 flex-shrink-0 px-4 sm:px-6 py-4">
+          {/* Search - à gauche */}
+          <div className="relative max-w-md">
+            <Input
+              id={`${id}-input`}
+              ref={inputRef}
+              placeholder="Recherchez par nom ou par référence..."
+              value={globalFilter}
+              onChange={(e) => {
+                setGlobalFilter(e.target.value);
+                table.getColumn("name")?.setFilterValue(e.target.value);
+              }}
+              className="w-full sm:w-[400px] lg:w-[400px] ps-9"
+            />
+            <div className="text-muted-foreground/80 pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3">
+              <Search size={16} aria-hidden="true" />
             </div>
+          </div>
 
-            {/* Filters Button */}
-            <ProductFilters
-              selectedCategories={selectedCategories}
-              setSelectedCategories={setSelectedCategories}
-              uniqueCategories={uniqueCategoryValues}
-              table={table}
-            />
-          </ButtonGroup>
-
-          {/* Second Button Group: Import, Export */}
-          <ButtonGroup>
-            {/* Import/Export buttons */}
-            <ProductImportDialog onImportComplete={refetch} />
-            <ProductExportButton 
-              products={allProducts} 
-              selectedRows={table.getSelectedRowModel().rows}
-            />
-          </ButtonGroup>
-        </div>
-
-          {/* Add product button with split design */}
-          <ButtonGroup>
-            <Button
-              className="cursor-pointer font-normal bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
-              onClick={handleAddProduct}
-            >
-              Ajouter un produit
-            </Button>
-            <ButtonGroupSeparator />
-            <Button
-              size="icon"
-              className="cursor-pointer bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
-              onClick={handleAddProduct}
-            >
-              <PlusIcon size={16} aria-hidden="true" />
-            </Button>
-          </ButtonGroup>
-
-          {/* Delete button - shown when rows are selected */}
-          {table.getSelectedRowModel().rows.length > 0 && (
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  variant="destructive"
-                  data-mobile-delete-trigger-product
-                  className="cursor-pointer font-normal"
-                >
-                  <TrashIcon className="mr-2 h-4 w-4" />
-                  Supprimer ({table.getSelectedRowModel().rows.length})
+          {/* Actions à droite */}
+          <div className="flex items-center gap-2">
+            {/* Delete button - shown when rows are selected */}
+            {table.getSelectedRowModel().rows.length > 0 && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="destructive"
+                    data-mobile-delete-trigger-product
+                    className="cursor-pointer font-normal"
+                  >
+                    <TrashIcon className="mr-2 h-4 w-4" />
+                    Supprimer ({table.getSelectedRowModel().rows.length})
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
@@ -566,6 +502,15 @@ export default function TableProduct({ handleAddProduct }) {
               </AlertDialogContent>
             </AlertDialog>
           )}
+
+            {/* Filters Button - Icône 3 points */}
+            <ProductFilters
+              selectedCategories={selectedCategories}
+              setSelectedCategories={setSelectedCategories}
+              uniqueCategories={uniqueCategoryValues}
+              table={table}
+            />
+          </div>
         </div>
 
         {/* Table - Style identique à Transactions */}

@@ -201,7 +201,7 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
         className={`flex flex-col p-0 overflow-hidden ${
           isMobile
             ? "!fixed !inset-0 !w-screen !max-w-none !m-0 !rounded-none !translate-x-0 !translate-y-0"
-            : "max-h-[90vh] my-4 sm:max-w-lg"
+            : "max-h-[90vh] my-4 sm:max-w-4xl"
         }`}
         style={isMobile ? { height: '100dvh', maxHeight: '100dvh' } : {}}
       >
@@ -224,184 +224,182 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
           onSubmit={handleSubmit(onSubmit)}
           className="flex flex-col flex-1 min-h-0"
         >
-          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
-            {/* Nom du produit */}
-            <div className="space-y-2">
-              <Label className="font-normal">Nom du produit *</Label>
-              <Input
-                placeholder="Ex: Ordinateur portable Dell XPS 13"
-                className={errors.name ? "border-red-500 focus-visible:ring-red-500" : ""}
-                {...register("name", { 
-                  required: "Le nom du produit est requis",
-                  minLength: {
-                    value: 2,
-                    message: "Le nom doit contenir au moins 2 caractères"
-                  },
-                  maxLength: {
-                    value: 200,
-                    message: "Le nom ne peut pas dépasser 200 caractères"
-                  },
-                  pattern: {
-                    value: /^(?!.*[<>])[A-Za-zÀ-ÖØ-öø-ÿ0-9\s\-'.(),&/\\:;!?@#$%*+=[\]{}|~"_]{2,200}$/,
-                    message: "Le nom contient des caractères non autorisés (< et > sont interdits)"
-                  }
-                })}
-              />
-              {errors.name && (
-                <p className="text-sm text-red-500 font-medium">{errors.name.message}</p>
-              )}
-            </div>
+          <div className="flex-1 overflow-y-auto px-6 py-4">
+            {/* Flex 2 colonnes sur desktop */}
+            <div className={`flex ${isMobile ? 'flex-col gap-4' : 'flex-row gap-6'}`}>
+              {/* Colonne gauche - Formulaire */}
+              <div className={`space-y-4 ${isMobile ? 'w-full' : 'flex-1'}`}>
+                {/* Nom du produit et Référence côte à côte */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="font-normal">Nom du produit *</Label>
+                    <Input
+                      placeholder="Ex: Ordinateur portable Dell XPS 13"
+                      className={errors.name ? "border-red-500 focus-visible:ring-red-500" : ""}
+                      {...register("name", {
+                        required: "Le nom du produit est requis",
+                        minLength: {
+                          value: 2,
+                          message: "Le nom doit contenir au moins 2 caractères"
+                        },
+                        maxLength: {
+                          value: 200,
+                          message: "Le nom ne peut pas dépasser 200 caractères"
+                        },
+                        pattern: {
+                          value: /^(?!.*[<>])[A-Za-zÀ-ÖØ-öø-ÿ0-9\s\-'.(),&/\\:;!?@#$%*+=[\]{}|~"_]{2,200}$/,
+                          message: "Le nom contient des caractères non autorisés (< et > sont interdits)"
+                        }
+                      })}
+                    />
+                    {errors.name && (
+                      <p className="text-sm text-red-500 font-medium">{errors.name.message}</p>
+                    )}
+                  </div>
 
-            {/* Référence */}
-            <div className="space-y-2">
-              <Label className="font-normal">Référence</Label>
-              <Input
-                placeholder="Ex: DELL-XPS13-2024"
-                {...register("reference")}
-              />
-              <p className="text-xs text-muted-foreground">
-                Référence interne pour identifier le produit
-              </p>
-            </div>
+                  <div className="space-y-2">
+                    <Label className="font-normal">Référence</Label>
+                    <Input
+                      placeholder="Ex: DELL-XPS13-2024"
+                      {...register("reference")}
+                    />
+                  </div>
+                </div>
 
+                {/* Prix unitaire, TVA et Unité */}
+                <div className="space-y-4">
+                  {/* Prix unitaire - pleine largeur */}
+                  <div className="space-y-2">
+                    <Label className="font-normal">Prix unitaire (HT) *</Label>
+                    <div className="relative">
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="0.00"
+                        className={errors.unitPrice ? "pr-8 border-red-500 focus-visible:ring-red-500" : "pr-8"}
+                        {...register("unitPrice", {
+                          required: "Le prix unitaire est requis",
+                          min: {
+                            value: 0,
+                            message: "Le prix doit être positif"
+                          }
+                        })}
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">
+                        €
+                      </span>
+                    </div>
+                    {errors.unitPrice && (
+                      <p className="text-sm text-red-500 font-medium">{errors.unitPrice.message}</p>
+                    )}
+                  </div>
 
-            {/* Prix unitaire, TVA et Unité */}
-            <div className="space-y-4">
-              {/* Prix unitaire - pleine largeur */}
-              <div className="space-y-2">
-                <Label className="font-normal">Prix unitaire (HT) *</Label>
-                <div className="relative">
+                  {/* TVA et Unité côte à côte */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="font-normal">Taux de TVA (%) *</Label>
+                      <Controller
+                        name="vatRate"
+                        control={control}
+                        rules={{ required: "Le taux de TVA est requis" }}
+                        render={({ field }) => (
+                          <Select value={field.value} onValueChange={field.onChange}>
+                            <SelectTrigger className={errors.vatRate ? "w-full border-red-500" : "w-full"}>
+                              <SelectValue placeholder="TVA" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {VAT_RATES.map((rate) => (
+                                <SelectItem key={rate.value} value={rate.value}>
+                                  {rate.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
+                      {errors.vatRate && (
+                        <p className="text-sm text-red-500 font-medium">{errors.vatRate.message}</p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="font-normal">Unité *</Label>
+                      <Controller
+                        name="unit"
+                        control={control}
+                        rules={{ required: "L'unité est requise" }}
+                        render={({ field }) => (
+                          <Select value={field.value} onValueChange={field.onChange}>
+                            <SelectTrigger className={errors.unit ? "w-full border-red-500" : "w-full"}>
+                              <SelectValue placeholder="Unité" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {UNITS.map((unit) => (
+                                <SelectItem key={unit.value} value={unit.value}>
+                                  {unit.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
+                      {errors.unit && (
+                        <p className="text-sm text-red-500 font-medium">{errors.unit.message}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Catégorie */}
+                <div className="space-y-2">
+                  <Label className="font-normal">Catégorie</Label>
                   <Input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="0.00"
-                    className={errors.unitPrice ? "pr-8 border-red-500 focus-visible:ring-red-500" : "pr-8"}
-                    {...register("unitPrice", { 
-                      required: "Le prix unitaire est requis",
-                      min: {
-                        value: 0,
-                        message: "Le prix doit être positif"
-                      }
-                    })}
+                    placeholder="Ex: Matériel informatique, Fournitures de bureau..."
+                    {...register("category")}
                   />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground pointer-events-none">
-                    €
-                  </span>
                 </div>
-                {errors.unitPrice && (
-                  <p className="text-sm text-red-500 font-medium">{errors.unitPrice.message}</p>
-                )}
-              </div>
 
-              {/* TVA et Unité - 50/50 sur mobile, côte à côte sur desktop */}
-              <div className="grid grid-cols-2 sm:grid-cols-2 gap-4">
+                {/* Description */}
                 <div className="space-y-2">
-                  <Label className="font-normal">Taux de TVA (%) *</Label>
-                  <Controller
-                    name="vatRate"
-                    control={control}
-                    rules={{ required: "Le taux de TVA est requis" }}
-                    render={({ field }) => (
-                      <Select value={field.value} onValueChange={field.onChange}>
-                        <SelectTrigger className={errors.vatRate ? "w-full border-red-500" : "w-full"}>
-                          <SelectValue placeholder="TVA" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {VAT_RATES.map((rate) => (
-                            <SelectItem key={rate.value} value={rate.value}>
-                              {rate.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
+                  <Label className="font-normal">Description</Label>
+                  <Textarea
+                    placeholder="Description détaillée du produit..."
+                    rows={3}
+                    {...register("description")}
                   />
-                  {errors.vatRate && (
-                    <p className="text-sm text-red-500 font-medium">{errors.vatRate.message}</p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="font-normal">Unité *</Label>
-                  <Controller
-                    name="unit"
-                    control={control}
-                    rules={{ required: "L'unité est requise" }}
-                    render={({ field }) => (
-                      <Select value={field.value} onValueChange={field.onChange}>
-                        <SelectTrigger className={errors.unit ? "w-full border-red-500" : "w-full"}>
-                          <SelectValue placeholder="Unité" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {UNITS.map((unit) => (
-                            <SelectItem key={unit.value} value={unit.value}>
-                              {unit.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
-                  />
-                  {errors.unit && (
-                    <p className="text-sm text-red-500 font-medium">{errors.unit.message}</p>
-                  )}
                 </div>
               </div>
-            </div>
 
-
-            {/* Catégorie */}
-            <div className="space-y-2">
-              <Label className="font-normal">Catégorie</Label>
-              <Input
-                placeholder="Ex: Matériel informatique, Fournitures de bureau..."
-                {...register("category")}
-              />
-              <p className="text-xs text-muted-foreground">
-                Séparez les catégories par des virgules si nécessaire
-              </p>
-            </div>
-
-            {/* Description */}
-            <div className="space-y-2">
-              <Label className="font-normal">Description</Label>
-              <Textarea
-                placeholder="Description détaillée du produit..."
-                rows={4}
-                {...register("description")}
-              />
-              <p className="text-xs text-muted-foreground">
-                Description qui apparaîtra sur vos devis et factures
-              </p>
-            </div>
-
-            {/* Aperçu du prix TTC */}
-            <div className="bg-muted/50 rounded-lg p-4 border">
-              <div className="text-sm font-medium text-muted-foreground mb-2">
-                Aperçu des prix
-              </div>
-              <div className="space-y-1 text-sm">
-                <div className="flex justify-between">
-                  <span>Prix HT :</span>
-                  <span className="font-mono">
-                    {(watchedUnitPrice && parseFloat(watchedUnitPrice) > 0) ? 
-                      `${parseFloat(watchedUnitPrice).toFixed(2)} €` : '0.00 €'}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span>TVA ({watchedVatRate}%) :</span>
-                  <span className="font-mono">
-                    {(watchedUnitPrice && parseFloat(watchedUnitPrice) > 0) ? 
-                      `${vatAmount.toFixed(2)} €` : '0.00 €'}
-                  </span>
-                </div>
-                <div className="flex justify-between font-medium border-t pt-1">
-                  <span>Prix TTC :</span>
-                  <span className="font-mono text-primary">
-                    {(watchedUnitPrice && parseFloat(watchedUnitPrice) > 0) ? 
-                      `${priceWithVat.toFixed(2)} €` : '0.00 €'}
-                  </span>
+              {/* Colonne droite - Aperçu des prix */}
+              <div className={`${isMobile ? 'w-full' : 'w-[260px] flex-shrink-0 sticky top-0 self-start'}`}>
+                <div className="bg-muted/50 rounded-lg p-4 border">
+                  <div className="text-sm font-medium text-muted-foreground mb-3">
+                    Aperçu des prix
+                  </div>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span>Prix HT :</span>
+                      <span className="font-mono">
+                        {(watchedUnitPrice && parseFloat(watchedUnitPrice) > 0) ?
+                          `${parseFloat(watchedUnitPrice).toFixed(2)} €` : '0.00 €'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>TVA ({watchedVatRate}%) :</span>
+                      <span className="font-mono">
+                        {(watchedUnitPrice && parseFloat(watchedUnitPrice) > 0) ?
+                          `${vatAmount.toFixed(2)} €` : '0.00 €'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between font-medium border-t pt-2 mt-2">
+                      <span>Prix TTC :</span>
+                      <span className="font-mono text-primary">
+                        {(watchedUnitPrice && parseFloat(watchedUnitPrice) > 0) ?
+                          `${priceWithVat.toFixed(2)} €` : '0.00 €'}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
