@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, useRef } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -187,6 +187,8 @@ export function DraggableTree({
 }) {
   const [expandedFolders, setExpandedFolders] = useState(new Set(["inbox"]));
   const [activeItem, setActiveItem] = useState(null);
+  const hoverTimerRef = useRef(null);
+  const lastHoveredFolderRef = useRef(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -275,6 +277,13 @@ export function DraggableTree({
       const { active, over } = event;
       setActiveItem(null);
 
+      // Clear hover timer
+      if (hoverTimerRef.current) {
+        clearTimeout(hoverTimerRef.current);
+        hoverTimerRef.current = null;
+      }
+      lastHoveredFolderRef.current = null;
+
       if (!over) return;
 
       const draggedId = active.id;
@@ -314,7 +323,60 @@ export function DraggableTree({
 
   const handleDragCancel = useCallback(() => {
     setActiveItem(null);
+    // Clear hover timer
+    if (hoverTimerRef.current) {
+      clearTimeout(hoverTimerRef.current);
+      hoverTimerRef.current = null;
+    }
+    lastHoveredFolderRef.current = null;
   }, []);
+
+  const handleDragOver = useCallback((event) => {
+    const { over } = event;
+
+    if (!over) {
+      // Clear timer if not over anything
+      if (hoverTimerRef.current) {
+        clearTimeout(hoverTimerRef.current);
+        hoverTimerRef.current = null;
+      }
+      lastHoveredFolderRef.current = null;
+      return;
+    }
+
+    const folderId = over.id.toString().replace("drop-", "");
+    const item = treeData.items[folderId];
+
+    // Only handle folders
+    if (!item?.isFolder) {
+      if (hoverTimerRef.current) {
+        clearTimeout(hoverTimerRef.current);
+        hoverTimerRef.current = null;
+      }
+      lastHoveredFolderRef.current = null;
+      return;
+    }
+
+    // If it's a different folder than before, reset timer
+    if (lastHoveredFolderRef.current !== folderId) {
+      if (hoverTimerRef.current) {
+        clearTimeout(hoverTimerRef.current);
+      }
+      lastHoveredFolderRef.current = folderId;
+
+      // Only start timer if folder is closed
+      if (!expandedFolders.has(folderId)) {
+        hoverTimerRef.current = setTimeout(() => {
+          setExpandedFolders((prev) => {
+            const next = new Set(prev);
+            next.add(folderId);
+            return next;
+          });
+          hoverTimerRef.current = null;
+        }, 500); // Open after 500ms
+      }
+    }
+  }, [treeData, expandedFolders]);
 
   // Render tree items recursively
   const renderItem = useCallback(
@@ -396,6 +458,7 @@ export function DraggableTree({
       sensors={sensors}
       collisionDetection={collisionDetection}
       onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
       onDragCancel={handleDragCancel}
     >
