@@ -172,12 +172,12 @@ function ContainerLeafSettings({ container, onUpdate, onDelete }) {
           onValueChange={(value) => onUpdate({ layout: value })}
           className="w-40"
         >
-          <TabsList className="h-8 p-0.5 bg-[#F3F3F3] w-full">
-            <TabsTrigger value="vertical" className="h-7 flex-1 p-0 data-[state=active]:[&_svg]:text-[#5B50FF]">
-              <Rows className="w-3.5 h-3.5" />
+          <TabsList className="w-full">
+            <TabsTrigger value="vertical" className="flex-1">
+              <Rows size={16} />
             </TabsTrigger>
-            <TabsTrigger value="horizontal" className="h-7 flex-1 p-0 data-[state=active]:[&_svg]:text-[#5B50FF]">
-              <Columns className="w-3.5 h-3.5" />
+            <TabsTrigger value="horizontal" className="flex-1">
+              <Columns size={16} />
             </TabsTrigger>
           </TabsList>
         </Tabs>
@@ -193,50 +193,86 @@ function ContainerLeafSettings({ container, onUpdate, onDelete }) {
           onValueChange={(value) => onUpdate({ alignment: value })}
           className="w-40"
         >
-          <TabsList className="h-8 p-0.5 bg-[#F3F3F3] w-full">
-            <TabsTrigger value="start" className="h-7 flex-1 p-0 data-[state=active]:[&_svg]:text-[#5B50FF]">
-              <AlignStartVertical className="w-3.5 h-3.5" />
+          <TabsList className="w-full">
+            <TabsTrigger value="start" className="flex-1">
+              {container.layout === "horizontal" ? (
+                <AlignEndVertical size={16} className="transition-transform duration-200 -rotate-90" />
+              ) : (
+                <AlignStartVertical size={16} />
+              )}
             </TabsTrigger>
-            <TabsTrigger value="center" className="h-7 flex-1 p-0 data-[state=active]:[&_svg]:text-[#5B50FF]">
-              <AlignCenterVertical className="w-3.5 h-3.5" />
+            <TabsTrigger value="center" className="flex-1">
+              <AlignCenterVertical
+                size={16}
+                className={cn(
+                  "transition-transform duration-200",
+                  container.layout === "horizontal" && "-rotate-90"
+                )}
+              />
             </TabsTrigger>
-            <TabsTrigger value="end" className="h-7 flex-1 p-0 data-[state=active]:[&_svg]:text-[#5B50FF]">
-              <AlignEndVertical className="w-3.5 h-3.5" />
+            <TabsTrigger value="end" className="flex-1">
+              {container.layout === "horizontal" ? (
+                <AlignStartVertical size={16} className="transition-transform duration-200 -rotate-90" />
+              ) : (
+                <AlignEndVertical size={16} />
+              )}
             </TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
 
       {/* Padding setting */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <Label className="text-xs">Padding</Label>
-          <span className="text-xs text-neutral-500">{currentPadding}px</span>
+      <div className="flex items-center justify-between">
+        <Label className="text-xs text-neutral-600 dark:text-neutral-400">Padding</Label>
+        <div className="flex items-center gap-1.5 w-40">
+          <Slider
+            className="flex-1"
+            value={[currentPadding]}
+            onValueChange={([value]) => onUpdate({ padding: value })}
+            min={0}
+            max={32}
+            step={1}
+          />
+          <Input
+            className="h-8 w-14 px-2 py-1 text-xs text-center flex-shrink-0 bg-white"
+            type="text"
+            inputMode="decimal"
+            value={currentPadding}
+            onChange={(e) => {
+              const numValue = parseInt(e.target.value);
+              if (!isNaN(numValue) && numValue >= 0) {
+                onUpdate({ padding: numValue });
+              }
+            }}
+          />
         </div>
-        <Slider
-          value={[currentPadding]}
-          onValueChange={([value]) => onUpdate({ padding: value })}
-          min={0}
-          max={32}
-          step={4}
-          className="w-full"
-        />
       </div>
 
       {/* Gap setting */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <Label className="text-xs">Espacement (gap)</Label>
-          <span className="text-xs text-neutral-500">{currentGap}px</span>
+      <div className="flex items-center justify-between">
+        <Label className="text-xs text-neutral-600 dark:text-neutral-400">Gap</Label>
+        <div className="flex items-center gap-1.5 w-40">
+          <Slider
+            className="flex-1"
+            value={[currentGap]}
+            onValueChange={([value]) => onUpdate({ gap: value })}
+            min={0}
+            max={32}
+            step={1}
+          />
+          <Input
+            className="h-8 w-14 px-2 py-1 text-xs text-center flex-shrink-0 bg-white"
+            type="text"
+            inputMode="decimal"
+            value={currentGap}
+            onChange={(e) => {
+              const numValue = parseInt(e.target.value);
+              if (!isNaN(numValue) && numValue >= 0) {
+                onUpdate({ gap: numValue });
+              }
+            }}
+          />
         </div>
-        <Slider
-          value={[currentGap]}
-          onValueChange={([value]) => onUpdate({ gap: value })}
-          min={0}
-          max={24}
-          step={2}
-          className="w-full"
-        />
       </div>
 
       {/* Elements list */}
@@ -320,12 +356,12 @@ function ContainerBranchSettings({ container, onUpdate, onDelete, isRoot }) {
           onValueChange={(value) => onUpdate({ layout: value })}
           className="w-40"
         >
-          <TabsList className="h-8 p-0.5 bg-[#F3F3F3] w-full">
-            <TabsTrigger value="vertical" className="h-7 flex-1 p-0 data-[state=active]:[&_svg]:text-[#5B50FF]">
-              <Rows className="w-3.5 h-3.5" />
+          <TabsList className="w-full">
+            <TabsTrigger value="vertical" className="flex-1">
+              <Rows size={16} />
             </TabsTrigger>
-            <TabsTrigger value="horizontal" className="h-7 flex-1 p-0 data-[state=active]:[&_svg]:text-[#5B50FF]">
-              <Columns className="w-3.5 h-3.5" />
+            <TabsTrigger value="horizontal" className="flex-1">
+              <Columns size={16} />
             </TabsTrigger>
           </TabsList>
         </Tabs>
@@ -341,50 +377,86 @@ function ContainerBranchSettings({ container, onUpdate, onDelete, isRoot }) {
           onValueChange={(value) => onUpdate({ alignment: value })}
           className="w-40"
         >
-          <TabsList className="h-8 p-0.5 bg-[#F3F3F3] w-full">
-            <TabsTrigger value="start" className="h-7 flex-1 p-0 data-[state=active]:[&_svg]:text-[#5B50FF]">
-              <AlignStartVertical className="w-3.5 h-3.5" />
+          <TabsList className="w-full">
+            <TabsTrigger value="start" className="flex-1">
+              {currentLayout === "horizontal" ? (
+                <AlignEndVertical size={16} className="transition-transform duration-200 -rotate-90" />
+              ) : (
+                <AlignStartVertical size={16} />
+              )}
             </TabsTrigger>
-            <TabsTrigger value="center" className="h-7 flex-1 p-0 data-[state=active]:[&_svg]:text-[#5B50FF]">
-              <AlignCenterVertical className="w-3.5 h-3.5" />
+            <TabsTrigger value="center" className="flex-1">
+              <AlignCenterVertical
+                size={16}
+                className={cn(
+                  "transition-transform duration-200",
+                  currentLayout === "horizontal" && "-rotate-90"
+                )}
+              />
             </TabsTrigger>
-            <TabsTrigger value="end" className="h-7 flex-1 p-0 data-[state=active]:[&_svg]:text-[#5B50FF]">
-              <AlignEndVertical className="w-3.5 h-3.5" />
+            <TabsTrigger value="end" className="flex-1">
+              {currentLayout === "horizontal" ? (
+                <AlignStartVertical size={16} className="transition-transform duration-200 -rotate-90" />
+              ) : (
+                <AlignEndVertical size={16} />
+              )}
             </TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
 
       {/* Padding setting */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <Label className="text-xs">Padding</Label>
-          <span className="text-xs text-neutral-500">{currentPadding}px</span>
+      <div className="flex items-center justify-between">
+        <Label className="text-xs text-neutral-600 dark:text-neutral-400">Padding</Label>
+        <div className="flex items-center gap-1.5 w-40">
+          <Slider
+            className="flex-1"
+            value={[currentPadding]}
+            onValueChange={([value]) => onUpdate({ padding: value })}
+            min={0}
+            max={32}
+            step={1}
+          />
+          <Input
+            className="h-8 w-14 px-2 py-1 text-xs text-center flex-shrink-0 bg-white"
+            type="text"
+            inputMode="decimal"
+            value={currentPadding}
+            onChange={(e) => {
+              const numValue = parseInt(e.target.value);
+              if (!isNaN(numValue) && numValue >= 0) {
+                onUpdate({ padding: numValue });
+              }
+            }}
+          />
         </div>
-        <Slider
-          value={[currentPadding]}
-          onValueChange={([value]) => onUpdate({ padding: value })}
-          min={0}
-          max={32}
-          step={4}
-          className="w-full"
-        />
       </div>
 
       {/* Gap setting */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <Label className="text-xs">Espacement (gap)</Label>
-          <span className="text-xs text-neutral-500">{currentGap}px</span>
+      <div className="flex items-center justify-between">
+        <Label className="text-xs text-neutral-600 dark:text-neutral-400">Gap</Label>
+        <div className="flex items-center gap-1.5 w-40">
+          <Slider
+            className="flex-1"
+            value={[currentGap]}
+            onValueChange={([value]) => onUpdate({ gap: value })}
+            min={0}
+            max={32}
+            step={1}
+          />
+          <Input
+            className="h-8 w-14 px-2 py-1 text-xs text-center flex-shrink-0 bg-white"
+            type="text"
+            inputMode="decimal"
+            value={currentGap}
+            onChange={(e) => {
+              const numValue = parseInt(e.target.value);
+              if (!isNaN(numValue) && numValue >= 0) {
+                onUpdate({ gap: numValue });
+              }
+            }}
+          />
         </div>
-        <Slider
-          value={[currentGap]}
-          onValueChange={([value]) => onUpdate({ gap: value })}
-          min={0}
-          max={24}
-          step={2}
-          className="w-full"
-        />
       </div>
 
       {/* Children list */}
@@ -471,12 +543,12 @@ function EmptyContainerSettings({ container, onUpdate, onDelete, isRoot }) {
           onValueChange={(value) => onUpdate({ layout: value })}
           className="w-40"
         >
-          <TabsList className="h-8 p-0.5 bg-[#F3F3F3] w-full">
-            <TabsTrigger value="vertical" className="h-7 flex-1 p-0 data-[state=active]:[&_svg]:text-[#5B50FF]">
-              <Rows className="w-3.5 h-3.5" />
+          <TabsList className="w-full">
+            <TabsTrigger value="vertical" className="flex-1">
+              <Rows size={16} />
             </TabsTrigger>
-            <TabsTrigger value="horizontal" className="h-7 flex-1 p-0 data-[state=active]:[&_svg]:text-[#5B50FF]">
-              <Columns className="w-3.5 h-3.5" />
+            <TabsTrigger value="horizontal" className="flex-1">
+              <Columns size={16} />
             </TabsTrigger>
           </TabsList>
         </Tabs>
@@ -492,50 +564,86 @@ function EmptyContainerSettings({ container, onUpdate, onDelete, isRoot }) {
           onValueChange={(value) => onUpdate({ alignment: value })}
           className="w-40"
         >
-          <TabsList className="h-8 p-0.5 bg-[#F3F3F3] w-full">
-            <TabsTrigger value="start" className="h-7 flex-1 p-0 data-[state=active]:[&_svg]:text-[#5B50FF]">
-              <AlignStartVertical className="w-3.5 h-3.5" />
+          <TabsList className="w-full">
+            <TabsTrigger value="start" className="flex-1">
+              {currentLayout === "horizontal" ? (
+                <AlignEndVertical size={16} className="transition-transform duration-200 -rotate-90" />
+              ) : (
+                <AlignStartVertical size={16} />
+              )}
             </TabsTrigger>
-            <TabsTrigger value="center" className="h-7 flex-1 p-0 data-[state=active]:[&_svg]:text-[#5B50FF]">
-              <AlignCenterVertical className="w-3.5 h-3.5" />
+            <TabsTrigger value="center" className="flex-1">
+              <AlignCenterVertical
+                size={16}
+                className={cn(
+                  "transition-transform duration-200",
+                  currentLayout === "horizontal" && "-rotate-90"
+                )}
+              />
             </TabsTrigger>
-            <TabsTrigger value="end" className="h-7 flex-1 p-0 data-[state=active]:[&_svg]:text-[#5B50FF]">
-              <AlignEndVertical className="w-3.5 h-3.5" />
+            <TabsTrigger value="end" className="flex-1">
+              {currentLayout === "horizontal" ? (
+                <AlignStartVertical size={16} className="transition-transform duration-200 -rotate-90" />
+              ) : (
+                <AlignEndVertical size={16} />
+              )}
             </TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
 
       {/* Padding setting */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <Label className="text-xs">Padding</Label>
-          <span className="text-xs text-neutral-500">{currentPadding}px</span>
+      <div className="flex items-center justify-between">
+        <Label className="text-xs text-neutral-600 dark:text-neutral-400">Padding</Label>
+        <div className="flex items-center gap-1.5 w-40">
+          <Slider
+            className="flex-1"
+            value={[currentPadding]}
+            onValueChange={([value]) => onUpdate({ padding: value })}
+            min={0}
+            max={32}
+            step={1}
+          />
+          <Input
+            className="h-8 w-14 px-2 py-1 text-xs text-center flex-shrink-0 bg-white"
+            type="text"
+            inputMode="decimal"
+            value={currentPadding}
+            onChange={(e) => {
+              const numValue = parseInt(e.target.value);
+              if (!isNaN(numValue) && numValue >= 0) {
+                onUpdate({ padding: numValue });
+              }
+            }}
+          />
         </div>
-        <Slider
-          value={[currentPadding]}
-          onValueChange={([value]) => onUpdate({ padding: value })}
-          min={0}
-          max={32}
-          step={4}
-          className="w-full"
-        />
       </div>
 
       {/* Gap setting */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <Label className="text-xs">Espacement (gap)</Label>
-          <span className="text-xs text-neutral-500">{currentGap}px</span>
+      <div className="flex items-center justify-between">
+        <Label className="text-xs text-neutral-600 dark:text-neutral-400">Gap</Label>
+        <div className="flex items-center gap-1.5 w-40">
+          <Slider
+            className="flex-1"
+            value={[currentGap]}
+            onValueChange={([value]) => onUpdate({ gap: value })}
+            min={0}
+            max={32}
+            step={1}
+          />
+          <Input
+            className="h-8 w-14 px-2 py-1 text-xs text-center flex-shrink-0 bg-white"
+            type="text"
+            inputMode="decimal"
+            value={currentGap}
+            onChange={(e) => {
+              const numValue = parseInt(e.target.value);
+              if (!isNaN(numValue) && numValue >= 0) {
+                onUpdate({ gap: numValue });
+              }
+            }}
+          />
         </div>
-        <Slider
-          value={[currentGap]}
-          onValueChange={([value]) => onUpdate({ gap: value })}
-          min={0}
-          max={24}
-          step={2}
-          className="w-full"
-        />
       </div>
 
       {/* Tip */}
@@ -958,15 +1066,15 @@ function TextSettings({ props, onUpdate }) {
           onValueChange={(value) => onUpdate({ textAlign: value })}
           className="w-40"
         >
-          <TabsList className="h-8 p-0.5 bg-[#F3F3F3] w-full">
-            <TabsTrigger value="left" className="h-7 flex-1 p-0 data-[state=active]:[&_svg]:text-[#5a50ff]">
-              <AlignLeft className="w-3.5 h-3.5" />
+          <TabsList className="w-full">
+            <TabsTrigger value="left" className="flex-1">
+              <AlignLeft size={16} />
             </TabsTrigger>
-            <TabsTrigger value="center" className="h-7 flex-1 p-0 data-[state=active]:[&_svg]:text-[#5a50ff]">
-              <AlignCenter className="w-3.5 h-3.5" />
+            <TabsTrigger value="center" className="flex-1">
+              <AlignCenter size={16} />
             </TabsTrigger>
-            <TabsTrigger value="right" className="h-7 flex-1 p-0 data-[state=active]:[&_svg]:text-[#5a50ff]">
-              <AlignRight className="w-3.5 h-3.5" />
+            <TabsTrigger value="right" className="flex-1">
+              <AlignRight size={16} />
             </TabsTrigger>
           </TabsList>
         </Tabs>
@@ -1112,15 +1220,15 @@ function ContactSettings({ props, onUpdate }) {
           onValueChange={(value) => onUpdate({ textAlign: value })}
           className="w-40"
         >
-          <TabsList className="h-8 p-0.5 bg-[#F3F3F3] w-full">
-            <TabsTrigger value="left" className="h-7 flex-1 p-0 data-[state=active]:[&_svg]:text-[#5a50ff]">
-              <AlignLeft className="w-3.5 h-3.5" />
+          <TabsList className="w-full">
+            <TabsTrigger value="left" className="flex-1">
+              <AlignLeft size={16} />
             </TabsTrigger>
-            <TabsTrigger value="center" className="h-7 flex-1 p-0 data-[state=active]:[&_svg]:text-[#5a50ff]">
-              <AlignCenter className="w-3.5 h-3.5" />
+            <TabsTrigger value="center" className="flex-1">
+              <AlignCenter size={16} />
             </TabsTrigger>
-            <TabsTrigger value="right" className="h-7 flex-1 p-0 data-[state=active]:[&_svg]:text-[#5a50ff]">
-              <AlignRight className="w-3.5 h-3.5" />
+            <TabsTrigger value="right" className="flex-1">
+              <AlignRight size={16} />
             </TabsTrigger>
           </TabsList>
         </Tabs>
@@ -1781,7 +1889,7 @@ function SeparatorSettings({ props, onUpdate }) {
             value={[props.thickness || 1]}
             onValueChange={([value]) => onUpdate({ thickness: value })}
             min={1}
-            max={4}
+            max={20}
             step={1}
           />
           <Input

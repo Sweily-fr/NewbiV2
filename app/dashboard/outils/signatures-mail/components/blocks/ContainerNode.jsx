@@ -129,48 +129,49 @@ export default function ContainerNode({
     console.log("🛑 [ContainerNode] Drag ended for container:", container.id);
   };
 
-  // ============ RESIZE HANDLERS ============
+  // ============ RESIZE HANDLERS (COMMENTED OUT FOR NOW) ============
+  // TODO: Réactiver quand la fonctionnalité sera finalisée
 
-  // Handle resize start
-  const handleResizeStart = (edge) => (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsResizing(true);
-    setResizeEdge(edge);
+  // // Handle resize start
+  // const handleResizeStart = (edge) => (e) => {
+  //   e.preventDefault();
+  //   e.stopPropagation();
+  //   setIsResizing(true);
+  //   setResizeEdge(edge);
 
-    const startX = e.clientX;
-    const startY = e.clientY;
-    const startWidth = container.width || containerRef.current?.offsetWidth || 100;
-    const startHeight = container.height || containerRef.current?.offsetHeight || 100;
+  //   const startX = e.clientX;
+  //   const startY = e.clientY;
+  //   const startWidth = container.width || containerRef.current?.offsetWidth || 100;
+  //   const startHeight = container.height || containerRef.current?.offsetHeight || 100;
 
-    // Get parent container's dimensions to limit resize
-    const parentElement = containerRef.current?.parentElement?.closest('[data-container-id]');
-    const parentWidth = parentElement?.offsetWidth || window.innerWidth;
-    const parentPadding = parentElement ? parseInt(window.getComputedStyle(parentElement).padding) * 2 : 0;
-    const maxWidth = parentWidth - parentPadding - 4; // 4px margin for safety
+  //   // Get parent container's dimensions to limit resize
+  //   const parentElement = containerRef.current?.parentElement?.closest('[data-container-id]');
+  //   const parentWidth = parentElement?.offsetWidth || window.innerWidth;
+  //   const parentPadding = parentElement ? parseInt(window.getComputedStyle(parentElement).padding) * 2 : 0;
+  //   const maxWidth = parentWidth - parentPadding - 4; // 4px margin for safety
 
-    const handleMouseMove = (moveEvent) => {
-      if (edge === 'right') {
-        const deltaX = moveEvent.clientX - startX;
-        const newWidth = Math.min(maxWidth, Math.max(60, startWidth + deltaX));
-        onUpdate(container.id, { width: newWidth });
-      } else if (edge === 'bottom') {
-        const deltaY = moveEvent.clientY - startY;
-        const newHeight = Math.max(40, startHeight + deltaY);
-        onUpdate(container.id, { height: newHeight });
-      }
-    };
+  //   const handleMouseMove = (moveEvent) => {
+  //     if (edge === 'right') {
+  //       const deltaX = moveEvent.clientX - startX;
+  //       const newWidth = Math.min(maxWidth, Math.max(60, startWidth + deltaX));
+  //       onUpdate(container.id, { width: newWidth });
+  //     } else if (edge === 'bottom') {
+  //       const deltaY = moveEvent.clientY - startY;
+  //       const newHeight = Math.max(40, startHeight + deltaY);
+  //       onUpdate(container.id, { height: newHeight });
+  //     }
+  //   };
 
-    const handleMouseUp = () => {
-      setIsResizing(false);
-      setResizeEdge(null);
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
+  //   const handleMouseUp = () => {
+  //     setIsResizing(false);
+  //     setResizeEdge(null);
+  //     document.removeEventListener('mousemove', handleMouseMove);
+  //     document.removeEventListener('mouseup', handleMouseUp);
+  //   };
 
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-  };
+  //   document.addEventListener('mousemove', handleMouseMove);
+  //   document.addEventListener('mouseup', handleMouseUp);
+  // };
 
   // ============ DROP HANDLERS ============
 
@@ -299,22 +300,14 @@ export default function ContainerNode({
   // Get alignment classes based on layout and alignment property
   const getAlignmentClasses = () => {
     const alignment = container.alignment || 'start';
-    const isHorizontal = container.layout === "horizontal";
 
-    // For horizontal layout: justify controls main axis (horizontal)
-    // For vertical layout: items controls cross axis (horizontal alignment)
-    if (isHorizontal) {
-      switch (alignment) {
-        case 'center': return 'justify-center';
-        case 'end': return 'justify-end';
-        default: return 'justify-start';
-      }
-    } else {
-      switch (alignment) {
-        case 'center': return 'items-center';
-        case 'end': return 'items-end';
-        default: return 'items-start';
-      }
+    // items-* controls cross-axis alignment:
+    // - In column (vertical): horizontal alignment (left/center/right)
+    // - In row (horizontal): vertical alignment (top/center/bottom)
+    switch (alignment) {
+      case 'center': return 'items-center';
+      case 'end': return 'items-end';
+      default: return 'items-start';
     }
   };
 
@@ -342,7 +335,7 @@ export default function ContainerNode({
       <div
         className={cn(
           "flex h-full",
-          container.layout === "horizontal" ? "flex-row items-stretch" : "flex-col",
+          container.layout === "horizontal" ? "flex-row" : "flex-col",
           // Largeur 100% seulement pour les conteneurs verticaux (non-séparateur vertical)
           !isVerticalSeparatorContainer && container.layout !== "horizontal" && "w-full",
           getAlignmentClasses(),
@@ -391,8 +384,7 @@ export default function ContainerNode({
       <div
         className={cn(
           "flex",
-          // Use items-stretch for horizontal to allow child containers to stretch vertically
-          container.layout === "horizontal" ? "flex-row items-stretch" : "flex-col",
+          container.layout === "horizontal" ? "flex-row" : "flex-col",
           getAlignmentClasses()
         )}
         style={getGapStyle()}
@@ -514,10 +506,9 @@ export default function ContainerNode({
       {dropPosition === 'before' && <DropIndicator position="before" />}
       {dropPosition === 'after' && <DropIndicator position="after" />}
 
-      {/* Resize handles - subtle lines on edges */}
+      {/* Resize handles - COMMENTED OUT FOR NOW
       {(isHovered || isContainerSelected || isResizing) && (
         <>
-          {/* Right edge resize handle */}
           <div
             className={cn(
               "absolute top-1 bottom-1 -right-px w-0.5 cursor-ew-resize z-20 transition-all rounded-full",
@@ -525,7 +516,6 @@ export default function ContainerNode({
             )}
             onMouseDown={handleResizeStart('right')}
           />
-          {/* Bottom edge resize handle */}
           <div
             className={cn(
               "absolute left-1 right-1 -bottom-px h-0.5 cursor-ns-resize z-20 transition-all rounded-full",
@@ -533,7 +523,6 @@ export default function ContainerNode({
             )}
             onMouseDown={handleResizeStart('bottom')}
           />
-          {/* Corner resize handle (bottom-right) */}
           <div
             className={cn(
               "absolute -bottom-0.5 -right-0.5 w-2 h-2 cursor-nwse-resize z-30 transition-all",
@@ -541,44 +530,16 @@ export default function ContainerNode({
               "rounded-full"
             )}
             onMouseDown={(e) => {
-              // Handle both width and height resize from corner
               e.preventDefault();
               e.stopPropagation();
               setIsResizing(true);
               setResizeEdge('corner');
-
-              const startX = e.clientX;
-              const startY = e.clientY;
-              const startWidth = container.width || containerRef.current?.offsetWidth || 100;
-              const startHeight = container.height || containerRef.current?.offsetHeight || 100;
-
-              // Get parent container's dimensions to limit resize
-              const parentElement = containerRef.current?.parentElement?.closest('[data-container-id]');
-              const parentWidth = parentElement?.offsetWidth || window.innerWidth;
-              const parentPadding = parentElement ? parseInt(window.getComputedStyle(parentElement).padding) * 2 : 0;
-              const maxWidth = parentWidth - parentPadding - 4;
-
-              const handleMouseMove = (moveEvent) => {
-                const deltaX = moveEvent.clientX - startX;
-                const deltaY = moveEvent.clientY - startY;
-                const newWidth = Math.min(maxWidth, Math.max(60, startWidth + deltaX));
-                const newHeight = Math.max(40, startHeight + deltaY);
-                onUpdate(container.id, { width: newWidth, height: newHeight });
-              };
-
-              const handleMouseUp = () => {
-                setIsResizing(false);
-                setResizeEdge(null);
-                document.removeEventListener('mousemove', handleMouseMove);
-                document.removeEventListener('mouseup', handleMouseUp);
-              };
-
-              document.addEventListener('mousemove', handleMouseMove);
-              document.addEventListener('mouseup', handleMouseUp);
+              // ... resize logic
             }}
           />
         </>
       )}
+      */}
 
       {/* Controls */}
       {showControls && (
