@@ -21,6 +21,7 @@ import {
   useUpdateSharedDocument,
   useMoveSharedFolder,
   useCreateDefaultFolders,
+  useDownloadFolder,
 } from "@/src/hooks/useSharedDocuments";
 import { DraggableTree } from "./components/DraggableTree";
 import { Button } from "@/src/components/ui/button";
@@ -265,6 +266,7 @@ export default function DocumentsPartagesPage() {
   const { update: updateDocument, loading: updateDocLoading } =
     useUpdateSharedDocument();
   const { moveFolder, loading: moveFolderLoading } = useMoveSharedFolder();
+  const { downloadFolder, loading: downloadFolderLoading } = useDownloadFolder();
   const { createDefaultFolders, isCreating: isCreatingDefaultFolders, workspaceId } =
     useCreateDefaultFolders();
 
@@ -847,7 +849,18 @@ export default function DocumentsPartagesPage() {
                             <FolderPlus className="size-4 mr-2" />
                             Nouveau sous-dossier
                           </DropdownMenuItem>
-                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() => {
+                              downloadFolder(treeContextMenu.itemId, treeContextMenu.item.name);
+                              setTreeContextMenu(null);
+                            }}
+                            disabled={downloadFolderLoading}
+                          >
+                            <Download className="size-4 mr-2" />
+                            {downloadFolderLoading ? "Téléchargement..." : "Télécharger en ZIP"}
+                          </DropdownMenuItem>
+                          {/* Separator seulement si Renommer ou Supprimer sera affiché */}
+                          {!treeContextMenu.item.isSystem && <DropdownMenuSeparator />}
                         </>
                       )}
                       {/* Renommer - pas pour les dossiers système */}

@@ -797,3 +797,74 @@ export function useMoveSharedFolder() {
 
   return { moveFolder, loading };
 }
+
+/**
+ * Hook pour télécharger un dossier en ZIP
+ */
+export function useDownloadFolder() {
+  const { workspaceId } = useWorkspace();
+  const [loading, setLoading] = React.useState(false);
+
+  const downloadFolder = async (folderId, folderName) => {
+    if (!workspaceId || !folderId) {
+      toast.error("Paramètres manquants");
+      return;
+    }
+
+    // Récupérer le token d'authentification
+    const token = localStorage.getItem("bearer_token");
+    if (!token) {
+      toast.error("Non authentifié");
+      return;
+    }
+
+    setLoading(true);
+    const loadingToast = toast.loading("Préparation du téléchargement...");
+
+    try {
+      // Utiliser la route API Next.js (proxy vers le backend)
+      const response = await fetch(
+        `/api/shared-documents/download-folder?folderId=${folderId}&workspaceId=${workspaceId}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        // Essayer de parser l'erreur JSON
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          const error = await response.json();
+          throw new Error(error.message || "Erreur lors du téléchargement");
+        } else {
+          throw new Error(`Erreur ${response.status}: ${response.statusText}`);
+        }
+      }
+
+      // Créer un blob et le télécharger
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${folderName || "dossier"}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast.dismiss(loadingToast);
+      toast.success("Dossier téléchargé avec succès");
+    } catch (error) {
+      console.error("Erreur téléchargement dossier:", error);
+      toast.dismiss(loadingToast);
+      toast.error(error.message || "Erreur lors du téléchargement");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { downloadFolder, loading };
+}
