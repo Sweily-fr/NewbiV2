@@ -338,13 +338,13 @@ export function TaskModal({
 
   // Convert priority to uppercase for the Select component
   const getDisplayPriority = (priority) => {
-    if (!priority) return 'MEDIUM';
+    if (!priority) return 'NONE';
     return priority.toUpperCase();
   };
 
   // Convert priority to lowercase for submission
   const getSubmitPriority = (priority) => {
-    if (!priority) return 'medium';
+    if (!priority) return '';
     return priority.toLowerCase();
   };
 
