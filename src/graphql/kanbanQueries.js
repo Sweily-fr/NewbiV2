@@ -1153,3 +1153,129 @@ export const PUBLIC_TASK_UPDATED_SUBSCRIPTION = gql`
     }
   }
 `;
+
+// ==================== USER INVITED (Visiteurs persistants) ====================
+
+// Query pour vérifier si un email existe et ses caractéristiques
+export const CHECK_INVITED_EMAIL = gql`
+  query CheckInvitedEmail($email: String!, $token: String!) {
+    checkInvitedEmail(email: $email, token: $token) {
+      exists
+      requiresPassword
+      hasLinkedNewbiAccount
+      linkedUser {
+        id
+        email
+        name
+        firstName
+        lastName
+        image
+      }
+      userInvited {
+        id
+        email
+        firstName
+        lastName
+        name
+        image
+        requiresPassword
+      }
+    }
+  }
+`;
+
+// Mutation pour authentifier ou créer un utilisateur invité
+export const AUTHENTICATE_INVITED_USER = gql`
+  mutation AuthenticateInvitedUser($input: AuthInvitedInput!) {
+    authenticateInvitedUser(input: $input) {
+      success
+      message
+      userInvited {
+        id
+        email
+        firstName
+        lastName
+        name
+        image
+        requiresPassword
+        linkedUserId
+        stats {
+          totalVisits
+          totalComments
+          totalBoardsAccessed
+        }
+      }
+      sessionToken
+      isNewUser
+      requiresPassword
+      linkedUser {
+        id
+        email
+        name
+        firstName
+        lastName
+        image
+      }
+      isBanned
+      banReason
+    }
+  }
+`;
+
+// Mutation pour définir un mot de passe
+export const SET_INVITED_USER_PASSWORD = gql`
+  mutation SetInvitedUserPassword($input: SetPasswordInput!) {
+    setInvitedUserPassword(input: $input) {
+      success
+      message
+      userInvited {
+        id
+        email
+        requiresPassword
+      }
+      requiresPassword
+    }
+  }
+`;
+
+// Mutation pour mettre à jour le profil d'un utilisateur invité
+export const UPDATE_INVITED_USER_PROFILE = gql`
+  mutation UpdateInvitedUserProfile($email: String!, $input: UpdateInvitedProfileInput!) {
+    updateInvitedUserProfile(email: $email, input: $input) {
+      id
+      email
+      firstName
+      lastName
+      name
+      image
+    }
+  }
+`;
+
+// Query pour valider un token de session d'utilisateur invité
+export const VALIDATE_INVITED_SESSION = gql`
+  query ValidateInvitedSession($sessionToken: String!) {
+    validateInvitedSession(sessionToken: $sessionToken) {
+      id
+      email
+      firstName
+      lastName
+      name
+      image
+      requiresPassword
+      linkedUserId
+      stats {
+        totalVisits
+        totalComments
+        totalBoardsAccessed
+      }
+    }
+  }
+`;
+
+// Mutation pour déconnecter un utilisateur invité
+export const LOGOUT_INVITED_USER = gql`
+  mutation LogoutInvitedUser($sessionToken: String!) {
+    logoutInvitedUser(sessionToken: $sessionToken)
+  }
+`;

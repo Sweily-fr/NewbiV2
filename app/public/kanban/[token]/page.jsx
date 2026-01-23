@@ -12,8 +12,13 @@ import {
   ACCESS_APPROVED_SUBSCRIPTION,
   ACCESS_REVOKED_SUBSCRIPTION,
   UPLOAD_EXTERNAL_COMMENT_IMAGE,
-  UPLOAD_VISITOR_IMAGE
+  UPLOAD_VISITOR_IMAGE,
+  CHECK_INVITED_EMAIL,
+  AUTHENTICATE_INVITED_USER,
+  VALIDATE_INVITED_SESSION
 } from "@/src/graphql/kanbanQueries";
+import { Checkbox } from "@/src/components/ui/checkbox";
+import { Avatar, AvatarImage, AvatarFallback } from "@/src/components/ui/avatar";
 import { toast } from "@/src/components/ui/sonner";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
@@ -45,7 +50,333 @@ const scrollbarStyles = `
   .kanban-column-scroll { scrollbar-width: thin; scrollbar-color: hsl(var(--muted-foreground) / 0.2) transparent; }
 `;
 
-// EmailModal Component
+// AuthModal Component - Nouveau système d'authentification avec mot de passe optionnel
+function AuthModal({ isOpen, token, onSuccess, onBanned }) {
+  const [step, setStep] = useState('email'); // 'email' | 'password' | 'create_account'
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [skipPassword, setSkipPassword] = useState(false);
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [error, setError] = useState(null);
+  const [linkedUser, setLinkedUser] = useState(null);
+  const [existingUser, setExistingUser] = useState(null);
+  
+  const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  
+  // Query pour vérifier l'email
+  const [checkEmail, { loading: checkingEmail }] = useLazyQuery(CHECK_INVITED_EMAIL, {
+    fetchPolicy: 'network-only',
+    onCompleted: (data) => {
+      const result = data?.checkInvitedEmail;
+      if (result) {
+        setLinkedUser(result.linkedUser);
+        setExistingUser(result.userInvited);
+        
+        if (result.exists && result.requiresPassword) {
+          // Utilisateur existant avec mot de passe
+          setStep('password');
+        } else if (result.exists) {
+          // Utilisateur existant sans mot de passe - connexion directe
+          handleAuthenticate(email, null, true);
+        } else {
+          // Nouvel utilisateur - proposer de créer un compte
+          if (result.linkedUser) {
+            // Pré-remplir avec les infos du compte Newbi
+            setFirstName(result.linkedUser.firstName || '');
+            setLastName(result.linkedUser.lastName || '');
+          }
+          setStep('create_account');
+        }
+      }
+    },
+    onError: (err) => {
+      setError(err.message || "Erreur lors de la vérification de l'email");
+    }
+  });
+  
+  // Mutation pour authentifier
+  const [authenticate, { loading: authenticating }] = useMutation(AUTHENTICATE_INVITED_USER, {
+    onCompleted: (data) => {
+      const result = data?.authenticateInvitedUser;
+      if (result?.success) {
+        // Sauvegarder le token de session
+        if (result.sessionToken) {
+          localStorage.setItem(`invited_session_${token}`, JSON.stringify({
+            sessionToken: result.sessionToken,
+            userInvited: result.userInvited,
+            savedAt: Date.now()
+          }));
+        }
+        onSuccess(result);
+      } else if (result?.isBanned) {
+        onBanned(email, result.banReason);
+      } else {
+        setError(result?.message || "Erreur d'authentification");
+      }
+    },
+    onError: (err) => {
+      setError(err.message || "Erreur lors de l'authentification");
+    }
+  });
+  
+  const handleEmailSubmit = (e) => {
+    e.preventDefault();
+    if (!isValidEmail) return;
+    setError(null);
+    checkEmail({ variables: { email, token } });
+  };
+  
+  const handleAuthenticate = (emailToUse, passwordToUse, skipPwd = false) => {
+    authenticate({
+      variables: {
+        input: {
+          token,
+          email: emailToUse || email,
+          password: passwordToUse || password || null,
+          skipPassword: skipPwd || skipPassword,
+          firstName: firstName || null,
+          lastName: lastName || null
+        }
+      }
+    });
+  };
+  
+  const handlePasswordSubmit = (e) => {
+    e.preventDefault();
+    setError(null);
+    handleAuthenticate(email, password, false);
+  };
+  
+  const handleCreateAccount = (e) => {
+    e.preventDefault();
+    setError(null);
+    handleAuthenticate(email, skipPassword ? null : newPassword, skipPassword);
+  };
+  
+  const handleBack = () => {
+    setStep('email');
+    setPassword("");
+    setNewPassword("");
+    setError(null);
+  };
+
+  const loading = checkingEmail || authenticating;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={() => {}}>
+      <DialogContent className="sm:max-w-md" onPointerDownOutside={(e) => e.preventDefault()}>
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Eye className="h-5 w-5 text-primary" />
+            {step === 'email' && "Accès au tableau Kanban"}
+            {step === 'password' && "Connexion"}
+            {step === 'create_account' && "Créer votre profil"}
+          </DialogTitle>
+          <DialogDescription>
+            {step === 'email' && "Veuillez renseigner votre adresse email pour accéder à ce tableau."}
+            {step === 'password' && "Entrez votre mot de passe pour vous connecter."}
+            {step === 'create_account' && "Configurez votre profil pour accéder au tableau."}
+          </DialogDescription>
+        </DialogHeader>
+        
+        {/* Étape 1: Email */}
+        {step === 'email' && (
+          <form onSubmit={handleEmailSubmit} className="space-y-4 mt-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Adresse email</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input 
+                  id="email" 
+                  type="email" 
+                  placeholder="votre@email.com" 
+                  value={email} 
+                  onChange={(e) => setEmail(e.target.value)} 
+                  className="pl-10" 
+                  autoFocus 
+                  required 
+                />
+              </div>
+            </div>
+            {error && (
+              <div className="flex items-center gap-2 p-3 bg-destructive/10 text-destructive rounded-md text-sm">
+                <AlertCircle className="h-4 w-4" />{error}
+              </div>
+            )}
+            <Button type="submit" className="w-full" disabled={!isValidEmail || loading}>
+              {loading ? (
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Vérification...</>
+              ) : (
+                <><ExternalLink className="mr-2 h-4 w-4" />Continuer</>
+              )}
+            </Button>
+          </form>
+        )}
+        
+        {/* Étape 2: Mot de passe (utilisateur existant) */}
+        {step === 'password' && (
+          <form onSubmit={handlePasswordSubmit} className="space-y-4 mt-4">
+            <div className="p-3 bg-muted/50 rounded-lg border">
+              <p className="text-sm text-muted-foreground">
+                Connecté en tant que <span className="font-medium text-foreground">{email}</span>
+              </p>
+              {existingUser?.name && (
+                <p className="text-sm font-medium mt-1">{existingUser.name}</p>
+              )}
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="password">Mot de passe</Label>
+              <Input 
+                id="password" 
+                type="password" 
+                placeholder="Votre mot de passe" 
+                value={password} 
+                onChange={(e) => setPassword(e.target.value)} 
+                autoFocus 
+                required 
+              />
+            </div>
+            
+            {error && (
+              <div className="flex items-center gap-2 p-3 bg-destructive/10 text-destructive rounded-md text-sm">
+                <AlertCircle className="h-4 w-4" />{error}
+              </div>
+            )}
+            
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" onClick={handleBack} className="flex-1">
+                Retour
+              </Button>
+              <Button type="submit" className="flex-1" disabled={!password || loading}>
+                {loading ? (
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Connexion...</>
+                ) : (
+                  "Se connecter"
+                )}
+              </Button>
+            </div>
+          </form>
+        )}
+        
+        {/* Étape 3: Création de compte (nouvel utilisateur) */}
+        {step === 'create_account' && (
+          <form onSubmit={handleCreateAccount} className="space-y-4 mt-4">
+            {/* Afficher les infos du compte Newbi lié si trouvé */}
+            {linkedUser && (
+              <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage src={linkedUser.image} />
+                    <AvatarFallback className="bg-green-100 text-green-700">
+                      {(linkedUser.name || linkedUser.email)?.[0]?.toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="text-sm font-medium text-green-700 dark:text-green-400">
+                      Compte Newbi trouvé !
+                    </p>
+                    <p className="text-xs text-green-600 dark:text-green-500">
+                      {linkedUser.name || linkedUser.email}
+                    </p>
+                  </div>
+                </div>
+                <p className="text-xs text-green-600 dark:text-green-500 mt-2">
+                  Vos informations seront automatiquement récupérées.
+                </p>
+              </div>
+            )}
+            
+            <div className="p-3 bg-muted/50 rounded-lg border">
+              <p className="text-sm text-muted-foreground">
+                Email : <span className="font-medium text-foreground">{email}</span>
+              </p>
+            </div>
+            
+            {/* Nom et prénom */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="firstName">Prénom</Label>
+                <Input 
+                  id="firstName" 
+                  type="text" 
+                  placeholder="Prénom" 
+                  value={firstName} 
+                  onChange={(e) => setFirstName(e.target.value)} 
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="lastName">Nom</Label>
+                <Input 
+                  id="lastName" 
+                  type="text" 
+                  placeholder="Nom" 
+                  value={lastName} 
+                  onChange={(e) => setLastName(e.target.value)} 
+                />
+              </div>
+            </div>
+            
+            {/* Mot de passe optionnel */}
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <Label htmlFor="newPassword">Mot de passe (optionnel)</Label>
+                <Input 
+                  id="newPassword" 
+                  type="password" 
+                  placeholder="Créer un mot de passe" 
+                  value={newPassword} 
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  disabled={skipPassword}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Un mot de passe sécurise votre accès à ce tableau.
+                </p>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="skipPassword" 
+                  checked={skipPassword} 
+                  onCheckedChange={setSkipPassword}
+                />
+                <Label 
+                  htmlFor="skipPassword" 
+                  className="text-sm font-normal cursor-pointer"
+                >
+                  Se connecter sans mot de passe
+                </Label>
+              </div>
+            </div>
+            
+            {error && (
+              <div className="flex items-center gap-2 p-3 bg-destructive/10 text-destructive rounded-md text-sm">
+                <AlertCircle className="h-4 w-4" />{error}
+              </div>
+            )}
+            
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" onClick={handleBack} className="flex-1">
+                Retour
+              </Button>
+              <Button type="submit" className="flex-1" disabled={loading}>
+                {loading ? (
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Création...</>
+                ) : (
+                  <><User className="mr-2 h-4 w-4" />Accéder au tableau</>
+                )}
+              </Button>
+            </div>
+          </form>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// Ancien EmailModal conservé pour compatibilité (sera supprimé plus tard)
 function EmailModal({ isOpen, onSubmit, loading, error }) {
   const [email, setEmail] = useState("");
   const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -2359,10 +2690,12 @@ export default function PublicKanbanPage({ params }) {
   const { token } = use(params);
   const [visitorEmail, setVisitorEmail] = useState(null);
   const [visitorProfile, setVisitorProfile] = useState(null);
-  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [userInvited, setUserInvited] = useState(null); // Nouveau: stocke l'utilisateur invité complet
+  const [showAuthModal, setShowAuthModal] = useState(false); // Nouveau modal d'auth
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [accessError, setAccessError] = useState(null);
   const [isBanned, setIsBanned] = useState(false);
+  const [banReason, setBanReason] = useState(null);
   const [boardData, setBoardData] = useState(null);
   const [permissions, setPermissions] = useState(null);
   const [selectedTask, setSelectedTask] = useState(null);
@@ -2374,6 +2707,7 @@ export default function PublicKanbanPage({ params }) {
   const [validateToken, { loading: validatingToken }] = useLazyQuery(VALIDATE_PUBLIC_TOKEN);
   const [getPublicBoard, { loading: loadingBoard }] = useLazyQuery(GET_PUBLIC_BOARD);
   const [updateVisitorProfile, { loading: updatingProfile }] = useMutation(UPDATE_VISITOR_PROFILE);
+  const [validateInvitedSession] = useLazyQuery(VALIDATE_INVITED_SESSION);
 
   // Subscription pour les mises à jour en temps réel
   useSubscription(PUBLIC_TASK_UPDATED_SUBSCRIPTION, {
@@ -2500,8 +2834,44 @@ export default function PublicKanbanPage({ params }) {
         return;
       }
       
-      // Vérifier si on a une session stockée
+      // Vérifier si on a une session UserInvited stockée (nouveau système)
       try {
+        const invitedSession = localStorage.getItem(`invited_session_${token}`);
+        if (invitedSession) {
+          const session = JSON.parse(invitedSession);
+          if (session.sessionToken && session.userInvited) {
+            // Valider le token de session
+            const validationResult = await validateInvitedSession({ 
+              variables: { sessionToken: session.sessionToken } 
+            });
+            
+            if (validationResult.data?.validateInvitedSession) {
+              const validUser = validationResult.data.validateInvitedSession;
+              
+              // Récupérer le board avec l'email de l'utilisateur
+              const result = await getPublicBoard({ 
+                variables: { token, email: validUser.email } 
+              });
+              
+              if (result.data?.getPublicBoard?.success) {
+                setVisitorEmail(validUser.email);
+                setUserInvited(validUser);
+                setBoardData(result.data.getPublicBoard.board);
+                setPermissions(result.data.getPublicBoard.share?.permissions);
+                setVisitorProfile({
+                  firstName: validUser.firstName,
+                  lastName: validUser.lastName,
+                  name: validUser.name || validUser.email.split('@')[0],
+                  image: validUser.image
+                });
+                setIsInitializing(false);
+                return;
+              }
+            }
+          }
+        }
+        
+        // Fallback: Vérifier l'ancien système de session
         const storedSession = localStorage.getItem(getStorageKey(token));
         if (storedSession) {
           const session = JSON.parse(storedSession);
@@ -2535,15 +2905,59 @@ export default function PublicKanbanPage({ params }) {
         console.warn('Erreur lecture localStorage:', e);
       }
       
-      // Pas de session valide, afficher le modal email
-      setShowEmailModal(true);
+      // Pas de session valide, afficher le nouveau modal d'authentification
+      setShowAuthModal(true);
       setIsInitializing(false);
     };
     
     initSession();
-  }, [token, validateToken, getPublicBoard]);
+  }, [token, validateToken, getPublicBoard, validateInvitedSession]);
 
-  // Handle email submission
+  // Handle authentication success (nouveau système UserInvited)
+  const handleAuthSuccess = async (authResult) => {
+    const { userInvited: user } = authResult;
+    
+    if (!user) {
+      setAccessError("Erreur d'authentification");
+      return;
+    }
+    
+    try {
+      // Récupérer le board avec l'email de l'utilisateur authentifié
+      const result = await getPublicBoard({ variables: { token, email: user.email } });
+      
+      if (result.data?.getPublicBoard?.success) {
+        setVisitorEmail(user.email);
+        setUserInvited(user);
+        setBoardData(result.data.getPublicBoard.board);
+        setPermissions(result.data.getPublicBoard.share?.permissions);
+        setShowAuthModal(false);
+        
+        // Utiliser les infos du UserInvited pour le profil
+        setVisitorProfile({
+          firstName: user.firstName,
+          lastName: user.lastName,
+          name: user.name || user.email.split('@')[0],
+          image: user.image
+        });
+      } else {
+        setAccessError(result.data?.getPublicBoard?.message || "Accès refusé");
+      }
+    } catch (error) {
+      console.error('Erreur récupération board:', error);
+      setAccessError("Une erreur est survenue");
+    }
+  };
+  
+  // Handle banned user (nouveau système)
+  const handleAuthBanned = (email, reason) => {
+    setVisitorEmail(email);
+    setIsBanned(true);
+    setBanReason(reason);
+    setShowAuthModal(false);
+  };
+
+  // Handle email submission (ancien système - conservé pour compatibilité)
   const handleEmailSubmit = async (email) => {
     try {
       const result = await getPublicBoard({ variables: { token, email } });
@@ -2551,7 +2965,7 @@ export default function PublicKanbanPage({ params }) {
         setVisitorEmail(email);
         setBoardData(result.data.getPublicBoard.board);
         setPermissions(result.data.getPublicBoard.share?.permissions);
-        setShowEmailModal(false);
+        setShowAuthModal(false);
         
         // Try to get visitor profile from share
         const visitor = result.data.getPublicBoard.share?.visitors?.find(v => v.email === email.toLowerCase());
@@ -2583,7 +2997,7 @@ export default function PublicKanbanPage({ params }) {
         if (result.data?.getPublicBoard?.isBanned) {
           setVisitorEmail(email);
           setIsBanned(true);
-          setShowEmailModal(false);
+          setShowAuthModal(false);
         } else {
           setAccessError(result.data?.getPublicBoard?.message || "Accès refusé");
         }
@@ -2754,7 +3168,12 @@ export default function PublicKanbanPage({ params }) {
 
   return (
     <div className="min-h-screen bg-background">
-      <EmailModal isOpen={showEmailModal} onSubmit={handleEmailSubmit} loading={loadingBoard} error={accessError} />
+      <AuthModal 
+        isOpen={showAuthModal} 
+        token={token} 
+        onSuccess={handleAuthSuccess} 
+        onBanned={handleAuthBanned} 
+      />
       <ProfileModal isOpen={showProfileModal} onClose={() => setShowProfileModal(false)} visitorProfile={visitorProfile} onSave={handleProfileSave} loading={updatingProfile} token={token} visitorEmail={visitorEmail} />
       
       {boardData && (

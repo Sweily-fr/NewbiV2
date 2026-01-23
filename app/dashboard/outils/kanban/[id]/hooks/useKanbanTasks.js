@@ -16,7 +16,7 @@ export const useKanbanTasks = (boardId, board) => {
     title: "",
     description: "",
     status: "TODO",
-    priority: "medium",
+    priority: "",
     startDate: "",
     dueDate: "",
     tags: [],
@@ -371,7 +371,7 @@ export const useKanbanTasks = (boardId, board) => {
           input: {
             title: taskForm.title,
             description: taskForm.description,
-            priority: taskForm.priority.toLowerCase(),
+            priority: taskForm.priority.toLowerCase() === 'none' ? '' : taskForm.priority.toLowerCase(),
             startDate: taskForm.startDate || null,
             dueDate: taskForm.dueDate || null,
             columnId: taskForm.columnId,
@@ -411,7 +411,7 @@ export const useKanbanTasks = (boardId, board) => {
         id: editingTask.id,
         title: taskForm.title,
         description: taskForm.description,
-        priority: taskForm.priority.toLowerCase(),
+        priority: taskForm.priority.toLowerCase() === 'none' ? '' : taskForm.priority.toLowerCase(),
         startDate: taskForm.startDate || null,
         dueDate: taskForm.dueDate || null,
         columnId: taskForm.columnId,
@@ -449,7 +449,7 @@ export const useKanbanTasks = (boardId, board) => {
     setTaskForm({
       ...initialTaskForm,
       status: "TODO",
-      priority: "medium",
+      priority: "",
       columnId: columnId, // Initialiser columnId avec la colonne sélectionnée
       startDate: options.startDate || "",
       dueDate: options.dueDate || "",
@@ -485,7 +485,7 @@ export const useKanbanTasks = (boardId, board) => {
       title: task?.title || "",
       description: task?.description || "",
       status: task?.status || "TODO",
-      priority: task?.priority ? task.priority.toLowerCase() : "medium",
+      priority: task?.priority ? task.priority.toLowerCase() : "",
       startDate: task?.startDate || "",
       dueDate: task?.dueDate || "", // Garder l'heure complète au format ISO
       columnId: task?.columnId || task?.column?.id || "",
