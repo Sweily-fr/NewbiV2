@@ -161,13 +161,11 @@ export default function Component({
             </CommandItem>
             <CommandItem
               onSelect={() =>
-                runCommand(() =>
-                  router.push("/dashboard/outils/gestion-depenses")
-                )
+                runCommand(() => router.push("/dashboard/outils/transactions"))
               }
             >
               <BarChart3 className="mr-2 h-4 w-4" />
-              <span>Gestion des dépenses</span>
+              <span>Transactions</span>
             </CommandItem>
             <CommandItem
               onSelect={() =>

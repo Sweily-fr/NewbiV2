@@ -96,47 +96,60 @@ export default function ModernCreditNoteEditor({
   const handleFinalize = async () => {
     try {
       const result = await finalize(false); // Ne pas rediriger automatiquement
-      
+
       if (result?.success && result?.creditNote) {
-        // Stocker les données de l'avoir créé
+        // Stocker les données de l'avoir créé pour la modal d'envoi
         // Le montant doit être négatif pour un avoir - utiliser formData ou result
-        const amount = formData.finalTotalTTC || result.creditNote.finalTotalTTC || 0;
-        
+        const amount =
+          formData.finalTotalTTC || result.creditNote.finalTotalTTC || 0;
+
         // Formater le numéro de facture associée avec préfixe
-        const invoiceNum = originalInvoice 
+        const invoiceNum = originalInvoice
           ? `${originalInvoice.prefix || "F"}-${originalInvoice.number}`
           : result.creditNote.originalInvoiceNumber;
-        
+
         // Formater la date de l'avoir - utiliser formData en priorité
-        const creditNoteDate = formData.issueDate 
+        const creditNoteDate = formData.issueDate
           ? formatDate(formData.issueDate)
           : formatDate(result.creditNote.issueDate);
-        
-        setCreatedCreditNoteData({
+
+        const creditNoteData = {
           id: result.creditNote.id,
           number: `${result.creditNote.prefix || "AV"}-${result.creditNote.number}`,
           clientName: result.creditNote.client?.name,
           clientEmail: result.creditNote.client?.email,
-          totalAmount: new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(amount),
+          totalAmount: new Intl.NumberFormat("fr-FR", {
+            style: "currency",
+            currency: "EUR",
+          }).format(amount),
           companyName: result.creditNote.companyInfo?.name,
           issueDate: creditNoteDate,
           invoiceNumber: invoiceNum,
           redirectUrl: result.redirectUrl,
-        });
-        // Afficher la modal d'envoi
-        setShowSendEmailModal(true);
+        };
+        setCreatedCreditNoteData(creditNoteData);
+
+        // Stocker les données dans sessionStorage pour afficher le toast sur la page de liste
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem(
+            "newCreditNoteData",
+            JSON.stringify(creditNoteData)
+          );
+        }
+
+        // Rediriger vers la liste des factures
+        router.push("/dashboard/outils/factures");
       }
     } catch (error) {
       // Error is already handled in the hook
     }
   };
 
-  // Handler pour fermer la modal et rediriger
+  // Handler pour fermer la modal après envoi d'email
   const handleEmailModalClose = () => {
     setShowSendEmailModal(false);
-    if (createdCreditNoteData?.redirectUrl) {
-      router.push(createdCreditNoteData.redirectUrl);
-    }
+    // Rediriger vers la liste des factures après envoi ou fermeture
+    router.push("/dashboard/outils/factures");
   };
 
   const getStatusBadge = () => {
@@ -173,7 +186,8 @@ export default function ModernCreditNoteEditor({
           </div>
           <h2 className="text-xl font-semibold mb-2">Facture introuvable</h2>
           <p className="text-muted-foreground mb-6">
-            La facture originale n'existe pas ou a été supprimée. Impossible de créer un avoir.
+            La facture originale n'existe pas ou a été supprimée. Impossible de
+            créer un avoir.
           </p>
           <Button onClick={handleBack} variant="default">
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -185,7 +199,7 @@ export default function ModernCreditNoteEditor({
   }
 
   return (
-    <div className="fixed inset-0 flex flex-col overflow-hidden bg-background">
+    <div className="fixed inset-0 z-40 flex flex-col overflow-hidden bg-background">
       <div className="grid grid-cols-1 lg:grid-cols-[2fr_3fr] h-full">
         {/* Left Panel - Enhanced Form */}
         <div className="pl-4 pt-18 pr-2 pb-4 md:pl-6 md:pt-6 md:pr-6 flex flex-col h-full overflow-hidden">
@@ -195,7 +209,11 @@ export default function ModernCreditNoteEditor({
               <div className="flex items-center gap-2">
                 <div>
                   <h1 className="text-xl md:text-2xl font-medium mb-1">
-                    {isCreating ? "Créer un avoir" : isEditing ? "Modifier l'avoir" : "Voir l'avoir"}
+                    {isCreating
+                      ? "Créer un avoir"
+                      : isEditing
+                        ? "Modifier l'avoir"
+                        : "Voir l'avoir"}
                   </h1>
                   <div className="flex items-center gap-2 flex-wrap">
                     {formData?.number && (
@@ -213,8 +231,7 @@ export default function ModernCreditNoteEditor({
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 md:gap-4">
-              </div>
+              <div className="flex items-center gap-2 md:gap-4"></div>
             </div>
 
             {/* Form Content */}
@@ -235,12 +252,15 @@ export default function ModernCreditNoteEditor({
         <div className="hidden lg:flex bg-muted/30 border-l flex-col h-full overflow-hidden">
           <div className="flex-1 overflow-y-auto pl-4 pr-4 pt-6 pb-6 md:pl-18 md:pr-18 md:pt-22 md:pb-22 bg-[#F9F9F9] dark:bg-[#1a1a1a]">
             <div ref={pdfRef}>
-              <UniversalPreviewPDF data={{...formData, originalInvoice}} type="creditNote" />
+              <UniversalPreviewPDF
+                data={{ ...formData, originalInvoice }}
+                type="creditNote"
+              />
             </div>
           </div>
         </div>
       </div>
-      
+
       {/* Modal d'envoi par email */}
       {createdCreditNoteData && (
         <SendDocumentModal
@@ -256,7 +276,11 @@ export default function ModernCreditNoteEditor({
           issueDate={createdCreditNoteData.issueDate}
           invoiceNumber={createdCreditNoteData.invoiceNumber}
           onSent={handleEmailModalClose}
-          onClose={() => router.push(createdCreditNoteData.redirectUrl || "/dashboard/outils/factures")}
+          onClose={() =>
+            router.push(
+              createdCreditNoteData.redirectUrl || "/dashboard/outils/factures"
+            )
+          }
           pdfRef={pdfRef}
         />
       )}

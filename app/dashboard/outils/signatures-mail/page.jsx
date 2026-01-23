@@ -1,13 +1,13 @@
 "use client";
 
-import { Suspense } from "react";
-import { Plus, Monitor, Smartphone } from "lucide-react";
+import { Suspense, useState } from "react";
+import { Plus, Monitor } from "lucide-react";
 import { RoleRouteGuard } from "@/src/components/rbac/RBACRouteGuard";
 import { Button } from "@/src/components/ui/button";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { Card, CardContent } from "@/src/components/ui/card";
 import SignatureTable from "./components/table/signature-table";
-import { useRouter } from "next/navigation";
+import { TemplateSelector } from "./components/modals/TemplateSelector";
 import { gql } from "@apollo/client";
 
 // Query pour récupérer toutes les signatures de l'utilisateur
@@ -132,10 +132,10 @@ const CREATE_EMAIL_SIGNATURE = gql`
 `;
 
 function SignaturesContent() {
-  const router = useRouter();
+  const [isTemplateSelectorOpen, setIsTemplateSelectorOpen] = useState(false);
 
   const handleCreateSignature = () => {
-    router.push("/dashboard/outils/signatures-mail/new");
+    setIsTemplateSelectorOpen(true);
   };
 
   return (
@@ -148,9 +148,6 @@ function SignaturesContent() {
               <div className="flex justify-center">
                 <div className="relative">
                   <Monitor className="h-16 w-16 text-primary" />
-                  {/* <div className="absolute -bottom-2 -right-2 bg-background border-2 border-border rounded-full p-1">
-                    <Smartphone className="h-4 w-4 text-muted-foreground" />
-                  </div> */}
                 </div>
               </div>
 
@@ -175,29 +172,34 @@ function SignaturesContent() {
         </div>
       </div>
 
-      {/* Desktop Content */}
-      <div className="hidden lg:block space-y-6 p-6">
+      {/* Desktop Content - Pleine largeur */}
+      <div className="hidden lg:flex lg:flex-col h-[calc(100vh-64px)] overflow-hidden md:h-[calc(100vh-64px)]">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between px-4 sm:px-6 pt-4 sm:pt-6 flex-shrink-0">
           <div>
             <h1 className="text-2xl font-medium mb-2">Signatures Mail</h1>
-            <p className="text-muted-foreground text-sm">
-              Gérez vos signatures mail et suivez les modifications
-            </p>
           </div>
           <Button
             onClick={handleCreateSignature}
-            className="gap-2 font-normal cursor-pointer"
+            className="font-normal bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
           >
             Créer une signature
           </Button>
         </div>
 
-        {/* Table */}
-        <Suspense fallback={<SignatureTableSkeleton />}>
-          <SignatureTable />
-        </Suspense>
+        {/* Table - Pleine largeur */}
+        <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+          <Suspense fallback={<SignatureTableSkeleton />}>
+            <SignatureTable />
+          </Suspense>
+        </div>
       </div>
+
+      {/* Modal de sélection de template */}
+      <TemplateSelector
+        open={isTemplateSelectorOpen}
+        onOpenChange={setIsTemplateSelectorOpen}
+      />
     </>
   );
 }
@@ -268,7 +270,7 @@ function SignatureTableSkeleton() {
 
 export default function EmailSignaturesPage() {
   return (
-    <RoleRouteGuard 
+    <RoleRouteGuard
       roles={["owner", "admin", "member", "viewer"]}
       fallbackUrl="/dashboard"
       toastMessage="Vous n'avez pas accès aux signatures de mail. Cette fonctionnalité est réservée aux membres de l'équipe."

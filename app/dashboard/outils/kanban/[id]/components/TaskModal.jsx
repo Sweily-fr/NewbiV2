@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { LoaderCircle, Trash2, X, CalendarIcon, Clock, User, FileText, MessageSquare, ChevronDown, Flag, Users, UserPlus, Columns, Tag, Send, Edit2 } from 'lucide-react';
+import { LoaderCircle, Trash2, X, CalendarIcon, Clock, User, FileText, MessageSquare, ChevronDown, Flag, Users, UserPlus, Columns, Tag, Send, Edit2, ImagePlus } from 'lucide-react';
 import { Button } from '@/src/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/src/components/ui/dialog';
 import { Input } from '@/src/components/ui/input';
@@ -18,6 +18,9 @@ import { fr } from 'date-fns/locale';
 import { Checklist } from '@/src/components/Checklist';
 import { MemberSelector } from './MemberSelector';
 import { TaskActivity } from './TaskActivity';
+import { TimerControls } from './TimerControls';
+import { TaskImageUpload } from './TaskImageUpload';
+import { useTaskImageUpload } from '../hooks/useTaskImageUpload';
 import { useAssignedMembersInfo } from '@/src/hooks/useAssignedMembersInfo';
 import MultipleSelector from '@/src/components/ui/multiple-selector';
 import { cn } from '@/src/lib/utils';
@@ -243,6 +246,52 @@ export function TaskModal({
     setTaskForm(prev => ({ ...prev, checklist: updatedItems }));
   }, [setTaskForm]);
 
+  // Hook pour l'upload d'images (uniquement en mode édition avec un taskId)
+  const taskId = taskForm.id || taskForm._id;
+  const boardId = board?.id;
+  const {
+    isUploading: isUploadingImage,
+    uploadProgress,
+    uploadImage,
+    deleteImage,
+    handleDrop: handleImageDrop
+  } = useTaskImageUpload(taskId, workspaceId, boardId);
+
+  // Handler pour l'upload d'images dans la description
+  const handleDescriptionImageUpload = useCallback(async (files) => {
+    if (!taskId) {
+      // En mode création, on ne peut pas encore uploader d'images
+      return;
+    }
+    
+    const uploadedImages = [];
+    for (const file of files) {
+      const result = await uploadImage(file, 'description');
+      if (result) {
+        uploadedImages.push(result);
+      }
+    }
+    
+    // Mettre à jour le formulaire avec les nouvelles images
+    if (uploadedImages.length > 0) {
+      setTaskForm(prev => ({
+        ...prev,
+        images: [...(prev.images || []), ...uploadedImages]
+      }));
+    }
+  }, [taskId, uploadImage, setTaskForm]);
+
+  // Handler pour supprimer une image
+  const handleDeleteImage = useCallback(async (imageId) => {
+    const success = await deleteImage(imageId);
+    if (success) {
+      setTaskForm(prev => ({
+        ...prev,
+        images: (prev.images || []).filter(img => img.id !== imageId)
+      }));
+    }
+  }, [deleteImage, setTaskForm]);
+
   const handleTimeChange = useCallback((e) => {
     const time = e.target.value;
     if (!time) return;
@@ -289,13 +338,13 @@ export function TaskModal({
 
   // Convert priority to uppercase for the Select component
   const getDisplayPriority = (priority) => {
-    if (!priority) return 'MEDIUM';
+    if (!priority) return 'NONE';
     return priority.toUpperCase();
   };
 
   // Convert priority to lowercase for submission
   const getSubmitPriority = (priority) => {
-    if (!priority) return 'medium';
+    if (!priority) return '';
     return priority.toLowerCase();
   };
 
@@ -890,13 +939,48 @@ export function TaskModal({
               </div>
             </div>
 
+            {/* Timer et facturation (uniquement en mode édition) */}
+            {isEditing && (taskForm.id || taskForm._id) && (
+              <div className="mt-12">
+                <TimerControls
+                  taskId={taskForm.id || taskForm._id}
+                  timeTracking={taskForm.timeTracking}
+                  onTimerUpdate={(newTimeTracking) => {
+                    setTaskForm(prev => ({
+                      ...prev,
+                      timeTracking: newTimeTracking
+                    }));
+                  }}
+                />
+              </div>
+            )}
+
             {/* Checklist */}
-            <div className="space-y-3 mt-12">
+            <div className="space-y-3 mt-6">
               <Checklist 
                 items={taskForm.checklist}
                 onChange={handleChecklistChange}
               />
             </div>
+
+            {/* Images de la tâche (uniquement en mode édition) */}
+            {isEditing && taskId && (
+              <div className="space-y-2 mt-6">
+                <Label className="text-sm font-normal flex items-center gap-2">
+                  <ImagePlus className="h-4 w-4 text-muted-foreground" />
+                  Images
+                </Label>
+                <TaskImageUpload
+                  images={taskForm.images || []}
+                  onUpload={handleDescriptionImageUpload}
+                  onDelete={handleDeleteImage}
+                  isUploading={isUploadingImage}
+                  uploadProgress={uploadProgress}
+                  maxImages={10}
+                  placeholder="Glissez des images ici ou cliquez pour ajouter"
+                />
+              </div>
+            )}
             </div>
             
             {/* Footer fixe */}
@@ -1477,13 +1561,48 @@ export function TaskModal({
                   </div>
                 </div>
 
+                {/* Timer et facturation (uniquement en mode édition) */}
+                {isEditing && (taskForm.id || taskForm._id) && (
+                  <div className="mt-6">
+                    <TimerControls
+                      taskId={taskForm.id || taskForm._id}
+                      timeTracking={taskForm.timeTracking}
+                      onTimerUpdate={(newTimeTracking) => {
+                        setTaskForm(prev => ({
+                          ...prev,
+                          timeTracking: newTimeTracking
+                        }));
+                      }}
+                    />
+                  </div>
+                )}
+
                 {/* Checklist */}
-                <div className="space-y-3">
+                <div className="space-y-3 mt-6">
                   <Checklist 
                     items={taskForm.checklist}
                     onChange={handleChecklistChange}
                   />
                 </div>
+
+                {/* Images de la tâche (uniquement en mode édition) */}
+                {isEditing && (taskForm.id || taskForm._id) && (
+                  <div className="space-y-2 mt-6">
+                    <Label className="text-sm font-normal flex items-center gap-2">
+                      <ImagePlus className="h-4 w-4 text-muted-foreground" />
+                      Images
+                    </Label>
+                    <TaskImageUpload
+                      images={taskForm.images || []}
+                      onUpload={handleDescriptionImageUpload}
+                      onDelete={handleDeleteImage}
+                      isUploading={isUploadingImage}
+                      uploadProgress={uploadProgress}
+                      maxImages={10}
+                      placeholder="Glissez des images ici ou cliquez pour ajouter"
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Footer fixe mobile */}

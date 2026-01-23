@@ -291,6 +291,22 @@
   }
 }
 
+/* Lucide icons - strokeWidth global à 1.5 */
+.lucide {
+  stroke-width: 1.5;
+}
+
+/* Tooltip styles - fond noir #202020 */
+[data-slot="tooltip-content"] {
+  background-color: #202020 !important;
+  color: white !important;
+}
+
+[data-slot="tooltip-content"] [class*="Arrow"] {
+  background-color: #202020 !important;
+  fill: #202020 !important;
+}
+
 /* Support pour Safari iOS et safe-area-inset */
 @supports (padding: max(0px)) {
   body {
@@ -309,4 +325,20 @@
   [class*="fixed"][class*="bottom-0"] {
     padding-bottom: max(1rem, env(safe-area-inset-bottom));
   }
+}
+
+/* Animation pour le tutoriel Joyride - effet de pulsation subtil */
+@keyframes tutorial-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(90, 84, 250, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(90, 84, 250, 0);
+  }
+}
+
+/* Appliquer l'animation au spotlight de Joyride */
+[class*="react-joyride__spotlight"] {
+  animation: tutorial-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }

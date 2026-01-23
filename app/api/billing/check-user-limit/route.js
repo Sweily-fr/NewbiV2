@@ -3,16 +3,21 @@ import { auth } from "@/src/lib/auth";
 import { seatSyncService } from "@/src/services/seatSyncService";
 
 /**
- * API pour vérifier si l'organisation peut ajouter un nouvel utilisateur
- * selon les limites de son plan (Freelance: 1, PME: 10, Entreprise: 25)
+ * API pour vérifier si l'organisation peut inviter un nouveau membre
+ * selon les limites de son plan et le rôle demandé
+ *
+ * Limites :
+ * - Freelance : 0 utilisateur, 1 comptable (pas de siège payant)
+ * - PME : 10 utilisateurs inclus, 3 comptables, sièges payants possibles (7,49€/mois)
+ * - Entreprise : 25 utilisateurs inclus, 5 comptables, sièges payants possibles (7,49€/mois)
  */
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { organizationId } = body;
+    const { organizationId, role = "member" } = body;
 
     console.log(
-      `🔍 [CHECK-LIMIT] Vérification limite pour org: ${organizationId}`
+      `🔍 [CHECK-LIMIT] Vérification limite pour org: ${organizationId}, role: ${role}`
     );
 
     if (!organizationId) {
@@ -47,18 +52,23 @@ export async function POST(request) {
       );
     }
 
-    // 3. Vérifier la limite via le service
-    const result = await seatSyncService.canAddMember(organizationId, null);
+    // 3. Vérifier la limite via le service avec le rôle
+    const result = await seatSyncService.canInviteMember(organizationId, role);
 
     console.log(`📊 [CHECK-LIMIT] Résultat:`, result);
 
-    return NextResponse.json(result);
+    // Adapter la réponse pour compatibilité avec l'ancien format
+    return NextResponse.json({
+      ...result,
+      canAdd: result.canInvite, // Compatibilité avec l'ancien nom
+    });
   } catch (error) {
     console.error("❌ [CHECK-LIMIT] Erreur:", error);
     return NextResponse.json(
       {
         error: error.message || "Erreur lors de la vérification de la limite",
         canAdd: false,
+        canInvite: false,
       },
       { status: 500 }
     );

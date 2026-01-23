@@ -78,6 +78,7 @@ import { DeleteConfirmation } from "./components/DeleteConfirmation";
 import { KanbanListView } from "./components/KanbanListView";
 import { KanbanGanttView } from "./components/KanbanGanttView";
 import { MemberFilterButton } from "./components/MemberFilterButton";
+import { ShareBoardDialog } from "./components/ShareBoardDialog";
 import {
   GET_BOARD,
   CREATE_COLUMN,
@@ -497,6 +498,13 @@ export default function KanbanBoardPage({ params }) {
                 Supprimer ({selectedTaskIds.size})
               </Button>
             )}
+            
+            {/* Bouton de partage */}
+            <ShareBoardDialog 
+              boardId={id} 
+              boardTitle={board.title} 
+              workspaceId={workspaceId} 
+            />
             
             <ButtonGroup>
               <Button

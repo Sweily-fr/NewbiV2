@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import * as React from 'react';
 import { Button } from '@/src/components/ui/button';
 import { Textarea } from '@/src/components/ui/textarea';
-import { Send, Edit2, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Send, Edit2, Trash2, ChevronDown, ChevronUp, ImagePlus, X, ZoomIn, Loader2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogTrigger, DialogTitle } from '@/src/components/ui/dialog';
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/src/components/ui/tabs';
 import { UserAvatar } from '@/src/components/ui/user-avatar';
 import {
@@ -16,7 +18,7 @@ import {
 } from '@/src/components/ui/alert-dialog';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { useMutation, useQuery } from '@apollo/client';
+import { useMutation, useQuery, gql } from '@apollo/client';
 import { ADD_COMMENT, UPDATE_COMMENT, DELETE_COMMENT, GET_ORGANIZATION_MEMBERS } from '@/src/graphql/kanbanQueries';
 import { useSession } from '@/src/lib/auth-client';
 import { useAssignedMembersInfo } from '@/src/hooks/useAssignedMembersInfo';
@@ -28,7 +30,65 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
   const [editingContent, setEditingContent] = useState('');
   const [commentToDelete, setCommentToDelete] = useState(null);
   const [showAllActivities, setShowAllActivities] = useState(false);
+  const [pendingImages, setPendingImages] = useState([]);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const fileInputRef = useRef(null);
+  const textareaRef = useRef(null);
   const { data: session } = useSession();
+
+  // Gestion du drag-and-drop sur le textarea
+  const handleDragOver = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+  }, []);
+
+  const handleDrop = useCallback((e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+
+    const files = Array.from(e.dataTransfer.files).filter(file => 
+      file.type.startsWith('image/')
+    );
+
+    if (files.length > 0) {
+      const newImages = files.map(file => ({
+        file,
+        preview: URL.createObjectURL(file)
+      }));
+      setPendingImages(prev => [...prev, ...newImages]);
+    }
+  }, []);
+
+  const handlePaste = useCallback((e) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    const imageFiles = [];
+    for (const item of items) {
+      if (item.type.startsWith('image/')) {
+        const file = item.getAsFile();
+        if (file) {
+          imageFiles.push({
+            file,
+            preview: URL.createObjectURL(file)
+          });
+        }
+      }
+    }
+
+    if (imageFiles.length > 0) {
+      setPendingImages(prev => [...prev, ...imageFiles]);
+    }
+  }, []);
 
   // Récupérer les membres de l'organisation directement via GraphQL (même procédé que MemberSelector)
   const { data: membersData } = useQuery(GET_ORGANIZATION_MEMBERS, {
@@ -87,6 +147,28 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
     return item;
   };
 
+  // Mutation pour uploader les images de commentaires
+  const UPLOAD_COMMENT_IMAGE = gql`
+    mutation UploadCommentImage($taskId: ID!, $commentId: ID!, $file: Upload!, $workspaceId: ID) {
+      uploadCommentImage(taskId: $taskId, commentId: $commentId, file: $file, workspaceId: $workspaceId) {
+        success
+        image {
+          id
+          key
+          url
+          fileName
+          fileSize
+          contentType
+          uploadedBy
+          uploadedAt
+        }
+        message
+      }
+    }
+  `;
+
+  const [uploadCommentImage] = useMutation(UPLOAD_COMMENT_IMAGE);
+
   const [addComment, { loading: addingComment }] = useMutation(ADD_COMMENT, {
     onCompleted: (data) => {
       if (data?.addComment) {
@@ -115,7 +197,8 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
   });
 
   const handleAddComment = async () => {
-    if (!newComment.trim()) return;
+    // Permettre l'envoi si texte OU images
+    if (!newComment.trim() && pendingImages.length === 0) return;
 
     const taskId = task.id || task._id;
 
@@ -125,18 +208,78 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
     }
 
     try {
-      await addComment({
+      setIsUploadingImage(true);
+      
+      // 1. Créer le commentaire (contenu vide autorisé si images présentes)
+      const result = await addComment({
         variables: {
           taskId,
-          input: { content: newComment },
+          input: { content: newComment.trim() || (pendingImages.length > 0 ? '' : ' ') },
           workspaceId
         },
         refetchQueries: ['GetBoard'],
         awaitRefetchQueries: true,
       });
+
+      // 2. Si des images sont en attente, les uploader
+      if (pendingImages.length > 0 && result.data?.addComment?.comments) {
+        // Trouver le commentaire qu'on vient de créer (le dernier)
+        const comments = result.data.addComment.comments;
+        const newCommentData = comments[comments.length - 1];
+        
+        if (newCommentData?.id) {
+          // Collecter les images uploadées
+          const uploadedImages = [];
+          
+          // Uploader chaque image
+          for (const img of pendingImages) {
+            try {
+              const uploadResult = await uploadCommentImage({
+                variables: {
+                  taskId,
+                  commentId: newCommentData.id,
+                  file: img.file,
+                  workspaceId
+                },
+                refetchQueries: ['GetBoard'],
+              });
+              
+              // Collecter l'image uploadée
+              if (uploadResult.data?.uploadCommentImage?.success) {
+                uploadedImages.push(uploadResult.data.uploadCommentImage.image);
+              }
+            } catch (uploadError) {
+              console.error('Error uploading comment image:', uploadError);
+            }
+            // Libérer l'URL de preview
+            URL.revokeObjectURL(img.preview);
+          }
+          
+          // Mettre à jour le state local avec les images uploadées
+          if (uploadedImages.length > 0) {
+            setTask(prevTask => {
+              const updatedComments = prevTask.comments.map(c => {
+                if (c.id === newCommentData.id) {
+                  return {
+                    ...c,
+                    images: [...(c.images || []), ...uploadedImages]
+                  };
+                }
+                return c;
+              });
+              return { ...prevTask, comments: updatedComments };
+            });
+          }
+        }
+      }
+
+      // 3. Nettoyer
       setNewComment('');
+      setPendingImages([]);
     } catch (error) {
       console.error('Error adding comment:', error);
+    } finally {
+      setIsUploadingImage(false);
     }
   };
 
@@ -379,8 +522,8 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
                                       {formatDate(item.createdAt)}
                                     </span>
                                   </div>
-                                  {item.userId === currentUser?.id && (
-                                    <div className="flex gap-1">
+                                  <div className="flex gap-1">
+                                    {item.userId === currentUser?.id && (
                                       <Button
                                         size="sm"
                                         variant="ghost"
@@ -395,41 +538,72 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
                                       >
                                         <Edit2 className="h-3.5 w-3.5" />
                                       </Button>
-                                      <AlertDialog open={commentToDelete === item.id} onOpenChange={(open) => !open && setCommentToDelete(null)}>
-                                        <AlertDialogTrigger asChild>
-                                          <Button
-                                            size="sm"
-                                            variant="ghost"
-                                            className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
-                                            onClick={() => setCommentToDelete(item.id)}
+                                    )}
+                                    <AlertDialog open={commentToDelete === item.id} onOpenChange={(open) => !open && setCommentToDelete(null)}>
+                                      <AlertDialogTrigger asChild>
+                                        <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+                                          onClick={() => setCommentToDelete(item.id)}
+                                        >
+                                          <Trash2 className="h-3.5 w-3.5" />
+                                        </Button>
+                                      </AlertDialogTrigger>
+                                      <AlertDialogContent>
+                                        <AlertDialogTitle>Supprimer le commentaire</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          Êtes-vous sûr de vouloir supprimer ce commentaire ? Cette action ne peut pas être annulée.
+                                        </AlertDialogDescription>
+                                        <div className="flex gap-2 justify-end">
+                                          <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                          <AlertDialogAction
+                                            onClick={() => {
+                                              handleDeleteComment(item.id);
+                                              setCommentToDelete(null);
+                                            }}
+                                            disabled={deletingComment}
+                                            className="bg-destructive text-white hover:bg-destructive/90"
                                           >
-                                            <Trash2 className="h-3.5 w-3.5" />
-                                          </Button>
-                                        </AlertDialogTrigger>
-                                        <AlertDialogContent>
-                                          <AlertDialogTitle>Supprimer le commentaire</AlertDialogTitle>
-                                          <AlertDialogDescription>
-                                            Êtes-vous sûr de vouloir supprimer ce commentaire ? Cette action ne peut pas être annulée.
-                                          </AlertDialogDescription>
-                                          <div className="flex gap-2 justify-end">
-                                            <AlertDialogCancel>Annuler</AlertDialogCancel>
-                                            <AlertDialogAction
-                                              onClick={() => {
-                                                handleDeleteComment(item.id);
-                                                setCommentToDelete(null);
-                                              }}
-                                              disabled={deletingComment}
-                                              className="bg-destructive text-white hover:bg-destructive/90"
-                                            >
-                                              Supprimer
-                                            </AlertDialogAction>
-                                          </div>
-                                        </AlertDialogContent>
-                                      </AlertDialog>
-                                    </div>
-                                  )}
+                                            Supprimer
+                                          </AlertDialogAction>
+                                        </div>
+                                      </AlertDialogContent>
+                                    </AlertDialog>
+                                  </div>
                                 </div>
                                 <p className="text-sm whitespace-pre-wrap">{item.content}</p>
+                                {/* Affichage des images du commentaire dans le fil "Tout" */}
+                                {item.images && item.images.length > 0 && (
+                                  <div className="grid grid-cols-2 gap-2 mt-2">
+                                    {item.images.map((image) => (
+                                      <Dialog key={image.id}>
+                                        <DialogTrigger asChild>
+                                          <div className="relative cursor-pointer group overflow-hidden rounded-md border border-border hover:border-primary/50 transition-colors">
+                                            <img
+                                              src={image.url}
+                                              alt={image.fileName}
+                                              className="w-full h-20 object-cover"
+                                            />
+                                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                                              <ZoomIn className="h-5 w-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                            </div>
+                                          </div>
+                                        </DialogTrigger>
+                                        <DialogContent className="max-w-4xl p-0 overflow-hidden">
+                                          <VisuallyHidden>
+                                            <DialogTitle>Aperçu de l'image</DialogTitle>
+                                          </VisuallyHidden>
+                                          <img
+                                            src={image.url}
+                                            alt={image.fileName}
+                                            className="w-full h-auto max-h-[80vh] object-contain"
+                                          />
+                                        </DialogContent>
+                                      </Dialog>
+                                    ))}
+                                  </div>
+                                )}
                               </>
                             )}
                           </div>
@@ -550,8 +724,8 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
                                 {formatDate(comment.createdAt)}
                               </span>
                             </div>
-                            {comment.userId === currentUser?.id && (
-                              <div className="flex gap-1">
+                            <div className="flex gap-1">
+                              {comment.userId === currentUser?.id && (
                                 <Button
                                   size="sm"
                                   variant="ghost"
@@ -566,41 +740,72 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
                                 >
                                   <Edit2 className="h-3.5 w-3.5" />
                                 </Button>
-                                <AlertDialog open={commentToDelete === comment.id} onOpenChange={(open) => !open && setCommentToDelete(null)}>
-                                  <AlertDialogTrigger asChild>
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
-                                      onClick={() => setCommentToDelete(comment.id)}
+                              )}
+                              <AlertDialog open={commentToDelete === comment.id} onOpenChange={(open) => !open && setCommentToDelete(null)}>
+                                <AlertDialogTrigger asChild>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+                                    onClick={() => setCommentToDelete(comment.id)}
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogTitle>Supprimer le commentaire</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Êtes-vous sûr de vouloir supprimer ce commentaire ? Cette action ne peut pas être annulée.
+                                  </AlertDialogDescription>
+                                  <div className="flex gap-2 justify-end">
+                                    <AlertDialogCancel>Annuler</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() => {
+                                        handleDeleteComment(comment.id);
+                                        setCommentToDelete(null);
+                                      }}
+                                      disabled={deletingComment}
+                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                     >
-                                      <Trash2 className="h-3.5 w-3.5" />
-                                    </Button>
-                                  </AlertDialogTrigger>
-                                  <AlertDialogContent>
-                                    <AlertDialogTitle>Supprimer le commentaire</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      Êtes-vous sûr de vouloir supprimer ce commentaire ? Cette action ne peut pas être annulée.
-                                    </AlertDialogDescription>
-                                    <div className="flex gap-2 justify-end">
-                                      <AlertDialogCancel>Annuler</AlertDialogCancel>
-                                      <AlertDialogAction
-                                        onClick={() => {
-                                          handleDeleteComment(comment.id);
-                                          setCommentToDelete(null);
-                                        }}
-                                        disabled={deletingComment}
-                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                      >
-                                        Supprimer
-                                      </AlertDialogAction>
-                                    </div>
-                                  </AlertDialogContent>
-                                </AlertDialog>
-                              </div>
-                            )}
+                                      Supprimer
+                                    </AlertDialogAction>
+                                  </div>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </div>
                           </div>
                           <p className="text-sm whitespace-pre-wrap">{comment.content}</p>
+                          {/* Affichage des images du commentaire */}
+                          {comment.images && comment.images.length > 0 && (
+                            <div className="grid grid-cols-2 gap-2 mt-2">
+                              {comment.images.map((image) => (
+                                <Dialog key={image.id}>
+                                  <DialogTrigger asChild>
+                                    <div className="relative cursor-pointer group overflow-hidden rounded-md border border-border hover:border-primary/50 transition-colors">
+                                      <img
+                                        src={image.url}
+                                        alt={image.fileName}
+                                        className="w-full h-20 object-cover"
+                                      />
+                                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                                        <ZoomIn className="h-5 w-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                      </div>
+                                    </div>
+                                  </DialogTrigger>
+                                  <DialogContent className="max-w-4xl p-0 overflow-hidden">
+                                    <VisuallyHidden>
+                                      <DialogTitle>Aperçu de l'image</DialogTitle>
+                                    </VisuallyHidden>
+                                    <img
+                                      src={image.url}
+                                      alt={image.fileName}
+                                      className="w-full h-auto max-h-[80vh] object-contain"
+                                    />
+                                  </DialogContent>
+                                </Dialog>
+                              ))}
+                            </div>
+                          )}
                         </>
                       )}
                     </div>
@@ -698,32 +903,106 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
         </TabsList>
 
         {/* Zone de saisie de commentaire - Sticky en bas */}
-        <div className=" pb-3 pl-3 pr-3 pt-1 space-y-2 flex-shrink-0">
-        <Textarea
-          value={newComment}
-          onChange={(e) => setNewComment(e.target.value)}
-          placeholder="Ajouter un commentaire..."
-          className="min-h-[80px] text-sm bg-background border-border"
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-              e.preventDefault();
-              handleAddComment();
-            }
-          }}
-        />
-        <div className="flex justify-between items-center">
-          <span className="text-xs text-muted-foreground">
-            Cmd/Ctrl + Entrée pour envoyer
-          </span>
-          <Button
-            size="sm"
-            onClick={handleAddComment}
-            disabled={!newComment.trim() || addingComment}
+        <div className="pb-3 pl-3 pr-3 pt-1 space-y-2 flex-shrink-0">
+          <div
+            className={`relative transition-all ${isDragOver ? 'ring-2 ring-primary ring-offset-2 rounded-md' : ''}`}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
           >
-            <Send className="h-3 w-3 mr-2" />
-            Envoyer
-          </Button>
-        </div>
+            <Textarea
+              ref={textareaRef}
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              onPaste={handlePaste}
+              placeholder={isDragOver ? "Déposez vos images ici..." : "Ajouter un commentaire... (glissez-déposez des images)"}
+              className={`min-h-[80px] text-sm bg-background border-border ${isDragOver ? 'border-primary' : ''}`}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                  e.preventDefault();
+                  handleAddComment();
+                }
+              }}
+            />
+            {isDragOver && (
+              <div className="absolute inset-0 bg-primary/10 rounded-md flex items-center justify-center pointer-events-none">
+                <div className="text-primary font-medium text-sm flex items-center gap-2">
+                  <ImagePlus className="h-5 w-5" />
+                  Déposez vos images ici
+                </div>
+              </div>
+            )}
+          </div>
+          
+          {/* Images en attente */}
+          {pendingImages.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {pendingImages.map((img, index) => (
+                <div key={index} className="relative group">
+                  <img
+                    src={img.preview}
+                    alt={img.file.name}
+                    className="w-16 h-16 object-cover rounded-md border border-border"
+                  />
+                  <button
+                    onClick={() => {
+                      setPendingImages(prev => prev.filter((_, i) => i !== index));
+                      URL.revokeObjectURL(img.preview);
+                    }}
+                    className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-white text-black border border-gray-200 shadow-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-100"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/gif,image/webp"
+                multiple
+                onChange={(e) => {
+                  const files = Array.from(e.target.files || []);
+                  const newImages = files.map(file => ({
+                    file,
+                    preview: URL.createObjectURL(file)
+                  }));
+                  setPendingImages(prev => [...prev, ...newImages]);
+                  e.target.value = '';
+                }}
+                className="hidden"
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploadingImage}
+                className="h-8 px-2"
+              >
+                {isUploadingImage ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <ImagePlus className="h-4 w-4" />
+                )}
+              </Button>
+              <span className="text-xs text-muted-foreground">
+                Cmd/Ctrl + Entrée pour envoyer
+              </span>
+            </div>
+            <Button
+              size="sm"
+              onClick={handleAddComment}
+              disabled={(!newComment.trim() && pendingImages.length === 0) || addingComment || isUploadingImage}
+            >
+              <Send className="h-3 w-3 mr-2" />
+              Envoyer
+            </Button>
+          </div>
         </div>
       </Tabs>
     </div>

@@ -1,89 +1,119 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { authClient } from "@/src/lib/auth-client";
-import { useUser } from "@/src/lib/auth/hooks";
+import { useSession } from "@/src/lib/auth-client";
 
 /**
  * Hook pour obtenir les informations du workspace actuel
- * Utilise directement les hooks Better Auth pour les organisations
+ * OPTIMISÉ: Utilise un seul appel Better Auth et évite les boucles infinies
  * Better Auth gère automatiquement la persistance de l'organisation active dans la session
  * Stocke automatiquement organizationId et userRole dans localStorage pour Apollo Client
  * @returns {Object} - { workspaceId, organization, organizations, loading }
  */
 export const useWorkspace = () => {
-  // Utiliser directement les hooks Better Auth
+  // Utiliser useSession une seule fois - c'est la source de vérité
+  const { data: session, isPending: sessionLoading } = useSession();
+
+  // Utiliser les hooks Better Auth avec cache interne
   const { data: organizations, isPending: orgsLoading } =
     authClient.useListOrganizations();
   const { data: activeOrganization, isPending: activeLoading } =
     authClient.useActiveOrganization();
 
-  // Récupérer la session pour obtenir l'utilisateur
-  const { session } = useUser();
-
   // État pour l'organisation complète avec les membres
   const [fullOrganization, setFullOrganization] = useState(null);
   const [loadingFull, setLoadingFull] = useState(false);
 
-  const loading = orgsLoading || activeLoading || loadingFull;
+  // Ref pour éviter les appels multiples à getFullOrganization
+  const lastFetchedOrgId = useRef(null);
+  const isFetching = useRef(false);
+
+  const loading = sessionLoading || orgsLoading || activeLoading || loadingFull;
 
   // Charger l'organisation complète si elle n'a pas de membres
+  // OPTIMISÉ: Utiliser une ref pour éviter les appels multiples
   useEffect(() => {
-    if (activeOrganization?.id && !activeOrganization.members) {
-      setLoadingFull(true);
-      authClient.organization
-        .getFullOrganization({
-          organizationId: activeOrganization.id,
-        })
-        .then(({ data }) => {
-          setFullOrganization(data);
-          setLoadingFull(false);
-        })
-        .catch((error) => {
-          console.error("Error loading full organization:", error);
-          setLoadingFull(false);
-        });
-    } else if (activeOrganization?.members) {
-      setFullOrganization(activeOrganization);
+    const orgId = activeOrganization?.id;
+
+    // Ne pas refetch si c'est la même organisation ou si on est déjà en train de fetch
+    if (!orgId || lastFetchedOrgId.current === orgId || isFetching.current) {
+      return;
     }
-  }, [activeOrganization?.id]);
+
+    // Si l'organisation a déjà les membres, pas besoin de fetch
+    if (activeOrganization?.members) {
+      setFullOrganization(activeOrganization);
+      lastFetchedOrgId.current = orgId;
+      return;
+    }
+
+    isFetching.current = true;
+    setLoadingFull(true);
+
+    authClient.organization
+      .getFullOrganization({
+        organizationId: orgId,
+      })
+      .then(({ data }) => {
+        setFullOrganization(data);
+        lastFetchedOrgId.current = orgId;
+      })
+      .catch((error) => {
+        console.error("Error loading full organization:", error);
+      })
+      .finally(() => {
+        setLoadingFull(false);
+        isFetching.current = false;
+      });
+  }, [activeOrganization?.id, activeOrganization?.members]);
 
   // Utiliser l'organisation complète si disponible, sinon l'organisation active
   const orgWithMembers = fullOrganization || activeOrganization;
 
-  // Stocker l'organizationId et le userRole dans localStorage pour Apollo Client
+  // Stocker l'organizationId dans localStorage pour Apollo Client
+  // OPTIMISÉ: Utiliser useMemo pour éviter les re-renders inutiles
+  const orgId = activeOrganization?.id;
   useEffect(() => {
-    if (activeOrganization?.id) {
-      localStorage.setItem("active_organization_id", activeOrganization.id);
-      console.log(
-        "✅ [useWorkspace] Organization ID stocké:",
-        activeOrganization.id
-      );
+    if (orgId) {
+      const currentStored = localStorage.getItem("active_organization_id");
+      if (currentStored !== orgId) {
+        localStorage.setItem("active_organization_id", orgId);
+      }
     } else {
       localStorage.removeItem("active_organization_id");
     }
+  }, [orgId]);
 
-    // Récupérer le rôle directement depuis l'organisation avec membres
-    if (orgWithMembers && session?.user) {
-      const member = orgWithMembers.members?.find(
-        (m) => m.userId === session.user.id
-      );
+  // Stocker le userRole dans localStorage pour Apollo Client
+  const userId = session?.user?.id;
+  const members = orgWithMembers?.members;
+
+  useEffect(() => {
+    if (members && userId) {
+      const member = members.find((m) => m.userId === userId);
       const userRole = member?.role?.toLowerCase() || null;
 
       if (userRole) {
-        localStorage.setItem("user_role", userRole);
-        console.log("✅ [useWorkspace] User role stocké:", userRole);
+        const currentRole = localStorage.getItem("user_role");
+        if (currentRole !== userRole) {
+          localStorage.setItem("user_role", userRole);
+        }
       } else {
         localStorage.removeItem("user_role");
       }
     }
-  }, [activeOrganization?.id, orgWithMembers, session?.user]);
+  }, [members, userId]);
 
-  return {
-    workspaceId: activeOrganization?.id || null,
-    organization: orgWithMembers,
-    activeOrganization: orgWithMembers,
-    organizations: organizations || [],
-    loading,
-  };
+  // Mémoriser le résultat pour éviter les re-renders inutiles
+  return useMemo(
+    () => ({
+      workspaceId: activeOrganization?.id || null,
+      organization: orgWithMembers,
+      activeOrganization: orgWithMembers,
+      organizations: organizations || [],
+      loading,
+    }),
+    [activeOrganization?.id, orgWithMembers, organizations, loading]
+  );
 };
 
 /**

@@ -10,6 +10,7 @@ import {
 } from "@/src/components/ui/tabs";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
+import { Switch } from "@/src/components/ui/switch";
 import {
   Settings,
   XIcon,
@@ -19,10 +20,114 @@ import {
   CheckCircle,
   CheckCheck,
   XCircle,
+  Receipt,
+  CreditCard,
+  AlertTriangle,
+  Clock,
+  UserPlus,
+  FileText,
+  Sparkles,
+  Loader2,
 } from "lucide-react";
 import { authClient } from "@/src/lib/auth-client";
 import { toast } from "@/src/components/ui/sonner";
 import { useOrganizationInvitations } from "@/src/hooks/useOrganizationInvitations";
+import { useNotificationPreferences } from "@/src/hooks/useNotificationPreferences";
+
+// Configuration des catégories de notifications Phase 1
+const notificationCategories = {
+  billing: {
+    label: "Facturation",
+    icon: Receipt,
+    description: "Notifications liées à vos factures et paiements clients",
+    notifications: [
+      {
+        key: "invoice_overdue",
+        label: "Facture en retard",
+        description: "Quand une facture dépasse sa date d'échéance",
+        email: true,
+        push: true,
+      },
+      {
+        key: "payment_received",
+        label: "Paiement reçu",
+        description: "Quand un client règle une facture",
+        email: true,
+        push: true,
+      },
+      {
+        key: "quote_response",
+        label: "Réponse à un devis",
+        description: "Quand un client accepte ou refuse un devis",
+        email: true,
+        push: true,
+      },
+      {
+        key: "invoice_due_soon",
+        label: "Facture bientôt due",
+        description: "3 jours avant l'échéance d'une facture",
+        email: false,
+        push: true,
+      },
+    ],
+  },
+  subscription: {
+    label: "Abonnement",
+    icon: CreditCard,
+    description: "Notifications liées à votre abonnement Newbi",
+    notifications: [
+      {
+        key: "payment_failed",
+        label: "Échec de paiement",
+        description: "Quand le prélèvement de votre abonnement échoue",
+        email: true,
+        push: true,
+      },
+      {
+        key: "trial_ending",
+        label: "Fin de période d'essai",
+        description: "3 jours avant la fin de votre essai gratuit",
+        email: true,
+        push: true,
+      },
+      {
+        key: "subscription_renewed",
+        label: "Abonnement renouvelé",
+        description: "Confirmation de renouvellement avec facture",
+        email: true,
+        push: false,
+      },
+    ],
+  },
+  team: {
+    label: "Équipe",
+    icon: UserPlus,
+    description: "Notifications liées à votre équipe et collaborateurs",
+    notifications: [
+      {
+        key: "invitation_received",
+        label: "Invitation reçue",
+        description: "Quand vous êtes invité à rejoindre une organisation",
+        email: true,
+        push: true,
+      },
+      {
+        key: "member_joined",
+        label: "Nouveau membre",
+        description: "Quand quelqu'un rejoint votre organisation",
+        email: false,
+        push: true,
+      },
+      {
+        key: "document_shared",
+        label: "Document partagé",
+        description: "Quand quelqu'un partage un document avec vous",
+        email: false,
+        push: true,
+      },
+    ],
+  },
+};
 
 export function NotificationsSection() {
   const [invitations, setInvitations] = useState([]);
@@ -31,13 +136,20 @@ export function NotificationsSection() {
   const [loadingSent, setLoadingSent] = useState(true);
   const [dismissedNotifications, setDismissedNotifications] = useState([]);
   const [readNotifications, setReadNotifications] = useState(() => {
-    // Charger les notifications lues depuis le localStorage
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("readNotifications");
       return saved ? JSON.parse(saved) : [];
     }
     return [];
   });
+
+  // Hook pour les préférences de notifications (backend)
+  const {
+    preferences: notificationPreferences,
+    loading: preferencesLoading,
+    updating: savingPreferences,
+    updatePreference: updateNotificationPreference,
+  } = useNotificationPreferences();
 
   const { listInvitations, cancelInvitation } = useOrganizationInvitations();
 
@@ -350,7 +462,7 @@ export function NotificationsSection() {
           >
             <div className="flex items-center gap-1">
               <Settings className="w-4 h-4" />
-              <span className="hidden sm:inline">Système</span>
+              <span className="hidden sm:inline">Préférences</span>
             </div>
           </TabsTrigger>
         </TabsList>
@@ -533,11 +645,112 @@ export function NotificationsSection() {
           )}
         </TabsContent>
 
-        {/* Contenu: Système */}
-        <TabsContent value="system" className="space-y-4 mt-6">
-          <div className="text-center py-8 text-sm text-muted-foreground">
-            Aucune notification système
-          </div>
+        {/* Contenu: Préférences de notifications */}
+        <TabsContent value="system" className="mt-6">
+          {preferencesLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-6 h-6 animate-spin text-[#5b4eff]" />
+              <span className="ml-2 text-sm text-muted-foreground">
+                Chargement des préférences...
+              </span>
+            </div>
+          ) : (
+            <div className="space-y-10">
+              {/* Catégories de notifications */}
+              {Object.entries(notificationCategories).map(
+                ([categoryKey, category]) => {
+                  return (
+                    <div key={categoryKey}>
+                      {/* Header de catégorie - style preferences-section */}
+                      <div className="flex items-start justify-between mb-6">
+                        <div className="flex-1">
+                          <h3 className="text-sm font-normal mb-1">
+                            {category.label}
+                          </h3>
+                          <p className="text-xs text-gray-400">
+                            {category.description}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Liste des notifications de cette catégorie */}
+                      <div className="space-y-6">
+                        {category.notifications.map((notif) => {
+                          const prefs = notificationPreferences?.[
+                            notif.key
+                          ] || {
+                            email: notif.email,
+                            push: notif.push,
+                          };
+                          return (
+                            <div
+                              key={notif.key}
+                              className="flex items-start justify-between"
+                            >
+                              <div className="flex-1">
+                                <h3 className="text-sm font-normal mb-1">
+                                  {notif.label}
+                                </h3>
+                                <p className="text-xs text-gray-400">
+                                  {notif.description}
+                                </p>
+                              </div>
+
+                              {/* Toggles Email et Push */}
+                              <div className="flex items-center gap-4 ml-4">
+                                {/* Email toggle */}
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs text-gray-400">
+                                    Email
+                                  </span>
+                                  <Switch
+                                    checked={prefs.email}
+                                    disabled={savingPreferences}
+                                    onCheckedChange={(checked) =>
+                                      updateNotificationPreference(
+                                        notif.key,
+                                        "email",
+                                        checked
+                                      )
+                                    }
+                                    className="scale-75 data-[state=checked]:!bg-[#5b4eff]"
+                                  />
+                                </div>
+
+                                {/* Push toggle */}
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs text-gray-400">
+                                    Push
+                                  </span>
+                                  <Switch
+                                    checked={prefs.push}
+                                    disabled={savingPreferences}
+                                    onCheckedChange={(checked) =>
+                                      updateNotificationPreference(
+                                        notif.key,
+                                        "push",
+                                        checked
+                                      )
+                                    }
+                                    className="scale-75 data-[state=checked]:!bg-[#5b4eff]"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Séparateur entre catégories */}
+                      {categoryKey !== "team" && (
+                        <Separator className="mt-10" />
+                      )}
+                    </div>
+                  );
+                }
+              )}
+            </div>
+          )}
         </TabsContent>
       </Tabs>
     </div>

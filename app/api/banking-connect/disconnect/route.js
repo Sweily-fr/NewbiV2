@@ -1,21 +1,34 @@
-import { NextResponse } from 'next/server';
+import { NextResponse } from "next/server";
 
 export async function POST(request) {
   try {
-    const workspaceId = request.headers.get('x-workspace-id');
-    
+    const workspaceId = request.headers.get("x-workspace-id");
+    const authHeader = request.headers.get("authorization");
+
+    if (!authHeader) {
+      return NextResponse.json(
+        { error: "Non authentifié - Token manquant" },
+        { status: 401 }
+      );
+    }
+
     if (!workspaceId) {
-      return NextResponse.json({ error: 'WorkspaceId requis' }, { status: 400 });
+      return NextResponse.json(
+        { error: "WorkspaceId requis" },
+        { status: 400 }
+      );
     }
 
     // Proxy vers l'API backend
-    const backendUrl = process.env.BACKEND_API_URL || 'http://localhost:4000';
+    const backendUrl = (
+      process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
+    ).replace(/\/$/, "");
     const response = await fetch(`${backendUrl}/banking-connect/disconnect`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'x-workspace-id': workspaceId,
-        'Cookie': request.headers.get('cookie') || '',
+        "Content-Type": "application/json",
+        "x-workspace-id": workspaceId,
+        Authorization: authHeader,
       },
     });
 
@@ -26,11 +39,10 @@ export async function POST(request) {
 
     const data = await response.json();
     return NextResponse.json(data);
-
   } catch (error) {
-    console.error('Erreur proxy banking disconnect:', error);
+    console.error("Erreur proxy banking disconnect:", error);
     return NextResponse.json(
-      { error: 'Erreur interne du serveur' }, 
+      { error: "Erreur interne du serveur" },
       { status: 500 }
     );
   }

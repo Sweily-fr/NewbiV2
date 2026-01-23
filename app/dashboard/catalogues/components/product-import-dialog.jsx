@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { Upload, FileText, FileSpreadsheet, Download, AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { Upload, FileText, FileSpreadsheet, Download, AlertCircle, CheckCircle2, Loader2, ArrowRightFromLine } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import {
   Dialog,
@@ -19,7 +19,7 @@ import { parseCSV, parseExcel, validateFile } from "@/src/utils/product-import";
 import { useCreateProduct } from "@/src/hooks/useProducts";
 import { toast } from "@/src/components/ui/sonner";
 
-export default function ProductImportDialog({ onImportComplete }) {
+export default function ProductImportDialog({ onImportComplete, iconOnly = false, triggerImport = false, onImportTriggered }) {
   const [isOpen, setIsOpen] = useState(false);
   const [file, setFile] = useState(null);
   const [parsedProducts, setParsedProducts] = useState([]);
@@ -28,6 +28,16 @@ export default function ProductImportDialog({ onImportComplete }) {
   const fileInputRef = useRef(null);
   
   const { createProduct } = useCreateProduct({ showToast: false });
+
+  // Gérer le déclenchement externe
+  useEffect(() => {
+    if (triggerImport) {
+      setIsOpen(true);
+      if (onImportTriggered) {
+        onImportTriggered();
+      }
+    }
+  }, [triggerImport, onImportTriggered]);
 
   const handleFileSelect = async (event) => {
     const selectedFile = event.target.files[0];
@@ -130,10 +140,16 @@ export default function ProductImportDialog({ onImportComplete }) {
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="font-normal cursor-pointer">
-          <Upload className="mr-2 h-4 w-4" />
-          Importer
-        </Button>
+        {iconOnly ? (
+          <Button variant="secondary" size="icon" className="cursor-pointer">
+            <ArrowRightFromLine className="h-4 w-4" strokeWidth={1.5} />
+          </Button>
+        ) : (
+          <Button variant="outline" className="font-normal cursor-pointer">
+            <Upload className="mr-2 h-4 w-4" />
+            Importer
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="w-full max-w-[600px] max-h-[90vh] flex flex-col p-0 sm:max-w-[600px]">
         <div className="flex-shrink-0 p-6 pb-4 border-b">

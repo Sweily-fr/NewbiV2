@@ -60,32 +60,88 @@ export async function POST(request) {
         `⬇️ [CHANGE PLAN] Downgrade détecté: ${currentPlan} → ${newPlan}`
       );
 
-      // Vérifier le nombre de membres actuels
       const { ObjectId } = await import("mongodb");
+
+      // Vérifier le nombre de membres actuels (exclure owner et accountants)
       const members = await mongoDb
         .collection("member")
         .find({ organizationId: new ObjectId(organizationId) })
         .toArray();
 
-      // Exclure les comptables
-      const billableMembers = members.filter((m) => m.role !== "accountant");
+      const billableMembers = members.filter(
+        (m) => m.role !== "accountant" && m.role !== "owner"
+      );
       const currentMemberCount = billableMembers.length;
+
+      // Compter aussi les invitations pending (exclure comptables)
+      const pendingInvitations = await mongoDb
+        .collection("invitation")
+        .find({
+          organizationId: new ObjectId(organizationId),
+          status: "pending",
+          role: { $ne: "accountant" },
+        })
+        .toArray();
+      const pendingCount = pendingInvitations.length;
+
+      // Total = membres actuels + invitations pending
+      const totalAfterPending = currentMemberCount + pendingCount;
 
       // Récupérer la limite du nouveau plan
       const newPlanLimits = seatSyncService.getPlanLimits(newPlan);
       const newLimit = newPlanLimits.users;
 
-      console.log(
-        `📊 [CHANGE PLAN] Membres actuels: ${currentMemberCount}, Nouvelle limite: ${newLimit}`
-      );
+      console.log(`📊 [CHANGE PLAN] Vérification downgrade:`, {
+        currentMembers: currentMemberCount,
+        pendingInvitations: pendingCount,
+        totalAfterPending,
+        newLimit,
+      });
 
-      if (currentMemberCount > newLimit) {
+      // Vérifier si le total dépasse la limite
+      if (totalAfterPending > newLimit) {
+        const excess = totalAfterPending - newLimit;
+        const message =
+          pendingCount > 0
+            ? `Vous avez ${currentMemberCount} membre(s) actif(s) et ${pendingCount} invitation(s) en attente, soit ${totalAfterPending} au total. Le plan ${newPlan.toUpperCase()} limite à ${newLimit}. Veuillez retirer ${excess} membre(s) ou annuler des invitations avant de downgrader.`
+            : `Vous avez ${currentMemberCount} membres mais le plan ${newPlan.toUpperCase()} limite à ${newLimit}. Veuillez retirer ${excess} membre(s) avant de downgrader.`;
+
         return NextResponse.json(
           {
             error: "Impossible de downgrader",
-            message: `Vous avez ${currentMemberCount} membres mais le plan ${newPlan.toUpperCase()} limite à ${newLimit}. Veuillez retirer ${currentMemberCount - newLimit} membre(s) avant de downgrader.`,
+            message,
             currentMembers: currentMemberCount,
-            newLimit: newLimit,
+            pendingInvitations: pendingCount,
+            totalAfterPending,
+            newLimit,
+          },
+          { status: 400 }
+        );
+      }
+
+      // Vérifier aussi les comptables
+      const currentAccountants = members.filter(
+        (m) => m.role === "accountant"
+      ).length;
+      const pendingAccountants = await mongoDb
+        .collection("invitation")
+        .countDocuments({
+          organizationId: new ObjectId(organizationId),
+          status: "pending",
+          role: "accountant",
+        });
+      const totalAccountants = currentAccountants + pendingAccountants;
+
+      if (totalAccountants > newPlanLimits.accountants) {
+        const excess = totalAccountants - newPlanLimits.accountants;
+        return NextResponse.json(
+          {
+            error: "Impossible de downgrader",
+            message: `Vous avez ${currentAccountants} comptable(s) actif(s) et ${pendingAccountants} invitation(s) comptable en attente, soit ${totalAccountants} au total. Le plan ${newPlan.toUpperCase()} limite à ${newPlanLimits.accountants}. Veuillez retirer ${excess} comptable(s) ou annuler des invitations avant de downgrader.`,
+            currentAccountants,
+            pendingAccountants,
+            totalAccountants,
+            newAccountantLimit: newPlanLimits.accountants,
           },
           { status: 400 }
         );

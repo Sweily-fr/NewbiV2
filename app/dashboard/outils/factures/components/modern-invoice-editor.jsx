@@ -46,6 +46,9 @@ export default function ModernInvoiceEditor({
   const [debouncedFormData, setDebouncedFormData] = useState(null);
   const [showSendEmailModal, setShowSendEmailModal] = useState(false);
   const [createdInvoiceData, setCreatedInvoiceData] = useState(null);
+  const [previousSituationInvoices, setPreviousSituationInvoices] = useState(
+    []
+  );
   const pdfRef = useRef(null);
 
   // Récupérer l'organisation au chargement
@@ -89,7 +92,8 @@ export default function ModernInvoiceEditor({
   });
 
   // Déterminer si la facture est en lecture seule
-  const readOnly = loadedInvoice?.status === "SENT" || loadedInvoice?.status === "PAID";
+  const readOnly =
+    loadedInvoice?.status === "SENT" || loadedInvoice?.status === "PAID";
 
   // Debounce pour la preview (évite les saccades)
   useEffect(() => {
@@ -103,7 +107,7 @@ export default function ModernInvoiceEditor({
   // Détecter les changements d'organisation pour les modes edit/view
   useOrganizationChange({
     resourceId: invoiceId,
-    resourceExists: mode === "create" ? true : (!!loadedInvoice && !invoiceError),
+    resourceExists: mode === "create" ? true : !!loadedInvoice && !invoiceError,
     listUrl: "/dashboard/outils/factures",
     enabled: mode !== "create" && !loading,
   });
@@ -117,7 +121,7 @@ export default function ModernInvoiceEditor({
         resourceType="facture"
         resourceName="Cette facture"
         listUrl="/dashboard/outils/factures"
-        homeUrl="/dashboard/outils"
+        homeUrl="/dashboard"
       />
     );
   }
@@ -167,11 +171,11 @@ export default function ModernInvoiceEditor({
         },
       },
     });
-    
+
     // Rafraîchir l'organisation
     const org = await getActiveOrganization();
     setOrganization(org);
-    
+
     toast.success("Informations de l'entreprise mises à jour");
   };
 
@@ -183,39 +187,50 @@ export default function ModernInvoiceEditor({
     return date.toLocaleDateString("fr-FR");
   };
 
-  // Handler personnalisé pour afficher la modal d'envoi après création
+  // Handler personnalisé pour créer la facture et proposer l'envoi par email
   const handleSubmitWithEmail = async () => {
     const result = await handleSubmit();
-    
+
     if (result?.success && result?.invoice) {
-      // Stocker les données de la facture créée
-      // Utiliser les données du formulaire comme fallback pour les dates
-      setCreatedInvoiceData({
+      // Stocker les données de la facture créée pour la modal d'envoi
+      const invoiceData = {
         id: result.invoice.id,
         number: `${result.invoice.prefix || "F"}-${result.invoice.number}`,
         clientName: result.invoice.client?.name,
         clientEmail: result.invoice.client?.email,
-        totalAmount: new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(result.invoice.finalTotalTTC || 0),
+        totalAmount: new Intl.NumberFormat("fr-FR", {
+          style: "currency",
+          currency: "EUR",
+        }).format(result.invoice.finalTotalTTC || 0),
         companyName: result.invoice.companyInfo?.name,
-        issueDate: formatDate(result.invoice.issueDate) || formatDate(formData.issueDate),
-        dueDate: formatDate(result.invoice.dueDate) || formatDate(formData.dueDate),
+        issueDate:
+          formatDate(result.invoice.issueDate) ||
+          formatDate(formData.issueDate),
+        dueDate:
+          formatDate(result.invoice.dueDate) || formatDate(formData.dueDate),
         redirectUrl: result.redirectUrl,
-      });
-      // Afficher la modal d'envoi
-      setShowSendEmailModal(true);
+      };
+      setCreatedInvoiceData(invoiceData);
+
+      // Stocker les données dans sessionStorage pour afficher le toast sur la page de liste
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("newInvoiceData", JSON.stringify(invoiceData));
+      }
+
+      // Rediriger vers la liste des factures
+      router.push("/dashboard/outils/factures");
     }
   };
 
-  // Handler pour fermer la modal et rediriger
+  // Handler pour fermer la modal après envoi d'email
   const handleEmailModalClose = () => {
     setShowSendEmailModal(false);
-    if (createdInvoiceData?.redirectUrl) {
-      router.push(createdInvoiceData.redirectUrl);
-    }
+    // Rediriger vers la liste des factures après envoi ou fermeture
+    router.push("/dashboard/outils/factures");
   };
 
   return (
-    <div className="fixed inset-0 flex flex-col overflow-hidden bg-background">
+    <div className="fixed inset-0 z-40 flex flex-col overflow-hidden bg-background">
       <div className="grid grid-cols-1 lg:grid-cols-[2fr_3fr] h-full">
         {/* Left Panel - Enhanced Form */}
         <div className="pl-4 pt-18 pr-2 pb-4 md:pl-6 md:pt-6 md:pr-6 flex flex-col h-full overflow-hidden">
@@ -285,7 +300,7 @@ export default function ModernInvoiceEditor({
                       onClick={handleSettingsClick}
                       className="h-8 w-8 p-0"
                     >
-                      <Settings className="w-4 h-4" style={{ color: '#5b50FF' }} />
+                      <Settings className="w-4 h-4" />
                     </Button>
                   </>
                 )}
@@ -314,7 +329,6 @@ export default function ModernInvoiceEditor({
 
             {/* Enhanced Form ou Settings View */}
             <div className="flex-1 min-h-0 mr-2 flex flex-col">
-              
               <div className="flex-1 min-h-0">
                 <FormProvider {...form}>
                   {showSettings ? (
@@ -322,6 +336,9 @@ export default function ModernInvoiceEditor({
                       canEdit={!isReadOnly}
                       onCancel={() => setShowSettings(false)}
                       onCloseAttempt={setCloseSettingsHandler}
+                      validateInvoiceNumberExists={validateInvoiceNumber}
+                      validationErrors={validationErrors}
+                      setValidationErrors={setValidationErrors}
                       onSave={async () => {
                         try {
                           // Sauvegarder les paramètres dans l'organisation
@@ -353,6 +370,9 @@ export default function ModernInvoiceEditor({
                       onEditClient={() => setShowEditClient(true)}
                       markFieldAsEditing={markFieldAsEditing}
                       unmarkFieldAsEditing={unmarkFieldAsEditing}
+                      onPreviousSituationInvoicesChange={
+                        setPreviousSituationInvoices
+                      }
                     />
                   )}
                 </FormProvider>
@@ -376,13 +396,17 @@ export default function ModernInvoiceEditor({
               </div>
             ) : debouncedFormData ? (
               <div ref={pdfRef}>
-                <UniversalPreviewPDF data={debouncedFormData} type="invoice" />
+                <UniversalPreviewPDF
+                  data={debouncedFormData}
+                  type="invoice"
+                  previousSituationInvoices={previousSituationInvoices}
+                />
               </div>
             ) : null}
           </div>
         </div>
       </div>
-      
+
       {/* Modal d'édition du client */}
       {formData.client && (
         <ClientsModal
@@ -392,13 +416,13 @@ export default function ModernInvoiceEditor({
           onSave={handleClientUpdated}
         />
       )}
-      
+
       <QuickEditCompanyModal
         open={showEditCompany}
         onOpenChange={setShowEditCompany}
         onCompanyUpdated={handleCompanyUpdated}
       />
-      
+
       {/* Modal d'envoi par email */}
       {createdInvoiceData && (
         <SendDocumentModal
@@ -414,7 +438,11 @@ export default function ModernInvoiceEditor({
           issueDate={createdInvoiceData.issueDate}
           dueDate={createdInvoiceData.dueDate}
           onSent={handleEmailModalClose}
-          onClose={() => router.push(createdInvoiceData.redirectUrl || "/dashboard/outils/factures")}
+          onClose={() =>
+            router.push(
+              createdInvoiceData.redirectUrl || "/dashboard/outils/factures"
+            )
+          }
           pdfRef={pdfRef}
         />
       )}

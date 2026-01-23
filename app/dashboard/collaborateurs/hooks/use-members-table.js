@@ -11,7 +11,7 @@ import {
 import { Badge } from "@/src/components/ui/badge";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import { Button } from "@/src/components/ui/button";
-import { ArrowUpDown, Mail } from "lucide-react";
+import { ArrowUpDown, Mail, Clock } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import { useOrganizationInvitations } from "@/src/hooks/useOrganizationInvitations";
 import MemberRowActions from "../components/member-row-actions";
@@ -248,13 +248,62 @@ export function useMembersTable({ data = [], onRefetch }) {
             }
           };
 
+          // Calculer le temps restant pour les invitations pending
+          const getExpirationInfo = () => {
+            if (member.type !== "invitation" || status !== "pending" || !member.expiresAt) {
+              return null;
+            }
+
+            const now = new Date();
+            const expiresAt = new Date(member.expiresAt);
+            const diffMs = expiresAt - now;
+
+            if (diffMs <= 0) {
+              return { expired: true, text: "Expirée" };
+            }
+
+            const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+            const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+
+            if (diffDays > 3) {
+              return null; // Ne pas afficher si plus de 3 jours
+            }
+
+            if (diffDays > 0) {
+              return { expired: false, text: `${diffDays}j restant${diffDays > 1 ? "s" : ""}` };
+            }
+
+            if (diffHours > 0) {
+              return { expired: false, text: `${diffHours}h restante${diffHours > 1 ? "s" : ""}` };
+            }
+
+            return { expired: false, text: "< 1h" };
+          };
+
+          const expirationInfo = getExpirationInfo();
+
           return (
-            <Badge className={cn("font-normal", getStatusBadgeClass(status))}>
-              {getStatusLabel(status, member.type)}
-            </Badge>
+            <div className="flex items-center gap-1.5">
+              <Badge className={cn("font-normal", getStatusBadgeClass(status))}>
+                {getStatusLabel(status, member.type)}
+              </Badge>
+              {expirationInfo && (
+                <span
+                  className={cn(
+                    "inline-flex items-center gap-1 text-xs",
+                    expirationInfo.expired
+                      ? "text-red-600 dark:text-red-400"
+                      : "text-amber-600 dark:text-amber-400"
+                  )}
+                >
+                  <Clock className="h-3 w-3" />
+                  {expirationInfo.text}
+                </span>
+              )}
+            </div>
           );
         },
-        size: 120,
+        size: 160,
         filterFn: statusFilterFn,
       },
       {

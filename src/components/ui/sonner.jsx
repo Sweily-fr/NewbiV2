@@ -3,7 +3,7 @@
 import { useTheme } from "next-themes";
 import { Toaster as Sonner, toast as sonnerToast } from "sonner";
 import { Button } from "@/src/components/ui/button";
-import { XIcon, CircleCheck, AlertCircleIcon, InfoIcon } from "lucide-react";
+import { XIcon, CircleCheck, AlertCircleIcon, InfoIcon, LoaderCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 
 // Composant de notification de succès
@@ -111,6 +111,28 @@ const InfoToast = ({ message, isMobile }) => (
   </div>
 );
 
+// Composant de notification de chargement
+const LoadingToast = ({ message, isMobile }) => (
+  <div
+    className={`max-w-[400px] shadow-lg ${isMobile ? "rounded-2xl px-4 py-4" : "rounded-md px-4 py-3"}`}
+    style={{ backgroundColor: "#202020" }}
+  >
+    <div className="flex gap-2 items-center">
+      <p
+        className={`grow ${isMobile ? "text-sm" : "text-sm"}`}
+        style={{ color: "#ffffff" }}
+      >
+        <LoaderCircle
+          className="me-3 -mt-0.5 inline-flex text-white animate-spin"
+          size={isMobile ? 18 : 16}
+          aria-hidden="true"
+        />
+        {message}
+      </p>
+    </div>
+  </div>
+);
+
 // Détection mobile pour les toasts
 const checkIsMobile = () =>
   typeof window !== "undefined" && window.innerWidth < 768;
@@ -133,6 +155,11 @@ const toast = {
     sonnerToast.custom(() => (
       <InfoToast message={message} isMobile={checkIsMobile()} />
     )), // Utilise InfoToast pour les warnings
+  loading: (message) =>
+    sonnerToast.custom(
+      () => <LoadingToast message={message} isMobile={checkIsMobile()} />,
+      { duration: Infinity }
+    ),
   // Conserver les méthodes originales de sonner si nécessaire
   dismiss: sonnerToast.dismiss,
   promise: sonnerToast.promise,

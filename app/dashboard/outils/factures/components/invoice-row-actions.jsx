@@ -15,6 +15,7 @@ import {
   Receipt,
   CalendarSync,
   Mail,
+  FileUp,
 } from "lucide-react";
 import { SendDocumentModal } from "./send-document-modal";
 import { ButtonGroup } from "@/src/components/ui/button-group";
@@ -35,20 +36,17 @@ import {
   useMarkInvoiceAsPaid,
   useChangeInvoiceStatus,
   useDeleteInvoice,
-  useInvoice,
   INVOICE_STATUS,
 } from "@/src/graphql/invoiceQueries";
-import { useCreditNotesByInvoice } from "@/src/graphql/creditNoteQueries";
-import { hasReachedCreditNoteLimit } from "@/src/utils/creditNoteUtils";
 import { toast } from "@/src/components/ui/sonner";
 import { usePermissions } from "@/src/hooks/usePermissions";
-import InvoiceSidebar from "./invoice-sidebar";
+// InvoiceSidebar est maintenant géré au niveau du tableau (InvoiceTable) pour éviter les re-renders
 import InvoiceMobileFullscreen from "./invoice-mobile-fullscreen";
 
 // Fonction utilitaire pour formater les dates
 const formatDateForEmail = (dateValue) => {
   if (!dateValue) return null;
-  
+
   try {
     let date;
     // Si c'est un timestamp en millisecondes (nombre ou string de chiffres)
@@ -67,7 +65,7 @@ const formatDateForEmail = (dateValue) => {
     } else {
       return null;
     }
-    
+
     if (isNaN(date.getTime())) return null;
     return date.toLocaleDateString("fr-FR");
   } catch {
@@ -75,8 +73,15 @@ const formatDateForEmail = (dateValue) => {
   }
 };
 
-export default function InvoiceRowActions({ row, onRefetch, showReminderIcon = false, isClientExcluded = false, onOpenReminderSettings }) {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+export default function InvoiceRowActions({
+  row,
+  onRefetch,
+  showReminderIcon = false,
+  isClientExcluded = false,
+  onOpenReminderSettings,
+  onOpenSidebar, // Callback pour ouvrir la sidebar au niveau du tableau
+}) {
+  // OPTIMISÉ: Suppression de isSidebarOpen - géré au niveau du tableau pour éviter les re-renders
   const [isMobileFullscreenOpen, setIsMobileFullscreenOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [canCreateCreditNote, setCanCreateCreditNote] = useState(false);
@@ -91,8 +96,8 @@ export default function InvoiceRowActions({ row, onRefetch, showReminderIcon = f
       setIsMobile(window.innerWidth < 768);
     };
     checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
   // Vérifier les permissions pour créer un avoir
@@ -105,18 +110,10 @@ export default function InvoiceRowActions({ row, onRefetch, showReminderIcon = f
   }, [canCreate]);
 
   // Ne pas récupérer les détails pour les factures importées
-  const isImportedInvoice = invoice._type === 'imported';
+  const isImportedInvoice = invoice._type === "imported";
 
-  // Récupération de la facture complète avec tous ses détails (seulement pour les factures normales)
-  const { invoice: fullInvoice, loading: loadingFullInvoice } = useInvoice(
-    isImportedInvoice ? null : invoice.id
-  );
-
-  // Récupération des avoirs pour cette facture (seulement pour les factures normales)
-  const { creditNotes, loading: loadingCreditNotes } = useCreditNotesByInvoice(
-    isImportedInvoice ? null : invoice.id
-  );
-
+  // OPTIMISÉ: Suppression de useInvoice et useCreditNotesByInvoice pour éviter les re-renders
+  // Ces données sont récupérées dans la sidebar elle-même
   const { markAsPaid, loading: markingAsPaid } = useMarkInvoiceAsPaid();
   const { changeStatus, loading: changingStatus } = useChangeInvoiceStatus();
   const { deleteInvoice, loading: isDeleting } = useDeleteInvoice();
@@ -125,7 +122,10 @@ export default function InvoiceRowActions({ row, onRefetch, showReminderIcon = f
     if (isMobile) {
       setIsMobileFullscreenOpen(true);
     } else {
-      setIsSidebarOpen(true);
+      // Utiliser la callback du tableau pour ouvrir la sidebar
+      if (onOpenSidebar) {
+        onOpenSidebar(invoice);
+      }
     }
   };
 
@@ -149,7 +149,7 @@ export default function InvoiceRowActions({ row, onRefetch, showReminderIcon = f
       if (onRefetch) onRefetch();
     } catch (error) {
       // L'erreur est gérée par errorLink dans apolloClient.js
-      console.error('Erreur lors du changement de statut:', error);
+      console.error("Erreur lors du changement de statut:", error);
     }
   };
 
@@ -178,19 +178,16 @@ export default function InvoiceRowActions({ row, onRefetch, showReminderIcon = f
     router.push(`/dashboard/outils/factures/${invoice.id}/avoir/nouveau`);
   };
 
-  // Vérifier si la facture a atteint sa limite d'avoirs
-  const currentInvoice = fullInvoice || invoice;
-  const creditNoteLimitReached = hasReachedCreditNoteLimit(currentInvoice, creditNotes);
-
   const isLoading = markingAsPaid || changingStatus || isDeleting;
 
   // Afficher un badge Import pour les factures importées
   if (isImportedInvoice) {
     return (
       <div className="flex items-center justify-end gap-1" data-actions-cell>
-        <Badge variant="outline" className="text-xs">
+        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-[#5a50ff]/10 text-[#5a50ff] dark:bg-[#5a50ff]/20 dark:text-[#5a50ff]">
+          <FileUp className="w-3 h-3" />
           Import
-        </Badge>
+        </span>
       </div>
     );
   }
@@ -205,71 +202,18 @@ export default function InvoiceRowActions({ row, onRefetch, showReminderIcon = f
           className="hidden"
           aria-hidden="true"
         />
-        <ButtonGroup>
-          {/* Icône d'envoi par email */}
-          {invoice.status !== "DRAFT" && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8 p-0 cursor-pointer"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowSendEmailModal(true);
-                    }}
-                  >
-                    <Mail className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Envoyer par email</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
-          {/* Icône de relance automatique */}
-          {showReminderIcon && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8 p-0 cursor-pointer"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onOpenReminderSettings?.();
-                    }}
-                  >
-                    <CalendarSync 
-                      className={`h-4 w-4 ${
-                        isClientExcluded 
-                          ? "opacity-30" 
-                          : ""
-                      }`} 
-                    />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{isClientExcluded ? "Client exclu des relances" : "Relance automatique activée"}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-8 w-8 p-0"
-                disabled={isLoading}
-              >
-                <span className="sr-only">Ouvrir le menu</span>
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 p-0"
+              disabled={isLoading}
+            >
+              <span className="sr-only">Ouvrir le menu</span>
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={handleView}>
               <Eye className="mr-2 h-4 w-4" />
@@ -282,35 +226,58 @@ export default function InvoiceRowActions({ row, onRefetch, showReminderIcon = f
               </DropdownMenuItem>
             )}
 
-            {/* Séparateur seulement pour les brouillons qui ont des actions supplémentaires */}
-            {invoice.status === INVOICE_STATUS.DRAFT && (
-              <DropdownMenuSeparator />
-            )}
-
-            {invoice.status === INVOICE_STATUS.DRAFT && (
-              <DropdownMenuItem
-                onClick={handleCreateInvoice}
-                disabled={isLoading}
-              >
-                <FileText className="mr-2 h-4 w-4" />
-                Créer la facture
-              </DropdownMenuItem>
-            )}
-
             {invoice.status === INVOICE_STATUS.PENDING && (
               <>
                 <DropdownMenuItem onClick={handleMarkAsPaid}>
                   <CheckCircle className="mr-2 h-4 w-4" />
                   Marquer comme payée
                 </DropdownMenuItem>
-                {!creditNoteLimitReached && canCreateCreditNote && (
+                {canCreateCreditNote && (
                   <DropdownMenuItem onClick={handleCreateCreditNote}>
                     <Receipt className="mr-2 h-4 w-4" />
                     Créer un avoir
                   </DropdownMenuItem>
                 )}
+              </>
+            )}
+
+            {invoice.status === INVOICE_STATUS.COMPLETED &&
+              canCreateCreditNote && (
+                <DropdownMenuItem onClick={handleCreateCreditNote}>
+                  <Receipt className="mr-2 h-4 w-4" />
+                  Créer un avoir
+                </DropdownMenuItem>
+              )}
+
+            {invoice.status === INVOICE_STATUS.CANCELED &&
+              canCreateCreditNote && (
+                <DropdownMenuItem onClick={handleCreateCreditNote}>
+                  <Receipt className="mr-2 h-4 w-4" />
+                  Créer un avoir
+                </DropdownMenuItem>
+              )}
+
+            {/* Envoyer par email - visible pour les factures non brouillon */}
+            {invoice.status !== "DRAFT" && (
+              <>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem 
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowSendEmailModal(true);
+                  }}
+                >
+                  <Mail className="mr-2 h-4 w-4" />
+                  Envoyer par email
+                </DropdownMenuItem>
+              </>
+            )}
+
+            {/* Annuler - pour les factures en attente */}
+            {invoice.status === INVOICE_STATUS.PENDING && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
                   onClick={handleCancel}
                   className="text-red-600 focus:text-red-600"
                 >
@@ -320,23 +287,17 @@ export default function InvoiceRowActions({ row, onRefetch, showReminderIcon = f
               </>
             )}
 
-            {invoice.status === INVOICE_STATUS.COMPLETED && !creditNoteLimitReached && canCreateCreditNote && (
-              <DropdownMenuItem onClick={handleCreateCreditNote}>
-                <Receipt className="mr-2 h-4 w-4" />
-                Créer un avoir
-              </DropdownMenuItem>
-            )}
-
-            {invoice.status === INVOICE_STATUS.CANCELED && !creditNoteLimitReached && canCreateCreditNote && (
-              <DropdownMenuItem onClick={handleCreateCreditNote}>
-                <Receipt className="mr-2 h-4 w-4" />
-                Créer un avoir
-              </DropdownMenuItem>
-            )}
-
-            {/* Séparateur seulement s'il y a l'action supprimer (factures brouillon uniquement) */}
+            {/* Créer la facture et Supprimer - pour les brouillons */}
             {invoice.status === INVOICE_STATUS.DRAFT && (
               <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={handleCreateInvoice}
+                  disabled={isLoading}
+                >
+                  <FileText className="mr-2 h-4 w-4" />
+                  Créer la facture
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={handleDelete}
@@ -348,17 +309,10 @@ export default function InvoiceRowActions({ row, onRefetch, showReminderIcon = f
               </>
             )}
           </DropdownMenuContent>
-          </DropdownMenu>
-        </ButtonGroup>
+        </DropdownMenu>
       </div>
 
-      {/* Sidebar pour desktop */}
-      <InvoiceSidebar
-        invoice={invoice}
-        isOpen={isSidebarOpen}
-        onClose={() => setIsSidebarOpen(false)}
-        onRefetch={onRefetch}
-      />
+      {/* Sidebar pour desktop - DÉPLACÉE AU NIVEAU DU TABLEAU pour éviter les re-renders */}
 
       {/* Fullscreen pour mobile - Ne monter que si ouvert */}
       {isMobileFullscreenOpen && (
@@ -380,7 +334,10 @@ export default function InvoiceRowActions({ row, onRefetch, showReminderIcon = f
           documentNumber={`${invoice.prefix || "F"}-${invoice.number}`}
           clientName={invoice.client?.name}
           clientEmail={invoice.client?.email}
-          totalAmount={new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(invoice.finalTotalTTC || invoice.totalTTC || 0)}
+          totalAmount={new Intl.NumberFormat("fr-FR", {
+            style: "currency",
+            currency: "EUR",
+          }).format(invoice.finalTotalTTC || invoice.totalTTC || 0)}
           companyName={invoice.companyInfo?.name}
           issueDate={formatDateForEmail(invoice.issueDate)}
           dueDate={formatDateForEmail(invoice.dueDate)}

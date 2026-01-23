@@ -1,6 +1,12 @@
 "use client";
 
-import { FileText, Download, Eye, LoaderCircle, AlertCircle } from "lucide-react";
+import {
+  FileText,
+  Download,
+  Eye,
+  LoaderCircle,
+  AlertCircle,
+} from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { useStripeInvoices } from "@/src/hooks/useStripeInvoices";
@@ -103,10 +109,7 @@ export default function FacturationSection() {
     <div className="space-y-8">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-lg font-medium mb-1">Facturation</h2>
-          <Separator />
-        </div>
+        <h2 className="text-lg font-medium">Facturation</h2>
 
         {/* Bouton de rafraîchissement */}
         <Button
@@ -124,6 +127,7 @@ export default function FacturationSection() {
           Actualiser
         </Button>
       </div>
+      <Separator />
 
       {/* Informations sur l'abonnement */}
       {/* {subscription && (
@@ -154,10 +158,9 @@ export default function FacturationSection() {
       {/* Factures Section */}
       <div className="space-y-6">
         <div>
-          <h3 className="text-base font-medium mb-4">
+          {/* <h3 className="text-base font-medium mb-4">
             Factures
-            {/* Factures {invoices.length > 0 && `(${invoices.length})`} */}
-          </h3>
+          </h3> */}
 
           {/* État de chargement */}
           {loading && (
@@ -286,20 +289,9 @@ export default function FacturationSection() {
               <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
                 Aucune facture
               </h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                Vos factures Stripe apparaîtront ici une fois générées.
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Vos factures apparaîtront ici une fois générées.
               </p>
-              {isActive() && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={refetch}
-                  className="flex items-center gap-2"
-                >
-                  <LoaderCircle className="h-4 w-4" />
-                  Actualiser
-                </Button>
-              )}
             </div>
           )}
         </div>

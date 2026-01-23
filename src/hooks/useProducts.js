@@ -1,17 +1,36 @@
-import { useMutation, useQuery } from '@apollo/client';
-import { CREATE_PRODUCT, UPDATE_PRODUCT, DELETE_PRODUCT } from '../graphql/mutations/products';
-import { GET_PRODUCTS, GET_PRODUCT } from '../graphql/queries/products';
-import { toast } from '@/src/components/ui/sonner';
-import { useRequiredWorkspace } from '@/src/hooks/useWorkspace';
+import { useMutation, useQuery } from "@apollo/client";
+import {
+  CREATE_PRODUCT,
+  UPDATE_PRODUCT,
+  DELETE_PRODUCT,
+} from "../graphql/mutations/products";
+import { GET_PRODUCTS, GET_PRODUCT } from "../graphql/queries/products";
+import { toast } from "@/src/components/ui/sonner";
+import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 
-export const useProducts = (page = 1, limit = 10, search = '', category = '') => {
-  const { workspaceId, loading: workspaceLoading, error: workspaceError } = useRequiredWorkspace();
+export const useProducts = (
+  page = 1,
+  limit = 50,
+  search = "",
+  category = ""
+) => {
+  const {
+    workspaceId,
+    loading: workspaceLoading,
+    error: workspaceError,
+  } = useRequiredWorkspace();
 
-  const { data, loading: queryLoading, error: queryError, refetch } = useQuery(GET_PRODUCTS, {
+  const {
+    data,
+    loading: queryLoading,
+    error: queryError,
+    refetch,
+  } = useQuery(GET_PRODUCTS, {
     variables: { workspaceId, page, limit, search, category },
-    fetchPolicy: 'cache-first',
+    fetchPolicy: "cache-first",
+    nextFetchPolicy: "cache-first",
     notifyOnNetworkStatusChange: false,
-    errorPolicy: 'all',
+    errorPolicy: "all",
     skip: !workspaceId,
   });
 
@@ -45,16 +64,17 @@ export const useCreateProduct = (options = {}) => {
   const { showToast = true } = options;
 
   const [createProduct, { loading, error }] = useMutation(CREATE_PRODUCT, {
-    refetchQueries: ['GetProducts'],
+    refetchQueries: ["GetProducts"],
     onCompleted: () => {
       if (showToast) {
-        toast.success('Produit créé avec succès');
+        toast.success("Produit créé avec succès");
       }
     },
     onError: (error) => {
       if (showToast) {
         // Afficher un message d'erreur plus détaillé si disponible
-        const errorMessage = error.message || 'Erreur lors de la création du produit';
+        const errorMessage =
+          error.message || "Erreur lors de la création du produit";
         toast.error(errorMessage);
       }
     },
@@ -67,13 +87,13 @@ export const useCreateProduct = (options = {}) => {
       }
 
       try {
-        const result = await createProduct({ 
-          variables: { 
+        const result = await createProduct({
+          variables: {
             input: {
               ...input,
               workspaceId,
-            }
-          } 
+            },
+          },
         });
         return result;
       } catch {
@@ -88,13 +108,14 @@ export const useCreateProduct = (options = {}) => {
 
 export const useUpdateProduct = () => {
   const [updateProduct, { loading, error }] = useMutation(UPDATE_PRODUCT, {
-    refetchQueries: ['GetProducts'],
+    refetchQueries: ["GetProducts"],
     onCompleted: () => {
-      toast.success('Produit modifié avec succès');
+      toast.success("Produit modifié avec succès");
     },
     onError: (error) => {
       // Afficher un message d'erreur plus détaillé si disponible
-      const errorMessage = error.message || 'Erreur lors de la modification du produit';
+      const errorMessage =
+        error.message || "Erreur lors de la modification du produit";
       toast.error(errorMessage);
     },
   });
@@ -118,22 +139,22 @@ export const useDeleteProduct = (options = {}) => {
   const { showToast = true } = options;
 
   const [deleteProduct, { loading, error }] = useMutation(DELETE_PRODUCT, {
-    refetchQueries: ['GetProducts'],
+    refetchQueries: ["GetProducts"],
     onCompleted: () => {
       if (showToast) {
-        toast.success('Produit supprimé avec succès');
+        toast.success("Produit supprimé avec succès");
       }
     },
     onError: () => {
       if (showToast) {
-        toast.error('Erreur lors de la suppression du produit');
+        toast.error("Erreur lors de la suppression du produit");
       }
     },
   });
 
   return {
     deleteProduct: async (id) => {
-      const result = await deleteProduct({ 
+      const result = await deleteProduct({
         variables: { id },
       });
       return result;

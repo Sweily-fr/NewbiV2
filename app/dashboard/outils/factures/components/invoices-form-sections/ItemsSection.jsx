@@ -34,7 +34,13 @@ import PercentageSliderInput from "@/src/components/percentage-slider-input";
 // Utilisation du composant ProductSearchCombobox défini dans enhanced-invoice-form.jsx
 
 // Fonction utilitaire pour calculer le total d'un article en prenant en compte la remise et l'avancement
-const calculateItemTotal = (quantity, unitPrice, discount, discountType, progressPercentage = 100) => {
+const calculateItemTotal = (
+  quantity,
+  unitPrice,
+  discount,
+  discountType,
+  progressPercentage = 100
+) => {
   let subtotal = (quantity || 1) * (unitPrice || 0);
 
   // Appliquer le pourcentage d'avancement
@@ -71,6 +77,7 @@ export default function ItemsSection({
   validationErrors = [],
   markFieldAsEditing,
   unmarkFieldAsEditing,
+  isLinkedToQuote = false,
 }) {
   // Déterminer si c'est un avoir
   const isCreditNoteContext =
@@ -92,11 +99,14 @@ export default function ItemsSection({
 
   // Observer les changements en temps réel pour tous les items
   const watchedItems = watch("items") || [];
-  
+  const invoiceType = watch("invoiceType");
+
+  // Déterminer si les champs des articles sont verrouillés (facture de situation liée à un devis)
+  const isItemFieldLocked = isLinkedToQuote && invoiceType === "situation";
+
   // État pour gérer l'affichage des champs optionnels par article
-  const [showProgress, setShowProgress] = useState({});
   const [showDiscount, setShowDiscount] = useState({});
-  
+
   // Helper pour vérifier si un champ a une erreur
   const hasFieldError = (itemIndex, fieldName) => {
     return validationErrors.some(
@@ -108,8 +118,11 @@ export default function ItemsSection({
     const quantity = productData.quantity || 1;
     const unitPrice = productData.unitPrice || 0;
     const discount = productData.discount || 0;
-    const discountType = (productData.discountType === "percentage" ? "PERCENTAGE" : productData.discountType) || "PERCENTAGE";
-    
+    const discountType =
+      (productData.discountType === "percentage"
+        ? "PERCENTAGE"
+        : productData.discountType) || "PERCENTAGE";
+
     // Si auto-liquidation est activée, forcer la TVA à 0%
     const isReverseCharge = watch("isReverseCharge");
     const defaultVatRate = isReverseCharge ? 0 : 20;
@@ -119,13 +132,24 @@ export default function ItemsSection({
       details: productData.details || "",
       quantity: quantity,
       unitPrice: unitPrice,
-      vatRate: productData.vatRate !== undefined ? (isReverseCharge ? 0 : productData.vatRate) : defaultVatRate,
+      vatRate:
+        productData.vatRate !== undefined
+          ? isReverseCharge
+            ? 0
+            : productData.vatRate
+          : defaultVatRate,
       unit: productData.unit !== undefined ? productData.unit : "",
       discount: discount,
       discountType: discountType === "percentage" ? "PERCENTAGE" : discountType,
       vatExemptionText: productData.vatExemptionText || "",
       progressPercentage: productData.progressPercentage || 100,
-      total: calculateItemTotal(quantity, unitPrice, discount, discountType, 100),
+      total: calculateItemTotal(
+        quantity,
+        unitPrice,
+        discount,
+        discountType,
+        100
+      ),
     });
   };
 
@@ -152,7 +176,7 @@ export default function ItemsSection({
                   checked={field.value || false}
                   onCheckedChange={(checked) => {
                     field.onChange(checked);
-                    
+
                     // Si auto-liquidation activée, mettre tous les taux de TVA à 0%
                     if (checked) {
                       const currentItems = watch("items") || [];
@@ -177,21 +201,35 @@ export default function ItemsSection({
           </div>
         )}
 
-        {/* Bouton ajouter article */}
-        <div className="flex flex-col md:flex-row gap-3 items-stretch">
-          {ProductSearchCombobox ? (
-            <>
-              <div className="flex-1 min-w-0 order-1 md:order-1">
-                <div className="h-full">
-                  <ProductSearchCombobox
-                    onSelect={addItem}
-                    placeholder="Rechercher un produit..."
-                    disabled={!canEdit}
-                    className="h-full"
-                  />
+        {/* Bouton ajouter article - Masqué pour les factures de situation liées à un devis */}
+        {!(isLinkedToQuote && invoiceType === "situation") && (
+          <div className="flex flex-col md:flex-row gap-3 items-stretch">
+            {ProductSearchCombobox ? (
+              <>
+                <div className="flex-1 min-w-0 order-1 md:order-1">
+                  <div className="h-full">
+                    <ProductSearchCombobox
+                      onSelect={addItem}
+                      placeholder="Rechercher un produit..."
+                      disabled={!canEdit}
+                      className="h-full"
+                    />
+                  </div>
                 </div>
-              </div>
-              <div className="flex-shrink-0 order-2 md:order-2 md:w-auto">
+                <div className="flex-shrink-0 order-2 md:order-2 md:w-auto">
+                  <Button
+                    onClick={() => addItem()}
+                    disabled={!canEdit}
+                    className="gap-2 w-full h-full min-h-10 font-normal"
+                    size="lg"
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span className="md:inline">Ajouter un article</span>
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <div className="w-full">
                 <Button
                   onClick={() => addItem()}
                   disabled={!canEdit}
@@ -199,24 +237,22 @@ export default function ItemsSection({
                   size="lg"
                 >
                   <Plus className="h-4 w-4" />
-                  <span className="md:inline">Ajouter un article</span>
+                  Ajouter un article
                 </Button>
               </div>
-            </>
-          ) : (
-            <div className="w-full">
-              <Button
-                onClick={() => addItem()}
-                disabled={!canEdit}
-                className="gap-2 w-full h-full min-h-10 font-normal"
-                size="lg"
-              >
-                <Plus className="h-4 w-4" />
-                Ajouter un article
-              </Button>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
+
+        {/* Message informatif pour les factures de situation liées à un devis ou à une facture de situation existante */}
+        {isLinkedToQuote && invoiceType === "situation" && (
+          <div className="bg-muted/50 rounded-lg p-4 text-sm text-muted-foreground">
+            <p>
+              Les articles sont importés depuis le document lié. Seuls le
+              pourcentage d'avancement et la remise sont modifiables.
+            </p>
+          </div>
+        )}
 
         {/* Liste des articles avec Accordion */}
         {items.length > 0 && (
@@ -235,18 +271,22 @@ export default function ItemsSection({
                 const discount = currentItem.discount || 0;
                 const discountType = currentItem.discountType || "percentage";
                 const unit = currentItem.unit || "unité";
-                const progressPercentage = currentItem.progressPercentage ?? 100;
+                const progressPercentage =
+                  currentItem.progressPercentage ?? 100;
                 const description =
                   currentItem.description || `Article ${index + 1}`;
 
                 // Calculer le total en temps réel avec avancement
                 let subtotal = quantity * unitPrice;
-                
+
                 // Appliquer le pourcentage d'avancement
                 subtotal = subtotal * (progressPercentage / 100);
-                
+
                 if (discount > 0) {
-                  if (discountType === "PERCENTAGE" || discountType === "percentage") {
+                  if (
+                    discountType === "PERCENTAGE" ||
+                    discountType === "percentage"
+                  ) {
                     subtotal = subtotal * (1 - Math.min(discount, 100) / 100);
                   } else {
                     subtotal = Math.max(0, subtotal - discount);
@@ -267,7 +307,8 @@ export default function ItemsSection({
                           <div className="text-sm mt-1 space-y-1">
                             <div className="flex items-center gap-2 text-muted-foreground">
                               <span className="font-normal">
-                                {quantity}{unit ? ` ${unit}` : ""}
+                                {quantity}
+                                {unit ? ` ${unit}` : ""}
                               </span>
                               <span className="font-normal">•</span>
                               <span className="font-normal">
@@ -276,51 +317,78 @@ export default function ItemsSection({
                                   ? "h"
                                   : unit === "jour"
                                     ? "j"
-                                    : unit ? "unité" : ""}
+                                    : unit
+                                      ? "unité"
+                                      : ""}
                               </span>
                               {discount > 0 && (
                                 <span className="text-amber-600 dark:text-amber-400">
-                                  {(discountType === "PERCENTAGE" || discountType === "percentage")
+                                  {discountType === "PERCENTAGE" ||
+                                  discountType === "percentage"
                                     ? `-${discount}%`
                                     : `-${formatCurrency(discount)}`}
                                 </span>
                               )}
-                              {progressPercentage < 100 && (
+                              {progressPercentage !== 100 && (
                                 <>
                                   <span className="font-normal">•</span>
-                                  <span style={{ color: "#5b50ff" }} className="font-normal">
+                                  <span
+                                    style={{ color: "#5b50ff" }}
+                                    className="font-normal"
+                                  >
                                     {progressPercentage}% avancement
                                   </span>
                                 </>
                               )}
                             </div>
                             <div className="font-normal">
-                              {formatCurrency(subtotal)} HT • {vatRate}% TVA •{" "}
-                              {formatCurrency(totalTTC)} TTC
+                              {progressPercentage !== 100 ? (
+                                <>
+                                  <span className="text-muted-foreground">
+                                    {formatCurrency(quantity * unitPrice)} HT
+                                  </span>
+                                  <span className="mx-1">→</span>
+                                  <span style={{ color: "#5b50ff" }}>
+                                    {formatCurrency(subtotal)} HT
+                                  </span>
+                                  <span> • {vatRate}% TVA • </span>
+                                  <span style={{ color: "#5b50ff" }}>
+                                    {formatCurrency(totalTTC)} TTC
+                                  </span>
+                                </>
+                              ) : (
+                                <>
+                                  {formatCurrency(subtotal)} HT • {vatRate}% TVA
+                                  • {formatCurrency(totalTTC)} TTC
+                                </>
+                              )}
                             </div>
                           </div>
                         </div>
-                        <div
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (canEdit) {
-                              removeItem(index);
-                            }
-                          }}
-                          className={`h-8 w-8 flex items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors ${!canEdit ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
-                          role="button"
-                          tabIndex={0}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" || e.key === " ") {
+                        {/* Bouton de suppression - Masqué pour les factures de situation liées à un devis */}
+                        {!isItemFieldLocked && (
+                          <div
+                            onClick={(e) => {
                               e.stopPropagation();
                               if (canEdit) {
                                 removeItem(index);
                               }
-                            }
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </div>
+                            }}
+                            className={`h-8 w-8 flex items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors ${!canEdit ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+                            role="button"
+                            tabIndex={0}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                e.stopPropagation();
+                                if (canEdit) {
+                                  removeItem(index);
+                                }
+                              }
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </div>
+                        )}
                       </div>
                     </AccordionTrigger>
                     <AccordionContent className="pb-6 pt-2 px-2 overflow-visible">
@@ -352,16 +420,23 @@ export default function ItemsSection({
                                     "La description ne doit pas dépasser 255 caractères",
                                 },
                                 pattern: {
-                                  value: /^[A-Za-zÀ-ÖØ-öø-ÿ0-9\s\.,;:!?@#$%&*()\[\]\-_+='"/\\]+$/,
-                                  message: "La description contient des caractères non autorisés"
+                                  value:
+                                    /^[A-Za-zÀ-ÖØ-öø-ÿ0-9\s\.,;:!?@#$%&*()\[\]\-_+='"/\\]+$/,
+                                  message:
+                                    "La description contient des caractères non autorisés",
                                 },
                               })}
                               placeholder="Décrivez votre produit ou service"
-                              disabled={!canEdit}
-                              onFocus={() => markFieldAsEditing?.(index, "description")}
-                              onBlur={() => unmarkFieldAsEditing?.(index, "description")}
+                              disabled={!canEdit || isItemFieldLocked}
+                              onFocus={() =>
+                                markFieldAsEditing?.(index, "description")
+                              }
+                              onBlur={() =>
+                                unmarkFieldAsEditing?.(index, "description")
+                              }
                               className={`h-10 rounded-lg text-sm w-full ${
-                                errors?.items?.[index]?.description || hasFieldError(index, "description")
+                                errors?.items?.[index]?.description ||
+                                hasFieldError(index, "description")
                                   ? "border-destructive focus-visible:ring-1 focus-visible:ring-destructive"
                                   : ""
                               }`}
@@ -390,16 +465,22 @@ export default function ItemsSection({
                             {...register(`items.${index}.details`, {
                               maxLength: {
                                 value: 500,
-                                message: "Les détails ne doivent pas dépasser 500 caractères",
+                                message:
+                                  "Les détails ne doivent pas dépasser 500 caractères",
                               },
                             })}
                             placeholder="Informations complémentaires sur l'article"
-                            disabled={!canEdit}
+                            disabled={!canEdit || isItemFieldLocked}
                             rows={2}
-                            onFocus={() => markFieldAsEditing?.(index, "details")}
-                            onBlur={() => unmarkFieldAsEditing?.(index, "details")}
+                            onFocus={() =>
+                              markFieldAsEditing?.(index, "details")
+                            }
+                            onBlur={() =>
+                              unmarkFieldAsEditing?.(index, "details")
+                            }
                             className={`rounded-lg text-sm w-full ${
-                              errors?.items?.[index]?.details || hasFieldError(index, "details")
+                              errors?.items?.[index]?.details ||
+                              hasFieldError(index, "details")
                                 ? "border-destructive focus-visible:ring-1 focus-visible:ring-destructive"
                                 : ""
                             }`}
@@ -421,71 +502,98 @@ export default function ItemsSection({
                               >
                                 Quantité
                               </Label>
-                              <span className="h-4 w-4" aria-hidden="true"></span>
+                              <span
+                                className="h-4 w-4"
+                                aria-hidden="true"
+                              ></span>
                             </div>
                             <div className="space-y-1">
-                              <QuantityInput
-                                id={`item-quantity-${index}`}
-                                {...register(`items.${index}.quantity`, {
-                                  valueAsNumber: true,
+                              <Controller
+                                name={`items.${index}.quantity`}
+                                rules={{
                                   required: "La quantité est requise",
                                   ...(isCreditNoteContext
                                     ? {}
                                     : {
                                         min: {
-                                          value: 0.01,
+                                          value: 0.5,
                                           message:
-                                            "La quantité doit être supérieure à 0",
+                                            "La quantité doit être au minimum de 0.5",
                                         },
                                       }),
-                                  onChange: (e) => {
-                                    const quantity =
-                                      parseFloat(e.target.value) || 0;
-                                    const unitPrice =
-                                      watch(`items.${index}.unitPrice`) || 0;
-                                    const discount =
-                                      watch(`items.${index}.discount`) || 0;
-                                    const discountType =
-                                      watch(`items.${index}.discountType`) ||
-                                      "percentage";
-                                    const progressPercentage =
-                                      watch(`items.${index}.progressPercentage`) || 100;
+                                }}
+                                render={({ field }) => (
+                                  <QuantityInput
+                                    id={`item-quantity-${index}`}
+                                    value={field.value}
+                                    onChange={(e) => {
+                                      const newQuantity =
+                                        parseFloat(e.target.value) || 0.5;
+                                      field.onChange(newQuantity);
 
-                                    const total = calculateItemTotal(
-                                      quantity,
-                                      unitPrice,
-                                      discount,
-                                      discountType,
-                                      progressPercentage
-                                    );
-                                    setValue(`items.${index}.total`, total, {
-                                      shouldDirty: true,
-                                    });
-                                  },
-                                })}
-                                disabled={!canEdit}
-                                onFocus={() => markFieldAsEditing?.(index, "quantity")}
-                                onBlur={() => unmarkFieldAsEditing?.(index, "quantity")}
-                                className={`h-10 text-sm w-full ${
-                                  errors?.items?.[index]?.quantity || hasFieldError(index, "quantity")
-                                    ? "border-destructive focus-visible:ring-1 focus-visible:ring-destructive"
-                                    : ""
-                                }`}
+                                      // Recalculer le total
+                                      const unitPrice =
+                                        watch(`items.${index}.unitPrice`) || 0;
+                                      const discount =
+                                        watch(`items.${index}.discount`) || 0;
+                                      const discountType =
+                                        watch(`items.${index}.discountType`) ||
+                                        "percentage";
+                                      const progressPercentage =
+                                        watch(
+                                          `items.${index}.progressPercentage`
+                                        ) || 100;
+
+                                      const total = calculateItemTotal(
+                                        newQuantity,
+                                        unitPrice,
+                                        discount,
+                                        discountType,
+                                        progressPercentage
+                                      );
+                                      setValue(`items.${index}.total`, total, {
+                                        shouldDirty: true,
+                                      });
+                                    }}
+                                    onBlur={() => {
+                                      field.onBlur();
+                                      unmarkFieldAsEditing?.(index, "quantity");
+                                    }}
+                                    disabled={!canEdit || isItemFieldLocked}
+                                    onFocus={() =>
+                                      markFieldAsEditing?.(index, "quantity")
+                                    }
+                                    className={`h-10 text-sm w-full ${
+                                      errors?.items?.[index]?.quantity ||
+                                      hasFieldError(index, "quantity")
+                                        ? "border-destructive focus-visible:ring-1 focus-visible:ring-destructive"
+                                        : ""
+                                    }`}
+                                  />
+                                )}
                               />
                               {errors?.items?.[index]?.quantity && (
                                 <p className="text-xs text-destructive">
                                   {errors.items[index].quantity.message}
                                 </p>
                               )}
-                              {!errors?.items?.[index]?.quantity && hasFieldError(index, "quantity") && (
-                                <p className="text-xs text-destructive">La quantité doit être supérieure à 0</p>
-                              )}
+                              {!errors?.items?.[index]?.quantity &&
+                                hasFieldError(index, "quantity") && (
+                                  <p className="text-xs text-destructive">
+                                    La quantité doit être supérieure à 0
+                                  </p>
+                                )}
                             </div>
                           </div>
                           <div className="space-y-2">
                             <div className="flex items-center gap-2">
-                              <Label className="text-sm font-normal">Unité</Label>
-                              <span className="h-4 w-4" aria-hidden="true"></span>
+                              <Label className="text-sm font-normal">
+                                Unité
+                              </Label>
+                              <span
+                                className="h-4 w-4"
+                                aria-hidden="true"
+                              ></span>
                             </div>
                             <div className="space-y-1">
                               <Controller
@@ -494,26 +602,53 @@ export default function ItemsSection({
                                 render={({ field }) => (
                                   <Select
                                     value={field.value || "none"}
-                                    onValueChange={(value) => field.onChange(value === "none" ? "" : value)}
-                                    disabled={!canEdit}
+                                    onValueChange={(value) =>
+                                      field.onChange(
+                                        value === "none" ? "" : value
+                                      )
+                                    }
+                                    disabled={!canEdit || isItemFieldLocked}
                                   >
-                                    <SelectTrigger className="w-full text-sm">
+                                    <SelectTrigger
+                                      className="w-full text-sm"
+                                      style={{ height: "40px" }}
+                                    >
                                       <SelectValue placeholder="Aucune unité" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                      <SelectItem value="none">Aucune unité</SelectItem>
-                                      <SelectItem value="unité">Unité</SelectItem>
-                                      <SelectItem value="pièce">Pièce</SelectItem>
-                                      <SelectItem value="heure">Heure</SelectItem>
+                                      <SelectItem value="none">
+                                        Aucune unité
+                                      </SelectItem>
+                                      <SelectItem value="unité">
+                                        Unité
+                                      </SelectItem>
+                                      <SelectItem value="pièce">
+                                        Pièce
+                                      </SelectItem>
+                                      <SelectItem value="heure">
+                                        Heure
+                                      </SelectItem>
                                       <SelectItem value="jour">Jour</SelectItem>
                                       <SelectItem value="mois">Mois</SelectItem>
-                                      <SelectItem value="kg">Kilogramme</SelectItem>
+                                      <SelectItem value="kg">
+                                        Kilogramme
+                                      </SelectItem>
                                       <SelectItem value="m">Mètre</SelectItem>
-                                      <SelectItem value="m²">Mètre carré</SelectItem>
-                                      <SelectItem value="m³">Mètre cube</SelectItem>
-                                      <SelectItem value="litre">Litre</SelectItem>
-                                      <SelectItem value="forfait">Forfait</SelectItem>
-                                      <SelectItem value="ensemble">Ensemble</SelectItem>
+                                      <SelectItem value="m²">
+                                        Mètre carré
+                                      </SelectItem>
+                                      <SelectItem value="m³">
+                                        Mètre cube
+                                      </SelectItem>
+                                      <SelectItem value="litre">
+                                        Litre
+                                      </SelectItem>
+                                      <SelectItem value="forfait">
+                                        Forfait
+                                      </SelectItem>
+                                      <SelectItem value="ensemble">
+                                        Ensemble
+                                      </SelectItem>
                                     </SelectContent>
                                   </Select>
                                 )}
@@ -523,9 +658,13 @@ export default function ItemsSection({
                         </div>
 
                         {/* Prix unitaire et Taux de TVA - Taux de TVA masqué en auto-liquidation */}
-                        <div className={`grid gap-3 md:gap-4 ${
-                          watch('isReverseCharge') ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2'
-                        }`}>
+                        <div
+                          className={`grid gap-3 md:gap-4 ${
+                            watch("isReverseCharge")
+                              ? "grid-cols-1"
+                              : "grid-cols-1 md:grid-cols-2"
+                          }`}
+                        >
                           <div className="space-y-2">
                             <div className="flex items-center gap-2">
                               <Label
@@ -534,7 +673,10 @@ export default function ItemsSection({
                               >
                                 Prix unitaire (€)
                               </Label>
-                              <span className="h-4 w-4" aria-hidden="true"></span>
+                              <span
+                                className="h-4 w-4"
+                                aria-hidden="true"
+                              ></span>
                             </div>
                             <div className="space-y-1">
                               <CurrencyInput
@@ -553,7 +695,9 @@ export default function ItemsSection({
                                       watch(`items.${index}.discountType`) ||
                                       "percentage";
                                     const progressPercentage =
-                                      watch(`items.${index}.progressPercentage`) || 100;
+                                      watch(
+                                        `items.${index}.progressPercentage`
+                                      ) || 100;
 
                                     const total = calculateItemTotal(
                                       quantity,
@@ -567,11 +711,16 @@ export default function ItemsSection({
                                     });
                                   },
                                 })}
-                                disabled={!canEdit}
-                                onFocus={() => markFieldAsEditing?.(index, "unitPrice")}
-                                onBlur={() => unmarkFieldAsEditing?.(index, "unitPrice")}
+                                disabled={!canEdit || isItemFieldLocked}
+                                onFocus={() =>
+                                  markFieldAsEditing?.(index, "unitPrice")
+                                }
+                                onBlur={() =>
+                                  unmarkFieldAsEditing?.(index, "unitPrice")
+                                }
                                 className={`h-10 text-sm w-full ${
-                                  errors?.items?.[index]?.unitPrice || hasFieldError(index, "unitPrice")
+                                  errors?.items?.[index]?.unitPrice ||
+                                  hasFieldError(index, "unitPrice")
                                     ? "border-destructive focus-visible:ring-1 focus-visible:ring-destructive"
                                     : ""
                                 }`}
@@ -581,18 +730,24 @@ export default function ItemsSection({
                                   {errors.items[index].unitPrice.message}
                                 </p>
                               )}
-                              {!errors?.items?.[index]?.unitPrice && hasFieldError(index, "unitPrice") && (
-                                <p className="text-xs text-destructive">Le prix unitaire doit être supérieur à 0€</p>
-                              )}
+                              {!errors?.items?.[index]?.unitPrice &&
+                                hasFieldError(index, "unitPrice") && (
+                                  <p className="text-xs text-destructive">
+                                    Le prix unitaire doit être supérieur à 0€
+                                  </p>
+                                )}
                             </div>
                           </div>
-                          {!watch('isReverseCharge') && (
+                          {!watch("isReverseCharge") && (
                             <div className="space-y-2">
                               <div className="flex items-center gap-2">
                                 <Label className="text-sm font-normal">
                                   Taux de TVA
                                 </Label>
-                                <span className="h-4 w-4" aria-hidden="true"></span>
+                                <span
+                                  className="h-4 w-4"
+                                  aria-hidden="true"
+                                ></span>
                               </div>
                               <Controller
                                 name={`items.${index}.vatRate`}
@@ -600,10 +755,15 @@ export default function ItemsSection({
                                 render={({ field }) => (
                                   <Select
                                     value={field.value?.toString() || "20"}
-                                    onValueChange={(value) => field.onChange(parseFloat(value))}
-                                    disabled={!canEdit}
+                                    onValueChange={(value) =>
+                                      field.onChange(parseFloat(value))
+                                    }
+                                    disabled={!canEdit || isItemFieldLocked}
                                   >
-                                    <SelectTrigger className="w-full text-sm">
+                                    <SelectTrigger
+                                      className="w-full text-sm"
+                                      style={{ height: "40px" }}
+                                    >
                                       <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -628,143 +788,107 @@ export default function ItemsSection({
                         </div>
 
                         {/* Texte d'exonération TVA (affiché seulement si TVA = 0% et pas d'auto-liquidation) */}
-                        {watch(`items.${index}.vatRate`) === 0 && !watch('isReverseCharge') && (
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2">
-                              <Label
-                                htmlFor={`item-vat-exemption-${index}`}
-                                className="text-sm font-normal"
-                              >
-                                Texte d'exonération de TVA
-                              </Label>
-                              <span className="h-4 w-4" aria-hidden="true"></span>
-                            </div>
-                            <div className="space-y-1">
-                              <Controller
-                                name={`items.${index}.vatExemptionText`}
-                                render={({ field }) => (
-                                  <Select
-                                    value={field.value || "none"}
-                                    onValueChange={field.onChange}
-                                    disabled={!canEdit}
-                                  >
-                                    <SelectTrigger className={`w-full text-sm ${
-                                      hasFieldError(index, "vatExemptionText")
-                                        ? "border-destructive focus-visible:ring-1 focus-visible:ring-destructive"
-                                        : ""
-                                    }`}>
-                                      <SelectValue placeholder="Sélectionner une mention" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="none">Sélectionner une mention</SelectItem>
-                                      <SelectItem value="Article 259-1 du CGI">Article 259-1 du CGI</SelectItem>
-                                      <SelectItem value="Article 259 B du CGI">Article 259 B du CGI</SelectItem>
-                                      <SelectItem value="Article 261 du CGI">Article 261 du CGI</SelectItem>
-                                      <SelectItem value="Article 261 D du CGI">Article 261 D du CGI</SelectItem>
-                                      <SelectItem value="Article 261 D-4° du CGI">Article 261 D-4° du CGI</SelectItem>
-                                      <SelectItem value="Article 261 2-4° du CGI">Article 261 2-4° du CGI</SelectItem>
-                                      <SelectItem value="Article 261-4 du CGI">Article 261-4 du CGI</SelectItem>
-                                      <SelectItem value="Article 261 4-4° du CGI">Article 261 4-4° du CGI</SelectItem>
-                                      <SelectItem value="Article 262 du CGI">Article 262 du CGI</SelectItem>
-                                      <SelectItem value="Article 262 ter-I du CGI">Article 262 ter-I du CGI</SelectItem>
-                                      <SelectItem value="Article 275 du CGI">Article 275 du CGI</SelectItem>
-                                      <SelectItem value="Article 283 du CGI">Article 283 du CGI</SelectItem>
-                                      <SelectItem value="Article 283-2 du CGI">Article 283-2 du CGI</SelectItem>
-                                      <SelectItem value="Article 293 B du CGI">Article 293 B du CGI</SelectItem>
-                                      <SelectItem value="Article 298 sexies du CGI">Article 298 sexies du CGI</SelectItem>
-                                      <SelectItem value="Article 44 de la Directive 2006/112/CE">Article 44 de la Directive 2006/112/CE</SelectItem>
-                                    </SelectContent>
-                                  </Select>
+                        {watch(`items.${index}.vatRate`) === 0 &&
+                          !watch("isReverseCharge") && (
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2">
+                                <Label
+                                  htmlFor={`item-vat-exemption-${index}`}
+                                  className="text-sm font-normal"
+                                >
+                                  Texte d'exonération de TVA
+                                </Label>
+                                <span
+                                  className="h-4 w-4"
+                                  aria-hidden="true"
+                                ></span>
+                              </div>
+                              <div className="space-y-1">
+                                <Controller
+                                  name={`items.${index}.vatExemptionText`}
+                                  render={({ field }) => (
+                                    <Select
+                                      value={field.value || "none"}
+                                      onValueChange={field.onChange}
+                                      disabled={!canEdit || isItemFieldLocked}
+                                    >
+                                      <SelectTrigger
+                                        className={`w-full text-sm ${
+                                          hasFieldError(
+                                            index,
+                                            "vatExemptionText"
+                                          )
+                                            ? "border-destructive focus-visible:ring-1 focus-visible:ring-destructive"
+                                            : ""
+                                        }`}
+                                      >
+                                        <SelectValue placeholder="Sélectionner une mention" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="none">
+                                          Sélectionner une mention
+                                        </SelectItem>
+                                        <SelectItem value="Article 259-1 du CGI">
+                                          Article 259-1 du CGI
+                                        </SelectItem>
+                                        <SelectItem value="Article 259 B du CGI">
+                                          Article 259 B du CGI
+                                        </SelectItem>
+                                        <SelectItem value="Article 261 du CGI">
+                                          Article 261 du CGI
+                                        </SelectItem>
+                                        <SelectItem value="Article 261 D du CGI">
+                                          Article 261 D du CGI
+                                        </SelectItem>
+                                        <SelectItem value="Article 261 D-4° du CGI">
+                                          Article 261 D-4° du CGI
+                                        </SelectItem>
+                                        <SelectItem value="Article 261 2-4° du CGI">
+                                          Article 261 2-4° du CGI
+                                        </SelectItem>
+                                        <SelectItem value="Article 261-4 du CGI">
+                                          Article 261-4 du CGI
+                                        </SelectItem>
+                                        <SelectItem value="Article 261 4-4° du CGI">
+                                          Article 261 4-4° du CGI
+                                        </SelectItem>
+                                        <SelectItem value="Article 262 du CGI">
+                                          Article 262 du CGI
+                                        </SelectItem>
+                                        <SelectItem value="Article 262 ter-I du CGI">
+                                          Article 262 ter-I du CGI
+                                        </SelectItem>
+                                        <SelectItem value="Article 275 du CGI">
+                                          Article 275 du CGI
+                                        </SelectItem>
+                                        <SelectItem value="Article 283 du CGI">
+                                          Article 283 du CGI
+                                        </SelectItem>
+                                        <SelectItem value="Article 283-2 du CGI">
+                                          Article 283-2 du CGI
+                                        </SelectItem>
+                                        <SelectItem value="Article 293 B du CGI">
+                                          Article 293 B du CGI
+                                        </SelectItem>
+                                        <SelectItem value="Article 298 sexies du CGI">
+                                          Article 298 sexies du CGI
+                                        </SelectItem>
+                                        <SelectItem value="Article 44 de la Directive 2006/112/CE">
+                                          Article 44 de la Directive 2006/112/CE
+                                        </SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  )}
+                                />
+                                {hasFieldError(index, "vatExemptionText") && (
+                                  <p className="text-xs text-destructive">
+                                    Le texte d'exonération de TVA est requis
+                                    lorsque la TVA est à 0%
+                                  </p>
                                 )}
-                              />
-                              {hasFieldError(index, "vatExemptionText") && (
-                                <p className="text-xs text-destructive">
-                                  Le texte d'exonération de TVA est requis lorsque la TVA est à 0%
-                                </p>
-                              )}
+                              </div>
                             </div>
-                          </div>
-                        )}
-
-                        {/* Avancement - Affichage conditionnel */}
-                        {!showProgress[index] ? (
-                          <div className="pt-2">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setShowProgress(prev => ({ ...prev, [index]: true }));
-                                setValue(`items.${index}.progressPercentage`, 100);
-                              }}
-                              disabled={!canEdit}
-                              className="text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                              style={{ color: '#5b50FF' }}
-                            >
-                              + Facturer partiellement (%)
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="space-y-4">
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm font-normal">Facturation partielle</span>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setShowProgress(prev => ({ ...prev, [index]: false }));
-                                  setValue(`items.${index}.progressPercentage`, 100);
-                                  // Recalculer le total
-                                  const quantity = watch(`items.${index}.quantity`) || 1;
-                                  const unitPrice = watch(`items.${index}.unitPrice`) || 0;
-                                  const discount = watch(`items.${index}.discount`) || 0;
-                                  const discountType = watch(`items.${index}.discountType`) || "percentage";
-                                  const total = calculateItemTotal(quantity, unitPrice, discount, discountType, 100);
-                                  setValue(`items.${index}.total`, total, { shouldDirty: true });
-                                }}
-                                disabled={!canEdit}
-                                className="text-xs hover:text-destructive transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                                style={{ color: '#5b50FF' }}
-                              >
-                                Retirer
-                              </button>
-                            </div>
-                            <PercentageSliderInput
-                              label="Facturation partielle"
-                              value={watch(`items.${index}.progressPercentage`) || 100}
-                              showLabelInValue={false}
-                              onChange={(value) => {
-                                setValue(`items.${index}.progressPercentage`, value, {
-                                  shouldDirty: true,
-                                  shouldValidate: true,
-                                });
-                                // Recalculer le total
-                                const quantity = watch(`items.${index}.quantity`) || 1;
-                                const unitPrice = watch(`items.${index}.unitPrice`) || 0;
-                                const discount = watch(`items.${index}.discount`) || 0;
-                                const discountType = watch(`items.${index}.discountType`) || "percentage";
-                                const total = calculateItemTotal(
-                                  quantity,
-                                  unitPrice,
-                                  discount,
-                                  discountType,
-                                  value
-                                );
-                                setValue(`items.${index}.total`, total, {
-                                  shouldDirty: true,
-                                });
-                              }}
-                              disabled={!canEdit}
-                              minValue={0}
-                              maxValue={100}
-                              step={1}
-                              gaugeColor="#5b50FF"
-                              id={`item-progress-${index}`}
-                            />
-                            {errors?.items?.[index]?.progressPercentage && (
-                              <p className="text-xs text-destructive mt-2">
-                                {errors.items[index].progressPercentage.message}
-                              </p>
-                            )}
-                          </div>
-                        )}
+                          )}
 
                         {/* Remise sur l'article - Affichage conditionnel */}
                         {!showDiscount[index] ? (
@@ -772,13 +896,19 @@ export default function ItemsSection({
                             <button
                               type="button"
                               onClick={() => {
-                                setShowDiscount(prev => ({ ...prev, [index]: true }));
+                                setShowDiscount((prev) => ({
+                                  ...prev,
+                                  [index]: true,
+                                }));
                                 setValue(`items.${index}.discount`, 0);
-                                setValue(`items.${index}.discountType`, "PERCENTAGE");
+                                setValue(
+                                  `items.${index}.discountType`,
+                                  "PERCENTAGE"
+                                );
                               }}
                               disabled={!canEdit}
                               className="text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                              style={{ color: '#5b50FF' }}
+                              style={{ color: "#5b50FF" }}
                             >
                               + Ajouter une remise à l'article
                             </button>
@@ -788,232 +918,210 @@ export default function ItemsSection({
                             <div className="flex items-center justify-between">
                               <Separator className="flex-1" />
                               <button
-                              type="button"
-                              onClick={() => {
-                                setShowDiscount(prev => ({ ...prev, [index]: false }));
-                                setValue(`items.${index}.discount`, 0);
-                                setValue(`items.${index}.discountType`, "PERCENTAGE");
-                                // Recalculer le total
-                                const quantity = watch(`items.${index}.quantity`) || 1;
-                                const unitPrice = watch(`items.${index}.unitPrice`) || 0;
-                                const progressPercentage = watch(`items.${index}.progressPercentage`) || 100;
-                                const total = calculateItemTotal(quantity, unitPrice, 0, "PERCENTAGE", progressPercentage);
-                                setValue(`items.${index}.total`, total, { shouldDirty: true });
-                              }}
-                              disabled={!canEdit}
-                              className="text-xs hover:text-destructive transition-colors px-3 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap cursor-pointer"
-                              style={{ color: '#5b50FF' }}
-                            >
-                              Retirer la remise
-                            </button>
+                                type="button"
+                                onClick={() => {
+                                  setShowDiscount((prev) => ({
+                                    ...prev,
+                                    [index]: false,
+                                  }));
+                                  setValue(`items.${index}.discount`, 0);
+                                  setValue(
+                                    `items.${index}.discountType`,
+                                    "PERCENTAGE"
+                                  );
+                                  // Recalculer le total
+                                  const quantity =
+                                    watch(`items.${index}.quantity`) || 1;
+                                  const unitPrice =
+                                    watch(`items.${index}.unitPrice`) || 0;
+                                  const progressPercentage =
+                                    watch(
+                                      `items.${index}.progressPercentage`
+                                    ) || 100;
+                                  const total = calculateItemTotal(
+                                    quantity,
+                                    unitPrice,
+                                    0,
+                                    "PERCENTAGE",
+                                    progressPercentage
+                                  );
+                                  setValue(`items.${index}.total`, total, {
+                                    shouldDirty: true,
+                                  });
+                                }}
+                                disabled={!canEdit}
+                                className="text-xs hover:text-destructive transition-colors px-3 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap cursor-pointer"
+                                style={{ color: "#5b50FF" }}
+                              >
+                                Retirer la remise
+                              </button>
                               <Separator className="flex-1" />
                             </div>
-                            <div className="space-y-3 md:space-y-4">
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
-                              <div className="space-y-2">
-                                <div className="flex items-center gap-2">
-                                  <Label className="text-sm font-normal">
-                                    Type de remise
-                                  </Label>
-                                  <span className="h-4 w-4" aria-hidden="true"></span>
-                                </div>
-                              <Controller
-                                name={`items.${index}.discountType`}
-                                defaultValue="PERCENTAGE"
-                                render={({ field }) => (
-                                  <Select
-                                    value={field.value || "PERCENTAGE"}
-                                    onValueChange={(value) => {
-                                      field.onChange(value);
-
-                                      // Mettre à jour le type de remise immédiatement
-                                      setValue(
-                                        `items.${index}.discountType`,
-                                        value,
-                                        {
-                                          shouldDirty: true,
-                                          shouldValidate: true,
-                                        }
-                                      );
-
-                                      // Mettre à jour le total avec les nouvelles valeurs
-                                      const discount =
-                                        parseFloat(
-                                          watch(`items.${index}.discount`)
-                                        ) || 0;
-                                      const quantity =
-                                        parseFloat(
-                                          watch(`items.${index}.quantity`)
-                                        ) || 1;
-                                      const unitPrice =
-                                        parseFloat(
-                                          watch(`items.${index}.unitPrice`)
-                                        ) || 0;
-                                      const progressPercentage =
-                                        parseFloat(
-                                          watch(`items.${index}.progressPercentage`)
-                                        ) || 100;
-
-                                      const total = calculateItemTotal(
-                                        quantity,
-                                        unitPrice,
-                                        discount,
-                                        value,
-                                        progressPercentage
-                                      );
-
-                                      setValue(`items.${index}.total`, total, {
-                                        shouldDirty: true,
-                                      });
-                                    }}
-                                    disabled={!canEdit}
-                                  >
-                                    <SelectTrigger className="w-full text-sm">
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="PERCENTAGE">Pourcentage (%)</SelectItem>
-                                      <SelectItem value="FIXED">Montant fixe (€)</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                )}
-                              />
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2">
+                                <Label
+                                  htmlFor={`item-discount-${index}`}
+                                  className="text-sm font-normal"
+                                >
+                                  Remise
+                                </Label>
+                                <span
+                                  className="h-4 w-4"
+                                  aria-hidden="true"
+                                ></span>
                               </div>
-                              <div className="space-y-2">
-                                <div className="flex items-center gap-2">
-                                  <Label
-                                    htmlFor={`item-discount-${index}`}
-                                    className="text-sm font-normal"
-                                  >
-                                    {(watch(`items.${index}.discountType`) === "PERCENTAGE" ||
-                                     watch(`items.${index}.discountType`) === "percentage")
-                                      ? "Pourcentage (%)"
-                                      : "Montant (€)"}
-                                  </Label>
-                                  <span className="h-4 w-4" aria-hidden="true"></span>
-                                </div>
-                              <div className="space-y-1">
-                                {(watch(`items.${index}.discountType`) === "FIXED") ? (
-                                  <CurrencyInput
-                                    id={`item-discount-${index}`}
-                                    {...register(`items.${index}.discount`, {
-                                      valueAsNumber: true,
-                                      min: {
-                                        value: 0,
-                                        message:
-                                          "La remise doit être positive ou nulle",
-                                      },
-                                    })}
-                                    disabled={!canEdit}
-                                    className={`w-full h-10 text-sm ${errors?.items?.[index]?.discount ? "border-red-500" : ""}`}
-                                    onInput={(e) => {
-                                      const value = e.target.value;
-                                      const discountValue =
-                                        parseFloat(value) || 0;
-                                      const quantity =
-                                        watch(`items.${index}.quantity`) || 1;
-                                      const unitPrice =
-                                        watch(`items.${index}.unitPrice`) || 0;
-                                      const discountType =
-                                        watch(`items.${index}.discountType`) ||
-                                        "percentage";
-                                      const progressPercentage =
-                                        watch(`items.${index}.progressPercentage`) || 100;
+                              <div className="relative flex rounded-md shadow-xs">
+                                <Input
+                                  id={`item-discount-${index}`}
+                                  type="text"
+                                  inputMode="decimal"
+                                  value={watch(`items.${index}.discount`) ?? 0}
+                                  onChange={(e) => {
+                                    // Sanitize input
+                                    let sanitizedValue = e.target.value.replace(
+                                      /,/g,
+                                      "."
+                                    );
+                                    sanitizedValue = sanitizedValue.replace(
+                                      /[^\d.]/g,
+                                      ""
+                                    );
+                                    const parts = sanitizedValue.split(".");
+                                    if (parts.length > 2) {
+                                      sanitizedValue =
+                                        parts[0] +
+                                        "." +
+                                        parts.slice(1).join("");
+                                    }
 
-                                      setValue(
-                                        `items.${index}.discount`,
-                                        discountValue,
-                                        {
-                                          shouldDirty: true,
-                                          shouldValidate: true,
-                                        }
-                                      );
+                                    let discountValue =
+                                      parseFloat(sanitizedValue);
+                                    if (isNaN(discountValue)) discountValue = 0;
+                                    if (discountValue < 0) discountValue = 0;
 
-                                      const total = calculateItemTotal(
-                                        quantity,
-                                        unitPrice,
-                                        discountValue,
-                                        discountType,
-                                        progressPercentage
-                                      );
+                                    const discountType =
+                                      watch(`items.${index}.discountType`) ||
+                                      "PERCENTAGE";
+                                    // Limiter à 100 si pourcentage
+                                    if (
+                                      (discountType === "PERCENTAGE" ||
+                                        discountType === "percentage") &&
+                                      discountValue > 100
+                                    ) {
+                                      discountValue = 100;
+                                    }
 
-                                      setValue(`items.${index}.total`, total, {
+                                    setValue(
+                                      `items.${index}.discount`,
+                                      discountValue,
+                                      {
                                         shouldDirty: true,
-                                      });
-                                    }}
-                                  />
-                                ) : (
-                                  <Input
-                                    id={`item-discount-${index}`}
-                                    type="number"
-                                    {...register(`items.${index}.discount`, {
-                                      valueAsNumber: true,
-                                      min: {
-                                        value: 0,
-                                        message:
-                                          "La remise doit être positive ou nulle",
-                                      },
-                                      max: {
-                                        value: 100,
-                                        message:
-                                          "La remise ne peut pas dépasser 100%",
-                                      },
-                                      validate: (value) => {
-                                        if (value > 100) {
-                                          return "La remise ne peut pas dépasser 100%";
-                                        }
-                                        return true;
-                                      },
-                                    })}
-                                    max="100"
-                                    step="0.01"
-                                    disabled={!canEdit}
-                                    className={`w-full h-10 rounded-lg text-sm ${errors?.items?.[index]?.discount ? "border-red-500" : ""}`}
-                                    onInput={(e) => {
-                                      const value = e.target.value;
-                                      const discountValue =
-                                        parseFloat(value) || 0;
-                                      const quantity =
-                                        watch(`items.${index}.quantity`) || 1;
-                                      const unitPrice =
-                                        watch(`items.${index}.unitPrice`) || 0;
-                                      const discountType =
-                                        watch(`items.${index}.discountType`) ||
-                                        "percentage";
-                                      const progressPercentage =
-                                        watch(`items.${index}.progressPercentage`) || 100;
+                                        shouldValidate: true,
+                                      }
+                                    );
 
-                                      setValue(
-                                        `items.${index}.discount`,
-                                        discountValue,
-                                        {
-                                          shouldDirty: true,
-                                          shouldValidate: true,
-                                        }
-                                      );
+                                    const quantity =
+                                      watch(`items.${index}.quantity`) || 1;
+                                    const unitPrice =
+                                      watch(`items.${index}.unitPrice`) || 0;
+                                    const progressPercentage =
+                                      watch(
+                                        `items.${index}.progressPercentage`
+                                      ) || 100;
 
-                                      const total = calculateItemTotal(
-                                        quantity,
-                                        unitPrice,
-                                        discountValue,
-                                        discountType,
-                                        progressPercentage
-                                      );
+                                    const total = calculateItemTotal(
+                                      quantity,
+                                      unitPrice,
+                                      discountValue,
+                                      discountType,
+                                      progressPercentage
+                                    );
+                                    setValue(`items.${index}.total`, total, {
+                                      shouldDirty: true,
+                                    });
+                                  }}
+                                  disabled={!canEdit}
+                                  className={`-me-px rounded-e-none shadow-none h-10 text-sm w-full ${
+                                    errors?.items?.[index]?.discount
+                                      ? "border-destructive focus-visible:ring-1 focus-visible:ring-destructive"
+                                      : ""
+                                  }`}
+                                />
+                                <Controller
+                                  name={`items.${index}.discountType`}
+                                  defaultValue="PERCENTAGE"
+                                  render={({ field }) => (
+                                    <Select
+                                      value={field.value || "PERCENTAGE"}
+                                      onValueChange={(value) => {
+                                        field.onChange(value);
+                                        setValue(
+                                          `items.${index}.discountType`,
+                                          value,
+                                          {
+                                            shouldDirty: true,
+                                            shouldValidate: true,
+                                          }
+                                        );
 
-                                      setValue(`items.${index}.total`, total, {
-                                        shouldDirty: true,
-                                      });
-                                    }}
-                                  />
-                                )}
-                                {errors?.items?.[index]?.discount && (
-                                  <p className="text-xs text-red-500">
-                                    {errors.items[index].discount.message}
-                                  </p>
-                                )}
+                                        // Recalculer le total
+                                        const discount =
+                                          parseFloat(
+                                            watch(`items.${index}.discount`)
+                                          ) || 0;
+                                        const quantity =
+                                          parseFloat(
+                                            watch(`items.${index}.quantity`)
+                                          ) || 1;
+                                        const unitPrice =
+                                          parseFloat(
+                                            watch(`items.${index}.unitPrice`)
+                                          ) || 0;
+                                        const progressPercentage =
+                                          parseFloat(
+                                            watch(
+                                              `items.${index}.progressPercentage`
+                                            )
+                                          ) || 100;
+
+                                        const total = calculateItemTotal(
+                                          quantity,
+                                          unitPrice,
+                                          discount,
+                                          value,
+                                          progressPercentage
+                                        );
+                                        setValue(
+                                          `items.${index}.total`,
+                                          total,
+                                          {
+                                            shouldDirty: true,
+                                          }
+                                        );
+                                      }}
+                                      disabled={!canEdit}
+                                    >
+                                      <SelectTrigger
+                                        className="w-auto min-w-[60px] rounded-s-none rounded-e-md border border-input border-s-0 text-sm text-muted-foreground bg-background px-3"
+                                        style={{ height: "40px" }}
+                                      >
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="PERCENTAGE">
+                                          %
+                                        </SelectItem>
+                                        <SelectItem value="FIXED">€</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  )}
+                                />
                               </div>
-                            </div>
-                              </div>
+                              {errors?.items?.[index]?.discount && (
+                                <p className="text-xs text-destructive">
+                                  {errors.items[index].discount.message}
+                                </p>
+                              )}
                             </div>
                           </div>
                         )}
@@ -1026,8 +1134,8 @@ export default function ItemsSection({
           </div>
         )}
 
-        {/* Bouton ajouter article en bas */}
-        {items.length > 0 && (
+        {/* Bouton ajouter article en bas - Masqué pour les factures de situation liées à un devis */}
+        {items.length > 0 && !isItemFieldLocked && (
           <div className="flex justify-center pt-4">
             <Button
               onClick={() => addItem()}

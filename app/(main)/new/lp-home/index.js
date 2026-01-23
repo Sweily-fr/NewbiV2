@@ -1,0 +1,12 @@
+export { NewHeroNavbar } from "./NewHeroNavbar";
+export { default as HeroSection } from "./HeroSection";
+export { default as TrustedBySection } from "./TrustedBySection";
+export { default as AgentStudioSection } from "./AgentStudioSection";
+export { default as ComponentsSection } from "./ComponentsSection";
+export { default as ComplianceSection } from "./ComplianceSection";
+export { default as GovernanceSection } from "./GovernanceSection";
+export { default as PricingSection } from "./PricingSection";
+export { default as NewPricingSection } from "./NewPricingSection";
+export { default as FeaturedOnSection } from "./FeaturedOnSection";
+export { default as TestimonialsSplit } from "./TestimonialsSplit";
+export { default as FAQSection } from "./FAQSection";

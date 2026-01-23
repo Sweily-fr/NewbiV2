@@ -20,7 +20,9 @@ export async function GET(request) {
     }
 
     // Proxy vers l'API backend
-    const backendUrl = process.env.BACKEND_API_URL || "http://localhost:4000";
+    const backendUrl = (
+      process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
+    ).replace(/\/$/, "");
     const response = await fetch(
       `${backendUrl}/banking-connect/gocardless/connect?institutionId=${institutionId}`,
       {

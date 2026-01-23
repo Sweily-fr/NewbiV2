@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { toast } from "@/src/utils/debouncedToast";
 import { useMutation } from "@apollo/client";
 import {
@@ -16,15 +16,17 @@ export const useKanbanTasks = (boardId, board) => {
     title: "",
     description: "",
     status: "TODO",
-    priority: "medium",
+    priority: "",
     startDate: "",
     dueDate: "",
     tags: [],
     checklist: [],
     assignedMembers: [],
+    images: [], // Images de la tâche
     newTag: "",
     newChecklistItem: "",
     pendingComments: [], // Commentaires en attente de création
+    timeTracking: null, // Données du timer
   };
 
   const [taskForm, setTaskForm] = useState(initialTaskForm);
@@ -32,6 +34,45 @@ export const useKanbanTasks = (boardId, board) => {
   const [selectedColumnId, setSelectedColumnId] = useState(null);
   const [isAddTaskOpen, setIsAddTaskOpen] = useState(false);
   const [isEditTaskOpen, setIsEditTaskOpen] = useState(false);
+  
+  // Ref pour éviter les mises à jour en boucle
+  const lastUpdateRef = useRef(null);
+
+  // Synchroniser taskForm avec les données du board quand la tâche en cours d'édition change
+  // Cela permet de recevoir les mises à jour en temps réel (commentaires, etc.)
+  useEffect(() => {
+    if (!isEditTaskOpen || !editingTask?.id || !board?.tasks) return;
+    
+    // Trouver la tâche mise à jour dans le board
+    const updatedTask = board.tasks.find(t => t.id === editingTask.id);
+    if (!updatedTask) return;
+    
+    // Créer une clé de comparaison incluant le contenu des commentaires (userName, userImage)
+    const getCommentsKey = (comments) => {
+      if (!comments || comments.length === 0) return '';
+      return comments.map(c => `${c.id}-${c.userName}-${c.userImage}`).join('|');
+    };
+    
+    const currentCommentsKey = getCommentsKey(taskForm.comments);
+    const updatedCommentsKey = getCommentsKey(updatedTask.comments);
+    
+    // Éviter les mises à jour en boucle
+    const updateKey = `${updatedTask.id}-${updatedCommentsKey}-${updatedTask.updatedAt}`;
+    if (lastUpdateRef.current === updateKey) return;
+    
+    // Si les commentaires ont changé (nombre OU contenu), mettre à jour le taskForm
+    if (currentCommentsKey !== updatedCommentsKey) {
+      console.log('🔄 [TaskForm] Mise à jour des commentaires (contenu changé)');
+      lastUpdateRef.current = updateKey;
+      
+      setTaskForm(prev => ({
+        ...prev,
+        comments: updatedTask.comments || [],
+        activity: updatedTask.activity || [],
+        updatedAt: updatedTask.updatedAt
+      }));
+    }
+  }, [board?.tasks, editingTask?.id, isEditTaskOpen, taskForm.comments]);
 
   // Task mutations
   const [addComment] = useMutation(ADD_COMMENT);
@@ -330,7 +371,7 @@ export const useKanbanTasks = (boardId, board) => {
           input: {
             title: taskForm.title,
             description: taskForm.description,
-            priority: taskForm.priority.toLowerCase(),
+            priority: taskForm.priority.toLowerCase() === 'none' ? '' : taskForm.priority.toLowerCase(),
             startDate: taskForm.startDate || null,
             dueDate: taskForm.dueDate || null,
             columnId: taskForm.columnId,
@@ -370,7 +411,7 @@ export const useKanbanTasks = (boardId, board) => {
         id: editingTask.id,
         title: taskForm.title,
         description: taskForm.description,
-        priority: taskForm.priority.toLowerCase(),
+        priority: taskForm.priority.toLowerCase() === 'none' ? '' : taskForm.priority.toLowerCase(),
         startDate: taskForm.startDate || null,
         dueDate: taskForm.dueDate || null,
         columnId: taskForm.columnId,
@@ -408,7 +449,7 @@ export const useKanbanTasks = (boardId, board) => {
     setTaskForm({
       ...initialTaskForm,
       status: "TODO",
-      priority: "medium",
+      priority: "",
       columnId: columnId, // Initialiser columnId avec la colonne sélectionnée
       startDate: options.startDate || "",
       dueDate: options.dueDate || "",
@@ -444,7 +485,7 @@ export const useKanbanTasks = (boardId, board) => {
       title: task?.title || "",
       description: task?.description || "",
       status: task?.status || "TODO",
-      priority: task?.priority ? task.priority.toLowerCase() : "medium",
+      priority: task?.priority ? task.priority.toLowerCase() : "",
       startDate: task?.startDate || "",
       dueDate: task?.dueDate || "", // Garder l'heure complète au format ISO
       columnId: task?.columnId || task?.column?.id || "",
@@ -459,6 +500,8 @@ export const useKanbanTasks = (boardId, board) => {
       assignedMembers: Array.isArray(task?.assignedMembers) ? task.assignedMembers : [],
       comments: Array.isArray(task?.comments) ? task.comments : [],
       activity: Array.isArray(task?.activity) ? task.activity : [],
+      images: Array.isArray(task?.images) ? task.images : [], // Images de la tâche
+      timeTracking: task?.timeTracking || null, // Données du timer
       userId: task?.userId,
       createdAt: task?.createdAt,
       updatedAt: task?.updatedAt,

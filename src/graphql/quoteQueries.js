@@ -255,6 +255,65 @@ export const GET_NEXT_QUOTE_NUMBER = gql`
   }
 `;
 
+export const GET_QUOTE_BY_NUMBER = gql`
+  query GetQuoteByNumber($workspaceId: ID!, $number: String!) {
+    quoteByNumber(workspaceId: $workspaceId, number: $number) {
+      id
+      prefix
+      number
+      finalTotalTTC
+      finalTotalHT
+      finalTotalVAT
+      items {
+        description
+        quantity
+        unitPrice
+        vatRate
+        vatExemptionText
+        unit
+        discount
+        discountType
+        details
+      }
+      client {
+        id
+        name
+        email
+        type
+        vatNumber
+        siret
+        address {
+          fullName
+          street
+          city
+          postalCode
+          country
+        }
+      }
+    }
+  }
+`;
+
+// Query pour rechercher les devis (pour la sélection de référence)
+export const SEARCH_QUOTES_FOR_REFERENCE = gql`
+  query SearchQuotesForReference($workspaceId: ID!, $search: String, $limit: Int) {
+    quotes(workspaceId: $workspaceId, search: $search, limit: $limit, status: COMPLETED) {
+      quotes {
+        id
+        prefix
+        number
+        issueDate
+        finalTotalTTC
+        situationInvoicedTotal
+        client {
+          name
+        }
+      }
+      totalCount
+    }
+  }
+`;
+
 // ==================== MUTATIONS ====================
 
 export const CREATE_QUOTE = gql`
@@ -334,7 +393,7 @@ export const useQuotes = (filters = {}) => {
     error: workspaceError,
   } = useRequiredWorkspace();
   const [page, setPage] = useState(1);
-  const limit = 10;
+  const limit = 50;
 
   const { data, loading, error, fetchMore, refetch } = useQuery(GET_QUOTES, {
     variables: {
@@ -344,7 +403,8 @@ export const useQuotes = (filters = {}) => {
       limit,
     },
     skip: !workspaceId,
-    fetchPolicy: "network-only",
+    fetchPolicy: "cache-and-network",
+    nextFetchPolicy: "cache-first",
     errorPolicy: "all",
   });
 
@@ -430,7 +490,8 @@ export const useQuoteStats = () => {
 
   return {
     stats: data?.quoteStats,
-    loading: (workspaceLoading && !workspaceId) || (loading && !data?.quoteStats),
+    loading:
+      (workspaceLoading && !workspaceId) || (loading && !data?.quoteStats),
     error: error || workspaceError,
     refetch,
   };
@@ -476,20 +537,14 @@ export function useNextQuoteNumber(prefix, options = {}) {
 
 // Hook pour créer un devis
 export const useCreateQuote = () => {
-  const client = useApolloClient();
   const { workspaceId } = useRequiredWorkspace();
   const { handleMutationError } = useErrorHandler();
 
   const [createQuoteMutation, { loading }] = useMutation(CREATE_QUOTE, {
-    onCompleted: () => {
-      // Toast désactivé ici - géré dans use-quote-editor.js
-      // Invalider le cache des listes
-      client.refetchQueries({
-        include: [GET_QUOTES, GET_QUOTE_STATS],
-      });
-    },
+    refetchQueries: ['GetQuotes', 'GetQuoteStats'],
+    awaitRefetchQueries: true,
     onError: (error) => {
-      handleMutationError(error, 'create', 'quote');
+      handleMutationError(error, "create", "quote");
     },
   });
 
@@ -565,15 +620,15 @@ export const useDeleteQuote = () => {
       await deleteQuoteMutation({
         variables: { id },
       });
-      
+
       // Invalider le cache
       client.refetchQueries({
         include: [GET_QUOTES, GET_QUOTE_STATS],
       });
-      
+
       // Toast désactivé ici - géré dans les composants (quote-row-actions, etc.)
       // Le paramètre silent est conservé pour compatibilité mais n'est plus utilisé
-      
+
       return true;
     } catch (error) {
       throw error;
@@ -707,23 +762,29 @@ export const useCheckQuoteNumber = () => {
           fetchPolicy: "network-only", // Toujours vérifier avec le serveur
         });
 
-        console.log('[checkQuoteNumber] Tous les devis:', data?.quotes?.quotes?.map(q => `${q.prefix}${q.number}`));
-        console.log('[checkQuoteNumber] Recherche:', { prefix: quotePrefix, number: quoteNumber });
-        console.log('[checkQuoteNumber] ExcludeId:', excludeId);
+        console.log(
+          "[checkQuoteNumber] Tous les devis:",
+          data?.quotes?.quotes?.map((q) => `${q.prefix}${q.number}`)
+        );
+        console.log("[checkQuoteNumber] Recherche:", {
+          prefix: quotePrefix,
+          number: quoteNumber,
+        });
+        console.log("[checkQuoteNumber] ExcludeId:", excludeId);
 
         if (data?.quotes?.quotes) {
           // Chercher un devis avec le même préfixe ET le même numéro (en excluant l'ID actuel si fourni)
-          const existingQuote = data.quotes.quotes.find(
-            (quote) => {
-              const matchesNumber = quote.number === quoteNumber;
-              const matchesPrefix = quote.prefix === quotePrefix;
-              const notExcluded = !excludeId || quote.id !== excludeId;
-              console.log(`[checkQuoteNumber] Comparaison: "${quote.prefix}${quote.number}" === "${quotePrefix}${quoteNumber}" ? prefix:${matchesPrefix}, number:${matchesNumber}, notExcluded: ${notExcluded}`);
-              return matchesNumber && matchesPrefix && notExcluded;
-            }
-          );
+          const existingQuote = data.quotes.quotes.find((quote) => {
+            const matchesNumber = quote.number === quoteNumber;
+            const matchesPrefix = quote.prefix === quotePrefix;
+            const notExcluded = !excludeId || quote.id !== excludeId;
+            console.log(
+              `[checkQuoteNumber] Comparaison: "${quote.prefix}${quote.number}" === "${quotePrefix}${quoteNumber}" ? prefix:${matchesPrefix}, number:${matchesNumber}, notExcluded: ${notExcluded}`
+            );
+            return matchesNumber && matchesPrefix && notExcluded;
+          });
 
-          console.log('[checkQuoteNumber] Devis trouvé:', existingQuote);
+          console.log("[checkQuoteNumber] Devis trouvé:", existingQuote);
 
           return {
             exists: !!existingQuote,
@@ -733,7 +794,10 @@ export const useCheckQuoteNumber = () => {
 
         return { exists: false, quote: null };
       } catch (error) {
-        console.error("Erreur lors de la vérification du numéro de devis:", error);
+        console.error(
+          "Erreur lors de la vérification du numéro de devis:",
+          error
+        );
         return { exists: false, quote: null };
       }
     },

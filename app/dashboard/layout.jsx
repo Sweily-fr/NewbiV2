@@ -21,21 +21,36 @@ import { SiteHeaderSkeleton } from "@/src/components/site-header-skeleton";
 import { useInactivityTimer } from "@/src/hooks/useInactivityTimer";
 import { useSessionValidator } from "@/src/hooks/useSessionValidator";
 import { authClient } from "@/src/lib/auth-client";
-import { SubscriptionSuccessModal } from "@/src/components/subscription-success-modal";
+import { ProSubscriptionOverlayHandler } from "@/src/components/pro-subscription-overlay-handler";
 import { SettingsModal } from "@/src/components/settings-modal";
 import { OrgActivationHandler } from "@/src/components/org-activation-handler";
 import { StripeConnectUrlHandler } from "@/src/components/stripe-connect-url-handler";
+import { ReconciliationToastProvider } from "@/src/components/reconciliation/ReconciliationToast";
+import {
+  ToastProvider,
+  ToastManagerInitializer,
+} from "@/src/components/ui/toast-manager";
+import { AccountingViewProvider } from "@/src/contexts/accounting-view-context";
+import { FloatingTimer } from "@/src/components/FloatingTimer";
+import { OAuthCallbackHandler } from "@/src/components/oauth-callback-handler";
+import { EInvoicingPromoModal } from "@/src/components/e-invoicing-promo-modal";
+import { TutorialProvider } from "@/src/contexts/tutorial-context";
+import { TutorialOverlay } from "@/src/components/tutorial/tutorial-overlay";
+import { SignatureSidebarRight } from "@/src/components/signature-sidebar-right";
 
 // Composant interne qui utilise le contexte
 function DashboardContent({ children }) {
   const pathname = usePathname();
   const router = useRouter();
-  const isSignaturePage = pathname === "/dashboard/outils/signatures-mail/new";
+  const isSignaturePage = pathname?.startsWith(
+    "/dashboard/outils/signatures-mail/new"
+  );
   const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
   const [isCommunitySidebarOpen, setIsCommunitySidebarOpen] = useState(false);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [settingsInitialTab, setSettingsInitialTab] = useState("notifications");
+  const [eInvoicingPromoOpen, setEInvoicingPromoOpen] = useState(false);
 
   // Hook pour gérer l'onboarding et les données du layout
   const {
@@ -82,7 +97,27 @@ function DashboardContent({ children }) {
     setIsHydrated(true);
   }, []);
 
+  // Afficher le modal de facturation électronique automatiquement après connexion
+  // si l'utilisateur a un abonnement actif et n'a pas encore vu le modal
+  useEffect(() => {
+    if (!isHydrated || !layoutInitialized) return;
+
+    const E_INVOICING_PROMO_KEY = "e_invoicing_promo_shown";
+    const hasSeenPromo = localStorage.getItem(E_INVOICING_PROMO_KEY);
+
+    if (isActive() && !hasSeenPromo && !isOnboardingOpen) {
+      // Attendre un peu pour ne pas surcharger l'utilisateur
+      const timer = setTimeout(() => {
+        setEInvoicingPromoOpen(true);
+        localStorage.setItem(E_INVOICING_PROMO_KEY, "true");
+      }, 2000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [isHydrated, layoutInitialized, isActive, isOnboardingOpen]);
+
   // Déterminer si on est sur une page d'outil qui nécessite la sidebar fermée
+  // Exception : la page de signature doit avoir la sidebar en mode rétréci (icon)
   const isToolPage =
     pathname.includes("/dashboard/outils/") &&
     (pathname.includes("/new") ||
@@ -90,21 +125,55 @@ function DashboardContent({ children }) {
       pathname.includes("/edit") ||
       pathname.includes("/editer") ||
       pathname.includes("/view") ||
-      pathname.includes("/avoir/"));
+      pathname.includes("/avoir/")) &&
+    !isSignaturePage; // Exception pour la page de signature
+
+  // Clé localStorage pour persister l'état de la sidebar
+  const SIDEBAR_STORAGE_KEY = "sidebar_collapsed";
+
+  // Lire l'état initial depuis localStorage (false = rétrécie par défaut)
+  const getInitialSidebarState = () => {
+    if (typeof window === "undefined") return false;
+    const stored = localStorage.getItem(SIDEBAR_STORAGE_KEY);
+    // Si pas de valeur stockée, retourner false (rétrécie par défaut)
+    if (stored === null) return false;
+    return stored === "true";
+  };
 
   // État pour contrôler l'ouverture de la sidebar
-  const [sidebarOpen, setSidebarOpen] = useState(!isToolPage);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Mettre à jour l'état de la sidebar quand le pathname change
+  // Charger l'état depuis localStorage après hydratation
   useEffect(() => {
-    setSidebarOpen(!isToolPage);
+    if (isHydrated && !isToolPage) {
+      const storedState = getInitialSidebarState();
+      setSidebarOpen(storedState);
+    }
+  }, [isHydrated, isToolPage]);
+
+  // Sauvegarder l'état dans localStorage à chaque changement
+  const handleSidebarChange = (open) => {
+    setSidebarOpen(open);
+    if (typeof window !== "undefined" && !isToolPage) {
+      localStorage.setItem(SIDEBAR_STORAGE_KEY, String(open));
+    }
+  };
+
+  // Forcer la sidebar fermée sur les pages d'outils (sauf page de signature)
+  useEffect(() => {
+    if (isToolPage) {
+      setSidebarOpen(false);
+    } else if (isSignaturePage) {
+      // Pour la page de signature, forcer en mode rétréci (false = collapsed)
+      setSidebarOpen(false);
+    }
   }, [isToolPage]);
 
   // Désactiver complètement le banner - remplacé par le compteur dans le header
   const showTrialBanner = false;
 
   return (
-    <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen}>
+    <SidebarProvider open={sidebarOpen} onOpenChange={handleSidebarChange}>
       <AppSidebar
         variant="inset"
         onCommunityClick={() => {
@@ -117,10 +186,11 @@ function DashboardContent({ children }) {
           setSettingsInitialTab("notifications");
           setSettingsModalOpen(true);
         }}
+        onOpenEInvoicingPromo={() => setEInvoicingPromoOpen(true)}
       />
       <SidebarInset className="md:pt-0 pt-10">
         <SiteHeader />
-        <div className="flex flex-1 flex-col">
+        <div className="flex flex-1 flex-col overflow-y-auto">
           {showTrialBanner && (
             <div className="p-4 pb-0">
               <TrialBanner
@@ -137,6 +207,10 @@ function DashboardContent({ children }) {
           </div>
         </div>
       </SidebarInset>
+
+      {/* Sidebar droite miroir - Affichée uniquement sur la page de signature */}
+      {isSignaturePage && <SignatureSidebarRight />}
+
       <SearchCommand />
 
       {/* Modal de pricing pour upgrade - DÉSACTIVÉ car géré dans chaque page */}
@@ -158,8 +232,10 @@ function DashboardContent({ children }) {
         onOpenChange={setIsCommunitySidebarOpen}
       />
 
-      {/* Modal de succès d'abonnement */}
-      <SubscriptionSuccessModal />
+      {/* Animation de succès d'abonnement Pro */}
+      <Suspense fallback={null}>
+        <ProSubscriptionOverlayHandler />
+      </Suspense>
 
       {/* Gestionnaire d'activation d'organisation après création */}
       <Suspense fallback={null}>
@@ -171,6 +247,14 @@ function DashboardContent({ children }) {
         <StripeConnectUrlHandler />
       </Suspense>
 
+      {/* Gestionnaire de callback OAuth (SuperPDP, etc.) */}
+      <Suspense fallback={null}>
+        <OAuthCallbackHandler
+          onOpenSettings={setSettingsModalOpen}
+          onSetSettingsTab={setSettingsInitialTab}
+        />
+      </Suspense>
+
       {/* Modal de paramètres avec notifications */}
       <SettingsModal
         open={settingsModalOpen}
@@ -178,8 +262,20 @@ function DashboardContent({ children }) {
         initialTab={settingsInitialTab}
       />
 
+      {/* Timer flottant - visible sur toutes les pages quand un timer est actif */}
+      <FloatingTimer />
+
+      {/* Modal de promotion facturation électronique */}
+      <EInvoicingPromoModal
+        open={eInvoicingPromoOpen}
+        onOpenChange={setEInvoicingPromoOpen}
+      />
+
+      {/* Tutoriel interactif */}
+      <TutorialOverlay />
+
       {/* Bouton de test pour le modal (à retirer en production) */}
-      {process.env.NODE_ENV === "development" && (
+      {/* {process.env.NODE_ENV === "development" && (
         <button
           onClick={() => {
             window.history.pushState(
@@ -193,19 +289,30 @@ function DashboardContent({ children }) {
         >
           Test Modal Success
         </button>
-      )}
+      )} */}
     </SidebarProvider>
   );
 }
 
 export default function DashboardLayout({ children }) {
   const pathname = usePathname();
-  const isSignaturePage = pathname === "/dashboard/outils/signatures-mail/new";
+  const isSignaturePage = pathname?.startsWith(
+    "/dashboard/outils/signatures-mail/new"
+  );
 
   // Wrapper avec le provider de layout optimisé
   const content = (
     <DashboardLayoutProvider>
-      <DashboardContent>{children}</DashboardContent>
+      <AccountingViewProvider>
+        <TutorialProvider>
+          <ToastProvider>
+            <ToastManagerInitializer />
+            <ReconciliationToastProvider>
+              <DashboardContent>{children}</DashboardContent>
+            </ReconciliationToastProvider>
+          </ToastProvider>
+        </TutorialProvider>
+      </AccountingViewProvider>
     </DashboardLayoutProvider>
   );
 

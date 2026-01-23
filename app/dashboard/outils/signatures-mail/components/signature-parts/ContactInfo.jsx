@@ -38,6 +38,8 @@ const ContactInfo = ({
     address: true,
   },
   centered = false, // Mode centré pour signature verticale
+  inlinePhoneWebsite = false, // Mode inline : téléphone et site web sur la même ligne
+  showTextPrefix = false, // Affiche "T." pour téléphone sans icône
 }) => {
   // Icônes hébergées sur Cloudflare (compatibles Gmail)
   const smartphoneIcon = "https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/info/smartphone.png"; // Téléphone fixe
@@ -46,8 +48,11 @@ const ContactInfo = ({
   const websiteIcon = "https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/info/globe.png";
   const addressIcon = "https://pub-f5ac1d55852142ab931dc75bdc939d68.r2.dev/info/map-pin.png";
 
-  const renderContactRow = (icon, value, field, placeholder, validation, spacing) => {
+  const renderContactRow = (icon, value, field, placeholder, validation, spacing, textPrefix = null) => {
     if (!value) return null;
+
+    // Déterminer le préfixe à afficher
+    const prefix = showTextPrefix && !showIcons[field] && textPrefix ? textPrefix : null;
 
     return (
       <tr>
@@ -65,7 +70,7 @@ const ContactInfo = ({
             cellPadding="0"
             cellSpacing="0"
             border="0"
-            style={{ 
+            style={{
               borderCollapse: "collapse",
               margin: centered ? "0 auto" : "0",
             }}
@@ -103,6 +108,21 @@ const ContactInfo = ({
                     verticalAlign: field === "address" ? "top" : "middle",
                   }}
                 >
+                  {prefix && (
+                    <span
+                      style={{
+                        color:
+                          typography[field]?.color ||
+                          colors.contact ||
+                          "rgb(102,102,102)",
+                        fontSize: `${typography[field]?.fontSize || fontSize.contact || 12}px`,
+                        fontFamily:
+                          typography[field]?.fontFamily || fontFamily,
+                      }}
+                    >
+                      {prefix}
+                    </span>
+                  )}
                   <InlineEdit
                     value={value}
                     onChange={(val) => onFieldChange(field, val)}
@@ -134,6 +154,69 @@ const ContactInfo = ({
     );
   };
 
+  // Mode inline : téléphone et site web sur la même ligne
+  if (inlinePhoneWebsite) {
+    return (
+      <tr>
+        <td
+          colSpan="2"
+          style={{
+            paddingTop: "4px",
+            fontSize: `${typography.phone?.fontSize || fontSize.contact || 11}px`,
+            color: typography.phone?.color || colors.contact || "#666666",
+            fontFamily: typography.phone?.fontFamily || fontFamily,
+            textAlign: centered ? "center" : "left",
+          }}
+        >
+          {phone && (
+            <>
+              <span>T. </span>
+              <InlineEdit
+                value={phone}
+                onChange={(val) => onFieldChange("phone", val)}
+                placeholder="Téléphone"
+                validation={validators.validatePhone}
+                displayClassName="border-0 shadow-none p-0 h-auto"
+                inputClassName="border-0 shadow-none p-0 h-auto"
+                style={{
+                  display: "inline",
+                  width: "auto",
+                  minWidth: "0",
+                  height: "auto",
+                  color: typography.phone?.color || colors.contact || "#666666",
+                  fontSize: `${typography.phone?.fontSize || fontSize.contact || 11}px`,
+                  fontFamily: typography.phone?.fontFamily || fontFamily,
+                }}
+              />
+            </>
+          )}
+          {phone && website && " "}
+          {website && (
+            <span style={{ color: primaryColor }}>
+              <InlineEdit
+                value={website}
+                onChange={(val) => onFieldChange("website", val)}
+                placeholder="Site web"
+                validation={validators.validateUrl}
+                displayClassName="border-0 shadow-none p-0 h-auto"
+                inputClassName="border-0 shadow-none p-0 h-auto"
+                style={{
+                  display: "inline",
+                  width: "auto",
+                  minWidth: "0",
+                  height: "auto",
+                  color: primaryColor,
+                  fontSize: `${typography.website?.fontSize || fontSize.contact || 11}px`,
+                  fontFamily: typography.website?.fontFamily || fontFamily,
+                }}
+              />
+            </span>
+          )}
+        </td>
+      </tr>
+    );
+  }
+
   return (
     <>
       {/* Téléphone */}
@@ -143,7 +226,8 @@ const ContactInfo = ({
         "phone",
         "Numéro de téléphone",
         validators.validatePhone,
-        getSpacing(signatureData, spacings.phoneToMobile, 8)
+        getSpacing(signatureData, spacings.phoneToMobile, 8),
+        "T. "
       )}
 
       {/* Mobile */}
@@ -153,7 +237,8 @@ const ContactInfo = ({
         "mobile",
         "Numéro de mobile",
         validators.validatePhone,
-        getSpacing(signatureData, spacings.mobileToEmail, 8)
+        getSpacing(signatureData, spacings.mobileToEmail, 8),
+        "M. "
       )}
 
       {/* Email */}

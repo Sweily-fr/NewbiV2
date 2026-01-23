@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useId } from "react";
+import { useState, useEffect, useCallback, useId, useRef } from "react";
 import { useFormContext, useFieldArray } from "react-hook-form";
 import {
   Plus,
@@ -63,8 +63,10 @@ import { Separator } from "@/src/components/ui/separator";
 
 import InvoiceInfoSection from "./invoices-form-sections/InvoiceInfoSection";
 import ItemsSection from "./invoices-form-sections/ItemsSection";
+import ProgressSection from "./invoices-form-sections/ProgressSection";
 import DiscountsAndTotalsSection from "./invoices-form-sections/DiscountsAndTotalsSection";
 import ShippingSection from "./invoices-form-sections/ShippingSection";
+import CustomFieldsSection from "./invoices-form-sections/CustomFieldsSection";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import { Calendar } from "@/src/components/ui/calendar";
 import {
@@ -122,7 +124,10 @@ function ProductSearchCombobox({
   const { data, loading, error } = useQuery(GET_PRODUCTS, {
     variables: {
       workspaceId,
-      search: debouncedSearchTerm && debouncedSearchTerm.trim() !== "" ? debouncedSearchTerm : undefined,
+      search:
+        debouncedSearchTerm && debouncedSearchTerm.trim() !== ""
+          ? debouncedSearchTerm
+          : undefined,
       limit: 20,
     },
     fetchPolicy: "network-only",
@@ -149,7 +154,8 @@ function ProductSearchCombobox({
         description: selectedProduct.label,
         quantity: 1,
         unitPrice: selectedProduct.price,
-        vatRate: selectedProduct.vatRate !== undefined ? selectedProduct.vatRate : 20,
+        vatRate:
+          selectedProduct.vatRate !== undefined ? selectedProduct.vatRate : 20,
         productId: selectedProduct.value,
         unit: selectedProduct.unit || "unité",
       });
@@ -198,15 +204,18 @@ function ProductSearchCombobox({
           />
         </Button>
       </PopoverTrigger>
-      <PopoverContent 
-        className="p-0 w-[var(--radix-popover-trigger-width)] sm:w-[calc(var(--radix-popover-trigger-width)+12rem)] bg-popover text-popover-foreground" 
-        align="start" 
+      <PopoverContent
+        className="p-0 w-[var(--radix-popover-trigger-width)] sm:w-[calc(var(--radix-popover-trigger-width)+12rem)] bg-popover text-popover-foreground"
+        align="start"
         side="bottom"
         sideOffset={4}
         avoidCollisions={false}
         sticky="always"
       >
-        <Command shouldFilter={false} className="bg-popover text-popover-foreground">
+        <Command
+          shouldFilter={false}
+          className="bg-popover text-popover-foreground"
+        >
           <CommandInput
             placeholder="Rechercher un produit..."
             value={searchTerm}
@@ -219,7 +228,9 @@ function ProductSearchCombobox({
               <CommandEmpty>Tapez pour rechercher un produit...</CommandEmpty>
             )}
             {!loading && debouncedSearchTerm && products.length === 0 && (
-              <CommandEmpty>Aucun produit trouvé pour "{debouncedSearchTerm}".</CommandEmpty>
+              <CommandEmpty>
+                Aucun produit trouvé pour "{debouncedSearchTerm}".
+              </CommandEmpty>
             )}
             {!loading && products.length > 0 && (
               <CommandGroup>
@@ -272,15 +283,21 @@ export default function EnhancedInvoiceForm({
   onEditClient,
   markFieldAsEditing,
   unmarkFieldAsEditing,
+  onPreviousSituationInvoicesChange,
 }) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [activeField, setActiveField] = useState(null);
   const [internalCurrentStep, setInternalCurrentStep] = useState(1);
+  const scrollContainerRef = useRef(null);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [isLinkedToQuote, setIsLinkedToQuote] = useState(false);
   const canEdit = !readOnly && !loading;
 
   // Utiliser l'état externe si fourni, sinon utiliser l'état interne
-  const currentStep = externalCurrentStep !== undefined ? externalCurrentStep : internalCurrentStep;
+  const currentStep =
+    externalCurrentStep !== undefined
+      ? externalCurrentStep
+      : internalCurrentStep;
   const setCurrentStep = onStepChange || setInternalCurrentStep;
 
   // Utiliser react-hook-form context
@@ -295,9 +312,20 @@ export default function EnhancedInvoiceForm({
     append,
     remove,
     update,
+    replace: replaceItems,
   } = useFieldArray({
     name: "items",
   });
+
+  // Fonction pour réinitialiser les articles (utilisée par InvoiceInfoSection)
+  const resetItems = useCallback(() => {
+    console.log(
+      "📋 [RESET ITEMS] Réinitialisation des articles, items actuels:",
+      items.length
+    );
+    replaceItems([]);
+    console.log("📋 [RESET ITEMS] Articles vidés");
+  }, [replaceItems, items.length]);
 
   // Watch les données du formulaire
   const data = watch();
@@ -335,7 +363,8 @@ export default function EnhancedInvoiceForm({
     }, 0) || 0;
 
   // Si totalHT <= 0 (remise >= 100%), la TVA doit être 0
-  const adjustedTotalTVA = totalHT > 0 && subtotalHT > 0 ? totalTVA * (totalHT / subtotalHT) : 0;
+  const adjustedTotalTVA =
+    totalHT > 0 && subtotalHT > 0 ? totalTVA * (totalHT / subtotalHT) : 0;
   const totalTTC = totalHT + adjustedTotalTVA;
 
   const updateField = (field, value) => {
@@ -434,12 +463,20 @@ export default function EnhancedInvoiceForm({
   const handleNextStep = () => {
     if (currentStep < 2) {
       setCurrentStep(currentStep + 1);
+      // Scroll vers le haut du conteneur
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.scrollTo({ top: 0, behavior: "smooth" });
+      }
     }
   };
 
   const handlePreviousStep = () => {
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
+      // Scroll vers le haut du conteneur
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.scrollTo({ top: 0, behavior: "smooth" });
+      }
     }
   };
 
@@ -468,12 +505,12 @@ export default function EnhancedInvoiceForm({
     const hasInvoiceNumberError = validationErrors?.invoiceNumber;
     const hasPrefixError = validationErrors?.prefix;
     const hasPurchaseOrderError = validationErrors?.purchaseOrderNumber;
-    
+
     // Vérifier que les champs requis sont remplis
     const hasClient = data.client?.id;
     const hasCompanyName = data.companyInfo?.name;
     const hasIssueDate = data.issueDate;
-    
+
     return (
       hasClient &&
       hasCompanyName &&
@@ -493,14 +530,18 @@ export default function EnhancedInvoiceForm({
     const hasItemsError = validationErrors?.items;
     const hasShippingError = validationErrors?.shipping;
     const hasDiscountError = validationErrors?.discount;
-    
+
     // Vérifier que les articles sont valides
     const hasItems = data.items && data.items.length > 0;
-    const itemsAreValid = hasItems && data.items.every(
-      (item) => item.description && item.quantity && item.unitPrice
+    const itemsAreValid =
+      hasItems &&
+      data.items.every(
+        (item) => item.description && item.quantity && item.unitPrice
+      );
+
+    return (
+      itemsAreValid && !hasItemsError && !hasShippingError && !hasDiscountError
     );
-    
-    return itemsAreValid && !hasItemsError && !hasShippingError && !hasDiscountError;
   };
 
   return (
@@ -511,26 +552,19 @@ export default function EnhancedInvoiceForm({
           <ValidationCallout errors={validationErrors} />
         </div>
       )}
-      
+
       {/* Form Content */}
-      <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent min-h-0 pb-20 lg:pb-0">
-        <div className="space-y-6">
+      <div
+        ref={scrollContainerRef}
+        className="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent min-h-0 pb-20 lg:pb-0"
+      >
+        <div className="space-y-4">
           {/* Étape 1: Détails de la facture */}
           {currentStep === 1 && (
             <>
-              {/* Section 1: Informations de la facture */}
-              <InvoiceInfoSection 
-                canEdit={canEdit} 
-                validateInvoiceNumber={validateInvoiceNumber}
-              />
-
-              {/* Section 2: Sélection d'un client */}
-              <Card className="gap-0 shadow-none border-none pt-2 pb-6 pr-2 pl-2 bg-transparent">
-                <CardHeader className="p-0">
-                  <CardTitle className="flex items-center font-normal text-lg">
-                    Sélection d'un client
-                  </CardTitle>
-                </CardHeader>
+              {/* Section 1: Sélection d'un client (en premier) */}
+              <div className="pl-2 pr-2 pt-2">
+                <h3 className="font-normal text-lg">Sélection d'un client</h3>
                 <ClientSelector
                   selectedClient={data.client}
                   onSelect={(client) => updateField("client", client)}
@@ -538,15 +572,30 @@ export default function EnhancedInvoiceForm({
                   className="p-0"
                   error={
                     validationErrors?.client && !validationErrors.client.canEdit
-                      ? (validationErrors.client.message || validationErrors.client)
+                      ? validationErrors.client.message ||
+                        validationErrors.client
                       : null
                   }
                   setValidationErrors={setValidationErrors}
                   clientPositionRight={data.clientPositionRight || false}
-                  onClientPositionChange={(checked) => updateField("clientPositionRight", checked)}
+                  onClientPositionChange={(checked) =>
+                    updateField("clientPositionRight", checked)
+                  }
                   onEditClient={onEditClient}
                 />
-              </Card>
+              </div>
+
+              {/* Section 2: Informations de la facture */}
+              <InvoiceInfoSection
+                canEdit={canEdit}
+                validateInvoiceNumber={validateInvoiceNumber}
+                onPreviousSituationInvoicesChange={
+                  onPreviousSituationInvoicesChange
+                }
+                setValidationErrors={setValidationErrors}
+                onLinkedToQuoteChange={setIsLinkedToQuote}
+                onResetItems={resetItems}
+              />
             </>
           )}
 
@@ -561,20 +610,39 @@ export default function EnhancedInvoiceForm({
                 validationErrors={validationErrors?.items?.details || []}
                 markFieldAsEditing={markFieldAsEditing}
                 unmarkFieldAsEditing={unmarkFieldAsEditing}
+                isLinkedToQuote={isLinkedToQuote}
               />
 
-              {/* Section 2: Facturation de livraison */}
-              <ShippingSection canEdit={canEdit} validationErrors={validationErrors} />
+              {/* Section 2: Facturation partielle (uniquement pour factures de situation) */}
+              <ProgressSection canEdit={canEdit} />
 
               {/* Section 3: Remises et totaux */}
-              <DiscountsAndTotalsSection canEdit={canEdit} validationErrors={validationErrors} />
+              <DiscountsAndTotalsSection
+                canEdit={canEdit}
+                validationErrors={validationErrors}
+              />
+
+              {/* Section 4: Facturation de livraison */}
+              <ShippingSection
+                canEdit={canEdit}
+                validationErrors={validationErrors}
+              />
+
+              {/* Section 5: Champs personnalisés */}
+              <CustomFieldsSection
+                canEdit={canEdit}
+                validationErrors={validationErrors}
+              />
             </>
           )}
         </div>
       </div>
 
       {/* Footer avec boutons d'action - Positionné en dehors du flux normal */}
-      <div className="pt-4 z-50 border-t lg:relative lg:bottom-auto lg:pt-4 fixed bottom-0 left-0 right-0 bg-background lg:bg-transparent p-4 lg:p-0" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
+      <div
+        className="pt-4 z-50 border-t lg:relative lg:bottom-auto lg:pt-4 fixed bottom-0 left-0 right-0 bg-background lg:bg-transparent p-4 lg:p-0"
+        style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}
+      >
         <div className="max-w-2xl mx-auto px-2 md:px-6 lg:px-0">
           <div className="flex justify-between items-center">
             <div className="flex gap-3">
@@ -639,7 +707,8 @@ export default function EnhancedInvoiceForm({
           <AlertDialogHeader>
             <AlertDialogTitle>Quitter l'éditeur ?</AlertDialogTitle>
             <AlertDialogDescription>
-              Êtes-vous sûr de vouloir quitter ? Les modifications non enregistrées seront perdues.
+              Êtes-vous sûr de vouloir quitter ? Les modifications non
+              enregistrées seront perdues.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

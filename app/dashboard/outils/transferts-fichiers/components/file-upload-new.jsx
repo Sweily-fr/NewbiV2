@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useFileTransferR2Multipart } from "../hooks/useFileTransferR2Multipart";
 import { useStripeConnect } from "@/src/hooks/useStripeConnect";
 import StripeConnectOnboarding from "@/src/components/stripe/StripeConnectOnboarding";
@@ -58,7 +58,9 @@ import {
   IconBell,
   IconLock,
   IconEye,
+  IconDroplet,
 } from "@tabler/icons-react";
+import { isImageFile, countImageFiles } from "../utils/watermark";
 
 // Format bytes utility function
 const formatBytes = (bytes, decimals = 2) => {
@@ -158,7 +160,16 @@ export default function FileUploadNew({
     passwordProtected: false,
     password: "",
     allowPreview: true,
+    // Options filigrane
+    applyWatermark: false,
+    watermarkText: "CONFIDENTIEL",
+    watermarkPosition: "diagonal", // 'center', 'bottom-right', 'diagonal', 'tile'
   });
+
+  // Compter le nombre d'images dans les fichiers sélectionnés
+  const imageCount = useMemo(() => {
+    return countImageFiles(selectedFiles);
+  }, [selectedFiles]);
 
   const [isDragging, setIsDragging] = useState(false);
   const [errors, setErrors] = useState([]);
@@ -492,9 +503,10 @@ export default function FileUploadNew({
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 h-[75vh]">
-      {/* Upload Section - Fixe */}
-      <div className="flex flex-col gap-2 h-full overflow-hidden">
+    <>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 h-full min-h-0">
+      {/* Upload Section */}
+      <div className="flex flex-col gap-2 min-h-0">
         {/* Drop area ou Progress */}
         {isUploading ? (
           <div className="border-input flex min-h-60 flex-col items-center justify-center rounded-xl border border-dashed p-4 animate-in fade-in duration-300">
@@ -664,9 +676,9 @@ export default function FileUploadNew({
 
         {/* File list */}
         {selectedFiles.length > 0 && (
-          <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+          <div className="flex-1 flex flex-col min-h-0">
             {/* Liste des fichiers avec scroll */}
-            <div className="flex-1 overflow-y-auto space-y-3 pr-1 min-h-0">
+            <div className="flex-1 overflow-y-auto space-y-3 pr-1">
               {selectedFiles.map((fileItem) => (
                 <FileUploadItem
                   key={fileItem.id}
@@ -716,7 +728,7 @@ export default function FileUploadNew({
         )}
       </div>
       {/* Options Panel */}
-      <div className="flex flex-col h-full overflow-hidden">
+      <div className="flex flex-col min-h-0">
         {/* Header fixe */}
         <div className="flex items-center justify-between pb-4 flex-shrink-0">
           <h3 className="text-lg font-medium">Options d'envoi</h3>
@@ -761,7 +773,7 @@ export default function FileUploadNew({
                   <Label className="text-sm font-normal">
                     Demander un paiement
                   </Label>
-                  {!stripeConnected && (
+                  {!stripeConnected && !transferOptions.applyWatermark && (
                     <Button
                       variant="outline"
                       size="sm"
@@ -773,9 +785,11 @@ export default function FileUploadNew({
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {stripeConnected
-                    ? "Exiger un paiement avant le téléchargement"
-                    : "Connectez Stripe Connect pour activer les paiements"}
+                  {transferOptions.applyWatermark
+                    ? "Non disponible avec le filigrane activé"
+                    : stripeConnected
+                      ? "Exiger un paiement avant le téléchargement"
+                      : "Connectez Stripe Connect pour activer les paiements"}
                 </p>
               </div>
               <Switch
@@ -787,7 +801,7 @@ export default function FileUploadNew({
                   }
                   handleOptionChange("requirePayment", checked);
                 }}
-                disabled={!user}
+                disabled={!user || transferOptions.applyWatermark}
                 className="data-[state=checked]:bg-[#5a50ff] scale-75 cursor-pointer"
               />
             </div>
@@ -1005,6 +1019,98 @@ export default function FileUploadNew({
 
           <Separator />
 
+          {/* Filigrane */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <IconDroplet className="size-4 text-muted-foreground" />
+              <Label className="text-sm font-normal">Filigrane</Label>
+              {imageCount > 0 && (
+                <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                  {imageCount} image{imageCount > 1 ? "s" : ""}
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <Label className="text-sm font-normal">
+                  Appliquer un filigrane
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Ajouter un filigrane sur les images avant l'envoi
+                </p>
+              </div>
+              <Switch
+                checked={transferOptions.applyWatermark}
+                onCheckedChange={(checked) => {
+                  handleOptionChange("applyWatermark", checked);
+                  // Désactiver le paiement si filigrane activé
+                  if (checked && transferOptions.requirePayment) {
+                    handleOptionChange("requirePayment", false);
+                    handleOptionChange("paymentAmount", 0);
+                  }
+                }}
+                disabled={imageCount === 0}
+                className="data-[state=checked]:bg-[#5a50ff] scale-75 cursor-pointer"
+              />
+            </div>
+
+            {transferOptions.applyWatermark && imageCount > 0 && (
+              <div className="space-y-3 pt-2">
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground">
+                    Texte du filigrane
+                  </Label>
+                  <Input
+                    type="text"
+                    placeholder="CONFIDENTIEL"
+                    value={transferOptions.watermarkText}
+                    onChange={(e) =>
+                      handleOptionChange("watermarkText", e.target.value)
+                    }
+                    className="h-9"
+                    maxLength={30}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground">
+                    Position
+                  </Label>
+                  <Select
+                    value={transferOptions.watermarkPosition}
+                    onValueChange={(value) =>
+                      handleOptionChange("watermarkPosition", value)
+                    }
+                  >
+                    <SelectTrigger className="h-9">
+                      <SelectValue placeholder="Position du filigrane" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="diagonal">
+                        Diagonale (centré)
+                      </SelectItem>
+                      <SelectItem value="center">Centre</SelectItem>
+                      <SelectItem value="bottom-right">Bas droite</SelectItem>
+                      <SelectItem value="tile">Mosaïque (répété)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Le filigrane sera appliqué sur {imageCount} image
+                  {imageCount > 1 ? "s" : ""}.
+                </p>
+              </div>
+            )}
+
+            {imageCount === 0 && selectedFiles.length > 0 && (
+              <p className="text-xs text-muted-foreground italic">
+                Aucune image détectée dans les fichiers sélectionnés.
+              </p>
+            )}
+          </div>
+
+          <Separator />
+
           <div className="space-y-3">
             <Label className="text-sm font-normal">Message personnalisé</Label>
             <Textarea
@@ -1019,7 +1125,7 @@ export default function FileUploadNew({
         </div>
 
         {/* Create Transfer Button - Fixe en bas */}
-        <div className="flex justify-end mt-2 pt-3 border-t bg-background flex-shrink-0">
+        <div className="flex justify-end mt-4 pt-4 border-t bg-background flex-shrink-0">
           <ButtonGroup>
             <Button
               onClick={handleCreateTransfer}
@@ -1047,7 +1153,9 @@ export default function FileUploadNew({
           </ButtonGroup>
         </div>
       </div>
-      {/* Modal Stripe Connect Onboarding */}
+    </div>
+
+      {/* Modal Stripe Connect Onboarding - En dehors du grid */}
       <StripeConnectOnboarding
         isOpen={showStripeOnboarding}
         onClose={() => setShowStripeOnboarding(false)}
@@ -1055,7 +1163,6 @@ export default function FileUploadNew({
         userEmail={user?.user?.email}
         onSuccess={() => {
           setShowStripeOnboarding(false);
-          // Optionnel: afficher une notification de succès
         }}
       />
       {/* Modal Settings pour configurer Stripe Connect */}
@@ -1064,6 +1171,6 @@ export default function FileUploadNew({
         onOpenChange={setSettingsModalOpen}
         initialTab="user-info"
       />
-    </div>
+    </>
   );
 }

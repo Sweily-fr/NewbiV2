@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { useFormContext } from "react-hook-form";
-import { Tag, AlignLeft, AlignRight, Check } from "lucide-react";
+import { Tag, AlignLeft, AlignRight, Check, Info } from "lucide-react";
 import { documentSuggestions } from "@/src/utils/document-suggestions";
 import { SuggestionDropdown } from "@/src/components/ui/suggestion-dropdown";
 import {
@@ -12,7 +12,21 @@ import {
   CardTitle,
 } from "@/src/components/ui/card";
 import { Label } from "@/src/components/ui/label";
+import { Input } from "@/src/components/ui/input";
 import { Textarea } from "@/src/components/ui/textarea";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/src/components/ui/tooltip";
+import {
+  generateQuotePrefix,
+  parseQuotePrefix,
+  formatQuotePrefix,
+  getCurrentMonthYear,
+  validateQuoteNumber,
+  formatQuoteNumber,
+} from "@/src/utils/quoteUtils";
 import { Separator } from "@/src/components/ui/separator";
 import { Alert, AlertDescription } from "@/src/components/ui/alert";
 import { Button } from "@/src/components/ui/button";
@@ -28,8 +42,12 @@ import {
   AlertDialogTitle,
 } from "@/src/components/ui/alert-dialog";
 
-
-export default function QuoteSettingsView({ canEdit, onCancel, onSave, onCloseAttempt }) {
+export default function QuoteSettingsView({
+  canEdit,
+  onCancel,
+  onSave,
+  onCloseAttempt,
+}) {
   const {
     watch,
     setValue,
@@ -37,7 +55,7 @@ export default function QuoteSettingsView({ canEdit, onCancel, onSave, onCloseAt
     formState: { errors, dirtyFields },
   } = useFormContext();
   const data = watch();
-  
+
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const initialValuesRef = useRef(null);
@@ -70,8 +88,10 @@ export default function QuoteSettingsView({ canEdit, onCancel, onSave, onCloseAt
 
     const hasChanges =
       data.appearance?.textColor !== initialValuesRef.current.textColor ||
-      data.appearance?.headerTextColor !== initialValuesRef.current.headerTextColor ||
-      data.appearance?.headerBgColor !== initialValuesRef.current.headerBgColor ||
+      data.appearance?.headerTextColor !==
+        initialValuesRef.current.headerTextColor ||
+      data.appearance?.headerBgColor !==
+        initialValuesRef.current.headerBgColor ||
       data.headerNotes !== initialValuesRef.current.headerNotes ||
       data.footerNotes !== initialValuesRef.current.footerNotes ||
       data.termsAndConditions !== initialValuesRef.current.termsAndConditions ||
@@ -91,13 +111,28 @@ export default function QuoteSettingsView({ canEdit, onCancel, onSave, onCloseAt
   const handleConfirmCancel = () => {
     // Restaurer les valeurs initiales avec fallback sur les valeurs par défaut
     if (initialValuesRef.current) {
-      setValue("appearance.textColor", initialValuesRef.current.textColor || "#000000");
-      setValue("appearance.headerTextColor", initialValuesRef.current.headerTextColor || "#ffffff");
-      setValue("appearance.headerBgColor", initialValuesRef.current.headerBgColor || "#5b50FF");
+      setValue(
+        "appearance.textColor",
+        initialValuesRef.current.textColor || "#000000"
+      );
+      setValue(
+        "appearance.headerTextColor",
+        initialValuesRef.current.headerTextColor || "#ffffff"
+      );
+      setValue(
+        "appearance.headerBgColor",
+        initialValuesRef.current.headerBgColor || "#5b50FF"
+      );
       setValue("headerNotes", initialValuesRef.current.headerNotes || "");
       setValue("footerNotes", initialValuesRef.current.footerNotes || "");
-      setValue("termsAndConditions", initialValuesRef.current.termsAndConditions || "");
-      setValue("clientPositionRight", initialValuesRef.current.clientPositionRight || false);
+      setValue(
+        "termsAndConditions",
+        initialValuesRef.current.termsAndConditions || ""
+      );
+      setValue(
+        "clientPositionRight",
+        initialValuesRef.current.clientPositionRight || false
+      );
     }
     setShowConfirmDialog(false);
     onCancel();
@@ -118,7 +153,6 @@ export default function QuoteSettingsView({ canEdit, onCancel, onSave, onCloseAt
     onSave();
   };
 
-
   return (
     <div className="h-full flex flex-col">
       {/* Contenu scrollable */}
@@ -128,21 +162,186 @@ export default function QuoteSettingsView({ canEdit, onCancel, onSave, onCloseAt
           {Object.keys(errors).length > 0 && (
             <Alert variant="destructive">
               <AlertDescription>
-                <div className="font-medium mb-2">Veuillez corriger les erreurs suivantes :</div>
+                <div className="font-medium mb-2">
+                  Veuillez corriger les erreurs suivantes :
+                </div>
                 <ul className="list-disc list-inside space-y-1">
                   {errors.headerNotes && (
-                    <li className="text-sm">Notes d'en-tête : {errors.headerNotes.message}</li>
+                    <li className="text-sm">
+                      Notes d'en-tête : {errors.headerNotes.message}
+                    </li>
                   )}
                   {errors.footerNotes && (
-                    <li className="text-sm">Notes de bas de page : {errors.footerNotes.message}</li>
+                    <li className="text-sm">
+                      Notes de bas de page : {errors.footerNotes.message}
+                    </li>
                   )}
                   {errors.termsAndConditions && (
-                    <li className="text-sm">Conditions générales : {errors.termsAndConditions.message}</li>
+                    <li className="text-sm">
+                      Conditions générales : {errors.termsAndConditions.message}
+                    </li>
                   )}
                 </ul>
               </AlertDescription>
             </Alert>
           )}
+
+          {/* Section Numérotation */}
+          <Card className="shadow-none border-none bg-transparent">
+            <CardHeader className="p-0">
+              <CardTitle className="flex items-center gap-2 font-normal text-lg">
+                Numérotation
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 p-0">
+              {/* Préfixe et numéro de devis */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Label
+                      htmlFor="quote-prefix"
+                      className="text-sm font-light"
+                    >
+                      Préfixe de devis
+                    </Label>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent
+                        side="top"
+                        className="max-w-[280px] sm:max-w-xs"
+                      >
+                        <p>
+                          Préfixe personnalisable pour identifier vos devis.
+                          Tapez <span className="font-mono">MM</span> pour
+                          insérer le mois actuel ou{" "}
+                          <span className="font-mono">AAAA</span> pour l'année.
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                  <div className="space-y-1">
+                    <Input
+                      id="quote-prefix"
+                      {...register("prefix", {
+                        required: "Le préfixe est requis",
+                        maxLength: {
+                          value: 20,
+                          message:
+                            "Le préfixe ne doit pas dépasser 20 caractères",
+                        },
+                        pattern: {
+                          value: /^D-\d{6}$/,
+                          message: "Format attendu : D-MMAAAA (ex: D-022025)",
+                        },
+                      })}
+                      onFocus={(e) => {
+                        if (!e.target.value) {
+                          const { month, year } = getCurrentMonthYear();
+                          e.target.placeholder = `D-${month}${year}`;
+                        }
+                      }}
+                      onBlur={(e) => {
+                        if (e.target.value) {
+                          const parsed = parseQuotePrefix(e.target.value);
+                          if (parsed) {
+                            setValue(
+                              "prefix",
+                              formatQuotePrefix(parsed.month, parsed.year),
+                              { shouldValidate: true }
+                            );
+                          }
+                        }
+                      }}
+                      placeholder="D-MMAAAA"
+                      disabled={!canEdit}
+                    />
+                    {errors?.prefix && (
+                      <p className="text-xs text-red-500">
+                        {errors.prefix.message}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Label
+                      htmlFor="quote-number"
+                      className="text-sm font-light"
+                    >
+                      Numéro de devis
+                    </Label>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent
+                        side="top"
+                        className="max-w-[280px] sm:max-w-xs"
+                      >
+                        <p>
+                          Numéro unique et séquentiel de votre devis. Il sera
+                          automatiquement formaté avec des zéros (ex: 000001).
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                  <div className="space-y-1">
+                    <Input
+                      id="quote-number"
+                      {...register("number", {
+                        required: "Le numéro de devis est requis",
+                      })}
+                      value={data.number || ""}
+                      placeholder="000001"
+                      disabled={!canEdit}
+                      readOnly={data.number && data.number.startsWith("DRAFT-")}
+                      onBlur={(e) => {
+                        if (
+                          e.target.value &&
+                          !e.target.value.startsWith("DRAFT-")
+                        ) {
+                          if (validateQuoteNumber(e.target.value)) {
+                            const formattedNum = formatQuoteNumber(
+                              e.target.value
+                            );
+                            setValue("number", formattedNum, {
+                              shouldValidate: true,
+                            });
+                          }
+                        }
+                      }}
+                    />
+                    {errors?.number && (
+                      <p className="text-xs text-red-500">
+                        {errors.number.message}
+                      </p>
+                    )}
+                    {data.number && data.number.startsWith("DRAFT-") && (
+                      <p className="text-xs text-blue-600">
+                        Numéro de brouillon - sera remplacé lors de la
+                        validation
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Note explicative sur la numérotation */}
+              <div className="mt-4 p-3 bg-muted/30 rounded-lg border border-muted">
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  <span className="font-medium">Note :</span> La numérotation
+                  des devis doit être séquentielle et continue pour respecter
+                  les obligations légales françaises. Le préfixe vous permet
+                  d'organiser vos devis par période (ex: D-122025 pour décembre
+                  2025). Le système vérifie automatiquement qu'il n'y a pas de
+                  saut dans la numérotation.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+          <Separator />
 
           {/* Section Apparence */}
           <Card className="shadow-none border-none bg-transparent">
@@ -224,20 +423,29 @@ export default function QuoteSettingsView({ canEdit, onCancel, onSave, onCloseAt
                 {/* Option Centre */}
                 <button
                   type="button"
-                  onClick={() => setValue("clientPositionRight", false, { shouldDirty: true })}
+                  onClick={() =>
+                    setValue("clientPositionRight", false, {
+                      shouldDirty: true,
+                    })
+                  }
                   disabled={!canEdit}
                   className={`
                     relative flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all
-                    ${!data.clientPositionRight 
-                      ? 'border-primary bg-primary/5 shadow-sm' 
-                      : 'border-border bg-background hover:border-primary/50'
+                    ${
+                      !data.clientPositionRight
+                        ? "border-primary bg-primary/5 shadow-sm"
+                        : "border-border bg-background hover:border-primary/50"
                     }
-                    ${!canEdit ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                    ${!canEdit ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
                   `}
                 >
-                  <AlignLeft className={`h-6 w-6 ${!data.clientPositionRight ? 'text-primary' : 'text-muted-foreground'}`} />
+                  <AlignLeft
+                    className={`h-6 w-6 ${!data.clientPositionRight ? "text-primary" : "text-muted-foreground"}`}
+                  />
                   <div className="text-center">
-                    <div className={`text-sm font-medium ${!data.clientPositionRight ? 'text-primary' : 'text-foreground'}`}>
+                    <div
+                      className={`text-sm font-medium ${!data.clientPositionRight ? "text-primary" : "text-foreground"}`}
+                    >
                       Au centre
                     </div>
                     <div className="text-xs text-muted-foreground mt-0.5">
@@ -254,20 +462,27 @@ export default function QuoteSettingsView({ canEdit, onCancel, onSave, onCloseAt
                 {/* Option Droite */}
                 <button
                   type="button"
-                  onClick={() => setValue("clientPositionRight", true, { shouldDirty: true })}
+                  onClick={() =>
+                    setValue("clientPositionRight", true, { shouldDirty: true })
+                  }
                   disabled={!canEdit}
                   className={`
                     relative flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all
-                    ${data.clientPositionRight 
-                      ? 'border-primary bg-primary/5 shadow-sm' 
-                      : 'border-border bg-background hover:border-primary/50'
+                    ${
+                      data.clientPositionRight
+                        ? "border-primary bg-primary/5 shadow-sm"
+                        : "border-border bg-background hover:border-primary/50"
                     }
-                    ${!canEdit ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                    ${!canEdit ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
                   `}
                 >
-                  <AlignRight className={`h-6 w-6 ${data.clientPositionRight ? 'text-primary' : 'text-muted-foreground'}`} />
+                  <AlignRight
+                    className={`h-6 w-6 ${data.clientPositionRight ? "text-primary" : "text-muted-foreground"}`}
+                  />
                   <div className="text-center">
-                    <div className={`text-sm font-medium ${data.clientPositionRight ? 'text-primary' : 'text-foreground'}`}>
+                    <div
+                      className={`text-sm font-medium ${data.clientPositionRight ? "text-primary" : "text-foreground"}`}
+                    >
                       À droite
                     </div>
                     <div className="text-xs text-muted-foreground mt-0.5">
@@ -302,7 +517,9 @@ export default function QuoteSettingsView({ canEdit, onCancel, onSave, onCloseAt
                   </Label>
                   <SuggestionDropdown
                     suggestions={documentSuggestions.headerNotes}
-                    onSelect={(value) => setValue("headerNotes", value, { shouldDirty: true })}
+                    onSelect={(value) =>
+                      setValue("headerNotes", value, { shouldDirty: true })
+                    }
                     label="Suggestions"
                   />
                 </div>
@@ -338,7 +555,9 @@ export default function QuoteSettingsView({ canEdit, onCancel, onSave, onCloseAt
                   </Label>
                   <SuggestionDropdown
                     suggestions={documentSuggestions.footerNotes}
-                    onSelect={(value) => setValue("footerNotes", value, { shouldDirty: true })}
+                    onSelect={(value) =>
+                      setValue("footerNotes", value, { shouldDirty: true })
+                    }
                     label="Suggestions"
                   />
                 </div>
@@ -374,7 +593,11 @@ export default function QuoteSettingsView({ canEdit, onCancel, onSave, onCloseAt
                   </Label>
                   <SuggestionDropdown
                     suggestions={documentSuggestions.termsAndConditions}
-                    onSelect={(value) => setValue("termsAndConditions", value, { shouldDirty: true })}
+                    onSelect={(value) =>
+                      setValue("termsAndConditions", value, {
+                        shouldDirty: true,
+                      })
+                    }
                     label="Suggestions"
                   />
                 </div>
@@ -417,9 +640,9 @@ export default function QuoteSettingsView({ canEdit, onCancel, onSave, onCloseAt
           >
             Annuler
           </Button>
-          <Button 
-            onClick={handleSaveClick} 
-            disabled={!canEdit} 
+          <Button
+            onClick={handleSaveClick}
+            disabled={!canEdit}
             className="font-normal"
           >
             Enregistrer les modifications
@@ -433,7 +656,8 @@ export default function QuoteSettingsView({ canEdit, onCancel, onSave, onCloseAt
           <AlertDialogHeader>
             <AlertDialogTitle>Modifications non sauvegardées</AlertDialogTitle>
             <AlertDialogDescription>
-              Vous avez des modifications non sauvegardées. Si vous quittez maintenant, ces modifications seront perdues.
+              Vous avez des modifications non sauvegardées. Si vous quittez
+              maintenant, ces modifications seront perdues.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

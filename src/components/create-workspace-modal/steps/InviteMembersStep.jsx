@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Lightbulb } from "lucide-react";
+import { Lightbulb, Users } from "lucide-react";
 import MultipleSelector from "@/src/components/ui/multiselect";
 import {
   Select,
@@ -18,7 +18,50 @@ export function InviteMembersStep({
   membersWithRoles,
   onEmailsChange,
   onRoleChange,
+  selectedPlan,
 }) {
+  // Configuration des limites par plan
+  const planLimitsConfig = {
+    freelance: { users: 0, accountants: 1 },
+    pme: { users: 10, accountants: 3 },
+    entreprise: { users: 25, accountants: 5 },
+  };
+
+  const planLimits =
+    planLimitsConfig[selectedPlan] || planLimitsConfig.freelance;
+
+  // Compter les utilisateurs et comptables invités
+  const invitedUsers = membersWithRoles.filter(
+    (m) => m.role !== "accountant"
+  ).length;
+  const invitedAccountants = membersWithRoles.filter(
+    (m) => m.role === "accountant"
+  ).length;
+
+  const availableUsers = Math.max(0, planLimits.users - invitedUsers);
+  const availableAccountants = Math.max(
+    0,
+    planLimits.accountants - invitedAccountants
+  );
+
+  // Forcer le rôle "accountant" pour le plan Freelance
+  React.useEffect(() => {
+    if (selectedPlan === "freelance" && membersWithRoles.length > 0) {
+      const hasNonAccountant = membersWithRoles.some(
+        (m) => m.role !== "accountant"
+      );
+      if (hasNonAccountant) {
+        // Convertir tous les membres en comptables
+        const updatedMembers = membersWithRoles.map((m, index) => {
+          if (m.role !== "accountant") {
+            onRoleChange(index, "accountant");
+          }
+          return m;
+        });
+      }
+    }
+  }, [selectedPlan, membersWithRoles, onRoleChange]);
+
   return (
     <div className="w-full max-w-3xl space-y-4 sm:space-y-6">
       <div className="space-y-2">
@@ -35,6 +78,45 @@ export function InviteMembersStep({
       </div>
 
       <div className="space-y-3">
+        {/* Affichage des sièges disponibles */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 px-3 py-2.5 bg-gray-50 dark:bg-[#252525] rounded-lg border border-gray-200 dark:border-[#313131]/90">
+            <Users className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+            <div className="flex-1">
+              <p className="text-xs text-gray-600 dark:text-gray-400">
+                <span className="font-medium text-gray-900 dark:text-white">
+                  {invitedUsers}
+                </span>{" "}
+                utilisateur{invitedUsers > 1 ? "s" : ""} •{" "}
+                <span className="font-medium text-gray-900 dark:text-white">
+                  {availableUsers}
+                </span>{" "}
+                disponible{availableUsers > 1 ? "s" : ""} sur{" "}
+                <span className="font-medium text-gray-900 dark:text-white">
+                  {planLimits.users}
+                </span>
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 px-3 py-2.5 bg-gray-50 dark:bg-[#252525] rounded-lg border border-gray-200 dark:border-[#313131]/90">
+            <Users className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+            <div className="flex-1">
+              <p className="text-xs text-gray-600 dark:text-gray-400">
+                <span className="font-medium text-gray-900 dark:text-white">
+                  {invitedAccountants}
+                </span>{" "}
+                comptable{invitedAccountants > 1 ? "s" : ""} •{" "}
+                <span className="font-medium text-gray-900 dark:text-white">
+                  {availableAccountants}
+                </span>{" "}
+                disponible{availableAccountants > 1 ? "s" : ""} sur{" "}
+                <span className="font-medium text-gray-900 dark:text-white">
+                  {planLimits.accountants}
+                </span>
+              </p>
+            </div>
+          </div>
+        </div>
         <MultipleSelector
           value={invitedEmails}
           onChange={onEmailsChange}
@@ -73,13 +155,40 @@ export function InviteMembersStep({
                   value={member.role}
                   onValueChange={(value) => onRoleChange(index, value)}
                 >
-                  <SelectTrigger className="w-[140px] h-8 text-xs dark:bg-[#171717] dark:border-gray-700">
+                  <SelectTrigger className="w-[180px] h-8 text-xs border-none shadow-none hover:bg-muted dark:hover:bg-[#252525]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="owner">Propriétaire</SelectItem>
-                    <SelectItem value="admin">Administrateur</SelectItem>
-                    <SelectItem value="member">Membre</SelectItem>
+                    {selectedPlan !== "freelance" && (
+                      <>
+                        <SelectItem value="admin">
+                          <div className="flex flex-col">
+                            <span className="font-normal text-sm">
+                              Administrateur
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              Gestion complète
+                            </span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="member">
+                          <div className="flex flex-col">
+                            <span className="font-normal text-sm">Membre</span>
+                            <span className="text-xs text-muted-foreground">
+                              Accès standard
+                            </span>
+                          </div>
+                        </SelectItem>
+                      </>
+                    )}
+                    <SelectItem value="accountant">
+                      <div className="flex flex-col">
+                        <span className="font-normal text-sm">Comptable</span>
+                        <span className="text-xs text-muted-foreground">
+                          Accès comptabilité
+                        </span>
+                      </div>
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>

@@ -123,7 +123,7 @@ export default function LoginPage() {
         <div className="hidden md:flex h-screen">
           <div className="w-1/2 flex items-center justify-center p-8">
             <div className="mx-auto sm:max-w-md w-full">
-              <h3 className="text-3xl font-semibold text-foreground dark:text-foreground">
+              <h3 className="text-3xl font-medium text-foreground dark:text-foreground">
                 Connectez-vous
               </h3>
               <p className="mt-2 text-sm text-muted-foreground dark:text-muted-foreground">
@@ -181,11 +181,8 @@ export default function LoginPage() {
               </p>
             </div>
           </div>
-          <div className="w-1/2 p-5 flex items-center min-h-screen justify-center">
-            <div
-              className="flex p-6 items-center justify-center w-full h-full rounded-lg bg-cover bg-center relative"
-              style={{ backgroundImage: "url('/BackgroundAuth.svg')" }}
-            >
+          <div className="w-1/2 p-2 flex items-center min-h-screen justify-center">
+            <div className="flex p-5 items-center justify-center w-full h-full rounded-lg bg-[#5A50FF]/30 relative">
               <div className="bg-white/80 shadow-md rounded-2xl p-6 w-110 mx-auto">
                 <div className="text-lg min-h-[27px] flex items-center justify-between">
                   <div className="flex-1">

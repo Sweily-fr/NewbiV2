@@ -11,7 +11,15 @@ import {
 import { Badge } from "@/src/components/ui/badge";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import { Button } from "@/src/components/ui/button";
-import { ArrowUpDown } from "lucide-react";
+import {
+  ArrowUpDown,
+  FileText,
+  Clock,
+  CheckCircle,
+  Send,
+  XCircle,
+  Archive,
+} from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import {
   INVOICE_STATUS_LABELS,
@@ -146,13 +154,15 @@ const clientFilterFn = (row, columnId, filterValue) => {
 // Custom filter function for date range
 const dateFilterFn = (row, columnId, filterValue) => {
   if (!filterValue?.from && !filterValue?.to) return true;
-  
+
   const issueDate = row.original.issueDate;
   if (!issueDate) return false;
-  
-  const date = new Date(typeof issueDate === 'string' ? parseInt(issueDate) : issueDate);
+
+  const date = new Date(
+    typeof issueDate === "string" ? parseInt(issueDate) : issueDate
+  );
   date.setHours(0, 0, 0, 0);
-  
+
   if (filterValue.from && filterValue.to) {
     const from = new Date(filterValue.from);
     from.setHours(0, 0, 0, 0);
@@ -168,11 +178,19 @@ const dateFilterFn = (row, columnId, filterValue) => {
     to.setHours(23, 59, 59, 999);
     return date <= to;
   }
-  
+
   return true;
 };
 
-export function useInvoiceTable({ data = [], onRefetch, onRefetchImported, reminderEnabled = false, onOpenReminderSettings, excludedClientIds = [] }) {
+export function useInvoiceTable({
+  data = [],
+  onRefetch,
+  onRefetchImported,
+  reminderEnabled = false,
+  onOpenReminderSettings,
+  excludedClientIds = [],
+  onOpenSidebar, // Callback pour ouvrir la sidebar au niveau du tableau
+}) {
   const [globalFilter, setGlobalFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState([]);
   const [clientFilter, setClientFilter] = useState([]);
@@ -180,7 +198,8 @@ export function useInvoiceTable({ data = [], onRefetch, onRefetchImported, remin
 
   // Hook pour la suppression de factures
   const { deleteInvoice, loading: isDeleting } = useDeleteInvoice();
-  const { deleteImportedInvoice, loading: isDeletingImported } = useDeleteImportedInvoice();
+  const { deleteImportedInvoice, loading: isDeletingImported } =
+    useDeleteImportedInvoice();
 
   // Define columns
   const columns = useMemo(
@@ -255,12 +274,13 @@ export function useInvoiceTable({ data = [], onRefetch, onRefetchImported, remin
         cell: ({ row }) => {
           const client = row.original.client;
           const invoice = row.original;
-          const isImported = invoice._type === 'imported';
-          const clientName = client?.name || (isImported ? "Fournisseur inconnu" : "Non défini");
+          const isImported = invoice._type === "imported";
+          const clientName =
+            client?.name || (isImported ? "Fournisseur inconnu" : "Non défini");
           return (
             <div className="min-h-[40px] flex flex-col justify-center">
-              <div 
-                className="font-normal max-w-[100px] md:max-w-none truncate" 
+              <div
+                className="font-normal max-w-[100px] md:max-w-none truncate"
                 title={clientName}
               >
                 {client?.name || (
@@ -271,9 +291,7 @@ export function useInvoiceTable({ data = [], onRefetch, onRefetchImported, remin
               </div>
               {!isImported && (
                 <div className="text-xs text-muted-foreground truncate max-w-[100px] md:max-w-none">
-                  {invoice.number || (
-                    <span className="italic">Brouillon</span>
-                  )}
+                  {invoice.number || <span className="italic">Brouillon</span>}
                 </div>
               )}
             </div>
@@ -356,10 +374,10 @@ export function useInvoiceTable({ data = [], onRefetch, onRefetchImported, remin
         },
         cell: ({ row }) => {
           // Ne pas afficher d'échéance pour les factures importées
-          if (row.original._type === 'imported') {
+          if (row.original._type === "imported") {
             return <span className="text-muted-foreground">-</span>;
           }
-          
+
           const dateFromGetter = row.getValue("dueDate");
           const dateFromOriginal = row.original.dueDate;
           const date = dateFromGetter || dateFromOriginal;
@@ -387,12 +405,10 @@ export function useInvoiceTable({ data = [], onRefetch, onRefetchImported, remin
               // Si c'est déjà un objet Date
               dueDate = date;
             } else {
-           
               return "-";
             }
 
             if (isNaN(dueDate.getTime())) {
-           
               return "-";
             }
 
@@ -430,18 +446,103 @@ export function useInvoiceTable({ data = [], onRefetch, onRefetchImported, remin
         },
         cell: ({ row }) => {
           const status = row.getValue("status");
-          const isImported = row.original._type === 'imported';
-          
-          // Utiliser les labels/couleurs appropriés selon le type
-          const label = isImported 
-            ? (IMPORTED_INVOICE_STATUS_LABELS[status] || status)
-            : (INVOICE_STATUS_LABELS[status] || status);
-          const colorClass = isImported
-            ? (IMPORTED_INVOICE_STATUS_COLORS[status] || "")
-            : (INVOICE_STATUS_COLORS[status] || "");
+          const isImported = row.original._type === "imported";
+
+          // Utiliser les labels appropriés selon le type
+          const label = isImported
+            ? IMPORTED_INVOICE_STATUS_LABELS[status] || status
+            : INVOICE_STATUS_LABELS[status] || status;
+
+          // Configuration des badges par statut (style transfert de fichier)
+          const getStatusConfig = () => {
+            if (isImported) {
+              switch (status) {
+                case "PENDING_REVIEW":
+                  return {
+                    icon: <Clock className="w-3 h-3" />,
+                    className:
+                      "bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400",
+                  };
+                case "VALIDATED":
+                  return {
+                    icon: <CheckCircle className="w-3 h-3" />,
+                    className:
+                      "bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400",
+                  };
+                case "REJECTED":
+                  return {
+                    icon: <XCircle className="w-3 h-3" />,
+                    className:
+                      "bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400",
+                  };
+                case "ARCHIVED":
+                  return {
+                    icon: <Archive className="w-3 h-3" />,
+                    className:
+                      "bg-gray-50 text-gray-600 dark:bg-gray-900/20 dark:text-gray-400",
+                  };
+                default:
+                  return {
+                    icon: <FileText className="w-3 h-3" />,
+                    className:
+                      "bg-gray-50 text-gray-600 dark:bg-gray-900/20 dark:text-gray-400",
+                  };
+              }
+            } else {
+              switch (status) {
+                case "DRAFT":
+                  return {
+                    icon: <FileText className="w-3 h-3" />,
+                    className:
+                      "bg-gray-50 text-gray-600 dark:bg-gray-900/20 dark:text-gray-400",
+                  };
+                case "SENT":
+                  return {
+                    icon: <Send className="w-3 h-3" />,
+                    className:
+                      "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400",
+                  };
+                case "PENDING":
+                  return {
+                    icon: <Clock className="w-3 h-3" />,
+                    className:
+                      "bg-[#5a50ff]/10 text-[#5a50ff] dark:bg-[#5a50ff]/20 dark:text-[#5a50ff]",
+                  };
+                case "PAID":
+                case "COMPLETED":
+                  return {
+                    icon: <CheckCircle className="w-3 h-3" />,
+                    className:
+                      "bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400",
+                  };
+                case "CANCELLED":
+                  return {
+                    icon: <XCircle className="w-3 h-3" />,
+                    className:
+                      "bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400",
+                  };
+                default:
+                  return {
+                    icon: <FileText className="w-3 h-3" />,
+                    className:
+                      "bg-gray-50 text-gray-600 dark:bg-gray-900/20 dark:text-gray-400",
+                  };
+              }
+            }
+          };
+
+          const config = getStatusConfig();
 
           return (
-            <Badge className={cn("font-normal", colorClass)}>{label}</Badge>
+            <span
+              className={cn(
+                "inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium",
+                config.className
+              )}
+            >
+              {config.icon}
+              {label}
+            </span>
           );
         },
         size: 100,
@@ -464,9 +565,9 @@ export function useInvoiceTable({ data = [], onRefetch, onRefetchImported, remin
         },
         cell: ({ row }) => {
           const invoice = row.original;
-          
+
           // Pour les factures importées, utiliser totalTTC directement
-          if (invoice._type === 'imported') {
+          if (invoice._type === "imported") {
             const amount = invoice.totalTTC || invoice.total || 0;
             return (
               <div className="font-normal">
@@ -477,49 +578,56 @@ export function useInvoiceTable({ data = [], onRefetch, onRefetchImported, remin
               </div>
             );
           }
-          
+
           const escompteValue = parseFloat(invoice.escompte) || 0;
-          
+
           // Utiliser finalTotalTTC comme base (après remise mais avant escompte)
           let amount = invoice.finalTotalTTC;
-          
+
           // Afficher "-" si undefined/null
-          if (amount === undefined || amount === null || isNaN(amount)) return "-";
-          
+          if (amount === undefined || amount === null || isNaN(amount))
+            return "-";
+
           // Appliquer uniquement l'escompte pour afficher le Total TTC
           if (escompteValue > 0) {
             // Utiliser finalTotalHT et finalTotalVAT (après remise)
-            const totalHT = invoice.finalTotalHT !== undefined && invoice.finalTotalHT !== null 
-              ? invoice.finalTotalHT 
-              : (invoice.totalHT || 0);
-            const totalVAT = invoice.finalTotalVAT !== undefined && invoice.finalTotalVAT !== null
-              ? invoice.finalTotalVAT
-              : (invoice.totalVAT || 0);
-            
-            console.log('Invoice Table - Escompte calculation:', {
+            const totalHT =
+              invoice.finalTotalHT !== undefined &&
+              invoice.finalTotalHT !== null
+                ? invoice.finalTotalHT
+                : invoice.totalHT || 0;
+            const totalVAT =
+              invoice.finalTotalVAT !== undefined &&
+              invoice.finalTotalVAT !== null
+                ? invoice.finalTotalVAT
+                : invoice.totalVAT || 0;
+
+            console.log("Invoice Table - Escompte calculation:", {
               invoiceId: invoice.id,
               finalTotalTTC: invoice.finalTotalTTC,
               finalTotalHT: invoice.finalTotalHT,
               finalTotalVAT: invoice.finalTotalVAT,
               totalHT,
               totalVAT,
-              escompteValue
+              escompteValue,
             });
-            
+
             // Appliquer l'escompte sur HT
             const escompteAmount = (totalHT * escompteValue) / 100;
             const htAfterEscompte = totalHT - escompteAmount;
-            const tvaAfterEscompte = invoice.isReverseCharge ? 0 : (htAfterEscompte / totalHT) * totalVAT;
+            const tvaAfterEscompte = invoice.isReverseCharge
+              ? 0
+              : (htAfterEscompte / totalHT) * totalVAT;
             amount = htAfterEscompte + tvaAfterEscompte;
-            
-            console.log('Invoice Table - Result:', {
+
+            console.log("Invoice Table - Result:", {
               escompteAmount,
               htAfterEscompte,
               tvaAfterEscompte,
-              finalAmount: amount
+              finalAmount: amount,
             });
           }
-          
+
           return (
             <div className="font-normal">
               {new Intl.NumberFormat("fr-FR", {
@@ -537,22 +645,22 @@ export function useInvoiceTable({ data = [], onRefetch, onRefetchImported, remin
         cell: ({ row }) => {
           const clientId = row.original.client?.id || row.original.client?._id;
           // Comparer en string pour éviter les problèmes de type
-          const isClientExcluded = clientId && excludedClientIds.some(
-            excludedId => String(excludedId) === String(clientId)
-          );
-          
-          // Debug log
-          if (row.original.status === "PENDING") {
-            console.log(`🔍 Facture ${row.original.number}: clientId=${clientId}, isExcluded=${isClientExcluded}`);
-          }
-          
+          const isClientExcluded =
+            clientId &&
+            excludedClientIds.some(
+              (excludedId) => String(excludedId) === String(clientId)
+            );
+
           return (
-            <InvoiceRowActions 
-              row={row} 
-              onRefetch={onRefetch} 
-              showReminderIcon={reminderEnabled && row.original.status === "PENDING"}
+            <InvoiceRowActions
+              row={row}
+              onRefetch={onRefetch}
+              showReminderIcon={
+                reminderEnabled && row.original.status === "PENDING"
+              }
               isClientExcluded={isClientExcluded}
               onOpenReminderSettings={onOpenReminderSettings}
+              onOpenSidebar={onOpenSidebar}
             />
           );
         },
@@ -560,14 +668,20 @@ export function useInvoiceTable({ data = [], onRefetch, onRefetchImported, remin
         enableHiding: false,
       },
     ],
-    [onRefetch, reminderEnabled, onOpenReminderSettings, excludedClientIds] // Inclure toutes les dépendances
+    [
+      onRefetch,
+      reminderEnabled,
+      onOpenReminderSettings,
+      excludedClientIds,
+      onOpenSidebar,
+    ] // Inclure toutes les dépendances
   );
 
   // Create table instance with optimized settings
   const table = useReactTable({
     data,
     columns,
-    // Enable client-side filtering and sorting
+    // Pagination côté client (toutes les données sont chargées)
     manualPagination: false,
     manualFiltering: false,
     manualSorting: false,
@@ -589,8 +703,12 @@ export function useInvoiceTable({ data = [], onRefetch, onRefetchImported, remin
     state: {
       globalFilter,
       columnFilters: [
-        ...(statusFilter.length > 0 ? [{ id: "status", value: statusFilter }] : []),
-        ...(clientFilter.length > 0 ? [{ id: "client", value: clientFilter }] : []),
+        ...(statusFilter.length > 0
+          ? [{ id: "status", value: statusFilter }]
+          : []),
+        ...(clientFilter.length > 0
+          ? [{ id: "client", value: clientFilter }]
+          : []),
         ...(dateFilter ? [{ id: "issueDate", value: dateFilter }] : []),
       ],
     },
@@ -602,7 +720,7 @@ export function useInvoiceTable({ data = [], onRefetch, onRefetchImported, remin
     },
     initialState: {
       pagination: {
-        pageSize: 10,
+        pageSize: 50,
       },
     },
   });
@@ -615,19 +733,21 @@ export function useInvoiceTable({ data = [], onRefetch, onRefetchImported, remin
   const handleDeleteSelected = async () => {
     // Séparer les factures normales (brouillons) et les factures importées
     const draftInvoices = selectedRows.filter(
-      (invoice) => invoice._type !== 'imported' && invoice.status === "DRAFT"
+      (invoice) => invoice._type !== "imported" && invoice.status === "DRAFT"
     );
     const importedInvoices = selectedRows.filter(
-      (invoice) => invoice._type === 'imported'
+      (invoice) => invoice._type === "imported"
     );
-    
+
     // Factures normales non-brouillon ignorées
     const ignoredNormalInvoices = selectedRows.filter(
-      (invoice) => invoice._type !== 'imported' && invoice.status !== "DRAFT"
+      (invoice) => invoice._type !== "imported" && invoice.status !== "DRAFT"
     );
 
     if (draftInvoices.length === 0 && importedInvoices.length === 0) {
-      toast.error("Seules les factures en brouillon ou importées peuvent être supprimées");
+      toast.error(
+        "Seules les factures en brouillon ou importées peuvent être supprimées"
+      );
       return;
     }
 
@@ -657,14 +777,14 @@ export function useInvoiceTable({ data = [], onRefetch, onRefetchImported, remin
     for (let i = 0; i < importedInvoices.length; i += BATCH_SIZE) {
       const batch = importedInvoices.slice(i, i + BATCH_SIZE);
       try {
-        await Promise.all(batch.map((invoice) => 
-          deleteImportedInvoice({ variables: { id: invoice.id } })
-        ));
+        await Promise.all(
+          batch.map((invoice) =>
+            deleteImportedInvoice({ variables: { id: invoice.id } })
+          )
+        );
         deletedCount += batch.length;
       } catch (_) {
-        toast.error(
-          `Erreur lors de la suppression des factures importées`
-        );
+        toast.error(`Erreur lors de la suppression des factures importées`);
       }
     }
 

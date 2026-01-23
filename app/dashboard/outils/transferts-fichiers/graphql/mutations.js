@@ -356,6 +356,7 @@ export const GET_TRANSFER_BY_LINK = gql`
         # Nouvelles options
         passwordProtected
         allowPreview
+        hasWatermark
       }
     }
   }

@@ -1,24 +1,33 @@
-'use client';
+"use client";
 
-import { useState, useMemo, useEffect } from 'react';
-import { useAddClientToLists, useClientListsByClient, useRemoveClientFromLists } from '@/src/hooks/useClientLists';
-import { Button } from '@/src/components/ui/button';
-import { Badge } from '@/src/components/ui/badge';
+import { useState, useMemo, useEffect } from "react";
+import {
+  useAddClientToLists,
+  useClientListsByClient,
+  useRemoveClientFromLists,
+} from "@/src/hooks/useClientLists";
+import { Button } from "@/src/components/ui/button";
+import { Badge } from "@/src/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
-  DropdownMenuLabel
-} from '@/src/components/ui/dropdown-menu';
-import { Plus, Loader2, X } from 'lucide-react';
-import { toast } from '@/src/components/ui/sonner';
-import TableUser from './table';
-import ClientsModal from './clients-modal';
+  DropdownMenuLabel,
+} from "@/src/components/ui/dropdown-menu";
+import { Plus, Loader2, X } from "lucide-react";
+import { toast } from "@/src/components/ui/sonner";
+import TableUser from "./table";
+import ClientsModal from "./clients-modal";
 
 // Composant pour afficher les listes communes
-function CommonListsDisplay({ workspaceId, selectedClientIds, onRemoveFromList, isRemoving }) {
+function CommonListsDisplay({
+  workspaceId,
+  selectedClientIds,
+  onRemoveFromList,
+  isRemoving,
+}) {
   // Récupérer les listes pour le premier client
   const { lists: firstClientLists } = useClientListsByClient(
     workspaceId,
@@ -57,7 +66,15 @@ function CommonListsDisplay({ workspaceId, selectedClientIds, onRemoveFromList, 
         clientLists.some((l) => l.id === list.id)
       )
     );
-  }, [selectedClientIds.length, selectedClientIds[0], selectedClientIds[1], selectedClientIds[2], firstClientLists, secondClientLists, thirdClientLists]);
+  }, [
+    selectedClientIds.length,
+    selectedClientIds[0],
+    selectedClientIds[1],
+    selectedClientIds[2],
+    firstClientLists,
+    secondClientLists,
+    thirdClientLists,
+  ]);
 
   if (commonLists.length === 0) return null;
 
@@ -88,7 +105,19 @@ function CommonListsDisplay({ workspaceId, selectedClientIds, onRemoveFromList, 
   );
 }
 
-export default function ClientsTable({ workspaceId, lists, onListsUpdated, clients: clientsProp, onSelectList, useProvidedClients = false, defaultListId = null }) {
+export default function ClientsTable({
+  workspaceId,
+  lists,
+  onListsUpdated,
+  clients: clientsProp,
+  onSelectList,
+  useProvidedClients = false,
+  defaultListId = null,
+  globalFilter = "",
+  selectedTypes = [],
+  selectedList = null,
+  hideSearchBar = false,
+}) {
   const [selectedClients, setSelectedClients] = useState(new Set());
   const { addToLists } = useAddClientToLists();
   const { removeFromLists } = useRemoveClientFromLists();
@@ -99,7 +128,7 @@ export default function ClientsTable({ workspaceId, lists, onListsUpdated, clien
 
   const handleAddToList = async (listId) => {
     if (selectedClients.size === 0) {
-      toast.error('Sélectionnez au moins un client');
+      toast.error("Sélectionnez au moins un client");
       return;
     }
 
@@ -114,7 +143,9 @@ export default function ClientsTable({ workspaceId, lists, onListsUpdated, clien
       // Ne pas fermer la sélection, juste rafraîchir les données
       onListsUpdated?.();
     } catch (error) {
-      toast.error(error.message || 'Impossible d\'ajouter les clients à la liste');
+      toast.error(
+        error.message || "Impossible d'ajouter les clients à la liste"
+      );
     } finally {
       setAssigningLists(false);
     }
@@ -122,7 +153,7 @@ export default function ClientsTable({ workspaceId, lists, onListsUpdated, clien
 
   const handleRemoveFromList = async (listId) => {
     if (selectedClients.size === 0) {
-      toast.error('Sélectionnez au moins un client');
+      toast.error("Sélectionnez au moins un client");
       return;
     }
 
@@ -137,19 +168,23 @@ export default function ClientsTable({ workspaceId, lists, onListsUpdated, clien
       // Ne pas fermer la sélection, juste rafraîchir les données
       onListsUpdated?.();
     } catch (error) {
-      toast.error(error.message || 'Impossible de retirer les clients de la liste');
+      toast.error(
+        error.message || "Impossible de retirer les clients de la liste"
+      );
     } finally {
       setAssigningLists(false);
     }
   };
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col flex-1 min-h-0">
       {selectedClients.size > 0 && lists && lists.length > 0 && (
         <div className="flex flex-col gap-3 p-3 sm:p-4 bg-[rgba(91,80,255,0.05)] rounded-lg border border-[rgba(91,80,255,0.2)]">
           <div className="flex items-center justify-between">
             <span className="text-xs sm:text-sm font-normal">
-              {selectedClients.size} contact{selectedClients.size !== 1 ? 's' : ''} sélectionné{selectedClients.size !== 1 ? 's' : ''}
+              {selectedClients.size} contact
+              {selectedClients.size !== 1 ? "s" : ""} sélectionné
+              {selectedClients.size !== 1 ? "s" : ""}
             </span>
           </div>
 
@@ -171,7 +206,9 @@ export default function ClientsTable({ workspaceId, lists, onListsUpdated, clien
                   disabled={assigningLists}
                   className="gap-2 cursor-pointer font-normal"
                 >
-                  {assigningLists && <Loader2 className="w-4 h-4 animate-spin" />}
+                  {assigningLists && (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  )}
                   <Plus className="w-4 h-4" />
                   Ajouter aux listes
                 </Button>
@@ -217,14 +254,14 @@ export default function ClientsTable({ workspaceId, lists, onListsUpdated, clien
           if (checked) {
             // Sélectionner tous les clients fournis
             const newSelected = new Set(selectedClients);
-            clientsToSelect.forEach(client => {
+            clientsToSelect.forEach((client) => {
               newSelected.add(client.id);
             });
             setSelectedClients(newSelected);
           } else {
             // Désélectionner tous les clients fournis
             const newSelected = new Set(selectedClients);
-            clientsToSelect.forEach(client => {
+            clientsToSelect.forEach((client) => {
               newSelected.delete(client.id);
             });
             setSelectedClients(newSelected);
@@ -234,6 +271,10 @@ export default function ClientsTable({ workspaceId, lists, onListsUpdated, clien
         useProvidedClients={useProvidedClients}
         onSelectList={onSelectList}
         workspaceId={workspaceId}
+        externalGlobalFilter={globalFilter}
+        externalSelectedTypes={selectedTypes}
+        selectedList={selectedList}
+        hideSearchBar={hideSearchBar}
       />
 
       <ClientsModal

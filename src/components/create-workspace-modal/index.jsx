@@ -93,7 +93,7 @@ export function CreateWorkspaceModal({ open, onOpenChange, onSuccess }) {
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         className="p-0 gap-0 overflow-hidden bg-white dark:bg-[#171717] dark:border-gray-800 w-[95vw] sm:w-full"
-        style={{ maxWidth: "68rem", height: "80vh" }}
+        style={{ maxWidth: "68rem", height: "90vh", maxHeight: "900px" }}
       >
         <VisuallyHidden>
           <DialogTitle>Créer un espace de travail</DialogTitle>
@@ -127,7 +127,7 @@ export function CreateWorkspaceModal({ open, onOpenChange, onSuccess }) {
         </div>
 
         {/* Contenu */}
-        <div className="h-full flex flex-col items-center justify-center px-6 sm:px-6 md:px-6 pt-16 sm:pt-20 pb-24 w-full mx-auto">
+        <div className="h-full flex flex-col items-center justify-center px-6 sm:px-6 md:px-6 pt-16 sm:pt-20 pb-28 w-full mx-auto overflow-y-auto">
           {currentStep === 1 && (
             <PlanSelectionStep
               selectedPlan={selectedPlan}
@@ -150,6 +150,7 @@ export function CreateWorkspaceModal({ open, onOpenChange, onSuccess }) {
               membersWithRoles={membersWithRoles}
               onEmailsChange={handleEmailsChange}
               onRoleChange={handleRoleChange}
+              selectedPlan={selectedPlan}
             />
           )}
 

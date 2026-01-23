@@ -102,6 +102,31 @@ function SelectItem({ className, children, ...props }) {
   );
 }
 
+function SelectItemWithDescription({
+  className,
+  children,
+  description,
+  ...props
+}) {
+  return (
+    <SelectPrimitive.Item
+      data-slot="select-item"
+      className={cn(
+        "data-[state=checked]:bg-accent/50 focus:bg-accent focus:text-accent-foreground relative flex w-full cursor-default flex-col items-start gap-1 rounded-sm py-2 px-3 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+        className
+      )}
+      {...props}
+    >
+      <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
+      {description && (
+        <span className="text-xs text-muted-foreground font-normal">
+          {description}
+        </span>
+      )}
+    </SelectPrimitive.Item>
+  );
+}
+
 function SelectSeparator({ className, ...props }) {
   return (
     <SelectPrimitive.Separator
@@ -147,6 +172,7 @@ export {
   SelectContent,
   SelectGroup,
   SelectItem,
+  SelectItemWithDescription,
   SelectLabel,
   SelectScrollDownButton,
   SelectScrollUpButton,

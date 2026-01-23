@@ -1,9 +1,11 @@
 import {
-  LayoutDashboard,
-  Palette,
+  Users,
   Save,
   LoaderCircleIcon,
   AlertCircle,
+  Blocks,
+  Settings2,
+  MousePointerClick,
 } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import { useMutation } from "@apollo/client";
@@ -26,8 +28,11 @@ import { useSignatureData } from "@/src/hooks/use-signature-data";
 import { useQuery } from "@apollo/client";
 
 // Import des composants d'édition
-import LayoutContent from "../editor/layout/LayoutContent";
-import TypographyContent from "../editor/typography/TypographyContent";
+import BlockPalette from "../blocks/BlockPalette";
+import { useOrganizationInvitations } from "@/src/hooks/useOrganizationInvitations";
+import { useSession } from "@/src/lib/auth-client";
+import BlockSettings from "../blocks/BlockSettings";
+import { createContainerFromWidget } from "../../utils/block-registry";
 import CancelConfirmationModal from "../modals/CancelConfirmationModal";
 // Mutation GraphQL pour créer une signature
 const CREATE_EMAIL_SIGNATURE = gql`
@@ -82,7 +87,7 @@ const hslToHex = (hslString) => {
   if (!hslString || hslString.startsWith("#")) return hslString;
 
   const hslMatch = hslString.match(
-    /hsl\((\d+(?:\.\d+)?),\s*(\d+(?:\.\d+)?)%,\s*(\d+(?:\.\d+)?)%\)/
+    /hsl\((\d+(?:\.\d+)?),\s*(\d+(?:\.\d+)?)%,\s*(\d+(?:\.\d+)?)%\)/,
   );
   if (!hslMatch) return hslString;
 
@@ -133,20 +138,172 @@ const cleanGraphQLData = (obj) => {
   return cleaned;
 };
 
+// Composant pour afficher les utilisateurs de l'organisation
+function UsersTab() {
+  const { getAllCollaborators, loading } = useOrganizationInvitations();
+  const { data: session } = useSession();
+  const [users, setUsers] = useState([]);
+  const [selectedUsers, setSelectedUsers] = useState([]);
+  const [hasFetched, setHasFetched] = useState(false);
+
+  useEffect(() => {
+    if (hasFetched) return;
+
+    const fetchUsers = async () => {
+      const result = await getAllCollaborators();
+      if (result.success) {
+        // Filtrer pour ne garder que les membres (pas les invitations en attente)
+        // et exclure l'utilisateur connecté
+        const currentUserId = session?.user?.id;
+        const members = result.data.filter(
+          (item) => item.type === "member" && item.userId !== currentUserId
+        );
+        setUsers(members);
+        setHasFetched(true);
+      }
+    };
+    fetchUsers();
+  }, [hasFetched, session?.user?.id]);
+
+  const toggleUserSelection = (userId) => {
+    setSelectedUsers((prev) =>
+      prev.includes(userId)
+        ? prev.filter((id) => id !== userId)
+        : [...prev, userId]
+    );
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <LoaderCircleIcon className="w-6 h-6 animate-spin text-neutral-400" />
+      </div>
+    );
+  }
+
+  if (users.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 text-center">
+        <div className="w-12 h-12 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center mb-4">
+          <Users className="w-6 h-6 text-neutral-400" />
+        </div>
+        <h3 className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+          Aucun utilisateur
+        </h3>
+        <p className="text-xs text-neutral-500 max-w-[200px]">
+          Invitez des membres à votre organisation pour leur attribuer cette signature
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="text-xs text-neutral-500 mb-2">
+        Sélectionnez les utilisateurs à qui attribuer cette signature
+      </div>
+      {users.map((user) => {
+        const email = user.email || user.user?.email || "";
+        const name = user.user?.name || email.split("@")[0];
+        const avatar = user.user?.image || user.user?.avatar;
+        const isSelected = selectedUsers.includes(user.id);
+
+        return (
+          <div
+            key={user.id}
+            onClick={() => toggleUserSelection(user.id)}
+            className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
+              isSelected
+                ? "border-[#5a50ff] bg-[#5a50ff]/5"
+                : "border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600"
+            }`}
+          >
+            {/* Avatar */}
+            <div className="w-9 h-9 rounded-full bg-neutral-200 dark:bg-neutral-700 flex items-center justify-center overflow-hidden flex-shrink-0">
+              {avatar ? (
+                <img
+                  src={avatar}
+                  alt={name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
+                  {name.charAt(0).toUpperCase()}
+                </span>
+              )}
+            </div>
+
+            {/* User info */}
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-medium text-neutral-800 dark:text-neutral-200 truncate">
+                {name}
+              </div>
+              <div className="text-xs text-neutral-500 truncate">{email}</div>
+            </div>
+
+            {/* Role badge */}
+            <div className="text-xs px-2 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300">
+              {user.role === "owner" ? "Admin" : user.role === "admin" ? "Admin" : "Membre"}
+            </div>
+
+            {/* Checkbox indicator */}
+            <div
+              className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                isSelected
+                  ? "border-[#5a50ff] bg-[#5a50ff]"
+                  : "border-neutral-300 dark:border-neutral-600"
+              }`}
+            >
+              {isSelected && (
+                <svg
+                  className="w-3 h-3 text-white"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={3}
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+              )}
+            </div>
+          </div>
+        );
+      })}
+
+      {selectedUsers.length > 0 && (
+        <div className="mt-4 p-3 bg-[#5a50ff]/5 rounded-lg border border-[#5a50ff]/20">
+          <div className="text-xs text-neutral-600 dark:text-neutral-400">
+            <span className="font-medium text-[#5a50ff]">{selectedUsers.length}</span>{" "}
+            utilisateur{selectedUsers.length > 1 ? "s" : ""} sélectionné{selectedUsers.length > 1 ? "s" : ""}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function TabSignature({ existingSignatureId = null }) {
-  const { signatureData } = useSignatureData();
+  const {
+    signatureData,
+    showCancelModal,
+    setShowCancelModal,
+    showSaveModal,
+    setShowSaveModal,
+  } = useSignatureData();
   const router = useRouter();
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [signatureName, setSignatureName] = useState(
-    signatureData.signatureName || ""
+    signatureData.signatureName || "",
   );
   const [saveStatus, setSaveStatus] = useState(null); // null, 'success', 'error', 'duplicate'
-  const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
 
   // Récupérer toutes les signatures existantes pour vérifier les doublons
   const { data: signaturesData } = useQuery(GET_MY_EMAIL_SIGNATURES, {
-    skip: !isModalOpen, // Charger uniquement quand le modal est ouvert
+    skip: !showSaveModal, // Charger uniquement quand le modal est ouvert
   });
 
   // Effet pour synchroniser le nom de la signature avec les données chargées
@@ -164,7 +321,7 @@ export function TabSignature({ existingSignatureId = null }) {
       onCompleted: (data) => {
         setSaveStatus("success");
         toast.success("Signature créée avec succès !");
-        
+
         // Invalider tout le cache des signatures pour forcer le rechargement
         client.cache.evict({ fieldName: "getMyEmailSignatures" });
         client.cache.evict({ fieldName: "getEmailSignature" });
@@ -173,8 +330,6 @@ export function TabSignature({ existingSignatureId = null }) {
         // Redirection après un court délai pour laisser voir la notification
         setTimeout(() => {
           setSaveStatus(null);
-          // Nettoyer le brouillon après sauvegarde réussie
-          localStorage.removeItem("draftSignature");
           router.push("/dashboard/outils/signatures-mail");
         }, 1500);
       },
@@ -184,17 +339,16 @@ export function TabSignature({ existingSignatureId = null }) {
         toast.error("Erreur lors de la création de la signature");
         setTimeout(() => setSaveStatus(null), 3000);
       },
-    }
+    },
   );
 
-  const [updateSignature, { loading: updating, client: updateClient }] = useMutation(
-    UPDATE_EMAIL_SIGNATURE,
-    {
+  const [updateSignature, { loading: updating, client: updateClient }] =
+    useMutation(UPDATE_EMAIL_SIGNATURE, {
       refetchQueries: [GET_MY_EMAIL_SIGNATURES],
       awaitRefetchQueries: false,
       onCompleted: (data) => {
         toast.success("Signature mise à jour avec succès !");
-        
+
         // Invalider tout le cache des signatures pour forcer le rechargement
         updateClient.cache.evict({ fieldName: "getMyEmailSignatures" });
         updateClient.cache.evict({ fieldName: "getEmailSignature" });
@@ -202,8 +356,6 @@ export function TabSignature({ existingSignatureId = null }) {
 
         // Redirection après un court délai pour laisser voir la notification
         setTimeout(() => {
-          // Nettoyer le brouillon après sauvegarde réussie
-          localStorage.removeItem("draftSignature");
           router.push("/dashboard/outils/signatures-mail");
         }, 1500);
       },
@@ -211,36 +363,35 @@ export function TabSignature({ existingSignatureId = null }) {
         console.error("❌ Erreur mise à jour:", error);
         toast.error("Erreur lors de la mise à jour de la signature");
       },
-    }
-  );
+    });
 
   const isLoading = creating || updating;
 
   // Fonction pour valider et normaliser une couleur hex
   const validateColor = (color) => {
     if (!color) return "#171717"; // Couleur par défaut
-    
+
     // Si c'est déjà au bon format
     if (/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(color)) {
       return color;
     }
-    
+
     // Si c'est rgb(r, g, b), convertir en hex
     const rgbMatch = color.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
     if (rgbMatch) {
-      const r = parseInt(rgbMatch[1]).toString(16).padStart(2, '0');
-      const g = parseInt(rgbMatch[2]).toString(16).padStart(2, '0');
-      const b = parseInt(rgbMatch[3]).toString(16).padStart(2, '0');
+      const r = parseInt(rgbMatch[1]).toString(16).padStart(2, "0");
+      const g = parseInt(rgbMatch[2]).toString(16).padStart(2, "0");
+      const b = parseInt(rgbMatch[3]).toString(16).padStart(2, "0");
       return `#${r}${g}${b}`;
     }
-    
+
     // Si c'est hsl(h, s%, l%), convertir en hex
     const hslMatch = color.match(/hsl\(([\d.]+),\s*([\d.]+)%,\s*([\d.]+)%\)/);
     if (hslMatch) {
       const h = parseFloat(hslMatch[1]) / 360;
       const s = parseFloat(hslMatch[2]) / 100;
       const l = parseFloat(hslMatch[3]) / 100;
-      
+
       const hslToRgb = (h, s, l) => {
         let r, g, b;
         if (s === 0) {
@@ -249,24 +400,24 @@ export function TabSignature({ existingSignatureId = null }) {
           const hue2rgb = (p, q, t) => {
             if (t < 0) t += 1;
             if (t > 1) t -= 1;
-            if (t < 1/6) return p + (q - p) * 6 * t;
-            if (t < 1/2) return q;
-            if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+            if (t < 1 / 6) return p + (q - p) * 6 * t;
+            if (t < 1 / 2) return q;
+            if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
             return p;
           };
           const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
           const p = 2 * l - q;
-          r = hue2rgb(p, q, h + 1/3);
+          r = hue2rgb(p, q, h + 1 / 3);
           g = hue2rgb(p, q, h);
-          b = hue2rgb(p, q, h - 1/3);
+          b = hue2rgb(p, q, h - 1 / 3);
         }
         return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
       };
-      
+
       const [r, g, b] = hslToRgb(h, s, l);
-      return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+      return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
     }
-    
+
     // Sinon, retourner la couleur par défaut
     return "#171717";
   };
@@ -292,7 +443,7 @@ export function TabSignature({ existingSignatureId = null }) {
       "👤 TabSignature - Noms extraits - firstName:",
       firstName,
       "lastName:",
-      lastName
+      lastName,
     );
 
     return {
@@ -325,10 +476,10 @@ export function TabSignature({ existingSignatureId = null }) {
         company: signatureData.colors?.company || "#2563eb",
         contact: signatureData.colors?.contact || "#666666",
         separatorVertical: hslToHex(
-          signatureData.colors?.separatorVertical || "#e0e0e0"
+          signatureData.colors?.separatorVertical || "#e0e0e0",
         ),
         separatorHorizontal: hslToHex(
-          signatureData.colors?.separatorHorizontal || "#e0e0e0"
+          signatureData.colors?.separatorHorizontal || "#e0e0e0",
         ),
       },
       // Configuration layout
@@ -367,8 +518,10 @@ export function TabSignature({ existingSignatureId = null }) {
         separatorTop: signatureData.spacings?.separatorTop ?? 12,
         separatorBottom: signatureData.spacings?.separatorBottom ?? 12,
         logoToSocial: signatureData.spacings?.logoToSocial ?? 12,
-        verticalSeparatorLeft: signatureData.spacings?.verticalSeparatorLeft ?? 22,
-        verticalSeparatorRight: signatureData.spacings?.verticalSeparatorRight ?? 22,
+        verticalSeparatorLeft:
+          signatureData.spacings?.verticalSeparatorLeft ?? 22,
+        verticalSeparatorRight:
+          signatureData.spacings?.verticalSeparatorRight ?? 22,
       },
       // Mode espacement détaillé
       detailedSpacing: signatureData.detailedSpacing ?? false,
@@ -377,61 +530,94 @@ export function TabSignature({ existingSignatureId = null }) {
         photo: {
           top: signatureData.paddings?.photo?.top ?? 0,
           right: signatureData.paddings?.photo?.right ?? 0,
-          bottom: signatureData.paddings?.photo?.bottom ?? (signatureData.spacings?.global ?? 8),
+          bottom:
+            signatureData.paddings?.photo?.bottom ??
+            signatureData.spacings?.global ??
+            8,
           left: signatureData.paddings?.photo?.left ?? 0,
         },
         name: {
           top: signatureData.paddings?.name?.top ?? 0,
           right: signatureData.paddings?.name?.right ?? 0,
-          bottom: signatureData.paddings?.name?.bottom ?? (signatureData.spacings?.global ?? 8),
+          bottom:
+            signatureData.paddings?.name?.bottom ??
+            signatureData.spacings?.global ??
+            8,
           left: signatureData.paddings?.name?.left ?? 0,
         },
         position: {
           top: signatureData.paddings?.position?.top ?? 0,
           right: signatureData.paddings?.position?.right ?? 0,
-          bottom: signatureData.paddings?.position?.bottom ?? (signatureData.spacings?.global ?? 8),
+          bottom:
+            signatureData.paddings?.position?.bottom ??
+            signatureData.spacings?.global ??
+            8,
           left: signatureData.paddings?.position?.left ?? 0,
         },
         company: {
           top: signatureData.paddings?.company?.top ?? 0,
           right: signatureData.paddings?.company?.right ?? 0,
-          bottom: signatureData.paddings?.company?.bottom ?? (signatureData.spacings?.global ?? 8),
+          bottom:
+            signatureData.paddings?.company?.bottom ??
+            signatureData.spacings?.global ??
+            8,
           left: signatureData.paddings?.company?.left ?? 0,
         },
         phone: {
           top: signatureData.paddings?.phone?.top ?? 0,
           right: signatureData.paddings?.phone?.right ?? 0,
-          bottom: signatureData.paddings?.phone?.bottom ?? (signatureData.spacings?.global ?? 8),
+          bottom:
+            signatureData.paddings?.phone?.bottom ??
+            signatureData.spacings?.global ??
+            8,
           left: signatureData.paddings?.phone?.left ?? 0,
         },
         mobile: {
           top: signatureData.paddings?.mobile?.top ?? 0,
           right: signatureData.paddings?.mobile?.right ?? 0,
-          bottom: signatureData.paddings?.mobile?.bottom ?? (signatureData.spacings?.global ?? 8),
+          bottom:
+            signatureData.paddings?.mobile?.bottom ??
+            signatureData.spacings?.global ??
+            8,
           left: signatureData.paddings?.mobile?.left ?? 0,
         },
         email: {
           top: signatureData.paddings?.email?.top ?? 0,
           right: signatureData.paddings?.email?.right ?? 0,
-          bottom: signatureData.paddings?.email?.bottom ?? (signatureData.spacings?.global ?? 8),
+          bottom:
+            signatureData.paddings?.email?.bottom ??
+            signatureData.spacings?.global ??
+            8,
           left: signatureData.paddings?.email?.left ?? 0,
         },
         website: {
           top: signatureData.paddings?.website?.top ?? 0,
           right: signatureData.paddings?.website?.right ?? 0,
-          bottom: signatureData.paddings?.website?.bottom ?? (signatureData.spacings?.global ?? 8),
+          bottom:
+            signatureData.paddings?.website?.bottom ??
+            signatureData.spacings?.global ??
+            8,
           left: signatureData.paddings?.website?.left ?? 0,
         },
         address: {
           top: signatureData.paddings?.address?.top ?? 0,
           right: signatureData.paddings?.address?.right ?? 0,
-          bottom: signatureData.paddings?.address?.bottom ?? (signatureData.spacings?.global ?? 8),
+          bottom:
+            signatureData.paddings?.address?.bottom ??
+            signatureData.spacings?.global ??
+            8,
           left: signatureData.paddings?.address?.left ?? 0,
         },
         separatorHorizontal: {
-          top: signatureData.paddings?.separatorHorizontal?.top ?? (signatureData.spacings?.global ?? 8),
+          top:
+            signatureData.paddings?.separatorHorizontal?.top ??
+            signatureData.spacings?.global ??
+            8,
           right: signatureData.paddings?.separatorHorizontal?.right ?? 0,
-          bottom: signatureData.paddings?.separatorHorizontal?.bottom ?? (signatureData.spacings?.global ?? 8),
+          bottom:
+            signatureData.paddings?.separatorHorizontal?.bottom ??
+            signatureData.spacings?.global ??
+            8,
           left: signatureData.paddings?.separatorHorizontal?.left ?? 0,
         },
         separatorVertical: {
@@ -441,13 +627,19 @@ export function TabSignature({ existingSignatureId = null }) {
           left: signatureData.paddings?.separatorVertical?.left ?? 4,
         },
         logo: {
-          top: signatureData.paddings?.logo?.top ?? (signatureData.spacings?.global ?? 8),
+          top:
+            signatureData.paddings?.logo?.top ??
+            signatureData.spacings?.global ??
+            8,
           right: signatureData.paddings?.logo?.right ?? 0,
           bottom: signatureData.paddings?.logo?.bottom ?? 0,
           left: signatureData.paddings?.logo?.left ?? 0,
         },
         social: {
-          top: signatureData.paddings?.social?.top ?? (signatureData.spacings?.global ?? 8),
+          top:
+            signatureData.paddings?.social?.top ??
+            signatureData.spacings?.global ??
+            8,
           right: signatureData.paddings?.social?.right ?? 0,
           bottom: signatureData.paddings?.social?.bottom ?? 0,
           left: signatureData.paddings?.social?.left ?? 0,
@@ -492,68 +684,91 @@ export function TabSignature({ existingSignatureId = null }) {
       // Typographie détaillée pour chaque champ
       typography: {
         fullName: {
-          fontFamily: signatureData.typography?.fullName?.fontFamily || "Arial, sans-serif",
+          fontFamily:
+            signatureData.typography?.fullName?.fontFamily ||
+            "Arial, sans-serif",
           fontSize: signatureData.typography?.fullName?.fontSize || 16,
           color: validateColor(signatureData.typography?.fullName?.color),
-          fontWeight: signatureData.typography?.fullName?.fontWeight || "normal",
+          fontWeight:
+            signatureData.typography?.fullName?.fontWeight || "normal",
           fontStyle: signatureData.typography?.fullName?.fontStyle || "normal",
-          textDecoration: signatureData.typography?.fullName?.textDecoration || "none",
+          textDecoration:
+            signatureData.typography?.fullName?.textDecoration || "none",
         },
         position: {
-          fontFamily: signatureData.typography?.position?.fontFamily || "Arial, sans-serif",
+          fontFamily:
+            signatureData.typography?.position?.fontFamily ||
+            "Arial, sans-serif",
           fontSize: signatureData.typography?.position?.fontSize || 14,
           color: validateColor(signatureData.typography?.position?.color),
-          fontWeight: signatureData.typography?.position?.fontWeight || "normal",
+          fontWeight:
+            signatureData.typography?.position?.fontWeight || "normal",
           fontStyle: signatureData.typography?.position?.fontStyle || "normal",
-          textDecoration: signatureData.typography?.position?.textDecoration || "none",
+          textDecoration:
+            signatureData.typography?.position?.textDecoration || "none",
         },
         company: {
-          fontFamily: signatureData.typography?.company?.fontFamily || "Arial, sans-serif",
+          fontFamily:
+            signatureData.typography?.company?.fontFamily ||
+            "Arial, sans-serif",
           fontSize: signatureData.typography?.company?.fontSize || 14,
           color: validateColor(signatureData.typography?.company?.color),
           fontWeight: signatureData.typography?.company?.fontWeight || "normal",
           fontStyle: signatureData.typography?.company?.fontStyle || "normal",
-          textDecoration: signatureData.typography?.company?.textDecoration || "none",
+          textDecoration:
+            signatureData.typography?.company?.textDecoration || "none",
         },
         email: {
-          fontFamily: signatureData.typography?.email?.fontFamily || "Arial, sans-serif",
+          fontFamily:
+            signatureData.typography?.email?.fontFamily || "Arial, sans-serif",
           fontSize: signatureData.typography?.email?.fontSize || 12,
           color: validateColor(signatureData.typography?.email?.color),
           fontWeight: signatureData.typography?.email?.fontWeight || "normal",
           fontStyle: signatureData.typography?.email?.fontStyle || "normal",
-          textDecoration: signatureData.typography?.email?.textDecoration || "none",
+          textDecoration:
+            signatureData.typography?.email?.textDecoration || "none",
         },
         phone: {
-          fontFamily: signatureData.typography?.phone?.fontFamily || "Arial, sans-serif",
+          fontFamily:
+            signatureData.typography?.phone?.fontFamily || "Arial, sans-serif",
           fontSize: signatureData.typography?.phone?.fontSize || 12,
           color: validateColor(signatureData.typography?.phone?.color),
           fontWeight: signatureData.typography?.phone?.fontWeight || "normal",
           fontStyle: signatureData.typography?.phone?.fontStyle || "normal",
-          textDecoration: signatureData.typography?.phone?.textDecoration || "none",
+          textDecoration:
+            signatureData.typography?.phone?.textDecoration || "none",
         },
         mobile: {
-          fontFamily: signatureData.typography?.mobile?.fontFamily || "Arial, sans-serif",
+          fontFamily:
+            signatureData.typography?.mobile?.fontFamily || "Arial, sans-serif",
           fontSize: signatureData.typography?.mobile?.fontSize || 12,
           color: validateColor(signatureData.typography?.mobile?.color),
           fontWeight: signatureData.typography?.mobile?.fontWeight || "normal",
           fontStyle: signatureData.typography?.mobile?.fontStyle || "normal",
-          textDecoration: signatureData.typography?.mobile?.textDecoration || "none",
+          textDecoration:
+            signatureData.typography?.mobile?.textDecoration || "none",
         },
         website: {
-          fontFamily: signatureData.typography?.website?.fontFamily || "Arial, sans-serif",
+          fontFamily:
+            signatureData.typography?.website?.fontFamily ||
+            "Arial, sans-serif",
           fontSize: signatureData.typography?.website?.fontSize || 12,
           color: validateColor(signatureData.typography?.website?.color),
           fontWeight: signatureData.typography?.website?.fontWeight || "normal",
           fontStyle: signatureData.typography?.website?.fontStyle || "normal",
-          textDecoration: signatureData.typography?.website?.textDecoration || "none",
+          textDecoration:
+            signatureData.typography?.website?.textDecoration || "none",
         },
         address: {
-          fontFamily: signatureData.typography?.address?.fontFamily || "Arial, sans-serif",
+          fontFamily:
+            signatureData.typography?.address?.fontFamily ||
+            "Arial, sans-serif",
           fontSize: signatureData.typography?.address?.fontSize || 12,
           color: validateColor(signatureData.typography?.address?.color),
           fontWeight: signatureData.typography?.address?.fontWeight || "normal",
           fontStyle: signatureData.typography?.address?.fontStyle || "normal",
-          textDecoration: signatureData.typography?.address?.textDecoration || "none",
+          textDecoration:
+            signatureData.typography?.address?.textDecoration || "none",
         },
       },
       // Typographie ancienne structure (pour compatibilité)
@@ -562,6 +777,22 @@ export function TabSignature({ existingSignatureId = null }) {
         name: signatureData.fontSize?.name || 16,
         position: signatureData.fontSize?.position || 14,
         contact: signatureData.fontSize?.contact || 12,
+      },
+      // Ordre des éléments (drag & drop)
+      elementsOrder: signatureData.elementsOrder || [
+        "photo",
+        "fullName",
+        "position",
+        "separator",
+        "contact",
+        "logo",
+        "social",
+      ],
+      // Layout horizontal (3 zones)
+      horizontalLayout: signatureData.horizontalLayout || {
+        leftColumn: ["photo", "fullName", "position"],
+        rightColumn: ["contact"],
+        bottomRow: ["separator", "logo", "social"],
       },
     };
   };
@@ -572,7 +803,7 @@ export function TabSignature({ existingSignatureId = null }) {
     const isDuplicate = existingSignatures.some(
       (sig) =>
         sig.signatureName.toLowerCase() === signatureName.toLowerCase() &&
-        sig.id !== existingSignatureId // Permettre le même nom si on édite la même signature
+        sig.id !== existingSignatureId, // Permettre le même nom si on édite la même signature
     );
 
     if (isDuplicate) {
@@ -635,39 +866,126 @@ export function TabSignature({ existingSignatureId = null }) {
 
   const handleOpenModal = () => {
     setSignatureName(signatureData.signatureName || "");
-    setIsModalOpen(true);
+    setShowSaveModal(true);
   };
 
   const handleCancelClick = () => {
-    setShowCancelConfirmation(true);
+    setShowCancelModal(true);
   };
 
   const handleConfirmCancel = () => {
-    setShowCancelConfirmation(false);
+    setShowCancelModal(false);
     router.push("/dashboard/outils/signatures-mail");
   };
 
   const handleCloseCancelModal = () => {
-    setShowCancelConfirmation(false);
+    setShowCancelModal(false);
   };
 
-  const [activeTab, setActiveTab] = useState("tab-1");
+  const [activeTab, setActiveTab] = useState("tab-widgets");
 
   // Debug: vérifier si le composant se rend plusieurs fois
-  console.log("🔍 TabSignature rendu - existingSignatureId:", existingSignatureId);
+  console.log(
+    "🔍 TabSignature rendu - existingSignatureId:",
+    existingSignatureId,
+  );
+
+  // Container system from context
+  const {
+    rootContainer,
+    selectedContainerId,
+    selectedBlockId, // Alias for backward compatibility
+    selectedElementId,
+    addContainer,
+    updateContainer,
+    deleteContainer,
+    selectContainer,
+    selectBlock, // Alias
+    selectElement,
+    getSelectedContainer,
+    getSelectedBlock, // Alias
+    getSelectedElement,
+    updateElement,
+    deleteElement,
+    updateSignatureData,
+  } = useSignatureData();
+
+  const selectedBlock = getSelectedContainer();
+  const selectedElement = getSelectedElement();
+
+  // Handle adding a widget from the palette (click fallback)
+  const handleAddBlock = (widgetId) => {
+    if (!rootContainer) return;
+    const newContainer = createContainerFromWidget(widgetId);
+    if (newContainer) {
+      addContainer(rootContainer.id, newContainer);
+      selectContainer(newContainer.id);
+    }
+  };
+
+  // Handle updating an element's props
+  const handleUpdateElement = (props) => {
+    if (selectedContainerId && selectedElementId) {
+      updateElement(selectedContainerId, selectedElementId, props);
+    }
+  };
+
+  // Handle deleting an element
+  const handleDeleteElement = () => {
+    if (selectedContainerId && selectedElementId) {
+      deleteElement(selectedContainerId, selectedElementId);
+    }
+  };
+
+  // Handle updating container props
+  const handleUpdateBlock = (props) => {
+    if (selectedContainerId) {
+      updateContainer(selectedContainerId, props);
+    }
+  };
+
+  // Handle deleting the selected container
+  const handleDeleteBlock = () => {
+    if (selectedContainerId) {
+      deleteContainer(selectedContainerId);
+    }
+  };
+
+  // Auto-switch to selection tab when an element or container is selected
+  useEffect(() => {
+    if (selectedContainerId || selectedElementId) {
+      setActiveTab("tab-selection");
+    }
+  }, [selectedContainerId, selectedElementId]);
 
   return (
     <>
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full overflow-hidden">
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="flex flex-col h-full overflow-hidden"
+        data-sidebar-content="true"
+      >
         {/* Header fixe avec les onglets */}
         <div className="flex-shrink-0 p-5 pb-0">
           <ScrollArea className="w-full">
             <TabsList className="mb-3 w-full">
-              <TabsTrigger value="tab-1" className="flex-1">
-                <LayoutDashboard size={16} aria-hidden="true" />
+              <TabsTrigger value="tab-widgets" className="flex-1" title="Widgets">
+                <Blocks size={16} aria-hidden="true" />
               </TabsTrigger>
-              <TabsTrigger value="tab-2" className="group flex-1">
-                <Palette size={16} aria-hidden="true" />
+              <TabsTrigger
+                value="tab-selection"
+                className="flex-1 relative"
+                title="Sélection"
+                disabled={!selectedBlockId && !selectedElementId}
+              >
+                <MousePointerClick size={16} aria-hidden="true" />
+                {(selectedBlockId || selectedElementId) && (
+                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-[#5a50ff] rounded-full" />
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="tab-users" className="flex-1" title="Utilisateurs">
+                <Users size={16} aria-hidden="true" />
               </TabsTrigger>
             </TabsList>
             <ScrollBar orientation="horizontal" />
@@ -676,43 +994,50 @@ export function TabSignature({ existingSignatureId = null }) {
 
         {/* Contenu scrollable - prend l'espace restant automatiquement */}
         <div className="flex-1 overflow-y-auto px-5 min-h-0">
-          {activeTab === "tab-1" && (
-            <div className="w-full space-y-6 mt-4">
-              <LayoutContent />
+          {activeTab === "tab-widgets" && (
+            <div className="w-full mt-4">
+              {/* Bibliothèque de blocs */}
+              <BlockPalette onAddBlock={handleAddBlock} />
             </div>
           )}
-          {activeTab === "tab-2" && (
-            <div className="w-full space-y-6 mt-4">
-              <TypographyContent />
+          {activeTab === "tab-selection" && (
+            <div className="w-full mt-4">
+              {selectedElement || selectedBlock ? (
+                // Panneau de propriétés dynamique pour l'élément/bloc sélectionné
+                <BlockSettings
+                  selectedBlock={selectedBlock}
+                  selectedElement={selectedElement}
+                  onUpdateBlock={handleUpdateBlock}
+                  onUpdateElement={handleUpdateElement}
+                  onDeleteBlock={handleDeleteBlock}
+                  onDeleteElement={handleDeleteElement}
+                />
+              ) : (
+                // Message quand rien n'est sélectionné
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <div className="w-12 h-12 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center mb-4">
+                    <MousePointerClick className="w-6 h-6 text-neutral-400" />
+                  </div>
+                  <h3 className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                    Aucune sélection
+                  </h3>
+                  <p className="text-xs text-neutral-500 max-w-[200px]">
+                    Cliquez sur un bloc ou un élément dans la signature pour voir ses propriétés
+                  </p>
+                </div>
+              )}
             </div>
           )}
-        </div>
-
-        {/* Footer fixe en bas - en dehors du contenu scrollable */}
-        <div className="flex-shrink-0 py-3 px-5 border-t">
-          <div className="flex gap-3 w-full">
-            <Button
-              variant="outline"
-              className="cursor-pointer flex-1"
-              onClick={handleCancelClick}
-            >
-              Annuler
-            </Button>
-            <Button
-              className="cursor-pointer flex-1 flex items-center justify-center font-normal gap-2"
-              onClick={handleOpenModal}
-              disabled={isLoading}
-            >
-              {isLoading && <LoaderCircleIcon className="-ms-1 animate-spin" size={16} aria-hidden="true" />}
-              <Save className="w-4 h-4" />
-              {existingSignatureId ? "Mettre à jour" : "Sauvegarder"}
-            </Button>
-          </div>
+          {activeTab === "tab-users" && (
+            <div className="w-full mt-4">
+              <UsersTab />
+            </div>
+          )}
         </div>
       </Tabs>
-      
+
       {/* Modal de sauvegarde */}
-      {isModalOpen && (
+      {showSaveModal && (
         <div className="fixed inset-0 bg-background/80 dark:bg-background/60 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="rounded-lg p-6 w-full max-w-md mx-4 border shadow-lg bg-card text-card-foreground">
             <h3 className="text-lg font-semibold mb-4">
@@ -724,7 +1049,10 @@ export function TabSignature({ existingSignatureId = null }) {
             <div className="space-y-4">
               {/* Nom de la signature */}
               <div>
-                <Label htmlFor="signatureName" className="text-sm font-medium text-muted-foreground">
+                <Label
+                  htmlFor="signatureName"
+                  className="text-sm font-medium text-muted-foreground"
+                >
                   Nom de la signature
                 </Label>
                 <Input
@@ -738,9 +1066,7 @@ export function TabSignature({ existingSignatureId = null }) {
 
               {/* Status de sauvegarde */}
               {(saveStatus === "error" || saveStatus === "duplicate") && (
-                <div 
-                  className="flex items-center gap-2 p-3 rounded-md border border-red-200 bg-red-50 text-red-700 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-300"
-                >
+                <div className="flex items-center gap-2 p-3 rounded-md border border-red-200 bg-red-50 text-red-700 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-300">
                   <AlertCircle className="w-4 h-4" />
                   <span>{errorMessage || "Erreur lors de la sauvegarde"}</span>
                 </div>
@@ -750,7 +1076,7 @@ export function TabSignature({ existingSignatureId = null }) {
             {/* Boutons d'action */}
             <div className="flex justify-end gap-3 mt-6">
               <Button
-                onClick={() => setIsModalOpen(false)}
+                onClick={() => setShowSaveModal(false)}
                 variant="outline"
                 disabled={isLoading}
               >
@@ -761,7 +1087,13 @@ export function TabSignature({ existingSignatureId = null }) {
                 disabled={isLoading || !signatureName.trim()}
                 className="flex items-center font-normal gap-2"
               >
-                {isLoading && <LoaderCircleIcon className="-ms-1 animate-spin" size={16} aria-hidden="true" />}
+                {isLoading && (
+                  <LoaderCircleIcon
+                    className="-ms-1 animate-spin"
+                    size={16}
+                    aria-hidden="true"
+                  />
+                )}
                 {existingSignatureId ? "Mettre à jour" : "Sauvegarder"}
               </Button>
             </div>
@@ -771,7 +1103,7 @@ export function TabSignature({ existingSignatureId = null }) {
 
       {/* Modal de confirmation d'annulation */}
       <CancelConfirmationModal
-        isOpen={showCancelConfirmation}
+        isOpen={showCancelModal}
         onClose={handleCloseCancelModal}
         onConfirm={handleConfirmCancel}
         title="Annuler la création de signature ?"

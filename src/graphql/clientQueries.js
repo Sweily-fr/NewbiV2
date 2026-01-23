@@ -145,11 +145,7 @@ export const CREATE_CLIENT = gql`
 `;
 
 export const UPDATE_CLIENT = gql`
-  mutation UpdateClient(
-    $workspaceId: String!
-    $id: ID!
-    $input: ClientInput!
-  ) {
+  mutation UpdateClient($workspaceId: String!, $id: ID!, $input: ClientInput!) {
     updateClient(workspaceId: $workspaceId, id: $id, input: $input) {
       ...ClientFragment
     }
@@ -164,8 +160,16 @@ export const DELETE_CLIENT = gql`
 `;
 
 export const ADD_CLIENT_NOTE = gql`
-  mutation AddClientNote($workspaceId: String!, $clientId: ID!, $input: ClientNoteInput!) {
-    addClientNote(workspaceId: $workspaceId, clientId: $clientId, input: $input) {
+  mutation AddClientNote(
+    $workspaceId: String!
+    $clientId: ID!
+    $input: ClientNoteInput!
+  ) {
+    addClientNote(
+      workspaceId: $workspaceId
+      clientId: $clientId
+      input: $input
+    ) {
       ...ClientFragment
     }
   }
@@ -173,8 +177,18 @@ export const ADD_CLIENT_NOTE = gql`
 `;
 
 export const UPDATE_CLIENT_NOTE = gql`
-  mutation UpdateClientNote($workspaceId: String!, $clientId: ID!, $noteId: ID!, $content: String!) {
-    updateClientNote(workspaceId: $workspaceId, clientId: $clientId, noteId: $noteId, content: $content) {
+  mutation UpdateClientNote(
+    $workspaceId: String!
+    $clientId: ID!
+    $noteId: ID!
+    $content: String!
+  ) {
+    updateClientNote(
+      workspaceId: $workspaceId
+      clientId: $clientId
+      noteId: $noteId
+      content: $content
+    ) {
       ...ClientFragment
     }
   }
@@ -182,8 +196,16 @@ export const UPDATE_CLIENT_NOTE = gql`
 `;
 
 export const DELETE_CLIENT_NOTE = gql`
-  mutation DeleteClientNote($workspaceId: String!, $clientId: ID!, $noteId: ID!) {
-    deleteClientNote(workspaceId: $workspaceId, clientId: $clientId, noteId: $noteId) {
+  mutation DeleteClientNote(
+    $workspaceId: String!
+    $clientId: ID!
+    $noteId: ID!
+  ) {
+    deleteClientNote(
+      workspaceId: $workspaceId
+      clientId: $clientId
+      noteId: $noteId
+    ) {
       ...ClientFragment
     }
   }
@@ -232,13 +254,15 @@ export const useClients = (options = {}) => {
   const {
     workspaceId = contextWorkspaceId,
     page = 1,
-    limit = 10,
+    limit = 50,
     search = "",
   } = options;
 
   const { data, loading, error, refetch, fetchMore } = useQuery(GET_CLIENTS, {
     variables: { workspaceId, page, limit, search },
     skip: !workspaceId,
+    fetchPolicy: "cache-first",
+    nextFetchPolicy: "cache-first",
     errorPolicy: "all",
     notifyOnNetworkStatusChange: true,
   });

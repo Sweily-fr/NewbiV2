@@ -12,12 +12,15 @@ const DOCUMENT_LABELS = {
   creditNote: { singular: "avoir", article: "l'" },
 };
 
-export default function SendDocumentEmailForm({ 
+export default function SendDocumentEmailForm({
   documentType = "invoice",
   clientEmail,
   clientName,
 }) {
-  const { register, formState: { errors } } = useFormContext();
+  const {
+    register,
+    formState: { errors },
+  } = useFormContext();
   const labels = DOCUMENT_LABELS[documentType] || DOCUMENT_LABELS.invoice;
 
   return (
@@ -27,15 +30,23 @@ export default function SendDocumentEmailForm({
         <div>
           <h3 className="text-base font-medium mb-2">Destinataire</h3>
           <p className="text-sm text-muted-foreground mb-3">
-            L&apos;email sera envoyé au client sélectionné dans {labels.article}{labels.singular}
+            L&apos;email sera envoyé au client sélectionné dans{" "}
+            {labels.article.endsWith("'")
+              ? labels.article
+              : `${labels.article} `}
+            {labels.singular}
           </p>
         </div>
 
         <div className="space-y-2">
           <Label>Client</Label>
           <div className="p-3 bg-gray-50 dark:bg-[#252525] rounded-lg border border-gray-200 dark:border-gray-700">
-            <p className="font-medium text-foreground">{clientName || "Client non défini"}</p>
-            <p className="text-sm text-muted-foreground">{clientEmail || "Email non défini"}</p>
+            <p className="font-medium text-foreground">
+              {clientName || "Client non défini"}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              {clientEmail || "Email non défini"}
+            </p>
           </div>
         </div>
       </div>
@@ -45,9 +56,15 @@ export default function SendDocumentEmailForm({
       {/* Configuration de l'email */}
       <div className="space-y-4">
         <div>
-          <h3 className="text-base font-medium mb-2">Contenu de l&apos;email</h3>
+          <h3 className="text-base font-medium mb-2">
+            Contenu de l&apos;email
+          </h3>
           <p className="text-sm text-muted-foreground mb-3">
-            Personnalisez le message qui accompagnera {labels.article}{labels.singular}
+            Personnalisez le message qui accompagnera{" "}
+            {labels.article.endsWith("'")
+              ? labels.article
+              : `${labels.article} `}
+            {labels.singular}
           </p>
         </div>
 
@@ -56,7 +73,8 @@ export default function SendDocumentEmailForm({
           <div className="flex items-start gap-2">
             <Info className="h-4 w-4 text-[#5b50ff] mt-0.5 flex-shrink-0" />
             <p className="text-xs text-[#5b50ff]">
-              Variables disponibles : {"{clientName}"}, {"{documentNumber}"}, {"{totalAmount}"}, {"{companyName}"}
+              Variables disponibles : {"{clientName}"}, {"{documentNumber}"},{" "}
+              {"{totalAmount}"}, {"{companyName}"}
               {documentType === "creditNote" && <>, {"{invoiceNumber}"}</>}
             </p>
           </div>
@@ -73,7 +91,9 @@ export default function SendDocumentEmailForm({
             className="dark:border-gray-700"
           />
           {errors.emailSubject && (
-            <p className="text-sm text-red-500">{errors.emailSubject.message}</p>
+            <p className="text-sm text-red-500">
+              {errors.emailSubject.message}
+            </p>
           )}
         </div>
 

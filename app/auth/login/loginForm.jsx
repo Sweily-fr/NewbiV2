@@ -138,9 +138,9 @@ const ensureActiveOrganization = async () => {
           user.name || `Espace ${user.email.split("@")[0]}'s`;
         const organizationSlug = `org-${user.id.slice(-8)}`;
 
-        // Calculer les dates de trial (180 jours - 6 mois)
+        // Calculer les dates de trial (14 jours)
         const now = new Date();
-        const trialEnd = new Date(now.getTime() + 180 * 24 * 60 * 60 * 1000);
+        const trialEnd = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
 
         console.log(
           `🔄 Création organisation pour ${user.email} avec trial...`
@@ -225,9 +225,15 @@ const LoginForm = () => {
         }
 
         // Connexion normale sans 2FA
-        const authToken = ctx.response.headers.get("set-auth-token");
-        localStorage.setItem("bearer_token", authToken);
-        console.log("💾 [LOGIN] Token sauvegardé");
+        // Vérifier les deux noms de headers possibles (Better Auth peut utiliser l'un ou l'autre)
+        const authToken = ctx.response.headers.get("set-auth-jwt") ||
+                         ctx.response.headers.get("set-auth-token");
+        if (authToken) {
+          localStorage.setItem("bearer_token", authToken);
+          console.log("💾 [LOGIN] Token sauvegardé");
+        } else {
+          console.warn("⚠️ [LOGIN] Aucun token JWT trouvé dans les headers");
+        }
 
         // Vérifier la limite de sessions via l'API Better Auth
         console.log("🔍 [LOGIN] Vérification de la limite de sessions...");
@@ -426,19 +432,19 @@ const LoginForm = () => {
               );
 
               // Utiliser la page de démarrage préférée de l'utilisateur ou fallback
-              let redirectPath = "/dashboard/outils";
+              let redirectPath = "/dashboard";
 
               if (userRedirectPage && userRedirectPage !== "last-page") {
                 // Mapper les pages vers leurs vraies routes
                 const routeMap = {
                   dashboard: "/dashboard",
-                  outils: "/dashboard/outils",
+                  outils: "/dashboard",
                   kanban: "/dashboard/outils/kanban",
                   calendar: "/dashboard/calendar",
                   factures: "/dashboard/outils/factures",
                   devis: "/dashboard/outils/devis",
                   clients: "/dashboard/clients",
-                  depenses: "/dashboard/outils/gestion-depenses",
+                  depenses: "/dashboard/outils/transactions",
                   signatures: "/dashboard/outils/signatures-mail",
                   transferts: "/dashboard/outils/transferts-fichiers",
                   catalogues: "/dashboard/catalogues",
@@ -454,16 +460,16 @@ const LoginForm = () => {
 
               router.push(redirectPath);
             } else {
-              // Pas d'organisation, rediriger vers /dashboard/outils par défaut
-              router.push("/dashboard/outils");
+              // Pas d'organisation, rediriger vers /dashboard par défaut
+              router.push("/dashboard");
             }
           } catch (error) {
             console.error(
               "Erreur lors de la vérification de l'abonnement:",
               error
             );
-            // En cas d'erreur, rediriger vers /dashboard/outils par défaut
-            router.push("/dashboard/outils");
+            // En cas d'erreur, rediriger vers /dashboard par défaut
+            router.push("/dashboard");
           }
         }
       },
@@ -662,19 +668,19 @@ const LoginForm = () => {
             );
 
             // Utiliser la page de démarrage préférée de l'utilisateur ou fallback
-            let redirectPath = "/dashboard/outils";
+            let redirectPath = "/dashboard";
 
             if (userRedirectPage && userRedirectPage !== "last-page") {
               // Mapper les pages vers leurs vraies routes
               const routeMap = {
                 dashboard: "/dashboard",
-                outils: "/dashboard/outils",
+                outils: "/dashboard",
                 kanban: "/dashboard/outils/kanban",
                 calendar: "/dashboard/calendar",
                 factures: "/dashboard/outils/factures",
                 devis: "/dashboard/outils/devis",
                 clients: "/dashboard/clients",
-                depenses: "/dashboard/outils/gestion-depenses",
+                depenses: "/dashboard/outils/transactions",
                 signatures: "/dashboard/outils/signatures-mail",
                 transferts: "/dashboard/outils/transferts-fichiers",
                 catalogues: "/dashboard/catalogues",
@@ -690,16 +696,16 @@ const LoginForm = () => {
 
             router.push(redirectPath);
           } else {
-            // Pas d'organisation, rediriger vers /dashboard/outils par défaut
-            router.push("/dashboard/outils");
+            // Pas d'organisation, rediriger vers /dashboard par défaut
+            router.push("/dashboard");
           }
         } catch (error) {
           console.error(
             "Erreur lors de la vérification de l'abonnement:",
             error
           );
-          // En cas d'erreur, rediriger vers /dashboard/outils par défaut
-          router.push("/dashboard/outils");
+          // En cas d'erreur, rediriger vers /dashboard par défaut
+          router.push("/dashboard");
         }
       }
 

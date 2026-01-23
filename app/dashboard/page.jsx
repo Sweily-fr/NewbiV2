@@ -44,22 +44,25 @@ import { useUser } from "@/src/lib/auth/hooks";
 import { authClient } from "@/src/lib/auth-client";
 import { redirect } from "next/navigation";
 // Financial stats and bridge hooks removed
-import { useExpenses } from "@/src/hooks/useExpenses";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import BankingConnectButton from "@/src/components/banking/BankingConnectButton";
 import BankBalanceCard from "@/src/components/banking/BankBalanceCard";
-import UnifiedTransactions from "@/src/components/banking/UnifiedTransactions";
+import RecentTransactionsCard from "@/src/components/banking/RecentTransactionsCard";
 import { TreasuryChart } from "@/src/components/treasury-chart";
-import { ExpenseCategoryChart } from "@/app/dashboard/outils/gestion-depenses/components/expense-category-chart";
+import { ExpenseCategoryChart } from "@/app/dashboard/outils/transactions/components/expense-category-chart";
 import { IncomeCategoryChart } from "@/app/dashboard/components/income-category-chart";
 
 import { DashboardSkeleton } from "@/src/components/dashboard-skeleton";
 import { useDashboardData } from "@/src/hooks/useDashboardData";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { useInvoices } from "@/src/graphql/invoiceQueries";
+import { PricingModal } from "@/src/components/pricing-modal";
+import { ProSubscriptionOverlay } from "@/src/components/pro-subscription-overlay";
+import { BankSyncOverlay } from "@/src/components/bank-sync-overlay";
 import {
-  processInvoicesForCharts,
-  processExpensesForCharts,
+  processIncomeForCharts,
+  processExpensesWithBankForCharts,
   getIncomeChartConfig,
   getExpenseChartConfig,
 } from "@/src/utils/chartDataProcessors";
@@ -80,12 +83,74 @@ function DashboardContent() {
     totalIncome,
     totalExpenses,
     transactions,
+    bankAccounts,
+    bankBalance,
     isLoading,
     isInitialized,
     formatCurrency,
     refreshData,
     cacheInfo,
   } = useDashboardData();
+
+  const { workspaceId } = useWorkspace();
+
+  // État pour l'overlay de synchronisation bancaire
+  const [isBankSyncing, setIsBankSyncing] = useState(false);
+
+  // Gérer le retour de Bridge Connect (sync automatique des comptes bancaires)
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const isFromBridge = urlParams.has("item_id") || urlParams.has("status");
+
+    if (isFromBridge && workspaceId) {
+      console.log(
+        "🏦 Retour de Bridge détecté, synchronisation des comptes..."
+      );
+
+      // Afficher l'overlay de chargement immédiatement
+      setIsBankSyncing(true);
+
+      const syncBankAccounts = async () => {
+        try {
+          // Récupérer le JWT depuis localStorage (même pattern qu'Apollo Client)
+          const token = localStorage.getItem("bearer_token");
+
+          // Lancer la sync complète (comptes + transactions) via le proxy Next.js
+          const response = await fetch("/api/banking-sync/full", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-workspace-id": workspaceId,
+              ...(token && { Authorization: `Bearer ${token}` }),
+            },
+            body: JSON.stringify({ limit: 100 }),
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            console.log("✅ Sync bancaire terminée:", data);
+            // Rafraîchir les données du dashboard
+            refreshData();
+          } else {
+            console.error("❌ Erreur sync bancaire:", await response.text());
+          }
+
+          // Nettoyer l'URL des paramètres Bridge
+          const cleanUrl = window.location.pathname;
+          window.history.replaceState({}, "", cleanUrl);
+        } catch (error) {
+          console.error("❌ Erreur lors de la sync bancaire:", error);
+        } finally {
+          // Masquer l'overlay après la sync
+          setIsBankSyncing(false);
+        }
+      };
+
+      // Attendre un peu pour que Bridge finalise
+      const timer = setTimeout(syncBankAccounts, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [workspaceId, refreshData]);
 
   // Gérer le retour de Stripe Connect
   useEffect(() => {
@@ -136,14 +201,15 @@ function DashboardContent() {
     }
   }, [session?.user?.id, checkAndUpdateAccountStatus, refetchStatus]);
 
-  // Données pour les graphiques
+  // Données pour les graphiques (incluant les transactions bancaires)
   const incomeChartData = useMemo(
-    () => (paidInvoices ? processInvoicesForCharts(paidInvoices) : []),
-    [paidInvoices]
+    () => processIncomeForCharts(paidInvoices || [], transactions || []),
+    [paidInvoices, transactions]
   );
   const expenseChartData = useMemo(
-    () => (paidExpenses ? processExpensesForCharts(paidExpenses) : []),
-    [paidExpenses]
+    () =>
+      processExpensesWithBankForCharts(paidExpenses || [], transactions || []),
+    [paidExpenses, transactions]
   );
 
   // Debug pour vérifier l'état du cache
@@ -189,6 +255,10 @@ function DashboardContent() {
       <Head>
         <meta name="robots" content="noindex,nofollow,noarchive" />
       </Head>
+
+      {/* Overlay de synchronisation bancaire */}
+      <BankSyncOverlay isVisible={isBankSyncing} />
+
       <div className="flex flex-col gap-4 py-8 sm:p-6 md:gap-6 md:py-6 p-4 md:p-6">
         <div className="flex items-center justify-between w-full mb-4 md:mb-6">
           <div className="flex flex-col">
@@ -221,7 +291,7 @@ function DashboardContent() {
                 asChild
               >
                 <a
-                  href="/dashboard/outils/gestion-depenses"
+                  href="/dashboard/outils/transactions"
                   className="flex items-center gap-1 lg:gap-2 justify-center"
                 >
                   <CloudUpload className="w-4 h-4" />
@@ -251,7 +321,7 @@ function DashboardContent() {
                 asChild
               >
                 <a
-                  href="/dashboard/outils/gestion-depenses"
+                  href="/dashboard/outils/transactions"
                   className="flex items-center gap-1 lg:gap-2 justify-center"
                 >
                   <Download className="w-4 h-4" />
@@ -298,23 +368,23 @@ function DashboardContent() {
             invoices={paidInvoices}
             totalIncome={totalIncome}
             totalExpenses={totalExpenses}
+            bankAccounts={bankAccounts}
+            bankBalance={bankBalance}
             isLoading={isLoading}
           />
-          <UnifiedTransactions
-            limit={5}
+          <RecentTransactionsCard
             className="shadow-xs w-full md:w-1/2"
-            expenses={paidExpenses}
-            invoices={paidInvoices}
+            transactions={transactions}
+            limit={5}
             isLoading={isLoading}
           />
         </div>
-        {/* Graphique de trésorerie - Pleine largeur */}
+        {/* Graphique de trésorerie - Pleine largeur (MODE BANCAIRE PUR) */}
         <div className="w-full">
           <TreasuryChart
-            expenses={paidExpenses}
-            invoices={paidInvoices}
+            bankTransactions={transactions}
             className="shadow-xs"
-            initialBalance={0}
+            initialBalance={bankBalance || 0}
           />
         </div>
         <div className="flex flex-col md:flex-row gap-4 md:gap-6 w-full">
@@ -338,14 +408,16 @@ function DashboardContent() {
           />
         </div>
 
-        {/* Graphiques de répartition par catégorie */}
+        {/* Graphiques de répartition par catégorie (MODE BANCAIRE PUR) */}
         <div className="flex flex-col md:flex-row gap-4 md:gap-6 w-full">
           <IncomeCategoryChart
             invoices={paidInvoices}
+            bankTransactions={transactions}
             className="shadow-xs w-full md:w-1/2"
           />
           <ExpenseCategoryChart
             expenses={paidExpenses}
+            bankTransactions={transactions}
             className="shadow-xs w-full md:w-1/2"
           />
         </div>
@@ -354,11 +426,67 @@ function DashboardContent() {
   );
 }
 
-export default function Dashboard() {
-  // Le dashboard principal est accessible en mode Pro (trial ou payant)
+function DashboardWithSearchParams() {
+  const searchParams = useSearchParams();
+  const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
+  const [showProAnimation, setShowProAnimation] = useState(false);
+
+  // Détecter le succès de paiement Stripe et afficher l'animation Pro
+  useEffect(() => {
+    const paymentSuccess = searchParams.get("payment_success") === "true";
+    const subscriptionSuccess =
+      searchParams.get("subscription_success") === "true";
+
+    if (paymentSuccess || subscriptionSuccess) {
+      console.log("🎉 Paiement réussi détecté, affichage de l'animation Pro");
+      setShowProAnimation(true);
+      // Nettoyer l'URL des paramètres
+      const cleanUrl = window.location.pathname;
+      window.history.replaceState({}, "", cleanUrl);
+    }
+  }, [searchParams]);
+
+  // Ouvrir le modal de pricing si les paramètres pricing=true ou access=restricted sont présents
+  // MAIS seulement si l'animation Pro n'est pas en cours
+  useEffect(() => {
+    if (showProAnimation) return; // Ne pas ouvrir le modal si l'animation est en cours
+
+    const showPricing = searchParams.get("pricing") === "true";
+    const accessRestricted = searchParams.get("access") === "restricted";
+
+    if (showPricing || accessRestricted) {
+      setIsPricingModalOpen(true);
+      // Nettoyer l'URL des paramètres
+      const cleanUrl = window.location.pathname;
+      window.history.replaceState({}, "", cleanUrl);
+    }
+  }, [searchParams, showProAnimation]);
+
+  const handleProAnimationComplete = () => {
+    setShowProAnimation(false);
+    console.log("✅ Animation Pro terminée, dashboard accessible");
+  };
+
+  // Le dashboard principal est accessible sans abonnement
   return (
-    <ProRouteGuard pageName="Tableau de bord">
+    <>
       <DashboardContent />
-    </ProRouteGuard>
+      <PricingModal
+        isOpen={isPricingModalOpen}
+        onClose={() => setIsPricingModalOpen(false)}
+      />
+      <ProSubscriptionOverlay
+        isVisible={showProAnimation}
+        onComplete={handleProAnimationComplete}
+      />
+    </>
+  );
+}
+
+export default function Dashboard() {
+  return (
+    <Suspense fallback={<DashboardSkeleton />}>
+      <DashboardWithSearchParams />
+    </Suspense>
   );
 }

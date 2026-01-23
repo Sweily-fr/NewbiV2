@@ -1,15 +1,14 @@
 import React from "react";
-import HeroHeader from "@/src/components/blocks/hero-header";
+import { NewHeroNavbar } from "@/app/(main)/new/lp-home/NewHeroNavbar";
 import Footer7 from "@/src/components/footer7";
 import { HeroSection } from "./section/hero-section";
-import SectionAvantages from "./section/section-avantages";
 import { Poppins } from "next/font/google";
 import FAQ from "./section/faq";
-import TestimonialsSection from "./section/testimonial";
-import BusinessAgility from "@/app/(main)/section/business-agility";
 import { generateNextMetadata } from "@/src/utils/seo-data";
+import TrustedBySection from "@/app/(main)/new/lp-home/TrustedBySection";
+import SignaturesComponentsSection from "./section/SignaturesComponentsSection";
+import { TestimonialsSplit } from "./section/TestimonialsSplit";
 
-// Configuration de Poppins uniquement pour les landing pages
 const poppins = Poppins({
   weight: ["400", "500", "600", "700"],
   subsets: ["latin"],
@@ -17,20 +16,18 @@ const poppins = Poppins({
   display: "swap",
 });
 
-// Export des metadata pour le SEO
 export const metadata = generateNextMetadata("signatures");
 
 export default function SignaturesPage() {
   return (
     <>
       <div className={`${poppins.variable} font-poppins`}>
-        <HeroHeader />
+        <NewHeroNavbar hasBanner={false} />
         <main>
-          {/* Hero Section */}
           <HeroSection />
-          <SectionAvantages />
-          <BusinessAgility />
-          {/* <TestimonialsSection /> */}
+          <TrustedBySection />
+          <SignaturesComponentsSection />
+          <TestimonialsSplit />
           <FAQ />
           {/* <section className="min-h-screen py-20 flex flex-col justify-between">
           <div className="mx-auto max-w-6xl px-6 lg:px-12">

@@ -2,7 +2,21 @@
 
 import { useFormContext } from "react-hook-form";
 import React, { useEffect, useState, useRef } from "react";
-import { Tag, Settings, AlignLeft, AlignRight, Check } from "lucide-react";
+import {
+  Tag,
+  Settings,
+  AlignLeft,
+  AlignRight,
+  Check,
+  Info,
+} from "lucide-react";
+import { useInvoiceNumber } from "../hooks/use-invoice-number";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/src/components/ui/tooltip";
+import { getCurrentMonthYear } from "@/src/utils/invoiceUtils";
 import { documentSuggestions } from "@/src/utils/document-suggestions";
 import { SuggestionDropdown } from "@/src/components/ui/suggestion-dropdown";
 import {
@@ -54,15 +68,23 @@ const validateBIC = (value) => {
 // Fonction de formatage de l'IBAN avec espaces
 const formatIban = (iban) => {
   if (!iban) return "";
-  
+
   // Supprimer tous les espaces existants et convertir en majuscules
-  const cleanIban = iban.replace(/\s/g, '').toUpperCase();
-  
+  const cleanIban = iban.replace(/\s/g, "").toUpperCase();
+
   // Ajouter un espace tous les 4 caractères
-  return cleanIban.replace(/(.{4})/g, '$1 ').trim();
+  return cleanIban.replace(/(.{4})/g, "$1 ").trim();
 };
 
-export default function InvoiceSettingsView({ canEdit, onCancel, onSave, onCloseAttempt }) {
+export default function InvoiceSettingsView({
+  canEdit,
+  onCancel,
+  onSave,
+  onCloseAttempt,
+  validateInvoiceNumberExists,
+  validationErrors = {},
+  setValidationErrors,
+}) {
   const {
     watch,
     setValue,
@@ -70,6 +92,57 @@ export default function InvoiceSettingsView({ canEdit, onCancel, onSave, onClose
     formState: { errors },
   } = useFormContext();
   const data = watch();
+
+  // Hook pour la numérotation séquentielle des factures
+  const {
+    nextInvoiceNumber,
+    validateInvoiceNumber,
+    isLoading: isLoadingInvoiceNumber,
+    hasExistingInvoices,
+    getFormattedNextNumber,
+  } = useInvoiceNumber();
+
+  // Gérer le changement de préfixe avec auto-fill pour MM et AAAA
+  const handlePrefixChange = (e) => {
+    const value = e.target.value;
+    const cursorPosition = e.target.selectionStart;
+
+    // Auto-fill MM (month)
+    if (value.includes("MM")) {
+      const { month } = getCurrentMonthYear();
+      const newValue = value.replace("MM", month);
+      setValue("prefix", newValue, { shouldValidate: true });
+      const newPosition = cursorPosition + month.length - 2;
+      setTimeout(() => {
+        e.target.setSelectionRange(newPosition, newPosition);
+      }, 0);
+      return;
+    }
+
+    // Auto-fill AAAA (year)
+    if (value.includes("AAAA")) {
+      const { year } = getCurrentMonthYear();
+      const newValue = value.replace("AAAA", year);
+      setValue("prefix", newValue, { shouldValidate: true });
+      const newPosition = cursorPosition + year.length - 4;
+      setTimeout(() => {
+        e.target.setSelectionRange(newPosition, newPosition);
+      }, 0);
+      return;
+    }
+
+    // Default behavior
+    setValue("prefix", value, { shouldValidate: true });
+  };
+
+  // Debug: Log des couleurs reçues
+  useEffect(() => {
+    console.log("🎨 InvoiceSettingsView - Couleurs reçues:", {
+      textColor: data.appearance?.textColor,
+      headerTextColor: data.appearance?.headerTextColor,
+      headerBgColor: data.appearance?.headerBgColor,
+    });
+  }, [data.appearance]);
 
   const { data: organization } = authClient.useActiveOrganization();
 
@@ -83,12 +156,12 @@ export default function InvoiceSettingsView({ canEdit, onCancel, onSave, onClose
   const handleBankDetailsSuccess = async () => {
     // La mise à jour se fera via l'écouteur d'événement ci-dessous
   };
-  
+
   // Écouter l'événement personnalisé émis par BankDetailsDialog
   useEffect(() => {
     const handleOrganizationUpdated = (event) => {
       const { bankName, bankIban, bankBic } = event.detail;
-      
+
       if (bankIban || bankBic || bankName) {
         // Mettre à jour les données bancaires dans le formulaire
         setValue("bankDetails.iban", bankIban || "", {
@@ -100,26 +173,29 @@ export default function InvoiceSettingsView({ canEdit, onCancel, onSave, onClose
         setValue("bankDetails.bankName", bankName || "", {
           shouldDirty: true,
         });
-        
+
         // Mettre à jour userBankDetails pour que la checkbox soit visible
         setValue("userBankDetails", {
           iban: bankIban || "",
           bic: bankBic || "",
           bankName: bankName || "",
         });
-        
+
         // Cocher automatiquement la checkbox pour afficher les coordonnées bancaires
         setValue("showBankDetails", true, {
           shouldDirty: true,
         });
       }
     };
-    
+
     window.addEventListener("organizationUpdated", handleOrganizationUpdated);
-    
+
     // Nettoyer l'écouteur au démontage
     return () => {
-      window.removeEventListener("organizationUpdated", handleOrganizationUpdated);
+      window.removeEventListener(
+        "organizationUpdated",
+        handleOrganizationUpdated
+      );
     };
   }, [setValue]);
 
@@ -152,8 +228,10 @@ export default function InvoiceSettingsView({ canEdit, onCancel, onSave, onClose
 
     const hasChanges =
       data.appearance?.textColor !== initialValuesRef.current.textColor ||
-      data.appearance?.headerTextColor !== initialValuesRef.current.headerTextColor ||
-      data.appearance?.headerBgColor !== initialValuesRef.current.headerBgColor ||
+      data.appearance?.headerTextColor !==
+        initialValuesRef.current.headerTextColor ||
+      data.appearance?.headerBgColor !==
+        initialValuesRef.current.headerBgColor ||
       data.headerNotes !== initialValuesRef.current.headerNotes ||
       data.footerNotes !== initialValuesRef.current.footerNotes ||
       data.termsAndConditions !== initialValuesRef.current.termsAndConditions ||
@@ -174,14 +252,32 @@ export default function InvoiceSettingsView({ canEdit, onCancel, onSave, onClose
   const handleConfirmCancel = () => {
     // Restaurer les valeurs initiales avec fallback sur les valeurs par défaut
     if (initialValuesRef.current) {
-      setValue("appearance.textColor", initialValuesRef.current.textColor || "#000000");
-      setValue("appearance.headerTextColor", initialValuesRef.current.headerTextColor || "#ffffff");
-      setValue("appearance.headerBgColor", initialValuesRef.current.headerBgColor || "#5b50FF");
+      setValue(
+        "appearance.textColor",
+        initialValuesRef.current.textColor || "#000000"
+      );
+      setValue(
+        "appearance.headerTextColor",
+        initialValuesRef.current.headerTextColor || "#ffffff"
+      );
+      setValue(
+        "appearance.headerBgColor",
+        initialValuesRef.current.headerBgColor || "#5b50FF"
+      );
       setValue("headerNotes", initialValuesRef.current.headerNotes || "");
       setValue("footerNotes", initialValuesRef.current.footerNotes || "");
-      setValue("termsAndConditions", initialValuesRef.current.termsAndConditions || "");
-      setValue("showBankDetails", initialValuesRef.current.showBankDetails || false);
-      setValue("clientPositionRight", initialValuesRef.current.clientPositionRight || false);
+      setValue(
+        "termsAndConditions",
+        initialValuesRef.current.termsAndConditions || ""
+      );
+      setValue(
+        "showBankDetails",
+        initialValuesRef.current.showBankDetails || false
+      );
+      setValue(
+        "clientPositionRight",
+        initialValuesRef.current.clientPositionRight || false
+      );
     }
     setShowConfirmDialog(false);
     onCancel();
@@ -254,27 +350,258 @@ export default function InvoiceSettingsView({ canEdit, onCancel, onSave, onClose
           {Object.keys(errors).length > 0 && (
             <Alert variant="destructive">
               <AlertDescription>
-                <div className="font-medium mb-2">Veuillez corriger les erreurs suivantes :</div>
+                <div className="font-medium mb-2">
+                  Veuillez corriger les erreurs suivantes :
+                </div>
                 <ul className="list-disc list-inside space-y-1">
                   {errors.headerNotes && (
-                    <li className="text-sm">Notes d'en-tête : {errors.headerNotes.message}</li>
+                    <li className="text-sm">
+                      Notes d'en-tête : {errors.headerNotes.message}
+                    </li>
                   )}
                   {errors.footerNotes && (
-                    <li className="text-sm">Notes de bas de page : {errors.footerNotes.message}</li>
+                    <li className="text-sm">
+                      Notes de bas de page : {errors.footerNotes.message}
+                    </li>
                   )}
                   {errors.termsAndConditions && (
-                    <li className="text-sm">Conditions générales : {errors.termsAndConditions.message}</li>
+                    <li className="text-sm">
+                      Conditions générales : {errors.termsAndConditions.message}
+                    </li>
                   )}
                   {errors.bankDetails?.iban && (
-                    <li className="text-sm">IBAN : {errors.bankDetails.iban.message}</li>
+                    <li className="text-sm">
+                      IBAN : {errors.bankDetails.iban.message}
+                    </li>
                   )}
                   {errors.bankDetails?.bic && (
-                    <li className="text-sm">BIC/SWIFT : {errors.bankDetails.bic.message}</li>
+                    <li className="text-sm">
+                      BIC/SWIFT : {errors.bankDetails.bic.message}
+                    </li>
+                  )}
+                  {errors.prefix && (
+                    <li className="text-sm">
+                      Préfixe : {errors.prefix.message}
+                    </li>
+                  )}
+                  {errors.number && (
+                    <li className="text-sm">
+                      Numéro : {errors.number.message}
+                    </li>
                   )}
                 </ul>
               </AlertDescription>
             </Alert>
           )}
+
+          {/* Section Numérotation */}
+          <Card className="shadow-none border-none bg-transparent">
+            <CardHeader className="p-0">
+              <CardTitle className="flex items-center gap-2 font-normal text-lg">
+                Numérotation
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 p-0">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {/* Préfixe de facture */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Label
+                      htmlFor="invoice-prefix"
+                      className="text-sm font-light"
+                    >
+                      Préfixe de facture
+                    </Label>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent
+                        side="top"
+                        className="max-w-[280px] sm:max-w-xs"
+                      >
+                        <p>
+                          Préfixe personnalisable pour identifier vos factures.
+                          Tapez <span className="font-mono">MM</span> pour
+                          insérer le mois actuel ou{" "}
+                          <span className="font-mono">AAAA</span> pour l'année.
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                  <div className="space-y-1">
+                    <Input
+                      id="invoice-prefix"
+                      {...register("prefix", {
+                        maxLength: {
+                          value: 20,
+                          message:
+                            "Le préfixe ne doit pas dépasser 20 caractères",
+                        },
+                        pattern: {
+                          value: /^[A-Za-z0-9-]*$/,
+                          message:
+                            "Le préfixe ne doit contenir que des lettres, chiffres et tirets",
+                        },
+                      })}
+                      onChange={handlePrefixChange}
+                      onBlur={async (e) => {
+                        // Vérifier si le numéro existe déjà quand le préfixe change
+                        const currentNumber = data.number;
+                        if (currentNumber && validateInvoiceNumberExists) {
+                          await validateInvoiceNumberExists(
+                            currentNumber,
+                            e.target.value
+                          );
+                        }
+                      }}
+                      placeholder="F-MMYYYY"
+                      disabled={!canEdit}
+                      className={
+                        errors?.prefix
+                          ? "border-destructive focus-visible:ring-1 focus-visible:ring-destructive"
+                          : ""
+                      }
+                    />
+                    {errors?.prefix && (
+                      <p className="text-xs text-destructive">
+                        {errors.prefix.message}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Numéro de facture */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Label
+                      htmlFor="invoice-number"
+                      className="text-sm font-light"
+                    >
+                      Numéro de facture
+                    </Label>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent
+                        side="top"
+                        className="max-w-[280px] sm:max-w-xs"
+                      >
+                        <p>
+                          Numéro unique et séquentiel de votre facture. La
+                          numérotation doit être continue sans saut pour
+                          respecter les obligations légales.
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                  <div className="space-y-1">
+                    <Input
+                      id="invoice-number"
+                      {...register("number", {
+                        required: "Le numéro de facture est requis",
+                        validate: {
+                          isNumeric: (value) => {
+                            if (!/^\d+$/.test(value)) {
+                              return "Le numéro doit contenir uniquement des chiffres";
+                            }
+                            return true;
+                          },
+                          isValidSequence: (value) => {
+                            if (isLoadingInvoiceNumber) return true;
+                            const result = validateInvoiceNumber(
+                              parseInt(value, 10)
+                            );
+                            return result.isValid || result.message;
+                          },
+                        },
+                        minLength: {
+                          value: 1,
+                          message: "Le numéro est requis",
+                        },
+                        maxLength: {
+                          value: 6,
+                          message: "Le numéro ne peut pas dépasser 6 chiffres",
+                        },
+                      })}
+                      value={
+                        data.number ||
+                        (nextInvoiceNumber
+                          ? String(nextInvoiceNumber).padStart(4, "0")
+                          : "")
+                      }
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, "");
+                        setValue("number", value, { shouldValidate: true });
+                      }}
+                      onBlur={async (e) => {
+                        let finalNumber;
+                        if (e.target.value) {
+                          finalNumber = e.target.value.padStart(4, "0");
+                          setValue("number", finalNumber, {
+                            shouldValidate: true,
+                          });
+                        } else if (nextInvoiceNumber) {
+                          finalNumber = String(nextInvoiceNumber).padStart(
+                            4,
+                            "0"
+                          );
+                          setValue("number", finalNumber, {
+                            shouldValidate: true,
+                          });
+                        }
+
+                        // Vérifier si le numéro existe déjà (avec le préfixe)
+                        if (finalNumber && validateInvoiceNumberExists) {
+                          const currentPrefix = data.prefix;
+                          await validateInvoiceNumberExists(
+                            finalNumber,
+                            currentPrefix
+                          );
+                        }
+                      }}
+                      placeholder={
+                        nextInvoiceNumber
+                          ? String(nextInvoiceNumber).padStart(4, "0")
+                          : "000001"
+                      }
+                      disabled={!canEdit || isLoadingInvoiceNumber}
+                      className={
+                        errors?.number || validationErrors?.invoiceNumber
+                          ? "border-destructive focus-visible:ring-1 focus-visible:ring-destructive"
+                          : ""
+                      }
+                    />
+                    {errors?.number && (
+                      <p className="text-xs text-destructive">
+                        {errors.number.message}
+                      </p>
+                    )}
+                    {!errors?.number && validationErrors?.invoiceNumber && (
+                      <p className="text-xs text-destructive">
+                        {validationErrors.invoiceNumber.message}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Note explicative sur la numérotation */}
+              <div className="mt-4 p-3 bg-muted/30 rounded-lg border border-muted">
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  <span className="font-medium">Note :</span> La numérotation
+                  des factures doit être séquentielle et continue pour respecter
+                  les obligations légales françaises. Le préfixe vous permet
+                  d'organiser vos factures par période (ex: F-122025 pour
+                  décembre 2025). Le système vérifie automatiquement qu'il n'y a
+                  pas de saut dans la numérotation.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+          <Separator />
+
           {/* Coordonnées bancaires */}
           <Card className="shadow-none border-none bg-transparent">
             <CardHeader className="p-0">
@@ -459,26 +786,36 @@ export default function InvoiceSettingsView({ canEdit, onCancel, onSave, onClose
             </CardHeader>
             <CardContent className="space-y-4 p-0">
               <p className="text-sm text-muted-foreground">
-                Choisissez où afficher les informations du client dans vos factures
+                Choisissez où afficher les informations du client dans vos
+                factures
               </p>
               <div className="grid grid-cols-2 gap-3">
                 {/* Option Centre */}
                 <button
                   type="button"
-                  onClick={() => setValue("clientPositionRight", false, { shouldDirty: true })}
+                  onClick={() =>
+                    setValue("clientPositionRight", false, {
+                      shouldDirty: true,
+                    })
+                  }
                   disabled={!canEdit}
                   className={`
-                    relative flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all
-                    ${!data.clientPositionRight 
-                      ? 'border-primary bg-primary/5 shadow-sm' 
-                      : 'border-border bg-background hover:border-primary/50'
+                    relative flex flex-col items-center gap-2 p-4 rounded-lg border-1 transition-all
+                    ${
+                      !data.clientPositionRight
+                        ? "border-primary bg-primary/5 shadow-sm"
+                        : "border-border bg-background hover:border-primary/50"
                     }
-                    ${!canEdit ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                    ${!canEdit ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
                   `}
                 >
-                  <AlignLeft className={`h-6 w-6 ${!data.clientPositionRight ? 'text-primary' : 'text-muted-foreground'}`} />
+                  <AlignLeft
+                    className={`h-6 w-6 ${!data.clientPositionRight ? "text-primary" : "text-muted-foreground"}`}
+                  />
                   <div className="text-center">
-                    <div className={`text-sm font-medium ${!data.clientPositionRight ? 'text-primary' : 'text-foreground'}`}>
+                    <div
+                      className={`text-sm font-medium ${!data.clientPositionRight ? "text-primary" : "text-foreground"}`}
+                    >
                       Au centre
                     </div>
                     <div className="text-xs text-muted-foreground mt-0.5">
@@ -495,20 +832,27 @@ export default function InvoiceSettingsView({ canEdit, onCancel, onSave, onClose
                 {/* Option Droite */}
                 <button
                   type="button"
-                  onClick={() => setValue("clientPositionRight", true, { shouldDirty: true })}
+                  onClick={() =>
+                    setValue("clientPositionRight", true, { shouldDirty: true })
+                  }
                   disabled={!canEdit}
                   className={`
-                    relative flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all
-                    ${data.clientPositionRight 
-                      ? 'border-primary bg-primary/5 shadow-sm' 
-                      : 'border-border bg-background hover:border-primary/50'
+                    relative flex flex-col items-center gap-2 p-4 rounded-lg border-1 transition-all
+                    ${
+                      data.clientPositionRight
+                        ? "border-primary bg-primary/5 shadow-sm"
+                        : "border-border bg-background hover:border-primary/50"
                     }
-                    ${!canEdit ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                    ${!canEdit ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
                   `}
                 >
-                  <AlignRight className={`h-6 w-6 ${data.clientPositionRight ? 'text-primary' : 'text-muted-foreground'}`} />
+                  <AlignRight
+                    className={`h-6 w-6 ${data.clientPositionRight ? "text-primary" : "text-muted-foreground"}`}
+                  />
                   <div className="text-center">
-                    <div className={`text-sm font-medium ${data.clientPositionRight ? 'text-primary' : 'text-foreground'}`}>
+                    <div
+                      className={`text-sm font-medium ${data.clientPositionRight ? "text-primary" : "text-foreground"}`}
+                    >
                       À droite
                     </div>
                     <div className="text-xs text-muted-foreground mt-0.5">
@@ -542,7 +886,9 @@ export default function InvoiceSettingsView({ canEdit, onCancel, onSave, onClose
                   </Label>
                   <SuggestionDropdown
                     suggestions={documentSuggestions.headerNotes}
-                    onSelect={(value) => setValue("headerNotes", value, { shouldDirty: true })}
+                    onSelect={(value) =>
+                      setValue("headerNotes", value, { shouldDirty: true })
+                    }
                     label="Suggestions"
                   />
                 </div>
@@ -578,7 +924,9 @@ export default function InvoiceSettingsView({ canEdit, onCancel, onSave, onClose
                   </Label>
                   <SuggestionDropdown
                     suggestions={documentSuggestions.footerNotes}
-                    onSelect={(value) => setValue("footerNotes", value, { shouldDirty: true })}
+                    onSelect={(value) =>
+                      setValue("footerNotes", value, { shouldDirty: true })
+                    }
                     label="Suggestions"
                   />
                 </div>
@@ -613,7 +961,11 @@ export default function InvoiceSettingsView({ canEdit, onCancel, onSave, onClose
                   </Label>
                   <SuggestionDropdown
                     suggestions={documentSuggestions.termsAndConditions}
-                    onSelect={(value) => setValue("termsAndConditions", value, { shouldDirty: true })}
+                    onSelect={(value) =>
+                      setValue("termsAndConditions", value, {
+                        shouldDirty: true,
+                      })
+                    }
                     label="Suggestions"
                   />
                 </div>
@@ -656,7 +1008,11 @@ export default function InvoiceSettingsView({ canEdit, onCancel, onSave, onClose
           >
             Annuler
           </Button>
-          <Button onClick={handleSaveClick} disabled={!canEdit} className="font-normal">
+          <Button
+            onClick={handleSaveClick}
+            disabled={!canEdit}
+            className="font-normal"
+          >
             Enregistrer les modifications
           </Button>
         </div>
@@ -668,7 +1024,8 @@ export default function InvoiceSettingsView({ canEdit, onCancel, onSave, onClose
           <AlertDialogHeader>
             <AlertDialogTitle>Modifications non sauvegardées</AlertDialogTitle>
             <AlertDialogDescription>
-              Vous avez des modifications non sauvegardées. Si vous quittez maintenant, ces modifications seront perdues.
+              Vous avez des modifications non sauvegardées. Si vous quittez
+              maintenant, ces modifications seront perdues.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo } from "react";
@@ -17,8 +16,17 @@ import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import { Calendar } from "@/src/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/src/components/ui/popover";
-import { Filter, Users, FileCheck, Calendar as CalendarIcon } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/src/components/ui/popover";
+import {
+  EllipsisVertical,
+  Users,
+  FileCheck,
+  Calendar as CalendarIcon,
+} from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -83,9 +91,9 @@ export default function InvoiceFilters({
   const setQuickDateRange = (range) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     let from, to;
-    
+
     switch (range) {
       case "today":
         from = new Date(today);
@@ -110,7 +118,7 @@ export default function InvoiceFilters({
         from = null;
         to = null;
     }
-    
+
     setDateRange({ from, to });
     setDateFilter({ from, to });
   };
@@ -119,7 +127,7 @@ export default function InvoiceFilters({
   const toggleStatus = (status) => {
     if (selectedStatuses.includes(status)) {
       // Retirer le statut
-      const newStatuses = selectedStatuses.filter(s => s !== status);
+      const newStatuses = selectedStatuses.filter((s) => s !== status);
       setStatusFilter(newStatuses.length === 0 ? "" : newStatuses);
     } else {
       // Ajouter le statut
@@ -129,8 +137,9 @@ export default function InvoiceFilters({
   };
 
   // Tout sélectionner / tout désélectionner les statuts
-  const allStatusesSelected = selectedStatuses.length === Object.keys(INVOICE_STATUS_LABELS).length;
-  
+  const allStatusesSelected =
+    selectedStatuses.length === Object.keys(INVOICE_STATUS_LABELS).length;
+
   const toggleAllStatuses = () => {
     if (allStatusesSelected) {
       setStatusFilter("");
@@ -143,7 +152,7 @@ export default function InvoiceFilters({
   const toggleClient = (clientName) => {
     if (selectedClients.includes(clientName)) {
       // Retirer le client
-      const newClients = selectedClients.filter(c => c !== clientName);
+      const newClients = selectedClients.filter((c) => c !== clientName);
       setClientFilter(newClients.length === 0 ? "" : newClients);
     } else {
       // Ajouter le client
@@ -153,13 +162,14 @@ export default function InvoiceFilters({
   };
 
   // Tout sélectionner / tout désélectionner les clients
-  const allClientsSelected = selectedClients.length === uniqueClients.length && uniqueClients.length > 0;
-  
+  const allClientsSelected =
+    selectedClients.length === uniqueClients.length && uniqueClients.length > 0;
+
   const toggleAllClients = () => {
     if (allClientsSelected) {
       setClientFilter("");
     } else {
-      setClientFilter(uniqueClients.map(c => c.name));
+      setClientFilter(uniqueClients.map((c) => c.name));
     }
   };
 
@@ -169,33 +179,33 @@ export default function InvoiceFilters({
       .getAllColumns()
       .filter(
         (column) =>
-          typeof column.accessorFn !== "undefined" &&
-          column.getCanHide()
+          typeof column.accessorFn !== "undefined" && column.getCanHide()
       );
   }, [table]);
 
   // Calculer le nombre de colonnes visibles
-  const visibleColumnsCount = hideableColumns.filter((column) => 
+  const visibleColumnsCount = hideableColumns.filter((column) =>
     column.getIsVisible()
   ).length;
 
   // Vérifier si toutes les colonnes sont visibles
-  const allColumnsVisible = hideableColumns.length > 0 && 
+  const allColumnsVisible =
+    hideableColumns.length > 0 &&
     hideableColumns.every((column) => column.getIsVisible());
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         <Button
-          variant="outline"
-          className={cn("h-9 gap-2 font-normal", className)}
+          variant="ghost"
+          size="icon"
+          className={cn("h-9 w-9 relative", className)}
         >
-          <Filter className="h-4 w-4" />
-          <span>Filtres</span>
+          <EllipsisVertical className="h-4 w-4" />
           {activeFiltersCount > 0 && (
-            <Badge variant="secondary" className="ml-1">
+            <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-[10px] font-medium text-primary-foreground flex items-center justify-center">
               {activeFiltersCount}
-            </Badge>
+            </span>
           )}
         </Button>
       </DropdownMenuTrigger>
@@ -286,8 +296,10 @@ export default function InvoiceFilters({
               {(dateRange?.from || dateRange?.to) && (
                 <div className="border-t pt-3 px-3 pb-3">
                   <p className="text-xs text-muted-foreground px-2">
-                    {dateRange.from && format(dateRange.from, "dd MMM yyyy", { locale: fr })}
-                    {dateRange.to && dateRange.from !== dateRange.to && 
+                    {dateRange.from &&
+                      format(dateRange.from, "dd MMM yyyy", { locale: fr })}
+                    {dateRange.to &&
+                      dateRange.from !== dateRange.to &&
                       ` - ${format(dateRange.to, "dd MMM yyyy", { locale: fr })}`}
                   </p>
                   <Button
@@ -322,7 +334,7 @@ export default function InvoiceFilters({
             {uniqueClients.length > 0 ? (
               <>
                 {/* Checkbox Tout sélectionner */}
-                <div 
+                <div
                   className="flex items-center px-2 py-1.5 cursor-pointer hover:bg-accent rounded-sm text-sm"
                   onClick={toggleAllClients}
                 >
@@ -368,7 +380,7 @@ export default function InvoiceFilters({
           </DropdownMenuSubTrigger>
           <DropdownMenuSubContent className="w-[250px]">
             {/* Checkbox Tout sélectionner */}
-            <div 
+            <div
               className="flex items-center px-2 py-1.5 cursor-pointer hover:bg-accent rounded-sm text-sm"
               onClick={toggleAllStatuses}
             >
@@ -391,9 +403,7 @@ export default function InvoiceFilters({
                 />
                 <Badge
                   variant="outline"
-                  className={cn(
-                    INVOICE_STATUS_COLORS[value] || "bg-gray-100"
-                  )}
+                  className={cn(INVOICE_STATUS_COLORS[value] || "bg-gray-100")}
                 >
                   {label}
                 </Badge>
@@ -403,26 +413,28 @@ export default function InvoiceFilters({
             <div className="px-2 py-1 text-xs text-muted-foreground font-medium">
               Factures importées
             </div>
-            {Object.entries(IMPORTED_INVOICE_STATUS_LABELS).map(([value, label]) => (
-              <div
-                key={`imported-${value}`}
-                className="flex items-center px-2 py-1.5 cursor-pointer hover:bg-accent rounded-sm text-sm"
-                onClick={() => toggleStatus(value)}
-              >
-                <Checkbox
-                  checked={selectedStatuses.includes(value)}
-                  className="mr-2 pointer-events-none"
-                />
-                <Badge
-                  variant="outline"
-                  className={cn(
-                    IMPORTED_INVOICE_STATUS_COLORS[value] || "bg-gray-100"
-                  )}
+            {Object.entries(IMPORTED_INVOICE_STATUS_LABELS).map(
+              ([value, label]) => (
+                <div
+                  key={`imported-${value}`}
+                  className="flex items-center px-2 py-1.5 cursor-pointer hover:bg-accent rounded-sm text-sm"
+                  onClick={() => toggleStatus(value)}
                 >
-                  {label}
-                </Badge>
-              </div>
-            ))}
+                  <Checkbox
+                    checked={selectedStatuses.includes(value)}
+                    className="mr-2 pointer-events-none"
+                  />
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      IMPORTED_INVOICE_STATUS_COLORS[value] || "bg-gray-100"
+                    )}
+                  >
+                    {label}
+                  </Badge>
+                </div>
+              )
+            )}
           </DropdownMenuSubContent>
         </DropdownMenuSub>
 
@@ -438,7 +450,7 @@ export default function InvoiceFilters({
           </DropdownMenuSubTrigger>
           <DropdownMenuSubContent className="w-[250px] max-h-[400px] overflow-y-auto">
             {/* Checkbox Tout sélectionner */}
-            <div 
+            <div
               className="flex items-center px-2 py-1.5 cursor-pointer hover:bg-accent rounded-sm text-sm"
               onClick={() => {
                 table.toggleAllColumnsVisible(!allColumnsVisible);
@@ -451,7 +463,7 @@ export default function InvoiceFilters({
               <span>Tout sélectionner</span>
             </div>
             <DropdownMenuSeparator />
-            
+
             {table
               .getAllColumns()
               .filter(
@@ -466,9 +478,7 @@ export default function InvoiceFilters({
                   }
                   return column.id
                     .split(".")
-                    .map(
-                      (word) => word.charAt(0).toUpperCase() + word.slice(1)
-                    )
+                    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
                     .join(" ");
                 };
 

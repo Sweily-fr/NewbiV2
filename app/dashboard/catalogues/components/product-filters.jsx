@@ -15,7 +15,7 @@ import {
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { Checkbox } from "@/src/components/ui/checkbox";
-import { Filter, Tag } from "lucide-react";
+import { EllipsisVertical, Tag } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 
 export default function ProductFilters({
@@ -94,15 +94,15 @@ export default function ProductFilters({
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         <Button
-          variant="outline"
-          className={cn("h-9 gap-2 font-normal", className)}
+          variant="ghost"
+          size="icon"
+          className={cn("h-9 w-9 relative", className)}
         >
-          <Filter className="h-4 w-4" />
-          <span>Filtres</span>
+          <EllipsisVertical className="h-4 w-4" />
           {activeFiltersCount > 0 && (
-            <Badge variant="secondary" className="ml-1">
+            <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-[10px] font-medium text-primary-foreground flex items-center justify-center">
               {activeFiltersCount}
-            </Badge>
+            </span>
           )}
         </Button>
       </DropdownMenuTrigger>

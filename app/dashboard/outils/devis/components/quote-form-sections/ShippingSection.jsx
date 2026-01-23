@@ -50,7 +50,7 @@ export default function ShippingSection({ canEdit, validationErrors = {} }) {
   const shipping = data.shipping || {};
   const billShipping = shipping.billShipping || false;
   const client = data.client;
-  
+
   // Helper pour vérifier si la livraison a une erreur
   const hasShippingError = validationErrors?.shipping;
   const getShippingFieldError = (fieldName) => {
@@ -102,7 +102,7 @@ export default function ShippingSection({ canEdit, validationErrors = {} }) {
     } else {
       // Réinitialiser la position du client au centre quand on facture la livraison
       setValue("clientPositionRight", false, { shouldDirty: true });
-      
+
       if (client?.shippingAddress) {
         // Auto-remplir avec les informations du client si disponibles
         fillFromClientShipping();
@@ -113,7 +113,9 @@ export default function ShippingSection({ canEdit, validationErrors = {} }) {
   return (
     <Card className="border-0 shadow-none bg-transparent mb-0 p-0">
       <CardContent className="space-y-6 p-0">
-        <h3 className="text-lg font-normal text-foreground mb-6 mt-8">Facturer la livraison</h3>
+        <h3 className="text-lg font-normal text-foreground mb-6 mt-8">
+          Facturer la livraison
+        </h3>
 
         {/* Case à cocher pour activer la facturation de livraison */}
         <div className="flex items-center space-x-2">
@@ -154,7 +156,9 @@ export default function ShippingSection({ canEdit, validationErrors = {} }) {
             {/* Nom complet */}
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <Label htmlFor="shippingFullName" className="font-normal">Nom complet</Label>
+                <Label htmlFor="shippingFullName" className="font-normal">
+                  Nom complet
+                </Label>
                 <span className="h-4 w-4" aria-hidden="true"></span>
               </div>
               <Input
@@ -162,11 +166,17 @@ export default function ShippingSection({ canEdit, validationErrors = {} }) {
                 placeholder="Nom complet du destinataire"
                 disabled={!canEdit}
                 {...register("shipping.shippingAddress.fullName")}
-                className={getShippingFieldError("nom complet") ? "border-destructive focus-visible:ring-destructive" : ""}
+                className={
+                  getShippingFieldError("nom complet")
+                    ? "border-destructive focus-visible:ring-destructive"
+                    : ""
+                }
               />
-              {(errors?.shipping?.shippingAddress?.fullName || getShippingFieldError("nom complet")) && (
+              {(errors?.shipping?.shippingAddress?.fullName ||
+                getShippingFieldError("nom complet")) && (
                 <p className="text-sm text-destructive">
-                  {errors?.shipping?.shippingAddress?.fullName?.message || "Le nom complet est requis"}
+                  {errors?.shipping?.shippingAddress?.fullName?.message ||
+                    "Le nom complet est requis"}
                 </p>
               )}
             </div>
@@ -174,7 +184,9 @@ export default function ShippingSection({ canEdit, validationErrors = {} }) {
             {/* Adresse de livraison */}
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <Label htmlFor="shippingStreet" className="font-normal">Adresse de livraison *</Label>
+                <Label htmlFor="shippingStreet" className="font-normal">
+                  Adresse de livraison *
+                </Label>
                 <span className="h-4 w-4" aria-hidden="true"></span>
               </div>
               <Textarea
@@ -188,11 +200,17 @@ export default function ShippingSection({ canEdit, validationErrors = {} }) {
                     "L'adresse de livraison est requise"
                   ),
                 })}
-                className={getShippingFieldError("adresse") ? "border-destructive focus-visible:ring-destructive" : ""}
+                className={
+                  getShippingFieldError("adresse")
+                    ? "border-destructive focus-visible:ring-destructive"
+                    : ""
+                }
               />
-              {(errors?.shipping?.shippingAddress?.street || getShippingFieldError("adresse")) && (
+              {(errors?.shipping?.shippingAddress?.street ||
+                getShippingFieldError("adresse")) && (
                 <p className="text-sm text-destructive">
-                  {errors?.shipping?.shippingAddress?.street?.message || "L'adresse est requise"}
+                  {errors?.shipping?.shippingAddress?.street?.message ||
+                    "L'adresse est requise"}
                 </p>
               )}
             </div>
@@ -201,7 +219,9 @@ export default function ShippingSection({ canEdit, validationErrors = {} }) {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <Label htmlFor="shippingCity" className="font-normal">Ville *</Label>
+                  <Label htmlFor="shippingCity" className="font-normal">
+                    Ville *
+                  </Label>
                   <span className="h-4 w-4" aria-hidden="true"></span>
                 </div>
                 <Input
@@ -214,18 +234,26 @@ export default function ShippingSection({ canEdit, validationErrors = {} }) {
                       "La ville est requise"
                     ),
                   })}
-                  className={getShippingFieldError("ville") ? "border-destructive focus-visible:ring-destructive" : ""}
+                  className={
+                    getShippingFieldError("ville")
+                      ? "border-destructive focus-visible:ring-destructive"
+                      : ""
+                  }
                 />
-                {(errors?.shipping?.shippingAddress?.city || getShippingFieldError("ville")) && (
+                {(errors?.shipping?.shippingAddress?.city ||
+                  getShippingFieldError("ville")) && (
                   <p className="text-sm text-destructive">
-                    {errors?.shipping?.shippingAddress?.city?.message || "La ville est requise"}
+                    {errors?.shipping?.shippingAddress?.city?.message ||
+                      "La ville est requise"}
                   </p>
                 )}
               </div>
 
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <Label htmlFor="shippingPostalCode" className="font-normal">Code postal *</Label>
+                  <Label htmlFor="shippingPostalCode" className="font-normal">
+                    Code postal *
+                  </Label>
                   <span className="h-4 w-4" aria-hidden="true"></span>
                 </div>
                 <Input
@@ -238,11 +266,17 @@ export default function ShippingSection({ canEdit, validationErrors = {} }) {
                       "Le code postal est requis"
                     ),
                   })}
-                  className={getShippingFieldError("code postal") ? "border-destructive focus-visible:ring-destructive" : ""}
+                  className={
+                    getShippingFieldError("code postal")
+                      ? "border-destructive focus-visible:ring-destructive"
+                      : ""
+                  }
                 />
-                {(errors?.shipping?.shippingAddress?.postalCode || getShippingFieldError("code postal")) && (
+                {(errors?.shipping?.shippingAddress?.postalCode ||
+                  getShippingFieldError("code postal")) && (
                   <p className="text-sm text-destructive">
-                    {errors?.shipping?.shippingAddress?.postalCode?.message || "Le code postal est requis"}
+                    {errors?.shipping?.shippingAddress?.postalCode?.message ||
+                      "Le code postal est requis"}
                   </p>
                 )}
               </div>
@@ -251,7 +285,9 @@ export default function ShippingSection({ canEdit, validationErrors = {} }) {
             {/* Pays */}
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <Label htmlFor="shippingCountry" className="font-normal">Pays *</Label>
+                <Label htmlFor="shippingCountry" className="font-normal">
+                  Pays *
+                </Label>
                 <span className="h-4 w-4" aria-hidden="true"></span>
               </div>
               <Input
@@ -264,11 +300,17 @@ export default function ShippingSection({ canEdit, validationErrors = {} }) {
                     "Le pays est requis"
                   ),
                 })}
-                className={getShippingFieldError("pays") ? "border-destructive focus-visible:ring-destructive" : ""}
+                className={
+                  getShippingFieldError("pays")
+                    ? "border-destructive focus-visible:ring-destructive"
+                    : ""
+                }
               />
-              {(errors?.shipping?.shippingAddress?.country || getShippingFieldError("pays")) && (
+              {(errors?.shipping?.shippingAddress?.country ||
+                getShippingFieldError("pays")) && (
                 <p className="text-sm text-destructive">
-                  {errors?.shipping?.shippingAddress?.country?.message || "Le pays est requis"}
+                  {errors?.shipping?.shippingAddress?.country?.message ||
+                    "Le pays est requis"}
                 </p>
               )}
             </div>
@@ -277,7 +319,9 @@ export default function ShippingSection({ canEdit, validationErrors = {} }) {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <Label htmlFor="shippingAmountHT" className="font-normal">Montant HT (€) *</Label>
+                  <Label htmlFor="shippingAmountHT" className="font-normal">
+                    Montant HT (€) *
+                  </Label>
                   <span className="h-4 w-4" aria-hidden="true"></span>
                 </div>
                 <Input
@@ -291,18 +335,26 @@ export default function ShippingSection({ canEdit, validationErrors = {} }) {
                     valueAsNumber: true,
                     validate: createAmountValidation(),
                   })}
-                  className={getShippingFieldError("coût") ? "border-destructive focus-visible:ring-destructive" : ""}
+                  className={
+                    getShippingFieldError("coût")
+                      ? "border-destructive focus-visible:ring-destructive"
+                      : ""
+                  }
                 />
-                {(errors?.shipping?.shippingAmountHT || getShippingFieldError("coût")) && (
+                {(errors?.shipping?.shippingAmountHT ||
+                  getShippingFieldError("coût")) && (
                   <p className="text-sm text-destructive">
-                    {errors?.shipping?.shippingAmountHT?.message || "Le montant de livraison est requis"}
+                    {errors?.shipping?.shippingAmountHT?.message ||
+                      "Le montant de livraison est requis"}
                   </p>
                 )}
               </div>
 
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <Label htmlFor="shippingVatRate" className="font-normal">TVA (%)</Label>
+                  <Label htmlFor="shippingVatRate" className="font-normal">
+                    TVA (%)
+                  </Label>
                   <span className="h-4 w-4" aria-hidden="true"></span>
                 </div>
                 <Select

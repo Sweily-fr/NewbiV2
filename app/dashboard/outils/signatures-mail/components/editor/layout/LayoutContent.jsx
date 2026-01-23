@@ -9,6 +9,7 @@ import DisplayModeSection from "./sections/DisplayModeSection";
 import ColumnWidthSection from "./sections/ColumnWidthSection";
 import StructureSection from "./sections/StructureSection";
 import SpacingSection from "./sections/SpacingSection";
+import ElementsOrderSection from "./sections/ElementsOrderSection";
 
 export default function ContentTab() {
   const { signatureData, updateSignatureData } = useSignatureData();
@@ -25,7 +26,7 @@ export default function ContentTab() {
         signatureData={signatureData}
         updateSignatureData={updateSignatureData}
       /> */}
-      <Separator />
+      {/* <Separator /> */}
 
       <StructureSection
         signatureData={signatureData}
@@ -34,6 +35,12 @@ export default function ContentTab() {
       <Separator />
 
       <SpacingSection
+        signatureData={signatureData}
+        updateSignatureData={updateSignatureData}
+      />
+      <Separator />
+
+      <ElementsOrderSection
         signatureData={signatureData}
         updateSignatureData={updateSignatureData}
       />
@@ -876,4 +883,3 @@ export default function ContentTab() {
 
 //         </div>
 //       </div>
-

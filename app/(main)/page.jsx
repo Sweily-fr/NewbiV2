@@ -1,15 +1,24 @@
 "use client";
-import { HeroSection } from "./section/hero-section";
-import FeatureGrid from "./section/feature-grid";
-import BusinessAgility from "./section/business-agility";
-import TestimonialsSection from "./section/testimonial";
-import Freelance from "./section/freelance";
-import PricingSection from "./section/pricing-section";
-import FeaturedOn from "./section/featured-on";
-import FAQ from "./section/faq";
+import React from "react";
 import SEOHead from "@/src/components/seo/seo-head";
 import { JsonLd } from "@/src/components/seo/seo-metadata";
 import { useSEO } from "@/src/hooks/use-seo";
+
+// Import des sections depuis le dossier lp-home
+import {
+  NewHeroNavbar,
+  HeroSection,
+  TrustedBySection,
+  AgentStudioSection,
+  ComponentsSection,
+  ComplianceSection,
+  GovernanceSection,
+  PricingSection,
+  FeaturedOnSection,
+  NewPricingSection,
+  TestimonialsSplit,
+  FAQSection,
+} from "./new/lp-home";
 
 export default function Home() {
   const seoData = useSEO("home");
@@ -18,15 +27,19 @@ export default function Home() {
     <>
       <SEOHead {...seoData} />
       <JsonLd jsonLd={seoData.jsonLd} />
+      <NewHeroNavbar />
       <div className="bg-[#FDFDFD]">
         <HeroSection />
-        <FeatureGrid />
-        <BusinessAgility />
-        {/* <Freelance /> */}
-        {/* <TestimonialsSection /> */}
+        <TrustedBySection />
+        {/* <AgentStudioSection /> */}
+        <ComponentsSection />
+        {/* <ComplianceSection /> */}
+        <GovernanceSection />
+        {/* <NewPricingSection /> */}
         <PricingSection />
-        <FeaturedOn />
-        <FAQ />
+        <FeaturedOnSection />
+        <TestimonialsSplit />
+        <FAQSection />
       </div>
     </>
   );

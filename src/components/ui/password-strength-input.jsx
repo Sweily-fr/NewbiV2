@@ -50,35 +50,40 @@ export const PasswordStrengthInput = forwardRef(
     return (
       <div>
         {/* Password input field with toggle visibility button */}
-        <Label htmlFor={id} className="text-sm font-medium text-foreground dark:text-foreground">
+        <Label
+          htmlFor={id}
+          className="text-sm font-medium text-foreground dark:text-foreground"
+        >
           {label}
         </Label>
         <div className="relative mt-2">
-            <Input
-              ref={ref}
-              id={id}
-              className="pe-9"
-              placeholder="Saisissez votre mot de passe"
-              type={isVisible ? "text" : "password"}
-              value={value}
-              onChange={onChange}
-              aria-describedby={`${id}-description`}
-              {...props}
-            />
-            <button
-              className="text-muted-foreground/80 hover:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 absolute inset-y-0 end-0 flex h-full w-9 items-center justify-center rounded-e-md transition-[color,box-shadow] outline-none focus:z-10 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
-              type="button"
-              onClick={toggleVisibility}
-              aria-label={isVisible ? "Masquer le mot de passe" : "Afficher le mot de passe"}
-              aria-pressed={isVisible}
-              aria-controls="password"
-            >
-              {isVisible ? (
-                <EyeOffIcon size={16} aria-hidden="true" />
-              ) : (
-                <EyeIcon size={16} aria-hidden="true" />
-              )}
-            </button>
+          <Input
+            ref={ref}
+            id={id}
+            className="pe-9"
+            placeholder="Saisissez votre mot de passe"
+            type={isVisible ? "text" : "password"}
+            value={value}
+            onChange={onChange}
+            aria-describedby={`${id}-description`}
+            {...props}
+          />
+          <button
+            className="text-muted-foreground/80 hover:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 absolute inset-y-0 end-0 flex h-full w-9 items-center justify-center rounded-e-md transition-[color,box-shadow] outline-none focus:z-10 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
+            type="button"
+            onClick={toggleVisibility}
+            aria-label={
+              isVisible ? "Masquer le mot de passe" : "Afficher le mot de passe"
+            }
+            aria-pressed={isVisible}
+            aria-controls="password"
+          >
+            {isVisible ? (
+              <EyeOffIcon size={16} aria-hidden="true" />
+            ) : (
+              <EyeIcon size={16} aria-hidden="true" />
+            )}
+          </button>
         </div>
 
         {/* Error message */}
@@ -108,7 +113,10 @@ export const PasswordStrengthInput = forwardRef(
         </p>
 
         {/* Password requirements list */}
-        <ul className="space-y-1.5" aria-label="Exigences du mot de passe">
+        <ul
+          className="grid grid-cols-2 gap-x-4 gap-y-1.5"
+          aria-label="Exigences du mot de passe"
+        >
           {strength.map((req, index) => (
             <li key={index} className="flex items-center gap-2">
               {req.met ? (

@@ -57,8 +57,22 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
     variables: { boardId: id, workspaceId },
     skip: !workspaceId || !id || !isReady || sessionLoading || isRedirecting,
     onData: ({ data: subscriptionData }) => {
+      console.log('📡 [Subscription] Données reçues:', subscriptionData?.data?.taskUpdated?.type, 'visitor:', subscriptionData?.data?.taskUpdated?.visitor);
       if (subscriptionData?.data?.taskUpdated) {
-        const { type, task, taskId } = subscriptionData.data.taskUpdated;
+        const { type, task, taskId, visitor } = subscriptionData.data.taskUpdated;
+        
+        // Traiter immédiatement les mises à jour de profil visiteur
+        if (type === 'VISITOR_PROFILE_UPDATED' && visitor) {
+          console.log('👤 [Subscription] Mise à jour profil visiteur détectée:', visitor.email, visitor.name);
+          // Refetch pour récupérer les données mises à jour depuis le serveur
+          // Les commentaires sont déjà mis à jour en base de données par le backend
+          refetch().then(() => {
+            console.log("✅ [Subscription] Board rechargé avec le nouveau profil visiteur:", visitor.name);
+          }).catch(error => {
+            console.error("❌ [Subscription] Erreur refetch après mise à jour profil visiteur:", error);
+          });
+          return; // Sortir après traitement
+        }
         
         
         // Pour les créations, mettre à jour le cache Apollo manuellement
@@ -154,8 +168,8 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
           }
         }
         
-        // Pour les mises à jour (UPDATED), mettre à jour le cache Apollo
-        if (type === 'UPDATED' && task) {
+        // Pour les mises à jour (UPDATED, COMMENT_ADDED, COMMENT_UPDATED, TIMER_STARTED, TIMER_STOPPED), mettre à jour le cache Apollo
+        if ((type === 'UPDATED' || type === 'COMMENT_ADDED' || type === 'COMMENT_UPDATED' || type === 'TIMER_STARTED' || type === 'TIMER_STOPPED') && task) {
           try {
             const cacheData = apolloClient.cache.readQuery({
               query: GET_BOARD,
@@ -178,10 +192,16 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
                 }
               });
               
-              console.log("✅ [Subscription] Tâche mise à jour dans le cache:", task.title);
+              if (type === 'TIMER_STARTED') {
+                console.log("✅ [Subscription] Timer démarré dans le cache:", task.title);
+              } else if (type === 'TIMER_STOPPED') {
+                console.log("✅ [Subscription] Timer arrêté dans le cache:", task.title);
+              } else {
+                console.log("✅ [Subscription] Tâche mise à jour dans le cache:", task.title);
+              }
             }
           } catch (error) {
-            console.error("❌ [Subscription] Erreur mise à jour cache (UPDATED):", error);
+            console.error("❌ [Subscription] Erreur mise à jour cache (UPDATED/TIMER):", error);
           }
         }
         

@@ -1,17 +1,39 @@
 "use client";
 
-import { Suspense, useState, useEffect } from "react";
+import { Suspense, useState, useEffect, useMemo } from "react";
 import { Button } from "@/src/components/ui/button";
-import { ButtonGroup, ButtonGroupSeparator } from "@/src/components/ui/button-group";
+import {
+  ButtonGroup,
+  ButtonGroupSeparator,
+} from "@/src/components/ui/button-group";
 import { PermissionButton } from "@/src/components/rbac";
-import { Plus, Settings, Bell } from "lucide-react";
+import {
+  Plus,
+  Settings,
+  MailCheck,
+  Bell,
+  ArrowRightFromLine,
+  Download,
+  Info,
+} from "lucide-react";
+import { Badge } from "@/src/components/ui/badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/src/components/ui/tooltip";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import InvoiceTable from "./components/invoice-table";
 import { InvoiceSettingsModal } from "./components/invoice-settings-modal";
 import { AutoReminderModal } from "./components/auto-reminder-modal";
+import InvoiceExportButton from "./components/invoice-export-button";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
 import { CompanyInfoGuard } from "@/src/components/company-info-guard";
+import { useInvoices, INVOICE_STATUS } from "@/src/graphql/invoiceQueries";
+import { useToastManager } from "@/src/components/ui/toast-manager";
+import { SendDocumentModal } from "./components/send-document-modal";
 
 function InvoicesContent() {
   const router = useRouter();
@@ -20,12 +42,77 @@ function InvoicesContent() {
   const [isAutoReminderOpen, setIsAutoReminderOpen] = useState(false);
   const [invoiceIdToOpen, setInvoiceIdToOpen] = useState(null);
 
+  // Refs pour déclencher les actions depuis le header
+  const [triggerImport, setTriggerImport] = useState(false);
+
+  // Toast manager et modal d'envoi pour les nouvelles factures/avoirs
+  const toastManager = useToastManager();
+  const [showSendEmailModal, setShowSendEmailModal] = useState(false);
+  const [newDocumentData, setNewDocumentData] = useState(null);
+  const [documentType, setDocumentType] = useState("invoice");
+
+  // Vérifier si une nouvelle facture ou un nouvel avoir vient d'être créé
   useEffect(() => {
-    const id = searchParams.get('id');
+    if (typeof window !== "undefined") {
+      // Vérifier les factures
+      const invoiceData = sessionStorage.getItem("newInvoiceData");
+      if (invoiceData) {
+        try {
+          const data = JSON.parse(invoiceData);
+          setNewDocumentData(data);
+          setDocumentType("invoice");
+          
+          toastManager.add({
+            type: "document",
+            title: "Facture créée avec succès",
+            description: `Facture ${data.number} créée`,
+            timeout: 10000,
+            actionProps: data.clientEmail ? {
+              children: "Envoyer au client",
+              onClick: () => setShowSendEmailModal(true),
+            } : undefined,
+          });
+          
+          sessionStorage.removeItem("newInvoiceData");
+        } catch (e) {
+          sessionStorage.removeItem("newInvoiceData");
+        }
+        return;
+      }
+
+      // Vérifier les avoirs
+      const creditNoteData = sessionStorage.getItem("newCreditNoteData");
+      if (creditNoteData) {
+        try {
+          const data = JSON.parse(creditNoteData);
+          setNewDocumentData(data);
+          setDocumentType("creditNote");
+          
+          toastManager.add({
+            type: "document",
+            title: "Avoir créé avec succès",
+            description: `Avoir ${data.number} créé`,
+            timeout: 10000,
+            actionProps: data.clientEmail ? {
+              children: "Envoyer au client",
+              onClick: () => setShowSendEmailModal(true),
+            } : undefined,
+          });
+          
+          sessionStorage.removeItem("newCreditNoteData");
+        } catch (e) {
+          sessionStorage.removeItem("newCreditNoteData");
+        }
+      }
+    }
+  }, [toastManager]);
+
+  useEffect(() => {
+    const id = searchParams.get("id");
     if (id) {
       setInvoiceIdToOpen(id);
       // Nettoyer l'URL après avoir récupéré l'ID
-      router.replace('/dashboard/outils/factures', { scroll: false });
+      router.replace("/dashboard/outils/factures", { scroll: false });
     }
   }, [searchParams, router]);
 
@@ -33,46 +120,287 @@ function InvoicesContent() {
     router.push("/dashboard/outils/factures/new");
   };
 
+  // Récupérer les factures pour les stats
+  const { invoices, loading: invoicesLoading } = useInvoices();
+
+  // Calculer les statistiques
+  const invoiceStats = useMemo(() => {
+    if (!invoices || invoices.length === 0) {
+      return {
+        totalBilled: 0,
+        totalPaid: 0,
+        overdueAmount: 0,
+        overdueCount: 0,
+      };
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    let totalBilled = 0;
+    let totalPaid = 0;
+    let overdueAmount = 0;
+    let overdueCount = 0;
+
+    invoices.forEach((invoice) => {
+      // Utiliser finalTotalHT (après remises) ou totalHT si non disponible
+      const invoiceAmount = invoice.finalTotalHT ?? invoice.totalHT ?? 0;
+      
+      // Exclure les brouillons du CA facturé
+      if (invoice.status !== INVOICE_STATUS.DRAFT) {
+        totalBilled += invoiceAmount;
+      }
+
+      // CA payé = factures terminées
+      if (invoice.status === INVOICE_STATUS.COMPLETED) {
+        totalPaid += invoiceAmount;
+      }
+
+      // Factures en retard = en attente + date d'échéance dépassée
+      if (invoice.status === INVOICE_STATUS.PENDING && invoice.dueDate) {
+        // dueDate peut être un timestamp en string ou un format ISO
+        const dueDateValue = typeof invoice.dueDate === 'string' && /^\d+$/.test(invoice.dueDate)
+          ? parseInt(invoice.dueDate, 10)
+          : invoice.dueDate;
+        const dueDate = new Date(dueDateValue);
+        dueDate.setHours(0, 0, 0, 0);
+        if (dueDate < today) {
+          overdueAmount += invoiceAmount;
+          overdueCount++;
+        }
+      }
+    });
+
+    return {
+      totalBilled,
+      totalPaid,
+      overdueAmount,
+      overdueCount,
+    };
+  }, [invoices]);
+
+  // Formater les montants
+  const formatAmount = (amount) => {
+    return new Intl.NumberFormat("fr-FR", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amount);
+  };
+
   return (
     <>
-      {/* Desktop Layout */}
-      <div className="hidden md:block space-y-6 p-4 sm:p-6">
+      {/* Desktop Layout - Full height avec scroll uniquement sur le tableau */}
+      <div className="hidden md:flex md:flex-col md:h-[calc(100vh-64px)] overflow-hidden">
         {/* Header */}
-        <div className="flex items-start justify-between">
+        <div className="flex items-start justify-between px-4 sm:px-6 pt-4 sm:pt-6">
           <div>
-            <h1 className="text-2xl font-medium mb-2">Factures</h1>
-            <p className="text-muted-foreground text-sm">
+            <h1 className="text-2xl font-medium mb-2">Factures clients</h1>
+            {/* <p className="text-muted-foreground text-sm">
               Gérez vos factures et suivez vos paiements
-            </p>
+            </p> */}
           </div>
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsAutoReminderOpen(true)}
-              className="gap-2"
-            >
-              <Bell className="h-4 w-4" />
-              Relance auto.
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsSettingsOpen(true)}
-              className="gap-2"
-            >
-              <Settings className="h-4 w-4" />
-              Paramètres
-            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    onClick={() => setTriggerImport(true)}
+                  >
+                    <ArrowRightFromLine className="h-4 w-4" strokeWidth={1.5} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent
+                  side="bottom"
+                  className="bg-[#202020] text-white border-0"
+                >
+                  <p>Importer des factures</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span>
+                    <InvoiceExportButton invoices={invoices} iconOnly />
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent
+                  side="bottom"
+                  className="bg-[#202020] text-white border-0"
+                >
+                  <p>Exporter des factures</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    onClick={() => setIsAutoReminderOpen(true)}
+                  >
+                    <MailCheck className="h-4 w-4" strokeWidth={1.5} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent
+                  side="bottom"
+                  className="bg-[#202020] text-white border-0"
+                >
+                  <p>Relance automatique</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    onClick={() => setIsSettingsOpen(true)}
+                  >
+                    <Settings className="h-4 w-4" strokeWidth={1.5} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent
+                  side="bottom"
+                  className="bg-[#202020] text-white border-0"
+                >
+                  <p>Paramètres</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <ButtonGroup>
+              <Button
+                onClick={handleNewInvoice}
+                className="cursor-pointer font-normal bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
+              >
+                Nouvelle facture
+              </Button>
+              <ButtonGroupSeparator />
+              <Button
+                onClick={handleNewInvoice}
+                size="icon"
+                className="cursor-pointer bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
+              >
+                <Plus size={16} aria-hidden="true" />
+              </Button>
+            </ButtonGroup>
+          </div>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="flex gap-3 px-4 sm:px-6 py-3">
+          {/* CA facturé + CA payé */}
+          <div className="bg-background border rounded-lg px-4 py-3 flex items-center gap-0">
+            {/* CA facturé */}
+            <div className="pr-4">
+              <div className="flex items-center gap-1.5 mb-1">
+                <span className="text-xs text-muted-foreground">
+                  CA facturé
+                </span>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent
+                      side="bottom"
+                      className="bg-[#202020] text-white border-0"
+                    >
+                      <p>Total des factures émises (hors brouillons)</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              <div className="flex items-baseline gap-1">
+                <span className="text-lg font-medium tracking-tight">
+                  {invoicesLoading
+                    ? "..."
+                    : `${formatAmount(invoiceStats.totalBilled)} €`}
+                </span>
+                <span className="text-xs text-muted-foreground">HT</span>
+              </div>
+            </div>
+
+            {/* Separator */}
+            <div className="w-px h-10 bg-border mx-4" />
+
+            {/* CA payé */}
+            <div className="pl-0">
+              <div className="flex items-center gap-1.5 mb-1">
+                <span className="text-xs text-muted-foreground">CA payé</span>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent
+                      side="bottom"
+                      className="bg-[#202020] text-white border-0"
+                    >
+                      <p>Total des factures payées</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              <div className="flex items-baseline gap-1">
+                <span className="text-lg font-medium tracking-tight">
+                  {invoicesLoading
+                    ? "..."
+                    : `${formatAmount(invoiceStats.totalPaid)} €`}
+                </span>
+                <span className="text-xs text-muted-foreground">HT</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Factures en retard */}
+          <div className="bg-background border rounded-lg px-4 py-3">
+            <div className="flex items-center gap-1.5 mb-1">
+              <span className="text-xs text-muted-foreground">
+                Factures en retard
+              </span>
+              {invoiceStats.overdueCount > 0 && (
+                <span className="h-4 w-4 flex items-center justify-center rounded-full bg-red-100 text-red-500 text-[10px] font-medium">
+                  {invoiceStats.overdueCount}
+                </span>
+              )}
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="bottom"
+                    className="bg-[#202020] text-white border-0"
+                  >
+                    <p>Factures dont la date d'échéance est dépassée</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+            <div className="flex items-baseline gap-1">
+              <span className="text-lg font-medium tracking-tight">
+                {invoicesLoading
+                  ? "..."
+                  : `${formatAmount(invoiceStats.overdueAmount)} €`}
+              </span>
+              <span className="text-xs text-muted-foreground">HT</span>
+            </div>
           </div>
         </div>
 
         {/* Table */}
         <Suspense fallback={<InvoiceTableSkeleton />}>
-          <InvoiceTable 
-            handleNewInvoice={handleNewInvoice} 
-            invoiceIdToOpen={invoiceIdToOpen} 
+          <InvoiceTable
+            handleNewInvoice={handleNewInvoice}
+            invoiceIdToOpen={invoiceIdToOpen}
             onOpenReminderSettings={() => setIsAutoReminderOpen(true)}
+            triggerImport={triggerImport}
+            onImportTriggered={() => setTriggerImport(false)}
           />
         </Suspense>
       </div>
@@ -111,8 +439,8 @@ function InvoicesContent() {
 
         {/* Table */}
         <Suspense fallback={<InvoiceTableSkeleton />}>
-          <InvoiceTable 
-            invoiceIdToOpen={invoiceIdToOpen} 
+          <InvoiceTable
+            invoiceIdToOpen={invoiceIdToOpen}
             onOpenReminderSettings={() => setIsAutoReminderOpen(true)}
           />
         </Suspense>
@@ -142,6 +470,26 @@ function InvoicesContent() {
         open={isAutoReminderOpen}
         onOpenChange={setIsAutoReminderOpen}
       />
+
+      {/* Modal d'envoi par email pour les nouvelles factures/avoirs */}
+      {newDocumentData && (
+        <SendDocumentModal
+          open={showSendEmailModal}
+          onOpenChange={setShowSendEmailModal}
+          documentId={newDocumentData.id}
+          documentType={documentType}
+          documentNumber={newDocumentData.number}
+          clientName={newDocumentData.clientName}
+          clientEmail={newDocumentData.clientEmail}
+          totalAmount={newDocumentData.totalAmount}
+          companyName={newDocumentData.companyName}
+          issueDate={newDocumentData.issueDate}
+          dueDate={newDocumentData.dueDate}
+          invoiceNumber={newDocumentData.invoiceNumber}
+          onSent={() => setShowSendEmailModal(false)}
+          onClose={() => setShowSendEmailModal(false)}
+        />
+      )}
     </>
   );
 }

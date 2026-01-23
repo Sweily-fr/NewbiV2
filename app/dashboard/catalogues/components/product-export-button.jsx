@@ -21,7 +21,7 @@ import {
 import { exportToCSV, exportToExcel } from "@/src/utils/product-export";
 import { toast } from "@/src/components/ui/sonner";
 
-export default function ProductExportButton({ products, selectedRows = [] }) {
+export default function ProductExportButton({ products, selectedRows = [], iconOnly = false }) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedFormat, setSelectedFormat] = useState(null);
 
@@ -72,15 +72,21 @@ export default function ProductExportButton({ products, selectedRows = [] }) {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" className="font-normal cursor-pointer">
-            <Download className="mr-2 h-4 w-4" />
-            Exporter
-            {hasSelection && (
-              <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-xs text-white dark:text-black">
-                {selectedRows.length}
-              </span>
-            )}
-          </Button>
+          {iconOnly ? (
+            <Button variant="secondary" size="icon" className="cursor-pointer">
+              <Download className="h-4 w-4" strokeWidth={1.5} />
+            </Button>
+          ) : (
+            <Button variant="outline" className="font-normal cursor-pointer">
+              <Download className="mr-2 h-4 w-4" />
+              Exporter
+              {hasSelection && (
+                <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-xs text-white dark:text-black">
+                  {selectedRows.length}
+                </span>
+              )}
+            </Button>
+          )}
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[180px]">
           <DropdownMenuLabel>Format d&apos;export</DropdownMenuLabel>

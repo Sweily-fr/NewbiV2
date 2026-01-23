@@ -100,11 +100,11 @@ export async function sendPaymentFailedEmail({
   amount,
   invoiceUrl,
 }) {
-  const updatePaymentUrl = `${process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "http://localhost:3000"}/dashboard/settings?tab=subscription`;
+  const updatePaymentUrl = `${process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "http://localhost:3000"}/dashboard`;
 
   await sendEmail({
     to,
-    subject: "⚠️ Échec du paiement de votre abonnement Newbi",
+    subject: "Échec du paiement de votre abonnement Newbi",
     html: emailTemplates.paymentFailed({
       customerName,
       amount,
@@ -127,8 +127,8 @@ export async function sendSubscriptionChangedEmail({
   await sendEmail({
     to,
     subject: isUpgrade
-      ? "🎉 Votre abonnement Newbi a été amélioré !"
-      : "✅ Votre abonnement Newbi a été modifié",
+      ? "Votre abonnement Newbi a été amélioré !"
+      : "Votre abonnement Newbi a été modifié",
     html: emailTemplates.subscriptionChanged({
       customerName,
       oldPlan,
@@ -246,6 +246,121 @@ export async function sendRenewalReminderEmail({
       amount,
     }),
   });
+}
+
+// Fonction pour envoyer un email de paiement réussi avec facture PDF et reçu Stripe en pièce jointe
+export async function sendPaymentSucceededEmail({
+  to,
+  customerName,
+  plan,
+  amount,
+  invoiceNumber,
+  paymentDate,
+  nextRenewalDate,
+  invoicePdfUrl,
+  receiptUrl,
+}) {
+  try {
+    // Préparer les données de l'email
+    const emailData = {
+      to,
+      subject: `Paiement confirmé - Facture ${invoiceNumber}`,
+      html: emailTemplates.paymentSucceeded({
+        customerName,
+        plan,
+        amount,
+        invoiceNumber,
+        paymentDate,
+        nextRenewalDate,
+      }),
+      from: "Newbi <noreply@newbi.sweily.fr>",
+      attachments: [],
+    };
+
+    // Si on a l'URL du PDF de la facture, la télécharger et l'ajouter en pièce jointe
+    if (invoicePdfUrl) {
+      try {
+        console.log(
+          `[EMAIL] Téléchargement de la facture PDF: ${invoicePdfUrl}`
+        );
+
+        const response = await fetch(invoicePdfUrl);
+
+        if (response.ok) {
+          const pdfBuffer = await response.arrayBuffer();
+          const pdfBase64 = Buffer.from(pdfBuffer).toString("base64");
+
+          emailData.attachments.push({
+            filename: `Facture_Newbi_${invoiceNumber}.pdf`,
+            content: pdfBase64,
+            type: "application/pdf",
+          });
+
+          console.log(`✅ [EMAIL] Facture PDF ajoutée en pièce jointe`);
+        } else {
+          console.warn(
+            `⚠️ [EMAIL] Impossible de télécharger la facture PDF: ${response.status}`
+          );
+        }
+      } catch (pdfError) {
+        console.error(
+          `❌ [EMAIL] Erreur téléchargement facture PDF:`,
+          pdfError
+        );
+      }
+    }
+
+    // Si on a l'URL du reçu Stripe, le télécharger et l'ajouter en pièce jointe
+    if (receiptUrl) {
+      try {
+        console.log(`[EMAIL] Téléchargement du reçu Stripe: ${receiptUrl}`);
+
+        // Le reçu Stripe est une page HTML, on va la convertir en PDF ou l'ajouter en HTML
+        const response = await fetch(receiptUrl);
+
+        if (response.ok) {
+          const receiptHtml = await response.text();
+          const receiptBase64 = Buffer.from(receiptHtml).toString("base64");
+
+          emailData.attachments.push({
+            filename: `Recu_Stripe_${invoiceNumber}.html`,
+            content: receiptBase64,
+            type: "text/html",
+          });
+
+          console.log(`✅ [EMAIL] Reçu Stripe ajouté en pièce jointe`);
+        } else {
+          console.warn(
+            `⚠️ [EMAIL] Impossible de télécharger le reçu Stripe: ${response.status}`
+          );
+        }
+      } catch (receiptError) {
+        console.error(
+          `❌ [EMAIL] Erreur téléchargement reçu Stripe:`,
+          receiptError
+        );
+      }
+    }
+
+    // Supprimer attachments si vide
+    if (emailData.attachments.length === 0) {
+      delete emailData.attachments;
+    }
+
+    // Envoyer l'email via Resend
+    await resend.emails.send(emailData);
+
+    const attachmentInfo = [];
+    if (invoicePdfUrl) attachmentInfo.push("facture PDF");
+    if (receiptUrl) attachmentInfo.push("reçu Stripe");
+
+    console.log(
+      `✅ [EMAIL] Email de paiement réussi envoyé à ${to}${attachmentInfo.length > 0 ? ` avec ${attachmentInfo.join(" et ")}` : ""}`
+    );
+  } catch (error) {
+    console.error("❌ [EMAIL] Erreur envoi email paiement réussi:", error);
+    throw error;
+  }
 }
 
 // Fonction pour envoyer un email d'invitation d'organisation

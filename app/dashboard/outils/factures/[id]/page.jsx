@@ -48,7 +48,7 @@ function InvoiceDetailsContent() {
         resourceType="facture"
         resourceName="Cette facture"
         listUrl="/dashboard/outils/factures"
-        homeUrl="/dashboard/outils"
+        homeUrl="/dashboard"
       />
     );
   }
@@ -81,10 +81,7 @@ function InvoiceDetailsContent() {
 
         <div className="flex items-center gap-2">
           {!isDraft && (
-            <Button
-              variant="outline"
-              className="gap-2"
-            >
+            <Button variant="outline" className="gap-2">
               <Send className="h-4 w-4" />
               Envoyer
             </Button>
@@ -97,17 +94,11 @@ function InvoiceDetailsContent() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem>
-                Dupliquer
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                Convertir en devis
-              </DropdownMenuItem>
+              <DropdownMenuItem>Dupliquer</DropdownMenuItem>
+              <DropdownMenuItem>Convertir en devis</DropdownMenuItem>
               <DropdownMenuSeparator />
               {isDraft && (
-                <DropdownMenuItem
-                  className="text-destructive"
-                >
+                <DropdownMenuItem className="text-destructive">
                   Supprimer
                 </DropdownMenuItem>
               )}

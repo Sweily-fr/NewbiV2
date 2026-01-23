@@ -7,7 +7,6 @@ import {
   Trash2,
   Search,
   Building2,
-  Users,
   ChevronRight,
   ArrowLeft,
 } from "lucide-react";
@@ -43,6 +42,8 @@ import {
   Avatar,
   AvatarFallback,
   AvatarImage,
+  AvatarGroup,
+  AvatarGroupCount,
 } from "@/src/components/ui/avatar";
 import { useOrganizationInvitations } from "@/src/hooks/useOrganizationInvitations";
 import { InviteMemberModal } from "@/src/components/invite-member-modal";
@@ -70,11 +71,16 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [memberToDelete, setMemberToDelete] = useState(null);
-  const [orgMemberCounts, setOrgMemberCounts] = useState({});
+  const [orgMemberData, setOrgMemberData] = useState({});
+  const [updatingRoleForMember, setUpdatingRoleForMember] = useState(null);
 
   // Utiliser le hook pour les invitations
-  const { getAllCollaborators, removeMember, cancelInvitation } =
-    useOrganizationInvitations();
+  const {
+    getAllCollaborators,
+    removeMember,
+    cancelInvitation,
+    updateMemberRole,
+  } = useOrganizationInvitations();
 
   // Récupérer les organisations
   const { data: organizationsList } = authClient.useListOrganizations();
@@ -84,27 +90,17 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
     if (organizationsList) {
       setOrganizations(organizationsList);
 
-      // Récupérer le nombre de membres pour chaque organisation
-      const fetchMemberCounts = async () => {
-        const counts = {};
+      // Récupérer les membres pour chaque organisation (avec avatars)
+      const fetchMemberData = async () => {
+        const data = {};
         for (const org of organizationsList) {
           try {
-            console.log(
-              `🔍 Comptage pour l'organisation: ${org.name} (${org.id})`
-            );
-
-            // Appel API direct pour éviter le bug de Better Auth
             const response = await fetch(
               `/api/organizations/${org.id}/members`
             );
             const result = await response.json();
 
             if (result.success) {
-              console.log(
-                `📊 Données reçues pour ${org.name}:`,
-                result.data.length,
-                "items"
-              );
               // Même logique que dans le modal : filtrer et dédupliquer
               const emailMap = new Map();
 
@@ -114,6 +110,8 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
                 if (item.type === "member") {
                   formattedItem = {
                     email: item.user?.email || item.email,
+                    name: item.user?.name || item.name,
+                    avatar: item.avatar || item.image || item.user?.avatar || item.user?.image,
                     role: item.role,
                     status: "active",
                     type: "member",
@@ -127,6 +125,8 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
 
                   formattedItem = {
                     email: item.email,
+                    name: item.email?.split("@")[0],
+                    avatar: null,
                     role: item.role,
                     status: item.status || "pending",
                     type: "invitation",
@@ -152,24 +152,21 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
               });
 
               const deduplicatedMembers = Array.from(emailMap.values());
-              // Exclure les owners comme dans le modal
+              // Exclure les owners
               const membersWithoutOwner = deduplicatedMembers.filter(
                 (m) => m.role !== "owner"
               );
-              console.log(
-                `✅ ${org.name}: ${membersWithoutOwner.length} membres (sans owner)`
-              );
-              counts[org.id] = membersWithoutOwner.length;
+              data[org.id] = membersWithoutOwner;
             }
           } catch (error) {
             console.error(`Erreur pour l'org ${org.id}:`, error);
-            counts[org.id] = 0;
+            data[org.id] = [];
           }
         }
-        setOrgMemberCounts(counts);
+        setOrgMemberData(data);
       };
 
-      fetchMemberCounts();
+      fetchMemberData();
       setLoading(false);
     }
   }, [organizationsList, refreshTrigger]);
@@ -199,9 +196,6 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
             let formattedItem;
 
             if (item.type === "member") {
-              const avatar =
-                item.user?.avatar || item.avatar || item.user?.image || null;
-
               formattedItem = {
                 id: item.id,
                 name:
@@ -209,7 +203,7 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
                   item.name ||
                   item.user?.email?.split("@")[0],
                 email: item.user?.email || item.email,
-                avatar: avatar,
+                avatar: item.avatar || item.image || item.user?.avatar || item.user?.image || null,
                 role: item.role,
                 status: "active",
                 type: "member",
@@ -268,13 +262,12 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
     fetchMembers();
   }, [selectedOrg, refreshTrigger]);
 
-  // Filter members based on search term and status (only active members)
+  // Filter members based on search term (afficher tous les statuts : active, pending, etc.)
   const filteredMembers = members.filter(
     (member) =>
-      member.status === "active" &&
-      (member.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        member.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        member.role?.toLowerCase().includes(searchTerm.toLowerCase()))
+      member.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      member.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      member.role?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleDeleteMember = (member) => {
@@ -353,6 +346,47 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
     setSelectedOrg(org);
   };
 
+  // Gérer le changement de rôle d'un membre
+  const handleRoleChange = async (member, newRole) => {
+    if (!canManageOrgSettings) {
+      toast.error("Vous n'avez pas la permission de modifier les rôles");
+      return;
+    }
+
+    if (member.role === newRole) {
+      return; // Pas de changement
+    }
+
+    try {
+      setUpdatingRoleForMember(member.id);
+
+      console.log("🔄 Changement de rôle pour:", {
+        memberId: member.id,
+        email: member.email,
+        currentRole: member.role,
+        newRole,
+        orgId: selectedOrg?.id,
+      });
+
+      // Appeler la fonction updateMemberRole du hook avec l'ID du membre
+      const result = await updateMemberRole(
+        member.id, // Better Auth utilise l'ID du membre
+        newRole,
+        selectedOrg?.id
+      );
+
+      if (result.success) {
+        // Rafraîchir la liste des membres
+        setRefreshTrigger((prev) => prev + 1);
+      }
+    } catch (error) {
+      console.error("Erreur lors du changement de rôle:", error);
+      toast.error("Erreur lors du changement de rôle");
+    } finally {
+      setUpdatingRoleForMember(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -380,7 +414,6 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
             <TableRow>
               <TableHead>Organisation</TableHead>
               <TableHead>Membres</TableHead>
-              <TableHead>Accès</TableHead>
               <TableHead className="w-[50px]"></TableHead>
             </TableRow>
           </TableHeader>
@@ -390,25 +423,20 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
               <>
                 {[1, 2, 3].map((i) => (
                   <TableRow key={i}>
-                    <TableCell>
-                      <div className="flex items-center gap-3 pt-3 pb-3">
-                        <Skeleton className="h-8 w-8 rounded-md" />
-                        <div className="space-y-2">
-                          <Skeleton className="h-4 w-[200px]" />
-                          <Skeleton className="h-3 w-[150px]" />
-                        </div>
+                    <TableCell className="py-2">
+                      <div className="flex items-center gap-3">
+                        <Skeleton className="h-7 w-7 rounded-md" />
+                        <Skeleton className="h-4 w-[180px]" />
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Skeleton className="h-4 w-4 rounded" />
-                        <Skeleton className="h-4 w-[80px]" />
+                    <TableCell className="py-2">
+                      <div className="flex -space-x-2">
+                        <Skeleton className="h-7 w-7 rounded-full" />
+                        <Skeleton className="h-7 w-7 rounded-full" />
+                        <Skeleton className="h-7 w-7 rounded-full" />
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-6 w-[60px] rounded-full" />
-                    </TableCell>
-                    <TableCell>
+                    <TableCell className="py-2">
                       <Skeleton className="h-4 w-4" />
                     </TableCell>
                   </TableRow>
@@ -416,49 +444,68 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
               </>
             ) : organizations.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={4} className="text-center py-8">
+                <TableCell colSpan={3} className="text-center py-8">
                   Aucune organisation
                 </TableCell>
               </TableRow>
             ) : (
-              organizations.map((org) => (
-                <TableRow
-                  key={org.id}
-                  className="cursor-pointer hover:bg-muted/50"
-                  onClick={() => handleOrgClick(org)}
-                >
-                  <TableCell>
-                    <div className="flex items-center gap-3 pt-3 pb-3">
-                      <div className="h-8 w-8 rounded-md bg-[#5b4fff]/10 flex items-center justify-center">
-                        <Building2 className="h-3.5 w-3.5 text-[#5b4fff]" />
-                      </div>
-                      <div>
-                        <div className="font-medium text-sm">{org.name}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {org.id}
+              organizations.map((org) => {
+                const orgMembers = orgMemberData[org.id] || [];
+                const memberCount = orgMembers.length;
+                const displayedMembers = orgMembers.slice(0, 3);
+                const remainingCount = memberCount - 3;
+
+                return (
+                  <TableRow
+                    key={org.id}
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={() => handleOrgClick(org)}
+                  >
+                    <TableCell className="py-2">
+                      <div className="flex items-center gap-3">
+                        <div className="h-7 w-7 rounded-md bg-muted flex items-center justify-center">
+                          <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
                         </div>
+                        <span className="font-normal text-sm">{org.name}</span>
                       </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Users className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm">
-                        {orgMemberCounts[org.id] || 0} membre
-                        {(orgMemberCounts[org.id] || 0) > 1 ? "s" : ""}
-                      </span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge className="bg-gray-100 border-gray-300 text-gray-800 font-normal">
-                      Défaut
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                  </TableCell>
-                </TableRow>
-              ))
+                    </TableCell>
+                    <TableCell className="py-2">
+                      {memberCount > 0 ? (
+                        <AvatarGroup>
+                          {displayedMembers.map((member, index) => (
+                            <Avatar key={member.email || index} className="h-7 w-7 border-2 border-background">
+                              <AvatarImage
+                                src={member.avatar}
+                                alt={member.name || member.email}
+                              />
+                              <AvatarFallback className="bg-muted text-muted-foreground text-[10px]">
+                                {(member.name || member.email || "?")
+                                  .split(" ")
+                                  .map((n) => n[0])
+                                  .join("")
+                                  .toUpperCase()
+                                  .slice(0, 2)}
+                              </AvatarFallback>
+                            </Avatar>
+                          ))}
+                          {remainingCount > 0 && (
+                            <AvatarGroupCount className="h-7 w-7 text-[10px]">
+                              +{remainingCount}
+                            </AvatarGroupCount>
+                          )}
+                        </AvatarGroup>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">
+                          Aucun membre
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell className="py-2">
+                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                    </TableCell>
+                  </TableRow>
+                );
+              })
             )}
           </TableBody>
         </Table>
@@ -558,9 +605,16 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
                                   .toUpperCase() || "?"}
                               </AvatarFallback>
                             </Avatar>
-                            <div>
-                              <div className="font-normal text-sm">
-                                {member.name || "Sans nom"}
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="font-normal text-sm">
+                                  {member.name || "Sans nom"}
+                                </span>
+                                {member.status === "pending" && (
+                                  <Badge className="bg-orange-100 border-orange-300 text-orange-800 font-normal text-[10px] px-1.5 py-0">
+                                    En attente
+                                  </Badge>
+                                )}
                               </div>
                               <div className="text-xs text-muted-foreground">
                                 {member.email}
@@ -571,12 +625,12 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
                         <TableCell className="text-right">
                           <Select
                             value={member.role}
-                            disabled={!canManageOrgSettings}
+                            disabled={
+                              !canManageOrgSettings ||
+                              updatingRoleForMember === member.id
+                            }
                             onValueChange={(newRole) => {
-                              // TODO: Implémenter le changement de rôle
-                              console.log(
-                                `Changer le rôle de ${member.email} à ${newRole}`
-                              );
+                              handleRoleChange(member, newRole);
                             }}
                           >
                             <SelectTrigger className="w-full md:w-[240px] border-none shadow-none cursor-pointer hover:bg-[#F0EFED]/90 ml-auto transition-colors">
@@ -661,6 +715,7 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
         open={inviteDialogOpen}
         onOpenChange={setInviteDialogOpen}
         onSuccess={() => setRefreshTrigger((prev) => prev + 1)}
+        organizationId={selectedOrg?.id}
       />
 
       {/* Delete Confirmation Dialog */}

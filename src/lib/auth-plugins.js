@@ -117,6 +117,15 @@ export const stripePlugin = stripe({
       { user, session, referenceId, action },
       request
     ) => {
+      console.log(
+        "🔐 [AUTHORIZE] Action:",
+        action,
+        "User:",
+        user?.id,
+        "ReferenceId:",
+        referenceId
+      );
+
       // Vérifier si l'utilisateur a les permissions pour gérer les abonnements
       if (
         action === "upgrade-subscription" ||
@@ -139,14 +148,22 @@ export const stripePlugin = stripe({
             });
 
             const isOwner = member?.role === "owner";
+            console.log(
+              "🔐 [AUTHORIZE] Member found:",
+              member,
+              "isOwner:",
+              isOwner
+            );
 
             return isOwner;
           } catch (error) {
+            console.error("🔐 [AUTHORIZE] Error:", error);
             return false;
           }
         }
 
         // Fallback: autoriser temporairement si l'adapter ne fonctionne pas
+        console.log("🔐 [AUTHORIZE] Fallback: adapter not available, allowing");
         return true;
       }
 
@@ -382,11 +399,11 @@ export const stripePlugin = stripe({
               );
 
               try {
-                // Vérifier si l'abonnement existe déjà
+                // Vérifier si l'abonnement existe déjà pour cette organisation
                 const existingSub = await mongoDb
                   .collection("subscription")
                   .findOne({
-                    stripeSubscriptionId: subscription.id,
+                    referenceId: referenceId,
                   });
 
                 if (!existingSub) {
@@ -418,18 +435,20 @@ export const stripePlugin = stripe({
                     currentPeriodStart: subscription.current_period_start
                       ? new Date(subscription.current_period_start * 1000)
                       : new Date(),
-                    updatedAt: new Date(),
                   };
 
+                  // ✅ Créer l'abonnement directement dans MongoDB
                   await mongoDb
                     .collection("subscription")
                     .insertOne(subscriptionData);
 
                   console.log(
-                    `✅ [STRIPE WEBHOOK] Abonnement créé pour nouvelle org: ${referenceId}`
+                    `✅ [STRIPE WEBHOOK] Abonnement créé via adapter pour nouvelle org: ${referenceId}`
                   );
                 } else {
-                  console.log(`✅ [STRIPE WEBHOOK] Abonnement existe déjà`);
+                  console.log(
+                    `✅ [STRIPE WEBHOOK] Abonnement existe déjà pour cette org: ${referenceId}`
+                  );
                 }
               } catch (subError) {
                 console.error(
@@ -534,11 +553,11 @@ export const stripePlugin = stripe({
                                 });
 
                                 console.log(
-                                  `✅ [STRIPE WEBHOOK] Invitation envoyée à ${email}`
+                                  `✅ [STRIPE WEBHOOK] Invitation envoyée à ${memberEmail}`
                                 );
                               } catch (inviteError) {
                                 console.error(
-                                  `❌ [STRIPE WEBHOOK] Erreur invitation ${email}:`,
+                                  `❌ [STRIPE WEBHOOK] Erreur invitation ${memberEmail}:`,
                                   inviteError
                                 );
                               }
@@ -590,28 +609,114 @@ export const stripePlugin = stripe({
             // Utiliser MongoDB directement au lieu de l'adapter
             const { mongoDb } = await import("./mongodb.js");
 
-            // Vérifier si l'abonnement existe déjà
-            const existingSub = await mongoDb
+            // Vérifier si l'abonnement existe déjà POUR CETTE ORGANISATION
+            const existingSubForOrg = await mongoDb
+              .collection("subscription")
+              .findOne({
+                referenceId: referenceId,
+              });
+
+            // Vérifier aussi si le stripeSubscriptionId existe (pour une autre org)
+            const existingSubByStripeId = await mongoDb
               .collection("subscription")
               .findOne({
                 stripeSubscriptionId: subscription.id,
               });
 
-            if (existingSub) {
+            console.log(`🔍 [STRIPE WEBHOOK] Recherche abonnement:`);
+            console.log(`   - referenceId: ${referenceId}`);
+            console.log(`   - stripeSubscriptionId: ${subscription.id}`);
+            console.log(
+              `   - Abonnement existant pour cette org: ${existingSubForOrg ? "OUI" : "NON"}`
+            );
+            console.log(
+              `   - Abonnement existant avec ce stripeId: ${existingSubByStripeId ? "OUI (org: " + existingSubByStripeId.referenceId + ")" : "NON"}`
+            );
+
+            if (
+              existingSubForOrg &&
+              existingSubForOrg.stripeSubscriptionId === subscription.id
+            ) {
+              // Même abonnement, même org -> mise à jour
               console.log(
-                `✅ [STRIPE WEBHOOK] Abonnement existe déjà, mise à jour`
+                `✅ [STRIPE WEBHOOK] Abonnement existe déjà pour cette org, mise à jour`
               );
               await mongoDb.collection("subscription").updateOne(
-                { stripeSubscriptionId: subscription.id },
+                {
+                  referenceId: referenceId,
+                  stripeSubscriptionId: subscription.id,
+                },
                 {
                   $set: {
                     status: subscription.status,
+                    plan:
+                      subscription.metadata?.planName || existingSubForOrg.plan,
                     currentPeriodStart: new Date(
                       subscription.current_period_start * 1000
                     ),
                     currentPeriodEnd: new Date(
                       subscription.current_period_end * 1000
                     ),
+                    periodStart: new Date(
+                      subscription.current_period_start * 1000
+                    ),
+                    periodEnd: new Date(subscription.current_period_end * 1000),
+                    updatedAt: new Date(),
+                  },
+                }
+              );
+
+              // ✅ Désactiver le trial si passage de trialing à active
+              if (
+                subscription.status === "active" &&
+                existingSubForOrg.status === "trialing"
+              ) {
+                try {
+                  const { ObjectId } = require("mongodb");
+                  await mongoDb.collection("organization").updateOne(
+                    { _id: new ObjectId(referenceId) },
+                    {
+                      $set: {
+                        isTrialActive: false,
+                        hasUsedTrial: true,
+                        updatedAt: new Date(),
+                      },
+                    }
+                  );
+                  console.log(
+                    `✅ [STRIPE WEBHOOK] Trial désactivé après upgrade pour l'organisation ${referenceId}`
+                  );
+                } catch (trialError) {
+                  console.warn(
+                    `⚠️ [STRIPE WEBHOOK] Erreur désactivation trial:`,
+                    trialError.message
+                  );
+                }
+              }
+            } else if (existingSubForOrg) {
+              // L'org a déjà un abonnement avec un autre stripeSubscriptionId -> remplacer
+              console.log(
+                `🔄 [STRIPE WEBHOOK] L'org a un ancien abonnement, remplacement par le nouveau`
+              );
+              await mongoDb.collection("subscription").updateOne(
+                { referenceId: referenceId },
+                {
+                  $set: {
+                    stripeSubscriptionId: subscription.id,
+                    stripeCustomerId: subscription.customer,
+                    status: subscription.status,
+                    plan:
+                      subscription.metadata?.planName || existingSubForOrg.plan,
+                    currentPeriodStart: new Date(
+                      subscription.current_period_start * 1000
+                    ),
+                    currentPeriodEnd: new Date(
+                      subscription.current_period_end * 1000
+                    ),
+                    periodStart: new Date(
+                      subscription.current_period_start * 1000
+                    ),
+                    periodEnd: new Date(subscription.current_period_end * 1000),
                     updatedAt: new Date(),
                   },
                 }
@@ -655,7 +760,6 @@ export const stripePlugin = stripe({
                 currentPeriodStart: subscription.current_period_start
                   ? new Date(subscription.current_period_start * 1000)
                   : new Date(),
-                updatedAt: new Date(),
               };
 
               console.log(
@@ -663,78 +767,56 @@ export const stripePlugin = stripe({
                 JSON.stringify(subscriptionData, null, 2)
               );
 
-              await mongoDb
-                .collection("subscription")
-                .insertOne(subscriptionData);
+              // ✅ Utiliser MongoDB directement pour créer l'abonnement
+              // Générer un ID unique pour Better Auth
+              const { ObjectId } = require("mongodb");
+              const newId = new ObjectId();
 
-              // Envoyer l'email de bienvenue
-              try {
-                const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
-                const customer = await stripe.customers.retrieve(
-                  subscription.customer
-                );
+              await mongoDb.collection("subscription").insertOne({
+                _id: newId,
+                id: newId.toString(), // Better Auth utilise ce champ comme identifiant
+                ...subscriptionData,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              });
 
-                const { sendSubscriptionCreatedEmail } = await import(
-                  "./auth-utils.js"
-                );
+              console.log(
+                `✅ [STRIPE WEBHOOK] Abonnement créé avec id: ${newId.toString()}`
+              );
 
-                // Déterminer les fonctionnalités selon le plan
-                const planFeatures = {
-                  freelance: [
-                    "1 utilisateur inclus",
-                    "Facturation complète",
-                    "Gestion client et fournisseurs",
-                    "OCR des reçus",
-                    "Catalogue produits",
-                    "Rapports financiers",
-                  ],
-                  pme: [
-                    "10 utilisateurs inclus",
-                    "Toutes les fonctionnalités Freelance",
-                    "Connexion comptes bancaires",
-                    "Gestion de trésorerie",
-                    "Transfert de fichiers sécurisé",
-                    "Rapports avancés",
-                  ],
-                  entreprise: [
-                    "25 utilisateurs inclus",
-                    "Toutes les fonctionnalités PME",
-                    "Support prioritaire",
-                    "Sièges additionnels (7,49€/mois)",
-                    "Gestion multi-organisations",
-                    "API access",
-                  ],
-                };
-
-                // Déterminer le prix et l'intervalle
-                const isAnnual = priceData?.recurring?.interval === "year";
-                const priceMap = {
-                  freelance: { monthly: "14,59€/mois", annual: "13,13€/mois" },
-                  pme: { monthly: "48,99€/mois", annual: "44,09€/mois" },
-                  entreprise: { monthly: "94,99€/mois", annual: "85,49€/mois" },
-                };
-
-                await sendSubscriptionCreatedEmail({
-                  to: customer.email,
-                  customerName: customer.name || customer.email,
-                  plan: planName.toUpperCase(),
-                  price: isAnnual
-                    ? priceMap[planName]?.annual
-                    : priceMap[planName]?.monthly,
-                  billingInterval: isAnnual ? "Annuelle" : "Mensuelle",
-                  features: planFeatures[planName] || [],
-                });
-
-                console.log(
-                  `✅ [STRIPE WEBHOOK] Email de bienvenue envoyé à ${customer.email}`
-                );
-              } catch (emailError) {
-                console.error(
-                  `⚠️ [STRIPE WEBHOOK] Erreur envoi email bienvenue:`,
-                  emailError
-                );
-                // Ne pas bloquer la création d'abonnement si l'email échoue
+              // ✅ Désactiver le trial de l'organisation si l'abonnement est actif (pas trialing)
+              if (subscription.status === "active" && referenceId) {
+                try {
+                  const orgUpdateResult = await mongoDb
+                    .collection("organization")
+                    .updateOne(
+                      { _id: new ObjectId(referenceId) },
+                      {
+                        $set: {
+                          isTrialActive: false,
+                          hasUsedTrial: true,
+                          updatedAt: new Date(),
+                        },
+                      }
+                    );
+                  if (orgUpdateResult.modifiedCount > 0) {
+                    console.log(
+                      `✅ [STRIPE WEBHOOK] Trial désactivé pour l'organisation ${referenceId}`
+                    );
+                  }
+                } catch (trialError) {
+                  console.warn(
+                    `⚠️ [STRIPE WEBHOOK] Erreur désactivation trial:`,
+                    trialError.message
+                  );
+                }
               }
+
+              // L'email de paiement avec facture PDF sera envoyé via le webhook invoice.payment_succeeded
+              // Ne pas envoyer d'email ici pour éviter les doublons
+              console.log(
+                `ℹ️ [STRIPE WEBHOOK] Abonnement créé, email de paiement sera envoyé via invoice.payment_succeeded`
+              );
             }
 
             console.log(
@@ -765,6 +847,7 @@ export const stripePlugin = stripe({
                 updatedSub.current_period_start * 1000
               ),
               currentPeriodEnd: new Date(updatedSub.current_period_end * 1000),
+              cancelAtPeriodEnd: updatedSub.cancel_at_period_end || false,
               updatedAt: new Date(),
             };
 
@@ -776,6 +859,13 @@ export const stripePlugin = stripe({
               );
             }
 
+            // Log si résiliation programmée
+            if (updatedSub.cancel_at_period_end) {
+              console.log(
+                `🔔 [STRIPE WEBHOOK] Résiliation programmée pour la fin de période`
+              );
+            }
+
             await mongoDb
               .collection("subscription")
               .updateOne(
@@ -784,7 +874,7 @@ export const stripePlugin = stripe({
               );
 
             console.log(
-              `✅ [STRIPE WEBHOOK] Abonnement mis à jour avec succès${newPlan ? ` (plan: ${newPlan})` : ""}`
+              `✅ [STRIPE WEBHOOK] Abonnement mis à jour avec succès${newPlan ? ` (plan: ${newPlan})` : ""}${updatedSub.cancel_at_period_end ? " (résiliation programmée)" : ""}`
             );
           } catch (error) {
             console.error(
@@ -797,6 +887,28 @@ export const stripePlugin = stripe({
 
         case "invoice.payment_failed":
           const failedInvoice = event.data.object;
+
+          // Déduplication pour éviter les emails multiples
+          if (!global._processedStripeEvents) {
+            global._processedStripeEvents = new Set();
+          }
+
+          const failedKey = `failed_${failedInvoice.id}`;
+          if (global._processedStripeEvents.has(failedKey)) {
+            console.log(
+              `⏭️ [STRIPE WEBHOOK] Email de paiement échoué déjà envoyé pour ${failedKey}, skip`
+            );
+            break;
+          }
+
+          // Marquer comme traité (expire après 1h)
+          global._processedStripeEvents.add(failedKey);
+          setTimeout(
+            () => {
+              global._processedStripeEvents?.delete(failedKey);
+            },
+            60 * 60 * 1000
+          ); // 1 heure
 
           try {
             // Import MongoDB directement
@@ -861,15 +973,41 @@ export const stripePlugin = stripe({
         case "customer.subscription.deleted":
           const deletedSub = event.data.object;
 
+          // Déduplication pour éviter les emails multiples
+          if (!global._processedStripeEvents) {
+            global._processedStripeEvents = new Set();
+          }
+
+          const cancelKey = `cancel_${deletedSub.id}`;
+          if (global._processedStripeEvents.has(cancelKey)) {
+            console.log(
+              `⏭️ [STRIPE WEBHOOK] Email d'annulation déjà envoyé pour ${cancelKey}, skip`
+            );
+            break;
+          }
+
+          // Marquer comme traité (expire après 1h)
+          global._processedStripeEvents.add(cancelKey);
+          setTimeout(
+            () => {
+              global._processedStripeEvents?.delete(cancelKey);
+            },
+            60 * 60 * 1000
+          ); // 1 heure
+
           try {
-            await adapter.update({
-              model: "subscription",
-              where: { stripeSubscriptionId: deletedSub.id },
-              data: {
-                status: "canceled",
-                updatedAt: new Date(),
-              },
-            });
+            // ✅ Utiliser MongoDB directement au lieu de l'adapter
+            const { mongoDb: mongoDbDelete } = await import("./mongodb.js");
+
+            await mongoDbDelete.collection("subscription").updateOne(
+              { stripeSubscriptionId: deletedSub.id },
+              {
+                $set: {
+                  status: "canceled",
+                  updatedAt: new Date(),
+                },
+              }
+            );
             console.log(`✅ [STRIPE WEBHOOK] Abonnement annulé avec succès`);
 
             // Envoyer l'email de confirmation d'annulation
@@ -920,62 +1058,170 @@ export const stripePlugin = stripe({
 
         case "invoice.upcoming":
           // Facture à venir (7 jours avant le renouvellement)
-          const upcomingInvoice = event.data.object;
+          // ℹ️ Email de rappel de renouvellement DÉSACTIVÉ
+          // On ne garde que l'email de confirmation de paiement (invoice.paid)
           console.log(
-            `📅 [STRIPE WEBHOOK] Facture à venir pour ${upcomingInvoice.customer}`
+            `📅 [STRIPE WEBHOOK] Facture à venir - pas d'email de rappel envoyé (désactivé)`
+          );
+          break;
+
+        case "invoice.paid":
+          // ⚠️ On utilise UNIQUEMENT invoice.paid (pas invoice.payment_succeeded)
+          // car Stripe envoie les deux événements pour le même paiement, ce qui causait des emails en double
+          const paidInvoice = event.data.object;
+
+          // Vérifier si on a déjà traité cet événement (déduplication)
+          const eventId = event.id;
+          const invoiceId = paidInvoice.id;
+
+          // Utiliser un cache simple pour éviter les doublons (en mémoire)
+          if (!global._processedStripeEvents) {
+            global._processedStripeEvents = new Set();
+          }
+
+          const eventKey = `payment_email_${invoiceId}`;
+          if (global._processedStripeEvents.has(eventKey)) {
+            console.log(
+              `⏭️ [STRIPE WEBHOOK] Email déjà envoyé pour facture ${invoiceId}, skip`
+            );
+            break;
+          }
+
+          // Marquer comme traité (expire après 1h pour éviter les fuites mémoire)
+          global._processedStripeEvents.add(eventKey);
+          setTimeout(
+            () => {
+              global._processedStripeEvents?.delete(eventKey);
+            },
+            60 * 60 * 1000
+          ); // 1 heure
+
+          console.log(
+            `💰 [STRIPE WEBHOOK] Paiement facture réussi: ${paidInvoice.id}, billing_reason: ${paidInvoice.billing_reason}`
           );
 
           try {
             const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+
+            // Récupérer les infos du client
             const customer = await stripe.customers.retrieve(
-              upcomingInvoice.customer
+              paidInvoice.customer
             );
 
-            // Récupérer l'abonnement
-            const subscription = await stripe.subscriptions.retrieve(
-              upcomingInvoice.subscription
-            );
+            // Récupérer l'abonnement pour avoir le nom du plan
+            let planName = "FREELANCE";
+            let nextRenewalDate = "Date non disponible";
 
-            const { sendRenewalReminderEmail } = await import(
-              "./auth-utils.js"
-            );
+            if (paidInvoice.subscription) {
+              const subscription = await stripe.subscriptions.retrieve(
+                paidInvoice.subscription
+              );
+              planName =
+                subscription.metadata?.planName?.toUpperCase() || "FREELANCE";
 
-            const planName = subscription.metadata?.planName || "FREELANCE";
-            const renewalDate = new Date(
-              subscription.current_period_end * 1000
-            ).toLocaleDateString("fr-FR", {
+              // Formater la date de prochain renouvellement avec vérification
+              if (subscription.current_period_end) {
+                const renewalTimestamp = subscription.current_period_end * 1000;
+                if (!isNaN(renewalTimestamp) && renewalTimestamp > 0) {
+                  nextRenewalDate = new Date(
+                    renewalTimestamp
+                  ).toLocaleDateString("fr-FR", {
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                  });
+                }
+              }
+            }
+
+            // Formater les données
+            const amount = `${(paidInvoice.amount_paid / 100).toFixed(2)}€`;
+            const invoiceNumber = paidInvoice.number || paidInvoice.id;
+
+            // Formater la date de paiement avec vérification
+            let paymentDate = new Date().toLocaleDateString("fr-FR", {
               day: "numeric",
               month: "long",
               year: "numeric",
             });
 
-            // Formater le montant
-            const amount = `${(upcomingInvoice.amount_due / 100).toFixed(2)}€`;
+            if (paidInvoice.status_transitions?.paid_at) {
+              const paidTimestamp =
+                paidInvoice.status_transitions.paid_at * 1000;
+              if (!isNaN(paidTimestamp) && paidTimestamp > 0) {
+                paymentDate = new Date(paidTimestamp).toLocaleDateString(
+                  "fr-FR",
+                  {
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                  }
+                );
+              }
+            }
 
-            await sendRenewalReminderEmail({
+            // URL du PDF de la facture (généré automatiquement par Stripe)
+            const invoicePdfUrl = paidInvoice.invoice_pdf;
+
+            // Récupérer l'URL du reçu Stripe via le charge
+            let receiptUrl = null;
+            try {
+              if (paidInvoice.charge) {
+                const charge = await stripe.charges.retrieve(
+                  paidInvoice.charge
+                );
+                receiptUrl = charge.receipt_url;
+                console.log(
+                  `🧾 [STRIPE WEBHOOK] Reçu Stripe trouvé: ${receiptUrl}`
+                );
+              } else if (paidInvoice.payment_intent) {
+                const paymentIntent = await stripe.paymentIntents.retrieve(
+                  paidInvoice.payment_intent
+                );
+                if (paymentIntent.latest_charge) {
+                  const charge = await stripe.charges.retrieve(
+                    paymentIntent.latest_charge
+                  );
+                  receiptUrl = charge.receipt_url;
+                  console.log(
+                    `🧾 [STRIPE WEBHOOK] Reçu Stripe trouvé via payment_intent: ${receiptUrl}`
+                  );
+                }
+              }
+            } catch (receiptError) {
+              console.warn(
+                `⚠️ [STRIPE WEBHOOK] Impossible de récupérer le reçu:`,
+                receiptError.message
+              );
+            }
+
+            // Envoyer l'email avec la facture et le reçu en pièce jointe
+            const { sendPaymentSucceededEmail } = await import(
+              "./auth-utils.js"
+            );
+
+            await sendPaymentSucceededEmail({
               to: customer.email,
               customerName: customer.name || customer.email,
-              plan: planName.toUpperCase(),
-              renewalDate: renewalDate,
-              amount: amount,
+              plan: planName,
+              amount,
+              invoiceNumber,
+              paymentDate,
+              nextRenewalDate,
+              invoicePdfUrl,
+              receiptUrl,
             });
 
             console.log(
-              `✅ [STRIPE WEBHOOK] Email de rappel renouvellement envoyé à ${customer.email}`
+              `✅ [STRIPE WEBHOOK] Email de paiement réussi envoyé à ${customer.email} avec facture PDF${receiptUrl ? " et reçu" : ""}`
             );
           } catch (emailError) {
             console.error(
-              `⚠️ [STRIPE WEBHOOK] Erreur envoi email rappel:`,
+              `⚠️ [STRIPE WEBHOOK] Erreur envoi email paiement réussi:`,
               emailError
             );
+            // Ne pas bloquer le webhook si l'email échoue
           }
-          break;
-
-        case "invoice.payment_succeeded":
-        case "invoice.paid":
-          console.log(`💰 [STRIPE WEBHOOK] Paiement facture réussi`);
-          // Ces événements sont gérés automatiquement par Stripe
-          // Pas besoin d'action supplémentaire
           break;
 
         case "invoice.created":
@@ -1006,7 +1252,9 @@ export const stripePlugin = stripe({
 export const organizationPlugin = organization({
   allowUserToCreateOrganization: true,
   organizationLimit: 5,
-  membershipLimit: 100,
+  // Limite fixe élevée - la vraie vérification se fait dans canInviteMember()
+  // Better Auth a des problèmes avec les limites dynamiques async
+  membershipLimit: 200,
   creatorRole: "owner",
   schema: {
     organization: {
@@ -1209,6 +1457,30 @@ export const organizationPlugin = organization({
         },
         quoteClientPositionRight: {
           type: "boolean",
+          input: true,
+          required: false,
+        },
+        // Organization type (business or accounting_firm)
+        organizationType: {
+          type: "string",
+          input: true,
+          required: false,
+        },
+        // Onboarding completion status
+        onboardingCompleted: {
+          type: "boolean",
+          input: true,
+          required: false,
+        },
+        // SIREN number
+        siren: {
+          type: "string",
+          input: true,
+          required: false,
+        },
+        // Activity sector
+        activitySector: {
+          type: "string",
           input: true,
           required: false,
         },

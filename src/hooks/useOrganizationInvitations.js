@@ -55,74 +55,52 @@ export const useOrganizationInvitations = () => {
 
   // Inviter un membre
   const inviteMember = useCallback(
-    async ({ email, role = "member" }) => {
+    async ({ email, role = "member", organizationId = null }) => {
       setInviting(true);
       try {
         if (!session?.user) {
           throw new Error("Utilisateur non connecté");
         }
 
-        // Récupérer l'organisation de l'utilisateur
-        const userOrg = getUserOrganization();
+        // Utiliser l'organizationId fourni ou récupérer l'organisation active
+        const userOrg = organizationId ? { id: organizationId } : getUserOrganization();
 
-        if (!userOrg) {
+        if (!userOrg?.id) {
           throw new Error("Aucune organisation trouvée pour cet utilisateur");
         }
 
-        // ✅ NOUVEAU : Vérifier les limites d'utilisateurs selon le plan
-        if (role !== "accountant") {
-          try {
-            const response = await fetch("/api/billing/check-user-limit", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ organizationId: userOrg.id }),
-            });
+        // ✅ Vérifier les limites selon le plan et le rôle (BLOQUANT)
+        try {
+          const response = await fetch("/api/billing/check-user-limit", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ organizationId: userOrg.id, role }),
+          });
 
-            const result = await response.json();
+          const result = await response.json();
 
-            if (!result.canAdd) {
-              toast.error(
-                result.reason ||
-                  `Limite d'utilisateurs atteinte pour votre plan. Passez à un plan supérieur pour inviter plus de collaborateurs.`
-              );
-              return { success: false, error: result.reason };
-            }
+          if (!result.canInvite) {
+            toast.error(result.reason || "Limite atteinte pour votre plan.");
+            return { success: false, error: result.reason };
+          }
 
+          // Afficher un avertissement si c'est un siège payant
+          if (result.isPaid) {
             console.log(
-              `✅ Limite vérifiée: ${result.currentCount}/${result.limit} utilisateurs`
+              `💰 Siège payant: ${result.additionalCost}€/mois supplémentaire`
             );
-          } catch (limitError) {
-            console.error(
-              "⚠️ Erreur vérification limite (non-bloquant):",
-              limitError
-            );
-            // Continuer quand même si la vérification échoue
+            // Note: On pourrait ajouter une confirmation ici si nécessaire
           }
-        }
 
-        // Validation spéciale pour les comptables
-        if (role === "accountant") {
-          // Vérifier qu'il n'y a pas déjà un comptable dans l'organisation
-          const collaboratorsResult = await getAllCollaborators(userOrg.id);
-
-          if (collaboratorsResult.success) {
-            const existingAccountant = collaboratorsResult.data.find(
-              (member) => member.role === "accountant"
-            );
-
-            if (existingAccountant) {
-              toast.error(
-                "Un comptable est déjà assigné à cette organisation. Vous ne pouvez avoir qu'un seul comptable par organisation."
-              );
-              return { success: false, error: "Comptable déjà existant" };
-            }
-          } else {
-            console.error(
-              "Erreur lors de la vérification des collaborateurs:",
-              collaboratorsResult.error
-            );
-            // Continuer quand même l'invitation si on ne peut pas vérifier
-          }
+          console.log(
+            `✅ Limite vérifiée pour ${role}: canInvite=${result.canInvite}`
+          );
+        } catch (limitError) {
+          console.error("❌ Erreur vérification limite:", limitError);
+          toast.error(
+            "Impossible de vérifier les limites. Veuillez réessayer."
+          );
+          return { success: false, error: "Erreur vérification limite" };
         }
 
         const { data, error } = await organization.inviteMember({
@@ -322,29 +300,115 @@ export const useOrganizationInvitations = () => {
     }
   }, []);
 
-  // Mettre à jour le rôle d'un membre
-  const updateMemberRole = useCallback(
-    async (memberId, role, organizationId = null) => {
+  // Renvoyer une invitation (annule l'ancienne et en crée une nouvelle)
+  const resendInvitation = useCallback(
+    async (email, role, invitationId) => {
       try {
-        const { data, error } = await organization.updateMemberRole({
-          memberId,
+        // 1. Annuler l'ancienne invitation silencieusement
+        if (invitationId) {
+          await organization.cancelInvitation({ invitationId });
+        }
+
+        // 2. Créer une nouvelle invitation
+        const userOrg = getUserOrganization();
+        if (!userOrg) {
+          toast.error("Aucune organisation trouvée");
+          return { success: false, error: "Aucune organisation trouvée" };
+        }
+
+        const { data, error } = await organization.inviteMember({
+          email,
           role,
-          organizationId,
+          organizationId: userOrg.id,
         });
 
         if (error) {
+          const errorMessage =
+            error.message || error.error || "Erreur lors du renvoi de l'invitation";
+          toast.error(errorMessage);
+          return { success: false, error };
+        }
+
+        toast.success(`Invitation renvoyée à ${email}`);
+        return { success: true, data };
+      } catch (error) {
+        toast.error(error.message || "Erreur lors du renvoi de l'invitation");
+        return { success: false, error: error.message };
+      }
+    },
+    [getUserOrganization]
+  );
+
+  // Mettre à jour le rôle d'un membre
+  const updateMemberRole = useCallback(
+    async (memberId, newRole, organizationId = null, currentRole = null) => {
+      try {
+        const userOrg = getUserOrganization();
+        const orgId = organizationId || userOrg?.id;
+
+        if (!orgId) {
+          toast.error("Aucune organisation trouvée");
+          return { success: false, error: "Aucune organisation trouvée" };
+        }
+
+        console.log("🔄 Mise à jour du rôle:", {
+          memberId,
+          currentRole,
+          newRole,
+          orgId,
+          type: typeof memberId,
+        });
+
+        // Vérifier les limites si changement vers comptable
+        if (newRole === "accountant") {
+          try {
+            const response = await fetch("/api/billing/check-role-change", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                organizationId: orgId,
+                memberId,
+                currentRole,
+                newRole,
+              }),
+            });
+
+            const result = await response.json();
+
+            if (!result.canChange) {
+              toast.error(result.reason || "Limite de comptables atteinte");
+              return { success: false, error: result.reason };
+            }
+          } catch (checkError) {
+            console.error("❌ Erreur vérification limite:", checkError);
+            toast.error("Impossible de vérifier les limites. Veuillez réessayer.");
+            return { success: false, error: "Erreur vérification limite" };
+          }
+        }
+
+        // Better Auth attend 'memberId' et 'newRole' comme paramètres
+        const { data, error } = await organization.updateMemberRole({
+          memberId: memberId,
+          newRole: newRole,
+          organizationId: orgId,
+        });
+
+        if (error) {
+          console.error("❌ Erreur updateMemberRole:", error);
           toast.error("Erreur lors de la mise à jour du rôle");
           return { success: false, error };
         }
 
+        console.log("✅ Rôle mis à jour avec succès:", data);
         toast.success("Rôle mis à jour avec succès");
         return { success: true, data };
       } catch (error) {
+        console.error("❌ Exception updateMemberRole:", error);
         toast.error(error.message || "Erreur lors de la mise à jour du rôle");
         return { success: false, error: error.message };
       }
     },
-    []
+    [getUserOrganization]
   );
 
   // Fonction pour récupérer tous les collaborateurs (membres + invitations)
@@ -440,6 +504,7 @@ export const useOrganizationInvitations = () => {
     getAllCollaborators,
     removeMember,
     cancelInvitation,
+    resendInvitation,
     updateMemberRole,
 
     // États

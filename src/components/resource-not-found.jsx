@@ -7,16 +7,13 @@ import { LoaderCircle } from "lucide-react";
 /**
  * Composant pour rediriger automatiquement vers la page parent
  * quand une ressource n'existe pas (typiquement après un changement d'organisation)
- * 
+ *
  * Exemples:
  * - /dashboard/outils/kanban/68e14533909f470e40a49754 → /dashboard/outils/kanban
  * - /dashboard/outils/factures/123/editer → /dashboard/outils/factures
  * - /dashboard/outils/devis/456 → /dashboard/outils/devis
  */
-export function ResourceNotFound({
-  listUrl,
-  homeUrl = "/dashboard/outils",
-}) {
+export function ResourceNotFound({ listUrl, homeUrl = "/dashboard" }) {
   const router = useRouter();
   const pathname = usePathname();
 
@@ -30,19 +27,23 @@ export function ResourceNotFound({
 
     // Sinon, extraire la page parent depuis l'URL actuelle
     // Exemple: /dashboard/outils/kanban/68e14533909f470e40a49754 → /dashboard/outils/kanban
-    const pathSegments = pathname.split('/').filter(Boolean);
-    
+    const pathSegments = pathname.split("/").filter(Boolean);
+
     if (pathSegments.length > 1) {
       // Retirer le dernier segment (l'ID de la ressource)
       pathSegments.pop();
-      
+
       // Si le dernier segment est "editer", "edit", "new", "nouveau", le retirer aussi
       const lastSegment = pathSegments[pathSegments.length - 1];
-      if (['editer', 'edit', 'new', 'nouveau', 'view', 'voir'].includes(lastSegment)) {
+      if (
+        ["editer", "edit", "new", "nouveau", "view", "voir"].includes(
+          lastSegment
+        )
+      ) {
         pathSegments.pop();
       }
-      
-      const parentUrl = '/' + pathSegments.join('/');
+
+      const parentUrl = "/" + pathSegments.join("/");
       console.log("🔄 Redirection vers la page parent:", parentUrl);
       router.replace(parentUrl);
     } else {

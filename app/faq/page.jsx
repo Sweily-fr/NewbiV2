@@ -5,7 +5,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { Separator } from "@/src/components/ui/separator";
-import HeroHeader from "@/src/components/blocks/hero-header";
+import { NewHeroNavbar } from "@/app/(main)/new/lp-home/NewHeroNavbar";
 import Footer7 from "@/src/components/footer7";
 import SEOHead from "@/src/components/seo/seo-head";
 import { JsonLd } from "@/src/components/seo/seo-metadata";
@@ -141,7 +141,7 @@ export default function FAQPage() {
       <SEOHead {...seoData} />
       <JsonLd jsonLd={seoData.jsonLd} />
       <div className="min-h-screen bg-white">
-      <HeroHeader />
+      <NewHeroNavbar />
       
       {/* Hero Section */}
       <div className="relative overflow-hidden bg-white pt-20">

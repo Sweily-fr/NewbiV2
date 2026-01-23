@@ -49,7 +49,7 @@ export function useFeatureAccess(featureName) {
       requiresCompanyInfo: true,
       requiresPaidSubscription: false,
     },
-    "gestion-depenses": {
+    transactions: {
       requiresPro: true,
       requiresCompanyInfo: false,
       requiresPaidSubscription: false,
@@ -106,7 +106,14 @@ export function useFeatureAccess(featureName) {
 
       // Vérifier si un abonnement payant est requis (pas de trial)
       if (config.requiresPaidSubscription) {
-        const isPaidSubscription = subscription?.status === "active";
+        // ✅ Accepter aussi les abonnements annulés mais encore dans la période payée (prorata)
+        const hasCanceledButValidSubscription =
+          subscription?.status === "canceled" &&
+          subscription?.periodEnd &&
+          new Date(subscription.periodEnd) > new Date();
+
+        const isPaidSubscription =
+          subscription?.status === "active" || hasCanceledButValidSubscription;
 
         if (!isPaidSubscription) {
           return {

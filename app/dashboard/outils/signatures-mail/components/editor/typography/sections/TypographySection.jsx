@@ -4,16 +4,22 @@ import React, { useState } from "react";
 import { Label } from "@/src/components/ui/label";
 import { Slider } from "@/src/components/ui/slider";
 import { Input } from "@/src/components/ui/input";
-import {
-  ChevronDown,
-  ChevronRight,
-  Bold,
-  Italic,
-  Underline,
-  Plus,
-  Minus,
-} from "lucide-react";
 import { Button } from "@/src/components/ui/button";
+import {
+  Plus,
+  X,
+  Search,
+  Type,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  AlignJustify,
+} from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/src/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -21,7 +27,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
-import { ToggleGroup, ToggleGroupItem } from "@/src/components/ui/toggle-group";
 import { ColorPicker } from "@/src/components/ui/color-picker";
 
 // Valeurs par défaut pour chaque champ
@@ -46,6 +51,11 @@ const fontOptions = [
   { value: "Tahoma, sans-serif", label: "Tahoma" },
 ];
 
+const weightOptions = [
+  { value: "400", label: "Normal" },
+  { value: "700", label: "Bold" },
+];
+
 const fieldLabels = {
   fullName: "Nom complet",
   position: "Poste",
@@ -56,30 +66,69 @@ const fieldLabels = {
   address: "Adresse",
 };
 
-function FieldTypographyControls({
-  fieldKey,
-  fieldLabel,
-  typography,
-  updateTypography,
-  isLast = false,
-}) {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const fieldTypo = typography?.[fieldKey] || {};
+// Liste des champs typographiques disponibles
+const TYPOGRAPHY_FIELDS = [
+  "fullName",
+  "position",
+  "email",
+  "phone",
+  "mobile",
+  "website",
+  "address",
+];
 
-  const updateField = (property, value) => {
-    // Si c'est la taille et qu'on efface tout, mettre 1
-    if (property === "fontSize" && (value === "" || value === null)) {
-      updateTypography({
-        ...typography,
-        [fieldKey]: {
-          ...fieldTypo,
-          [property]: 1,
-        },
-      });
-      return;
-    }
+export default function TypographySection({
+  signatureData,
+  updateSignatureData,
+}) {
+  // États pour les Popovers
+  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [openFieldPopover, setOpenFieldPopover] = useState(null);
+
+  const updateTypography = (newTypography) => {
+    updateSignatureData("typography", newTypography);
+  };
+
+  // Champs activés (ceux qui ont une entrée dans typography)
+  const activeFields = Object.keys(signatureData.typography || {});
+
+  // Champs disponibles pour l'ajout (filtrés par recherche)
+  const availableFields = TYPOGRAPHY_FIELDS.filter(
+    (field) => !activeFields.includes(field),
+  ).filter((field) =>
+    fieldLabels[field].toLowerCase().includes(searchQuery.toLowerCase()),
+  );
+
+  // Ajouter un champ typographique
+  const handleAddField = (fieldKey) => {
+    const updatedTypography = {
+      ...signatureData.typography,
+      [fieldKey]: {
+        fontFamily: "Arial, sans-serif",
+        fontSize: DEFAULT_FONT_SIZES[fieldKey],
+        fontWeight: "normal",
+        color: "#000000",
+        letterSpacing: 0,
+        lineHeight: 100,
+        textAlign: "left",
+      },
+    };
+    updateTypography(updatedTypography);
+  };
+
+  // Supprimer un champ typographique
+  const handleRemoveField = (fieldKey) => {
+    const updatedTypography = { ...signatureData.typography };
+    delete updatedTypography[fieldKey];
+    updateTypography(updatedTypography);
+  };
+
+  // Mettre à jour une propriété d'un champ
+  const updateField = (fieldKey, property, value) => {
+    const fieldTypo = signatureData.typography?.[fieldKey] || {};
     updateTypography({
-      ...typography,
+      ...signatureData.typography,
       [fieldKey]: {
         ...fieldTypo,
         [property]: value,
@@ -88,210 +137,327 @@ function FieldTypographyControls({
   };
 
   return (
-    <div className={`p-3 bg-gray-50/50 dark:bg-[#212121] dark:border dark:border-[#434343] dark:rounded-md ${!isLast ? 'border-b border-[#E5E5E5]' : ''}`}>
-      <div
-        className="flex items-center justify-between cursor-pointer"
-        onClick={() => setIsExpanded(!isExpanded)}
-      >
-        <Label className="text-xs">{fieldLabel}</Label>
-        <div className="flex items-center gap-2">
-          <div className="text-[10px] text-muted-foreground">
-            {fieldTypo.fontFamily?.split(",")[0] || "Arial"} •{" "}
-            {fieldTypo.fontSize || 12}px
-          </div>
-          {isExpanded ? (
-            <Minus className="h-3 w-3" />
-          ) : (
-            <Plus className="h-3 w-3" />
-          )}
-        </div>
+    <div className="flex flex-col gap-3 pb-6">
+      {/* Header avec titre et bouton + */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-medium">Typographie</h2>
+        <Popover open={isAddOpen} onOpenChange={setIsAddOpen}>
+          <PopoverTrigger asChild>
+            <button
+              className="h-6 w-6 flex items-center justify-center rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              title="Ajouter un champ typographique"
+            >
+              <Plus className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent
+            className="w-56 p-0 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-lg"
+            side="left"
+            align="start"
+            sideOffset={12}
+          >
+            {/* Barre de recherche */}
+            <div className="p-2 border-b border-gray-100 dark:border-gray-800">
+              <div className="flex items-center gap-2 px-2 py-1.5 bg-gray-50 dark:bg-gray-800 rounded-md">
+                <Search className="w-3.5 h-3.5 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Rechercher..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="flex-1 bg-transparent text-xs outline-none placeholder:text-gray-400"
+                />
+              </div>
+            </div>
+            {/* Liste des champs disponibles */}
+            <div className="max-h-64 overflow-y-auto py-1">
+              {availableFields.length > 0 ? (
+                availableFields.map((fieldKey) => (
+                  <button
+                    key={fieldKey}
+                    onClick={() => {
+                      handleAddField(fieldKey);
+                      setIsAddOpen(false);
+                      setSearchQuery("");
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                  >
+                    <Type className="w-4 h-4" />
+                    {fieldLabels[fieldKey]}
+                  </button>
+                ))
+              ) : (
+                <div className="px-3 py-2 text-xs text-gray-400">
+                  {activeFields.length === TYPOGRAPHY_FIELDS.length
+                    ? "Tous les champs sont ajoutés"
+                    : "Aucun résultat"}
+                </div>
+              )}
+            </div>
+          </PopoverContent>
+        </Popover>
       </div>
 
-      {isExpanded && (
-        <div className="mt-3 space-y-3">
-          {/* Police */}
-          <div className="flex items-center justify-between">
-            <Label className="text-xs text-muted-foreground">Police</Label>
-            <div>
-              <Select
-                value={fieldTypo.fontFamily || "Arial, sans-serif"}
-                onValueChange={(value) => updateField("fontFamily", value)}
-              >
-                <SelectTrigger className="h-8 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {fontOptions.map((font) => (
-                    <SelectItem key={font.value} value={font.value}>
-                      {font.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* Taille */}
-          <div className="flex items-center justify-between">
-            <Label className="text-xs text-muted-foreground">Taille</Label>
-            <div className="flex items-center gap-2 w-48">
-              <button
-                onClick={() => updateField("fontSize", DEFAULT_FONT_SIZES[fieldKey])}
-                className="h-8 w-8 flex items-center justify-center rounded-md bg-gradient-to-br from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200 border border-blue-200 hover:border-blue-300 transition-all shadow-sm hover:shadow-md flex-shrink-0"
-                title={`Réinitialiser à ${DEFAULT_FONT_SIZES[fieldKey]}`}
-              >
-                <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-              </button>
-              <Input
-                className="h-8 px-2 py-1 min-w-12"
-                style={{ width: `${Math.max(48, (fieldTypo.fontSize?.toString().length || 2) * 8 + 16)}px` }}
-                type="text"
-                inputMode="decimal"
-                value={fieldTypo.fontSize ?? 12}
-                onChange={(e) => {
-                  if (e.target.value === "") {
-                    updateField("fontSize", 1);
-                  } else {
-                    const numValue = parseInt(e.target.value);
-                    if (!isNaN(numValue) && numValue >= 1) {
-                      updateField("fontSize", numValue);
-                    }
+      {/* Liste des champs activés */}
+      {activeFields.length > 0 && (
+        <div className="flex flex-col gap-3 ml-4">
+          {activeFields.map((fieldKey) => {
+            const fieldTypo = signatureData.typography?.[fieldKey] || {};
+            return (
+              <div key={fieldKey} className="flex items-center justify-between">
+                <Label className="text-xs text-muted-foreground w-16">
+                  {fieldLabels[fieldKey]?.split(" ")[0] || fieldKey}
+                </Label>
+                <Popover
+                  open={openFieldPopover === fieldKey}
+                  onOpenChange={(open) =>
+                    setOpenFieldPopover(open ? fieldKey : null)
                   }
-                }}
-                onBlur={(e) => {
-                  if (e.target.value === "") {
-                    updateField("fontSize", 1);
-                  } else {
-                    const numValue = parseInt(e.target.value);
-                    if (!isNaN(numValue) && numValue >= 1) {
-                      updateField("fontSize", numValue);
-                    }
-                  }
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    if (e.target.value === "") {
-                      updateField("fontSize", 1);
-                    } else {
-                      const numValue = parseInt(e.target.value);
-                      if (!isNaN(numValue) && numValue >= 1) {
-                        updateField("fontSize", numValue);
-                      }
-                    }
-                  }
-                }}
-                aria-label="Taille de la police"
-                placeholder="12"
-              />
-              <Slider
-                className="grow h-4"
-                value={[fieldTypo.fontSize || 12]}
-                onValueChange={(value) => updateField("fontSize", value[0])}
-                min={8}
-                max={32}
-                step={1}
-                aria-label="Taille police"
-              />
-              <span className="text-xs text-muted-foreground">px</span>
-            </div>
-          </div>
+                >
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="h-8 w-40 px-1.5 justify-start gap-1.5"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Type className="w-4 h-4" />
+                        <span className="text-xs font-normal truncate">
+                          {fieldLabels[fieldKey]}
+                        </span>
+                      </div>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    className="w-72 p-0 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-lg"
+                    side="left"
+                    align="start"
+                    sideOffset={160}
+                  >
+                    {/* Header */}
+                    <div className="flex items-center justify-between px-3 py-2 border-b border-gray-100 dark:border-gray-800">
+                      <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                        {fieldLabels[fieldKey]}
+                      </span>
+                      <button
+                        onClick={() => setOpenFieldPopover(null)}
+                        className="h-5 w-5 flex items-center justify-center rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                      >
+                        <X className="w-3 h-3 text-gray-400" />
+                      </button>
+                    </div>
+                    {/* Contenu */}
+                    <div className="p-4 space-y-4">
+                      {/* Police */}
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs text-gray-600 dark:text-gray-400">
+                          Police
+                        </Label>
+                        <Select
+                          value={fieldTypo.fontFamily || "Arial, sans-serif"}
+                          onValueChange={(value) =>
+                            updateField(fieldKey, "fontFamily", value)
+                          }
+                        >
+                          <SelectTrigger className="h-7 w-32 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="z-[9999]">
+                            {fontOptions.map((font) => (
+                              <SelectItem key={font.value} value={font.value}>
+                                {font.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
 
-          {/* Couleur */}
-          <div className="flex items-center justify-between">
-            <Label className="text-xs text-muted-foreground">Couleur</Label>
-            <ColorPicker
-              color={fieldTypo.color || "#000000"}
-              onChange={(color) => updateField("color", color)}
-            />
-          </div>
+                      {/* Graisse */}
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs text-gray-600 dark:text-gray-400">
+                          Graisse
+                        </Label>
+                        <Select
+                          value={fieldTypo.fontWeight || "normal"}
+                          onValueChange={(value) =>
+                            updateField(fieldKey, "fontWeight", value)
+                          }
+                        >
+                          <SelectTrigger className="h-7 w-32 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="z-[9999]">
+                            {weightOptions.map((weight) => (
+                              <SelectItem
+                                key={weight.value}
+                                value={weight.value}
+                              >
+                                {weight.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
 
-          {/* Effets de texte */}
-          <div className="flex items-center justify-between">
-            <Label className="text-xs text-muted-foreground">Effets</Label>
-            <div className="flex items-center gap-0 w-30 border border-input rounded-md">
-              <button
-                type="button"
-                className={`flex-1 h-8 px-2 flex items-center justify-center border-r border-input first:rounded-l-md last:rounded-r-md last:border-r-0 transition-colors ${
-                  fieldTypo.fontWeight === "bold"
-                    ? "bg-accent text-accent-foreground"
-                    : "hover:bg-accent/50"
-                }`}
-                onClick={() =>
-                  updateField(
-                    "fontWeight",
-                    fieldTypo.fontWeight === "bold" ? "normal" : "bold"
-                  )
-                }
-              >
-                <Bold className="h-3 w-3" />
-              </button>
-              <button
-                type="button"
-                className={`flex-1 h-8 px-2 flex items-center justify-center border-r border-input first:rounded-l-md last:rounded-r-md last:border-r-0 transition-colors ${
-                  fieldTypo.fontStyle === "italic"
-                    ? "bg-accent text-accent-foreground"
-                    : "hover:bg-accent/50"
-                }`}
-                onClick={() =>
-                  updateField(
-                    "fontStyle",
-                    fieldTypo.fontStyle === "italic" ? "normal" : "italic"
-                  )
-                }
-              >
-                <Italic className="h-3 w-3" />
-              </button>
-              <button
-                type="button"
-                className={`flex-1 h-8 px-2 flex items-center justify-center border-r border-input first:rounded-l-md last:rounded-r-md last:border-r-0 transition-colors ${
-                  fieldTypo.textDecoration === "underline"
-                    ? "bg-accent text-accent-foreground"
-                    : "hover:bg-accent/50"
-                }`}
-                onClick={() =>
-                  updateField(
-                    "textDecoration",
-                    fieldTypo.textDecoration === "underline"
-                      ? "none"
-                      : "underline"
-                  )
-                }
-              >
-                <Underline className="h-3 w-3" />
-              </button>
-            </div>
-          </div>
+                      {/* Couleur */}
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs text-gray-600 dark:text-gray-400">
+                          Couleur
+                        </Label>
+                        <ColorPicker
+                          color={fieldTypo.color || "#000000"}
+                          onChange={(color) =>
+                            updateField(fieldKey, "color", color)
+                          }
+                        />
+                      </div>
+
+                      {/* Taille */}
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs text-gray-600 dark:text-gray-400">
+                          Taille
+                        </Label>
+                        <div className="flex items-center gap-1">
+                          <Input
+                            className="h-7 w-16 px-2 py-1 text-xs text-center"
+                            type="text"
+                            inputMode="decimal"
+                            value={
+                              fieldTypo.fontSize ?? DEFAULT_FONT_SIZES[fieldKey]
+                            }
+                            onChange={(e) => {
+                              const numValue = parseInt(e.target.value);
+                              if (!isNaN(numValue) && numValue >= 1) {
+                                updateField(fieldKey, "fontSize", numValue);
+                              }
+                            }}
+                          />
+                          <span className="text-xs text-gray-400">Px</span>
+                        </div>
+                      </div>
+
+                      {/* Letter spacing */}
+                      {/* <div className="flex items-center justify-between">
+                        <Label className="text-xs text-gray-600 dark:text-gray-400">
+                          Letter
+                        </Label>
+                        <div className="flex items-center gap-1">
+                          <Input
+                            className="h-7 w-16 px-2 py-1 text-xs text-center"
+                            type="text"
+                            inputMode="decimal"
+                            value={fieldTypo.letterSpacing ?? 0}
+                            onChange={(e) => {
+                              const numValue = parseInt(e.target.value);
+                              if (!isNaN(numValue)) {
+                                updateField(
+                                  fieldKey,
+                                  "letterSpacing",
+                                  numValue,
+                                );
+                              }
+                            }}
+                          />
+                          <span className="text-xs text-gray-400">Px</span>
+                        </div>
+                      </div> */}
+
+                      {/* Line height */}
+                      {/* <div className="flex items-center justify-between">
+                        <Label className="text-xs text-gray-600 dark:text-gray-400">
+                          Line
+                        </Label>
+                        <div className="flex items-center gap-1">
+                          <Input
+                            className="h-7 w-16 px-2 py-1 text-xs text-center"
+                            type="text"
+                            inputMode="decimal"
+                            value={fieldTypo.lineHeight ?? 100}
+                            onChange={(e) => {
+                              const numValue = parseInt(e.target.value);
+                              if (!isNaN(numValue) && numValue >= 1) {
+                                updateField(fieldKey, "lineHeight", numValue);
+                              }
+                            }}
+                          />
+                          <span className="text-xs text-gray-400">%</span>
+                        </div>
+                      </div> */}
+
+                      {/* Alignement */}
+                      {/* <div className="flex items-center justify-between">
+                        <Label className="text-xs text-gray-600 dark:text-gray-400">
+                          Alignement
+                        </Label>
+                        <div className="flex items-center gap-0 border border-gray-200 dark:border-gray-700 rounded-md">
+                          <button
+                            type="button"
+                            className={`h-7 w-8 flex items-center justify-center rounded-l-md transition-colors ${
+                              (fieldTypo.textAlign || "left") === "left"
+                                ? "bg-blue-100 text-blue-600"
+                                : "hover:bg-gray-100 dark:hover:bg-gray-800"
+                            }`}
+                            onClick={() =>
+                              updateField(fieldKey, "textAlign", "left")
+                            }
+                          >
+                            <AlignLeft className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            className={`h-7 w-8 flex items-center justify-center border-l border-gray-200 dark:border-gray-700 transition-colors ${
+                              fieldTypo.textAlign === "center"
+                                ? "bg-blue-100 text-blue-600"
+                                : "hover:bg-gray-100 dark:hover:bg-gray-800"
+                            }`}
+                            onClick={() =>
+                              updateField(fieldKey, "textAlign", "center")
+                            }
+                          >
+                            <AlignCenter className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            className={`h-7 w-8 flex items-center justify-center border-l border-gray-200 dark:border-gray-700 transition-colors ${
+                              fieldTypo.textAlign === "right"
+                                ? "bg-blue-100 text-blue-600"
+                                : "hover:bg-gray-100 dark:hover:bg-gray-800"
+                            }`}
+                            onClick={() =>
+                              updateField(fieldKey, "textAlign", "right")
+                            }
+                          >
+                            <AlignRight className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            className={`h-7 w-8 flex items-center justify-center border-l border-gray-200 dark:border-gray-700 rounded-r-md transition-colors ${
+                              fieldTypo.textAlign === "justify"
+                                ? "bg-blue-100 text-blue-600"
+                                : "hover:bg-gray-100 dark:hover:bg-gray-800"
+                            }`}
+                            onClick={() =>
+                              updateField(fieldKey, "textAlign", "justify")
+                            }
+                          >
+                            <AlignJustify className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div> */}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
+            );
+          })}
         </div>
       )}
-    </div>
-  );
-}
 
-export default function TypographySection({
-  signatureData,
-  updateSignatureData,
-}) {
-  const updateTypography = (newTypography) => {
-    updateSignatureData("typography", newTypography);
-  };
-
-  return (
-    <div className="flex flex-col gap-3">
-      <h2 className="text-sm font-medium">Typographie</h2>
-      <div className="flex flex-col gap-3">
-        {Object.entries(fieldLabels).map(([fieldKey, fieldLabel], index, array) => (
-          <FieldTypographyControls
-            key={fieldKey}
-            fieldKey={fieldKey}
-            fieldLabel={fieldLabel}
-            typography={signatureData.typography}
-            updateTypography={updateTypography}
-            isLast={index === array.length - 1}
-          />
-        ))}
-      </div>
+      {/* Message si aucun champ */}
+      {activeFields.length === 0 && (
+        <div className="ml-4 text-xs text-gray-400">
+          Cliquez sur + pour personnaliser la typographie
+        </div>
+      )}
     </div>
   );
 }
