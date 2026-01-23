@@ -1,9 +1,20 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/src/lib/auth-client";
 import { toast } from "@/src/components/ui/sonner";
+
+// Garde globale pour éviter les toasts multiples de session expirée
+let isSessionErrorShown = false;
+let sessionErrorTimeout = null;
+
+const resetSessionErrorGuard = () => {
+  sessionErrorTimeout = setTimeout(() => {
+    isSessionErrorShown = false;
+    sessionErrorTimeout = null;
+  }, 10000); // Reset après 10 secondes
+};
 
 /**
  * Hook pour valider la session utilisateur et détecter les révocations
@@ -13,8 +24,9 @@ export function useSessionValidator() {
   const router = useRouter();
   const checkingRef = useRef(false);
   const lastCheckRef = useRef(Date.now());
+  const mountedRef = useRef(true);
 
-  const checkSession = async () => {
+  const checkSession = useCallback(async () => {
     // Éviter les vérifications multiples simultanées
     if (checkingRef.current) {
       return;
@@ -36,33 +48,65 @@ export function useSessionValidator() {
         credentials: "include",
       });
 
-      if (!response.ok || response.status === 401) {
-        toast.error("Votre session a expiré. Veuillez vous reconnecter.");
+      // Vérifier si le composant est toujours monté
+      if (!mountedRef.current) {
+        return;
+      }
 
-        // Déconnecter proprement
-        await authClient.signOut({
-          fetchOptions: {
-            onSuccess: () => {
-              router.push("/auth/login");
+      if (!response.ok || response.status === 401) {
+        // Utiliser la garde pour éviter les toasts multiples
+        if (!isSessionErrorShown) {
+          isSessionErrorShown = true;
+          resetSessionErrorGuard();
+
+          toast.error("Votre session a expiré. Veuillez vous reconnecter.", {
+            id: "session-expired-toast", // ID unique pour éviter les doublons
+          });
+
+          // Nettoyer le token local
+          localStorage.removeItem("bearer_token");
+
+          // Déconnecter proprement
+          await authClient.signOut({
+            fetchOptions: {
+              onSuccess: () => {
+                if (mountedRef.current) {
+                  router.push("/auth/login");
+                }
+              },
+              onError: () => {
+                // Forcer la redirection même en cas d'erreur
+                if (mountedRef.current) {
+                  router.push("/auth/login");
+                }
+              },
             },
-            onError: () => {
-              // Forcer la redirection même en cas d'erreur
-              router.push("/auth/login");
-            },
-          },
-        });
+          });
+        }
       } else {
         const data = await response.json();
-        if (!data.valid) {
-          toast.error("Votre session a expiré. Veuillez vous reconnecter.");
+        if (!data.valid && !isSessionErrorShown) {
+          isSessionErrorShown = true;
+          resetSessionErrorGuard();
+
+          toast.error("Votre session a expiré. Veuillez vous reconnecter.", {
+            id: "session-expired-toast",
+          });
+
+          // Nettoyer le token local
+          localStorage.removeItem("bearer_token");
 
           await authClient.signOut({
             fetchOptions: {
               onSuccess: () => {
-                router.push("/auth/login");
+                if (mountedRef.current) {
+                  router.push("/auth/login");
+                }
               },
               onError: () => {
-                router.push("/auth/login");
+                if (mountedRef.current) {
+                  router.push("/auth/login");
+                }
               },
             },
           });
@@ -77,9 +121,11 @@ export function useSessionValidator() {
     } finally {
       checkingRef.current = false;
     }
-  };
+  }, [router]);
 
   useEffect(() => {
+    mountedRef.current = true;
+
     // Vérifier au focus de la fenêtre (throttlé par lastCheckRef)
     const handleFocus = () => {
       checkSession();
@@ -108,12 +154,13 @@ export function useSessionValidator() {
 
     // Cleanup
     return () => {
+      mountedRef.current = false;
       clearInterval(interval);
       clearTimeout(initialCheck);
       window.removeEventListener("focus", handleFocus);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [router]);
+  }, [checkSession]);
 
   return { checkSession };
 }

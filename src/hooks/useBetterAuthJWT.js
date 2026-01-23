@@ -46,7 +46,9 @@ export const useBetterAuthJWT = () => {
         await getSession({
           fetchOptions: {
             onSuccess: (ctx) => {
-              const token = ctx.response.headers.get("set-auth-token");
+              // Vérifier les deux noms de headers possibles (Better Auth peut utiliser l'un ou l'autre)
+              const token = ctx.response.headers.get("set-auth-jwt") ||
+                           ctx.response.headers.get("set-auth-token");
 
               if (token) {
                 setBearerToken(token);
@@ -88,7 +90,9 @@ export const useBetterAuthJWT = () => {
         await getSession({
           fetchOptions: {
             onSuccess: (ctx) => {
-              const token = ctx.response.headers.get("set-auth-token");
+              // Vérifier les deux noms de headers possibles
+              const token = ctx.response.headers.get("set-auth-jwt") ||
+                           ctx.response.headers.get("set-auth-token");
               if (token) {
                 setBearerToken(token);
                 localStorage.setItem("bearer_token", token);

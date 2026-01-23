@@ -225,9 +225,15 @@ const LoginForm = () => {
         }
 
         // Connexion normale sans 2FA
-        const authToken = ctx.response.headers.get("set-auth-token");
-        localStorage.setItem("bearer_token", authToken);
-        console.log("💾 [LOGIN] Token sauvegardé");
+        // Vérifier les deux noms de headers possibles (Better Auth peut utiliser l'un ou l'autre)
+        const authToken = ctx.response.headers.get("set-auth-jwt") ||
+                         ctx.response.headers.get("set-auth-token");
+        if (authToken) {
+          localStorage.setItem("bearer_token", authToken);
+          console.log("💾 [LOGIN] Token sauvegardé");
+        } else {
+          console.warn("⚠️ [LOGIN] Aucun token JWT trouvé dans les headers");
+        }
 
         // Vérifier la limite de sessions via l'API Better Auth
         console.log("🔍 [LOGIN] Vérification de la limite de sessions...");

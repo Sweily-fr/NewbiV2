@@ -55,17 +55,17 @@ export const useOrganizationInvitations = () => {
 
   // Inviter un membre
   const inviteMember = useCallback(
-    async ({ email, role = "member" }) => {
+    async ({ email, role = "member", organizationId = null }) => {
       setInviting(true);
       try {
         if (!session?.user) {
           throw new Error("Utilisateur non connecté");
         }
 
-        // Récupérer l'organisation de l'utilisateur
-        const userOrg = getUserOrganization();
+        // Utiliser l'organizationId fourni ou récupérer l'organisation active
+        const userOrg = organizationId ? { id: organizationId } : getUserOrganization();
 
-        if (!userOrg) {
+        if (!userOrg?.id) {
           throw new Error("Aucune organisation trouvée pour cet utilisateur");
         }
 
@@ -300,9 +300,48 @@ export const useOrganizationInvitations = () => {
     }
   }, []);
 
+  // Renvoyer une invitation (annule l'ancienne et en crée une nouvelle)
+  const resendInvitation = useCallback(
+    async (email, role, invitationId) => {
+      try {
+        // 1. Annuler l'ancienne invitation silencieusement
+        if (invitationId) {
+          await organization.cancelInvitation({ invitationId });
+        }
+
+        // 2. Créer une nouvelle invitation
+        const userOrg = getUserOrganization();
+        if (!userOrg) {
+          toast.error("Aucune organisation trouvée");
+          return { success: false, error: "Aucune organisation trouvée" };
+        }
+
+        const { data, error } = await organization.inviteMember({
+          email,
+          role,
+          organizationId: userOrg.id,
+        });
+
+        if (error) {
+          const errorMessage =
+            error.message || error.error || "Erreur lors du renvoi de l'invitation";
+          toast.error(errorMessage);
+          return { success: false, error };
+        }
+
+        toast.success(`Invitation renvoyée à ${email}`);
+        return { success: true, data };
+      } catch (error) {
+        toast.error(error.message || "Erreur lors du renvoi de l'invitation");
+        return { success: false, error: error.message };
+      }
+    },
+    [getUserOrganization]
+  );
+
   // Mettre à jour le rôle d'un membre
   const updateMemberRole = useCallback(
-    async (memberId, newRole, organizationId = null) => {
+    async (memberId, newRole, organizationId = null, currentRole = null) => {
       try {
         const userOrg = getUserOrganization();
         const orgId = organizationId || userOrg?.id;
@@ -314,10 +353,38 @@ export const useOrganizationInvitations = () => {
 
         console.log("🔄 Mise à jour du rôle:", {
           memberId,
+          currentRole,
           newRole,
           orgId,
           type: typeof memberId,
         });
+
+        // Vérifier les limites si changement vers comptable
+        if (newRole === "accountant") {
+          try {
+            const response = await fetch("/api/billing/check-role-change", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                organizationId: orgId,
+                memberId,
+                currentRole,
+                newRole,
+              }),
+            });
+
+            const result = await response.json();
+
+            if (!result.canChange) {
+              toast.error(result.reason || "Limite de comptables atteinte");
+              return { success: false, error: result.reason };
+            }
+          } catch (checkError) {
+            console.error("❌ Erreur vérification limite:", checkError);
+            toast.error("Impossible de vérifier les limites. Veuillez réessayer.");
+            return { success: false, error: "Erreur vérification limite" };
+          }
+        }
 
         // Better Auth attend 'memberId' et 'newRole' comme paramètres
         const { data, error } = await organization.updateMemberRole({
@@ -437,6 +504,7 @@ export const useOrganizationInvitations = () => {
     getAllCollaborators,
     removeMember,
     cancelInvitation,
+    resendInvitation,
     updateMemberRole,
 
     // États

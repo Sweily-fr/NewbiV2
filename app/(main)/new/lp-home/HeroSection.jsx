@@ -143,7 +143,7 @@ export default function HeroSection() {
               <img
                 src="/newbiLetter.png"
                 alt="newbi logo"
-                className="w-[70px] ml-[-12px] h-auto object-contain"
+                className="w-[60px] h-auto object-contain"
               />
             </div>
           </div>

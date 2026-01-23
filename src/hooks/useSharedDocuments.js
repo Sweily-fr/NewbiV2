@@ -12,12 +12,16 @@ export const GET_SHARED_DOCUMENTS = gql`
     $filter: SharedDocumentsFilterInput
     $limit: Int
     $offset: Int
+    $sortBy: String
+    $sortOrder: String
   ) {
     sharedDocuments(
       workspaceId: $workspaceId
       filter: $filter
       limit: $limit
       offset: $offset
+      sortBy: $sortBy
+      sortOrder: $sortOrder
     ) {
       success
       message
@@ -86,6 +90,57 @@ export const GET_SHARED_DOCUMENTS_STATS = gql`
       pendingDocuments
       classifiedDocuments
       archivedDocuments
+      totalFolders
+      totalSize
+      trashedDocuments
+      trashedFolders
+      trashedSize
+    }
+  }
+`;
+
+// Query pour la corbeille
+export const GET_TRASH_ITEMS = gql`
+  query GetTrashItems($workspaceId: ID!) {
+    trashItems(workspaceId: $workspaceId) {
+      success
+      message
+      documents {
+        id
+        name
+        originalName
+        description
+        fileUrl
+        fileKey
+        mimeType
+        fileSize
+        fileExtension
+        workspaceId
+        folderId
+        originalFolderId
+        uploadedBy
+        uploadedByName
+        status
+        trashedAt
+        daysUntilPermanentDeletion
+        createdAt
+        updatedAt
+      }
+      folders {
+        id
+        name
+        description
+        workspaceId
+        parentId
+        originalParentId
+        color
+        icon
+        trashedAt
+        daysUntilPermanentDeletion
+        createdAt
+        updatedAt
+      }
+      totalDocuments
       totalFolders
       totalSize
     }
@@ -186,6 +241,26 @@ export const MOVE_SHARED_DOCUMENTS = gql`
   }
 `;
 
+export const BULK_UPDATE_TAGS = gql`
+  mutation BulkUpdateTags(
+    $ids: [ID!]!
+    $workspaceId: ID!
+    $addTags: [String]
+    $removeTags: [String]
+  ) {
+    bulkUpdateTags(
+      ids: $ids
+      workspaceId: $workspaceId
+      addTags: $addTags
+      removeTags: $removeTags
+    ) {
+      success
+      message
+      updatedCount
+    }
+  }
+`;
+
 export const CREATE_SHARED_FOLDER = gql`
   mutation CreateSharedFolder(
     $workspaceId: ID!
@@ -238,6 +313,53 @@ export const DELETE_SHARED_FOLDER = gql`
   }
 `;
 
+// Mutations pour la corbeille
+export const RESTORE_FROM_TRASH = gql`
+  mutation RestoreFromTrash(
+    $workspaceId: ID!
+    $documentIds: [ID]
+    $folderIds: [ID]
+  ) {
+    restoreFromTrash(
+      workspaceId: $workspaceId
+      documentIds: $documentIds
+      folderIds: $folderIds
+    ) {
+      success
+      message
+      restoredDocuments
+      restoredFolders
+    }
+  }
+`;
+
+export const EMPTY_TRASH = gql`
+  mutation EmptyTrash($workspaceId: ID!) {
+    emptyTrash(workspaceId: $workspaceId) {
+      success
+      message
+    }
+  }
+`;
+
+export const PERMANENTLY_DELETE_DOCUMENTS = gql`
+  mutation PermanentlyDeleteDocuments($ids: [ID!]!, $workspaceId: ID!) {
+    permanentlyDeleteDocuments(ids: $ids, workspaceId: $workspaceId) {
+      success
+      message
+    }
+  }
+`;
+
+export const PERMANENTLY_DELETE_FOLDERS = gql`
+  mutation PermanentlyDeleteFolders($ids: [ID!]!, $workspaceId: ID!) {
+    permanentlyDeleteFolders(ids: $ids, workspaceId: $workspaceId) {
+      success
+      message
+    }
+  }
+`;
+
 // Hook principal avec pagination
 const DOCUMENTS_PER_PAGE = 50;
 
@@ -250,6 +372,12 @@ export function useSharedDocuments(filter = {}) {
   const status = filter.status;
   const sortBy = filter.sortBy || "createdAt";
   const sortOrder = filter.sortOrder || "desc";
+  // Filtres avancés
+  const fileType = filter.fileType;
+  const dateFrom = filter.dateFrom;
+  const dateTo = filter.dateTo;
+  const minSize = filter.minSize;
+  const maxSize = filter.maxSize;
 
   const { data, loading, error, refetch, fetchMore, networkStatus } = useQuery(
     GET_SHARED_DOCUMENTS,
@@ -260,9 +388,16 @@ export function useSharedDocuments(filter = {}) {
           folderId,
           search,
           status,
+          fileType,
+          dateFrom,
+          dateTo,
+          minSize,
+          maxSize,
         },
         limit: DOCUMENTS_PER_PAGE,
         offset: 0,
+        sortBy,
+        sortOrder,
       },
       skip: !workspaceId,
       fetchPolicy: "cache-and-network",
@@ -301,34 +436,8 @@ export function useSharedDocuments(filter = {}) {
     }
   };
 
-  // Trier les documents côté client
-  const sortedDocuments = React.useMemo(() => {
-    const docs = [...(data?.sharedDocuments?.documents || [])];
-
-    docs.sort((a, b) => {
-      let comparison = 0;
-
-      switch (sortBy) {
-        case "name":
-          comparison = (a.name || "").localeCompare(b.name || "");
-          break;
-        case "fileSize":
-          comparison = (a.fileSize || 0) - (b.fileSize || 0);
-          break;
-        case "createdAt":
-        default:
-          comparison = new Date(a.createdAt) - new Date(b.createdAt);
-          break;
-      }
-
-      return sortOrder === "asc" ? comparison : -comparison;
-    });
-
-    return docs;
-  }, [data?.sharedDocuments?.documents, sortBy, sortOrder]);
-
   return {
-    documents: sortedDocuments,
+    documents: data?.sharedDocuments?.documents || [],
     total: data?.sharedDocuments?.total || 0,
     hasMore: data?.sharedDocuments?.hasMore || false,
     loading,
@@ -381,6 +490,9 @@ export function useSharedDocumentsStats() {
       archivedDocuments: 0,
       totalFolders: 0,
       totalSize: 0,
+      trashedDocuments: 0,
+      trashedFolders: 0,
+      trashedSize: 0,
     },
     loading,
     refetch,
@@ -406,7 +518,7 @@ export function useUploadSharedDocument() {
         refetchQueries: [
           {
             query: GET_SHARED_DOCUMENTS,
-            variables: { workspaceId, filter: {}, limit: 100, offset: 0 },
+            variables: { workspaceId, filter: {}, limit: DOCUMENTS_PER_PAGE, offset: 0 },
           },
           { query: GET_SHARED_FOLDERS, variables: { workspaceId } },
           { query: GET_SHARED_DOCUMENTS_STATS, variables: { workspaceId } },
@@ -474,6 +586,46 @@ export function useMoveSharedDocuments() {
   return { move, loading };
 }
 
+// Hook pour mettre à jour les tags en masse
+export function useBulkUpdateTags() {
+  const { workspaceId } = useWorkspace();
+  const [updateTagsMutation, { loading }] = useMutation(BULK_UPDATE_TAGS);
+
+  const bulkUpdateTags = async (ids, { addTags, removeTags } = {}) => {
+    try {
+      const result = await updateTagsMutation({
+        variables: {
+          ids,
+          workspaceId,
+          addTags,
+          removeTags,
+        },
+        refetchQueries: [
+          {
+            query: GET_SHARED_DOCUMENTS,
+            variables: { workspaceId, filter: {}, limit: 50, offset: 0 },
+          },
+        ],
+        awaitRefetchQueries: false,
+      });
+
+      if (result.data?.bulkUpdateTags?.success) {
+        toast.success(result.data.bulkUpdateTags.message);
+        return true;
+      } else {
+        throw new Error(
+          result.data?.bulkUpdateTags?.message || "Erreur mise à jour des tags"
+        );
+      }
+    } catch (error) {
+      toast.error(error.message || "Erreur lors de la mise à jour des tags");
+      throw error;
+    }
+  };
+
+  return { bulkUpdateTags, loading };
+}
+
 // Hook pour supprimer des documents
 export function useDeleteSharedDocuments() {
   const { workspaceId } = useWorkspace();
@@ -486,15 +638,16 @@ export function useDeleteSharedDocuments() {
         refetchQueries: [
           {
             query: GET_SHARED_DOCUMENTS,
-            variables: { workspaceId, filter: {}, limit: 100, offset: 0 },
+            variables: { workspaceId, filter: {}, limit: DOCUMENTS_PER_PAGE, offset: 0 },
           },
           { query: GET_SHARED_FOLDERS, variables: { workspaceId } },
           { query: GET_SHARED_DOCUMENTS_STATS, variables: { workspaceId } },
+          { query: GET_TRASH_ITEMS, variables: { workspaceId } },
         ],
       });
 
       if (result.data?.deleteSharedDocuments?.success) {
-        toast.success("Document(s) supprimé(s)");
+        toast.success("Document(s) déplacé(s) vers la corbeille");
         return true;
       } else {
         throw new Error(
@@ -623,14 +776,15 @@ export function useDeleteSharedFolder() {
           { query: GET_SHARED_FOLDERS, variables: { workspaceId } },
           {
             query: GET_SHARED_DOCUMENTS,
-            variables: { workspaceId, filter: {}, limit: 100, offset: 0 },
+            variables: { workspaceId, filter: {}, limit: DOCUMENTS_PER_PAGE, offset: 0 },
           },
           { query: GET_SHARED_DOCUMENTS_STATS, variables: { workspaceId } },
+          { query: GET_TRASH_ITEMS, variables: { workspaceId } },
         ],
       });
 
       if (result.data?.deleteSharedFolder?.success) {
-        toast.success("Dossier supprimé");
+        toast.success("Dossier déplacé vers la corbeille");
         return true;
       } else {
         throw new Error(
@@ -662,7 +816,7 @@ export function useRenameSharedDocument() {
         refetchQueries: [
           {
             query: GET_SHARED_DOCUMENTS,
-            variables: { workspaceId, filter: {}, limit: 100, offset: 0 },
+            variables: { workspaceId, filter: {}, limit: DOCUMENTS_PER_PAGE, offset: 0 },
           },
         ],
       });
@@ -867,4 +1021,185 @@ export function useDownloadFolder() {
   };
 
   return { downloadFolder, loading };
+}
+
+// ==================== HOOKS POUR LA CORBEILLE ====================
+
+/**
+ * Hook pour récupérer les éléments de la corbeille
+ */
+export function useTrashItems() {
+  const { workspaceId } = useWorkspace();
+
+  const { data, loading, error, refetch } = useQuery(GET_TRASH_ITEMS, {
+    variables: { workspaceId },
+    skip: !workspaceId,
+    fetchPolicy: "cache-and-network",
+    notifyOnNetworkStatusChange: true,
+  });
+
+  const isInitialLoading = loading && !data;
+
+  return {
+    documents: data?.trashItems?.documents || [],
+    folders: data?.trashItems?.folders || [],
+    totalDocuments: data?.trashItems?.totalDocuments || 0,
+    totalFolders: data?.trashItems?.totalFolders || 0,
+    totalSize: data?.trashItems?.totalSize || 0,
+    loading,
+    isInitialLoading,
+    isRefetching: loading && !!data,
+    error,
+    refetch,
+  };
+}
+
+/**
+ * Hook pour restaurer des éléments de la corbeille
+ */
+export function useRestoreFromTrash() {
+  const { workspaceId } = useWorkspace();
+  const [restoreMutation, { loading }] = useMutation(RESTORE_FROM_TRASH);
+
+  const restore = async ({ documentIds = [], folderIds = [] } = {}) => {
+    try {
+      const result = await restoreMutation({
+        variables: {
+          workspaceId,
+          documentIds: documentIds.length > 0 ? documentIds : null,
+          folderIds: folderIds.length > 0 ? folderIds : null,
+        },
+        refetchQueries: [
+          { query: GET_TRASH_ITEMS, variables: { workspaceId } },
+          {
+            query: GET_SHARED_DOCUMENTS,
+            variables: { workspaceId, filter: {}, limit: DOCUMENTS_PER_PAGE, offset: 0 },
+          },
+          { query: GET_SHARED_FOLDERS, variables: { workspaceId } },
+          { query: GET_SHARED_DOCUMENTS_STATS, variables: { workspaceId } },
+        ],
+      });
+
+      if (result.data?.restoreFromTrash?.success) {
+        const { restoredDocuments, restoredFolders } = result.data.restoreFromTrash;
+        const parts = [];
+        if (restoredDocuments > 0) parts.push(`${restoredDocuments} document(s)`);
+        if (restoredFolders > 0) parts.push(`${restoredFolders} dossier(s)`);
+        toast.success(`${parts.join(" et ")} restauré(s)`);
+        return true;
+      } else {
+        throw new Error(
+          result.data?.restoreFromTrash?.message || "Erreur restauration"
+        );
+      }
+    } catch (error) {
+      toast.error(error.message || "Erreur lors de la restauration");
+      throw error;
+    }
+  };
+
+  return { restore, loading };
+}
+
+/**
+ * Hook pour vider la corbeille
+ */
+export function useEmptyTrash() {
+  const { workspaceId } = useWorkspace();
+  const [emptyMutation, { loading }] = useMutation(EMPTY_TRASH);
+
+  const emptyTrash = async () => {
+    try {
+      const result = await emptyMutation({
+        variables: { workspaceId },
+        refetchQueries: [
+          { query: GET_TRASH_ITEMS, variables: { workspaceId } },
+          { query: GET_SHARED_DOCUMENTS_STATS, variables: { workspaceId } },
+        ],
+      });
+
+      if (result.data?.emptyTrash?.success) {
+        toast.success("Corbeille vidée");
+        return true;
+      } else {
+        throw new Error(
+          result.data?.emptyTrash?.message || "Erreur vidage corbeille"
+        );
+      }
+    } catch (error) {
+      toast.error(error.message || "Erreur lors du vidage de la corbeille");
+      throw error;
+    }
+  };
+
+  return { emptyTrash, loading };
+}
+
+/**
+ * Hook pour supprimer définitivement des documents
+ */
+export function usePermanentlyDeleteDocuments() {
+  const { workspaceId } = useWorkspace();
+  const [deleteMutation, { loading }] = useMutation(PERMANENTLY_DELETE_DOCUMENTS);
+
+  const permanentlyDelete = async (ids) => {
+    try {
+      const result = await deleteMutation({
+        variables: { ids, workspaceId },
+        refetchQueries: [
+          { query: GET_TRASH_ITEMS, variables: { workspaceId } },
+          { query: GET_SHARED_DOCUMENTS_STATS, variables: { workspaceId } },
+        ],
+      });
+
+      if (result.data?.permanentlyDeleteDocuments?.success) {
+        toast.success("Document(s) supprimé(s) définitivement");
+        return true;
+      } else {
+        throw new Error(
+          result.data?.permanentlyDeleteDocuments?.message || "Erreur suppression"
+        );
+      }
+    } catch (error) {
+      toast.error(error.message || "Erreur lors de la suppression définitive");
+      throw error;
+    }
+  };
+
+  return { permanentlyDelete, loading };
+}
+
+/**
+ * Hook pour supprimer définitivement des dossiers
+ */
+export function usePermanentlyDeleteFolders() {
+  const { workspaceId } = useWorkspace();
+  const [deleteMutation, { loading }] = useMutation(PERMANENTLY_DELETE_FOLDERS);
+
+  const permanentlyDelete = async (ids) => {
+    try {
+      const result = await deleteMutation({
+        variables: { ids, workspaceId },
+        refetchQueries: [
+          { query: GET_TRASH_ITEMS, variables: { workspaceId } },
+          { query: GET_SHARED_FOLDERS, variables: { workspaceId } },
+          { query: GET_SHARED_DOCUMENTS_STATS, variables: { workspaceId } },
+        ],
+      });
+
+      if (result.data?.permanentlyDeleteFolders?.success) {
+        toast.success("Dossier(s) supprimé(s) définitivement");
+        return true;
+      } else {
+        throw new Error(
+          result.data?.permanentlyDeleteFolders?.message || "Erreur suppression"
+        );
+      }
+    } catch (error) {
+      toast.error(error.message || "Erreur lors de la suppression définitive");
+      throw error;
+    }
+  };
+
+  return { permanentlyDelete, loading };
 }

@@ -22,6 +22,12 @@ import {
   useMoveSharedFolder,
   useCreateDefaultFolders,
   useDownloadFolder,
+  useTrashItems,
+  useRestoreFromTrash,
+  useEmptyTrash,
+  usePermanentlyDeleteDocuments,
+  usePermanentlyDeleteFolders,
+  useBulkUpdateTags,
 } from "@/src/hooks/useSharedDocuments";
 import { DraggableTree } from "./components/DraggableTree";
 import { Button } from "@/src/components/ui/button";
@@ -111,7 +117,25 @@ import {
   Calendar,
   Info,
   ExternalLink,
+  RotateCcw,
+  AlertTriangle,
+  Filter,
+  FilterX,
+  GripVertical,
 } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/src/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/src/components/ui/select";
+import { Label } from "@/src/components/ui/label";
 import { toast } from "@/src/components/ui/sonner";
 import { Progress } from "@/src/components/ui/progress";
 import { cn } from "@/src/lib/utils";
@@ -122,7 +146,7 @@ import { fr } from "date-fns/locale";
 const getFileIcon = (
   mimeType,
   extension,
-  className = "size-4 text-muted-foreground"
+  className = "size-4 text-muted-foreground",
 ) => {
   if (mimeType?.startsWith("image/")) {
     return <FileImage className={className} />;
@@ -166,14 +190,118 @@ export default function DocumentsPartagesPage() {
   const [selectedFolder, setSelectedFolder] = useState(null); // null = "Documents à classer"
   const [selectedDocuments, setSelectedDocuments] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [viewMode, setViewMode] = useState("list"); // "list" ou "grid"
+  const [viewMode, setViewMode] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("documents-partages-viewMode") || "list";
+    }
+    return "list";
+  }); // "list" ou "grid"
   const [isUploading, setIsUploading] = useState(false);
   const [isDragActive, setIsDragActive] = useState(false);
   const fileInputRef = useRef(null);
+  const folderInputRef = useRef(null);
 
-  // Tri
-  const [sortBy, setSortBy] = useState("createdAt"); // "name", "fileSize", "createdAt"
-  const [sortOrder, setSortOrder] = useState("desc"); // "asc", "desc"
+  // Sidebar resize
+  const [sidebarWidth, setSidebarWidth] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("documents-partages-sidebarWidth");
+      return saved ? parseInt(saved, 10) : 256;
+    }
+    return 256;
+  });
+  const [isResizing, setIsResizing] = useState(false);
+  const sidebarRef = useRef(null);
+
+  // Tri - avec persistance localStorage
+  const [sortBy, setSortBy] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("documents-partages-sortBy") || "createdAt";
+    }
+    return "createdAt";
+  });
+  const [sortOrder, setSortOrder] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("documents-partages-sortOrder") || "desc";
+    }
+    return "desc";
+  });
+
+  // Persister les préférences de tri
+  useEffect(() => {
+    localStorage.setItem("documents-partages-sortBy", sortBy);
+    localStorage.setItem("documents-partages-sortOrder", sortOrder);
+  }, [sortBy, sortOrder]);
+
+  // Persister le mode d'affichage
+  useEffect(() => {
+    localStorage.setItem("documents-partages-viewMode", viewMode);
+  }, [viewMode]);
+
+  // Persister la largeur de la sidebar
+  useEffect(() => {
+    localStorage.setItem(
+      "documents-partages-sidebarWidth",
+      sidebarWidth.toString(),
+    );
+  }, [sidebarWidth]);
+
+  // Gestionnaire de redimensionnement de la sidebar
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (!isResizing) return;
+
+      const newWidth =
+        e.clientX - (sidebarRef.current?.getBoundingClientRect().left || 0);
+      // Contraintes min/max
+      const constrainedWidth = Math.min(Math.max(newWidth, 200), 500);
+      setSidebarWidth(constrainedWidth);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    };
+
+    if (isResizing) {
+      document.body.style.cursor = "col-resize";
+      document.body.style.userSelect = "none";
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
+    }
+
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isResizing]);
+
+  // Filtres avancés
+  const [filterFileType, setFilterFileType] = useState("");
+  const [filterDateFrom, setFilterDateFrom] = useState("");
+  const [filterDateTo, setFilterDateTo] = useState("");
+  const [filterMinSize, setFilterMinSize] = useState("");
+  const [filterMaxSize, setFilterMaxSize] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
+
+  // Vérifier si des filtres sont actifs
+  const hasActiveFilters =
+    filterFileType ||
+    filterDateFrom ||
+    filterDateTo ||
+    filterMinSize ||
+    filterMaxSize ||
+    filterStatus;
+
+  // Fonction pour réinitialiser les filtres
+  const clearFilters = () => {
+    setFilterFileType("");
+    setFilterDateFrom("");
+    setFilterDateTo("");
+    setFilterMinSize("");
+    setFilterMaxSize("");
+    setFilterStatus("");
+  };
 
   // Upload progress
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -201,6 +329,15 @@ export default function DocumentsPartagesPage() {
   // Debounced search
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const searchTimeoutRef = useRef(null);
+
+  // Corbeille (Trash)
+  const [showTrash, setShowTrash] = useState(false);
+  const [selectedTrashDocuments, setSelectedTrashDocuments] = useState([]);
+  const [selectedTrashFolders, setSelectedTrashFolders] = useState([]);
+  const [showEmptyTrashModal, setShowEmptyTrashModal] = useState(false);
+  const [showPermanentDeleteModal, setShowPermanentDeleteModal] =
+    useState(false);
+  const [expandedTrashFolders, setExpandedTrashFolders] = useState([]);
 
   // Debounce search input
   useEffect(() => {
@@ -230,9 +367,16 @@ export default function DocumentsPartagesPage() {
     loadMore,
   } = useSharedDocuments({
     folderId: selectedFolder,
-    search: debouncedSearch || undefined, // Use debounced search for server-side filtering
+    search: debouncedSearch || undefined,
     sortBy,
     sortOrder,
+    // Filtres avancés
+    fileType: filterFileType || undefined,
+    dateFrom: filterDateFrom || undefined,
+    dateTo: filterDateTo || undefined,
+    minSize: filterMinSize ? parseInt(filterMinSize) * 1024 : undefined, // Convertir KB en bytes
+    maxSize: filterMaxSize ? parseInt(filterMaxSize) * 1024 : undefined,
+    status: filterStatus || undefined,
   });
 
   // Tous les documents (pour le tree)
@@ -266,26 +410,71 @@ export default function DocumentsPartagesPage() {
   const { update: updateDocument, loading: updateDocLoading } =
     useUpdateSharedDocument();
   const { moveFolder, loading: moveFolderLoading } = useMoveSharedFolder();
-  const { downloadFolder, loading: downloadFolderLoading } = useDownloadFolder();
-  const { createDefaultFolders, isCreating: isCreatingDefaultFolders, workspaceId } =
-    useCreateDefaultFolders();
+  const { downloadFolder, loading: downloadFolderLoading } =
+    useDownloadFolder();
+  const {
+    createDefaultFolders,
+    isCreating: isCreatingDefaultFolders,
+    workspaceId,
+  } = useCreateDefaultFolders();
+
+  // Hooks pour la corbeille
+  const {
+    documents: trashDocuments,
+    folders: trashFolders,
+    totalDocuments: trashTotalDocuments,
+    totalFolders: trashTotalFolders,
+    totalSize: trashTotalSize,
+    loading: trashLoading,
+    isInitialLoading: trashInitialLoading,
+    refetch: refetchTrash,
+  } = useTrashItems();
+  const { restore: restoreFromTrash, loading: restoreLoading } =
+    useRestoreFromTrash();
+  const { emptyTrash, loading: emptyTrashLoading } = useEmptyTrash();
+  const {
+    permanentlyDelete: permanentlyDeleteDocs,
+    loading: permanentDeleteDocsLoading,
+  } = usePermanentlyDeleteDocuments();
+  const {
+    permanentlyDelete: permanentlyDeleteFolders,
+    loading: permanentDeleteFoldersLoading,
+  } = usePermanentlyDeleteFolders();
+  const { bulkUpdateTags, loading: bulkTagsLoading } = useBulkUpdateTags();
+
+  // État pour la gestion des tags en masse
+  const [showBulkTagsModal, setShowBulkTagsModal] = useState(false);
+  const [bulkTagsToAdd, setBulkTagsToAdd] = useState("");
+  const [bulkTagsToRemove, setBulkTagsToRemove] = useState([]);
+
+  // État pour la prévisualisation de documents
+  const [previewDocument, setPreviewDocument] = useState(null);
+
+  // Vérifier si un document peut être prévisualisé
+  const canPreview = (doc) => {
+    if (!doc) return false;
+    const mimeType = doc.mimeType || "";
+    return mimeType.startsWith("image/") || mimeType === "application/pdf";
+  };
 
   // Créer les dossiers par défaut si aucun dossier n'existe
-  const [defaultFoldersCreated, setDefaultFoldersCreated] = useState(false);
+  // Utiliser un ref pour éviter les race conditions (mise à jour synchrone)
+  const defaultFoldersInitiatedRef = useRef(false);
 
   useEffect(() => {
     const initDefaultFolders = async () => {
       // Ne créer les dossiers par défaut que si:
       // 1. workspaceId est disponible
       // 2. Les dossiers ont été chargés (pas en loading initial)
-      // 3. On n'a pas déjà essayé de les créer
+      // 3. On n'a pas déjà initié la création (ref synchrone)
       if (
         workspaceId &&
         !foldersInitialLoading &&
-        !defaultFoldersCreated &&
+        !defaultFoldersInitiatedRef.current &&
         !isCreatingDefaultFolders
       ) {
-        setDefaultFoldersCreated(true);
+        // Marquer immédiatement comme initié (évite les race conditions)
+        defaultFoldersInitiatedRef.current = true;
         // Passer les noms des dossiers existants pour éviter les doublons
         const existingNames = folders.map((f) => f.name);
         const created = await createDefaultFolders(existingNames);
@@ -300,23 +489,14 @@ export default function DocumentsPartagesPage() {
     workspaceId,
     foldersInitialLoading,
     folders,
-    defaultFoldersCreated,
     isCreatingDefaultFolders,
     createDefaultFolders,
     refetchFolders,
   ]);
 
-  // Filtrer les documents par recherche
-  const filteredDocuments = useMemo(() => {
-    if (!searchQuery) return documents;
-    const query = searchQuery.toLowerCase();
-    return documents.filter(
-      (doc) =>
-        doc.name.toLowerCase().includes(query) ||
-        doc.originalName?.toLowerCase().includes(query) ||
-        doc.description?.toLowerCase().includes(query)
-    );
-  }, [documents, searchQuery]);
+  // Les documents sont déjà filtrés côté serveur via debouncedSearch
+  // On utilise directement les documents retournés par l'API
+  const filteredDocuments = documents;
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -383,7 +563,7 @@ export default function DocumentsPartagesPage() {
         console.error("Erreur déplacement document:", error);
       }
     },
-    [move, refetchFolders, refetchAllDocs, refetchDocs]
+    [move, refetchFolders, refetchAllDocs, refetchDocs],
   );
 
   // Handler pour le déplacement de dossiers via drag & drop
@@ -398,7 +578,7 @@ export default function DocumentsPartagesPage() {
         console.error("Erreur déplacement dossier:", error);
       }
     },
-    [moveFolder, refetchFolders, refetchAllDocs, refetchDocs]
+    [moveFolder, refetchFolders, refetchAllDocs, refetchDocs],
   );
 
   // État pour le context menu du tree
@@ -440,7 +620,7 @@ export default function DocumentsPartagesPage() {
         }, 500);
       }
     },
-    [upload, selectedFolder, refetchDocs, refetchAllDocs, refetchFolders]
+    [upload, selectedFolder, refetchDocs, refetchAllDocs, refetchFolders],
   );
 
   // Gestion du drag & drop natif
@@ -464,7 +644,7 @@ export default function DocumentsPartagesPage() {
       const files = Array.from(e.dataTransfer.files);
       handleFileUpload(files);
     },
-    [handleFileUpload]
+    [handleFileUpload],
   );
 
   const handleFileInputChange = useCallback(
@@ -473,7 +653,7 @@ export default function DocumentsPartagesPage() {
       handleFileUpload(files);
       e.target.value = ""; // Reset input
     },
-    [handleFileUpload]
+    [handleFileUpload],
   );
 
   const openFileDialog = () => {
@@ -481,12 +661,40 @@ export default function DocumentsPartagesPage() {
   };
 
   // Sélection de documents
+  const lastSelectedIndexRef = useRef(null);
+
   const toggleDocumentSelection = (docId) => {
     setSelectedDocuments((prev) =>
       prev.includes(docId)
         ? prev.filter((id) => id !== docId)
-        : [...prev, docId]
+        : [...prev, docId],
     );
+  };
+
+  // Sélection avancée avec Shift+clic et Ctrl/Cmd+clic
+  const handleDocumentClick = (docId, event) => {
+    const currentIndex = filteredDocuments.findIndex((d) => d.id === docId);
+
+    if (event.shiftKey && lastSelectedIndexRef.current !== null) {
+      // Sélection par plage avec Shift
+      const start = Math.min(lastSelectedIndexRef.current, currentIndex);
+      const end = Math.max(lastSelectedIndexRef.current, currentIndex);
+      const rangeIds = filteredDocuments.slice(start, end + 1).map((d) => d.id);
+
+      setSelectedDocuments((prev) => {
+        const newSelection = new Set(prev);
+        rangeIds.forEach((id) => newSelection.add(id));
+        return [...newSelection];
+      });
+    } else if (event.ctrlKey || event.metaKey) {
+      // Toggle avec Ctrl/Cmd
+      toggleDocumentSelection(docId);
+      lastSelectedIndexRef.current = currentIndex;
+    } else {
+      // Clic simple - sélectionne uniquement ce document
+      setSelectedDocuments([docId]);
+      lastSelectedIndexRef.current = currentIndex;
+    }
   };
 
   const toggleSelectAll = () => {
@@ -635,6 +843,116 @@ export default function DocumentsPartagesPage() {
     }
   };
 
+  // === Trash operations ===
+  const handleRestoreItems = async () => {
+    try {
+      await restoreFromTrash({
+        documentIds: selectedTrashDocuments,
+        folderIds: selectedTrashFolders,
+      });
+      setSelectedTrashDocuments([]);
+      setSelectedTrashFolders([]);
+      refetchDocs();
+      refetchAllDocs();
+      refetchFolders();
+    } catch (error) {
+      console.error("Erreur restauration:", error);
+    }
+  };
+
+  const handleEmptyTrash = async () => {
+    try {
+      await emptyTrash();
+      setShowEmptyTrashModal(false);
+      setSelectedTrashDocuments([]);
+      setSelectedTrashFolders([]);
+    } catch (error) {
+      console.error("Erreur vidage corbeille:", error);
+    }
+  };
+
+  const handlePermanentDelete = async () => {
+    try {
+      if (selectedTrashDocuments.length > 0) {
+        await permanentlyDeleteDocs(selectedTrashDocuments);
+      }
+      if (selectedTrashFolders.length > 0) {
+        await permanentlyDeleteFolders(selectedTrashFolders);
+      }
+      setShowPermanentDeleteModal(false);
+      setSelectedTrashDocuments([]);
+      setSelectedTrashFolders([]);
+    } catch (error) {
+      console.error("Erreur suppression définitive:", error);
+    }
+  };
+
+  const toggleTrashDocumentSelection = (docId) => {
+    setSelectedTrashDocuments((prev) =>
+      prev.includes(docId)
+        ? prev.filter((id) => id !== docId)
+        : [...prev, docId],
+    );
+  };
+
+  const toggleTrashFolderSelection = (folderId) => {
+    setSelectedTrashFolders((prev) =>
+      prev.includes(folderId)
+        ? prev.filter((id) => id !== folderId)
+        : [...prev, folderId],
+    );
+  };
+
+  const selectAllTrashItems = () => {
+    const allFolderIds = trashFolders.map((f) => f.id);
+    const orphanDocIds = orphanTrashDocuments.map((d) => d.id);
+    if (
+      selectedTrashDocuments.length === orphanDocIds.length &&
+      selectedTrashFolders.length === allFolderIds.length
+    ) {
+      setSelectedTrashDocuments([]);
+      setSelectedTrashFolders([]);
+    } else {
+      setSelectedTrashDocuments(orphanDocIds);
+      setSelectedTrashFolders(allFolderIds);
+    }
+  };
+
+  // Calculer le nombre d'éléments "racine" dans la corbeille (dossiers + documents orphelins)
+  // Documents orphelins = documents dont le dossier parent n'est pas dans la corbeille
+  const trashedFolderIds = useMemo(
+    () => trashFolders.map((f) => f.id),
+    [trashFolders],
+  );
+
+  const orphanTrashDocuments = useMemo(
+    () =>
+      trashDocuments.filter(
+        (doc) =>
+          !doc.originalFolderId ||
+          !trashedFolderIds.includes(doc.originalFolderId),
+      ),
+    [trashDocuments, trashedFolderIds],
+  );
+
+  const getDocumentsInTrashFolder = useCallback(
+    (folderId) =>
+      trashDocuments.filter((doc) => doc.originalFolderId === folderId),
+    [trashDocuments],
+  );
+
+  const trashItemsCount = trashFolders.length + orphanTrashDocuments.length;
+  const selectedTrashCount =
+    selectedTrashDocuments.length + selectedTrashFolders.length;
+
+  const toggleTrashFolderExpanded = (folderId) => {
+    setExpandedTrashFolders((prev) =>
+      prev.includes(folderId)
+        ? prev.filter((id) => id !== folderId)
+        : [...prev, folderId],
+    );
+  };
+
   // Nom du dossier sélectionné
   const selectedFolderName = useMemo(() => {
     if (selectedFolder === null) return "Documents à classer";
@@ -677,7 +995,8 @@ export default function DocumentsPartagesPage() {
 
   // Get sort icon
   const getSortIcon = (field) => {
-    if (sortBy !== field) return <ArrowUpDown className="h-3 w-3 text-muted-foreground" />;
+    if (sortBy !== field)
+      return <ArrowUpDown className="h-3 w-3 text-muted-foreground" />;
     return sortOrder === "asc" ? (
       <ArrowUp className="h-3 w-3" />
     ) : (
@@ -698,6 +1017,15 @@ export default function DocumentsPartagesPage() {
         multiple
         onChange={handleFileInputChange}
         accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv"
+        className="hidden"
+      />
+      <input
+        ref={folderInputRef}
+        type="file"
+        webkitdirectory=""
+        directory=""
+        multiple
+        onChange={handleFileInputChange}
         className="hidden"
       />
 
@@ -731,28 +1059,34 @@ export default function DocumentsPartagesPage() {
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
-              <ButtonGroup>
-                <Button
-                  onClick={openFileDialog}
-                  disabled={isUploading || uploadLoading}
-                  className="cursor-pointer font-normal bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
-                >
-                  Ajouter
-                </Button>
-                <ButtonGroupSeparator />
-                <Button
-                  onClick={openFileDialog}
-                  disabled={isUploading || uploadLoading}
-                  size="icon"
-                  className="cursor-pointer bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
-                >
-                  {isUploading || uploadLoading ? (
-                    <LoaderCircle className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Plus size={16} aria-hidden="true" />
-                  )}
-                </Button>
-              </ButtonGroup>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    disabled={isUploading || uploadLoading}
+                    className="cursor-pointer font-normal bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90 gap-2"
+                  >
+                    {isUploading || uploadLoading ? (
+                      <LoaderCircle className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Plus size={16} aria-hidden="true" />
+                    )}
+                    Ajouter
+                    <ChevronDown className="h-4 w-4 opacity-50" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={openFileDialog}>
+                    <File className="h-4 w-4 mr-2" />
+                    Importer des fichiers
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => folderInputRef.current?.click()}
+                  >
+                    <Folder className="h-4 w-4 mr-2" />
+                    Importer un dossier
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
 
@@ -777,7 +1111,11 @@ export default function DocumentsPartagesPage() {
       {/* Main content */}
       <div className="flex-1 flex overflow-hidden">
         {/* Sidebar - Tree avec Dossiers et Documents */}
-        <div className="w-64 border-r bg-muted/20 flex-shrink-0 flex flex-col">
+        <div
+          ref={sidebarRef}
+          className="border-r bg-muted/20 flex-shrink-0 flex flex-col relative overflow-hidden"
+          style={{ width: sidebarWidth, minWidth: sidebarWidth, maxWidth: sidebarWidth }}
+        >
           <div className="px-3 h-14 border-b flex items-center justify-between">
             <span className="text-xs font-medium text-muted-foreground/80 uppercase tracking-wide">
               Explorateur
@@ -794,7 +1132,7 @@ export default function DocumentsPartagesPage() {
               <FolderPlus className="h-3.5 w-3.5" />
             </Button>
           </div>
-          <ScrollArea className="flex-1">
+          <ScrollArea className="flex-1 w-full">
             {foldersInitialLoading || allDocsInitialLoading ? (
               <div className="space-y-2 p-2">
                 {[1, 2, 3, 4, 5].map((i) => (
@@ -802,7 +1140,7 @@ export default function DocumentsPartagesPage() {
                 ))}
               </div>
             ) : (
-              <div className="pt-2">
+              <div className="pt-2 pb-2 overflow-hidden">
                 <DraggableTree
                   folders={folders}
                   documents={allDocuments}
@@ -810,11 +1148,19 @@ export default function DocumentsPartagesPage() {
                   selectedFolder={selectedFolder}
                   onMove={handleTreeMove}
                   onMoveFolder={handleTreeMoveFolder}
-                  onSelectFolder={setSelectedFolder}
+                  onSelectFolder={(folderId) => {
+                    setSelectedFolder(folderId);
+                    setShowTrash(false);
+                  }}
                   onSelectDocument={(docId) => setSelectedDocuments([docId])}
                   onContextMenu={(e, itemId, item) => {
                     e.preventDefault();
-                    setTreeContextMenu({ x: e.clientX, y: e.clientY, itemId, item });
+                    setTreeContextMenu({
+                      x: e.clientX,
+                      y: e.clientY,
+                      itemId,
+                      item,
+                    });
                   }}
                 />
 
@@ -837,39 +1183,49 @@ export default function DocumentsPartagesPage() {
                       />
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start" side="bottom">
-                      {treeContextMenu.item.isFolder && !treeContextMenu.item.isInbox && (
-                        <>
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setNewFolderParentId(treeContextMenu.itemId);
-                              setShowNewFolderModal(true);
-                              setTreeContextMenu(null);
-                            }}
-                          >
-                            <FolderPlus className="size-4 mr-2" />
-                            Nouveau sous-dossier
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => {
-                              downloadFolder(treeContextMenu.itemId, treeContextMenu.item.name);
-                              setTreeContextMenu(null);
-                            }}
-                            disabled={downloadFolderLoading}
-                          >
-                            <Download className="size-4 mr-2" />
-                            {downloadFolderLoading ? "Téléchargement..." : "Télécharger en ZIP"}
-                          </DropdownMenuItem>
-                          {/* Separator seulement si Renommer ou Supprimer sera affiché */}
-                          {!treeContextMenu.item.isSystem && <DropdownMenuSeparator />}
-                        </>
-                      )}
+                      {treeContextMenu.item.isFolder &&
+                        !treeContextMenu.item.isInbox && (
+                          <>
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setNewFolderParentId(treeContextMenu.itemId);
+                                setShowNewFolderModal(true);
+                                setTreeContextMenu(null);
+                              }}
+                            >
+                              <FolderPlus className="size-4 mr-2" />
+                              Nouveau sous-dossier
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => {
+                                downloadFolder(
+                                  treeContextMenu.itemId,
+                                  treeContextMenu.item.name,
+                                );
+                                setTreeContextMenu(null);
+                              }}
+                              disabled={downloadFolderLoading}
+                            >
+                              <Download className="size-4 mr-2" />
+                              {downloadFolderLoading
+                                ? "Téléchargement..."
+                                : "Télécharger en ZIP"}
+                            </DropdownMenuItem>
+                            {/* Separator seulement si Renommer ou Supprimer sera affiché */}
+                            {!treeContextMenu.item.isSystem && (
+                              <DropdownMenuSeparator />
+                            )}
+                          </>
+                        )}
                       {/* Renommer - pas pour les dossiers système */}
                       {!treeContextMenu.item.isSystem && (
                         <DropdownMenuItem
                           onClick={() => {
                             const isFolder = treeContextMenu.item.isFolder;
                             const itemId = treeContextMenu.itemId;
-                            const id = isFolder ? itemId : itemId.replace("doc-", "");
+                            const id = isFolder
+                              ? itemId
+                              : itemId.replace("doc-", "");
                             setItemToRename({
                               id,
                               name: treeContextMenu.item.name,
@@ -888,7 +1244,10 @@ export default function DocumentsPartagesPage() {
                         <DropdownMenuItem
                           onClick={() => {
                             if (treeContextMenu.item.data?.fileUrl) {
-                              window.open(treeContextMenu.item.data.fileUrl, "_blank");
+                              window.open(
+                                treeContextMenu.item.data.fileUrl,
+                                "_blank",
+                              );
                             }
                             setTreeContextMenu(null);
                           }}
@@ -898,34 +1257,77 @@ export default function DocumentsPartagesPage() {
                         </DropdownMenuItem>
                       )}
                       {/* Supprimer - pas pour inbox ni dossiers système */}
-                      {!treeContextMenu.item.isInbox && !treeContextMenu.item.isSystem && (
-                        <>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            className="text-destructive focus:text-destructive"
-                            onClick={() => {
-                              if (treeContextMenu.item.isFolder) {
-                                setFolderToDelete(treeContextMenu.itemId);
-                                setShowDeleteFolderModal(true);
-                              } else {
-                                const docId = treeContextMenu.itemId.replace("doc-", "");
-                                setSelectedDocuments([docId]);
-                                setShowDeleteModal(true);
-                              }
-                              setTreeContextMenu(null);
-                            }}
-                          >
-                            <Trash2 className="size-4 mr-2" />
-                            Supprimer
-                          </DropdownMenuItem>
-                        </>
-                      )}
+                      {!treeContextMenu.item.isInbox &&
+                        !treeContextMenu.item.isSystem && (
+                          <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="text-destructive focus:text-destructive"
+                              onClick={() => {
+                                if (treeContextMenu.item.isFolder) {
+                                  setFolderToDelete(treeContextMenu.itemId);
+                                  setShowDeleteFolderModal(true);
+                                } else {
+                                  const docId = treeContextMenu.itemId.replace(
+                                    "doc-",
+                                    "",
+                                  );
+                                  setSelectedDocuments([docId]);
+                                  setShowDeleteModal(true);
+                                }
+                                setTreeContextMenu(null);
+                              }}
+                            >
+                              <Trash2 className="size-4 mr-2" />
+                              Supprimer
+                            </DropdownMenuItem>
+                          </>
+                        )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 )}
               </div>
             )}
           </ScrollArea>
+
+          {/* Corbeille button */}
+          <div className="px-2 py-2 border-t">
+            <button
+              onClick={() => {
+                setShowTrash(true);
+                setSelectedFolder(null);
+              }}
+              className={cn(
+                "w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors",
+                showTrash
+                  ? "bg-accent text-accent-foreground"
+                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+              )}
+            >
+              <Trash2 className="h-4 w-4" />
+              <span>Corbeille</span>
+              {trashItemsCount > 0 && (
+                <Badge
+                  variant="secondary"
+                  className="ml-auto font-normal h-5 px-1.5 text-xs"
+                >
+                  {trashItemsCount}
+                </Badge>
+              )}
+            </button>
+          </div>
+
+          {/* Resize handle */}
+          <div
+            className={cn(
+              "absolute right-0 top-0 bottom-0 w-[3px] cursor-col-resize hover:bg-primary/10 transition-colors",
+              isResizing && "bg-primary/20",
+            )}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              setIsResizing(true);
+            }}
+          />
         </div>
 
         {/* Content area */}
@@ -933,11 +1335,12 @@ export default function DocumentsPartagesPage() {
           {/* Toolbar */}
           <div className="flex-shrink-0 px-4 min-h-14 border-b bg-background flex flex-col justify-center py-2">
             {/* Upload Progress Bar */}
-            {isUploading && (
+            {isUploading && !showTrash && (
               <div className="mb-2 space-y-1.5">
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-muted-foreground">
-                    Upload en cours... {uploadingFiles[0] && `(${uploadingFiles[0]})`}
+                    Upload en cours...{" "}
+                    {uploadingFiles[0] && `(${uploadingFiles[0]})`}
                   </span>
                   <span className="font-medium">{uploadProgress}%</span>
                 </div>
@@ -946,262 +1349,720 @@ export default function DocumentsPartagesPage() {
             )}
 
             <div className="flex items-center justify-between gap-4">
-              {/* Breadcrumb */}
-              <div className="flex items-center gap-1 min-w-0 flex-1">
-                <button
-                  onClick={() => setSelectedFolder(null)}
-                  className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <Home className="h-4 w-4" />
-                </button>
-                {breadcrumbPath.map((item, index) => (
-                  <div key={item.id || "inbox"} className="flex items-center gap-1 min-w-0">
-                    <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                    <button
-                      onClick={() => setSelectedFolder(item.id)}
-                      className={cn(
-                        "truncate max-w-[150px] text-sm transition-colors",
-                        index === breadcrumbPath.length - 1
-                          ? "font-medium text-foreground"
-                          : "text-muted-foreground hover:text-foreground"
-                      )}
+              {/* Breadcrumb / Trash header */}
+              {showTrash ? (
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <Trash2 className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-normal">Corbeille</span>
+                  <span className="text-xs font-normal text-muted-foreground">
+                    ({trashItemsCount} élément{trashItemsCount > 1 ? "s" : ""})
+                  </span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1 min-w-0 flex-1">
+                  <button
+                    onClick={() => {
+                      setSelectedFolder(null);
+                      setShowTrash(false);
+                    }}
+                    className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <Home className="h-4 w-4" />
+                  </button>
+                  {breadcrumbPath.map((item, index) => (
+                    <div
+                      key={item.id || "inbox"}
+                      className="flex items-center gap-1 min-w-0"
                     >
-                      {item.isInbox ? (
-                        <span className="flex items-center gap-1">
-                          <Inbox className="h-3.5 w-3.5 text-amber-500" />
-                          {item.name}
-                        </span>
-                      ) : (
-                        item.name
-                      )}
-                    </button>
-                  </div>
-                ))}
-                <span className="text-xs text-muted-foreground ml-1">
-                  ({filteredDocuments.length}{hasMore ? "+" : ""})
-                </span>
-              </div>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      <button
+                        onClick={() => {
+                          setSelectedFolder(item.id);
+                          setShowTrash(false);
+                        }}
+                        className={cn(
+                          "truncate max-w-[150px] text-sm transition-colors",
+                          index === breadcrumbPath.length - 1
+                            ? "font-medium text-foreground"
+                            : "text-muted-foreground hover:text-foreground",
+                        )}
+                      >
+                        {item.isInbox ? (
+                          <span className="flex items-center gap-1">
+                            <Inbox className="h-3.5 w-3.5 text-amber-500" />
+                            {item.name}
+                          </span>
+                        ) : (
+                          item.name
+                        )}
+                      </button>
+                    </div>
+                  ))}
+                  <span className="text-xs text-muted-foreground ml-1">
+                    ({filteredDocuments.length}
+                    {hasMore ? "+" : ""})
+                  </span>
+                </div>
+              )}
 
               <div className="flex items-center gap-2">
-                {/* Actions de sélection */}
-                {selectedDocuments.length > 0 && (
+                {showTrash ? (
+                  /* Trash actions */
                   <>
-                    <span className="text-xs font-normal text-muted-foreground">
-                      {selectedDocuments.length} sélectionné(s)
-                    </span>
+                    {selectedTrashCount > 0 && (
+                      <>
+                        <span className="text-xs font-normal text-muted-foreground">
+                          {selectedTrashCount} sélectionné(s)
+                        </span>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="secondary"
+                                size="icon"
+                                onClick={handleRestoreItems}
+                                disabled={restoreLoading}
+                              >
+                                {restoreLoading ? (
+                                  <LoaderCircle className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <RotateCcw
+                                    className="h-4 w-4"
+                                    strokeWidth={1.5}
+                                  />
+                                )}
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent
+                              side="bottom"
+                              className="bg-[#202020] text-white border-0"
+                            >
+                              <p>Restaurer</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() =>
+                                  setShowPermanentDeleteModal(true)
+                                }
+                                className="bg-destructive/10 text-destructive hover:bg-destructive/20 hover:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4" strokeWidth={1.5} />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent
+                              side="bottom"
+                              className="bg-[#202020] text-white border-0"
+                            >
+                              <p>Supprimer définitivement</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </>
+                    )}
+                    {trashItemsCount > 0 && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowEmptyTrashModal(true)}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        Vider la corbeille
+                      </Button>
+                    )}
+                  </>
+                ) : (
+                  /* Normal document actions */
+                  <>
+                    {selectedDocuments.length > 0 && (
+                      <>
+                        <span className="text-xs font-normal text-muted-foreground">
+                          {selectedDocuments.length} sélectionné(s)
+                        </span>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="secondary"
+                                size="icon"
+                                onClick={() => setShowMoveModal(true)}
+                              >
+                                <FolderInput
+                                  className="h-4 w-4"
+                                  strokeWidth={1.5}
+                                />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent
+                              side="bottom"
+                              className="bg-[#202020] text-white border-0"
+                            >
+                              <p>Déplacer</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setShowDeleteModal(true)}
+                                className="bg-destructive/10 text-destructive hover:bg-destructive/20 hover:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4" strokeWidth={1.5} />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent
+                              side="bottom"
+                              className="bg-[#202020] text-white border-0"
+                            >
+                              <p>Supprimer</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="secondary"
+                                size="icon"
+                                onClick={() => setShowBulkTagsModal(true)}
+                              >
+                                <Tag className="h-4 w-4" strokeWidth={1.5} />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent
+                              side="bottom"
+                              className="bg-[#202020] text-white border-0"
+                            >
+                              <p>Gérer les tags</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </>
+                    )}
+
+                    {/* Tri */}
                     <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="secondary"
-                            size="icon"
-                            onClick={() => setShowMoveModal(true)}
+                      <DropdownMenu>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="secondary" size="icon">
+                                <ArrowUpDown
+                                  className="h-4 w-4"
+                                  strokeWidth={1.5}
+                                />
+                              </Button>
+                            </DropdownMenuTrigger>
+                          </TooltipTrigger>
+                          <TooltipContent
+                            side="bottom"
+                            className="bg-[#202020] text-white border-0"
                           >
-                            <FolderInput className="h-4 w-4" strokeWidth={1.5} />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent
-                          side="bottom"
-                          className="bg-[#202020] text-white border-0"
-                        >
-                          <p>Déplacer</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => setShowDeleteModal(true)}
-                            className="bg-destructive/10 text-destructive hover:bg-destructive/20 hover:text-destructive"
+                            <p>Trier</p>
+                          </TooltipContent>
+                        </Tooltip>
+                        <DropdownMenuContent align="end" className="w-40">
+                          <DropdownMenuItem
+                            onClick={() => handleSort("name")}
+                            className="justify-between"
                           >
-                            <Trash2 className="h-4 w-4" strokeWidth={1.5} />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent
-                          side="bottom"
-                          className="bg-[#202020] text-white border-0"
-                        >
-                          <p>Supprimer</p>
-                        </TooltipContent>
-                      </Tooltip>
+                            Nom
+                            {getSortIcon("name")}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleSort("createdAt")}
+                            className="justify-between"
+                          >
+                            Date
+                            {getSortIcon("createdAt")}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleSort("fileSize")}
+                            className="justify-between"
+                          >
+                            Taille
+                            {getSortIcon("fileSize")}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TooltipProvider>
+
+                    {/* Recherche */}
+                    <div className="relative">
+                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Rechercher..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-8 w-48 h-8 text-sm"
+                      />
+                    </div>
+
+                    {/* Filtres avancés */}
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant={hasActiveFilters ? "default" : "outline"}
+                          size="sm"
+                          className="h-8 gap-1.5"
+                        >
+                          {hasActiveFilters ? (
+                            <FilterX className="h-4 w-4" />
+                          ) : (
+                            <Filter className="h-4 w-4" />
+                          )}
+                          Filtres
+                          {hasActiveFilters && (
+                            <Badge
+                              variant="secondary"
+                              className="ml-1 h-5 px-1.5 text-xs"
+                            >
+                              {
+                                [
+                                  filterFileType,
+                                  filterDateFrom || filterDateTo,
+                                  filterMinSize || filterMaxSize,
+                                  filterStatus,
+                                ].filter(Boolean).length
+                              }
+                            </Badge>
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-80" align="end">
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <h4 className="font-medium text-sm">
+                              Filtres avancés
+                            </h4>
+                            {hasActiveFilters && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={clearFilters}
+                                className="h-7 text-xs"
+                              >
+                                Réinitialiser
+                              </Button>
+                            )}
+                          </div>
+
+                          {/* Type de fichier */}
+                          <div className="space-y-2">
+                            <Label className="text-xs">Type de fichier</Label>
+                            <Select
+                              value={filterFileType}
+                              onValueChange={setFilterFileType}
+                            >
+                              <SelectTrigger className="h-8 text-sm">
+                                <SelectValue placeholder="Tous les types" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="">Tous les types</SelectItem>
+                                <SelectItem value="image">Images</SelectItem>
+                                <SelectItem value="pdf">PDF</SelectItem>
+                                <SelectItem value="document">
+                                  Documents
+                                </SelectItem>
+                                <SelectItem value="spreadsheet">
+                                  Tableurs
+                                </SelectItem>
+                                <SelectItem value="other">Autres</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          {/* Statut */}
+                          <div className="space-y-2">
+                            <Label className="text-xs">Statut</Label>
+                            <Select
+                              value={filterStatus}
+                              onValueChange={setFilterStatus}
+                            >
+                              <SelectTrigger className="h-8 text-sm">
+                                <SelectValue placeholder="Tous les statuts" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="">
+                                  Tous les statuts
+                                </SelectItem>
+                                <SelectItem value="pending">
+                                  En attente
+                                </SelectItem>
+                                <SelectItem value="classified">
+                                  Classé
+                                </SelectItem>
+                                <SelectItem value="archived">
+                                  Archivé
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          {/* Date */}
+                          <div className="space-y-2">
+                            <Label className="text-xs">Période</Label>
+                            <div className="grid grid-cols-2 gap-2">
+                              <Input
+                                type="date"
+                                value={filterDateFrom}
+                                onChange={(e) =>
+                                  setFilterDateFrom(e.target.value)
+                                }
+                                className="h-8 text-sm"
+                                placeholder="Du"
+                              />
+                              <Input
+                                type="date"
+                                value={filterDateTo}
+                                onChange={(e) =>
+                                  setFilterDateTo(e.target.value)
+                                }
+                                className="h-8 text-sm"
+                                placeholder="Au"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Taille */}
+                          <div className="space-y-2">
+                            <Label className="text-xs">Taille (Ko)</Label>
+                            <div className="grid grid-cols-2 gap-2">
+                              <Input
+                                type="number"
+                                value={filterMinSize}
+                                onChange={(e) =>
+                                  setFilterMinSize(e.target.value)
+                                }
+                                className="h-8 text-sm"
+                                placeholder="Min"
+                                min="0"
+                              />
+                              <Input
+                                type="number"
+                                value={filterMaxSize}
+                                onChange={(e) =>
+                                  setFilterMaxSize(e.target.value)
+                                }
+                                className="h-8 text-sm"
+                                placeholder="Max"
+                                min="0"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
                   </>
                 )}
-
-                {/* Tri */}
-                <TooltipProvider>
-                  <DropdownMenu>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="secondary" size="icon">
-                            <ArrowUpDown className="h-4 w-4" strokeWidth={1.5} />
-                          </Button>
-                        </DropdownMenuTrigger>
-                      </TooltipTrigger>
-                      <TooltipContent
-                        side="bottom"
-                        className="bg-[#202020] text-white border-0"
-                      >
-                        <p>Trier</p>
-                      </TooltipContent>
-                    </Tooltip>
-                    <DropdownMenuContent align="end" className="w-40">
-                      <DropdownMenuItem onClick={() => handleSort("name")} className="justify-between">
-                        Nom
-                        {getSortIcon("name")}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleSort("createdAt")} className="justify-between">
-                        Date
-                        {getSortIcon("createdAt")}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleSort("fileSize")} className="justify-between">
-                        Taille
-                        {getSortIcon("fileSize")}
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TooltipProvider>
-
-                {/* Recherche */}
-                <div className="relative">
-                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Rechercher..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-8 w-48 h-8 text-sm"
-                  />
-                </div>
               </div>
             </div>
           </div>
 
-          {/* Documents list */}
+          {/* Documents list / Trash view */}
           <ScrollArea className="flex-1">
-            {/* Zone de drop */}
-            {isDragActive && (
-              <div className="absolute inset-0 z-50 bg-primary/5 border border-dashed border-primary/40 rounded-lg flex items-center justify-center m-4">
-                <div className="text-center">
-                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
-                    <Upload className="h-5 w-5 text-primary" />
+            {showTrash ? (
+              /* Trash view */
+              trashInitialLoading ? (
+                <div className="space-y-2 py-2">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <Skeleton key={i} className="h-14 w-full" />
+                  ))}
+                </div>
+              ) : trashItemsCount === 0 ? (
+                <div className="h-full min-h-[400px] flex items-center justify-center">
+                  <div className="flex flex-col items-center gap-2 text-muted-foreground/60">
+                    <Trash2 className="h-8 w-8" />
+                    <p className="text-sm">La corbeille est vide</p>
+                    <p className="text-xs">
+                      Les éléments supprimés apparaîtront ici pendant 30 jours
+                    </p>
                   </div>
-                  <p className="text-sm font-medium text-foreground">
-                    Déposez vos fichiers ici
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    PDF, Images, Documents
-                  </p>
                 </div>
-              </div>
-            )}
+              ) : (
+                <div>
+                  {/* Header */}
+                  <div className="flex items-center gap-3 px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider border-b">
+                    <span className="w-6"></span>
+                    <Checkbox
+                      checked={
+                        selectedTrashFolders.length === trashFolders.length &&
+                        selectedTrashDocuments.length ===
+                          orphanTrashDocuments.length &&
+                        trashItemsCount > 0
+                      }
+                      onCheckedChange={() => {
+                        if (
+                          selectedTrashFolders.length === trashFolders.length &&
+                          selectedTrashDocuments.length ===
+                            orphanTrashDocuments.length
+                        ) {
+                          setSelectedTrashFolders([]);
+                          setSelectedTrashDocuments([]);
+                        } else {
+                          setSelectedTrashFolders(
+                            trashFolders.map((f) => f.id),
+                          );
+                          setSelectedTrashDocuments(
+                            orphanTrashDocuments.map((d) => d.id),
+                          );
+                        }
+                      }}
+                      className="h-4 w-4"
+                    />
+                    <span className="flex-1">Nom</span>
+                    <span className="w-24 text-right">Taille</span>
+                    <span className="w-40 text-right">Supprimé le</span>
+                    <span className="w-24 text-right">Jours restants</span>
+                    <span className="w-10"></span>
+                  </div>
 
-            {docsInitialLoading ? (
-              <div className="space-y-2 py-2">
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <Skeleton key={i} className="h-14 w-full" />
-                ))}
-              </div>
-            ) : filteredDocuments.length === 0 ? (
-              <div className="h-full min-h-[400px] flex items-center justify-center">
-                <div className="flex flex-col items-center gap-2 text-muted-foreground/60">
-                  <FileText className="h-5 w-5" />
-                  <p className="text-sm">
-                    {searchQuery
-                      ? "Aucun résultat"
-                      : "Aucun document"}
-                  </p>
-                </div>
-              </div>
-            ) : viewMode === "list" ? (
-              /* Vue liste */
-              <div>
-                {/* Header */}
-                <div className="flex items-center gap-3 px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider border-b">
-                  <Checkbox
-                    checked={
-                      selectedDocuments.length === filteredDocuments.length &&
-                      filteredDocuments.length > 0
-                    }
-                    onCheckedChange={toggleSelectAll}
-                    className="h-4 w-4"
-                  />
-                  <button
-                    className="flex-1 flex items-center gap-1 hover:text-foreground transition-colors text-left"
-                    onClick={() => handleSort("name")}
-                  >
-                    Nom
-                    {getSortIcon("name")}
-                  </button>
-                  <button
-                    className="w-24 flex items-center gap-1 justify-end hover:text-foreground transition-colors"
-                    onClick={() => handleSort("fileSize")}
-                  >
-                    Taille
-                    {getSortIcon("fileSize")}
-                  </button>
-                  <button
-                    className="w-32 flex items-center gap-1 justify-end hover:text-foreground transition-colors"
-                    onClick={() => handleSort("createdAt")}
-                  >
-                    Date
-                    {getSortIcon("createdAt")}
-                  </button>
-                  <span className="w-10"></span>
-                </div>
+                  {/* Trashed folders with their contents */}
+                  {trashFolders.map((folder) => {
+                    const docsInFolder = getDocumentsInTrashFolder(folder.id);
+                    const isExpanded = expandedTrashFolders.includes(folder.id);
+                    const hasDocuments = docsInFolder.length > 0;
 
-                {/* Documents */}
-                <div className="divide-y">
-                  {filteredDocuments.map((doc) => (
+                    return (
+                      <div key={`folder-${folder.id}`}>
+                        {/* Folder row */}
+                        <div
+                          className={cn(
+                            "flex items-center gap-3 px-4 py-3 hover:bg-accent/50 transition-colors group border-b",
+                            selectedTrashFolders.includes(folder.id) &&
+                              "bg-accent/30",
+                          )}
+                        >
+                          {/* Expand/collapse button */}
+                          <button
+                            onClick={() =>
+                              hasDocuments &&
+                              toggleTrashFolderExpanded(folder.id)
+                            }
+                            className={cn(
+                              "w-6 h-6 flex items-center justify-center rounded hover:bg-accent",
+                              !hasDocuments && "invisible",
+                            )}
+                          >
+                            <ChevronRight
+                              className={cn(
+                                "h-4 w-4 transition-transform",
+                                isExpanded && "rotate-90",
+                              )}
+                            />
+                          </button>
+                          <Checkbox
+                            checked={selectedTrashFolders.includes(folder.id)}
+                            onCheckedChange={() =>
+                              toggleTrashFolderSelection(folder.id)
+                            }
+                            className="h-4 w-4"
+                          />
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            {isExpanded ? (
+                              <FolderOpen
+                                className="h-4 w-4 flex-shrink-0"
+                                style={{ color: folder.color }}
+                              />
+                            ) : (
+                              <Folder
+                                className="h-4 w-4 flex-shrink-0"
+                                style={{ color: folder.color }}
+                              />
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-normal truncate">
+                                {folder.name}
+                                {hasDocuments && (
+                                  <span className="ml-2 text-xs text-muted-foreground">
+                                    ({docsInFolder.length} fichier
+                                    {docsInFolder.length > 1 ? "s" : ""})
+                                  </span>
+                                )}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                Dossier
+                              </p>
+                            </div>
+                          </div>
+                          <span className="w-24 text-right text-sm text-muted-foreground">
+                            {hasDocuments
+                              ? formatFileSize(
+                                  docsInFolder.reduce(
+                                    (acc, d) => acc + d.fileSize,
+                                    0,
+                                  ),
+                                )
+                              : "—"}
+                          </span>
+                          <span className="w-40 text-right text-sm text-muted-foreground">
+                            {format(
+                              new Date(folder.trashedAt),
+                              "d MMM yyyy HH:mm",
+                              {
+                                locale: fr,
+                              },
+                            )}
+                          </span>
+                          <span className="w-24 text-right">
+                            <Badge
+                              variant={
+                                folder.daysUntilPermanentDeletion <= 7
+                                  ? "destructive"
+                                  : "secondary"
+                              }
+                              className="text-xs"
+                            >
+                              {folder.daysUntilPermanentDeletion}j
+                            </Badge>
+                          </span>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100"
+                              >
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setSelectedTrashFolders([folder.id]);
+                                  setSelectedTrashDocuments([]);
+                                  handleRestoreItems();
+                                }}
+                              >
+                                <RotateCcw className="h-4 w-4 mr-2" />
+                                Restaurer
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setSelectedTrashFolders([folder.id]);
+                                  setSelectedTrashDocuments([]);
+                                  setShowPermanentDeleteModal(true);
+                                }}
+                                className="text-destructive focus:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Supprimer définitivement
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+
+                        {/* Documents inside folder (when expanded) */}
+                        {isExpanded &&
+                          docsInFolder.map((doc) => (
+                            <div
+                              key={`doc-${doc.id}`}
+                              className={cn(
+                                "flex items-center gap-3 px-4 py-2.5 hover:bg-accent/30 transition-colors group border-b bg-muted/20",
+                                selectedTrashDocuments.includes(doc.id) &&
+                                  "bg-accent/20",
+                              )}
+                            >
+                              <span className="w-6"></span>
+                              <span className="w-4 border-l-2 border-b-2 border-muted-foreground/30 h-4 rounded-bl-sm"></span>
+                              <Checkbox
+                                checked={selectedTrashDocuments.includes(
+                                  doc.id,
+                                )}
+                                onCheckedChange={() =>
+                                  toggleTrashDocumentSelection(doc.id)
+                                }
+                                className="h-4 w-4"
+                              />
+                              <div className="flex items-center gap-3 flex-1 min-w-0">
+                                {getFileIcon(doc.mimeType, doc.fileExtension)}
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-normal truncate">
+                                    {doc.name}
+                                  </p>
+                                </div>
+                              </div>
+                              <span className="w-24 text-right text-sm text-muted-foreground">
+                                {formatFileSize(doc.fileSize)}
+                              </span>
+                              <span className="w-40 text-right text-sm text-muted-foreground">
+                                —
+                              </span>
+                              <span className="w-24 text-right">—</span>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100"
+                                  >
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      setSelectedTrashDocuments([doc.id]);
+                                      setSelectedTrashFolders([]);
+                                      handleRestoreItems();
+                                    }}
+                                  >
+                                    <RotateCcw className="h-4 w-4 mr-2" />
+                                    Restaurer
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    onClick={() => {
+                                      setSelectedTrashDocuments([doc.id]);
+                                      setSelectedTrashFolders([]);
+                                      setShowPermanentDeleteModal(true);
+                                    }}
+                                    className="text-destructive focus:text-destructive"
+                                  >
+                                    <Trash2 className="h-4 w-4 mr-2" />
+                                    Supprimer définitivement
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
+                          ))}
+                      </div>
+                    );
+                  })}
+
+                  {/* Orphan trashed documents (not in a trashed folder) */}
+                  {orphanTrashDocuments.map((doc) => (
                     <div
-                      key={doc.id}
+                      key={`doc-${doc.id}`}
                       className={cn(
-                        "flex items-center gap-3 px-4 py-3 hover:bg-accent/50 transition-colors group",
-                        selectedDocuments.includes(doc.id) && "bg-accent/30"
+                        "flex items-center gap-3 px-4 py-3 hover:bg-accent/50 transition-colors group border-b",
+                        selectedTrashDocuments.includes(doc.id) &&
+                          "bg-accent/30",
                       )}
                     >
+                      <span className="w-6"></span>
                       <Checkbox
-                        checked={selectedDocuments.includes(doc.id)}
-                        onCheckedChange={() => toggleDocumentSelection(doc.id)}
+                        checked={selectedTrashDocuments.includes(doc.id)}
+                        onCheckedChange={() =>
+                          toggleTrashDocumentSelection(doc.id)
+                        }
                         className="h-4 w-4"
                       />
                       <div className="flex items-center gap-3 flex-1 min-w-0">
                         {getFileIcon(doc.mimeType, doc.fileExtension)}
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <p className="text-sm font-normal truncate">
-                              {doc.name}
-                            </p>
-                            {/* Tags inline */}
-                            {doc.tags && doc.tags.length > 0 && (
-                              <div className="flex items-center gap-1 flex-shrink-0">
-                                {doc.tags.slice(0, 2).map((tag) => (
-                                  <Badge
-                                    key={tag}
-                                    variant="outline"
-                                    className="text-[10px] px-1.5 py-0 h-4"
-                                  >
-                                    {tag}
-                                  </Badge>
-                                ))}
-                                {doc.tags.length > 2 && (
-                                  <span className="text-[10px] text-muted-foreground">
-                                    +{doc.tags.length - 2}
-                                  </span>
-                                )}
-                              </div>
-                            )}
-                            {/* Comments indicator */}
-                            {doc.comments && doc.comments.length > 0 && (
-                              <div className="flex items-center gap-0.5 text-muted-foreground flex-shrink-0">
-                                <MessageSquare className="h-3 w-3" />
-                                <span className="text-[10px]">{doc.comments.length}</span>
-                              </div>
-                            )}
-                          </div>
+                          <p className="text-sm font-normal truncate">
+                            {doc.name}
+                          </p>
                           {doc.description && (
                             <p className="text-xs text-muted-foreground truncate">
                               {doc.description}
@@ -1212,10 +2073,22 @@ export default function DocumentsPartagesPage() {
                       <span className="w-24 text-right text-sm text-muted-foreground">
                         {formatFileSize(doc.fileSize)}
                       </span>
-                      <span className="w-32 text-right text-sm text-muted-foreground">
-                        {format(new Date(doc.createdAt), "d MMM yyyy", {
+                      <span className="w-40 text-right text-sm text-muted-foreground">
+                        {format(new Date(doc.trashedAt), "d MMM yyyy HH:mm", {
                           locale: fr,
                         })}
+                      </span>
+                      <span className="w-24 text-right">
+                        <Badge
+                          variant={
+                            doc.daysUntilPermanentDeletion <= 7
+                              ? "destructive"
+                              : "secondary"
+                          }
+                          className="text-xs"
+                        >
+                          {doc.daysUntilPermanentDeletion}j
+                        </Badge>
                       </span>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -1228,182 +2101,398 @@ export default function DocumentsPartagesPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleOpenDetails(doc)}>
-                            <Info className="h-4 w-4 mr-2" />
-                            Détails
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => handleDownload(doc)}>
-                            <Download className="h-4 w-4 mr-2" />
-                            Télécharger
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => window.open(doc.fileUrl, "_blank")}
-                          >
-                            <Eye className="h-4 w-4 mr-2" />
-                            Aperçu
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
                           <DropdownMenuItem
                             onClick={() => {
-                              setSelectedDocuments([doc.id]);
-                              setShowMoveModal(true);
+                              setSelectedTrashDocuments([doc.id]);
+                              setSelectedTrashFolders([]);
+                              handleRestoreItems();
                             }}
                           >
-                            <FolderInput className="h-4 w-4 mr-2" />
-                            Déplacer
+                            <RotateCcw className="h-4 w-4 mr-2" />
+                            Restaurer
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
                             onClick={() => {
-                              setSelectedDocuments([doc.id]);
-                              setShowDeleteModal(true);
+                              setSelectedTrashDocuments([doc.id]);
+                              setSelectedTrashFolders([]);
+                              setShowPermanentDeleteModal(true);
                             }}
                             className="text-destructive focus:text-destructive"
                           >
                             <Trash2 className="h-4 w-4 mr-2" />
-                            Supprimer
+                            Supprimer définitivement
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
                   ))}
                 </div>
-
-                {/* Load More Button - List View */}
-                {hasMore && (
-                  <div className="flex justify-center py-4">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={loadMore}
-                      disabled={docsLoading}
-                      className="gap-2"
-                    >
-                      {docsLoading ? (
-                        <LoaderCircle className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Plus className="h-4 w-4" />
-                      )}
-                      Charger plus de documents
-                    </Button>
-                  </div>
-                )}
-              </div>
+              )
             ) : (
-              /* Vue grille */
-              <div className="px-4 py-2">
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                {filteredDocuments.map((doc) => (
-                  <div
-                    key={doc.id}
-                    className={cn(
-                      "group relative border rounded-xl p-4 hover:border-[#5b4eff]/50 hover:shadow-sm transition-all cursor-pointer",
-                      selectedDocuments.includes(doc.id) &&
-                        "border-[#5b4eff] bg-[#5b4eff]/5"
-                    )}
-                    onClick={() => toggleDocumentSelection(doc.id)}
-                  >
-                    <div className="absolute top-2 left-2">
-                      <Checkbox
-                        checked={selectedDocuments.includes(doc.id)}
-                        onCheckedChange={() => toggleDocumentSelection(doc.id)}
-                        className="h-4 w-4"
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                    </div>
-                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 w-6 p-0"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleOpenDetails(doc)}>
-                            <Info className="h-4 w-4 mr-2" />
-                            Détails
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => handleDownload(doc)}>
-                            <Download className="h-4 w-4 mr-2" />
-                            Télécharger
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setSelectedDocuments([doc.id]);
-                              setShowDeleteModal(true);
-                            }}
-                            className="text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Supprimer
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                    <div className="flex flex-col items-center pt-4">
-                      <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center mb-3 relative">
-                        {getFileIcon(doc.mimeType, doc.fileExtension)}
-                        {/* Comments/Tags indicator on grid card */}
-                        {((doc.tags && doc.tags.length > 0) || (doc.comments && doc.comments.length > 0)) && (
-                          <div className="absolute -top-1 -right-1 w-4 h-4 bg-[#5b4eff] rounded-full flex items-center justify-center">
-                            <span className="text-[8px] text-white font-medium">
-                              {(doc.tags?.length || 0) + (doc.comments?.length || 0)}
-                            </span>
-                          </div>
-                        )}
+              /* Regular documents view */
+              <>
+                {/* Zone de drop */}
+                {isDragActive && (
+                  <div className="absolute inset-0 z-50 bg-primary/5 border border-dashed border-primary/40 rounded-lg flex items-center justify-center m-4">
+                    <div className="text-center">
+                      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
+                        <Upload className="h-5 w-5 text-primary" />
                       </div>
-                      <p className="text-sm font-medium text-center truncate w-full">
-                        {doc.name}
+                      <p className="text-sm font-medium text-foreground">
+                        Déposez vos fichiers ici
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
-                        {formatFileSize(doc.fileSize)}
+                        PDF, Images, Documents
                       </p>
-                      {/* Tags on grid */}
-                      {doc.tags && doc.tags.length > 0 && (
-                        <div className="flex flex-wrap justify-center gap-1 mt-1.5">
-                          {doc.tags.slice(0, 2).map((tag) => (
-                            <Badge
-                              key={tag}
-                              variant="outline"
-                              className="text-[9px] px-1 py-0 h-3.5"
-                            >
-                              {tag}
-                            </Badge>
-                          ))}
-                        </div>
-                      )}
                     </div>
                   </div>
-                ))}
-                </div>
+                )}
 
-                {/* Load More Button - Grid View */}
-                {hasMore && (
-                  <div className="flex justify-center py-4 col-span-full">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={loadMore}
-                      disabled={docsLoading}
-                      className="gap-2"
-                    >
-                      {docsLoading ? (
-                        <LoaderCircle className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Plus className="h-4 w-4" />
-                      )}
-                      Charger plus de documents
-                    </Button>
+                {docsInitialLoading ? (
+                  <div className="space-y-2 py-2">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <Skeleton key={i} className="h-14 w-full" />
+                    ))}
+                  </div>
+                ) : filteredDocuments.length === 0 ? (
+                  <div className="h-full min-h-[400px] flex items-center justify-center">
+                    <div className="flex flex-col items-center gap-2 text-muted-foreground/60">
+                      <FileText className="h-5 w-5" />
+                      <p className="text-sm">
+                        {searchQuery ? "Aucun résultat" : "Aucun document"}
+                      </p>
+                    </div>
+                  </div>
+                ) : viewMode === "list" ? (
+                  /* Vue liste */
+                  <div>
+                    {/* Header */}
+                    <div className="flex items-center gap-3 px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider border-b">
+                      <Checkbox
+                        checked={
+                          selectedDocuments.length ===
+                            filteredDocuments.length &&
+                          filteredDocuments.length > 0
+                        }
+                        onCheckedChange={toggleSelectAll}
+                        className="h-4 w-4"
+                      />
+                      <button
+                        className="flex-1 flex items-center gap-1 hover:text-foreground transition-colors text-left"
+                        onClick={() => handleSort("name")}
+                      >
+                        Nom
+                        {getSortIcon("name")}
+                      </button>
+                      <button
+                        className="w-24 flex items-center gap-1 justify-end hover:text-foreground transition-colors"
+                        onClick={() => handleSort("fileSize")}
+                      >
+                        Taille
+                        {getSortIcon("fileSize")}
+                      </button>
+                      <button
+                        className="w-32 flex items-center gap-1 justify-end hover:text-foreground transition-colors"
+                        onClick={() => handleSort("createdAt")}
+                      >
+                        Date
+                        {getSortIcon("createdAt")}
+                      </button>
+                      <span className="w-10"></span>
+                    </div>
+
+                    {/* Documents */}
+                    <div className="divide-y">
+                      {filteredDocuments.map((doc) => (
+                        <div
+                          key={doc.id}
+                          className={cn(
+                            "flex items-center gap-3 px-4 py-3 hover:bg-accent/50 transition-colors group cursor-pointer select-none",
+                            selectedDocuments.includes(doc.id) &&
+                              "bg-accent/30",
+                          )}
+                          onClick={(e) => handleDocumentClick(doc.id, e)}
+                          onDoubleClick={() => {
+                            if (canPreview(doc)) {
+                              setPreviewDocument(doc);
+                            } else {
+                              window.open(doc.fileUrl, "_blank");
+                            }
+                          }}
+                        >
+                          <Checkbox
+                            checked={selectedDocuments.includes(doc.id)}
+                            onCheckedChange={() =>
+                              toggleDocumentSelection(doc.id)
+                            }
+                            onClick={(e) => e.stopPropagation()}
+                            className="h-4 w-4"
+                          />
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            {getFileIcon(doc.mimeType, doc.fileExtension)}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <p className="text-sm font-normal truncate">
+                                  {doc.name}
+                                </p>
+                                {/* Tags inline */}
+                                {doc.tags && doc.tags.length > 0 && (
+                                  <div className="flex items-center gap-1 flex-shrink-0">
+                                    {doc.tags.slice(0, 2).map((tag) => (
+                                      <span
+                                        key={tag}
+                                        className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-[#5a50ff]/10 text-[#5a50ff] dark:bg-[#5a50ff]/20"
+                                      >
+                                        {tag}
+                                      </span>
+                                    ))}
+                                    {doc.tags.length > 2 && (
+                                      <span className="text-[10px] text-muted-foreground">
+                                        +{doc.tags.length - 2}
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+                                {/* Comments indicator */}
+                                {doc.comments && doc.comments.length > 0 && (
+                                  <div className="flex items-center gap-0.5 text-muted-foreground flex-shrink-0">
+                                    <MessageSquare className="h-3 w-3" />
+                                    <span className="text-[10px]">
+                                      {doc.comments.length}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                              {doc.description && (
+                                <p className="text-xs text-muted-foreground truncate">
+                                  {doc.description}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          <span className="w-24 text-right text-sm text-muted-foreground">
+                            {formatFileSize(doc.fileSize)}
+                          </span>
+                          <span className="w-32 text-right text-sm text-muted-foreground">
+                            {format(new Date(doc.createdAt), "d MMM yyyy", {
+                              locale: fr,
+                            })}
+                          </span>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100"
+                              >
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onClick={() => handleOpenDetails(doc)}
+                              >
+                                <Info className="h-4 w-4 mr-2" />
+                                Détails
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() => handleDownload(doc)}
+                              >
+                                <Download className="h-4 w-4 mr-2" />
+                                Télécharger
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  if (canPreview(doc)) {
+                                    setPreviewDocument(doc);
+                                  } else {
+                                    window.open(doc.fileUrl, "_blank");
+                                  }
+                                }}
+                              >
+                                <Eye className="h-4 w-4 mr-2" />
+                                Aperçu
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setSelectedDocuments([doc.id]);
+                                  setShowMoveModal(true);
+                                }}
+                              >
+                                <FolderInput className="h-4 w-4 mr-2" />
+                                Déplacer
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setSelectedDocuments([doc.id]);
+                                  setShowDeleteModal(true);
+                                }}
+                                className="text-destructive focus:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Supprimer
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Load More Button - List View */}
+                    {hasMore && (
+                      <div className="flex justify-center py-4">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={loadMore}
+                          disabled={docsLoading}
+                          className="gap-2"
+                        >
+                          {docsLoading ? (
+                            <LoaderCircle className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Plus className="h-4 w-4" />
+                          )}
+                          Charger plus de documents
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  /* Vue grille */
+                  <div className="px-4 py-2">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                      {filteredDocuments.map((doc) => (
+                        <div
+                          key={doc.id}
+                          className={cn(
+                            "group relative border rounded-xl p-4 hover:border-[#5b4eff]/50 hover:shadow-sm transition-all cursor-pointer select-none",
+                            selectedDocuments.includes(doc.id) &&
+                              "border-[#5b4eff] bg-[#5b4eff]/5",
+                          )}
+                          onClick={(e) => handleDocumentClick(doc.id, e)}
+                          onDoubleClick={(e) => {
+                            e.stopPropagation();
+                            if (canPreview(doc)) {
+                              setPreviewDocument(doc);
+                            } else {
+                              window.open(doc.fileUrl, "_blank");
+                            }
+                          }}
+                        >
+                          <div className="absolute top-2 left-2">
+                            <Checkbox
+                              checked={selectedDocuments.includes(doc.id)}
+                              onCheckedChange={() =>
+                                toggleDocumentSelection(doc.id)
+                              }
+                              className="h-4 w-4"
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          </div>
+                          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 w-6 p-0"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem
+                                  onClick={() => handleOpenDetails(doc)}
+                                >
+                                  <Info className="h-4 w-4 mr-2" />
+                                  Détails
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onClick={() => handleDownload(doc)}
+                                >
+                                  <Download className="h-4 w-4 mr-2" />
+                                  Télécharger
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setSelectedDocuments([doc.id]);
+                                    setShowDeleteModal(true);
+                                  }}
+                                  className="text-destructive"
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Supprimer
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                          <div className="flex flex-col items-center pt-4">
+                            <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center mb-3 relative">
+                              {getFileIcon(doc.mimeType, doc.fileExtension)}
+                              {/* Comments/Tags indicator on grid card */}
+                              {((doc.tags && doc.tags.length > 0) ||
+                                (doc.comments && doc.comments.length > 0)) && (
+                                <div className="absolute -top-1 -right-1 w-4 h-4 bg-[#5b4eff] rounded-full flex items-center justify-center">
+                                  <span className="text-[8px] text-white font-medium">
+                                    {(doc.tags?.length || 0) +
+                                      (doc.comments?.length || 0)}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                            <p className="text-sm font-medium text-center truncate w-full">
+                              {doc.name}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {formatFileSize(doc.fileSize)}
+                            </p>
+                            {/* Tags on grid */}
+                            {doc.tags && doc.tags.length > 0 && (
+                              <div className="flex flex-wrap justify-center gap-1 mt-1.5">
+                                {doc.tags.slice(0, 2).map((tag) => (
+                                  <span
+                                    key={tag}
+                                    className="inline-flex items-center px-1 py-0 rounded text-[9px] font-medium bg-[#5a50ff]/10 text-[#5a50ff] dark:bg-[#5a50ff]/20"
+                                  >
+                                    {tag}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Load More Button - Grid View */}
+                    {hasMore && (
+                      <div className="flex justify-center py-4 col-span-full">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={loadMore}
+                          disabled={docsLoading}
+                          className="gap-2"
+                        >
+                          {docsLoading ? (
+                            <LoaderCircle className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Plus className="h-4 w-4" />
+                          )}
+                          Charger plus de documents
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 )}
-              </div>
+              </>
             )}
           </ScrollArea>
         </div>
@@ -1517,14 +2606,14 @@ export default function DocumentsPartagesPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Modal supprimer documents */}
+      {/* Modal supprimer documents (vers corbeille) */}
       <AlertDialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Supprimer les documents ?</AlertDialogTitle>
+            <AlertDialogTitle>Mettre à la corbeille ?</AlertDialogTitle>
             <AlertDialogDescription>
-              Cette action est irréversible. {selectedDocuments.length}{" "}
-              document(s) seront définitivement supprimé(s).
+              {selectedDocuments.length} document(s) seront déplacé(s) vers la
+              corbeille. Vous pourrez les restaurer pendant 30 jours.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -1537,24 +2626,26 @@ export default function DocumentsPartagesPage() {
               {deleteLoading ? (
                 <LoaderCircle className="h-4 w-4 animate-spin" />
               ) : (
-                "Supprimer"
+                "Mettre à la corbeille"
               )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Modal supprimer dossier */}
+      {/* Modal supprimer dossier (vers corbeille) */}
       <AlertDialog
         open={showDeleteFolderModal}
         onOpenChange={setShowDeleteFolderModal}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Supprimer ce dossier ?</AlertDialogTitle>
+            <AlertDialogTitle>
+              Mettre ce dossier à la corbeille ?
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              Le dossier sera supprimé et les documents qu'il contient seront
-              déplacés vers "Documents à classer".
+              Le dossier et tous les documents qu'il contient seront déplacés
+              vers la corbeille. Vous pourrez les restaurer pendant 30 jours.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -1567,12 +2658,139 @@ export default function DocumentsPartagesPage() {
               {deleteFolderLoading ? (
                 <LoaderCircle className="h-4 w-4 animate-spin" />
               ) : (
-                "Supprimer"
+                "Mettre à la corbeille"
               )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Modal gestion tags en masse */}
+      <Dialog
+        open={showBulkTagsModal}
+        onOpenChange={(open) => {
+          setShowBulkTagsModal(open);
+          if (!open) {
+            setBulkTagsToAdd("");
+            setBulkTagsToRemove([]);
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Gérer les tags</DialogTitle>
+            <DialogDescription>
+              Ajoutez ou supprimez des tags pour {selectedDocuments.length}{" "}
+              document(s) sélectionné(s)
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {/* Ajouter des tags */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Ajouter des tags</Label>
+              <Input
+                value={bulkTagsToAdd}
+                onChange={(e) => setBulkTagsToAdd(e.target.value)}
+                placeholder="Entrez des tags séparés par des virgules"
+                className="h-9"
+              />
+              <p className="text-xs text-muted-foreground">
+                Ex: facture, 2024, important
+              </p>
+            </div>
+
+            {/* Tags existants à supprimer */}
+            {(() => {
+              // Collecter tous les tags uniques des documents sélectionnés
+              const selectedDocs = documents.filter((d) =>
+                selectedDocuments.includes(d.id),
+              );
+              const allTags = [
+                ...new Set(selectedDocs.flatMap((d) => d.tags || [])),
+              ];
+              if (allTags.length === 0) return null;
+
+              return (
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">
+                    Supprimer des tags existants
+                  </Label>
+                  <div className="flex flex-wrap gap-2">
+                    {allTags.map((tag) => (
+                      <Badge
+                        key={tag}
+                        variant={
+                          bulkTagsToRemove.includes(tag)
+                            ? "destructive"
+                            : "secondary"
+                        }
+                        className="cursor-pointer"
+                        onClick={() => {
+                          setBulkTagsToRemove((prev) =>
+                            prev.includes(tag)
+                              ? prev.filter((t) => t !== tag)
+                              : [...prev, tag],
+                          );
+                        }}
+                      >
+                        {tag}
+                        {bulkTagsToRemove.includes(tag) && (
+                          <X className="ml-1 h-3 w-3" />
+                        )}
+                      </Badge>
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Cliquez sur un tag pour le marquer à supprimer
+                  </p>
+                </div>
+              );
+            })()}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowBulkTagsModal(false)}
+            >
+              Annuler
+            </Button>
+            <Button
+              onClick={async () => {
+                const addTags = bulkTagsToAdd
+                  .split(",")
+                  .map((t) => t.trim())
+                  .filter((t) => t.length > 0);
+                const removeTags = bulkTagsToRemove;
+
+                if (addTags.length === 0 && removeTags.length === 0) {
+                  toast.error("Veuillez ajouter ou supprimer au moins un tag");
+                  return;
+                }
+
+                try {
+                  await bulkUpdateTags(selectedDocuments, {
+                    addTags: addTags.length > 0 ? addTags : undefined,
+                    removeTags: removeTags.length > 0 ? removeTags : undefined,
+                  });
+                  setShowBulkTagsModal(false);
+                  setBulkTagsToAdd("");
+                  setBulkTagsToRemove([]);
+                  setSelectedDocuments([]);
+                  refetchDocs();
+                } catch (error) {
+                  // Error is handled by the hook
+                }
+              }}
+              disabled={bulkTagsLoading}
+            >
+              {bulkTagsLoading ? (
+                <LoaderCircle className="h-4 w-4 animate-spin mr-2" />
+              ) : null}
+              Appliquer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Modal renommer */}
       <Dialog open={showRenameModal} onOpenChange={setShowRenameModal}>
@@ -1638,7 +2856,7 @@ export default function DocumentsPartagesPage() {
                 getFileIcon(
                   selectedDocumentDetails.mimeType,
                   selectedDocumentDetails.fileExtension,
-                  "size-5"
+                  "size-5",
                 )}
               <span className="truncate">{selectedDocumentDetails?.name}</span>
             </DialogTitle>
@@ -1665,7 +2883,7 @@ export default function DocumentsPartagesPage() {
                   {format(
                     new Date(selectedDocumentDetails.createdAt),
                     "d MMMM yyyy à HH:mm",
-                    { locale: fr }
+                    { locale: fr },
                   )}
                 </div>
 
@@ -1764,11 +2982,13 @@ export default function DocumentsPartagesPage() {
                               {format(
                                 new Date(comment.createdAt),
                                 "d MMM yyyy",
-                                { locale: fr }
+                                { locale: fr },
                               )}
                             </span>
                           </div>
-                          <p className="text-muted-foreground">{comment.text}</p>
+                          <p className="text-muted-foreground">
+                            {comment.text}
+                          </p>
                         </div>
                       ))}
                     </div>
@@ -1795,13 +3015,192 @@ export default function DocumentsPartagesPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => window.open(selectedDocumentDetails?.fileUrl, "_blank")}
+              onClick={() =>
+                window.open(selectedDocumentDetails?.fileUrl, "_blank")
+              }
               className="gap-1"
             >
               <ExternalLink className="h-4 w-4" />
               Ouvrir
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal vider la corbeille */}
+      <AlertDialog
+        open={showEmptyTrashModal}
+        onOpenChange={setShowEmptyTrashModal}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              Vider la corbeille ?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action est irréversible. Tous les éléments de la corbeille (
+              {trashFolders.length} dossier(s) contenant{" "}
+              {
+                trashDocuments.filter(
+                  (d) =>
+                    d.originalFolderId &&
+                    trashedFolderIds.includes(d.originalFolderId),
+                ).length
+              }{" "}
+              fichier(s)
+              {orphanTrashDocuments.length > 0 &&
+                ` et ${orphanTrashDocuments.length} document(s) individuels`}
+              ) seront définitivement supprimés.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleEmptyTrash}
+              disabled={emptyTrashLoading}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {emptyTrashLoading ? (
+                <LoaderCircle className="h-4 w-4 animate-spin" />
+              ) : (
+                "Vider la corbeille"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Modal suppression définitive */}
+      <AlertDialog
+        open={showPermanentDeleteModal}
+        onOpenChange={setShowPermanentDeleteModal}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              Supprimer définitivement ?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action est irréversible.{" "}
+              {selectedTrashDocuments.length > 0 &&
+                `${selectedTrashDocuments.length} document(s)`}
+              {selectedTrashDocuments.length > 0 &&
+                selectedTrashFolders.length > 0 &&
+                " et "}
+              {selectedTrashFolders.length > 0 &&
+                `${selectedTrashFolders.length} dossier(s)`}{" "}
+              seront définitivement supprimé(s).
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handlePermanentDelete}
+              disabled={
+                permanentDeleteDocsLoading || permanentDeleteFoldersLoading
+              }
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {permanentDeleteDocsLoading || permanentDeleteFoldersLoading ? (
+                <LoaderCircle className="h-4 w-4 animate-spin" />
+              ) : (
+                "Supprimer définitivement"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Modal prévisualisation de document */}
+      <Dialog
+        open={!!previewDocument}
+        onOpenChange={(open) => !open && setPreviewDocument(null)}
+      >
+        <DialogContent className="max-w-6xl h-[85vh] flex flex-col p-0">
+          <DialogHeader className="px-6 pt-6 pb-4 border-b">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3 min-w-0">
+                {previewDocument &&
+                  getFileIcon(
+                    previewDocument.mimeType,
+                    previewDocument.fileExtension,
+                    "h-5 w-5 text-muted-foreground flex-shrink-0",
+                  )}
+                <div className="min-w-0">
+                  <DialogTitle className="truncate">
+                    {previewDocument?.name || previewDocument?.originalName}
+                  </DialogTitle>
+                  <DialogDescription className="text-xs mt-1">
+                    {previewDocument &&
+                      formatFileSize(previewDocument.fileSize)}{" "}
+                    •{" "}
+                    {previewDocument &&
+                      format(
+                        new Date(previewDocument.createdAt),
+                        "dd MMM yyyy",
+                        { locale: fr },
+                      )}
+                  </DialogDescription>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 ml-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    window.open(previewDocument?.fileUrl, "_blank")
+                  }
+                >
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Ouvrir
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleDownload(previewDocument)}
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Télécharger
+                </Button>
+              </div>
+            </div>
+          </DialogHeader>
+          <div className="flex-1 overflow-hidden bg-muted/30">
+            {previewDocument?.mimeType?.startsWith("image/") ? (
+              <div className="h-full flex items-center justify-center p-4">
+                <img
+                  src={previewDocument.fileUrl}
+                  alt={previewDocument.name}
+                  className="max-h-full max-w-full object-contain rounded-lg shadow-lg"
+                />
+              </div>
+            ) : previewDocument?.mimeType === "application/pdf" ? (
+              <iframe
+                src={previewDocument.fileUrl}
+                className="w-full h-full border-0"
+                title={previewDocument.name}
+              />
+            ) : (
+              <div className="h-full flex items-center justify-center">
+                <div className="text-center text-muted-foreground">
+                  <File className="h-16 w-16 mx-auto mb-4" />
+                  <p>Prévisualisation non disponible pour ce type de fichier</p>
+                  <Button
+                    variant="outline"
+                    className="mt-4"
+                    onClick={() =>
+                      window.open(previewDocument?.fileUrl, "_blank")
+                    }
+                  >
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    Ouvrir dans un nouvel onglet
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>
