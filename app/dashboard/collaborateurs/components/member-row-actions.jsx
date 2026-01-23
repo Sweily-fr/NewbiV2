@@ -1,4 +1,4 @@
-import { MoreHorizontal, Trash2, UserCheck, UserX } from "lucide-react";
+import { MoreHorizontal, Trash2, UserCheck, UserX, RefreshCw } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import {
   DropdownMenu,
@@ -22,7 +22,7 @@ import { toast } from "@/src/components/ui/sonner";
 
 export default function MemberRowActions({ row, onRefetch }) {
   const member = row.original;
-  const { removeMember, cancelInvitation, updateMemberRole } =
+  const { removeMember, cancelInvitation, resendInvitation, updateMemberRole } =
     useOrganizationInvitations();
 
   // Supprimer un membre
@@ -42,12 +42,30 @@ export default function MemberRowActions({ row, onRefetch }) {
     }
   };
 
+  // Renvoyer une invitation
+  const handleResendInvitation = async () => {
+    const result = await resendInvitation(member.email, member.role, member.id);
+    if (result.success && onRefetch) {
+      onRefetch();
+    }
+  };
+
   // Changer le rôle d'un membre
   const handleChangeRole = async (newRole) => {
     const result = await updateMemberRole(member.id, newRole);
     if (result.success && onRefetch) {
       onRefetch();
     }
+  };
+
+  // Vérifier si l'invitation est expirée ou proche de l'expiration
+  const isInvitationExpiredOrExpiring = () => {
+    if (member.type !== "invitation" || !member.expiresAt) return false;
+    const now = new Date();
+    const expiresAt = new Date(member.expiresAt);
+    const diffMs = expiresAt - now;
+    const diffDays = diffMs / (1000 * 60 * 60 * 24);
+    return diffDays <= 3; // Afficher si expire dans 3 jours ou moins
   };
 
   return (
@@ -123,35 +141,46 @@ export default function MemberRowActions({ row, onRefetch }) {
         )}
 
         {member.type === "invitation" && member.status === "pending" && (
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
+          <>
+            {isInvitationExpiredOrExpiring() && (
               <DropdownMenuItem
-                className="text-red-600"
-                onSelect={(e) => e.preventDefault()}
+                onClick={handleResendInvitation}
+                className="cursor-pointer"
               >
-                <UserX className="mr-2 h-4 w-4" />
-                Annuler l'invitation
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Renvoyer l'invitation
               </DropdownMenuItem>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Annuler l'invitation</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Êtes-vous sûr de vouloir annuler l'invitation pour{" "}
-                  <strong>{member.email}</strong> ?
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Annuler</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={handleCancelInvitation}
-                  className="bg-red-600 hover:bg-red-700"
+            )}
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <DropdownMenuItem
+                  className="text-red-600 cursor-pointer"
+                  onSelect={(e) => e.preventDefault()}
                 >
+                  <UserX className="mr-2 h-4 w-4" />
                   Annuler l'invitation
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+                </DropdownMenuItem>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Annuler l'invitation</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Êtes-vous sûr de vouloir annuler l'invitation pour{" "}
+                    <strong>{member.email}</strong> ?
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Annuler</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleCancelInvitation}
+                    className="bg-red-600 hover:bg-red-700"
+                  >
+                    Annuler l'invitation
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </>
         )}
 
         {member.type === "invitation" &&

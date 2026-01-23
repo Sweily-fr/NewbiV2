@@ -8,16 +8,40 @@ import { toast } from "@/src/components/ui/sonner";
 import { authClient } from "@/src/lib/auth-client";
 import { getErrorMessage, isCriticalError } from "@/src/utils/errorMessages";
 
-// Fonction pour vérifier si un token JWT est expiré
+// Fonction pour vérifier si un token JWT est expiré (avec marge de sécurité de 30 secondes)
 const isTokenExpired = (token) => {
   try {
     const payload = JSON.parse(atob(token.split(".")[1]));
     const currentTime = Date.now() / 1000;
-    return payload.exp < currentTime;
+    // Ajouter une marge de 30 secondes pour éviter les race conditions
+    // où le token expire pendant le traitement de la requête
+    const EXPIRATION_BUFFER_SECONDS = 30;
+    return payload.exp < (currentTime + EXPIRATION_BUFFER_SECONDS);
   } catch {
     // Si on ne peut pas décoder le token, on considère qu'il est expiré
     return true;
   }
+};
+
+// ==================== GARDE ANTI-BOUCLE POUR LES ERREURS AUTH ====================
+// Empêche les toasts multiples et redirections simultanées
+let isAuthErrorHandling = false;
+let authErrorTimeout = null;
+
+const resetAuthErrorGuard = () => {
+  authErrorTimeout = setTimeout(() => {
+    isAuthErrorHandling = false;
+    authErrorTimeout = null;
+  }, 5000); // Reset après 5 secondes
+};
+
+const canHandleAuthError = () => {
+  if (isAuthErrorHandling) {
+    return false;
+  }
+  isAuthErrorHandling = true;
+  resetAuthErrorGuard();
+  return true;
 };
 
 // Configuration Upload Link avec support des uploads de fichiers
@@ -63,7 +87,9 @@ const wsLink =
                 const session = await authClient.getSession({
                   fetchOptions: {
                     onSuccess: (ctx) => {
-                      const jwt = ctx.response.headers.get("set-auth-jwt");
+                      // Vérifier les deux noms de headers possibles
+                      const jwt = ctx.response.headers.get("set-auth-jwt") ||
+                                 ctx.response.headers.get("set-auth-token");
                       if (jwt && !isTokenExpired(jwt)) {
                         jwtToken = jwt;
                       }
@@ -120,30 +146,48 @@ const wsLink =
 if (wsLink && typeof window !== "undefined") {
   wsClient = wsLink.subscriptionClient;
 
-  // Fonction pour reconnecter le WebSocket avec un nouveau token (avec debouncing)
+  // Fonction pour reconnecter le WebSocket avec un nouveau token (avec debouncing amélioré)
   let reconnectTimeout = null;
-  const reconnectWebSocket = () => {
-    if (wsClient && reconnectTimeout === null) {
-      console.log("🔄 [WebSocket] Reconnexion programmée...");
+  let isReconnecting = false;
 
-      // Debouncing : attendre 500ms avant de reconnecter
-      reconnectTimeout = setTimeout(() => {
-        console.log("🔄 [WebSocket] Reconnexion avec nouveau token");
-        wsClient.close(false, false);
-        reconnectTimeout = null;
-        // Le lazy: true va reconnecter automatiquement
-      }, 500);
+  const reconnectWebSocket = () => {
+    // Double vérification pour éviter les reconnexions multiples
+    if (!wsClient || isReconnecting || reconnectTimeout !== null) {
+      return;
     }
+
+    console.log("🔄 [WebSocket] Reconnexion programmée...");
+    isReconnecting = true;
+
+    // Debouncing : attendre 500ms avant de reconnecter
+    reconnectTimeout = setTimeout(() => {
+      console.log("🔄 [WebSocket] Reconnexion avec nouveau token");
+      try {
+        wsClient.close(false, false);
+      } catch (e) {
+        console.warn("⚠️ [WebSocket] Erreur lors de la fermeture:", e.message);
+      }
+      reconnectTimeout = null;
+      isReconnecting = false;
+      // Le lazy: true va reconnecter automatiquement
+    }, 500);
   };
 
   // Écouter UNIQUEMENT les changements de session (connexion/déconnexion)
+  // Note: Cet event listener n'est pas nettoyé car wsLink est un singleton global
+  // et vit pendant toute la durée de l'application
   if (typeof window !== "undefined") {
-    window.addEventListener("storage", (e) => {
-      if (e.key === "better-auth.session_token") {
-        console.log("🔄 [WebSocket] Session changée, reconnexion...");
+    const handleStorageChange = (e) => {
+      if (e.key === "better-auth.session_token" || e.key === "bearer_token") {
+        console.log("🔄 [WebSocket] Session/token changé, reconnexion...");
         reconnectWebSocket();
       }
-    });
+    };
+
+    // Supprimer tout listener existant avant d'en ajouter un nouveau
+    // (au cas où le module serait rechargé en développement)
+    window.removeEventListener("storage", handleStorageChange);
+    window.addEventListener("storage", handleStorageChange);
   }
 }
 
@@ -164,7 +208,9 @@ const authLink = setContext(async (_, { headers }) => {
       const session = await authClient.getSession({
         fetchOptions: {
           onSuccess: (ctx) => {
-            const jwt = ctx.response.headers.get("set-auth-jwt");
+            // Vérifier les deux noms de headers possibles (Better Auth peut utiliser l'un ou l'autre)
+            const jwt = ctx.response.headers.get("set-auth-jwt") ||
+                       ctx.response.headers.get("set-auth-token");
             if (jwt && !isTokenExpired(jwt)) {
               jwtToken = jwt;
               // Stocker le JWT dans localStorage
@@ -217,15 +263,30 @@ const authLink = setContext(async (_, { headers }) => {
 // Intercepteur d'erreurs pour gérer les erreurs d'authentification
 const errorLink = onError(({ graphQLErrors, networkError, operation }) => {
   if (graphQLErrors) {
+    // Utiliser un Set pour éviter les messages en double
+    const processedMessages = new Set();
+
     graphQLErrors.forEach((error) => {
       const { message, extensions } = error;
       const errorWithCode = { message, code: extensions?.code };
+
+      // Éviter de traiter le même message plusieurs fois
+      if (processedMessages.has(message)) {
+        return;
+      }
+      processedMessages.add(message);
 
       // Utiliser notre système centralisé pour obtenir le message utilisateur
       const userMessage = getErrorMessage(errorWithCode, "generic");
 
       // Si l'erreur est critique (authentification), gérer la redirection
       if (isCriticalError(errorWithCode)) {
+        // Utiliser la garde anti-boucle pour éviter les toasts multiples
+        if (!canHandleAuthError()) {
+          console.warn("⚠️ [Apollo] Erreur auth ignorée (déjà en cours de traitement):", message);
+          return;
+        }
+
         // Ne pas afficher de toast si c'est une erreur au chargement initial
         const isInitialLoad = operation.getContext().isInitialLoad;
 
@@ -233,7 +294,11 @@ const errorLink = onError(({ graphQLErrors, networkError, operation }) => {
           toast.error(userMessage, {
             duration: 5000,
             description: "Vous allez être redirigé vers la page de connexion",
+            id: "auth-error-toast", // ID unique pour éviter les doublons de toast
           });
+
+          // Nettoyer le token invalide
+          localStorage.removeItem("bearer_token");
 
           // Rediriger vers la page de connexion après un délai
           setTimeout(() => {

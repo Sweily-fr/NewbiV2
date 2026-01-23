@@ -1,4 +1,5 @@
 import Stripe from "stripe";
+import { getPlanLimits as getCentralizedPlanLimits, SEAT_PRICE } from "../lib/plan-limits.js";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const SEAT_PRICE_ID = process.env.STRIPE_SEAT_PRICE_ID; // Prix par siège additionnel
@@ -7,45 +8,28 @@ const BASE_PRICE_ID = process.env.STRIPE_PRICE_ID_MONTH; // Prix du plan Pro de 
 /**
  * Service de gestion des limites d'utilisateurs par plan
  * Les utilisateurs sont INCLUS dans le plan (pas de facturation par siège)
- * - Freelance : 1 utilisateur max
- * - PME : 10 utilisateurs max
- * - Entreprise : 25 utilisateurs max
+ * - Freelance : Owner seul (0 invité)
+ * - PME : 10 utilisateurs invités max
+ * - Entreprise : 25 utilisateurs invités max
  */
 export class SeatSyncService {
   /**
-   * Récupère les limites d'un plan
+   * Récupère les limites d'un plan (utilise la config centralisée)
    * @param {string} planName
    * @returns {Object}
    */
   getPlanLimits(planName) {
-    const limits = {
-      freelance: {
-        users: 0, // 0 utilisateur invité (owner seul)
-        accountants: 1, // 1 comptable gratuit
-        canAddPaidUsers: false, // Pas de siège payant possible
-        workspaces: 1,
-        bankAccounts: 1,
-        storage: 50,
-      },
-      pme: {
-        users: 10, // 10 utilisateurs inclus
-        accountants: 3, // 3 comptables gratuits
-        canAddPaidUsers: true, // Sièges payants possibles (7,49€/mois)
-        workspaces: 1,
-        bankAccounts: 3,
-        storage: 200,
-      },
-      entreprise: {
-        users: 25, // 25 utilisateurs inclus
-        accountants: 5, // 5 comptables gratuits
-        canAddPaidUsers: true, // Sièges payants possibles (7,49€/mois)
-        workspaces: 1,
-        bankAccounts: 5,
-        storage: 500,
-      },
-    };
+    const centralLimits = getCentralizedPlanLimits(planName);
 
-    return limits[planName?.toLowerCase()] || limits.freelance;
+    // Adapter le format pour la compatibilité avec le code existant
+    return {
+      users: centralLimits.invitableUsers,  // Nombre d'utilisateurs invitables
+      accountants: centralLimits.accountants,
+      canAddPaidUsers: centralLimits.canAddPaidUsers,
+      workspaces: centralLimits.workspaces,
+      bankAccounts: centralLimits.bankAccounts,
+      storage: centralLimits.storage,
+    };
   }
 
   /**
@@ -288,8 +272,10 @@ export class SeatSyncService {
         })
         .toArray();
 
-      // 4. Exclure les comptables (1 comptable gratuit par organisation)
-      const billableMembers = members.filter((m) => m.role !== "accountant");
+      // 4. Exclure les comptables ET l'owner (owner n'est pas facturé, comptables sont gratuits)
+      const billableMembers = members.filter(
+        (m) => m.role !== "accountant" && m.role !== "owner"
+      );
 
       // 5. Calculer les sièges additionnels = membres facturables - limite incluse
       const additionalSeats = Math.max(
@@ -302,6 +288,8 @@ export class SeatSyncService {
         includedUsers,
         totalMembers: members.length,
         billableMembers: billableMembers.length,
+        ownersExcluded: members.filter((m) => m.role === "owner").length,
+        accountantsExcluded: members.filter((m) => m.role === "accountant").length,
         additionalSeats,
       });
 
@@ -365,8 +353,9 @@ export class SeatSyncService {
         .find({ organizationId })
         .toArray();
 
+      // Membres facturables = tous sauf owner, accountant et pending
       const billableMembers = members.filter(
-        (m) => m.role !== "owner" && m.role !== "pending"
+        (m) => m.role !== "owner" && m.role !== "accountant" && m.role !== "pending"
       );
       const currentMembers = billableMembers.length;
       const availableSeats = Math.max(0, includedSeats - currentMembers);
@@ -690,20 +679,34 @@ export class SeatSyncService {
   }
 
   /**
-   * ⚠️ DÉSACTIVÉ - Les utilisateurs sont inclus dans le plan
-   * Synchronise après suppression de membre
+   * ✅ ACTIVÉ - Synchronise les sièges après suppression d'un membre
    * Utilise la même logique que l'acceptation d'invitation
+   * Permet de réduire la facturation quand des membres sont supprimés
    *
    * @param {string} organizationId - ID de l'organisation
    * @param {Object} adapter - Adapter Better Auth
    * @returns {Promise<Object>} Résultat de la synchronisation
    */
   async syncSeatsAfterMemberRemoved(organizationId, adapter) {
-    console.log(`ℹ️ [SEAT SYNC] Désactivé - Utilisateurs inclus dans le plan`);
-    return {
-      success: true,
-      message: "Synchronisation désactivée - utilisateurs inclus dans le plan",
-    };
+    console.log(
+      `🔄 [SEAT SYNC] Synchronisation après suppression de membre pour organisation ${organizationId}`
+    );
+
+    try {
+      // Réutiliser la même logique que pour l'acceptation d'invitation
+      // Cela va recalculer le nombre de sièges et mettre à jour Stripe si nécessaire
+      return await this.syncSeatsAfterInvitationAccepted(organizationId, adapter);
+    } catch (error) {
+      console.error(
+        `❌ [SEAT SYNC] Erreur synchronisation après suppression:`,
+        error
+      );
+      // Ne pas propager l'erreur pour ne pas bloquer la suppression du membre
+      return {
+        success: false,
+        message: `Erreur synchronisation: ${error.message}`,
+      };
+    }
   }
 
   /**

@@ -209,13 +209,13 @@ export function NewHeroNavbar({ hasBanner = false }) {
               <Link
                 href="/"
                 aria-label="home"
-                className="flex gap-2 items-center -ml-3.5 lg:ml-0"
+                className="flex gap-2 items-center"
               >
                 <img
                   src="/newbiLetter.png"
                   alt="Logo newbi"
-                  width="100"
-                  height="40"
+                  width="90"
+                  height="36"
                   className="object-contain"
                 />
               </Link>
@@ -354,32 +354,14 @@ export function NewHeroNavbar({ hasBanner = false }) {
 
             {/* Desktop buttons */}
             <div className="hidden lg:flex lg:items-center lg:gap-2">
-              <Button
-                asChild
-                variant="outline"
-                size="md"
-                className={cn(isScrolled && "lg:hidden")}
-              >
+              <Button asChild variant="outline" size="md">
                 <Link href="/auth/login">
                   <span>Connexion</span>
                 </Link>
               </Button>
-              <Button
-                asChild
-                size="md"
-                className={cn(isScrolled && "lg:hidden")}
-              >
+              <Button asChild size="md">
                 <Link href="/auth/signup">
                   <span>Inscription</span>
-                </Link>
-              </Button>
-              <Button
-                asChild
-                size="md"
-                className={cn(isScrolled ? "lg:inline-flex" : "hidden")}
-              >
-                <Link href="/auth/signup">
-                  <span>Démarrer</span>
                 </Link>
               </Button>
             </div>

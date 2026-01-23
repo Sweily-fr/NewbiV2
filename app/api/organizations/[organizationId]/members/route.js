@@ -35,9 +35,21 @@ export async function GET(request, { params }) {
           },
         },
         {
+          // Convertir userId en ObjectId si c'est une string
+          $addFields: {
+            userIdAsObjectId: {
+              $cond: {
+                if: { $eq: [{ $type: "$userId" }, "string"] },
+                then: { $toObjectId: "$userId" },
+                else: "$userId"
+              }
+            }
+          }
+        },
+        {
           $lookup: {
             from: "user",
-            localField: "userId",
+            localField: "userIdAsObjectId",
             foreignField: "_id",
             as: "user",
           },
@@ -56,7 +68,8 @@ export async function GET(request, { params }) {
             status: 1,
             email: "$user.email",
             name: "$user.name",
-            avatar: "$user.avatar",
+            avatar: { $ifNull: ["$user.avatar", "$user.image"] },
+            image: "$user.image",
             type: { $literal: "member" },
           },
         },
@@ -86,6 +99,15 @@ export async function GET(request, { params }) {
     console.log(
       `✅ API - ${members.length} membres + ${invitations.length} invitations pour org ${organizationId}`
     );
+
+    // Debug: afficher les avatars des membres
+    if (members.length > 0) {
+      console.log("🖼️ Avatars des membres:", members.map(m => ({
+        email: m.email,
+        avatar: m.avatar,
+        image: m.image
+      })));
+    }
 
     return NextResponse.json({
       success: true,

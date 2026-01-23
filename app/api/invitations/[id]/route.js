@@ -102,6 +102,30 @@ export async function POST(request, { params }) {
         );
       }
 
+      // Vérifier si l'invitation a expiré
+      if (invitation.expiresAt && new Date(invitation.expiresAt) < new Date()) {
+        console.log(`❌ Invitation expirée: ${invitation.expiresAt}`);
+        return Response.json(
+          {
+            error: "Invitation expirée",
+            details: `Cette invitation a expiré le ${new Date(invitation.expiresAt).toLocaleDateString("fr-FR")}. Veuillez demander une nouvelle invitation.`,
+          },
+          { status: 410 }
+        );
+      }
+
+      // Vérifier si l'invitation a déjà été traitée
+      if (invitation.status !== "pending") {
+        console.log(`❌ Invitation déjà traitée: ${invitation.status}`);
+        return Response.json(
+          {
+            error: "Invitation déjà traitée",
+            details: `Cette invitation a déjà été ${invitation.status === "accepted" ? "acceptée" : invitation.status === "rejected" ? "refusée" : "annulée"}.`,
+          },
+          { status: 400 }
+        );
+      }
+
       console.log(`📧 Email invitation: ${invitation.email}`);
       console.log(`📧 Email utilisateur: ${session.user.email}`);
 

@@ -3,6 +3,7 @@
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { authClient } from "@/src/lib/auth-client";
 import { useState, useEffect } from "react";
+import { getPlanLimits as getCentralizedPlanLimits } from "@/src/lib/plan-limits";
 
 /**
  * Hook pour vérifier les limites d'utilisation selon le plan d'abonnement
@@ -96,36 +97,20 @@ export function useSubscriptionLimits() {
 }
 
 /**
- * Récupère les limites d'un plan
+ * Récupère les limites d'un plan (utilise la config centralisée)
  * @param {string} planName
  * @returns {Object}
  */
 function getPlanLimits(planName) {
-  const limits = {
-    freelance: {
-      users: 1,
-      workspaces: 1,
-      projects: 50,
-      storage: 50,
-      invoices: 500,
-    },
-    pme: {
-      users: 10,
-      workspaces: 1,
-      projects: 200,
-      storage: 200,
-      invoices: 2000,
-    },
-    entreprise: {
-      users: 25,
-      workspaces: 1,
-      projects: 500,
-      storage: 500,
-      invoices: 5000,
-    },
-  };
+  const centralLimits = getCentralizedPlanLimits(planName);
 
-  return (
-    limits[planName] || { users: 0, workspaces: 0, projects: 0, invoices: 0 }
-  );
+  // Adapter le format pour la compatibilité avec le code existant
+  // Note: users ici = totalUsers (owner + invités) pour l'affichage
+  return {
+    users: centralLimits.totalUsers,
+    workspaces: centralLimits.workspaces,
+    projects: centralLimits.projects,
+    storage: centralLimits.storage,
+    invoices: centralLimits.invoices,
+  };
 }

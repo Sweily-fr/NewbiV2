@@ -25,6 +25,12 @@ import {
   GripVertical,
 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/src/components/ui/tooltip";
 
 // Icône selon le type de fichier
 const getFileIcon = (mimeType, extension, className = "size-3.5 text-muted-foreground/70") => {
@@ -77,15 +83,15 @@ function DraggableItem({ id, item, level, isExpanded, onToggle, onClick, onConte
 
   return (
     <motion.div
-      layout
+      layout="position"
       initial={{ opacity: 0, x: -10 }}
       animate={{
         opacity: isDragging ? 0.5 : 1,
         x: 0,
-        scale: isOver && isFolder ? 1.02 : 1,
       }}
       exit={{ opacity: 0, x: -10 }}
       transition={{ duration: 0.15, ease: "easeOut" }}
+      className="overflow-hidden w-full"
     >
       <div
         ref={(node) => {
@@ -94,10 +100,10 @@ function DraggableItem({ id, item, level, isExpanded, onToggle, onClick, onConte
         }}
         style={style}
         className={cn(
-          "flex items-center gap-2 py-1.5 pr-2 rounded select-none",
-          "transition-all duration-100",
+          "flex items-center gap-2 py-1.5 pr-2 rounded select-none min-w-0 w-full",
+          "transition-colors duration-100",
           "hover:bg-accent/40",
-          isOver && isFolder && "bg-accent/50",
+          isOver && isFolder && "bg-accent/60 ring-1 ring-primary/30",
           isDragging && "opacity-40",
           canDrag ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"
         )}
@@ -137,7 +143,14 @@ function DraggableItem({ id, item, level, isExpanded, onToggle, onClick, onConte
           getFileIcon(item.mimeType, item.fileExtension)
         )}
 
-        <span className="truncate text-sm flex-1">{item.name}</span>
+        <Tooltip delayDuration={500}>
+          <TooltipTrigger asChild>
+            <span className="truncate text-sm flex-1 min-w-0">{item.name}</span>
+          </TooltipTrigger>
+          <TooltipContent side="right" className="max-w-xs break-all">
+            {item.name}
+          </TooltipContent>
+        </Tooltip>
 
         {item.count !== undefined && item.count > 0 && (
           <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
@@ -454,26 +467,28 @@ export function DraggableTree({
   }, [treeData]);
 
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={collisionDetection}
-      onDragStart={handleDragStart}
-      onDragOver={handleDragOver}
-      onDragEnd={handleDragEnd}
-      onDragCancel={handleDragCancel}
-    >
-      <div className="py-1">
-        <AnimatePresence initial={false}>
-          {treeData.rootItems.map((itemId) => renderItem(itemId, 0))}
-        </AnimatePresence>
-      </div>
+    <TooltipProvider>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={collisionDetection}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragEnd={handleDragEnd}
+        onDragCancel={handleDragCancel}
+      >
+        <div className="py-1 overflow-hidden">
+          <AnimatePresence initial={false}>
+            {treeData.rootItems.map((itemId) => renderItem(itemId, 0))}
+          </AnimatePresence>
+        </div>
 
-      <DragOverlay dropAnimation={{
-        duration: 150,
-        easing: "ease-out",
-      }}>
-        {activeItem && <DragOverlayContent item={activeItem} />}
-      </DragOverlay>
-    </DndContext>
+        <DragOverlay dropAnimation={{
+          duration: 150,
+          easing: "ease-out",
+        }}>
+          {activeItem && <DragOverlayContent item={activeItem} />}
+        </DragOverlay>
+      </DndContext>
+    </TooltipProvider>
   );
 }

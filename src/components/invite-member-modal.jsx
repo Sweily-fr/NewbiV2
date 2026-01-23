@@ -15,33 +15,49 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/src/components/ui/dialog";
-import { X, Users, LoaderCircle } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/src/components/ui/alert-dialog";
+import { X, Users, LoaderCircle, CreditCard } from "lucide-react";
 import { useOrganizationInvitations } from "@/src/hooks/useOrganizationInvitations";
 import MultipleSelector from "@/src/components/ui/multiselect";
 import { Avatar, AvatarFallback } from "@/src/components/ui/avatar";
 import { Callout } from "@/src/components/ui/callout";
 import { useDashboardLayoutContext } from "@/src/contexts/dashboard-layout-context";
 import { toast } from "@/src/components/ui/sonner";
+import { getPlanLimits, SEAT_PRICE } from "@/src/lib/plan-limits";
 
-export function InviteMemberModal({ open, onOpenChange, onSuccess }) {
+export function InviteMemberModal({ open, onOpenChange, onSuccess, organizationId: propOrganizationId = null }) {
   const [invitedEmails, setInvitedEmails] = useState([]);
   const [membersWithRoles, setMembersWithRoles] = useState([]);
   const [seatsInfo, setSeatsInfo] = useState(null);
   const [existingMembers, setExistingMembers] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [showPaidSeatsConfirm, setShowPaidSeatsConfirm] = useState(false);
+  const [paidSeatsInfo, setPaidSeatsInfo] = useState(null);
   const { inviteMember, inviting } = useOrganizationInvitations();
-  const { organization } = useDashboardLayoutContext();
+  const { organization: dashboardOrganization } = useDashboardLayoutContext();
+
+  // Utiliser l'organizationId fourni en prop, sinon celui du dashboard
+  const targetOrganizationId = propOrganizationId || dashboardOrganization?.id;
 
   // Récupérer les informations sur les sièges et les membres existants
   useEffect(() => {
     const fetchData = async () => {
-      if (!organization?.id) return;
+      if (!targetOrganizationId) return;
 
       setIsLoading(true);
       try {
         // Récupérer les membres existants (comme dans espaces-section)
         const membersResponse = await fetch(
-          `/api/organizations/${organization.id}/members`
+          `/api/organizations/${targetOrganizationId}/members`
         );
 
         if (membersResponse.ok) {
@@ -102,15 +118,8 @@ export function InviteMemberModal({ open, onOpenChange, onSuccess }) {
 
             // Récupérer le plan de l'organisation depuis la DB
             const subResponse = await fetch(
-              `/api/organizations/${organization.id}/subscription`
+              `/api/organizations/${targetOrganizationId}/subscription`
             );
-
-            // Nouvelles limites par plan
-            const planLimitsConfig = {
-              freelance: { users: 0, accountants: 1, canAddPaidUsers: false },
-              pme: { users: 10, accountants: 3, canAddPaidUsers: true },
-              entreprise: { users: 25, accountants: 5, canAddPaidUsers: true },
-            };
 
             let planName = "freelance";
 
@@ -127,9 +136,9 @@ export function InviteMemberModal({ open, onOpenChange, onSuccess }) {
               );
             }
 
-            const planLimits =
-              planLimitsConfig[planName] || planLimitsConfig.freelance;
-            const availableUsers = Math.max(0, planLimits.users - currentUsers);
+            // Utiliser les limites centralisées
+            const planLimits = getPlanLimits(planName);
+            const availableUsers = Math.max(0, planLimits.invitableUsers - currentUsers);
             const availableAccountants = Math.max(
               0,
               planLimits.accountants - currentAccountants
@@ -138,13 +147,13 @@ export function InviteMemberModal({ open, onOpenChange, onSuccess }) {
             setSeatsInfo({
               currentUsers,
               currentAccountants,
-              includedUsers: planLimits.users,
+              includedUsers: planLimits.invitableUsers,
               includedAccountants: planLimits.accountants,
               availableUsers,
               availableAccountants,
               canAddPaidUsers: planLimits.canAddPaidUsers,
               plan: planName,
-              seatCost: 7.49,
+              seatCost: SEAT_PRICE,
             });
 
             console.log("📊 Seats info calculé:", {
@@ -169,7 +178,7 @@ export function InviteMemberModal({ open, onOpenChange, onSuccess }) {
     if (open) {
       fetchData();
     }
-  }, [open, organization?.id]);
+  }, [open, targetOrganizationId]);
 
   // Quand on ajoute des emails, les ajouter à la liste avec un rôle par défaut
   const handleEmailsChange = (emails) => {
@@ -233,18 +242,86 @@ export function InviteMemberModal({ open, onOpenChange, onSuccess }) {
     );
   };
 
-  // Envoyer les invitations
+  // Vérifier les limites et demander confirmation si sièges payants
   const handleInviteAll = async () => {
+    if (!targetOrganizationId || membersWithRoles.length === 0) return;
+
+    // 1. Compter les utilisateurs et comptables dans le batch
+    const newUsers = membersWithRoles.filter((m) => m.role !== "accountant").length;
+    const newAccountants = membersWithRoles.filter((m) => m.role === "accountant").length;
+
+    // 2. Vérifier les limites AVANT d'envoyer (évite la race condition)
+    const totalUsersAfter = (seatsInfo?.currentUsers || 0) + newUsers;
+    const totalAccountantsAfter = (seatsInfo?.currentAccountants || 0) + newAccountants;
+
+    // Vérifier limite comptables
+    if (totalAccountantsAfter > (seatsInfo?.includedAccountants || 0)) {
+      toast.error(
+        `Limite de ${seatsInfo?.includedAccountants} comptable(s) dépassée. Vous essayez d'ajouter ${newAccountants} comptable(s) mais il n'en reste que ${seatsInfo?.availableAccountants}.`
+      );
+      return;
+    }
+
+    // Vérifier limite utilisateurs
+    const usersOverLimit = totalUsersAfter - (seatsInfo?.includedUsers || 0);
+    if (usersOverLimit > 0 && !seatsInfo?.canAddPaidUsers) {
+      toast.error(
+        `Le plan ${seatsInfo?.plan?.toUpperCase()} ne permet pas d'inviter d'utilisateurs. Passez au plan PME ou ENTREPRISE.`
+      );
+      return;
+    }
+
+    // 3. Demander confirmation si sièges payants
+    if (usersOverLimit > 0 && seatsInfo?.canAddPaidUsers) {
+      const additionalCost = usersOverLimit * SEAT_PRICE;
+      setPaidSeatsInfo({
+        count: usersOverLimit,
+        monthlyCost: additionalCost,
+      });
+      setShowPaidSeatsConfirm(true);
+      return;
+    }
+
+    // 4. Envoyer les invitations directement si pas de surcoût
+    await sendAllInvitations();
+  };
+
+  // Envoyer toutes les invitations
+  const sendAllInvitations = async () => {
+    const results = [];
+    const errors = [];
+
     for (const member of membersWithRoles) {
-      await inviteMember({
+      const result = await inviteMember({
         email: member.email,
         role: member.role,
+        organizationId: targetOrganizationId,
       });
+
+      if (result.success) {
+        results.push(member.email);
+      } else {
+        errors.push({ email: member.email, error: result.error });
+      }
+    }
+
+    // Afficher le résumé
+    if (errors.length > 0) {
+      toast.error(
+        `${errors.length} invitation(s) échouée(s)`,
+        { description: errors.map((e) => e.email).join(", ") }
+      );
+    }
+
+    if (results.length > 0) {
+      toast.success(`${results.length} invitation(s) envoyée(s)`);
     }
 
     // Réinitialiser et fermer
     setInvitedEmails([]);
     setMembersWithRoles([]);
+    setShowPaidSeatsConfirm(false);
+    setPaidSeatsInfo(null);
     onOpenChange(false);
     if (onSuccess) {
       onSuccess();
@@ -269,6 +346,7 @@ export function InviteMemberModal({ open, onOpenChange, onSuccess }) {
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px] p-6 gap-5">
         <DialogHeader className="space-y-2">
@@ -516,5 +594,57 @@ export function InviteMemberModal({ open, onOpenChange, onSuccess }) {
         )}
       </DialogContent>
     </Dialog>
+
+    {/* Dialog de confirmation pour sièges payants */}
+    <AlertDialog open={showPaidSeatsConfirm} onOpenChange={setShowPaidSeatsConfirm}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle className="flex items-center gap-2">
+            <CreditCard className="h-5 w-5 text-amber-500" />
+            Sièges supplémentaires
+          </AlertDialogTitle>
+          <AlertDialogDescription className="text-sm text-muted-foreground">
+            {paidSeatsInfo && (
+              <>
+                Vous avez atteint la limite de votre plan. L'ajout de{" "}
+                <span className="font-medium text-foreground">
+                  {paidSeatsInfo.count} utilisateur{paidSeatsInfo.count > 1 ? "s" : ""}
+                </span>{" "}
+                supplémentaire{paidSeatsInfo.count > 1 ? "s" : ""} entraînera une facturation de{" "}
+                <span className="font-medium text-foreground">
+                  {paidSeatsInfo.monthlyCost.toFixed(2).replace(".", ",")}€/mois
+                </span>
+                .
+              </>
+            )}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel
+            onClick={() => {
+              setShowPaidSeatsConfirm(false);
+              setPaidSeatsInfo(null);
+            }}
+          >
+            Annuler
+          </AlertDialogCancel>
+          <AlertDialogAction
+            onClick={sendAllInvitations}
+            disabled={inviting}
+            className="bg-[#5b4fff] hover:bg-[#5b4fff]/90"
+          >
+            {inviting ? (
+              <>
+                <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                Envoi...
+              </>
+            ) : (
+              "Confirmer et inviter"
+            )}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
