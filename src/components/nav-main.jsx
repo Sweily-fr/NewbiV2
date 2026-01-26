@@ -167,7 +167,8 @@ export function NavMain({
 
   // Fonction spéciale pour le menu Ventes avec actions rapides
   const renderVentesMenu = () => {
-    if (isCollapsed) {
+    // Sur mobile, toujours utiliser le pattern Collapsible pour rester dans le viewport
+    if (isCollapsed && !isMobile) {
       return (
         <DropdownMenu key="ventes">
           <SidebarMenuItem>
@@ -186,7 +187,7 @@ export function NavMain({
               </SidebarMenuButton>
             </DropdownMenuTrigger>
             <DropdownMenuContent
-              side="right"
+              side={isMobile ? "bottom" : "right"}
               align="start"
               className="min-w-[180px]"
             >
@@ -382,7 +383,7 @@ export function NavMain({
             </DropdownMenuTrigger>
             <DropdownMenuContent
               className="w-80 rounded-lg"
-              side="right"
+              side={isMobile ? "bottom" : "right"}
               align="start"
               sideOffset={8}
             >
@@ -481,7 +482,7 @@ export function NavMain({
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
-            side="right"
+            side={isMobile ? "bottom" : "right"}
             align="start"
             className="w-64 rounded-lg"
             sideOffset={8}
@@ -573,7 +574,8 @@ export function NavMain({
   ) => {
     const IconComponent = icon;
 
-    if (isCollapsed) {
+    // Sur mobile, toujours utiliser le pattern Collapsible pour rester dans le viewport
+    if (isCollapsed && !isMobile) {
       return (
         <DropdownMenu key={title}>
           <SidebarMenuItem>
@@ -592,7 +594,7 @@ export function NavMain({
               </SidebarMenuButton>
             </DropdownMenuTrigger>
             <DropdownMenuContent
-              side="right"
+              side={isMobile ? "bottom" : "right"}
               align="start"
               className="min-w-[180px]"
             >

@@ -302,14 +302,14 @@ export function TeamSwitcher() {
           <SidebarMenuButton
             size="lg"
             disabled
-            className={isCollapsed ? "justify-center" : ""}
+            className={isCollapsed && !isMobile ? "justify-center" : ""}
           >
             <img
               src="/newbi.svg"
               alt="NewBi Logo"
-              className={isCollapsed ? "size-8" : "size-8"}
+              className="size-8"
             />
-            {!isCollapsed && (
+            {(!isCollapsed || isMobile) && (
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">...</span>
                 <span className="truncate text-xs">-</span>
@@ -329,14 +329,14 @@ export function TeamSwitcher() {
           <SidebarMenuButton
             size="lg"
             disabled
-            className={isCollapsed ? "justify-center" : ""}
+            className={isCollapsed && !isMobile ? "justify-center" : ""}
           >
             <img
               src="/newbi.svg"
               alt="NewBi Logo"
-              className={isCollapsed ? "size-8" : "size-8"}
+              className="size-8"
             />
-            {!isCollapsed && (
+            {(!isCollapsed || isMobile) && (
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">
                   Aucune organisation
@@ -362,14 +362,14 @@ export function TeamSwitcher() {
               <SidebarMenuButton
                 size="lg"
                 data-tutorial="team-switcher"
-                className={`data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground cursor-pointer ${isCollapsed ? "justify-center" : ""}`}
+                className={`data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground cursor-pointer ${isCollapsed && !isMobile ? "justify-center" : ""}`}
               >
                 <img
                   src="/newbi.svg"
                   alt="NewBi Logo"
-                  className={isCollapsed ? "size-8" : "size-7"}
+                  className={isCollapsed && !isMobile ? "size-8" : "size-7"}
                 />
-                {!isCollapsed && (
+                {(!isCollapsed || isMobile) && (
                   <>
                     <div className="grid flex-1 text-left text-sm leading-tight">
                       <span className="truncate font-medium text-sm">

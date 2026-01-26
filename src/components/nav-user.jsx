@@ -125,10 +125,10 @@ export function NavUser({ user }) {
             <SidebarMenuButton
               size="lg"
               data-tutorial="nav-user"
-              className={`data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground cursor-pointer ${isCollapsed ? "justify-center overflow-visible" : ""}`}
+              className={`data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground cursor-pointer ${isCollapsed && !isMobile ? "justify-center overflow-visible" : ""}`}
             >
               <div
-                className={`relative ${isCollapsed ? "overflow-visible" : ""}`}
+                className={`relative ${isCollapsed && !isMobile ? "overflow-visible" : ""}`}
               >
                 <Avatar className="h-8 w-8 rounded-lg">
                   {profileImage ? (
@@ -169,7 +169,7 @@ export function NavUser({ user }) {
                   </span>
                 )}
               </div>
-              {!isCollapsed && (
+              {(!isCollapsed || isMobile) && (
                 <>
                   <div className="grid flex-1 text-left text-sm leading-tight">
                     <span className="truncate font-medium">{user.name}</span>

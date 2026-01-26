@@ -520,7 +520,7 @@ export function useDashboardLayoutSimple() {
   };
 
   const isActive = (requirePaidSubscription = false) => {
-    // Vérifier si l'abonnement est actif ou en période d'essai
+    // Vérifier si l'abonnement Stripe est actif ou en période d'essai Stripe
     const hasActiveSubscription =
       subscription?.status === "active" || subscription?.status === "trialing";
 
@@ -533,19 +533,16 @@ export function useDashboardLayoutSimple() {
     const hasValidSubscription =
       hasActiveSubscription || hasCanceledButValidSubscription;
 
-    // Si on exige un abonnement payant, ignorer la période d'essai ET le trial
+    // Si on exige un abonnement payant, ignorer la période d'essai Stripe (trialing)
     if (requirePaidSubscription) {
-      // Pour un abonnement payant requis, on accepte active ou canceled avec période valide
       return (
         subscription?.status === "active" || hasCanceledButValidSubscription
       );
     }
 
-    // Sinon, accepter aussi la période d'essai (trialing) et le trial de l'organisation
-    if (!hasValidSubscription) {
-      return trial.hasPremiumAccess;
-    }
-
+    // ⚠️ IMPORTANT: On ne fait plus de fallback sur le trial organisation
+    // Seuls les abonnements Stripe sont acceptés (active, trialing, canceled valide)
+    // Les anciens utilisateurs avec trial organisation devront souscrire via Stripe
     return hasValidSubscription;
   };
 

@@ -218,7 +218,7 @@ function DashboardContent({ children }) {
         // DÉSACTIVÉ: SuperPDP API pas encore active
         // onOpenEInvoicingPromo={() => setEInvoicingPromoOpen(true)}
       />
-      <SidebarInset className="md:pt-0 pt-10">
+      <SidebarInset>
         <SiteHeader />
         <div className="flex flex-1 flex-col overflow-y-auto">
           {showTrialBanner && (
