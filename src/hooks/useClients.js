@@ -1,6 +1,7 @@
 import { useMutation, useQuery } from '@apollo/client';
 import { CREATE_CLIENT, UPDATE_CLIENT, DELETE_CLIENT } from '../graphql/mutations/clients';
 import { GET_CLIENTS, GET_CLIENT } from '../graphql/queries/clients';
+import { GET_CLIENT_LISTS } from '../graphql/queries/clientLists';
 import { toast } from '@/src/components/ui/sonner';
 import { useWorkspace } from './useWorkspace';
 import { useErrorHandler } from './useErrorHandler';
@@ -71,6 +72,10 @@ export const useCreateClient = () => {
         // Si la query n'existe pas dans le cache, on l'ignore
       }
     },
+    refetchQueries: [
+      { query: GET_CLIENT_LISTS, variables: { workspaceId } }
+    ],
+    awaitRefetchQueries: false,
     onCompleted: () => {
       toast.success('Client créé avec succès');
     },
