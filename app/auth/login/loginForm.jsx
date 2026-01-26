@@ -138,22 +138,15 @@ const ensureActiveOrganization = async () => {
           user.name || `Espace ${user.email.split("@")[0]}'s`;
         const organizationSlug = `org-${user.id.slice(-8)}`;
 
-        // Calculer les dates de trial (14 jours)
-        const now = new Date();
-        const trialEnd = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
-
         console.log(
-          `🔄 Création organisation pour ${user.email} avec trial...`
+          `🔄 Création organisation pour ${user.email}...`
         );
 
-        // Créer l'organisation directement avec authClient + champs trial
+        // ⚠️ IMPORTANT: Ne plus créer de trial organisation
+        // L'utilisateur devra souscrire via Stripe (avec 30 jours d'essai Stripe)
         const result = await authClient.organization.create({
           name: organizationName,
           slug: organizationSlug,
-          trialStartDate: now.toISOString(),
-          trialEndDate: trialEnd.toISOString(),
-          isTrialActive: true,
-          hasUsedTrial: true,
           metadata: {
             autoCreated: true,
             createdAt: new Date().toISOString(),
@@ -167,10 +160,8 @@ const ensureActiveOrganization = async () => {
             result.error
           );
         } else {
-          console.log(`✅ Organisation créée avec trial:`, result.data);
-          toast.success(
-            "Bienvenue ! Votre période d'essai de 14 jours a démarré."
-          );
+          console.log(`✅ Organisation créée:`, result.data);
+          // Pas de toast ici, l'utilisateur sera redirigé vers l'onboarding pour s'abonner
         }
       } catch (error) {
         console.error("❌ Erreur lors de la création automatique:", error);
@@ -335,45 +326,13 @@ const LoginForm = () => {
             if (response.ok) {
               const result = await response.json();
 
+              // ⚠️ IMPORTANT: Ne plus créer de trial organisation
+              // L'utilisateur devra souscrire via Stripe (avec 30 jours d'essai Stripe)
               if (result.data) {
-                try {
-                  console.log(`🔄 Ajout des champs trial...`);
-
-                  const now = new Date();
-                  const trialEnd = new Date(
-                    now.getTime() + 14 * 24 * 60 * 60 * 1000
-                  );
-
-                  const updateResult = await authClient.organization.update({
-                    organizationId: result.data.id,
-                    data: {
-                      trialStartDate: now.toISOString(),
-                      trialEndDate: trialEnd.toISOString(),
-                      isTrialActive: true,
-                      hasUsedTrial: true,
-                    },
-                  });
-
-                  if (updateResult.error) {
-                    console.error(
-                      `❌ Erreur mise à jour trial:`,
-                      updateResult.error
-                    );
-                    toast.success(
-                      "Bienvenue ! Votre espace de travail a été créé."
-                    );
-                  } else {
-                    console.log(`✅ Champs trial ajoutés:`, updateResult.data);
-                    toast.success(
-                      "Bienvenue ! Votre période d'essai de 14 jours a démarré."
-                    );
-                  }
-                } catch (updateError) {
-                  console.error(`❌ Erreur mise à jour trial:`, updateError);
-                  toast.success(
-                    "Bienvenue ! Votre espace de travail a été créé."
-                  );
-                }
+                console.log(`✅ Invitation acceptée:`, result.data);
+                toast.success(
+                  "Invitation acceptée ! Bienvenue dans l'organisation."
+                );
               } else {
                 toast.success(
                   "Bienvenue ! Votre espace de travail a été créé."
@@ -401,23 +360,15 @@ const LoginForm = () => {
         if (callbackUrl) {
           router.push(callbackUrl);
         } else {
-          // Vérifier si l'utilisateur a complété l'onboarding
+          // Vérifier l'abonnement Stripe AVANT de rediriger
           try {
             const { data: session } = await authClient.getSession();
-            const hasSeenOnboarding = session?.user?.hasSeenOnboarding;
-
-            // Si l'utilisateur n'a pas vu l'onboarding, le rediriger
-            if (!hasSeenOnboarding) {
-              console.log(
-                "🎯 [LOGIN] Première connexion, redirection vers onboarding"
-              );
-              router.push("/onboarding");
-              return;
-            }
-
-            // Sinon, continuer avec la logique normale
             const organizationId = session?.session?.activeOrganizationId;
+            const hasSeenOnboarding = session?.user?.hasSeenOnboarding;
             const userRedirectPage = session?.user?.redirect_after_login;
+
+            // ⚠️ IMPORTANT: Vérifier l'abonnement Stripe en priorité
+            let hasActiveSubscription = false;
 
             if (organizationId) {
               const { data: subscriptions } =
@@ -427,49 +378,62 @@ const LoginForm = () => {
                   },
                 });
 
-              const hasActiveSubscription = subscriptions?.some(
+              hasActiveSubscription = subscriptions?.some(
                 (sub) => sub.status === "active" || sub.status === "trialing"
               );
-
-              // Utiliser la page de démarrage préférée de l'utilisateur ou fallback
-              let redirectPath = "/dashboard";
-
-              if (userRedirectPage && userRedirectPage !== "last-page") {
-                // Mapper les pages vers leurs vraies routes
-                const routeMap = {
-                  dashboard: "/dashboard",
-                  outils: "/dashboard",
-                  kanban: "/dashboard/outils/kanban",
-                  calendar: "/dashboard/calendar",
-                  factures: "/dashboard/outils/factures",
-                  devis: "/dashboard/outils/devis",
-                  clients: "/dashboard/clients",
-                  depenses: "/dashboard/outils/transactions",
-                  signatures: "/dashboard/outils/signatures-mail",
-                  transferts: "/dashboard/outils/transferts-fichiers",
-                  catalogues: "/dashboard/catalogues",
-                  collaborateurs: "/dashboard/collaborateurs",
-                  analytics: "/dashboard/analytics",
-                  favoris: "/dashboard/favoris",
-                };
-
-                redirectPath = routeMap[userRedirectPage] || "/dashboard";
-              } else if (hasActiveSubscription) {
-                redirectPath = "/dashboard";
-              }
-
-              router.push(redirectPath);
-            } else {
-              // Pas d'organisation, rediriger vers /dashboard par défaut
-              router.push("/dashboard");
             }
+
+            // Si pas d'abonnement Stripe actif, TOUJOURS rediriger vers onboarding
+            if (!hasActiveSubscription) {
+              console.log(
+                "🎯 [LOGIN] Pas d'abonnement Stripe actif, redirection vers onboarding"
+              );
+              router.push("/onboarding");
+              return;
+            }
+
+            // Si l'utilisateur n'a pas vu l'onboarding mais a un abonnement, le rediriger quand même
+            if (!hasSeenOnboarding) {
+              console.log(
+                "🎯 [LOGIN] Première connexion avec abonnement, redirection vers onboarding"
+              );
+              router.push("/onboarding");
+              return;
+            }
+
+            // L'utilisateur a un abonnement actif, rediriger vers sa page préférée
+            let redirectPath = "/dashboard";
+
+            if (userRedirectPage && userRedirectPage !== "last-page") {
+              // Mapper les pages vers leurs vraies routes
+              const routeMap = {
+                dashboard: "/dashboard",
+                outils: "/dashboard",
+                kanban: "/dashboard/outils/kanban",
+                calendar: "/dashboard/calendar",
+                factures: "/dashboard/outils/factures",
+                devis: "/dashboard/outils/devis",
+                clients: "/dashboard/clients",
+                depenses: "/dashboard/outils/transactions",
+                signatures: "/dashboard/outils/signatures-mail",
+                transferts: "/dashboard/outils/transferts-fichiers",
+                catalogues: "/dashboard/catalogues",
+                collaborateurs: "/dashboard/collaborateurs",
+                analytics: "/dashboard/analytics",
+                favoris: "/dashboard/favoris",
+              };
+
+              redirectPath = routeMap[userRedirectPage] || "/dashboard";
+            }
+
+            router.push(redirectPath);
           } catch (error) {
             console.error(
               "Erreur lors de la vérification de l'abonnement:",
               error
             );
-            // En cas d'erreur, rediriger vers /dashboard par défaut
-            router.push("/dashboard");
+            // En cas d'erreur, rediriger vers /onboarding par sécurité
+            router.push("/onboarding");
           }
         }
       },
@@ -638,23 +602,15 @@ const LoginForm = () => {
       if (callbackUrl) {
         router.push(callbackUrl);
       } else {
-        // Vérifier si l'utilisateur a complété l'onboarding
+        // Vérifier l'abonnement Stripe AVANT de rediriger
         try {
           const { data: session } = await authClient.getSession();
-          const hasSeenOnboarding = session?.user?.hasSeenOnboarding;
-
-          // Si l'utilisateur n'a pas vu l'onboarding, le rediriger
-          if (!hasSeenOnboarding) {
-            console.log(
-              "🎯 [2FA] Première connexion, redirection vers onboarding"
-            );
-            router.push("/onboarding");
-            return;
-          }
-
-          // Sinon, continuer avec la logique normale
           const organizationId = session?.session?.activeOrganizationId;
+          const hasSeenOnboarding = session?.user?.hasSeenOnboarding;
           const userRedirectPage = session?.user?.redirect_after_login;
+
+          // ⚠️ IMPORTANT: Vérifier l'abonnement Stripe en priorité
+          let hasActiveSubscription = false;
 
           if (organizationId) {
             const { data: subscriptions } = await authClient.subscription.list({
@@ -663,49 +619,62 @@ const LoginForm = () => {
               },
             });
 
-            const hasActiveSubscription = subscriptions?.some(
+            hasActiveSubscription = subscriptions?.some(
               (sub) => sub.status === "active" || sub.status === "trialing"
             );
-
-            // Utiliser la page de démarrage préférée de l'utilisateur ou fallback
-            let redirectPath = "/dashboard";
-
-            if (userRedirectPage && userRedirectPage !== "last-page") {
-              // Mapper les pages vers leurs vraies routes
-              const routeMap = {
-                dashboard: "/dashboard",
-                outils: "/dashboard",
-                kanban: "/dashboard/outils/kanban",
-                calendar: "/dashboard/calendar",
-                factures: "/dashboard/outils/factures",
-                devis: "/dashboard/outils/devis",
-                clients: "/dashboard/clients",
-                depenses: "/dashboard/outils/transactions",
-                signatures: "/dashboard/outils/signatures-mail",
-                transferts: "/dashboard/outils/transferts-fichiers",
-                catalogues: "/dashboard/catalogues",
-                collaborateurs: "/dashboard/collaborateurs",
-                analytics: "/dashboard/analytics",
-                favoris: "/dashboard/favoris",
-              };
-
-              redirectPath = routeMap[userRedirectPage] || "/dashboard";
-            } else if (hasActiveSubscription) {
-              redirectPath = "/dashboard";
-            }
-
-            router.push(redirectPath);
-          } else {
-            // Pas d'organisation, rediriger vers /dashboard par défaut
-            router.push("/dashboard");
           }
+
+          // Si pas d'abonnement Stripe actif, TOUJOURS rediriger vers onboarding
+          if (!hasActiveSubscription) {
+            console.log(
+              "🎯 [2FA] Pas d'abonnement Stripe actif, redirection vers onboarding"
+            );
+            router.push("/onboarding");
+            return true;
+          }
+
+          // Si l'utilisateur n'a pas vu l'onboarding mais a un abonnement, le rediriger quand même
+          if (!hasSeenOnboarding) {
+            console.log(
+              "🎯 [2FA] Première connexion avec abonnement, redirection vers onboarding"
+            );
+            router.push("/onboarding");
+            return true;
+          }
+
+          // L'utilisateur a un abonnement actif, rediriger vers sa page préférée
+          let redirectPath = "/dashboard";
+
+          if (userRedirectPage && userRedirectPage !== "last-page") {
+            // Mapper les pages vers leurs vraies routes
+            const routeMap = {
+              dashboard: "/dashboard",
+              outils: "/dashboard",
+              kanban: "/dashboard/outils/kanban",
+              calendar: "/dashboard/calendar",
+              factures: "/dashboard/outils/factures",
+              devis: "/dashboard/outils/devis",
+              clients: "/dashboard/clients",
+              depenses: "/dashboard/outils/transactions",
+              signatures: "/dashboard/outils/signatures-mail",
+              transferts: "/dashboard/outils/transferts-fichiers",
+              catalogues: "/dashboard/catalogues",
+              collaborateurs: "/dashboard/collaborateurs",
+              analytics: "/dashboard/analytics",
+              favoris: "/dashboard/favoris",
+            };
+
+            redirectPath = routeMap[userRedirectPage] || "/dashboard";
+          }
+
+          router.push(redirectPath);
         } catch (error) {
           console.error(
             "Erreur lors de la vérification de l'abonnement:",
             error
           );
-          // En cas d'erreur, rediriger vers /dashboard par défaut
-          router.push("/dashboard");
+          // En cas d'erreur, rediriger vers /onboarding par sécurité
+          router.push("/onboarding");
         }
       }
 

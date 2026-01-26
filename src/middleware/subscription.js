@@ -87,20 +87,9 @@ export async function subscriptionMiddleware(request) {
       return NextResponse.next();
     }
 
-    const user = session.user;
-    const now = new Date();
-    const createdAt = new Date(user.createdAt);
-    const daysSinceCreation = (now - createdAt) / (1000 * 60 * 60 * 24);
-
-    // Vérifier si l'utilisateur est en période d'essai (180 jours - 6 mois)
-    const isInTrial = daysSinceCreation <= 180;
-
-    if (isInTrial) {
-      // L'utilisateur est encore en période d'essai, autoriser l'accès
-      return NextResponse.next();
-    }
-
     // Récupérer les informations d'abonnement Stripe
+    // ⚠️ IMPORTANT: On ne vérifie plus le trial basé sur user.createdAt
+    // Seuls les abonnements Stripe sont acceptés (active, trialing, canceled valide)
     const subscription = await auth.api.stripe.getSubscription({
       headers: request.headers,
     });
@@ -109,11 +98,10 @@ export async function subscriptionMiddleware(request) {
       subscription?.status === "active" || subscription?.status === "trialing";
 
     if (!hasActiveSubscription) {
-      // L'essai a expiré et pas d'abonnement actif
-      // Rediriger vers la page de tarification
-      const redirectUrl = new URL("/pricing", request.url);
-      redirectUrl.searchParams.set("expired", "true");
-      return NextResponse.redirect(redirectUrl);
+      // Pas d'abonnement Stripe actif
+      // Rediriger vers l'onboarding pour choisir un plan
+      console.log("[Middleware] Pas d'abonnement actif, redirection vers /onboarding");
+      return NextResponse.redirect(new URL("/onboarding", request.url));
     }
 
     // L'utilisateur a un abonnement actif, autoriser l'accès
