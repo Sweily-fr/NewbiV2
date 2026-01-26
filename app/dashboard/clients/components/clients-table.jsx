@@ -179,7 +179,7 @@ export default function ClientsTable({
   return (
     <div className="flex flex-col flex-1 min-h-0">
       {selectedClients.size > 0 && lists && lists.length > 0 && (
-        <div className="flex flex-col gap-3 p-3 sm:p-4 bg-[rgba(91,80,255,0.05)] rounded-lg border border-[rgba(91,80,255,0.2)]">
+        <div className="flex flex-col gap-3 p-3 sm:p-4 mx-4 bg-[rgba(91,80,255,0.05)] rounded-lg border border-[rgba(91,80,255,0.2)]">
           <div className="flex items-center justify-between">
             <span className="text-xs sm:text-sm font-normal">
               {selectedClients.size} contact
