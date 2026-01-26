@@ -8,6 +8,12 @@ import { ButtonGroup, ButtonGroupSeparator } from '@/src/components/ui/button-gr
 import { Badge } from '@/src/components/ui/badge';
 import { Input } from '@/src/components/ui/input';
 import { Plus, Edit2, Trash2, Users, Search, CircleXIcon, MoreHorizontal, ChevronFirstIcon, ChevronLastIcon, ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/src/components/ui/tooltip';
 import { cn } from '@/src/lib/utils';
 import CreateListDialog from './create-list-dialog';
 import EditListDialog from './edit-list-dialog';
@@ -131,7 +137,7 @@ export default function ClientListsView({ workspaceId, lists, onListsUpdated, se
                 className="w-3 h-3 rounded-full flex-shrink-0"
                 style={{ backgroundColor: list.color }}
               />
-              <span className="font-medium truncate">{list.name}</span>
+              <span className="truncate">{list.name}</span>
               {list.isDefault && (
                 <Badge variant="outline" className="text-xs font-normal">
                   Par défaut
@@ -145,9 +151,24 @@ export default function ClientListsView({ workspaceId, lists, onListsUpdated, se
         accessorKey: 'description',
         header: 'Description',
         size: 300,
-        cell: (info) => (
-          <span className="text-muted-foreground truncate">{info.getValue() || '-'}</span>
-        ),
+        cell: (info) => {
+          const description = info.getValue();
+          if (!description) return <span className="text-muted-foreground">-</span>;
+          return (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="text-muted-foreground truncate block max-w-[250px] cursor-default">
+                    {description}
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-[300px]">
+                  <p className="text-sm">{description}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          );
+        },
       },
       {
         accessorKey: 'clientCount',
