@@ -4,7 +4,7 @@ import React from "react";
 import { Label } from "@/src/components/ui/label";
 import { Slider } from "@/src/components/ui/slider";
 import { Input } from "@/src/components/ui/input";
-import { RotateCcw, Plus, X } from "lucide-react";
+import { Plus, X } from "lucide-react";
 import {
   Popover,
   PopoverContent,
@@ -159,39 +159,22 @@ export default function SpacingSection({ signatureData, updateSignatureData }) {
           <Label className="text-xs text-muted-foreground font-normal">
             Global
           </Label>
-          <div className="flex items-center gap-2 w-40">
-            <div className="relative flex-shrink-0">
-              <Input
-                className="h-8 pl-2 pr-7 py-1 w-16 bg-white dark:bg-white"
-                type="text"
-                inputMode="decimal"
-                value={signatureData.spacings?.global ?? 8}
-                onChange={(e) => handleGlobalSpacingChange(e.target.value)}
-                onBlur={(e) => handleGlobalSpacingChange(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    handleGlobalSpacingChange(e.target.value);
-                  }
-                }}
-                aria-label="Espacement global"
-                placeholder="8"
-              />
-              <button
-                onClick={() => handleGlobalSpacingChange(8)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 hover:opacity-70 transition-opacity"
-                title="Réinitialiser à 8"
-                type="button"
-              >
-                <RotateCcw className="w-3 h-3 text-gray-400" />
-              </button>
-            </div>
+          <div className="flex items-center gap-1.5 w-40">
             <Slider
-              className="grow h-4"
+              className="flex-1"
               value={[signatureData.spacings?.global || 8]}
               onValueChange={(value) => handleGlobalSpacingChange(value[0])}
               min={0}
               max={30}
               step={2}
+              aria-label="Espacement global"
+            />
+            <Input
+              className="h-8 w-14 px-2 py-1 text-xs text-center flex-shrink-0 bg-white"
+              type="text"
+              inputMode="decimal"
+              value={signatureData.spacings?.global ?? 8}
+              onChange={(e) => handleGlobalSpacingChange(e.target.value)}
               aria-label="Espacement global"
             />
           </div>

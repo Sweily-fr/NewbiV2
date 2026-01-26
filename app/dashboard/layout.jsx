@@ -33,7 +33,8 @@ import {
 import { AccountingViewProvider } from "@/src/contexts/accounting-view-context";
 import { FloatingTimer } from "@/src/components/FloatingTimer";
 import { OAuthCallbackHandler } from "@/src/components/oauth-callback-handler";
-import { EInvoicingPromoModal } from "@/src/components/e-invoicing-promo-modal";
+// DÉSACTIVÉ: SuperPDP API pas encore active
+// import { EInvoicingPromoModal } from "@/src/components/e-invoicing-promo-modal";
 import { TutorialProvider } from "@/src/contexts/tutorial-context";
 import { TutorialOverlay } from "@/src/components/tutorial/tutorial-overlay";
 import { SignatureSidebarRight } from "@/src/components/signature-sidebar-right";
@@ -50,7 +51,8 @@ function DashboardContent({ children }) {
   const [isCommunitySidebarOpen, setIsCommunitySidebarOpen] = useState(false);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [settingsInitialTab, setSettingsInitialTab] = useState("notifications");
-  const [eInvoicingPromoOpen, setEInvoicingPromoOpen] = useState(false);
+  // DÉSACTIVÉ: SuperPDP API pas encore active
+  // const [eInvoicingPromoOpen, setEInvoicingPromoOpen] = useState(false);
 
   // Hook pour gérer l'onboarding et les données du layout
   const {
@@ -62,10 +64,36 @@ function DashboardContent({ children }) {
   } = useOnboarding();
 
   // Hook pour vérifier le statut de l'abonnement
-  const { isActive } = useDashboardLayoutContext();
+  const { isActive, subscription, isLoading: subscriptionLoading } = useDashboardLayoutContext();
 
   // Hook pour valider la session et détecter les révocations
   useSessionValidator();
+
+  // 🔒 Protection abonnement : rediriger vers onboarding si pas d'abonnement actif
+  useEffect(() => {
+    // Attendre l'hydratation et l'initialisation du layout
+    if (!isHydrated || !layoutInitialized || subscriptionLoading) return;
+
+    // Ne pas rediriger si on revient de Stripe (vérification du paiement en cours)
+    const urlParams = new URLSearchParams(window.location.search);
+    const isReturningFromStripe =
+      urlParams.get("session_id") ||
+      urlParams.get("subscription_success") === "true" ||
+      urlParams.get("payment_success") === "true";
+
+    if (isReturningFromStripe) {
+      console.log("🔄 [DASHBOARD] Retour de Stripe, attente de la vérification...");
+      return;
+    }
+
+    // Vérifier si l'utilisateur a un abonnement actif
+    const hasActiveSubscription = isActive();
+
+    if (!hasActiveSubscription) {
+      console.log("⚠️ [DASHBOARD] Pas d'abonnement actif, redirection vers onboarding");
+      router.push("/onboarding");
+    }
+  }, [isHydrated, layoutInitialized, subscriptionLoading, isActive, router]);
 
   // Hook pour gérer la déconnexion automatique après 15 minutes d'inactivité
   useInactivityTimer(15, true);
@@ -97,24 +125,25 @@ function DashboardContent({ children }) {
     setIsHydrated(true);
   }, []);
 
+  // DÉSACTIVÉ: SuperPDP API pas encore active
   // Afficher le modal de facturation électronique automatiquement après connexion
   // si l'utilisateur a un abonnement actif et n'a pas encore vu le modal
-  useEffect(() => {
-    if (!isHydrated || !layoutInitialized) return;
+  // useEffect(() => {
+  //   if (!isHydrated || !layoutInitialized) return;
 
-    const E_INVOICING_PROMO_KEY = "e_invoicing_promo_shown";
-    const hasSeenPromo = localStorage.getItem(E_INVOICING_PROMO_KEY);
+  //   const E_INVOICING_PROMO_KEY = "e_invoicing_promo_shown";
+  //   const hasSeenPromo = localStorage.getItem(E_INVOICING_PROMO_KEY);
 
-    if (isActive() && !hasSeenPromo && !isOnboardingOpen) {
-      // Attendre un peu pour ne pas surcharger l'utilisateur
-      const timer = setTimeout(() => {
-        setEInvoicingPromoOpen(true);
-        localStorage.setItem(E_INVOICING_PROMO_KEY, "true");
-      }, 2000);
+  //   if (isActive() && !hasSeenPromo && !isOnboardingOpen) {
+  //     // Attendre un peu pour ne pas surcharger l'utilisateur
+  //     const timer = setTimeout(() => {
+  //       setEInvoicingPromoOpen(true);
+  //       localStorage.setItem(E_INVOICING_PROMO_KEY, "true");
+  //     }, 2000);
 
-      return () => clearTimeout(timer);
-    }
-  }, [isHydrated, layoutInitialized, isActive, isOnboardingOpen]);
+  //     return () => clearTimeout(timer);
+  //   }
+  // }, [isHydrated, layoutInitialized, isActive, isOnboardingOpen]);
 
   // Déterminer si on est sur une page d'outil qui nécessite la sidebar fermée
   // Exception : la page de signature doit avoir la sidebar en mode rétréci (icon)
@@ -186,7 +215,8 @@ function DashboardContent({ children }) {
           setSettingsInitialTab("notifications");
           setSettingsModalOpen(true);
         }}
-        onOpenEInvoicingPromo={() => setEInvoicingPromoOpen(true)}
+        // DÉSACTIVÉ: SuperPDP API pas encore active
+        // onOpenEInvoicingPromo={() => setEInvoicingPromoOpen(true)}
       />
       <SidebarInset className="md:pt-0 pt-10">
         <SiteHeader />
@@ -265,11 +295,12 @@ function DashboardContent({ children }) {
       {/* Timer flottant - visible sur toutes les pages quand un timer est actif */}
       <FloatingTimer />
 
+      {/* DÉSACTIVÉ: SuperPDP API pas encore active */}
       {/* Modal de promotion facturation électronique */}
-      <EInvoicingPromoModal
+      {/* <EInvoicingPromoModal
         open={eInvoicingPromoOpen}
         onOpenChange={setEInvoicingPromoOpen}
-      />
+      /> */}
 
       {/* Tutoriel interactif */}
       <TutorialOverlay />

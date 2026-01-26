@@ -880,7 +880,7 @@ function PhotoSettings({ props, onUpdate }) {
               </Label>
               <div className="flex items-center gap-1">
                 <Input
-                  className="h-7 w-14 px-2 py-1 text-xs text-center"
+                  className="h-8 w-14 px-2 py-1 text-xs text-center"
                   type="text"
                   inputMode="decimal"
                   value={currentSize}
@@ -959,7 +959,7 @@ function TextSettings({ props, onUpdate }) {
           value={props.fontFamily || "Arial, sans-serif"}
           onValueChange={(value) => onUpdate({ fontFamily: value })}
         >
-          <SelectTrigger className="h-8 w-40 text-xs">
+          <SelectTrigger size="sm" className="h-8 w-40 text-xs">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -992,7 +992,7 @@ function TextSettings({ props, onUpdate }) {
             }
           }}
         >
-          <SelectTrigger className="h-8 w-40 text-xs">
+          <SelectTrigger size="sm" className="h-8 w-40 text-xs">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -1113,7 +1113,7 @@ function ContactSettings({ props, onUpdate }) {
           value={props.fontFamily || "Arial, sans-serif"}
           onValueChange={(value) => onUpdate({ fontFamily: value })}
         >
-          <SelectTrigger className="h-8 w-40 text-xs">
+          <SelectTrigger size="sm" className="h-8 w-40 text-xs">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -1146,7 +1146,7 @@ function ContactSettings({ props, onUpdate }) {
             }
           }}
         >
-          <SelectTrigger className="h-8 w-40 text-xs">
+          <SelectTrigger size="sm" className="h-8 w-40 text-xs">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -1380,8 +1380,23 @@ function SocialSettings({ props, onUpdate }) {
     updateSignatureData("socialSizes", updatedSizes);
   };
 
-  // Réseaux activés (ceux qui sont dans socialNetworks)
-  const activeNetworks = Object.keys(signatureData.socialNetworks || {});
+  // Réseaux activés (ceux qui sont dans socialNetworks ET dans la liste autorisée)
+  // On inclut les réseaux avec des URLs "#" (placeholders) pour permettre leur configuration
+  const activeNetworks = Object.keys(signatureData.socialNetworks || {}).filter((network) => {
+    if (!ALLOWED_SOCIAL_NETWORKS.includes(network)) return false;
+    const networkData = signatureData.socialNetworks[network];
+    // Accepter tout réseau défini (même avec placeholder "#")
+    return networkData !== undefined && networkData !== null;
+  });
+
+  // Helper pour obtenir l'URL d'un réseau (gère string et objet { url: "..." })
+  const getNetworkUrl = (network) => {
+    const networkData = signatureData.socialNetworks?.[network];
+    if (!networkData) return "";
+    const url = typeof networkData === "string" ? networkData : networkData?.url;
+    // Si c'est un placeholder "#", retourner vide pour afficher le placeholder
+    return url === "#" ? "" : (url || "");
+  };
 
   // Réseaux disponibles pour l'ajout (filtrés par recherche)
   const availableNetworks = ALLOWED_SOCIAL_NETWORKS.filter(
@@ -1464,7 +1479,7 @@ function SocialSettings({ props, onUpdate }) {
             const IconComponent = socialNetworkIcons[network];
             return (
               <div key={network} className="flex items-center justify-between">
-                <Label className="text-xs text-neutral-500 w-16 truncate">
+                <Label className="text-xs text-neutral-500">
                   {socialNetworkLabels[network].split(" ")[0]}
                 </Label>
                 <Popover
@@ -1474,7 +1489,7 @@ function SocialSettings({ props, onUpdate }) {
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
-                      className="h-7 w-32 px-1.5 justify-between gap-1"
+                      className="h-8 w-40 px-1.5 justify-between gap-1"
                     >
                       <div className="flex items-center gap-1.5">
                         {IconComponent && <IconComponent className="w-3.5 h-3.5" />}
@@ -1520,9 +1535,9 @@ function SocialSettings({ props, onUpdate }) {
                           URL du profil
                         </Label>
                         <Input
-                          className="h-7 w-full px-2 py-1 text-xs"
+                          className="h-8 w-full px-2 py-1 text-xs"
                           type="url"
-                          value={signatureData.socialNetworks?.[network] || ""}
+                          value={getNetworkUrl(network)}
                           onChange={(e) => handleSocialUrlChange(network, e.target.value)}
                           placeholder={`https://${network}.com/...`}
                         />
@@ -1536,7 +1551,7 @@ function SocialSettings({ props, onUpdate }) {
                           </Label>
                           <div className="flex items-center gap-1">
                             <Input
-                              className="h-6 w-12 px-1.5 py-0.5 text-xs text-center"
+                              className="h-8 w-14 px-2 py-1 text-xs text-center"
                               type="text"
                               inputMode="decimal"
                               value={
@@ -1574,7 +1589,7 @@ function SocialSettings({ props, onUpdate }) {
                           value={signatureData.socialColors?.[network] || "default"}
                           onValueChange={(color) => handleIndividualColorChange(network, color)}
                         >
-                          <SelectTrigger className="h-6 w-20 text-xs">
+                          <SelectTrigger size="sm" className="h-8 w-40 text-xs">
                             <SelectValue placeholder="Défaut" />
                           </SelectTrigger>
                           <SelectContent>
@@ -1614,7 +1629,7 @@ function SocialSettings({ props, onUpdate }) {
                 value={signatureData.socialGlobalColor || "default"}
                 onValueChange={handleGlobalColorChange}
               >
-                <SelectTrigger className="h-6 w-20 text-xs">
+                <SelectTrigger size="sm" className="h-8 w-40 text-xs">
                   <SelectValue placeholder="Défaut" />
                 </SelectTrigger>
                 <SelectContent>
@@ -1637,32 +1652,51 @@ function SocialSettings({ props, onUpdate }) {
             {/* Taille globale */}
             <div className="flex items-center justify-between">
               <Label className="text-xs text-neutral-500">Taille globale</Label>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1.5 w-40">
+                <Slider
+                  className="flex-1"
+                  value={[signatureData.socialSize ?? 24]}
+                  onValueChange={(value) => handleSocialSizeChange(value[0])}
+                  min={12}
+                  max={64}
+                  step={1}
+                />
                 <Input
-                  className="h-6 w-12 px-1.5 py-0.5 text-xs text-center"
+                  className="h-8 w-14 px-2 py-1 text-xs text-center flex-shrink-0 bg-white"
                   type="text"
                   inputMode="decimal"
                   value={signatureData.socialSize ?? 24}
                   onChange={(e) => handleSocialSizeChange(e.target.value)}
                 />
-                <span className="text-xs text-neutral-400">px</span>
               </div>
             </div>
 
             {/* Espacement */}
-            <SettingRow label="Espacement">
-              <Slider
-                value={[props.gap || 8]}
-                onValueChange={([value]) => onUpdate({ gap: value })}
-                min={4}
-                max={16}
-                step={2}
-                className="flex-1"
-              />
-              <span className="text-xs text-neutral-500 w-10 text-right">
-                {props.gap || 8}px
-              </span>
-            </SettingRow>
+            <div className="flex items-center justify-between">
+              <Label className="text-xs text-neutral-500">Espacement</Label>
+              <div className="flex items-center gap-1.5 w-40">
+                <Slider
+                  className="flex-1"
+                  value={[props.gap || 8]}
+                  onValueChange={([value]) => onUpdate({ gap: value })}
+                  min={4}
+                  max={16}
+                  step={2}
+                />
+                <Input
+                  className="h-8 w-14 px-2 py-1 text-xs text-center flex-shrink-0 bg-white"
+                  type="text"
+                  inputMode="decimal"
+                  value={props.gap || 8}
+                  onChange={(e) => {
+                    const numValue = parseInt(e.target.value);
+                    if (!isNaN(numValue) && numValue >= 1) {
+                      onUpdate({ gap: numValue });
+                    }
+                  }}
+                />
+              </div>
+            </div>
           </div>
         </div>
       )}

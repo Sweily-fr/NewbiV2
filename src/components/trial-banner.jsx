@@ -19,8 +19,9 @@ export function TrialBanner({ className, onStartTrial, onUpgrade }) {
     return null;
   }
 
-  // Ne pas afficher si l'utilisateur a un abonnement payant actif
-  if (isActive() && !trial.isTrialActive) {
+  // Ne pas afficher si l'utilisateur a un abonnement actif
+  // Le trial est désactivé pour les utilisateurs qui s'abonnent pendant l'onboarding
+  if (isActive()) {
     return null;
   }
 

@@ -7,6 +7,8 @@ import { useActiveOrganization } from "@/src/lib/organization-client";
 import { toast } from "@/src/components/ui/sonner";
 import { TrendingUp, LoaderCircle } from "lucide-react";
 import AccountTypeStep from "./steps/account-type-step";
+import EmployeeCountStep from "./steps/employee-count-step";
+import PlanSelectionStep from "./steps/plan-selection-step";
 import CompanySearchStep from "./steps/company-search-step";
 import { getAssetUrl } from "@/src/lib/image-utils";
 
@@ -30,7 +32,7 @@ function OnboardingContent() {
 
         if (hasSeenOnboarding) {
           console.log(
-            "✅ [ONBOARDING] Utilisateur a déjà complété l'onboarding, redirection vers /dashboard"
+            "✅ [ONBOARDING] Utilisateur a déjà complété l'onboarding, redirection vers /dashboard",
           );
           router.push("/dashboard");
           return;
@@ -41,7 +43,7 @@ function OnboardingContent() {
 
         if (!activeOrg) {
           console.log(
-            "⚠️ [ONBOARDING] Aucune organisation active, tentative de définition..."
+            "⚠️ [ONBOARDING] Aucune organisation active, tentative de définition...",
           );
 
           // Récupérer les organisations de l'utilisateur
@@ -53,16 +55,16 @@ function OnboardingContent() {
               organizationId: organizations[0].id,
             });
             console.log(
-              `✅ [ONBOARDING] Organisation active définie: ${organizations[0].id}`
+              `✅ [ONBOARDING] Organisation active définie: ${organizations[0].id}`,
             );
           } else {
             console.warn(
-              "⚠️ [ONBOARDING] Aucune organisation trouvée pour l'utilisateur"
+              "⚠️ [ONBOARDING] Aucune organisation trouvée pour l'utilisateur",
             );
           }
         } else {
           console.log(
-            `✅ [ONBOARDING] Organisation active existante: ${activeOrg.id}`
+            `✅ [ONBOARDING] Organisation active existante: ${activeOrg.id}`,
           );
         }
 
@@ -81,7 +83,7 @@ function OnboardingContent() {
     const step = searchParams.get("step");
     if (step) {
       const stepNumber = parseInt(step, 10);
-      if (stepNumber >= 1 && stepNumber <= 2) {
+      if (stepNumber >= 1 && stepNumber <= totalSteps) {
         setCurrentStep(stepNumber);
       }
     }
@@ -110,12 +112,21 @@ function OnboardingContent() {
     addressCity: "",
     addressZipCode: "",
     addressCountry: "France",
+    // Nouveaux champs pour le flux d'abonnement
+    selectedPlan: "", // 'freelance' | 'pme' | 'entreprise'
+    billingPeriod: "monthly", // 'monthly' | 'annual'
+    promoCode: "", // Code promo optionnel
   });
+
+  const [isRedirectingToPayment, setIsRedirectingToPayment] = useState(false);
 
   // Calculer le nombre total d'étapes
   // Étape 1: Choix du type de compte
-  // Étape 2: Recherche d'entreprise et complétion
-  const totalSteps = 2;
+  // Étape 2: Nombre d'employés
+  // Étape 3: Recherche d'entreprise
+  // Étape 4: Choix du plan (pleine page)
+  // Étape 5: Redirection vers paiement Stripe
+  const totalSteps = 5;
 
   const updateFormData = (data) => {
     setFormData((prev) => ({ ...prev, ...data }));
@@ -148,63 +159,33 @@ function OnboardingContent() {
     }
   };
 
-  const handleSkip = async () => {
+  // SUPPRIMÉ: handleSkip et handleComplete
+  // L'utilisateur DOIT compléter le flux et payer pour accéder au dashboard
+  // La complétion de l'onboarding (hasSeenOnboarding: true) est gérée par le webhook Stripe après paiement réussi
+
+  // Redirection vers Stripe Checkout pour le paiement
+  // selectedData est passé directement depuis PlanSelectionStep pour éviter le timing async
+  const handlePaymentRedirect = async (selectedData = {}) => {
+    setIsRedirectingToPayment(true);
     try {
-      // Marquer l'onboarding comme complété même si skip
-      await authClient.updateUser({
-        hasSeenOnboarding: true,
-      });
+      // Utiliser les données passées directement OU celles du formData
+      const selectedPlan = selectedData.selectedPlan || formData.selectedPlan;
+      const billingPeriod = selectedData.billingPeriod || formData.billingPeriod;
 
-      toast.success("Bienvenue sur Newbi !");
-      router.push("/dashboard");
-    } catch (error) {
-      console.error("Erreur lors du skip:", error);
-      toast.error("Une erreur est survenue");
-    }
-  };
+      console.log("💳 [ONBOARDING] Création de la session de paiement...");
+      console.log(`📋 [ONBOARDING] Plan sélectionné: ${selectedPlan}, Période: ${billingPeriod}`);
 
-  const handleComplete = async () => {
-    try {
-      console.log("🎯 [ONBOARDING] Complétion de l'onboarding...");
-
-      // Mettre à jour les informations utilisateur
-      const updateData = {
-        hasSeenOnboarding: true,
-      };
-
-      if (formData.name) updateData.name = formData.name;
-      if (formData.lastName) updateData.lastName = formData.lastName;
-
-      await authClient.updateUser(updateData);
-      console.log("✅ [ONBOARDING] Utilisateur mis à jour");
-
-      // Mettre à jour les informations entreprise si renseignées
+      // Sauvegarder d'abord les informations de l'organisation
       if (organization) {
         const orgData = {
-          // ✅ IMPORTANT: Toujours sauvegarder le type d'organisation et marquer l'onboarding comme complété
-          organizationType: formData.accountType || "business", // 'business' ou 'accounting_firm'
-          onboardingCompleted: true,
+          organizationType: formData.accountType || "business",
+          employeeCount: formData.employeeCount,
         };
 
-        // Informations entreprise
         if (formData.companyName) orgData.companyName = formData.companyName;
-        if (formData.companyEmail) orgData.companyEmail = formData.companyEmail;
         if (formData.siret) orgData.siret = formData.siret;
         if (formData.siren) orgData.siren = formData.siren;
         if (formData.legalForm) orgData.legalForm = formData.legalForm;
-        if (formData.rcs) orgData.rcs = formData.rcs;
-        if (formData.vatNumber) orgData.vatNumber = formData.vatNumber;
-        if (formData.capitalSocial)
-          orgData.capitalSocial = formData.capitalSocial;
-        if (formData.fiscalRegime) orgData.fiscalRegime = formData.fiscalRegime;
-        if (formData.activityCategory)
-          orgData.activityCategory = formData.activityCategory;
-        if (formData.activitySector)
-          orgData.activitySector = formData.activitySector;
-        if (formData.isVatSubject !== undefined)
-          orgData.isVatSubject = formData.isVatSubject;
-        if (formData.hasCommercialActivity !== undefined)
-          orgData.hasCommercialActivity = formData.hasCommercialActivity;
         if (formData.addressStreet)
           orgData.addressStreet = formData.addressStreet;
         if (formData.addressCity) orgData.addressCity = formData.addressCity;
@@ -214,63 +195,68 @@ function OnboardingContent() {
           orgData.addressCountry = formData.addressCountry;
 
         await updateOrganization(orgData);
-        console.log(
-          "✅ [ONBOARDING] Organisation mise à jour avec type:",
-          formData.accountType
-        );
+        console.log("✅ [ONBOARDING] Organisation mise à jour avant paiement");
       }
 
-      // Gérer les invitations en attente (si l'utilisateur s'est inscrit via invitation)
-      const pendingInvitation = localStorage.getItem("pendingInvitation");
-      if (pendingInvitation) {
-        try {
-          const invitation = JSON.parse(pendingInvitation);
-          const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000;
+      const response = await fetch("/api/create-org-subscription", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          organizationData: {
+            name: formData.companyName || "Mon entreprise",
+            type: "onboarding",
+            planName: selectedPlan,
+            isAnnual: billingPeriod === "annual",
+            promoCode: formData.promoCode,
+            // Données entreprise
+            companyName: formData.companyName,
+            siret: formData.siret,
+            siren: formData.siren,
+            legalForm: formData.legalForm,
+            addressStreet: formData.addressStreet,
+            addressCity: formData.addressCity,
+            addressZipCode: formData.addressZipCode,
+            employeeCount: formData.employeeCount,
+          },
+        }),
+      });
 
-          if (Date.now() - invitation.timestamp < sevenDaysInMs) {
-            console.log(
-              `📋 [ONBOARDING] Acceptation de l'invitation ${invitation.invitationId}`
-            );
+      const data = await response.json();
 
-            const response = await fetch(
-              `/api/invitations/${invitation.invitationId}`,
-              {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ action: "accept" }),
-              }
-            );
-
-            if (response.ok) {
-              console.log("✅ [ONBOARDING] Invitation acceptée");
-              toast.success("Bienvenue ! Vous avez rejoint l'organisation.");
-            }
-          }
-
-          localStorage.removeItem("pendingInvitation");
-        } catch (error) {
-          console.error(
-            "❌ [ONBOARDING] Erreur acceptation invitation:",
-            error
-          );
-        }
+      if (data.url) {
+        console.log("✅ [ONBOARDING] Redirection vers Stripe Checkout");
+        window.location.href = data.url;
+      } else {
+        console.error("❌ [ONBOARDING] Erreur création session:", data.error);
+        toast.error(data.error || "Erreur lors de la création du paiement");
+        setIsRedirectingToPayment(false);
       }
-
-      toast.success("Bienvenue sur Newbi !");
-      console.log("🚀 [ONBOARDING] Redirection vers /dashboard");
-      router.push("/dashboard");
     } catch (error) {
-      console.error("❌ [ONBOARDING] Erreur lors de la complétion:", error);
-      toast.error("Une erreur est survenue");
+      console.error("❌ [ONBOARDING] Erreur paiement:", error);
+      toast.error("Erreur de connexion au service de paiement");
+      setIsRedirectingToPayment(false);
     }
   };
 
+  // Vérifier si on est sur l'étape du pricing (pleine page)
+  const isFullPageStep = currentStep === 4;
+
   return (
     <main>
-      {/* Desktop Layout */}
-      <div className="hidden md:flex h-screen">
+      {/* Full Page Layout pour l'étape Pricing */}
+      {isFullPageStep && (
+        <div className="hidden md:block min-h-screen bg-background">
+          <PlanSelectionStep
+            formData={formData}
+            updateFormData={updateFormData}
+            onNext={handlePaymentRedirect}
+            onBack={handleBack}
+          />
+        </div>
+      )}
+
+      {/* Desktop Layout (étapes avec panneau gauche) */}
+      <div className={`hidden ${isFullPageStep ? '' : 'md:flex'} h-screen`}>
         {/* Meft side - Background */}
         <div className="w-2/5 p-3 flex items-center min-h-screen justify-center">
           <div
@@ -653,7 +639,7 @@ function OnboardingContent() {
             <img
               src={getAssetUrl("newbiLetter.png")}
               alt="Newbi"
-              className="h-9 w-auto"
+              className="h-5"
             />
           </div>
 
@@ -665,20 +651,39 @@ function OnboardingContent() {
                 formData={formData}
                 updateFormData={updateFormData}
                 onNext={handleNext}
-                onSkip={handleSkip}
-                onNoCompany={handleComplete}
               />
             )}
 
-            {/* Étape 2: Recherche d'entreprise et complétion */}
+            {/* Étape 2: Nombre d'employés */}
             {currentStep === 2 && (
+              <EmployeeCountStep
+                formData={formData}
+                updateFormData={updateFormData}
+                onNext={handleNext}
+                onBack={handleBack}
+              />
+            )}
+
+            {/* Étape 3: Recherche d'entreprise */}
+            {currentStep === 3 && (
               <CompanySearchStep
                 formData={formData}
                 updateFormData={updateFormData}
-                onNext={handleComplete}
+                onNext={handleNext}
                 onBack={handleBack}
-                onSkip={handleSkip}
               />
+            )}
+
+            {/* Étape 4: Choix du plan - rendu en pleine page au-dessus */}
+
+            {/* Étape 5: Redirection vers paiement (état de chargement) */}
+            {currentStep === 5 && (
+              <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                <LoaderCircle className="w-8 h-8 animate-spin text-[#5A50FF]" />
+                <p className="text-muted-foreground">
+                  Redirection vers le paiement...
+                </p>
+              </div>
             )}
           </div>
         </div>
@@ -703,20 +708,47 @@ function OnboardingContent() {
               formData={formData}
               updateFormData={updateFormData}
               onNext={handleNext}
-              onSkip={handleSkip}
-              onNoCompany={handleComplete}
             />
           )}
 
-          {/* Étape 2: Recherche d'entreprise et complétion */}
+          {/* Étape 2: Nombre d'employés */}
           {currentStep === 2 && (
+            <EmployeeCountStep
+              formData={formData}
+              updateFormData={updateFormData}
+              onNext={handleNext}
+              onBack={handleBack}
+            />
+          )}
+
+          {/* Étape 3: Recherche d'entreprise */}
+          {currentStep === 3 && (
             <CompanySearchStep
               formData={formData}
               updateFormData={updateFormData}
-              onNext={handleComplete}
+              onNext={handleNext}
               onBack={handleBack}
-              onSkip={handleSkip}
             />
+          )}
+
+          {/* Étape 4: Choix du plan */}
+          {currentStep === 4 && (
+            <PlanSelectionStep
+              formData={formData}
+              updateFormData={updateFormData}
+              onNext={handlePaymentRedirect}
+              onBack={handleBack}
+            />
+          )}
+
+          {/* Étape 5: Redirection vers paiement (état de chargement) */}
+          {currentStep === 5 && (
+            <div className="flex flex-col items-center justify-center py-12 space-y-4">
+              <LoaderCircle className="w-8 h-8 animate-spin text-[#5A50FF]" />
+              <p className="text-muted-foreground">
+                Redirection vers le paiement...
+              </p>
+            </div>
           )}
         </div>
       </div>

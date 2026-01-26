@@ -41,11 +41,11 @@ export const auth = betterAuth({
 
   // Configuration de la session
   session: {
-    expiresIn: 60 * 60 * 24 * 30, // 30 jours - Durée maximale de la session
-    updateAge: 60 * 60 * 24, // 24 heures - Renouvellement automatique si utilisateur actif
+    expiresIn: 60 * 60, // 1 heure - Durée maximale de la session
+    updateAge: 60 * 30, // 30 minutes - Renouvellement automatique à mi-vie si utilisateur actif
     cookieCache: {
       enabled: true,
-      maxAge: 5 * 60, // 5 minutes - Cache pour optimiser les performances
+      maxAge: 60, // 1 minute - Cache réduit pour détection rapide d'expiration
     },
     // Ajouter activeOrganizationId aux champs de session
     additionalFields: {
@@ -88,12 +88,11 @@ export const auth = betterAuth({
               user.name || `Espace ${user.email.split("@")[0]}'s`;
             const organizationSlug = `org-${user.id.slice(-8)}`;
 
-            // Calculer les dates de trial (14 jours)
             const now = new Date();
-            const trialEnd = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
 
             // Créer l'organisation avec onboardingCompleted: false
             // L'onboarding définira le type d'organisation (business ou accounting_firm)
+            // Note: Plus de trial - les utilisateurs s'abonnent directement pendant l'onboarding
             const orgResult = await mongoDb
               .collection("organization")
               .insertOne({
@@ -108,11 +107,11 @@ export const auth = betterAuth({
                 // ✅ Nouveaux champs pour le système comptable
                 organizationType: null, // Sera défini pendant l'onboarding: 'business' ou 'accounting_firm'
                 onboardingCompleted: false, // Sera mis à true après l'onboarding
-                // Trial system
-                trialStartDate: now,
-                trialEndDate: trialEnd,
-                isTrialActive: true,
-                hasUsedTrial: true,
+                // Trial désactivé - paiement obligatoire pendant l'onboarding
+                trialStartDate: null,
+                trialEndDate: null,
+                isTrialActive: false,
+                hasUsedTrial: false,
                 createdAt: now,
               });
 

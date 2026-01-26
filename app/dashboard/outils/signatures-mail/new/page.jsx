@@ -19,6 +19,7 @@ import SignatureTemplate from "../components/preview/SignatureTemplate";
 import SignatureEditor from "../components/preview/SignatureEditor";
 import { SignatureSidebar } from "@/src/components/signature-sidebar";
 import { SignatureToolbar } from "../components/SignatureToolbar";
+import SaveSignatureModal from "../components/modals/SaveSignatureModal";
 
 // Aperçu de l'email avec édition inline
 const EmailPreview = ({
@@ -1817,6 +1818,7 @@ export default function NewSignaturePage() {
   const [pan, setPan] = React.useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = React.useState(false);
   const [isSpacePressed, setIsSpacePressed] = React.useState(false);
+  const [copySuccess, setCopySuccess] = React.useState(false);
   const panStartRef = React.useRef({ x: 0, y: 0 });
   const canvasRef = React.useRef(null);
 
@@ -1941,9 +1943,6 @@ export default function NewSignaturePage() {
   // Note: Le templateId est maintenant toujours défini via le preset (dans use-signature-data.js)
   // ou via les données par défaut. Pas besoin de vérification supplémentaire.
 
-  // État pour le feedback visuel de copie réussie
-  const [copySuccess, setCopySuccess] = useState(false);
-
   // Handler pour copier depuis la toolbar
   const handleCopyFromToolbar = async () => {
     setIsCopying(true);
@@ -2002,6 +2001,9 @@ export default function NewSignaturePage() {
           onZoomChange={setZoom}
         />
       </div>
+
+      {/* Modal de sauvegarde */}
+      <SaveSignatureModal existingSignatureId={editingSignatureId} />
     </div>
   );
 }

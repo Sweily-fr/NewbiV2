@@ -15,7 +15,14 @@ import {
   Linkedin,
   Twitter,
   Youtube,
+  Info,
 } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/src/components/ui/tooltip";
 import {
   Popover,
   PopoverContent,
@@ -249,7 +256,19 @@ export default function SocialNetworksSection({
     <div className="flex flex-col gap-3">
       {/* Header avec titre et bouton + */}
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-medium">Réseaux</h2>
+        <div className="flex items-center gap-1.5">
+          <h2 className="text-sm font-medium">Réseaux</h2>
+          <TooltipProvider delayDuration={200}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="w-3.5 h-3.5 text-gray-400 hover:text-gray-600 cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-[220px] text-center">
+                <p className="text-xs">Pour afficher les icônes dans votre signature, vous devez entrer l'URL de vos profils.</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
         <Popover open={isAddOpen} onOpenChange={setIsAddOpen}>
           <PopoverTrigger asChild>
             <button
@@ -317,7 +336,7 @@ export default function SocialNetworksSection({
             const IconComponent = socialNetworkIcons[network];
             return (
               <div key={network} className="flex items-center justify-between">
-                <Label className="text-xs text-muted-foreground w-10">
+                <Label className="text-xs text-muted-foreground">
                   {socialNetworkLabels[network].split(" ")[0]}
                 </Label>
                 <Popover
@@ -393,7 +412,7 @@ export default function SocialNetworksSection({
                           </Label>
                           <div className="flex items-center gap-1">
                             <Input
-                              className="h-7 w-14 px-2 py-1 text-xs text-center"
+                              className="h-8 w-14 px-2 py-1 text-xs text-center"
                               type="text"
                               inputMode="decimal"
                               value={
@@ -442,7 +461,7 @@ export default function SocialNetworksSection({
                             handleIndividualColorChange(network, color)
                           }
                         >
-                          <SelectTrigger className="h-7 w-24 text-xs">
+                          <SelectTrigger size="sm" className="h-8 w-40 text-xs">
                             <SelectValue placeholder="Défaut" />
                           </SelectTrigger>
                           <SelectContent>
@@ -487,7 +506,7 @@ export default function SocialNetworksSection({
                 value={signatureData.socialGlobalColor || "default"}
                 onValueChange={handleGlobalColorChange}
               >
-                <SelectTrigger className="h-7 w-24 text-xs">
+                <SelectTrigger size="sm" className="h-8 w-40 text-xs">
                   <SelectValue placeholder="Défaut" />
                 </SelectTrigger>
                 <SelectContent>
@@ -514,16 +533,23 @@ export default function SocialNetworksSection({
               <Label className="text-xs text-muted-foreground">
                 Taille globale
               </Label>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1.5 w-40">
+                <Slider
+                  className="flex-1"
+                  value={[signatureData.socialSize ?? 24]}
+                  onValueChange={(value) => handleSocialSizeChange(value[0])}
+                  min={12}
+                  max={64}
+                  step={1}
+                />
                 <Input
-                  className="h-7 w-14 px-2 py-1 text-xs bg-white text-center"
+                  className="h-8 w-14 px-2 py-1 text-xs text-center flex-shrink-0 bg-white"
                   type="text"
                   inputMode="decimal"
                   value={signatureData.socialSize ?? 24}
                   onChange={(e) => handleSocialSizeChange(e.target.value)}
                   aria-label="Taille globale"
                 />
-                <span className="text-xs text-gray-400">px</span>
               </div>
             </div>
           </div>

@@ -109,11 +109,11 @@ export const TEMPLATE_PRESETS = {
     },
     primaryColor: "#171717",
 
-    // Réseaux sociaux
+    // Réseaux sociaux - URLs directes (format attendu par SocialNetworksSection)
     socialNetworks: {
-      facebook: { url: "#" },
-      linkedin: { url: "#" },
-      x: { url: "#" },
+      facebook: "#",
+      linkedin: "#",
+      x: "#",
     },
     socialGlobalColor: "black",
     socialSize: 20,
@@ -248,11 +248,11 @@ export const TEMPLATE_PRESETS = {
     },
     primaryColor: PRIMARY_COLOR,
 
-    // Réseaux sociaux
+    // Réseaux sociaux - URLs directes (format attendu par SocialNetworksSection)
     socialNetworks: {
-      facebook: { url: "#" },
-      linkedin: { url: "#" },
-      x: { url: "#" },
+      facebook: "#",
+      linkedin: "#",
+      x: "#",
     },
     socialGlobalColor: "black",
     socialSize: 20,
@@ -388,11 +388,11 @@ export const TEMPLATE_PRESETS = {
     },
     primaryColor: PRIMARY_COLOR,
 
-    // Réseaux sociaux
+    // Réseaux sociaux - URLs directes (format attendu par SocialNetworksSection)
     socialNetworks: {
-      facebook: { url: "#" },
-      linkedin: { url: "#" },
-      x: { url: "#" },
+      facebook: "#",
+      linkedin: "#",
+      x: "#",
     },
     socialGlobalColor: "black",
     socialSize: 16,

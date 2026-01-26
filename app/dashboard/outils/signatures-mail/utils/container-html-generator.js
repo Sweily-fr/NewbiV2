@@ -154,7 +154,7 @@ function generateElementHTML(element, signatureData, parentLayout = 'vertical') 
       const showIcon = props.showIcon !== false;
       const iconColor = props.iconColor || color;
 
-      const icon = showIcon ? `<img src="https://pub-dd6ab45e76d24bfb9622b5737a421877.r2.dev/icons/${type === ELEMENT_TYPES.PHONE ? 'phone' : 'smartphone'}-${getColorName(iconColor)}.png" alt="" width="14" height="14" style="vertical-align: middle; margin-right: 6px; display: inline-block;" />` : '';
+      const icon = showIcon ? `<img src="https://pub-dd6ab45e76d24bfb9622b5737a421877.r2.dev/icons/${type === ELEMENT_TYPES.PHONE ? 'phone' : 'smartphone'}-${getColorName(iconColor)}.png" alt="" width="16" height="16" style="vertical-align: middle; margin-right: 8px; display: inline-block;" />` : '';
 
       return `<div style="font-size: ${fontSize}px; color: ${color}; font-family: ${fontFamily}; line-height: 1.4; margin: 0; padding: 0;">${icon}<span>${escapeForGmail(value, 'phone')}</span></div>`;
     }
@@ -169,7 +169,7 @@ function generateElementHTML(element, signatureData, parentLayout = 'vertical') 
       const showIcon = props.showIcon !== false;
       const iconColor = props.iconColor || color;
 
-      const icon = showIcon ? `<img src="https://pub-dd6ab45e76d24bfb9622b5737a421877.r2.dev/icons/mail-${getColorName(iconColor)}.png" alt="" width="14" height="14" style="vertical-align: middle; margin-right: 6px; display: inline-block;" />` : '';
+      const icon = showIcon ? `<img src="https://pub-dd6ab45e76d24bfb9622b5737a421877.r2.dev/icons/mail-${getColorName(iconColor)}.png" alt="" width="16" height="16" style="vertical-align: middle; margin-right: 8px; display: inline-block;" />` : '';
 
       return `<div style="font-size: ${fontSize}px; color: ${color}; font-family: ${fontFamily}; line-height: 1.4; margin: 0; padding: 0;">${icon}<a href="mailto:${email}" style="color: ${color}; text-decoration: none;">${escapeForGmail(email, 'email')}</a></div>`;
     }
@@ -184,7 +184,7 @@ function generateElementHTML(element, signatureData, parentLayout = 'vertical') 
       const showIcon = props.showIcon !== false;
       const iconColor = props.iconColor || color;
 
-      const icon = showIcon ? `<img src="https://pub-dd6ab45e76d24bfb9622b5737a421877.r2.dev/icons/globe-${getColorName(iconColor)}.png" alt="" width="14" height="14" style="vertical-align: middle; margin-right: 6px; display: inline-block;" />` : '';
+      const icon = showIcon ? `<img src="https://pub-dd6ab45e76d24bfb9622b5737a421877.r2.dev/icons/globe-${getColorName(iconColor)}.png" alt="" width="16" height="16" style="vertical-align: middle; margin-right: 8px; display: inline-block;" />` : '';
       const href = website.startsWith('http') ? website : `https://${website}`;
 
       return `<div style="font-size: ${fontSize}px; color: ${color}; font-family: ${fontFamily}; line-height: 1.4; margin: 0; padding: 0;">${icon}<a href="${href}" style="color: ${color}; text-decoration: none;" target="_blank">${escapeForGmail(website, 'website')}</a></div>`;
@@ -200,7 +200,7 @@ function generateElementHTML(element, signatureData, parentLayout = 'vertical') 
       const showIcon = props.showIcon !== false;
       const iconColor = props.iconColor || color;
 
-      const icon = showIcon ? `<img src="https://pub-dd6ab45e76d24bfb9622b5737a421877.r2.dev/icons/map-pin-${getColorName(iconColor)}.png" alt="" width="14" height="14" style="vertical-align: middle; margin-right: 6px; display: inline-block;" />` : '';
+      const icon = showIcon ? `<img src="https://pub-dd6ab45e76d24bfb9622b5737a421877.r2.dev/icons/map-pin-${getColorName(iconColor)}.png" alt="" width="16" height="16" style="vertical-align: middle; margin-right: 8px; display: inline-block;" />` : '';
 
       return `<div style="font-size: ${fontSize}px; color: ${color}; font-family: ${fontFamily}; line-height: 1.4; margin: 0; padding: 0;">${icon}<span>${address}</span></div>`;
     }
@@ -253,7 +253,9 @@ function generateElementHTML(element, signatureData, parentLayout = 'vertical') 
       const color = props.color || '#e0e0e0';
 
       if (autoOrientation === 'vertical') {
-        return `<div style="width: ${thickness}px; min-width: ${thickness}px; height: 100%; min-height: 30px; background-color: ${color};"></div>`;
+        // Éviter height: 100% car problématique dans les clients mail
+        // Utiliser align-self: stretch pour flexbox ou laisser la hauteur naturelle
+        return `<div style="width: ${thickness}px; min-width: ${thickness}px; align-self: stretch; min-height: 30px; background-color: ${color};"></div>`;
       }
 
       return `<div style="width: 100%; height: ${thickness}px; min-height: ${thickness}px; background-color: ${color};"></div>`;
@@ -269,7 +271,7 @@ function generateElementHTML(element, signatureData, parentLayout = 'vertical') 
       const socialColors = signatureData.socialColors || {};
       const globalColor = signatureData.socialGlobalColor || props.color || 'black';
       const size = props.size || 20;
-      const gap = props.gap || 6;
+      const gap = props.gap || 8;
       const alignment = props.alignment || 'left';
 
       const alignStyle = alignment === 'center' ? 'center' : alignment === 'right' ? 'right' : 'left';

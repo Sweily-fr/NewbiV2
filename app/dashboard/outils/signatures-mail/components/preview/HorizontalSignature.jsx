@@ -56,10 +56,10 @@ const HorizontalSignature = ({
               style={{
                 ...(signatureData.detailedSpacing
                   ? getIndividualPaddingStyles(signatureData, "photo", {
-                      bottom: spacings.global || 8,
+                      bottom: spacings.global || 12,
                     })
                   : {
-                      paddingBottom: `${getSpacing(signatureData, spacings.photoBottom, spacings.global || 8)}px`,
+                      paddingBottom: `${getSpacing(signatureData, spacings.photoBottom, spacings.global || 12)}px`,
                     }),
               }}
             >
@@ -254,9 +254,6 @@ const HorizontalSignature = ({
           <td
             style={{
               verticalAlign: "top",
-              ...(signatureData.separatorVerticalEnabled && {
-                paddingRight: `${getSpacing(signatureData, spacings.global, 12)}px`,
-              }),
             }}
           >
             <table
@@ -289,9 +286,6 @@ const HorizontalSignature = ({
           <td
             style={{
               verticalAlign: signatureData.contactAlignment || "top",
-              ...(signatureData.separatorVerticalEnabled && {
-                paddingLeft: `${getSpacing(signatureData, spacings.global, 12)}px`,
-              }),
             }}
           >
             <table

@@ -33,6 +33,12 @@ export function SignatureToolbar({
 }) {
   const { openCancelModal, openSaveModal } = useSignatureData();
 
+  const handleSaveClick = () => {
+    if (openSaveModal) {
+      openSaveModal();
+    }
+  };
+
   const handleZoomIn = () => {
     const currentIndex = ZOOM_LEVELS.indexOf(zoom);
     if (currentIndex < ZOOM_LEVELS.length - 1) {
@@ -190,12 +196,10 @@ export function SignatureToolbar({
           </ToolbarGroup>
           <ToolbarSeparator />
           <ToolbarGroup>
-            <ToolbarButton
-              render={<Button onClick={openSaveModal} className="gap-2" />}
-            >
+            <Button onClick={handleSaveClick} className="gap-2">
               <Save className="h-4 w-4" />
               Sauvegarder
-            </ToolbarButton>
+            </Button>
           </ToolbarGroup>
         </Toolbar>
       </TooltipProvider>

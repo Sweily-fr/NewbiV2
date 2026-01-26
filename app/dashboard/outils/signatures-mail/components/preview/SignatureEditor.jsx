@@ -38,6 +38,7 @@ export default function SignatureEditor({
     reorderContainer,
     reorderElement,
     clearSelection,
+    isEditMode,
   } = useSignatureData();
 
   // Use prop or context
@@ -46,6 +47,8 @@ export default function SignatureEditor({
 
   // Track the last initialized template to detect changes
   const lastTemplateRef = useRef(null);
+  // Track if we've restored from containerStructure to avoid overwriting
+  const restoredFromContainerStructureRef = useRef(false);
 
   // Initialize default structure based on template
   const initializeFromTemplate = (template) => {
@@ -55,9 +58,25 @@ export default function SignatureEditor({
     setRootContainer(rootStructure);
   };
 
-  // Initialize when template changes
+  // Marquer quand le rootContainer a été restauré depuis containerStructure
   useEffect(() => {
-    console.log("🔄 [SignatureEditor] useEffect triggered - templateId:", templateId, "lastTemplate:", lastTemplateRef.current, "rootContainer:", rootContainer?.id);
+    if (isEditMode && rootContainer && rootContainer.id) {
+      // Si on est en mode édition et qu'on a un rootContainer, c'est qu'il a été restauré
+      restoredFromContainerStructureRef.current = true;
+      console.log("🔄 [SignatureEditor] Marked as restored from containerStructure");
+    }
+  }, [isEditMode, rootContainer]);
+
+  // Initialize when template changes - SAUF si on a restauré une structure sauvegardée
+  useEffect(() => {
+    console.log("🔄 [SignatureEditor] useEffect triggered - templateId:", templateId, "lastTemplate:", lastTemplateRef.current, "rootContainer:", rootContainer?.id, "isEditMode:", isEditMode, "restoredFromContainerStructure:", restoredFromContainerStructureRef.current);
+
+    // En mode édition avec une structure restaurée, ne pas réinitialiser
+    if (isEditMode && restoredFromContainerStructureRef.current) {
+      console.log("⏭️ [SignatureEditor] Skipping reinitialization - using restored containerStructure");
+      lastTemplateRef.current = templateId;
+      return;
+    }
 
     // Initialize if rootContainer is null OR if template has changed
     if (!rootContainer || lastTemplateRef.current !== templateId) {
@@ -65,7 +84,7 @@ export default function SignatureEditor({
       initializeFromTemplate(templateId);
       lastTemplateRef.current = templateId;
     }
-  }, [templateId, setRootContainer]);
+  }, [templateId, setRootContainer, isEditMode]);
 
   // Global click listener to deselect when clicking outside containers
   useEffect(() => {

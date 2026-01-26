@@ -312,11 +312,13 @@ export function generateSignatureHTML(signatureData) {
   const colSpan = signatureData.separatorVerticalEnabled ? 5 : 2;
 
   // Générer le séparateur vertical si activé
+  // Note: On évite height: 100% car cela cause des problèmes dans les clients mail
+  // La cellule prendra naturellement la hauteur de la ligne du tableau
   const verticalSeparatorHTML = signatureData.separatorVerticalEnabled
     ? `
-<td style="width: ${getSpacing(signatureData.spacings?.global, 12)}px;">&nbsp;</td>
-<td style="width: ${signatureData.separatorVerticalWidth || 1}px; background-color: ${signatureData.colors?.separatorVertical || "#e0e0e0"}; border-radius: 0px; padding: 0px; font-size: 1px; line-height: 1px; height: 100%; min-height: 200px;">&nbsp;</td>
-<td style="width: ${getSpacing(signatureData.spacings?.global, 12)}px;">&nbsp;</td>`
+<td style="width: ${getSpacing(signatureData.spacings?.global, 12)}px; vertical-align: top;">&nbsp;</td>
+<td style="width: ${signatureData.separatorVerticalWidth || 1}px; background-color: ${signatureData.colors?.separatorVertical || "#e0e0e0"}; vertical-align: top; padding: 0px; font-size: 1px; line-height: 1px;">&nbsp;</td>
+<td style="width: ${getSpacing(signatureData.spacings?.global, 12)}px; vertical-align: top;">&nbsp;</td>`
     : "";
 
   // ========== FONCTIONS HELPER POUR GÉNÉRER CHAQUE ÉLÉMENT ==========
@@ -757,7 +759,7 @@ ${socialIconsHTML}
 <tbody>
 <tr>
 <!-- Colonne gauche -->
-<td style="vertical-align: top; padding-right: ${signatureData.separatorVerticalEnabled ? getSpacing(signatureData.spacings?.global, 12) : 0}px;">
+<td style="vertical-align: top;">
 <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; width: auto;">
 <tbody>
 ${leftColumnHTML}
@@ -766,7 +768,7 @@ ${leftColumnHTML}
 </td>
 ${verticalSeparatorHTML}
 <!-- Colonne droite -->
-<td style="vertical-align: ${signatureData.contactAlignment || "top"}; padding-left: ${signatureData.separatorVerticalEnabled ? getSpacing(signatureData.spacings?.global, 12) : 0}px;">
+<td style="vertical-align: ${signatureData.contactAlignment || "top"};">
 <table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; width: auto;">
 <tbody>
 ${rightColumnHTML}

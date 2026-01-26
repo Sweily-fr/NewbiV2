@@ -8,14 +8,15 @@ import { toast } from "@/src/components/ui/sonner";
 import { authClient } from "@/src/lib/auth-client";
 import { getErrorMessage, isCriticalError } from "@/src/utils/errorMessages";
 
-// Fonction pour vérifier si un token JWT est expiré (avec marge de sécurité de 30 secondes)
+// Fonction pour vérifier si un token JWT est expiré (avec marge de sécurité de 60 secondes)
 const isTokenExpired = (token) => {
   try {
     const payload = JSON.parse(atob(token.split(".")[1]));
     const currentTime = Date.now() / 1000;
-    // Ajouter une marge de 30 secondes pour éviter les race conditions
+    // Ajouter une marge de 60 secondes pour éviter les race conditions
     // où le token expire pendant le traitement de la requête
-    const EXPIRATION_BUFFER_SECONDS = 30;
+    // (augmenté pour s'adapter à l'expiration de session d'1 heure)
+    const EXPIRATION_BUFFER_SECONDS = 60;
     return payload.exp < (currentTime + EXPIRATION_BUFFER_SECONDS);
   } catch {
     // Si on ne peut pas décoder le token, on considère qu'il est expiré
@@ -291,19 +292,12 @@ const errorLink = onError(({ graphQLErrors, networkError, operation }) => {
         const isInitialLoad = operation.getContext().isInitialLoad;
 
         if (!isInitialLoad) {
-          toast.error(userMessage, {
-            duration: 5000,
-            description: "Vous allez être redirigé vers la page de connexion",
-            id: "auth-error-toast", // ID unique pour éviter les doublons de toast
-          });
-
           // Nettoyer le token invalide
           localStorage.removeItem("bearer_token");
 
-          // Rediriger vers la page de connexion après un délai
-          setTimeout(() => {
-            window.location.href = "/auth/login";
-          }, 2000);
+          // Rediriger directement vers la page d'expiration de session
+          // (la page affiche déjà le message approprié)
+          window.location.href = "/auth/session-expired?reason=inactivity";
         } else {
           // Log silencieux pour le chargement initial
           console.warn(

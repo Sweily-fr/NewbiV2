@@ -1,5 +1,19 @@
 import { NextResponse } from "next/server";
 
+// DÉSACTIVÉ: SuperPDP API pas encore active
+export async function GET(request) {
+  return NextResponse.json(
+    {
+      success: false,
+      error: "La facturation électronique (SuperPDP) n'est pas encore disponible",
+      disabled: true,
+      isConnected: false,
+    },
+    { status: 503 }
+  );
+}
+
+/* Code original commenté - à réactiver quand SuperPDP sera disponible:
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -47,3 +61,4 @@ export async function GET(request) {
     );
   }
 }
+*/

@@ -125,7 +125,7 @@ const data = {
   ],
   navAfterVentes: [
     {
-      title: "Boîte de réception",
+      title: "Notifications",
       url: "#",
       icon: Inbox,
       action: "openNotifications",
@@ -421,7 +421,7 @@ export function AppSidebar({
   // Déterminer si on est sur une page d'outil qui nécessite la sidebar masquée
   // Exception : la page de signature doit avoir la sidebar en mode rétréci (icon)
   const isSignaturePage = pathname?.startsWith(
-    "/dashboard/outils/signatures-mail/new"
+    "/dashboard/outils/signatures-mail/new",
   );
   const isToolPage =
     pathname?.includes("/dashboard/outils/") &&
@@ -458,7 +458,7 @@ export function AppSidebar({
       } catch (error) {
         console.error(
           "Erreur lors de la récupération des notifications:",
-          error
+          error,
         );
       }
     };

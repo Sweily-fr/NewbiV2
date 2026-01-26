@@ -272,7 +272,7 @@ export default function BlockElement({
 
   // Get icon for contact elements
   const getContactIcon = (type) => {
-    const iconClass = "w-3.5 h-3.5 flex-shrink-0";
+    const iconClass = "w-4 h-4 flex-shrink-0";
     const iconColor = element.props?.iconColor || "#666666";
 
     switch (type) {
@@ -337,9 +337,10 @@ export default function BlockElement({
             )}
             style={{
               fontSize: props.fontSize || 14,
+              fontFamily: props.fontFamily || "Arial, sans-serif",
               fontWeight: props.fontWeight || "400",
-              color: props.color || "#171717",
               fontStyle: props.fontStyle || "normal",
+              color: props.color || "#171717",
             }}
           >
             {textValue || getPlaceholder(element.type)}
@@ -367,6 +368,9 @@ export default function BlockElement({
               )}
               style={{
                 fontSize: props.fontSize || 12,
+                fontFamily: props.fontFamily || "Arial, sans-serif",
+                fontWeight: props.fontWeight || "400",
+                fontStyle: props.fontStyle || "normal",
                 color: props.color || "#666666",
               }}
             >
@@ -390,6 +394,7 @@ export default function BlockElement({
             )}
             style={{
               fontSize: props.fontSize || 14,
+              fontFamily: props.fontFamily || "Arial, sans-serif",
               fontWeight: props.fontWeight || "400",
               fontStyle: props.fontStyle || "normal",
               color: props.color || "#171717",
@@ -403,15 +408,30 @@ export default function BlockElement({
         const socialNetworks = signatureData?.socialNetworks || {};
         const socialColors = signatureData?.socialColors || {};
         const globalColor = signatureData?.socialGlobalColor || props.color || "black";
-        const hasNetworks = Object.keys(socialNetworks).length > 0;
+
+        // Liste des réseaux autorisés
+        const allowedNetworks = ["facebook", "github", "instagram", "linkedin", "x", "youtube"];
+
+        // Filtrer pour n'afficher que les réseaux configurés (présents dans socialNetworks)
+        // Afficher dès qu'ils sont ajoutés, même sans URL valide
+        const configuredNetworks = Object.keys(socialNetworks).filter((network) => {
+          // Vérifier que le réseau est dans la liste autorisée
+          if (!allowedNetworks.includes(network)) return false;
+
+          // Le réseau est configuré s'il existe dans socialNetworks (valeur définie)
+          const networkData = socialNetworks[network];
+          return networkData !== undefined && networkData !== null;
+        });
+
+        // Utiliser les réseaux configurés, ou les défauts si aucun réseau configuré
         const defaultNetworks = ["facebook", "linkedin", "x"];
-        const networksToShow = hasNetworks ? Object.keys(socialNetworks) : defaultNetworks;
+        const networksToShow = configuredNetworks.length > 0 ? configuredNetworks : defaultNetworks;
 
         return (
           <div
             className="flex items-center"
             style={{
-              gap: props.gap || 6,
+              gap: props.gap || 8,
               justifyContent: props.alignment === "center" ? "center" : props.alignment === "right" ? "flex-end" : "flex-start",
             }}
           >

@@ -6,9 +6,10 @@ import { useDashboardLayoutContext } from "@/src/contexts/dashboard-layout-conte
 /**
  * Composant compteur de période d'essai qui s'affiche à côté du bouton de thème
  * Format: "Essais + date + 0d:00:00:00"
+ * Note: Masqué si l'utilisateur a un abonnement actif (trial désactivé après onboarding payant)
  */
 export function TrialCounter() {
-  const { user, trial } = useDashboardLayoutContext();
+  const { user, trial, isActive } = useDashboardLayoutContext();
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [mounted, setMounted] = useState(false);
 
@@ -77,8 +78,9 @@ export function TrialCounter() {
     return () => clearInterval(interval);
   }, [trial?.trialStatus?.trialEndDate, trial?.isTrialActive]);
 
-  // Ne pas afficher si pas connecté ou pas de trial actif
-  if (!user || !trial?.isTrialActive || !trial?.trialStatus?.trialEndDate) {
+  // Ne pas afficher si pas connecté, pas de trial actif, ou si l'utilisateur a un abonnement actif
+  // Le trial est désactivé pour les utilisateurs qui s'abonnent pendant l'onboarding
+  if (!user || !trial?.isTrialActive || !trial?.trialStatus?.trialEndDate || isActive?.()) {
     return null;
   }
 

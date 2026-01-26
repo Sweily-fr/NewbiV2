@@ -87,10 +87,10 @@ export default function HeroSection() {
             {/* Boutons CTA */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
               <Link
-                href="/auth/signup"
+                href="https://meet.brevo.com/sweily/newbi"
                 className="block rounded-xl px-8 py-3 text-center text-base font-normal transition duration-150 active:scale-[0.98] bg-[#202020] text-white dark:bg-white dark:text-black w-full sm:w-auto"
               >
-                Démarrer gratuitement
+                Demander une Demo
               </Link>
               <Link
                 href="/#pricing"

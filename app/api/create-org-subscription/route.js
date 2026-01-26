@@ -105,13 +105,25 @@ export async function POST(request) {
 
     // 4. Déterminer si c'est une nouvelle organisation ou un upgrade d'abonnement existant
     const isNewOrganization = organizationData.type !== "existing";
+    const isOnboarding = organizationData.type === "onboarding";
     const baseUrl =
       process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "http://localhost:3000";
 
     // URL de succès différente selon le cas
-    const successUrl = isNewOrganization
-      ? `${baseUrl}/dashboard?org_created=true&payment_success=true`
-      : `${baseUrl}/dashboard?subscription_success=true`;
+    let successUrl;
+    let cancelUrl;
+
+    if (isOnboarding) {
+      // Flux onboarding : redirection vers page de succès dédiée
+      successUrl = `${baseUrl}/onboarding/success?session_id={CHECKOUT_SESSION_ID}`;
+      cancelUrl = `${baseUrl}/onboarding?step=4&canceled=true`;
+    } else if (isNewOrganization) {
+      successUrl = `${baseUrl}/dashboard?org_created=true&payment_success=true`;
+      cancelUrl = `${baseUrl}/dashboard`;
+    } else {
+      successUrl = `${baseUrl}/dashboard?subscription_success=true`;
+      cancelUrl = `${baseUrl}/dashboard`;
+    }
 
     console.log(`🔄 [CREATE-SUB] Création session Stripe Checkout...`);
     console.log(
@@ -129,11 +141,14 @@ export async function POST(request) {
         },
       ],
       success_url: successUrl,
-      cancel_url: `${baseUrl}/dashboard`,
+      cancel_url: cancelUrl,
       billing_address_collection: "required",
+      // Activer les codes promo dans l'interface Stripe Checkout
+      allow_promotion_codes: true,
       metadata: {
         userId: session.user.id,
         isNewOrganization: isNewOrganization ? "true" : "false",
+        isOnboarding: isOnboarding ? "true" : "false",
         // Stocker les données de l'organisation pour le webhook
         orgName: organizationData.name || "",
         orgType: organizationData.type || "",
@@ -141,22 +156,33 @@ export async function POST(request) {
         planName: planName,
         isAnnual: isAnnual ? "true" : "false",
         organizationId: session.session?.activeOrganizationId || "",
+        employeeCount: organizationData.employeeCount || "",
+        companyName: organizationData.companyName || "",
+        siret: organizationData.siret || "",
       },
       subscription_data: {
+        // ✅ Trial de 30 jours - L'utilisateur ne sera pas prélevé avant 30 jours
+        trial_period_days: 30,
         metadata: {
           userId: session.user.id,
           isNewOrganization: isNewOrganization ? "true" : "false",
+          isOnboarding: isOnboarding ? "true" : "false",
           orgName: organizationData.name || "",
           orgType: organizationData.type || "",
           planName: planName,
           isAnnual: isAnnual ? "true" : "false",
           organizationId: session.session?.activeOrganizationId || "",
+          employeeCount: organizationData.employeeCount || "",
+          hasTrial: "true",
+          trialDays: "30",
         },
       },
-      // Message personnalisé selon le plan
+      // Message personnalisé avec info trial 30 jours
       custom_text: {
         submit: {
-          message: `Souscription au plan ${planName.toUpperCase()}`,
+          message: isOnboarding
+            ? `Essai gratuit 30 jours - Aucun prélèvement avant la fin de l'essai`
+            : `Souscription au plan ${planName.toUpperCase()} - 30 jours d'essai gratuit`,
         },
       },
     });

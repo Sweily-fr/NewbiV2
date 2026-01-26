@@ -186,6 +186,8 @@ const ContactInfo = ({
                   color: typography.phone?.color || colors.contact || "#666666",
                   fontSize: `${typography.phone?.fontSize || fontSize.contact || 11}px`,
                   fontFamily: typography.phone?.fontFamily || fontFamily,
+                  fontWeight: typography.phone?.fontWeight || "normal",
+                  fontStyle: typography.phone?.fontStyle || "normal",
                 }}
               />
             </>
@@ -208,6 +210,8 @@ const ContactInfo = ({
                   color: primaryColor,
                   fontSize: `${typography.website?.fontSize || fontSize.contact || 11}px`,
                   fontFamily: typography.website?.fontFamily || fontFamily,
+                  fontWeight: typography.website?.fontWeight || "normal",
+                  fontStyle: typography.website?.fontStyle || "normal",
                 }}
               />
             </span>

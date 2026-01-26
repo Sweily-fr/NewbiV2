@@ -41,7 +41,7 @@ const RegisterFormContent = () => {
     // Selon la doc Better Auth, l'erreur est retournée directement dans { data, error }
     const { data, error } = await signUp.email(formData, {
       onSuccess: async (ctx) => {
-        toast.success("Compte créé avec succès ! Configurons votre espace.");
+        // toast.success("Compte créé avec succès ! Configurons votre espace.");
 
         // Si c'est une inscription via invitation, stocker l'invitationId pour l'accepter après l'onboarding
         if (invitationId && invitationEmail) {
@@ -52,15 +52,15 @@ const RegisterFormContent = () => {
               invitationId,
               email: invitationEmail,
               timestamp: Date.now(),
-            })
+            }),
           );
 
           console.log(
-            `📋 Invitation ${invitationId} stockée pour acceptation après onboarding`
+            `📋 Invitation ${invitationId} stockée pour acceptation après onboarding`,
           );
 
           toast.info(
-            "Configurez votre espace puis vous serez automatiquement connecté."
+            "Configurez votre espace puis vous serez automatiquement connecté.",
           );
         }
 

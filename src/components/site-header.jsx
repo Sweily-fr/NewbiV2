@@ -2,7 +2,6 @@
 import React, { Suspense, useState, useEffect } from "react";
 import { Separator } from "@/src/components/ui/separator";
 import { SidebarTrigger } from "@/src/components/ui/sidebar";
-import { TrialCounter } from "@/src/components/trial-counter";
 import { EmailVerificationBadgeHeader } from "@/src/components/email-verification-badge-header";
 import { OrganizationSwitcherHeader } from "@/src/components/organization-switcher-header";
 import { authClient } from "@/src/lib/auth-client";
@@ -41,10 +40,9 @@ function SiteHeaderContent() {
         />
         {/* Sélecteur d'organisation style Supabase */}
         <OrganizationSwitcherHeader />
-        <EmailVerificationBadgeHeader />
         <div className="ml-auto flex items-center gap-2">
+          <EmailVerificationBadgeHeader />
           {/* <SignatureSaveButton /> */}
-          <TrialCounter />
           {/* <ModeToggle /> */}
         </div>
       </div>
@@ -67,7 +65,7 @@ function SiteHeaderFallback() {
           <div className="h-4 w-24 rounded bg-muted animate-pulse" />
         </div>
         <div className="ml-auto flex items-center gap-2">
-          <TrialCounter />
+          {/* Trial counter removed - users subscribe during onboarding */}
         </div>
       </div>
     </header>

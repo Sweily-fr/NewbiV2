@@ -10,7 +10,6 @@ export default function CompanySearchStep({
   updateFormData,
   onNext,
   onBack,
-  onSkip,
 }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
@@ -204,16 +203,11 @@ export default function CompanySearchStep({
 
       {/* Boutons de navigation */}
       <div className="flex items-center justify-between pt-4">
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" onClick={onBack}>
-            Retour
-          </Button>
-          <Button variant="ghost" onClick={onSkip}>
-            Passer cette étape
-          </Button>
-        </div>
-        <Button onClick={handleContinue} disabled={!selectedCompany}>
-          Continuer
+        <Button variant="ghost" onClick={onBack}>
+          Retour
+        </Button>
+        <Button onClick={handleContinue}>
+          {selectedCompany ? "Continuer" : "Continuer sans entreprise"}
         </Button>
       </div>
     </div>

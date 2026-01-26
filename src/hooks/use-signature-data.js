@@ -61,6 +61,10 @@ const GET_EMAIL_SIGNATURE = gql`
       logoSize
       separatorVerticalWidth
       separatorHorizontalWidth
+      separatorVerticalEnabled
+      separatorHorizontalEnabled
+      templateId
+      containerStructure
       spacings {
         global
         photoBottom
@@ -330,11 +334,11 @@ function SignatureProviderContent({ children }) {
         rightColumn: ["contact"],
         bottomRow: ["separator", "logo", "social"],
       },
-      // Réseaux sociaux (3 par défaut)
+      // Réseaux sociaux (3 par défaut) - format URL directe
       socialNetworks: {
-        facebook: { url: "#" },
-        linkedin: { url: "#" },
-        x: { url: "#" },
+        facebook: "#",
+        linkedin: "#",
+        x: "#",
       },
       // Couleur globale et taille des icônes sociales
       socialGlobalColor: null, // null = couleurs par défaut de chaque réseau
@@ -534,6 +538,18 @@ function SignatureProviderContent({ children }) {
             : defaultSignatureData.photoVisible,
         orientation:
           fetchedSignature.orientation || defaultSignatureData.orientation,
+        // Template ID - utiliser la valeur sauvegardée ou par défaut
+        templateId:
+          fetchedSignature.templateId || defaultSignatureData.templateId,
+        // Séparateurs - utiliser les valeurs sauvegardées ou par défaut
+        separatorVerticalEnabled:
+          fetchedSignature.separatorVerticalEnabled !== undefined
+            ? fetchedSignature.separatorVerticalEnabled
+            : defaultSignatureData.separatorVerticalEnabled,
+        separatorHorizontalEnabled:
+          fetchedSignature.separatorHorizontalEnabled !== undefined
+            ? fetchedSignature.separatorHorizontalEnabled
+            : defaultSignatureData.separatorHorizontalEnabled,
         colors: {
           ...defaultSignatureData.colors,
           ...(fetchedSignature.colors || {}),
@@ -604,9 +620,40 @@ function SignatureProviderContent({ children }) {
           ...defaultSignatureData.separators,
           ...(fetchedSignature.separators || {}),
         },
-        socialNetworks: {
-          ...defaultSignatureData.socialNetworks,
-          ...(fetchedSignature.socialNetworks || {}),
+        // Normaliser socialNetworks: convertir les objets { url: "..." } en chaînes directes
+        // En mode édition, utiliser UNIQUEMENT les données sauvegardées (pas les valeurs par défaut)
+        socialNetworks: (() => {
+          const fetchedNetworks = fetchedSignature.socialNetworks || {};
+          const normalized = {};
+
+          // Parcourir les réseaux récupérés du backend
+          Object.keys(fetchedNetworks).forEach((platform) => {
+            const value = fetchedNetworks[platform];
+            if (value) {
+              // Convertir objet { url: "..." } en chaîne directe
+              normalized[platform] = typeof value === "object" && value.url
+                ? value.url
+                : value;
+            }
+          });
+
+          return normalized;
+        })(),
+        // S'assurer que elementsOrder est un tableau valide
+        elementsOrder: (fetchedSignature.elementsOrder && fetchedSignature.elementsOrder.length > 0)
+          ? fetchedSignature.elementsOrder
+          : defaultSignatureData.elementsOrder,
+        // S'assurer que horizontalLayout est un objet valide avec les 3 colonnes
+        horizontalLayout: {
+          leftColumn: fetchedSignature.horizontalLayout?.leftColumn?.length > 0
+            ? fetchedSignature.horizontalLayout.leftColumn
+            : defaultSignatureData.horizontalLayout.leftColumn,
+          rightColumn: fetchedSignature.horizontalLayout?.rightColumn?.length > 0
+            ? fetchedSignature.horizontalLayout.rightColumn
+            : defaultSignatureData.horizontalLayout.rightColumn,
+          bottomRow: fetchedSignature.horizontalLayout?.bottomRow?.length > 0
+            ? fetchedSignature.horizontalLayout.bottomRow
+            : defaultSignatureData.horizontalLayout.bottomRow,
         },
         socialColors: {
           ...defaultSignatureData.socialColors,
@@ -1244,10 +1291,55 @@ function SignatureProviderContent({ children }) {
     return container.elements.find((el) => el.id === selectedElementId) || null;
   }, [rootContainer, selectedContainerId, selectedElementId, findContainerById]);
 
+  // Mapping from element type to typography field
+  const elementTypeToTypographyField = {
+    'name': 'fullName',
+    'position': 'position',
+    'company': 'company',
+    'phone': 'phone',
+    'mobile': 'mobile',
+    'email': 'email',
+    'website': 'website',
+    'address': 'address',
+  };
+
   // Update an element within a container
   const updateElement = React.useCallback((containerId, elementId, newProps) => {
-    setRootContainer(prev => updateElementRecursive(prev, containerId, elementId, newProps));
-  }, [updateElementRecursive]);
+    setRootContainer(prev => {
+      // Find the element to get its type for typography sync
+      const container = findContainerById(prev, containerId);
+      if (container && container.elements) {
+        const element = container.elements.find(el => el.id === elementId);
+        if (element) {
+          const typographyField = elementTypeToTypographyField[element.type];
+          // If this element type has a corresponding typography field, sync the typography
+          if (typographyField) {
+            const typographyProps = {};
+            const propsToSync = ['fontFamily', 'fontWeight', 'fontStyle', 'fontSize', 'color', 'textDecoration'];
+            propsToSync.forEach(prop => {
+              if (newProps[prop] !== undefined) {
+                typographyProps[prop] = newProps[prop];
+              }
+            });
+            // Update signatureData.typography if we have typography-related props
+            if (Object.keys(typographyProps).length > 0) {
+              setSignatureData(prevData => ({
+                ...prevData,
+                typography: {
+                  ...prevData.typography,
+                  [typographyField]: {
+                    ...prevData.typography?.[typographyField],
+                    ...typographyProps,
+                  },
+                },
+              }));
+            }
+          }
+        }
+      }
+      return updateElementRecursive(prev, containerId, elementId, newProps);
+    });
+  }, [updateElementRecursive, findContainerById]);
 
   // Delete an element from a container
   const deleteElement = React.useCallback((containerId, elementId) => {
@@ -1556,6 +1648,25 @@ function SignatureProviderContent({ children }) {
   const getSelectedBlock = getSelectedContainer;
   const reorderBlocks = setRootContainerData; // Direct replacement
   const clearBlocks = clearRootContainer;
+
+  // ========== Restaurer la structure des conteneurs en mode édition ==========
+  // Cet effet restaure la disposition personnalisée des blocs sauvegardée
+  useEffect(() => {
+    if (isEditMode && signatureQueryData?.getEmailSignature) {
+      console.log("🔍 [SIGNATURE_DATA] Données GraphQL reçues - containerStructure:", signatureQueryData.getEmailSignature.containerStructure);
+      console.log("🔍 [SIGNATURE_DATA] Données GraphQL reçues - templateId:", signatureQueryData.getEmailSignature.templateId);
+      console.log("🔍 [SIGNATURE_DATA] Données GraphQL reçues - position:", signatureQueryData.getEmailSignature.position);
+      console.log("🔍 [SIGNATURE_DATA] Données GraphQL reçues - socialNetworks:", signatureQueryData.getEmailSignature.socialNetworks);
+
+      if (signatureQueryData.getEmailSignature.containerStructure) {
+        const savedContainerStructure = signatureQueryData.getEmailSignature.containerStructure;
+        console.log("🔄 [SIGNATURE_DATA] Restauration de la structure des conteneurs:", savedContainerStructure);
+        setRootContainer(savedContainerStructure);
+      } else {
+        console.log("⚠️ [SIGNATURE_DATA] Aucune containerStructure sauvegardée, utilisation du template par défaut");
+      }
+    }
+  }, [isEditMode, signatureQueryData]);
 
   // États et fonctions pour les actions de la toolbar
   const [showCancelModal, setShowCancelModal] = useState(false);

@@ -19,27 +19,24 @@ const VerticalSeparator = ({
   return (
     <>
       {/* Espacement gauche */}
-      <td style={{ width: `${leftSpacing}px` }}>&nbsp;</td>
-      
+      <td style={{ width: `${leftSpacing}px`, verticalAlign: "top" }}>&nbsp;</td>
+
       {/* Séparateur */}
       <td
         style={{
           width: `${width}px`,
           backgroundColor: color,
-          borderRadius: "0px",
           padding: "0px",
           fontSize: "1px",
           lineHeight: "1px",
           verticalAlign: "top",
-          height: "100%",
-          minHeight: minHeight,
         }}
       >
         &nbsp;
       </td>
-      
+
       {/* Espacement droit */}
-      <td style={{ width: `${rightSpacing}px` }}>&nbsp;</td>
+      <td style={{ width: `${rightSpacing}px`, verticalAlign: "top" }}>&nbsp;</td>
     </>
   );
 };

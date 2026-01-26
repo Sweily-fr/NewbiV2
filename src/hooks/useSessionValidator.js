@@ -3,7 +3,6 @@
 import { useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/src/lib/auth-client";
-import { toast } from "@/src/components/ui/sonner";
 
 // Garde globale pour éviter les toasts multiples de session expirée
 let isSessionErrorShown = false;
@@ -59,25 +58,21 @@ export function useSessionValidator() {
           isSessionErrorShown = true;
           resetSessionErrorGuard();
 
-          toast.error("Votre session a expiré. Veuillez vous reconnecter.", {
-            id: "session-expired-toast", // ID unique pour éviter les doublons
-          });
-
           // Nettoyer le token local
           localStorage.removeItem("bearer_token");
 
-          // Déconnecter proprement
+          // Déconnecter proprement et rediriger vers la page d'expiration
           await authClient.signOut({
             fetchOptions: {
               onSuccess: () => {
                 if (mountedRef.current) {
-                  router.push("/auth/login");
+                  router.push("/auth/session-expired?reason=inactivity");
                 }
               },
               onError: () => {
                 // Forcer la redirection même en cas d'erreur
                 if (mountedRef.current) {
-                  router.push("/auth/login");
+                  router.push("/auth/session-expired?reason=inactivity");
                 }
               },
             },
@@ -89,23 +84,22 @@ export function useSessionValidator() {
           isSessionErrorShown = true;
           resetSessionErrorGuard();
 
-          toast.error("Votre session a expiré. Veuillez vous reconnecter.", {
-            id: "session-expired-toast",
-          });
-
           // Nettoyer le token local
           localStorage.removeItem("bearer_token");
+
+          // Déterminer la raison de l'expiration
+          const reason = data.error?.includes("révoquée") ? "revoked" : "inactivity";
 
           await authClient.signOut({
             fetchOptions: {
               onSuccess: () => {
                 if (mountedRef.current) {
-                  router.push("/auth/login");
+                  router.push(`/auth/session-expired?reason=${reason}`);
                 }
               },
               onError: () => {
                 if (mountedRef.current) {
-                  router.push("/auth/login");
+                  router.push(`/auth/session-expired?reason=${reason}`);
                 }
               },
             },
@@ -138,10 +132,10 @@ export function useSessionValidator() {
       }
     };
 
-    // Vérification périodique toutes les 2 minutes (suffisant pour détecter les révocations)
+    // Vérification périodique toutes les minutes (adapté à l'expiration de session d'1 heure)
     const interval = setInterval(() => {
       checkSession();
-    }, 120000); // 2 minutes
+    }, 60000); // 1 minute
 
     // Vérification initiale après 2 secondes
     const initialCheck = setTimeout(() => {

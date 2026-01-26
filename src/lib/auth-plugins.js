@@ -234,11 +234,8 @@ export const stripePlugin = stripe({
       const couponToApply =
         coupon || process.env.STRIPE_FIRST_YEAR_DISCOUNT_COUPON_ID;
 
-      // Message personnalisé selon le coupon
-      const discountMessage =
-        coupon === process.env.STRIPE_NEW_ORG_COUPON_ID
-          ? "🎉 Réduction de 25% appliquée sur votre nouvelle organisation !"
-          : "🎉 Réduction de 20% appliquée sur votre première année !";
+      // Message personnalisé avec info trial
+      const trialMessage = "Essai gratuit 30 jours - Aucun prélèvement avant la fin de l'essai";
 
       const discountType =
         coupon === process.env.STRIPE_NEW_ORG_COUPON_ID
@@ -247,14 +244,24 @@ export const stripePlugin = stripe({
 
       return {
         params: {
-          // Appliquer le coupon approprié
+          // Appliquer le coupon approprié (s'appliquera après le trial)
           discounts: couponToApply ? [{ coupon: couponToApply }] : [],
           // Collecter l'adresse de facturation
           billing_address_collection: "required",
+          // ✅ Trial de 30 jours - L'utilisateur ne sera pas prélevé avant 30 jours
+          subscription_data: {
+            trial_period_days: 30,
+            metadata: {
+              hasTrial: "true",
+              trialDays: "30",
+              planType: plan.name,
+              userId: user.id,
+            },
+          },
           // Message personnalisé
           custom_text: {
             submit: {
-              message: discountMessage,
+              message: trialMessage,
             },
           },
           // Métadonnées pour le suivi
@@ -262,6 +269,8 @@ export const stripePlugin = stripe({
             planType: plan.name,
             discountApplied: discountType,
             userId: user.id,
+            hasTrial: "true",
+            trialDays: "30",
             ...metadata, // Métadonnées additionnelles
           },
         },
@@ -784,29 +793,58 @@ export const stripePlugin = stripe({
                 `✅ [STRIPE WEBHOOK] Abonnement créé avec id: ${newId.toString()}`
               );
 
-              // ✅ Désactiver le trial de l'organisation si l'abonnement est actif (pas trialing)
-              if (subscription.status === "active" && referenceId) {
+              // ✅ Gérer le statut trial de l'organisation selon le statut de l'abonnement
+              if (referenceId) {
                 try {
-                  const orgUpdateResult = await mongoDb
-                    .collection("organization")
-                    .updateOne(
-                      { _id: new ObjectId(referenceId) },
-                      {
-                        $set: {
-                          isTrialActive: false,
-                          hasUsedTrial: true,
-                          updatedAt: new Date(),
-                        },
-                      }
-                    );
-                  if (orgUpdateResult.modifiedCount > 0) {
-                    console.log(
-                      `✅ [STRIPE WEBHOOK] Trial désactivé pour l'organisation ${referenceId}`
-                    );
+                  if (subscription.status === "trialing") {
+                    // Abonnement en période d'essai - Activer le trial Stripe sur l'organisation
+                    const trialEnd = subscription.trial_end
+                      ? new Date(subscription.trial_end * 1000)
+                      : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 jours par défaut
+
+                    const orgUpdateResult = await mongoDb
+                      .collection("organization")
+                      .updateOne(
+                        { _id: new ObjectId(referenceId) },
+                        {
+                          $set: {
+                            isTrialActive: true,
+                            trialStartDate: new Date().toISOString(),
+                            trialEndDate: trialEnd.toISOString(),
+                            stripeTrialActive: true, // Marquer que c'est un trial Stripe
+                            updatedAt: new Date(),
+                          },
+                        }
+                      );
+                    if (orgUpdateResult.modifiedCount > 0) {
+                      console.log(
+                        `✅ [STRIPE WEBHOOK] Trial Stripe activé pour l'organisation ${referenceId} jusqu'au ${trialEnd.toLocaleDateString('fr-FR')}`
+                      );
+                    }
+                  } else if (subscription.status === "active") {
+                    // Abonnement actif - Désactiver le trial
+                    const orgUpdateResult = await mongoDb
+                      .collection("organization")
+                      .updateOne(
+                        { _id: new ObjectId(referenceId) },
+                        {
+                          $set: {
+                            isTrialActive: false,
+                            hasUsedTrial: true,
+                            stripeTrialActive: false,
+                            updatedAt: new Date(),
+                          },
+                        }
+                      );
+                    if (orgUpdateResult.modifiedCount > 0) {
+                      console.log(
+                        `✅ [STRIPE WEBHOOK] Trial désactivé pour l'organisation ${referenceId}`
+                      );
+                    }
                   }
                 } catch (trialError) {
                   console.warn(
-                    `⚠️ [STRIPE WEBHOOK] Erreur désactivation trial:`,
+                    `⚠️ [STRIPE WEBHOOK] Erreur gestion trial:`,
                     trialError.message
                   );
                 }
@@ -837,6 +875,7 @@ export const stripePlugin = stripe({
           try {
             // Import MongoDB directement
             const { mongoDb } = await import("./mongodb.js");
+            const { ObjectId } = require("mongodb");
 
             // ✅ NOUVEAU : Récupérer le plan depuis les métadonnées
             const newPlan = updatedSub.metadata?.planName;
@@ -872,6 +911,46 @@ export const stripePlugin = stripe({
                 { stripeSubscriptionId: updatedSub.id },
                 { $set: updateData }
               );
+
+            // ✅ Gérer la fin du trial Stripe - Quand le statut passe de "trialing" à "active"
+            // Récupérer l'abonnement existant pour voir l'ancien statut
+            const existingSub = await mongoDb
+              .collection("subscription")
+              .findOne({ stripeSubscriptionId: updatedSub.id });
+
+            if (existingSub?.referenceId && updatedSub.status === "active") {
+              try {
+                // Vérifier si l'organisation était en trial Stripe
+                const org = await mongoDb
+                  .collection("organization")
+                  .findOne({ _id: new ObjectId(existingSub.referenceId) });
+
+                if (org?.stripeTrialActive || org?.isTrialActive) {
+                  // Le trial est terminé, désactiver
+                  await mongoDb
+                    .collection("organization")
+                    .updateOne(
+                      { _id: new ObjectId(existingSub.referenceId) },
+                      {
+                        $set: {
+                          isTrialActive: false,
+                          hasUsedTrial: true,
+                          stripeTrialActive: false,
+                          updatedAt: new Date(),
+                        },
+                      }
+                    );
+                  console.log(
+                    `✅ [STRIPE WEBHOOK] Trial terminé - Abonnement actif pour l'organisation ${existingSub.referenceId}`
+                  );
+                }
+              } catch (trialEndError) {
+                console.warn(
+                  `⚠️ [STRIPE WEBHOOK] Erreur fin de trial:`,
+                  trialEndError.message
+                );
+              }
+            }
 
             console.log(
               `✅ [STRIPE WEBHOOK] Abonnement mis à jour avec succès${newPlan ? ` (plan: ${newPlan})` : ""}${updatedSub.cancel_at_period_end ? " (résiliation programmée)" : ""}`
