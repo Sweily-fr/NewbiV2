@@ -58,7 +58,7 @@ export default function CGVPage() {
             <section className="mb-8">
               <h2 className="text-2xl font-semibold text-gray-800 mb-4">ARTICLE 5. TARIFS ET MODALITES DE PAIEMENT</h2>
               <p className="text-gray-600 leading-relaxed mb-4">
-                L'Utilisateur bénéficie d'un essai gratuit de 14 jours. À l'issue de cette période, l'accès aux services est facturé 14,99€/mois, sans engagement. La résiliation peut intervenir à tout moment ; l'Utilisateur continuera à profiter des Services jusqu'à la date de fin de son mois d'abonnement. Aucun remboursement partiel ne pourra être exigé.
+                L'Utilisateur bénéficie d'un essai gratuit de 30 jours. À l'issue de cette période, l'accès aux services est facturé 14,99€/mois, sans engagement. La résiliation peut intervenir à tout moment ; l'Utilisateur continuera à profiter des Services jusqu'à la date de fin de son mois d'abonnement. Aucun remboursement partiel ne pourra être exigé.
               </p>
             </section>
 

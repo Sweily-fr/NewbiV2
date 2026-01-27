@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useCallback } from "react";
-import { useRouter } from "next/navigation";
 import { authClient } from "@/src/lib/auth-client";
 import {
   getTimeSinceLastActivity,
@@ -34,7 +33,6 @@ const resetSessionErrorGuard = () => {
  * - Rafraîchit automatiquement la session si l'utilisateur est actif
  */
 export function useSessionValidator() {
-  const router = useRouter();
   const checkingRef = useRef(false);
   const lastCheckRef = useRef(Date.now());
   const mountedRef = useRef(true);
@@ -59,23 +57,14 @@ export function useSessionValidator() {
     // Notifier ActivityTracker
     notifySessionExpired(reason);
 
-    // Déconnecter proprement et rediriger vers la page d'expiration
-    await authClient.signOut({
-      fetchOptions: {
-        onSuccess: () => {
-          if (mountedRef.current) {
-            router.push(`/auth/session-expired?reason=${reason}`);
-          }
-        },
-        onError: () => {
-          // Forcer la redirection même en cas d'erreur
-          if (mountedRef.current) {
-            router.push(`/auth/session-expired?reason=${reason}`);
-          }
-        },
-      },
+    // Déconnecter proprement (fire and forget)
+    authClient.signOut().catch((error) => {
+      console.error("Erreur lors de la déconnexion:", error);
     });
-  }, [router]);
+
+    // Redirection immédiate et synchrone (ne pas attendre signOut)
+    window.location.href = `/auth/session-expired?reason=${reason}`;
+  }, []);
 
   const checkSession = useCallback(async () => {
     // Éviter les vérifications multiples simultanées

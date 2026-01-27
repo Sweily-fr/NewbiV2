@@ -60,7 +60,7 @@ export function HeroSection() {
             </div>
 
             {/* <p className="text-gray-500 text-sm pt-2">
-              Essayer 14 jours gratuit
+              Essayer 30 jours gratuit
             </p> */}
 
             <div className="flex flex-col lg:flex-row items-center justify-center gap-2 text-gray-600 text-sm">

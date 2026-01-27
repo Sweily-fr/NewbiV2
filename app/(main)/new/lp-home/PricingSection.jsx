@@ -177,7 +177,7 @@ export default function PricingSection() {
           {/* <span className="inline-block text-xs font-semibold uppercase tracking-wider text-[#5A50FF] mb-3"></span> */}
           <div className="flex flex-col">
             <h2 className="text-3xl md:text-4xl font-normal tracking-[-0.015em] text-balance text-gray-950 dark:text-gray-50 mb-4">
-              Profitez de 15 jours offerts
+              Profitez de 30 jours offerts
             </h2>
             <p className="text-md font-normal tracking-tight text-gray-600 dark:text-gray-300 mx-auto mb-8 max-w-2xl">
               Sans engagement et résiliable à tout moment !
@@ -253,7 +253,7 @@ export default function PricingSection() {
 
                 <Button asChild variant="outline" className="gap-4 w-full">
                   <Link href="/auth/signup">
-                    Essayer 14 jours gratuits <MoveRight className="w-4 h-4" />
+                    Essayer 30 jours gratuits <MoveRight className="w-4 h-4" />
                   </Link>
                 </Button>
               </div>
@@ -303,7 +303,7 @@ export default function PricingSection() {
 
                 <Button asChild className="gap-4 w-full">
                   <Link href="/auth/signup">
-                    Essayer 14 jours gratuits <MoveRight className="w-4 h-4" />
+                    Essayer 30 jours gratuits <MoveRight className="w-4 h-4" />
                   </Link>
                 </Button>
               </div>
@@ -350,7 +350,7 @@ export default function PricingSection() {
 
                 <Button asChild variant="outline" className="gap-4 w-full">
                   <Link href="/auth/signup">
-                    Essayer 14 jours gratuits <MoveRight className="w-4 h-4" />
+                    Essayer 30 jours gratuits <MoveRight className="w-4 h-4" />
                   </Link>
                 </Button>
               </div>
@@ -389,7 +389,7 @@ export default function PricingSection() {
                   )}
                   <Button asChild variant="outline" className="gap-4 mt-8">
                     <Link href="/auth/signup">
-                      Essayer 14 jours gratuits{" "}
+                      Essayer 30 jours gratuits{" "}
                       <MoveRight className="w-4 h-4" />
                     </Link>
                   </Button>
@@ -414,7 +414,7 @@ export default function PricingSection() {
                   )}
                   <Button asChild className="gap-4 mt-8">
                     <Link href="/auth/signup">
-                      Essayer 14 jours gratuits{" "}
+                      Essayer 30 jours gratuits{" "}
                       <MoveRight className="w-4 h-4" />
                     </Link>
                   </Button>
@@ -441,7 +441,7 @@ export default function PricingSection() {
                   )}
                   <Button asChild variant="outline" className="gap-4 mt-8">
                     <Link href="/auth/signup">
-                      Essayer 14 jours gratuits{" "}
+                      Essayer 30 jours gratuits{" "}
                       <MoveRight className="w-4 h-4" />
                     </Link>
                   </Button>
