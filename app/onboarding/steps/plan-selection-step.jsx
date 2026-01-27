@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
-import { Check, ArrowLeft, Shield } from "lucide-react";
+import { Check, ArrowLeft, Gift } from "lucide-react";
 import { getAssetUrl } from "@/src/lib/image-utils";
 
 const plans = [
@@ -145,6 +145,11 @@ export default function PlanSelectionStep({
           Économisez 10% en optant pour la facturation annuelle
         </p>
       </div>
+      {/* 30-day Free Trial Badge */}
+      <p className="text-xs text-muted-foreground flex items-center gap-1.5 mt-2">
+        <Gift className="w-3.5 h-3.5 text-primary" />
+        Profitez de 30 jours d'essai gratuit, sans engagement
+      </p>
 
       {/* Toggle Mensuel/Annuel */}
       <div className="flex w-fit rounded-full bg-muted p-1">
@@ -262,12 +267,6 @@ export default function PlanSelectionStep({
           </div>
         ))}
       </div>
-
-      {/* 30-day Guarantee Badge */}
-      <p className="text-xs text-muted-foreground flex items-center gap-1.5 mt-2">
-        <Shield className="w-3.5 h-3.5" />
-        Garantie satisfait ou remboursé 30 jours
-      </p>
     </section>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 import React from "react";
 import { TeamBentoGrid } from "./TeamBentoGrid";
+import { OurStorySection } from "./OurStorySection";
 
 export function HeroSection() {
   return (
@@ -13,17 +14,12 @@ export function HeroSection() {
               Simplifier la gestion financière des entrepreneurs
             </h1>
 
-            <h2 className="text-sm sm:text-md font-normal tracking-tight text-gray-600 dark:text-gray-300 mb-6 lg:mb-8 max-w-2xl mx-auto">
+            <h2 className="text-md font-normal tracking-tight text-gray-600 dark:text-gray-300 mx-auto mb-8 max-w-3xl">
               Nous sommes une équipe passionnée qui croit que la gestion
               financière ne devrait pas être compliquée. Notre mission est de
               simplifier le quotidien des entrepreneurs et PME avec des outils
               intuitifs et performants.
             </h2>
-
-            <p className="text-gray-500 text-sm pt-2 max-w-xl mx-auto">
-              Depuis notre création, nous accompagnons des milliers
-              d'entreprises dans leur gestion financière au quotidien.
-            </p>
           </div>
 
           {/* Bento Grid d'images en bas sans animation */}
@@ -31,6 +27,9 @@ export function HeroSection() {
             <TeamBentoGrid />
           </div>
         </section>
+
+        {/* Section Notre Histoire */}
+        <OurStorySection />
       </main>
     </>
   );

@@ -34,7 +34,7 @@ export const seoData = {
     title:
       "Newbi - Solution de gestion complète pour entrepreneurs et freelances",
     description:
-      "Simplifiez votre gestion d'entreprise avec Newbi : facturation, devis, signatures de mail, kanban, transferts de fichiers, gestion de trésorerie. Essai gratuit de 14 jours sans engagement.",
+      "Simplifiez votre gestion d'entreprise avec Newbi : facturation, devis, signatures de mail, kanban, transferts de fichiers, gestion de trésorerie. Essai gratuit de 30 jours sans engagement.",
     keywords:
       "gestion entreprise, facturation, devis, signature de mail, kanban, freelance, entrepreneur, comptabilité, CRM, logiciel gestion, auto-entrepreneur, TPE, PME",
     canonical: `${baseUrl}`,
@@ -80,7 +80,7 @@ export const seoData = {
       sameAs: ["https://www.instagram.com/newbi_fr?igsh=dnVwZ3NndTU3bWw5"],
       offers: {
         "@type": "Offer",
-        description: "Essai gratuit de 14 jours",
+        description: "Essai gratuit de 30 jours",
         price: "0",
         priceCurrency: "EUR",
       },
@@ -128,7 +128,7 @@ export const seoData = {
         "@type": "Offer",
         price: "0",
         priceCurrency: "EUR",
-        description: "Essai gratuit de 14 jours",
+        description: "Essai gratuit de 30 jours",
       },
       featureList: [
         "Création de factures professionnelles",
@@ -185,7 +185,7 @@ export const seoData = {
         "@type": "Offer",
         price: "0",
         priceCurrency: "EUR",
-        description: "Essai gratuit de 14 jours",
+        description: "Essai gratuit de 30 jours",
       },
       featureList: [
         "Création de devis personnalisés",
@@ -358,7 +358,7 @@ export const seoData = {
         "@type": "Offer",
         price: "0",
         priceCurrency: "EUR",
-        description: "Essai gratuit de 14 jours",
+        description: "Essai gratuit de 30 jours",
       },
       featureList: [
         "Transferts cryptés",
@@ -463,14 +463,14 @@ export const seoData = {
   pricing: {
     title: "Tarifs et Abonnements - Plans Newbi pour Entrepreneurs",
     description:
-      "Découvrez nos tarifs transparents pour votre gestion d'entreprise. Essai gratuit de 14 jours, puis abonnement flexible. Fonctionnalités complètes incluses.",
+      "Découvrez nos tarifs transparents pour votre gestion d'entreprise. Essai gratuit de 30 jours, puis abonnement flexible. Fonctionnalités complètes incluses.",
     keywords:
       "tarifs newbi, prix abonnement, plan entrepreneur, facturation prix, devis tarif, essai gratuit, abonnement mensuel",
     canonical: `${baseUrl}/pricing`,
     openGraph: {
       title: "Tarifs Newbi - Plans pour Entrepreneurs",
       description:
-        "Plans flexibles pour votre gestion d'entreprise. Essai gratuit de 14 jours inclus.",
+        "Plans flexibles pour votre gestion d'entreprise. Essai gratuit de 30 jours inclus.",
       image: `/images/op-newbi.png`,
       type: "website",
       locale: "fr_FR",
@@ -499,7 +499,7 @@ export const seoData = {
           price: "0",
           priceCurrency: "EUR",
           description:
-            "Essai gratuit de 14 jours - Toutes fonctionnalités incluses",
+            "Essai gratuit de 30 jours - Toutes fonctionnalités incluses",
           availability: "https://schema.org/InStock",
         },
         {
@@ -567,7 +567,7 @@ export const seoData = {
           name: "Y a-t-il un essai gratuit ?",
           acceptedAnswer: {
             "@type": "Answer",
-            text: "Oui, vous bénéficiez de 14 jours gratuits à l'inscription, durant lesquels vous pouvez résilier votre abonnement à tout moment.",
+            text: "Oui, vous bénéficiez de 30 jours gratuits à l'inscription, durant lesquels vous pouvez résilier votre abonnement à tout moment.",
           },
         },
       ],

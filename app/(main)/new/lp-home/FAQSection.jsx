@@ -37,14 +37,14 @@ const questions = [
     title:
       "Quelles formules et quels prix propose Newbi ? Y a-t-il un essai gratuit ?",
     content:
-      "À l'inscription, vous bénéficiez de 14 jours gratuits, durant lesquels vous pouvez résilier votre abonnement à tout moment.\n\nNewbi propose 3 formules :\n\n• Freelance (1 utilisateur) :\n- Mensuel : 14,59€ HT/mois\n- Annuel : 13,13€ HT/mois (soit 157,56€ HT/an, 10% de réduction)\n\n• PME (10 utilisateurs) :\n- Mensuel : 48,99€ HT/mois\n- Annuel : 44,09€ HT/mois (soit 529,08€ HT/an, 10% de réduction)\n\n• Entreprise (25 utilisateurs) :\n- Mensuel : 94,99€ HT/mois\n- Annuel : 85,49€ HT/mois (soit 1 025,88€ HT/an, 10% de réduction)\n\nVous pouvez à tout moment changer votre abonnement ou le résilier sans conditions.",
+      "À l'inscription, vous bénéficiez de 30 jours gratuits, durant lesquels vous pouvez résilier votre abonnement à tout moment.\n\nNewbi propose 3 formules :\n\n• Freelance (1 utilisateur) :\n- Mensuel : 14,59€ HT/mois\n- Annuel : 13,13€ HT/mois (soit 157,56€ HT/an, 10% de réduction)\n\n• PME (10 utilisateurs) :\n- Mensuel : 48,99€ HT/mois\n- Annuel : 44,09€ HT/mois (soit 529,08€ HT/an, 10% de réduction)\n\n• Entreprise (25 utilisateurs) :\n- Mensuel : 94,99€ HT/mois\n- Annuel : 85,49€ HT/mois (soit 1 025,88€ HT/an, 10% de réduction)\n\nVous pouvez à tout moment changer votre abonnement ou le résilier sans conditions.",
   },
   {
     id: "item-6",
     title:
       "Quels moyens de paiement sont acceptés pour l'abonnement Newbi et comment modifier ma formule ?",
     content:
-      "Actuellement, l'abonnement Newbi se règle uniquement par carte bancaire. Il suffit d'enregistrer une carte valide dans votre espace client pour démarrer après les 14 jours d'essai gratuit.",
+      "Actuellement, l'abonnement Newbi se règle uniquement par carte bancaire. Il suffit d'enregistrer une carte valide dans votre espace client pour démarrer après les 30 jours d'essai gratuit.",
   },
   {
     id: "item-7",
