@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useSession } from "@/src/lib/auth-client";
-import { useTrial } from "@/src/hooks/useTrial";
 import { authClient } from "@/src/lib/auth-client";
 import { toast } from "@/src/components/ui/sonner";
 /**
@@ -19,8 +18,6 @@ export function useDashboardLayoutSimple() {
   // Données d'organisation active (Better Auth)
   const { data: activeOrganization, isPending: orgLoading } =
     authClient.useActiveOrganization();
-  // Données de trial
-  const trial = useTrial();
 
   // États pour les données utilisateur (cache minimal)
   const [cachedUser, setCachedUser] = useState(null);
@@ -586,9 +583,6 @@ export function useDashboardLayoutSimple() {
     getLimit,
     isActive,
 
-    // Données de trial
-    trial,
-
     // Onboarding
     isOnboardingOpen,
     setIsOnboardingOpen,
@@ -599,7 +593,7 @@ export function useDashboardLayoutSimple() {
       session?.user?.role === "owner" && !session?.user?.hasSeenOnboarding,
 
     // États de chargement
-    isLoading: isLoading || sessionLoading || trial.loading || orgLoading,
+    isLoading: isLoading || sessionLoading || orgLoading,
     isInitialized: isInitialized && isHydrated && !orgLoading,
     isHydrated,
 

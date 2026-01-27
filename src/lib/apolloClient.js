@@ -7,6 +7,11 @@ import createUploadLink from "apollo-upload-client/createUploadLink.mjs";
 import { toast } from "@/src/components/ui/sonner";
 import { authClient } from "@/src/lib/auth-client";
 import { getErrorMessage, isCriticalError } from "@/src/utils/errorMessages";
+import {
+  recordApiActivity,
+  shouldRefreshSession as checkShouldRefreshSession,
+  refreshSession,
+} from "@/src/lib/activityTracker";
 
 // Fonction pour vérifier si un token JWT est expiré (avec marge de sécurité de 60 secondes)
 const isTokenExpired = (token) => {
@@ -23,6 +28,12 @@ const isTokenExpired = (token) => {
     return true;
   }
 };
+
+// ==================== SYSTÈME DE RAFRAÎCHISSEMENT DE SESSION ====================
+// Utilise le service centralisé ActivityTracker pour :
+// - Tracker l'activité API (chaque requête GraphQL)
+// - Rafraîchir la session Better Auth automatiquement (via updateAge)
+// - Synchroniser avec useInactivityTimer et useSessionValidator
 
 // ==================== GARDE ANTI-BOUCLE POUR LES ERREURS AUTH ====================
 // Empêche les toasts multiples et redirections simultanées
@@ -196,6 +207,10 @@ const authLink = setContext(async (_, { headers }) => {
   try {
     let jwtToken = null;
 
+    // ✅ ACTIVITÉ API : Enregistrer chaque requête GraphQL comme activité
+    // Cela permet à ActivityTracker de savoir que l'utilisateur est actif
+    recordApiActivity();
+
     // 1. Vérifier d'abord le JWT stocké dans localStorage
     const storedToken = localStorage.getItem("bearer_token");
     if (storedToken && !isTokenExpired(storedToken)) {
@@ -204,25 +219,42 @@ const authLink = setContext(async (_, { headers }) => {
       localStorage.removeItem("bearer_token");
     }
 
-    // 2. Si pas de JWT valide, récupérer un nouveau via getSession
-    if (!jwtToken) {
-      const session = await authClient.getSession({
-        fetchOptions: {
-          onSuccess: (ctx) => {
-            // Vérifier les deux noms de headers possibles (Better Auth peut utiliser l'un ou l'autre)
-            const jwt = ctx.response.headers.get("set-auth-jwt") ||
-                       ctx.response.headers.get("set-auth-token");
-            if (jwt && !isTokenExpired(jwt)) {
-              jwtToken = jwt;
-              // Stocker le JWT dans localStorage
-              localStorage.setItem("bearer_token", jwt);
-            }
-          },
-          onError: () => {},
-        },
-      });
+    // 2. Si pas de JWT valide OU si on doit rafraîchir la session, appeler getSession()
+    // ✅ FIX CRITIQUE : Utilise ActivityTracker pour décider quand rafraîchir
+    // Cela déclenche le mécanisme updateAge de Better Auth (30 min)
+    const needsSessionRefresh = checkShouldRefreshSession();
 
-      // Si on a une session mais pas de JWT, utiliser les cookies
+    if (!jwtToken || needsSessionRefresh) {
+      if (needsSessionRefresh) {
+        console.log("🔄 [Apollo] Rafraîchissement via ActivityTracker...");
+        // Utiliser la fonction centralisée de rafraîchissement
+        await refreshSession();
+        // Récupérer le nouveau token
+        const newToken = localStorage.getItem("bearer_token");
+        if (newToken && !isTokenExpired(newToken)) {
+          jwtToken = newToken;
+        }
+      } else {
+        // Pas de JWT, récupérer via getSession()
+        const session = await authClient.getSession({
+          fetchOptions: {
+            onSuccess: (ctx) => {
+              const jwt = ctx.response.headers.get("set-auth-jwt") ||
+                         ctx.response.headers.get("set-auth-token");
+              if (jwt && !isTokenExpired(jwt)) {
+                jwtToken = jwt;
+                localStorage.setItem("bearer_token", jwt);
+              }
+            },
+            onError: () => {},
+          },
+        });
+      }
+
+      // Si on avait déjà un JWT valide mais qu'on a fait un refresh, garder le JWT existant
+      if (!jwtToken && storedToken && !isTokenExpired(storedToken)) {
+        jwtToken = storedToken;
+      }
     }
 
     // 3. Récupérer l'organization ID et le rôle depuis localStorage (définis par le frontend)

@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useSession } from '@/src/lib/auth-client';
-import { useTrial } from '@/src/hooks/useTrial';
 import { authClient } from '@/src/lib/auth-client';
 import { toast } from 'sonner';
 
@@ -14,19 +13,15 @@ export function useDashboardLayout() {
     user: null,
     organization: null,
     subscription: null,
-    trial: null,
     lastUpdate: null,
   });
-  
+
   const [isInitialized, setIsInitialized] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isHydrated, setIsHydrated] = useState(false);
 
   // Données de session avec cache-first
   const { data: session, isPending: sessionLoading } = useSession();
-  
-  // Données de trial avec cache
-  const trial = useTrial();
 
   // Protection contre l'erreur d'hydratation
   useEffect(() => {
@@ -98,7 +93,6 @@ export function useDashboardLayout() {
         user: session?.user,
         organization: session?.user?.organization,
         subscription: subscriptionData,
-        trial: trial,
         lastUpdate: Date.now(),
       };
 
@@ -170,7 +164,6 @@ export function useDashboardLayout() {
       user: null,
       organization: null,
       subscription: null,
-      trial: null,
       lastUpdate: null,
     });
     loadLayoutData(true); // Force refresh
@@ -241,16 +234,11 @@ export function useDashboardLayout() {
   };
 
   const isActive = () => {
-    // Vérifier d'abord si l'utilisateur a un abonnement payant actif
-    const hasActiveSubscription = 
-      cachedData.subscription?.status === "active" || 
+    // Vérifier si l'utilisateur a un abonnement Stripe actif
+    const hasActiveSubscription =
+      cachedData.subscription?.status === "active" ||
       cachedData.subscription?.status === "trialing";
-    
-    // Si pas d'abonnement payant, vérifier la période d'essai
-    if (!hasActiveSubscription) {
-      return trial.hasPremiumAccess;
-    }
-    
+
     return hasActiveSubscription;
   };
 
@@ -258,34 +246,31 @@ export function useDashboardLayout() {
     // Données utilisateur
     user: cachedData.user,
     organization: cachedData.organization,
-    
+
     // Données d'abonnement
     subscription: cachedData.subscription,
     hasFeature,
     getLimit,
     isActive,
-    
-    // Données de trial
-    trial,
-    
+
     // Onboarding
     isOnboardingOpen,
     setIsOnboardingOpen,
     completeOnboarding,
     skipOnboarding: completeOnboarding,
     onboardingLoading,
-    shouldShowOnboarding: cachedData.user?.role === 'owner' && 
+    shouldShowOnboarding: cachedData.user?.role === 'owner' &&
                          !cachedData.user?.hasSeenOnboarding,
-    
+
     // États de chargement
-    isLoading: isLoading || sessionLoading || trial.loading,
+    isLoading: isLoading || sessionLoading,
     isInitialized,
     isHydrated,
-    
+
     // Fonctions de cache
     refreshLayoutData,
     invalidateOrganizationCache,
-    
+
     // Métadonnées de cache
     cacheInfo: {
       lastUpdate: cachedData.lastUpdate,

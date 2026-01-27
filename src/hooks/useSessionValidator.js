@@ -3,27 +3,79 @@
 import { useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/src/lib/auth-client";
+import {
+  getTimeSinceLastActivity,
+  isUserInactive,
+  notifySessionExpired,
+  onSessionExpired,
+  refreshSession,
+} from "@/src/lib/activityTracker";
 
 // Garde globale pour éviter les toasts multiples de session expirée
 let isSessionErrorShown = false;
-let sessionErrorTimeout = null;
+let _sessionErrorTimeout = null;
 
 const resetSessionErrorGuard = () => {
-  sessionErrorTimeout = setTimeout(() => {
+  if (_sessionErrorTimeout) {
+    clearTimeout(_sessionErrorTimeout);
+  }
+  _sessionErrorTimeout = setTimeout(() => {
     isSessionErrorShown = false;
-    sessionErrorTimeout = null;
+    _sessionErrorTimeout = null;
   }, 10000); // Reset après 10 secondes
 };
 
 /**
  * Hook pour valider la session utilisateur et détecter les révocations
- * Vérifie la session au focus de la fenêtre et périodiquement
+ *
+ * REFACTORISÉ pour utiliser ActivityTracker :
+ * - Ne vérifie pas la session si l'utilisateur a été actif récemment
+ * - Intégré avec le système centralisé de gestion d'activité
+ * - Rafraîchit automatiquement la session si l'utilisateur est actif
  */
 export function useSessionValidator() {
   const router = useRouter();
   const checkingRef = useRef(false);
   const lastCheckRef = useRef(Date.now());
   const mountedRef = useRef(true);
+
+  // Seuil de temps pour considérer qu'une vérification récente est suffisante
+  // Si l'utilisateur a été actif dans les 5 dernières minutes, on skip la vérification
+  const ACTIVITY_THRESHOLD = 5 * 60 * 1000; // 5 minutes
+
+  const handleSessionExpired = useCallback(async (reason = "inactivity") => {
+    // Utiliser la garde pour éviter les redirections multiples
+    if (isSessionErrorShown) {
+      return;
+    }
+    isSessionErrorShown = true;
+    resetSessionErrorGuard();
+
+    console.log(`🔒 [SESSION-VALIDATOR] Session expirée: ${reason}`);
+
+    // Nettoyer le token local
+    localStorage.removeItem("bearer_token");
+
+    // Notifier ActivityTracker
+    notifySessionExpired(reason);
+
+    // Déconnecter proprement et rediriger vers la page d'expiration
+    await authClient.signOut({
+      fetchOptions: {
+        onSuccess: () => {
+          if (mountedRef.current) {
+            router.push(`/auth/session-expired?reason=${reason}`);
+          }
+        },
+        onError: () => {
+          // Forcer la redirection même en cas d'erreur
+          if (mountedRef.current) {
+            router.push(`/auth/session-expired?reason=${reason}`);
+          }
+        },
+      },
+    });
+  }, [router]);
 
   const checkSession = useCallback(async () => {
     // Éviter les vérifications multiples simultanées
@@ -37,9 +89,32 @@ export function useSessionValidator() {
       return;
     }
 
+    // ✅ OPTIMISATION : Si l'utilisateur a été actif récemment, on skip la vérification
+    // car les appels API ont déjà rafraîchi la session via ActivityTracker
+    const timeSinceActivity = getTimeSinceLastActivity();
+    if (timeSinceActivity < ACTIVITY_THRESHOLD) {
+      console.log(
+        `🟢 [SESSION-VALIDATOR] Utilisateur actif récemment (${Math.round(timeSinceActivity / 1000)}s), skip validation`
+      );
+      lastCheckRef.current = now;
+      return;
+    }
+
     try {
       checkingRef.current = true;
       lastCheckRef.current = now;
+
+      console.log("🔍 [SESSION-VALIDATOR] Vérification de la session...");
+
+      // D'abord, essayer de rafraîchir la session si l'utilisateur n'est pas inactif
+      if (!isUserInactive()) {
+        console.log("🔄 [SESSION-VALIDATOR] Tentative de rafraîchissement de session...");
+        const refreshed = await refreshSession();
+        if (refreshed) {
+          console.log("✅ [SESSION-VALIDATOR] Session rafraîchie avec succès");
+          return;
+        }
+      }
 
       // Vérifier la session côté serveur (MongoDB)
       const response = await fetch("/api/auth/validate-session", {
@@ -53,57 +128,15 @@ export function useSessionValidator() {
       }
 
       if (!response.ok || response.status === 401) {
-        // Utiliser la garde pour éviter les toasts multiples
-        if (!isSessionErrorShown) {
-          isSessionErrorShown = true;
-          resetSessionErrorGuard();
-
-          // Nettoyer le token local
-          localStorage.removeItem("bearer_token");
-
-          // Déconnecter proprement et rediriger vers la page d'expiration
-          await authClient.signOut({
-            fetchOptions: {
-              onSuccess: () => {
-                if (mountedRef.current) {
-                  router.push("/auth/session-expired?reason=inactivity");
-                }
-              },
-              onError: () => {
-                // Forcer la redirection même en cas d'erreur
-                if (mountedRef.current) {
-                  router.push("/auth/session-expired?reason=inactivity");
-                }
-              },
-            },
-          });
-        }
+        await handleSessionExpired("inactivity");
       } else {
         const data = await response.json();
         if (!data.valid && !isSessionErrorShown) {
-          isSessionErrorShown = true;
-          resetSessionErrorGuard();
-
-          // Nettoyer le token local
-          localStorage.removeItem("bearer_token");
-
           // Déterminer la raison de l'expiration
           const reason = data.error?.includes("révoquée") ? "revoked" : "inactivity";
-
-          await authClient.signOut({
-            fetchOptions: {
-              onSuccess: () => {
-                if (mountedRef.current) {
-                  router.push(`/auth/session-expired?reason=${reason}`);
-                }
-              },
-              onError: () => {
-                if (mountedRef.current) {
-                  router.push(`/auth/session-expired?reason=${reason}`);
-                }
-              },
-            },
-          });
+          await handleSessionExpired(reason);
+        } else {
+          console.log("✅ [SESSION-VALIDATOR] Session valide");
         }
       }
     } catch (error) {
@@ -115,10 +148,15 @@ export function useSessionValidator() {
     } finally {
       checkingRef.current = false;
     }
-  }, [router]);
+  }, [handleSessionExpired, ACTIVITY_THRESHOLD]);
 
   useEffect(() => {
     mountedRef.current = true;
+
+    // S'abonner aux événements d'expiration de session de ActivityTracker
+    const unsubscribeExpired = onSessionExpired((reason) => {
+      handleSessionExpired(reason);
+    });
 
     // Vérifier au focus de la fenêtre (throttlé par lastCheckRef)
     const handleFocus = () => {
@@ -132,15 +170,16 @@ export function useSessionValidator() {
       }
     };
 
-    // Vérification périodique toutes les minutes (adapté à l'expiration de session d'1 heure)
+    // Vérification périodique toutes les 2 minutes
+    // (réduit car ActivityTracker gère déjà le rafraîchissement)
     const interval = setInterval(() => {
       checkSession();
-    }, 60000); // 1 minute
+    }, 120000); // 2 minutes
 
-    // Vérification initiale après 2 secondes
+    // Vérification initiale après 5 secondes
     const initialCheck = setTimeout(() => {
       checkSession();
-    }, 2000);
+    }, 5000);
 
     // Ajouter les event listeners
     window.addEventListener("focus", handleFocus);
@@ -153,8 +192,9 @@ export function useSessionValidator() {
       clearTimeout(initialCheck);
       window.removeEventListener("focus", handleFocus);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
+      unsubscribeExpired();
     };
-  }, [checkSession]);
+  }, [checkSession, handleSessionExpired]);
 
   return { checkSession };
 }
