@@ -39,6 +39,7 @@ const isTokenExpired = (token) => {
 // Empêche les toasts multiples et redirections simultanées
 let isAuthErrorHandling = false;
 let authErrorTimeout = null;
+let isRedirecting = false;
 
 const resetAuthErrorGuard = () => {
   authErrorTimeout = setTimeout(() => {
@@ -54,6 +55,25 @@ const canHandleAuthError = () => {
   isAuthErrorHandling = true;
   resetAuthErrorGuard();
   return true;
+};
+
+/**
+ * Force la redirection vers la page d'expiration de session
+ * Utilise window.location.href pour une redirection immédiate et fiable
+ */
+const forceSessionExpiredRedirect = (reason = "inactivity") => {
+  // Éviter les redirections multiples
+  if (isRedirecting) {
+    return;
+  }
+  isRedirecting = true;
+
+  // Nettoyer le token
+  localStorage.removeItem("bearer_token");
+
+  // Redirection immédiate et synchrone
+  console.log(`🔒 [Apollo] Redirection forcée vers /auth/session-expired (${reason})`);
+  window.location.href = `/auth/session-expired?reason=${reason}`;
 };
 
 // Configuration Upload Link avec support des uploads de fichiers
@@ -314,22 +334,16 @@ const errorLink = onError(({ graphQLErrors, networkError, operation }) => {
 
       // Si l'erreur est critique (authentification), gérer la redirection
       if (isCriticalError(errorWithCode)) {
-        // Utiliser la garde anti-boucle pour éviter les toasts multiples
-        if (!canHandleAuthError()) {
-          console.warn("⚠️ [Apollo] Erreur auth ignorée (déjà en cours de traitement):", message);
-          return;
-        }
-
         // Ne pas afficher de toast si c'est une erreur au chargement initial
         const isInitialLoad = operation.getContext().isInitialLoad;
 
         if (!isInitialLoad) {
-          // Nettoyer le token invalide
-          localStorage.removeItem("bearer_token");
-
-          // Rediriger directement vers la page d'expiration de session
-          // (la page affiche déjà le message approprié)
-          window.location.href = "/auth/session-expired?reason=inactivity";
+          // Utiliser la garde pour éviter les logs multiples, mais toujours rediriger
+          if (canHandleAuthError()) {
+            console.log("🔒 [Apollo] Session expirée détectée, redirection...");
+          }
+          // Forcer la redirection (la fonction gère déjà les appels multiples)
+          forceSessionExpiredRedirect("inactivity");
         } else {
           // Log silencieux pour le chargement initial
           console.warn(

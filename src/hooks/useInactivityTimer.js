@@ -1,6 +1,4 @@
 import { useEffect, useRef, useCallback } from "react";
-import { useRouter } from "next/navigation";
-import { toast } from "@/src/components/ui/sonner";
 import { authClient } from "@/src/lib/auth-client";
 import {
   initializeActivityTracker,
@@ -22,7 +20,6 @@ import {
  * @param {boolean} enabled - Active/désactive le timer d'inactivité (défaut: true)
  */
 export function useInactivityTimer(_timeoutMinutes = 60, enabled = true) {
-  const router = useRouter();
   const checkIntervalRef = useRef(null);
   const hasLoggedOutRef = useRef(false);
 
@@ -37,35 +34,20 @@ export function useInactivityTimer(_timeoutMinutes = 60, enabled = true) {
     }
     hasLoggedOutRef.current = true;
 
-    try {
-      console.log("⏰ [Inactivity] Déconnexion pour inactivité...");
+    console.log("⏰ [Inactivity] Déconnexion pour inactivité...");
 
-      // Afficher la notification de déconnexion
-      toast.error("Vous avez été déconnecté pour cause d'inactivité", {
-        duration: 5000,
-        position: "top-center",
-      });
+    // Nettoyer le token immédiatement
+    localStorage.removeItem("bearer_token");
 
-      // Nettoyer le token
-      localStorage.removeItem("bearer_token");
+    // Déconnexion via Better Auth (fire and forget)
+    authClient.signOut().catch((error) => {
+      console.error("Erreur lors de la déconnexion:", error);
+    });
 
-      // Déconnexion via Better Auth
-      await authClient.signOut({
-        fetchOptions: {
-          onSuccess: () => {
-            router.push("/auth/session-expired?reason=inactivity");
-          },
-          onError: (ctx) => {
-            console.error("Erreur lors de la déconnexion:", ctx.error);
-            router.push("/auth/session-expired?reason=inactivity");
-          },
-        },
-      });
-    } catch (error) {
-      console.error("Erreur lors de la déconnexion automatique:", error);
-      router.push("/auth/session-expired?reason=inactivity");
-    }
-  }, [router]);
+    // Redirection immédiate et synchrone (ne pas attendre signOut)
+    // Utiliser window.location.href pour garantir la redirection
+    window.location.href = "/auth/session-expired?reason=inactivity";
+  }, []);
 
   // Vérifier l'inactivité périodiquement
   const checkInactivity = useCallback(() => {

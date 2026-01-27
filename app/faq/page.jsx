@@ -41,11 +41,11 @@ const faqData = [
     questions: [
       {
         q: "Quelles formules et quels prix propose Newbi ? Y a-t-il un essai gratuit ?",
-        a: "À l'inscription vous bénéficiez de 14 jours gratuits, durant lesquels vous pouvez résilier votre abonnement à tout moment.\n\nEnsuite, les prix sont :\n• Abonnement mensuel: 12,49 € HT / mois\n• Abonnement annuel: 134,89 € HT / an (soit 10% de réduction)\n\nVous pouvez à tout moment changer votre abonnement ou le résilier sans conditions."
+        a: "À l'inscription vous bénéficiez de 30 jours gratuits, durant lesquels vous pouvez résilier votre abonnement à tout moment.\n\nEnsuite, les prix sont :\n• Abonnement mensuel: 12,49 € HT / mois\n• Abonnement annuel: 134,89 € HT / an (soit 10% de réduction)\n\nVous pouvez à tout moment changer votre abonnement ou le résilier sans conditions."
       },
       {
         q: "Quels moyens de paiement sont acceptés pour l'abonnement Newbi ?",
-        a: "Actuellement, l'abonnement Newbi se règle uniquement par carte bancaire. Il suffit d'enregistrer une carte valide dans votre espace client pour démarrer après les 14 jours d'essai gratuit."
+        a: "Actuellement, l'abonnement Newbi se règle uniquement par carte bancaire. Il suffit d'enregistrer une carte valide dans votre espace client pour démarrer après les 30 jours d'essai gratuit."
       }
     ]
   },
