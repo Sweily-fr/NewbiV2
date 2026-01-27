@@ -41,7 +41,7 @@ export const auth = betterAuth({
 
   // Configuration de la session
   session: {
-    expiresIn: 60 * 60, // 1 heure - Durée maximale de la session
+    expiresIn: 70 * 60, // 70 minutes - Marge de sécurité au-delà du timeout d'inactivité (60 min)
     updateAge: 60 * 30, // 30 minutes - Renouvellement automatique à mi-vie si utilisateur actif
     cookieCache: {
       enabled: true,

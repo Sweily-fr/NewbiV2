@@ -23,23 +23,17 @@ function OnboardingContent() {
   const [currentStep, setCurrentStep] = useState(1);
   const [isChecking, setIsChecking] = useState(true);
 
-  // Vérifier si l'utilisateur a déjà complété l'onboarding et s'assurer qu'une organisation active existe
+  // Vérifier si l'utilisateur a déjà complété l'onboarding ET a un abonnement actif
   useEffect(() => {
     const checkOnboardingStatus = async () => {
       try {
         const { data: session } = await authClient.getSession();
         const hasSeenOnboarding = session?.user?.hasSeenOnboarding;
 
-        if (hasSeenOnboarding) {
-          console.log(
-            "✅ [ONBOARDING] Utilisateur a déjà complété l'onboarding, redirection vers /dashboard",
-          );
-          router.push("/dashboard");
-          return;
-        }
-
         // ✅ S'assurer qu'une organisation active est définie
-        const { data: activeOrg } = await authClient.organization.getActive();
+        let activeOrg = null;
+        const { data: orgData } = await authClient.organization.getActive();
+        activeOrg = orgData;
 
         if (!activeOrg) {
           console.log(
@@ -54,6 +48,7 @@ function OnboardingContent() {
             await authClient.organization.setActive({
               organizationId: organizations[0].id,
             });
+            activeOrg = organizations[0];
             console.log(
               `✅ [ONBOARDING] Organisation active définie: ${organizations[0].id}`,
             );
@@ -61,11 +56,50 @@ function OnboardingContent() {
             console.warn(
               "⚠️ [ONBOARDING] Aucune organisation trouvée pour l'utilisateur",
             );
+            setIsChecking(false);
+            return;
           }
         } else {
           console.log(
             `✅ [ONBOARDING] Organisation active existante: ${activeOrg.id}`,
           );
+        }
+
+        // 🔒 IMPORTANT: Vérifier si l'utilisateur a un abonnement actif
+        // Même si hasSeenOnboarding est true, on doit vérifier l'abonnement
+        // car les anciens utilisateurs avec trial expiré n'ont plus accès
+        if (hasSeenOnboarding && activeOrg) {
+          try {
+            const response = await fetch(
+              `/api/organizations/${activeOrg.id}/subscription`
+            );
+            const subscriptionData = await response.json();
+
+            // Vérifier si l'abonnement est actif
+            const hasActiveSubscription =
+              subscriptionData.status === "active" ||
+              subscriptionData.status === "trialing" ||
+              (subscriptionData.status === "canceled" &&
+                subscriptionData.periodEnd &&
+                new Date(subscriptionData.periodEnd) > new Date());
+
+            if (hasActiveSubscription) {
+              console.log(
+                "✅ [ONBOARDING] Utilisateur a un abonnement actif, redirection vers /dashboard",
+              );
+              router.push("/dashboard");
+              return;
+            } else {
+              console.log(
+                "⚠️ [ONBOARDING] Utilisateur a complété l'onboarding mais n'a pas d'abonnement actif, affichage du flux d'abonnement",
+              );
+              // L'utilisateur doit compléter le flux d'abonnement
+              // On ne redirige pas vers dashboard, on continue sur l'onboarding
+            }
+          } catch (error) {
+            console.error("❌ [ONBOARDING] Erreur vérification abonnement:", error);
+            // En cas d'erreur, on laisse l'utilisateur sur l'onboarding par sécurité
+          }
         }
 
         setIsChecking(false);

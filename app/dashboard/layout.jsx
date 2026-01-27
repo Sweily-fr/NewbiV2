@@ -8,7 +8,6 @@ import { SiteHeader } from "@/src/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/src/components/ui/sidebar";
 import { SearchCommand } from "@/src/components/search-command";
 import { SignatureProvider } from "@/src/hooks/use-signature-data";
-import { TrialBanner } from "@/src/components/trial-banner";
 import { PricingModal } from "@/src/components/pricing-modal";
 import OnboardingModal from "@/src/components/onboarding-modal";
 import {
@@ -21,6 +20,7 @@ import { SiteHeaderSkeleton } from "@/src/components/site-header-skeleton";
 import { useInactivityTimer } from "@/src/hooks/useInactivityTimer";
 import { useSessionValidator } from "@/src/hooks/useSessionValidator";
 import { authClient } from "@/src/lib/auth-client";
+import { initializeActivityTracker } from "@/src/lib/activityTracker";
 import { ProSubscriptionOverlayHandler } from "@/src/components/pro-subscription-overlay-handler";
 import { SettingsModal } from "@/src/components/settings-modal";
 import { OrgActivationHandler } from "@/src/components/org-activation-handler";
@@ -95,8 +95,15 @@ function DashboardContent({ children }) {
     }
   }, [isHydrated, layoutInitialized, subscriptionLoading, isActive, router]);
 
-  // Hook pour gérer la déconnexion automatique après 15 minutes d'inactivité
-  useInactivityTimer(15, true);
+  // Initialiser ActivityTracker au montage (une seule fois)
+  useEffect(() => {
+    initializeActivityTracker();
+  }, []);
+
+  // Hook pour gérer la déconnexion automatique après inactivité
+  // Le timeout est maintenant géré par ActivityTracker (60 min = 1 heure)
+  // qui prend en compte les appels API + les événements DOM
+  useInactivityTimer(60, true);
 
   // Vérification de l'authentification côté client (après hydratation)
   useEffect(() => {
@@ -198,9 +205,6 @@ function DashboardContent({ children }) {
     }
   }, [isToolPage]);
 
-  // Désactiver complètement le banner - remplacé par le compteur dans le header
-  const showTrialBanner = false;
-
   return (
     <SidebarProvider open={sidebarOpen} onOpenChange={handleSidebarChange}>
       <AppSidebar
@@ -221,17 +225,6 @@ function DashboardContent({ children }) {
       <SidebarInset>
         <SiteHeader />
         <div className="flex flex-1 flex-col overflow-y-auto">
-          {showTrialBanner && (
-            <div className="p-4 pb-0">
-              <TrialBanner
-                onUpgrade={() => setIsPricingModalOpen(true)}
-                onStartTrial={() => {
-                  // Le hook useTrial gère automatiquement le démarrage
-                  console.log("Période d'essai démarrée");
-                }}
-              />
-            </div>
-          )}
           <div className="@container/main flex flex-1 flex-col gap-2">
             {children}
           </div>
