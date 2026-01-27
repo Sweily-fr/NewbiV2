@@ -48,7 +48,6 @@ import { NavDocuments } from "@/src/components/nav-documents";
 import { NavMain } from "@/src/components/nav-main";
 import { NavSecondary } from "@/src/components/nav-secondary";
 import { NavUser } from "@/src/components/nav-user";
-import { SidebarTrialCard } from "@/src/components/sidebar-trial-card";
 import { SidebarViewTabs } from "@/src/components/sidebar-view-tabs";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { useOrganizationType } from "@/src/hooks/useOrganizationType";
@@ -623,15 +622,6 @@ export function AppSidebar({
         )}
       </SidebarContent>
       <SidebarFooter>
-        {session?.user && !subscriptionLoading ? (
-          <SidebarTrialCard />
-        ) : (
-          !isCollapsed && (
-            <div className="mb-2 px-2">
-              <Skeleton className="h-16 w-full bg-[#EBEBEB] dark:bg-[#292929] rounded-md" />
-            </div>
-          )
-        )}
         {session?.user && !subscriptionLoading ? (
           <NavUser user={session.user} />
         ) : (

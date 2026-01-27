@@ -2,168 +2,147 @@ import { useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@/src/components/ui/sonner";
 import { authClient } from "@/src/lib/auth-client";
-
-// Événements à surveiller pour détecter l'activité (déclaré à l'extérieur pour éviter les dépendances)
-const ACTIVITY_EVENTS = [
-  "mousedown",
-  "mousemove",
-  "keypress",
-  "scroll",
-  "touchstart",
-  "click",
-  "focus",
-  "blur",
-];
+import {
+  initializeActivityTracker,
+  isUserInactive,
+  getTimeUntilInactivityTimeout,
+  onActivity,
+  ACTIVITY_CONFIG,
+} from "@/src/lib/activityTracker";
 
 /**
  * Hook pour gérer la déconnexion automatique après inactivité
- * @param {number} timeoutMinutes - Durée d'inactivité en minutes avant déconnexion (défaut: 15)
+ *
+ * REFACTORISÉ pour utiliser ActivityTracker :
+ * - Le tracking des événements DOM est géré par ActivityTracker
+ * - Les appels API sont aussi comptés comme activité (via apolloClient)
+ * - Timeout aligné sur la configuration centralisée (60 min = 1 heure)
+ *
+ * @param {number} timeoutMinutes - Ignoré, utilise la config ActivityTracker (60 min)
  * @param {boolean} enabled - Active/désactive le timer d'inactivité (défaut: true)
  */
-export function useInactivityTimer(timeoutMinutes = 15, enabled = true) {
+export function useInactivityTimer(_timeoutMinutes = 60, enabled = true) {
   const router = useRouter();
-  const timeoutRef = useRef(null);
-  const lastActivityRef = useRef(Date.now());
+  const checkIntervalRef = useRef(null);
+  const hasLoggedOutRef = useRef(false);
 
-  // Durée en millisecondes
-  const timeoutMs = timeoutMinutes * 60 * 1000;
+  // Utiliser le timeout de ActivityTracker (55 min) pour cohérence
+  const effectiveTimeoutMs = ACTIVITY_CONFIG.INACTIVITY_TIMEOUT;
 
   // Fonction de déconnexion
   const handleLogout = useCallback(async () => {
+    // Éviter les déconnexions multiples
+    if (hasLoggedOutRef.current) {
+      return;
+    }
+    hasLoggedOutRef.current = true;
+
     try {
+      console.log("⏰ [Inactivity] Déconnexion pour inactivité...");
+
       // Afficher la notification de déconnexion
       toast.error("Vous avez été déconnecté pour cause d'inactivité", {
         duration: 5000,
         position: "top-center",
       });
 
+      // Nettoyer le token
+      localStorage.removeItem("bearer_token");
+
       // Déconnexion via Better Auth
       await authClient.signOut({
         fetchOptions: {
           onSuccess: () => {
-            // Redirection vers la page de connexion
-            router.push("/auth/login");
+            router.push("/auth/session-expired?reason=inactivity");
           },
           onError: (ctx) => {
             console.error("Erreur lors de la déconnexion:", ctx.error);
-            // Redirection même en cas d'erreur
-            router.push("/auth/login");
+            router.push("/auth/session-expired?reason=inactivity");
           },
         },
       });
     } catch (error) {
       console.error("Erreur lors de la déconnexion automatique:", error);
-      // Redirection de secours
-      router.push("/auth/login");
+      router.push("/auth/session-expired?reason=inactivity");
     }
   }, [router]);
 
-  // Réinitialiser le timer d'inactivité
-  const resetTimer = useCallback(() => {
+  // Vérifier l'inactivité périodiquement
+  const checkInactivity = useCallback(() => {
     if (!enabled) return;
 
-    // Mettre à jour la dernière activité
-    lastActivityRef.current = Date.now();
-
-    // Effacer le timer existant
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
+    if (isUserInactive()) {
+      console.log("⏰ [Inactivity] Utilisateur inactif détecté, déconnexion...");
+      handleLogout();
     }
-
-    // Créer un nouveau timer
-    timeoutRef.current = setTimeout(() => {
-      const timeSinceLastActivity = Date.now() - lastActivityRef.current;
-
-      // Vérifier si vraiment inactif (double vérification)
-      if (timeSinceLastActivity >= timeoutMs) {
-        handleLogout();
-      } else {
-        // Si l'activité a été détectée entre temps, relancer le timer
-        const remainingTime = timeoutMs - timeSinceLastActivity;
-        timeoutRef.current = setTimeout(handleLogout, remainingTime);
-      }
-    }, timeoutMs);
-  }, [enabled, timeoutMs, handleLogout]);
-
-  // Gestionnaire d'événements d'activité
-  const handleActivity = useCallback(
-    (event) => {
-      // Ignorer les mouvements de souris trop fréquents
-      if (event.type === "mousemove") {
-        const now = Date.now();
-        if (now - lastActivityRef.current < 1000) {
-          return; // Ignorer si moins d'1 seconde depuis la dernière activité
-        }
-      }
-
-      resetTimer();
-    },
-    [resetTimer]
-  );
+  }, [enabled, handleLogout]);
 
   useEffect(() => {
     if (!enabled) {
-      // Nettoyer le timer si désactivé
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-        timeoutRef.current = null;
+      // Nettoyer si désactivé
+      if (checkIntervalRef.current) {
+        clearInterval(checkIntervalRef.current);
+        checkIntervalRef.current = null;
       }
       return;
     }
 
-    // Démarrer le timer initial
-    resetTimer();
+    // Initialiser ActivityTracker (idempotent)
+    initializeActivityTracker();
 
-    // Ajouter les écouteurs d'événements
-    ACTIVITY_EVENTS.forEach((event) => {
-      document.addEventListener(event, handleActivity, true);
+    // Réinitialiser le flag de déconnexion
+    hasLoggedOutRef.current = false;
+
+    // Vérifier l'inactivité toutes les 60 secondes
+    checkIntervalRef.current = setInterval(() => {
+      checkInactivity();
+    }, 60000);
+
+    // Vérification initiale après 5 secondes
+    const initialCheck = setTimeout(() => {
+      checkInactivity();
+    }, 5000);
+
+    // S'abonner aux événements d'activité pour reset le flag
+    const unsubscribe = onActivity(() => {
+      hasLoggedOutRef.current = false;
     });
-
-    // Surveiller les changements de visibilité de la page
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        resetTimer();
-      }
-    };
-    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     // Nettoyage
     return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
+      if (checkIntervalRef.current) {
+        clearInterval(checkIntervalRef.current);
       }
-
-      ACTIVITY_EVENTS.forEach((event) => {
-        document.removeEventListener(event, handleActivity, true);
-      });
-
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      clearTimeout(initialCheck);
+      unsubscribe();
     };
-  }, [enabled, handleActivity, resetTimer]);
+  }, [enabled, checkInactivity]);
 
   // Fonction pour obtenir le temps restant avant déconnexion
   const getTimeRemaining = useCallback(() => {
-    if (!enabled || !timeoutRef.current) return null;
+    if (!enabled) return null;
 
-    const timeSinceLastActivity = Date.now() - lastActivityRef.current;
-    const remaining = Math.max(0, timeoutMs - timeSinceLastActivity);
+    const remaining = getTimeUntilInactivityTimeout();
 
     return {
       minutes: Math.floor(remaining / (1000 * 60)),
       seconds: Math.floor((remaining % (1000 * 60)) / 1000),
       totalMs: remaining,
     };
-  }, [enabled, timeoutMs]);
+  }, [enabled]);
 
-  // Fonction pour réinitialiser manuellement le timer
-  const resetInactivityTimer = useCallback(() => {
-    resetTimer();
-  }, [resetTimer]);
+  // Fonction pour réinitialiser manuellement le timer (via ActivityTracker)
+  const resetTimer = useCallback(() => {
+    // ActivityTracker gère automatiquement via les événements
+    // Cette fonction existe pour la compatibilité
+    hasLoggedOutRef.current = false;
+  }, []);
 
   return {
-    resetTimer: resetInactivityTimer,
+    resetTimer,
     getTimeRemaining,
     isEnabled: enabled,
+    timeoutMinutes: effectiveTimeoutMs / (60 * 1000), // Retourner le timeout effectif
   };
 }
 

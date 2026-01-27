@@ -1,7 +1,6 @@
 "use client";
 
 import Head from "next/head";
-import { TrialAlert } from "@/src/components/trial-alert";
 import { ChartAreaInteractive } from "@/src/components/chart-area-interactive";
 import { ChartRadarGridCircle } from "@/src/components/chart-radar-grid-circle";
 import { ChartBarMultiple } from "@/src/components/ui/bar-charts";
