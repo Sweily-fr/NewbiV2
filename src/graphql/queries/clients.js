@@ -26,6 +26,19 @@ export const GET_CLIENTS = gql`
         }
         siret
         vatNumber
+        contacts {
+          id
+          position
+          firstName
+          lastName
+          email
+          phone
+          isPrimary
+        }
+        customFields {
+          fieldId
+          value
+        }
       }
       totalItems
       currentPage
@@ -59,6 +72,20 @@ export const GET_CLIENT = gql`
       }
       siret
       vatNumber
+      contacts {
+        id
+        position
+        firstName
+        lastName
+        email
+        phone
+        isPrimary
+        createdAt
+      }
+      customFields {
+        fieldId
+        value
+      }
       notes {
         id
         content

@@ -14,6 +14,7 @@ import ClientsTable from "./clients-table";
 import ClientListsView from "./client-lists-view";
 import ListClientsView from "./list-clients-view";
 import ClientFilters from "./client-filters";
+import CustomFieldsPopover from "./custom-fields-popover";
 import { Loader2, Search, CircleXIcon } from "lucide-react";
 import { Input } from "@/src/components/ui/input";
 import { cn } from "@/src/lib/utils";
@@ -102,8 +103,9 @@ export default function ClientsTabs() {
           )}
         </div>
 
-        {/* Filters Button */}
+        {/* Actions à droite */}
         <div className="flex items-center gap-2">
+          <CustomFieldsPopover />
           <ClientFilters
             selectedTypes={selectedTypes}
             setSelectedTypes={setSelectedTypes}
