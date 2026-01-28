@@ -38,6 +38,8 @@ import {
   UserPlus,
   Clock,
   ArrowRight,
+  Mail,
+  Settings2,
 } from 'lucide-react';
 import {
   useClientAutomations,
@@ -48,6 +50,8 @@ import {
 } from '@/src/hooks/useClientAutomations';
 import { useClientLists } from '@/src/hooks/useClientLists';
 import { useWorkspace } from '@/src/hooks/useWorkspace';
+import { useCrmEmailAutomations } from '@/src/hooks/useCrmEmailAutomations';
+import AutomationsModal from './automations-modal';
 
 const TRIGGER_TYPES = [
   {
@@ -311,6 +315,7 @@ export default function AutomationsPopover({ trigger }) {
   const { workspaceId } = useWorkspace();
   const { automations, loading: automationsLoading, refetch } = useClientAutomations(workspaceId);
   const { lists, loading: listsLoading } = useClientLists(workspaceId);
+  const { automations: emailAutomations } = useCrmEmailAutomations(workspaceId);
   const { createAutomation } = useCreateClientAutomation();
   const { updateAutomation } = useUpdateClientAutomation();
   const { deleteAutomation } = useDeleteClientAutomation();
@@ -319,6 +324,7 @@ export default function AutomationsPopover({ trigger }) {
   const [isOpen, setIsOpen] = useState(false);
   const [showNewForm, setShowNewForm] = useState(false);
   const [deletingAutomation, setDeletingAutomation] = useState(null);
+  const [showFullModal, setShowFullModal] = useState(false);
 
   const handleCreate = async (input) => {
     setShowNewForm(false);
@@ -355,7 +361,9 @@ export default function AutomationsPopover({ trigger }) {
   };
 
   const isLoading = automationsLoading && automations.length === 0;
-  const activeCount = automations.filter(a => a.isActive).length;
+  const activeListCount = automations.filter(a => a.isActive).length;
+  const activeEmailCount = emailAutomations.filter(a => a.isActive).length;
+  const activeCount = activeListCount + activeEmailCount;
 
   return (
     <>
@@ -388,11 +396,18 @@ export default function AutomationsPopover({ trigger }) {
                 <Zap className="w-4 h-4" style={{ color: '#5b50ff' }} />
                 <h4 className="font-medium">Automatisations</h4>
               </div>
-              {activeCount > 0 && (
-                <Badge variant="secondary" className="text-xs">
-                  {activeCount} active{activeCount > 1 ? 's' : ''}
-                </Badge>
-              )}
+              <div className="flex items-center gap-2">
+                {activeListCount > 0 && (
+                  <Badge variant="secondary" className="text-xs">
+                    {activeListCount} liste{activeListCount > 1 ? 's' : ''}
+                  </Badge>
+                )}
+                {activeEmailCount > 0 && (
+                  <Badge variant="secondary" className="text-xs">
+                    {activeEmailCount} email{activeEmailCount > 1 ? 's' : ''}
+                  </Badge>
+                )}
+              </div>
             </div>
             <p className="text-sm text-muted-foreground mt-1">
               Déplacez automatiquement vos contacts entre les listes
@@ -451,9 +466,34 @@ export default function AutomationsPopover({ trigger }) {
                 Créez d'abord des listes pour configurer des automatisations.
               </p>
             )}
+
+            <div className="border-t mt-3 pt-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setIsOpen(false);
+                  setShowFullModal(true);
+                }}
+                className="w-full justify-center gap-2"
+              >
+                <Mail className="h-4 w-4" />
+                Automatisations Email
+                {activeEmailCount > 0 && (
+                  <Badge variant="secondary" className="text-xs ml-1">
+                    {activeEmailCount}
+                  </Badge>
+                )}
+              </Button>
+            </div>
           </div>
         </PopoverContent>
       </Popover>
+
+      <AutomationsModal 
+        open={showFullModal} 
+        onOpenChange={setShowFullModal}
+      />
 
       <AlertDialog open={!!deletingAutomation} onOpenChange={() => setDeletingAutomation(null)}>
         <AlertDialogContent className="z-[9999]">
