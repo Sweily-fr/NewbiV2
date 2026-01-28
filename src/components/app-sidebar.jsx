@@ -104,22 +104,18 @@ const data = {
     {
       title: "Factures clients",
       url: "/dashboard/outils/factures",
-      isPro: true,
     },
     {
       title: "Devis",
       url: "/dashboard/outils/devis",
-      isPro: true,
     },
     {
       title: "Liste client (CRM)",
       url: "/dashboard/clients",
-      isPro: true,
     },
     {
       title: "Catalogues",
       url: "/dashboard/catalogues",
-      isPro: true,
     },
   ],
   navAfterVentes: [
@@ -147,12 +143,10 @@ const data = {
     {
       title: "Transfert de fichiers",
       url: "/dashboard/outils/transferts-fichiers",
-      isPro: true,
     },
     {
       title: "Documents partagés",
       url: "/dashboard/outils/documents-partages",
-      isPro: true,
     },
   ],
   navCommunication: [
