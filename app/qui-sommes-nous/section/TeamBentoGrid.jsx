@@ -54,7 +54,7 @@ export function TeamBentoGrid() {
         {images.map((image, index) => (
           <div
             key={index}
-            className={`relative overflow-hidden rounded-2xl bg-gray-100 ${image.className}`}
+            className={`relative overflow-hidden rounded-lg bg-gray-100 ${image.className}`}
             style={{
               height: image.height,
             }}
