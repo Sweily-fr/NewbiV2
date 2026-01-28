@@ -8,7 +8,7 @@ export function OurStorySection() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-12">
         <div className="grid grid-cols-1 gap-10 lg:grid-cols-7 lg:gap-12 items-center">
           {/* Image à gauche */}
-          <div className="col-span-1 lg:col-span-4 h-[400px] lg:h-[500px] rounded-2xl overflow-hidden">
+          <div className="col-span-1 lg:col-span-4 h-[400px] lg:h-[500px] rounded-lg overflow-hidden">
             <Image
               src="/lp/about/about-5.jpeg"
               alt="L'équipe Newbi - Notre histoire"

@@ -2,6 +2,8 @@ import React from "react";
 import { NewHeroNavbar } from "@/app/(main)/new/lp-home/NewHeroNavbar";
 import Footer7 from "@/src/components/footer7";
 import { HeroSection } from "./section/hero-section";
+import { ValuesSection } from "./section/ValuesSection";
+import { PressSection } from "./section/PressSection";
 import { Poppins } from "next/font/google";
 
 const poppins = Poppins({
@@ -31,6 +33,8 @@ export default function QuiSommesNousPage() {
         <NewHeroNavbar hasBanner={false} />
         <main>
           <HeroSection />
+          <ValuesSection />
+          <PressSection />
         </main>
         <Footer7 />
       </div>
