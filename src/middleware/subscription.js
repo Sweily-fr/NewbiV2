@@ -2,9 +2,11 @@ import { NextResponse } from "next/server";
 import { auth } from "@/src/lib/auth";
 
 // Routes qui nécessitent uniquement une authentification (pas d'abonnement requis)
+// ✅ MODIFIÉ: Toutes les routes dashboard nécessitent uniquement l'authentification
+// La vérification d'abonnement est gérée côté client pour plus de flexibilité
 const AUTH_ONLY_ROUTES = ["/dashboard"];
 
-// Routes qui nécessitent un abonnement actif ou un essai valide
+// Routes qui nécessitent un abonnement actif ou un essai valide (API uniquement)
 const PROTECTED_ROUTES = [
   "/api/graphql",
   "/api/upload",
@@ -12,17 +14,9 @@ const PROTECTED_ROUTES = [
   "/api/ocr",
 ];
 
-// Routes qui nécessitent spécifiquement un abonnement Pro (pas accessible en Free)
-const PRO_ONLY_ROUTES = [
-  "/dashboard/outils/factures",
-  "/dashboard/outils/devis",
-  "/dashboard/outils/clients",
-  "/dashboard/outils/produits",
-  "/dashboard/outils/transactions",
-  "/dashboard/outils/kanban",
-  "/dashboard/outils/transferts-fichiers",
-  "/dashboard/outils/signatures-mail",
-];
+// ❌ SUPPRIMÉ: PRO_ONLY_ROUTES - La vérification est maintenant côté client uniquement
+// Cela permet un meilleur contrôle et évite les problèmes de cache/synchronisation
+// Les composants côté client (nav-main, pro-route-guard, useFeatureAccess) gèrent l'accès
 
 // Routes exclues de la vérification d'abonnement
 const EXCLUDED_ROUTES = [
@@ -47,23 +41,18 @@ export async function subscriptionMiddleware(request) {
     return NextResponse.next();
   }
 
-  // Vérifier si c'est une route PRO_ONLY (sous-pages du dashboard)
-  const isProOnlyRoute = PRO_ONLY_ROUTES.some((route) =>
+  // Vérifier si c'est une route dashboard (nécessite uniquement authentification)
+  const isDashboardRoute = AUTH_ONLY_ROUTES.some((route) =>
     pathname.startsWith(route)
   );
 
-  // Vérifier si c'est une route qui nécessite uniquement une authentification
-  const isAuthOnlyRoute =
-    AUTH_ONLY_ROUTES.some((route) => pathname.startsWith(route)) &&
-    !isProOnlyRoute;
-
-  // Vérifier si la route nécessite une vérification d'abonnement
-  const isProtectedRoute = PROTECTED_ROUTES.some((route) =>
+  // Vérifier si la route nécessite une vérification d'abonnement (API uniquement)
+  const isProtectedApiRoute = PROTECTED_ROUTES.some((route) =>
     pathname.startsWith(route)
   );
 
-  // Si ce n'est ni une route auth-only ni une route protégée ni une route pro-only, laisser passer
-  if (!isAuthOnlyRoute && !isProtectedRoute && !isProOnlyRoute) {
+  // Si ce n'est ni une route dashboard ni une route API protégée, laisser passer
+  if (!isDashboardRoute && !isProtectedApiRoute) {
     return NextResponse.next();
   }
 
@@ -82,26 +71,28 @@ export async function subscriptionMiddleware(request) {
       return NextResponse.redirect(new URL("/auth/login", request.url));
     }
 
-    // Pour les routes auth-only (comme /dashboard), autoriser l'accès si connecté
-    if (isAuthOnlyRoute && !isProOnlyRoute) {
+    // ✅ Pour les routes dashboard, autoriser l'accès si connecté
+    // La vérification d'abonnement est gérée côté client (meilleur UX et cache)
+    if (isDashboardRoute) {
       return NextResponse.next();
     }
 
-    // Récupérer les informations d'abonnement Stripe
-    // ⚠️ IMPORTANT: On ne vérifie plus le trial basé sur user.createdAt
-    // Seuls les abonnements Stripe sont acceptés (active, trialing, canceled valide)
-    const subscription = await auth.api.stripe.getSubscription({
-      headers: request.headers,
-    });
+    // Pour les routes API protégées, vérifier l'abonnement
+    if (isProtectedApiRoute) {
+      const subscription = await auth.api.stripe.getSubscription({
+        headers: request.headers,
+      });
 
-    const hasActiveSubscription =
-      subscription?.status === "active" || subscription?.status === "trialing";
+      const hasActiveSubscription =
+        subscription?.status === "active" || subscription?.status === "trialing";
 
-    if (!hasActiveSubscription) {
-      // Pas d'abonnement Stripe actif
-      // Rediriger vers l'onboarding pour choisir un plan
-      console.log("[Middleware] Pas d'abonnement actif, redirection vers /onboarding");
-      return NextResponse.redirect(new URL("/onboarding", request.url));
+      if (!hasActiveSubscription) {
+        // Pas d'abonnement Stripe actif pour les API
+        return NextResponse.json(
+          { error: "Abonnement requis" },
+          { status: 403 }
+        );
+      }
     }
 
     // L'utilisateur a un abonnement actif, autoriser l'accès
@@ -109,7 +100,15 @@ export async function subscriptionMiddleware(request) {
   } catch (error) {
     console.error("Erreur dans le middleware d'abonnement:", error);
 
-    // En cas d'erreur, rediriger vers la page de connexion
-    return NextResponse.redirect(new URL("/auth/login", request.url));
+    // En cas d'erreur sur les routes API, retourner une erreur JSON
+    if (isProtectedApiRoute) {
+      return NextResponse.json(
+        { error: "Erreur de vérification" },
+        { status: 500 }
+      );
+    }
+
+    // En cas d'erreur sur les routes dashboard, laisser passer (le client gèrera)
+    return NextResponse.next();
   }
 }

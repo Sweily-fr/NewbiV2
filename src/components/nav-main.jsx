@@ -65,12 +65,16 @@ export function NavMain({
   notificationCount = 0,
 }) {
   const pathname = usePathname();
-  const { isActive } = useSubscription();
+  const { isActive, loading, subscription } = useSubscription();
   const { setOpenMobile, isMobile, state } = useSidebar();
   const isCollapsed = state === "collapsed";
   const { getUserRole } = usePermissions();
   const userRole = getUserRole();
   const { workspaceId } = useWorkspace();
+
+  // ✅ DÉSACTIVÉ: Tous les utilisateurs connectés ont accès à toutes les fonctionnalités
+  // La restriction Pro est gérée au niveau de l'abonnement, pas de la navigation
+  const hasProAccess = true;
 
   // État pour la recherche des tableaux Kanban
   const [kanbanSearchTerm, setKanbanSearchTerm] = useState("");
@@ -98,8 +102,9 @@ export function NavMain({
     return filtered;
   }, [kanbanData?.boards, kanbanSearchTerm]);
 
-  // Définir les onglets qui nécessitent un abonnement Pro
-  const proTabs = ["Dashboard", "Catalogue", "Transactions"];
+  // ✅ DÉSACTIVÉ: Plus de restriction Pro sur les onglets principaux
+  // Tous les utilisateurs abonnés (y compris trialing) ont accès
+  const proTabs = [];
 
   // Vérifier si un sous-lien est actif pour chaque menu
   const isVentesSubActive = navVentes.some(
@@ -192,47 +197,25 @@ export function NavMain({
               className="min-w-[180px]"
             >
               {/* Actions rapides */}
-              <DropdownMenuItem
-                asChild={isActive()}
-                disabled={!isActive()}
-                className={cn(!isActive() && "opacity-60 cursor-not-allowed")}
-              >
-                {isActive() ? (
-                  <Link
-                    href="/dashboard/outils/factures/new"
-                    onClick={handleLinkClick}
-                    className="cursor-pointer flex justify-between w-full"
-                  >
-                    <span>Nouvelle facture</span>
-                    <Plus className="h-4 w-4" />
-                  </Link>
-                ) : (
-                  <div className="flex items-center justify-between w-full">
-                    <span>Nouvelle facture</span>
-                    <Crown className="w-3 h-3 text-[#5b4fff]" />
-                  </div>
-                )}
+              <DropdownMenuItem asChild>
+                <Link
+                  href="/dashboard/outils/factures/new"
+                  onClick={handleLinkClick}
+                  className="cursor-pointer flex justify-between w-full"
+                >
+                  <span>Nouvelle facture</span>
+                  <Plus className="h-4 w-4" />
+                </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem
-                asChild={isActive()}
-                disabled={!isActive()}
-                className={cn(!isActive() && "opacity-60 cursor-not-allowed")}
-              >
-                {isActive() ? (
-                  <Link
-                    href="/dashboard/outils/devis/new"
-                    onClick={handleLinkClick}
-                    className="cursor-pointer flex justify-between w-full"
-                  >
-                    <span>Nouveau devis</span>
-                    <Plus className="h-4 w-4" />
-                  </Link>
-                ) : (
-                  <div className="flex items-center justify-between w-full">
-                    <span>Nouveau devis</span>
-                    <Crown className="w-3 h-3 text-[#5b4fff]" />
-                  </div>
-                )}
+              <DropdownMenuItem asChild>
+                <Link
+                  href="/dashboard/outils/devis/new"
+                  onClick={handleLinkClick}
+                  className="cursor-pointer flex justify-between w-full"
+                >
+                  <span>Nouveau devis</span>
+                  <Plus className="h-4 w-4" />
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               {/* Sous-menus */}
@@ -240,7 +223,7 @@ export function NavMain({
                 const isSubItemActive =
                   pathname === subItem.url ||
                   pathname?.startsWith(subItem.url + "/");
-                const hasSubAccess = !subItem.isPro || isActive();
+                const hasSubAccess = !subItem.isPro || hasProAccess;
                 return (
                   <DropdownMenuItem
                     key={subItem.title}
@@ -321,7 +304,7 @@ export function NavMain({
                 const isSubItemActive =
                   pathname === subItem.url ||
                   pathname?.startsWith(subItem.url + "/");
-                const hasSubAccess = !subItem.isPro || isActive();
+                const hasSubAccess = !subItem.isPro || hasProAccess;
                 return (
                   <SidebarMenuSubItem key={subItem.title}>
                     <SidebarMenuSubButton
@@ -614,7 +597,7 @@ export function NavMain({
                         const isSubItemActive =
                           pathname === item.url ||
                           pathname?.startsWith(item.url + "/");
-                        const hasSubAccess = !item.isPro || isActive();
+                        const hasSubAccess = !item.isPro || hasProAccess;
                         return (
                           <DropdownMenuItem
                             key={item.title}
@@ -652,7 +635,7 @@ export function NavMain({
                 const isSubItemActive =
                   pathname === subItem.url ||
                   pathname?.startsWith(subItem.url + "/");
-                const hasSubAccess = !subItem.isPro || isActive();
+                const hasSubAccess = !subItem.isPro || hasProAccess;
                 return (
                   <DropdownMenuItem
                     key={subItem.title || `item-${index}`}
@@ -742,7 +725,7 @@ export function NavMain({
                         const isSubItemActive =
                           pathname === item.url ||
                           pathname?.startsWith(item.url + "/");
-                        const hasSubAccess = !item.isPro || isActive();
+                        const hasSubAccess = !item.isPro || hasProAccess;
                         return (
                           <SidebarMenuSubItem key={item.title}>
                             <SidebarMenuSubButton
@@ -781,7 +764,7 @@ export function NavMain({
                 const isSubItemActive =
                   pathname === subItem.url ||
                   pathname?.startsWith(subItem.url + "/");
-                const hasSubAccess = !subItem.isPro || isActive();
+                const hasSubAccess = !subItem.isPro || hasProAccess;
                 return (
                   <SidebarMenuSubItem key={subItem.title}>
                     <SidebarMenuSubButton
@@ -852,7 +835,7 @@ export function NavMain({
     }
 
     const isProTab = proTabs.includes(item.title);
-    const hasAccess = !isProTab || isActive();
+    const hasAccess = !isProTab || hasProAccess;
     const isItemActive =
       pathname === item.url ||
       (item.url !== "/dashboard" && pathname?.startsWith(item.url + "/"));

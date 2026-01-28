@@ -517,6 +517,30 @@ export function useDashboardLayoutSimple() {
   };
 
   const isActive = (requirePaidSubscription = false) => {
+    // ✅ Si l'abonnement est en cours de chargement, autoriser l'accès par défaut
+    // Cela évite les flashs de liens bloqués pendant le chargement
+    if (isLoading && !subscription) {
+      // Vérifier le cache pour éviter les flashs
+      const organizationId =
+        activeOrganization?.id || session?.session?.activeOrganizationId;
+      if (organizationId) {
+        try {
+          const cacheKey = `subscription-${organizationId}`;
+          const cached = localStorage.getItem(cacheKey);
+          if (cached) {
+            const { data: cachedSub } = JSON.parse(cached);
+            if (cachedSub?.status === "active" || cachedSub?.status === "trialing") {
+              return true; // Utiliser le cache pendant le chargement
+            }
+          }
+        } catch (e) {
+          // Ignorer les erreurs de cache
+        }
+      }
+      // Par défaut, autoriser l'accès pendant le chargement pour éviter les flashs
+      return true;
+    }
+
     // Vérifier si l'abonnement Stripe est actif ou en période d'essai Stripe
     const hasActiveSubscription =
       subscription?.status === "active" || subscription?.status === "trialing";

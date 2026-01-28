@@ -409,9 +409,6 @@ export function TeamSwitcher() {
                 <span className="text-xs text-[#202020]">
                   Ajouter un espace de travail
                 </span>
-                {!isActive() && (
-                  <Crown className="ml-auto h-3 w-3 text-[#5b4fff]" />
-                )}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <div className="flex gap-2 p-2">
@@ -432,14 +429,10 @@ export function TeamSwitcher() {
                   variant="outline"
                   size="sm"
                   onClick={() => setInviteDialogOpen(true)}
-                  disabled={!isActive()}
                   className="flex-1 h-8 text-xs font-normal cursor-pointer relative"
                 >
                   <Users className="size-3 mr-1" />
                   Inviter des membres
-                  {!isActive() && (
-                    <Crown className="size-3 ml-1 text-[#5b4fff]" />
-                  )}
                 </Button>
               </div>
               <div className="p-2 pt-0">
