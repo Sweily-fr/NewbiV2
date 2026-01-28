@@ -7,11 +7,14 @@ import {
   LoaderCircle,
   ExternalLink,
   Globe,
+  Copy,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/src/lib/utils";
 import { VALIDATION_PATTERNS, validateField } from "@/src/lib/validation";
 import ClientActivity from "./ClientActivity";
+import CustomFieldsForm from "./custom-fields-form";
+import ClientContactsForm from "./client-contacts-form";
 
 import { Button } from "@/src/components/ui/button";
 import {
@@ -136,8 +139,38 @@ export default function ClientsModal({
   const [customErrors, setCustomErrors] = useState({});
   const [currentClient, setCurrentClient] = useState(client);
   const [pendingNotes, setPendingNotes] = useState([]);
+  const [customFieldValues, setCustomFieldValues] = useState({});
+  const [clientContacts, setClientContacts] = useState([]);
   const clientType = watch("type");
   const isInternational = watch("isInternational");
+
+  // Initialiser les valeurs des champs personnalisés depuis le client existant
+  useEffect(() => {
+    if (fullClient?.customFields) {
+      const values = {};
+      fullClient.customFields.forEach((cf) => {
+        values[cf.fieldId] = cf.value;
+      });
+      setCustomFieldValues(values);
+    }
+  }, [fullClient]);
+
+  // Initialiser les contacts depuis le client existant
+  useEffect(() => {
+    if (fullClient?.contacts) {
+      setClientContacts(fullClient.contacts);
+    } else {
+      setClientContacts([]);
+    }
+  }, [fullClient]);
+
+  // Handler pour les changements de champs personnalisés
+  const handleCustomFieldChange = (fieldId, value) => {
+    setCustomFieldValues((prev) => ({
+      ...prev,
+      [fieldId]: value,
+    }));
+  };
 
   // Mettre à jour currentClient quand fullClient change
   useEffect(() => {
@@ -438,10 +471,32 @@ export default function ClientsModal({
         return;
       }
 
+      // Convertir les champs personnalisés en format attendu par l'API
+      const customFieldsArray = Object.entries(customFieldValues)
+        .filter(([_, value]) => value !== undefined && value !== null && value !== "")
+        .map(([fieldId, value]) => ({
+          fieldId,
+          // Convertir les valeurs en string pour l'API (les tableaux sont JSON stringifiés)
+          value: Array.isArray(value) ? JSON.stringify(value) : String(value),
+        }));
+
+      // Préparer les contacts pour l'API (nettoyer les IDs temporaires)
+      const contactsArray = clientContacts.map(contact => ({
+        id: contact.id?.startsWith("temp-") ? undefined : contact.id,
+        position: contact.position || "",
+        firstName: contact.firstName || "",
+        lastName: contact.lastName || "",
+        email: contact.email || "",
+        phone: contact.phone || "",
+        isPrimary: contact.isPrimary || false,
+      }));
+
       const clientData = {
         ...formData,
         hasDifferentShippingAddress: hasDifferentShipping,
         shippingAddress: hasDifferentShipping ? formData.shippingAddress : null,
+        contacts: contactsArray,
+        customFields: customFieldsArray,
       };
 
       let result;
@@ -879,9 +934,9 @@ export default function ClientsModal({
                       </div>
                     ) : (
                       <div className="grid grid-cols-2 gap-4">
-                        {/* Contact pour entreprises */}
+                        {/* Contact principal pour entreprises */}
                         <div className="space-y-2">
-                          <Label className="font-normal">Contact</Label>
+                          <Label className="font-normal">Contact principal</Label>
                           <Input
                             placeholder="Nom du contact"
                             className={cn(
@@ -906,17 +961,35 @@ export default function ClientsModal({
                         {/* Email (pour tous les types) */}
                         <div className="space-y-2">
                           <Label className="font-normal">Email *</Label>
-                          <InputEmail
-                            placeholder="contact@entreprise.com"
-                            className={cn(
-                              errors.email &&
-                                "border-red-500 focus:border-red-500"
-                            )}
-                            {...register(
-                              "email",
-                              getValidationRules("email", true)
-                            )}
-                          />
+                          <div className="relative">
+                            <InputEmail
+                              placeholder="contact@entreprise.com"
+                              className={cn(
+                                "pr-10",
+                                errors.email &&
+                                  "border-red-500 focus:border-red-500"
+                              )}
+                              {...register(
+                                "email",
+                                getValidationRules("email", true)
+                              )}
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
+                              onClick={() => {
+                                const email = watch("email");
+                                if (email) {
+                                  navigator.clipboard.writeText(email);
+                                  toast.success("Email copié");
+                                }
+                              }}
+                            >
+                              <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                            </Button>
+                          </div>
                           {errors.email && (
                             <p className="text-sm text-red-500">
                               {errors.email.message}
@@ -930,17 +1003,35 @@ export default function ClientsModal({
                     {clientType === "INDIVIDUAL" && (
                       <div className="space-y-2">
                         <Label className="font-normal">Email *</Label>
-                        <InputEmail
-                          placeholder="client@exemple.com"
-                          className={cn(
-                            errors.email &&
-                              "border-red-500 focus:border-red-500"
-                          )}
-                          {...register(
-                            "email",
-                            getValidationRules("email", true)
-                          )}
-                        />
+                        <div className="relative">
+                          <InputEmail
+                            placeholder="client@exemple.com"
+                            className={cn(
+                              "pr-10",
+                              errors.email &&
+                                "border-red-500 focus:border-red-500"
+                            )}
+                            {...register(
+                              "email",
+                              getValidationRules("email", true)
+                            )}
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
+                            onClick={() => {
+                              const email = watch("email");
+                              if (email) {
+                                navigator.clipboard.writeText(email);
+                                toast.success("Email copié");
+                              }
+                            }}
+                          >
+                            <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                          </Button>
+                        </div>
                         {errors.email && (
                           <p className="text-sm text-red-500">
                             {errors.email.message}
@@ -1216,6 +1307,21 @@ export default function ClientsModal({
                         </div>
                       </div>
                     )}
+
+                    {/* Contacts additionnels - uniquement pour les entreprises */}
+                    {clientType === "COMPANY" && (
+                      <ClientContactsForm
+                        contacts={clientContacts}
+                        onChange={setClientContacts}
+                      />
+                    )}
+
+                    {/* Champs personnalisés */}
+                    <CustomFieldsForm
+                      values={customFieldValues}
+                      onChange={handleCustomFieldChange}
+                      errors={{}}
+                    />
                   </div>
                 </div>
 
@@ -1621,9 +1727,9 @@ export default function ClientsModal({
                       </div>
                     ) : (
                       <div className="grid grid-cols-2 gap-4">
-                        {/* Contact pour entreprises */}
+                        {/* Contact principal pour entreprises */}
                         <div className="space-y-2">
-                          <Label className="font-normal">Contact</Label>
+                          <Label className="font-normal">Contact principal</Label>
                           <Input
                             placeholder="Nom du contact"
                             className={cn(
@@ -1648,17 +1754,35 @@ export default function ClientsModal({
                         {/* Email (pour tous les types) */}
                         <div className="space-y-2">
                           <Label className="font-normal">Email *</Label>
-                          <InputEmail
-                            placeholder="contact@entreprise.com"
-                            className={cn(
-                              errors.email &&
-                                "border-red-500 focus:border-red-500"
-                            )}
-                            {...register(
-                              "email",
-                              getValidationRules("email", true)
-                            )}
-                          />
+                          <div className="relative">
+                            <InputEmail
+                              placeholder="contact@entreprise.com"
+                              className={cn(
+                                "pr-10",
+                                errors.email &&
+                                  "border-red-500 focus:border-red-500"
+                              )}
+                              {...register(
+                                "email",
+                                getValidationRules("email", true)
+                              )}
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
+                              onClick={() => {
+                                const email = watch("email");
+                                if (email) {
+                                  navigator.clipboard.writeText(email);
+                                  toast.success("Email copié");
+                                }
+                              }}
+                            >
+                              <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                            </Button>
+                          </div>
                           {errors.email && (
                             <p className="text-sm text-red-500">
                               {errors.email.message}
@@ -1672,17 +1796,35 @@ export default function ClientsModal({
                     {clientType === "INDIVIDUAL" && (
                       <div className="space-y-2">
                         <Label className="font-normal">Email *</Label>
-                        <InputEmail
-                          placeholder="client@exemple.com"
-                          className={cn(
-                            errors.email &&
-                              "border-red-500 focus:border-red-500"
-                          )}
-                          {...register(
-                            "email",
-                            getValidationRules("email", true)
-                          )}
-                        />
+                        <div className="relative">
+                          <InputEmail
+                            placeholder="client@exemple.com"
+                            className={cn(
+                              "pr-10",
+                              errors.email &&
+                                "border-red-500 focus:border-red-500"
+                            )}
+                            {...register(
+                              "email",
+                              getValidationRules("email", true)
+                            )}
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
+                            onClick={() => {
+                              const email = watch("email");
+                              if (email) {
+                                navigator.clipboard.writeText(email);
+                                toast.success("Email copié");
+                              }
+                            }}
+                          >
+                            <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                          </Button>
+                        </div>
                         {errors.email && (
                           <p className="text-sm text-red-500">
                             {errors.email.message}
@@ -1958,6 +2100,21 @@ export default function ClientsModal({
                         </div>
                       </div>
                     )}
+
+                    {/* Contacts additionnels - uniquement pour les entreprises */}
+                    {clientType === "COMPANY" && (
+                      <ClientContactsForm
+                        contacts={clientContacts}
+                        onChange={setClientContacts}
+                      />
+                    )}
+
+                    {/* Champs personnalisés */}
+                    <CustomFieldsForm
+                      values={customFieldValues}
+                      onChange={handleCustomFieldChange}
+                      errors={{}}
+                    />
                   </div>
                 </div>
 

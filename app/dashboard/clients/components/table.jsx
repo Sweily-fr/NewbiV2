@@ -554,7 +554,7 @@ export default function TableClients({
     <div className="flex flex-col flex-1 min-h-0">
       {/* Desktop Layout */}
       <div className="hidden md:flex md:flex-col flex-1 min-h-0">
-        {/* Filters - Fixe en haut - Caché si hideSearchBar */}
+        {/* Toolbar - Caché si hideSearchBar */}
         {!hideSearchBar && (
           <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-4 flex-shrink-0">
             {/* Search */}
@@ -595,63 +595,64 @@ export default function TableClients({
               )}
             </div>
 
-            {/* Actions à droite */}
+            {/* Filters Button */}
             <div className="flex items-center gap-2">
-              {/* Delete button - shown when rows are selected */}
-              {selectedClients.size > 0 && (
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      variant="destructive"
-                      data-mobile-delete-trigger
-                      className="cursor-pointer font-normal"
-                    >
-                      <TrashIcon className="mr-2 h-4 w-4" />
-                      Supprimer ({selectedClients.size})
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <div className="flex flex-col gap-2 max-sm:items-center sm:flex-row sm:gap-4">
-                      <div
-                        className="flex size-9 shrink-0 items-center justify-center rounded-full border"
-                        aria-hidden="true"
-                      >
-                        <CircleAlertIcon className="opacity-80" size={16} />
-                      </div>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>
-                          Êtes-vous absolument sûr ?
-                        </AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Cette action ne peut pas être annulée. Cela supprimera
-                          définitivement {selectedClients.size}{" "}
-                          {selectedClients.size === 1
-                            ? "client sélectionné"
-                            : "clients sélectionnés"}
-                          .
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                    </div>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Annuler</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={handleDeleteRows}
-                        variant="destructive"
-                      >
-                        Supprimer
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              )}
-
-              {/* Filters Button */}
               <ClientFilters
                 selectedTypes={selectedTypes}
                 setSelectedTypes={setSelectedTypes}
                 table={table}
               />
             </div>
+          </div>
+        )}
+
+        {/* Delete button - shown when rows are selected (always visible, outside hideSearchBar) */}
+        {selectedClients.size > 0 && (
+          <div className="flex items-center justify-end gap-2 px-4 sm:px-6 py-2 flex-shrink-0">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="destructive"
+                  data-mobile-delete-trigger
+                  className="cursor-pointer font-normal"
+                >
+                  <TrashIcon className="mr-2 h-4 w-4" />
+                  Supprimer ({selectedClients.size})
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <div className="flex flex-col gap-2 max-sm:items-center sm:flex-row sm:gap-4">
+                  <div
+                    className="flex size-9 shrink-0 items-center justify-center rounded-full border"
+                    aria-hidden="true"
+                  >
+                    <CircleAlertIcon className="opacity-80" size={16} />
+                  </div>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>
+                      Êtes-vous absolument sûr ?
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Cette action ne peut pas être annulée. Cela supprimera
+                      définitivement {selectedClients.size}{" "}
+                      {selectedClients.size === 1
+                        ? "client sélectionné"
+                        : "clients sélectionnés"}
+                      .
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                </div>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Annuler</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleDeleteRows}
+                    variant="destructive"
+                  >
+                    Supprimer
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         )}
 

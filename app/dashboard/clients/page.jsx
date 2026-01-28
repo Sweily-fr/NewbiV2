@@ -7,16 +7,15 @@ import {
   ButtonGroupSeparator,
 } from "@/src/components/ui/button-group";
 import { PermissionButton } from "@/src/components/rbac";
-import { Plus, Zap } from "lucide-react";
+import { Plus } from "lucide-react";
 import ClientsTabs from "./components/clients-tabs";
 import ClientsModal from "./components/clients-modal";
-import AutomationsModal from "./components/automations-modal";
+import AutomationsPopover from "./components/automations-popover";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
 
 function ClientsContent() {
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [automationsOpen, setAutomationsOpen] = useState(false);
-
+  
   // Fonction pour ouvrir le dialogue depuis le bouton dans TableUser
   const handleOpenInviteDialog = () => {
     setDialogOpen(true);
@@ -32,14 +31,7 @@ function ClientsContent() {
             <h1 className="text-2xl font-medium mb-2">Gestion des contacts</h1>
           </div>
           <div className="flex gap-2">
-            <Button
-              onClick={() => setAutomationsOpen(true)}
-              variant="outline"
-              className="cursor-pointer font-normal"
-            >
-              <Zap className="w-4 h-4 mr-2" style={{ color: '#5b50ff' }} />
-              Automatisations
-            </Button>
+            <AutomationsPopover />
             <ButtonGroup>
               <Button
                 onClick={handleOpenInviteDialog}
@@ -97,8 +89,6 @@ function ClientsContent() {
       {/* Modal unique pour desktop et mobile */}
       <ClientsModal open={dialogOpen} onOpenChange={setDialogOpen} />
       
-      {/* Modal des automatisations */}
-      <AutomationsModal open={automationsOpen} onOpenChange={setAutomationsOpen} />
     </>
   );
 }

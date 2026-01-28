@@ -25,6 +25,20 @@ export const CREATE_CLIENT = gql`
       }
       siret
       vatNumber
+      contacts {
+        id
+        position
+        firstName
+        lastName
+        email
+        phone
+        isPrimary
+        createdAt
+      }
+      customFields {
+        fieldId
+        value
+      }
       notes {
         id
         content
@@ -45,6 +59,12 @@ export const CREATE_CLIENT = gql`
         userName
         userImage
         createdAt
+        metadata {
+          documentType
+          documentId
+          documentNumber
+          status
+        }
       }
       createdAt
       updatedAt
@@ -77,6 +97,20 @@ export const UPDATE_CLIENT = gql`
       }
       siret
       vatNumber
+      contacts {
+        id
+        position
+        firstName
+        lastName
+        email
+        phone
+        isPrimary
+        createdAt
+      }
+      customFields {
+        fieldId
+        value
+      }
       notes {
         id
         content
@@ -97,6 +131,12 @@ export const UPDATE_CLIENT = gql`
         userName
         userImage
         createdAt
+        metadata {
+          documentType
+          documentId
+          documentNumber
+          status
+        }
       }
       createdAt
       updatedAt
