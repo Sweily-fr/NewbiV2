@@ -181,6 +181,9 @@ export default function KanbanBoardPage({ params }) {
   // State pour tracker si on drag une colonne
   const [isDraggingColumn, setIsDraggingColumn] = React.useState(false);
   
+  // State pour tracker si on drag (tâche ou colonne) - pour désactiver le scale pendant le drag
+  const [isDragging, setIsDragging] = React.useState(false);
+  
   // État pour les tâches sélectionnées
   const [selectedTaskIds, setSelectedTaskIds] = React.useState(new Set());
 
@@ -216,7 +219,8 @@ export default function KanbanBoardPage({ params }) {
     // Marquer le temps du drag
     lastDragTimeRef.current = Date.now();
     
-    // Arrêter le drag des colonnes
+    // Arrêter le drag
+    setIsDragging(false);
     if (result.type === 'column') {
       setIsDraggingColumn(false);
     }
@@ -229,8 +233,9 @@ export default function KanbanBoardPage({ params }) {
     // Plus de polling - les subscriptions WebSocket temps réel suffisent
   }, [dndHandleDragEnd]);
 
-  // Détecter le début du drag des colonnes
+  // Détecter le début du drag des colonnes et tâches
   const handleDragStart = React.useCallback((result) => {
+    setIsDragging(true);
     if (result.type === 'column') {
       setIsDraggingColumn(true);
     }
@@ -338,11 +343,15 @@ export default function KanbanBoardPage({ params }) {
                   );
                   const isCollapsed = isColumnCollapsed(column.id);
 
+                  // Créer un map de toutes les tâches pour le renderClone
+                  const allTasks = localColumns.flatMap(col => getLocalTasksByColumn(col.id));
+                  
                   return (
                     <KanbanColumnSimple
                       key={column.id}
                       column={column}
                       tasks={columnTasks}
+                      allTasks={allTasks}
                       onAddTask={handleColumnAddTask}
                       onEditTask={handleColumnEditTask}
                       onDeleteTask={handleColumnDeleteTask}
@@ -873,8 +882,12 @@ export default function KanbanBoardPage({ params }) {
                   className="h-full overflow-x-auto overflow-y-hidden pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
                 >
                   <div 
-                    className="h-full w-max min-w-full origin-top-left transition-transform duration-200"
-                    style={{ transform: `scale(${zoomLevel})` }}
+                    className="h-full w-max min-w-full origin-top-left flex flex-nowrap items-start"
+                    style={{ 
+                      transform: `scale(${zoomLevel})`,
+                      transformOrigin: 'top left',
+                      gap: '16px'
+                    }}
                   >
                     {columnsContent ? (
                       columnsContent

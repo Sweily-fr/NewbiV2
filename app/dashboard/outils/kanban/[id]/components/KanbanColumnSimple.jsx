@@ -12,7 +12,7 @@ import {
 import { TaskCard } from "./TaskCard";
 import { TaskCardSkeleton } from "./TaskCardSkeleton";
 
-// Styles pour le scrollbar personnalisé
+// Styles pour le scrollbar personnalisé et fix du drag and drop avec zoom
 const scrollbarStyles = `
   .kanban-column-scroll::-webkit-scrollbar {
     width: 6px;
@@ -39,6 +39,7 @@ const scrollbarStyles = `
 export function KanbanColumnSimple({
   column,
   tasks,
+  allTasks = [],
   onAddTask,
   onEditTask,
   onDeleteTask,
@@ -54,7 +55,6 @@ export function KanbanColumnSimple({
   // Calculer le maxHeight en fonction du zoom
   // Quand on dézoom (scale < 1), le conteneur est réduit visuellement
   // Donc on doit augmenter le maxHeight pour compenser et utiliser tout l'espace
-  // Formule: (100vh - header) / zoomLevel pour que le contenu scalé remplisse l'espace
   const baseOffset = 280; // Hauteur du header + toolbar
   const maxHeight = `calc((100vh - ${baseOffset}px) / ${zoomLevel})`;
 
@@ -71,12 +71,6 @@ export function KanbanColumnSimple({
               willChange: snapshot.isDragging ? 'auto' : 'auto',
               zIndex: snapshot.isDragging ? 1000 : 'auto',
               backgroundColor: `${column.color || "#94a3b8"}08`,
-              // Garder la même taille pendant le drag
-              ...(snapshot.isDragging ? { 
-                width: isCollapsed ? '80px' : '300px',
-                minWidth: isCollapsed ? '80px' : '300px',
-                maxWidth: isCollapsed ? '80px' : '300px',
-              } : {})
             }}
             className={`rounded-xl p-1.5 sm:p-2 min-w-[240px] max-w-[240px] sm:min-w-[300px] sm:max-w-[300px] flex flex-col flex-shrink-0 ${
               isCollapsed ? "max-w-[80px] min-w-[80px]" : ""
@@ -177,7 +171,36 @@ export function KanbanColumnSimple({
 
           {/* Zone droppable pour les tâches - Affichée seulement s'il y a des tâches, si on charge, ou si on drag au-dessus */}
           {!isCollapsed && (
-            <Droppable droppableId={column.id} type="task">
+            <Droppable 
+              droppableId={column.id} 
+              type="task"
+              renderClone={(provided, snapshot, rubric) => {
+                // Trouver la tâche par son ID dans toutes les tâches du board
+                const task = allTasks.find(t => t.id === rubric.draggableId) || tasks.find(t => t.id === rubric.draggableId);
+                if (!task) return <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps} />;
+                
+                return (
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.draggableProps}
+                    {...provided.dragHandleProps}
+                    style={{
+                      ...provided.draggableProps.style,
+                    }}
+                  >
+                    {/* Wrapper avec zoom pour avoir la bonne taille */}
+                    <div style={{ zoom: zoomLevel }}>
+                      <TaskCard
+                        task={task}
+                        onEdit={onEditTask}
+                        onDelete={onDeleteTask}
+                        isDragging={false}
+                      />
+                    </div>
+                  </div>
+                );
+              }}
+            >
               {(providedDroppable, snapshotDroppable) => (
                 <div
                   ref={providedDroppable.innerRef}
