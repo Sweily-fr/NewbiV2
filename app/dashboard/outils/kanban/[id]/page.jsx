@@ -2,7 +2,7 @@
 
 import { use, useState, useEffect } from "react";
 import * as React from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Plus, LoaderCircle, Search, Trash2, AlignLeft, Filter, Users } from "lucide-react";
 import { toast } from "@/src/components/ui/sonner";
 
@@ -98,8 +98,10 @@ import { useMutation } from "@apollo/client";
 
 export default function KanbanBoardPage({ params }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { id } = use(params);
   const [isRedirecting, setIsRedirecting] = React.useState(false);
+  const taskIdFromUrl = searchParams.get("task");
 
   // Hooks
   const { board, loading, error, refetch, getTasksByColumn, workspaceId, markReorderAction } =
@@ -260,6 +262,18 @@ export default function KanbanBoardPage({ params }) {
   }, [board?.id, board?.columns, board?.tasks]);
 
   const { searchQuery, setSearchQuery, filterTasks: filterTasksBySearch } = useKanbanSearch();
+
+  // Ouvrir automatiquement une tâche si le paramètre ?task= est présent dans l'URL
+  React.useEffect(() => {
+    if (taskIdFromUrl && board?.tasks && !loading) {
+      const taskToOpen = board.tasks.find(t => t.id === taskIdFromUrl);
+      if (taskToOpen && !isEditTaskOpen) {
+        openEditTaskModal(taskToOpen);
+        // Supprimer le paramètre de l'URL après ouverture pour éviter de réouvrir
+        router.replace(`/dashboard/outils/kanban/${id}`, { scroll: false });
+      }
+    }
+  }, [taskIdFromUrl, board?.tasks, loading, isEditTaskOpen, openEditTaskModal, router, id]);
 
   // Fonction de filtrage combinée (recherche + membre)
   const filterTasks = React.useCallback((tasks) => {
