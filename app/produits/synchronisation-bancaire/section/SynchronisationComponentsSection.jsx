@@ -108,7 +108,7 @@ const FeatureBlock = ({
         </div>
 
         <div
-          className={`relative ${reversed ? "lg:order-1 lg:-ml-40" : "lg:order-2 lg:-mr-40"}`}
+          className={`relative ${reversed ? "lg:order-1 lg:-ml-20" : "lg:order-2 lg:-mr-40"}`}
         >
           <DashedLine position="-top-px" orientation="horizontal" />
           <DashedLine position="-left-px" orientation="vertical" />
@@ -143,7 +143,7 @@ export default function SynchronisationComponentsSection() {
         "Multi-comptes et multi-banques",
         "Historique complet de vos opérations",
       ],
-      imageSrc: "/lp/synchronisation/sync1.png",
+      imageSrc: "/lp/synchronisation/banque_list.png",
       imageAlt: "Synchronisation bancaire - Connexion sécurisée",
       reversed: false,
     },
@@ -162,7 +162,7 @@ export default function SynchronisationComponentsSection() {
         "Export des données comptables",
         "Partage sécurisé avec votre expert-comptable",
       ],
-      imageSrc: "/lp/synchronisation/sync2.png",
+      imageSrc: "/lp/tresorerie/Trésorerie_Desk_002.svg",
       imageAlt: "Tableau de bord trésorerie - Vision consolidée",
       reversed: true,
     },
@@ -181,7 +181,7 @@ export default function SynchronisationComponentsSection() {
         "Gestion des écarts et anomalies",
         "Historique complet des rapprochements",
       ],
-      imageSrc: "/lp/synchronisation/sync3.png",
+      imageSrc: "/lp/synchronisation/rapprochement.avif",
       imageAlt: "Rapprochement bancaire automatique",
       reversed: false,
     },
@@ -200,7 +200,7 @@ export default function SynchronisationComponentsSection() {
         "Sauvegarde automatique des données",
         "Accès contrôlé et traçabilité complète",
       ],
-      imageSrc: "/lp/synchronisation/sync4.png",
+      imageSrc: "/lp/synchronisation/securite.avif",
       imageAlt: "Sécurité bancaire - Protection des données",
       reversed: true,
     },

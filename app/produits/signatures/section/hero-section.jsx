@@ -46,7 +46,7 @@ export function HeroSection() {
               </div>
 
               <div className="relative flex items-center justify-center lg:items-end lg:justify-end overflow-visible pt-8 lg:pt-24">
-                <div className="relative w-full lg:w-[700px] xl:w-[800px] lg:-mr-32 xl:-mr-48">
+                <div className="relative w-full lg:w-[700px] xl:w-[800px]">
                   <SignaturesAnimation />
                   <div
                     className="absolute bottom-0 left-0 right-0 h-16 lg:h-22 pointer-events-none"

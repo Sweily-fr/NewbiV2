@@ -9,6 +9,8 @@ export default function BlogPage() {
     variables: { limit: 20, offset: 0 },
   });
 
+  console.log("[BlogPage] loading:", loading, "error:", error, "data:", data);
+
   if (loading) {
     return (
       <div className="min-h-screen pt-32 pb-20 flex items-center justify-center">

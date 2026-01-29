@@ -174,13 +174,7 @@ const nextConfig = {
         destination: "/",
         permanent: true,
       },
-      // Redirection de la page blog principale
-      {
-        source: "/blog",
-        destination: "/",
-        permanent: true,
-      },
-
+      
       // Redirections des anciennes pages produits vers les nouvelles
       {
         source: "/factures",
