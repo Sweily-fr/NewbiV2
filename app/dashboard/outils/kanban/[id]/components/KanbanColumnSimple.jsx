@@ -49,7 +49,15 @@ export function KanbanColumnSimple({
   isLoading,
   columnIndex,
   isDraggingAnyColumn,
+  zoomLevel = 1,
 }) {
+  // Calculer le maxHeight en fonction du zoom
+  // Quand on dézoom (scale < 1), le conteneur est réduit visuellement
+  // Donc on doit augmenter le maxHeight pour compenser et utiliser tout l'espace
+  // Formule: (100vh - header) / zoomLevel pour que le contenu scalé remplisse l'espace
+  const baseOffset = 280; // Hauteur du header + toolbar
+  const maxHeight = `calc((100vh - ${baseOffset}px) / ${zoomLevel})`;
+
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: scrollbarStyles }} />
@@ -70,7 +78,7 @@ export function KanbanColumnSimple({
                 maxWidth: isCollapsed ? '80px' : '300px',
               } : {})
             }}
-            className={`rounded-xl p-1.5 sm:p-2 min-w-[240px] max-w-[240px] sm:min-w-[300px] sm:max-w-[300px] flex flex-col flex-shrink-0 h-auto ${
+            className={`rounded-xl p-1.5 sm:p-2 min-w-[240px] max-w-[240px] sm:min-w-[300px] sm:max-w-[300px] flex flex-col flex-shrink-0 ${
               isCollapsed ? "max-w-[80px] min-w-[80px]" : ""
             } ${snapshot.isDragging ? "opacity-60 rotate-2" : ""}`}
           >
@@ -107,7 +115,20 @@ export function KanbanColumnSimple({
               </span>
             </div>
 
-            <div className="flex items-center gap-1" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-0.5" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
+              {/* Bouton + pour ajouter une tâche rapidement */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 sm:h-8 sm:w-8"
+                style={{ color: column.color || "#94a3b8" }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAddTask(column.id);
+                }}
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
               {/* Bouton collapse/expand */}
               <Button
                 variant="ghost"
@@ -161,13 +182,12 @@ export function KanbanColumnSimple({
                 <div
                   ref={providedDroppable.innerRef}
                   {...providedDroppable.droppableProps}
-                  className={`kanban-column-scroll p-2 rounded-lg transition-colors overflow-y-auto ${
+                  className={`kanban-column-scroll p-2 pb-4 rounded-lg transition-colors overflow-y-auto ${
                     snapshotDroppable.isDraggingOver ? 'bg-accent/20 border-2 border-accent' : ''
                   }`}
                   style={{
                     minHeight: (isLoading || tasks.length > 0 || snapshotDroppable.isDraggingOver) ? '50px' : '0px',
-                    maxHeight: 'calc(100vh - 320px)', // Hauteur max basée sur la hauteur de l'écran (augmenté à 320px)
-                    overflowY: 'auto' // Scroll vertical
+                    maxHeight: maxHeight,
                   }}
                 >
                   <div className="flex flex-col gap-2 sm:gap-3">
@@ -210,32 +230,30 @@ export function KanbanColumnSimple({
                     >
                       {providedDroppable.placeholder}
                     </div>
+
+                    {/* Bouton ajouter une tâche - à l'intérieur de la zone scrollable */}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full mt-2 justify-start transition-colors flex-shrink-0"
+                      style={{ 
+                        color: column.color || "#94a3b8"
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = `${column.color || "#94a3b8"}10`;
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                      }}
+                      onClick={() => onAddTask(column.id)}
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      Ajouter une tâche
+                    </Button>
                   </div>
                 </div>
               )}
             </Droppable>
-          )}
-
-          {/* Bouton ajouter une tâche */}
-          {!isCollapsed && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="w-full mt-2 sm:mt-3 justify-start transition-colors"
-              style={{ 
-                color: column.color || "#94a3b8"
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = `${column.color || "#94a3b8"}10`;
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'transparent';
-              }}
-              onClick={() => onAddTask(column.id)}
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Ajouter une tâche
-            </Button>
           )}
           </div>
         )}

@@ -36,7 +36,7 @@ import {
   Mail, Eye, Calendar, CheckSquare, Flag, User, Send, Loader2, AlertCircle, ExternalLink,
   LayoutGrid, List, AlignLeft, Search, X, GanttChart, ChevronLeft, ChevronRight, Users,
   Tag, Columns, Clock, CheckCircle, ChevronUp, ChevronDown, Settings, Edit2, Camera, Upload,
-  ImagePlus, ZoomIn
+  ImagePlus, ZoomIn, ZoomOut, Minus, Plus
 } from "lucide-react";
 import { format, addDays, startOfWeek, endOfWeek, eachDayOfInterval, parseISO, differenceInDays, startOfDay, isWithinInterval, isSameDay, getWeek } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -798,11 +798,17 @@ function PublicTaskCard({ task, onEdit }) {
 }
 
 // KanbanColumn Component
-function PublicKanbanColumn({ column, tasks, onEditTask, isCollapsed, onToggleCollapse }) {
+function PublicKanbanColumn({ column, tasks, onEditTask, isCollapsed, onToggleCollapse, zoomLevel = 1 }) {
+  // Calculer le maxHeight en fonction du zoom
+  // Quand on dézoom (scale < 1), le conteneur est réduit visuellement
+  // Donc on doit augmenter le maxHeight pour compenser et utiliser tout l'espace
+  const baseOffset = 280;
+  const maxHeight = `calc((100vh - ${baseOffset}px) / ${zoomLevel})`;
+
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: scrollbarStyles }} />
-      <div style={{ backgroundColor: `${column.color || "#94a3b8"}08` }} className={`rounded-xl p-1.5 sm:p-2 min-w-[240px] max-w-[240px] sm:min-w-[300px] sm:max-w-[300px] flex flex-col flex-shrink-0 h-auto ${isCollapsed ? "max-w-[80px] min-w-[80px]" : ""}`}>
+      <div style={{ backgroundColor: `${column.color || "#94a3b8"}08` }} className={`rounded-xl p-1.5 sm:p-2 min-w-[240px] max-w-[240px] sm:min-w-[300px] sm:max-w-[300px] flex flex-col flex-shrink-0 ${isCollapsed ? "max-w-[80px] min-w-[80px]" : ""}`}>
         <div className={`flex items-center justify-between gap-2 px-2 ${isCollapsed ? '' : 'mb-2 sm:mb-3'}`}>
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <div className="px-2 py-1 rounded-md flex-shrink-0 text-xs font-medium border flex items-center gap-1" style={{ backgroundColor: `${column.color || "#94a3b8"}20`, borderColor: `${column.color || "#94a3b8"}20`, color: column.color || "#94a3b8" }}>
@@ -816,7 +822,7 @@ function PublicKanbanColumn({ column, tasks, onEditTask, isCollapsed, onToggleCo
           </Button>
         </div>
         {!isCollapsed && (
-          <div className="kanban-column-scroll p-2 rounded-lg overflow-y-auto" style={{ minHeight: tasks.length > 0 ? '50px' : '0px', maxHeight: 'calc(100vh - 320px)' }}>
+          <div className="kanban-column-scroll p-2 pb-4 rounded-lg overflow-y-auto" style={{ maxHeight: maxHeight }}>
             <div className="flex flex-col gap-2 sm:gap-3">
               {tasks.map((task) => <PublicTaskCard key={task.id} task={task} onEdit={onEditTask} />)}
             </div>
@@ -2703,6 +2709,7 @@ export default function PublicKanbanPage({ params }) {
   const [collapsedColumns, setCollapsedColumns] = useState({});
   const [searchQuery, setSearchQuery] = useState("");
   const [isInitializing, setIsInitializing] = useState(true);
+  const [zoomLevel, setZoomLevel] = useState(1);
 
   const [validateToken, { loading: validatingToken }] = useLazyQuery(VALIDATE_PUBLIC_TOKEN);
   const [getPublicBoard, { loading: loadingBoard }] = useLazyQuery(GET_PUBLIC_BOARD);
@@ -3240,9 +3247,9 @@ export default function PublicKanbanPage({ params }) {
               </div>
             </div>
             
-            {/* Ligne 3: Barre de recherche (visible en mode board) */}
+            {/* Ligne 3: Barre de recherche + Zoom (visible en mode board) */}
             {viewMode === "board" && (
-              <div className="px-4 sm:px-6 py-3 bg-background flex items-center gap-4">
+              <div className="px-4 sm:px-6 py-3 bg-background flex items-center justify-between gap-4">
                 <div className="relative flex-1 max-w-xs">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input 
@@ -3257,24 +3264,55 @@ export default function PublicKanbanPage({ params }) {
                     </Button>
                   )}
                 </div>
+                
+                {/* Contrôles de zoom */}
+                <div className="flex items-center gap-1 border rounded-md p-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={() => setZoomLevel(Math.max(0.5, zoomLevel - 0.1))}
+                    disabled={zoomLevel <= 0.5}
+                  >
+                    <Minus className="h-3.5 w-3.5" />
+                  </Button>
+                  <span className="text-xs font-medium w-12 text-center">
+                    {Math.round(zoomLevel * 100)}%
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={() => setZoomLevel(Math.min(1.5, zoomLevel + 0.1))}
+                    disabled={zoomLevel >= 1.5}
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
               </div>
             )}
           </div>
 
           {/* Content */}
-          <div className="p-4">
+          <div className="px-4 mt-4">
             {viewMode === "board" ? (
-              <div className="flex gap-4 overflow-x-auto pb-4">
-                {columns.map((column) => (
-                  <PublicKanbanColumn
-                    key={column.id}
-                    column={column}
-                    tasks={filteredTasksByColumn[column.id] || []}
-                    onEditTask={setSelectedTask}
-                    isCollapsed={collapsedColumns[column.id]}
-                    onToggleCollapse={toggleColumnCollapse}
-                  />
-                ))}
+              <div className="overflow-x-auto overflow-y-auto pb-4">
+                <div 
+                  className="w-max min-w-full origin-top-left transition-transform duration-200 flex gap-4 items-start"
+                  style={{ transform: `scale(${zoomLevel})` }}
+                >
+                  {columns.map((column) => (
+                    <PublicKanbanColumn
+                      key={column.id}
+                      column={column}
+                      tasks={filteredTasksByColumn[column.id] || []}
+                      onEditTask={setSelectedTask}
+                      isCollapsed={collapsedColumns[column.id]}
+                      onToggleCollapse={toggleColumnCollapse}
+                      zoomLevel={zoomLevel}
+                    />
+                  ))}
+                </div>
               </div>
             ) : viewMode === "list" ? (
               <PublicListView columns={columns} tasksByColumn={filteredTasksByColumn} onEditTask={setSelectedTask} />

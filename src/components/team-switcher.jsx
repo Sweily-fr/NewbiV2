@@ -152,12 +152,26 @@ export function TeamSwitcher() {
     try {
       setOrganizationsLoading(true);
       const response = await fetch("/api/organization/list-with-order");
-      if (!response.ok) throw new Error("Erreur chargement organisations");
+      
+      // Si non authentifié (401), ne pas throw d'erreur - laisser le composant gérer
+      if (response.status === 401) {
+        console.warn("Session expirée ou non authentifié");
+        setSortedOrganizations([]);
+        return;
+      }
+      
+      if (!response.ok) {
+        console.error("Erreur API:", response.status, response.statusText);
+        setSortedOrganizations([]);
+        return;
+      }
+      
       const data = await response.json();
       setSortedOrganizations(data.organizations || []);
     } catch (error) {
       console.error("Erreur chargement organisations:", error);
-      setSortedOrganizations([]);
+      // Ne pas vider les organisations en cas d'erreur réseau temporaire
+      // pour éviter le clignotement
     } finally {
       setOrganizationsLoading(false);
     }

@@ -3,7 +3,7 @@
 import { use, useState, useEffect } from "react";
 import * as React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, Plus, LoaderCircle, Search, Trash2, AlignLeft, Filter, Users } from "lucide-react";
+import { ArrowLeft, Plus, LoaderCircle, Search, Trash2, AlignLeft, Filter, Users, ZoomIn, ZoomOut } from "lucide-react";
 import { toast } from "@/src/components/ui/sonner";
 
 // UI Components
@@ -187,6 +187,9 @@ export default function KanbanBoardPage({ params }) {
   // État pour le popover de description du tableau
   const [showBoardDescriptionPopover, setShowBoardDescriptionPopover] = React.useState(false);
 
+  // État pour le niveau de zoom du Kanban (0.7 = 70%, 1 = 100%, 1.3 = 130%)
+  const [zoomLevel, setZoomLevel] = React.useState(1);
+
   // Hook pour le filtrage par membre (AVANT useKanbanDnDSimple pour éviter l'erreur de hoisting)
   const {
     selectedMemberId,
@@ -322,14 +325,13 @@ export default function KanbanBoardPage({ params }) {
 
     return (
       <>
-        <div className="flex overflow-x-auto pb-4 -mx-4 px-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-          <Droppable droppableId="all-columns" direction="horizontal" type="column">
-            {(provided, snapshot) => (
-              <div 
-                ref={provided.innerRef}
-                {...provided.droppableProps}
-                className="flex flex-nowrap items-start gap-4"
-              >
+        <Droppable droppableId="all-columns" direction="horizontal" type="column">
+          {(provided, snapshot) => (
+            <div 
+              ref={provided.innerRef}
+              {...provided.droppableProps}
+              className="flex flex-nowrap items-start gap-4"
+            >
                 {localColumns.map((column, index) => {
                   const columnTasks = filterTasks(
                     getLocalTasksByColumn(column.id)
@@ -351,6 +353,7 @@ export default function KanbanBoardPage({ params }) {
                       isLoading={loading}
                       columnIndex={index}
                       isDraggingAnyColumn={isDraggingColumn}
+                      zoomLevel={zoomLevel}
                     />
                   );
                 })}
@@ -374,7 +377,6 @@ export default function KanbanBoardPage({ params }) {
               </div>
             )}
           </Droppable>
-        </div>
       </>
     );
   }, [localColumns, filterTasks, getLocalTasksByColumn, isColumnCollapsed, handleColumnAddTask, handleColumnEditTask, handleColumnDeleteTask, handleColumnEditColumn, handleColumnDeleteColumn, handleColumnToggleCollapse, loading, openAddModal]);
@@ -426,13 +428,12 @@ export default function KanbanBoardPage({ params }) {
 
   return (
     <div 
-      ref={scrollRef}
       key={`kanban-board-${id}-${isBoard ? 'board' : 'list'}`}
-      className="w-full max-w-[100vw] overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+      className="h-[calc(100vh-64px)] flex flex-col overflow-hidden"
       style={{ pointerEvents: isBoard ? 'auto' : 'auto' }}
     >
-      {/* Header */}
-      <div className="sticky left-0 bg-background z-10">
+      {/* Header - Fixe en haut */}
+      <div className="flex-shrink-0 bg-background z-10">
         <div className="flex items-center gap-2 pt-2 pb-2 border-b px-4 sm:px-6">
           <h1 className="text-base font-semibold">{board.title}</h1>
           {board.description && (
@@ -658,6 +659,31 @@ export default function KanbanBoardPage({ params }) {
               </DropdownMenuContent>
             </DropdownMenu>
           </ButtonGroup>
+
+          {/* Contrôles de zoom */}
+          <div className="flex items-center gap-1 ml-auto">
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-9 w-9"
+              onClick={() => setZoomLevel(prev => Math.max(0.5, prev - 0.1))}
+              disabled={zoomLevel <= 0.5}
+            >
+              <ZoomOut className="h-4 w-4" />
+            </Button>
+            <span className="text-xs text-muted-foreground w-12 text-center">
+              {Math.round(zoomLevel * 100)}%
+            </span>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-9 w-9"
+              onClick={() => setZoomLevel(prev => Math.min(1.5, prev + 0.1))}
+              disabled={zoomLevel >= 1.5}
+            >
+              <ZoomIn className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       )}
 
@@ -798,34 +824,36 @@ export default function KanbanBoardPage({ params }) {
         </div>
       )}
 
-      {/* Board Content avec padding pour liste et board */}
-      <div className="w-full px-4 sm:px-6 mt-4">
+      {/* Board Content - Zone scrollable pour les colonnes */}
+      <div className="flex-1 overflow-hidden px-4 sm:px-6 mt-4">
         {isList && (
-          <DragDropContext onDragEnd={handleDragEnd} onDragStart={handleDragStart}>
-            <KanbanListView
-              columns={localColumns}
-              getTasksByColumn={getLocalTasksByColumn}
-              filterTasks={filterTasks}
-              onEditTask={openEditTaskModal}
-              onDeleteTask={handleDeleteTask}
-              onAddTask={openAddTaskModal}
-              onEditColumn={openEditModal}
-              onDeleteColumn={handleDeleteColumn}
-              members={board?.members || []}
-              selectedTaskIds={selectedTaskIds}
-              setSelectedTaskIds={setSelectedTaskIds}
-              moveTask={moveTask}
-              updateTask={updateTask}
-              workspaceId={workspaceId}
-            />
-          </DragDropContext>
+          <div className="h-full overflow-auto">
+            <DragDropContext onDragEnd={handleDragEnd} onDragStart={handleDragStart}>
+              <KanbanListView
+                columns={localColumns}
+                getTasksByColumn={getLocalTasksByColumn}
+                filterTasks={filterTasks}
+                onEditTask={openEditTaskModal}
+                onDeleteTask={handleDeleteTask}
+                onAddTask={openAddTaskModal}
+                onEditColumn={openEditModal}
+                onDeleteColumn={handleDeleteColumn}
+                members={board?.members || []}
+                selectedTaskIds={selectedTaskIds}
+                setSelectedTaskIds={setSelectedTaskIds}
+                moveTask={moveTask}
+                updateTask={updateTask}
+                workspaceId={workspaceId}
+              />
+            </DragDropContext>
+          </div>
         )}
 
         {isBoard && (
           <>
             {loading ? (
-              <div className="flex overflow-x-auto pb-4 -mx-4 px-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                <div className="flex gap-4 sm:gap-6 flex-nowrap items-start">
+              <div className="h-full overflow-x-auto overflow-y-hidden pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                <div className="flex gap-4 sm:gap-6 flex-nowrap items-start h-full">
                   {[1, 2, 3, 4].map((i) => (
                     <div key={i} className="bg-muted/30 rounded-xl p-2 sm:p-3 min-w-[240px] max-w-[240px] sm:min-w-[300px] sm:max-w-[300px] border border-border flex-shrink-0">
                       <div className="h-8 bg-muted rounded mb-3"></div>
@@ -840,20 +868,28 @@ export default function KanbanBoardPage({ params }) {
               </div>
             ) : (
               <DragDropContext onDragEnd={handleDragEnd} onDragStart={handleDragStart}>
-                <div className="min-h-[600px] w-max min-w-full">
-                  {columnsContent ? (
-                    columnsContent
-                  ) : (
-                    <div className="text-center py-12">
-                      <div className="text-muted-foreground mb-4">
-                        Ce tableau ne contient aucune colonne
+                <div 
+                  ref={scrollRef}
+                  className="h-full overflow-x-auto overflow-y-hidden pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+                >
+                  <div 
+                    className="h-full w-max min-w-full origin-top-left transition-transform duration-200"
+                    style={{ transform: `scale(${zoomLevel})` }}
+                  >
+                    {columnsContent ? (
+                      columnsContent
+                    ) : (
+                      <div className="text-center py-12">
+                        <div className="text-muted-foreground mb-4">
+                          Ce tableau ne contient aucune colonne
+                        </div>
+                        <Button variant="default" onClick={openAddModal}>
+                          <Plus className="mr-2 h-4 w-4" />
+                          Créer votre première colonne
+                        </Button>
                       </div>
-                      <Button variant="default" onClick={openAddModal}>
-                        <Plus className="mr-2 h-4 w-4" />
-                        Créer votre première colonne
-                      </Button>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               </DragDropContext>
             )}
