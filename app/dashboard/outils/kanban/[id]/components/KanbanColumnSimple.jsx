@@ -51,6 +51,7 @@ export function KanbanColumnSimple({
   columnIndex,
   isDraggingAnyColumn,
   zoomLevel = 1,
+  isClone = false,
 }) {
   // Calculer le maxHeight en fonction du zoom
   // Quand on dézoom (scale < 1), le conteneur est réduit visuellement
