@@ -72,6 +72,7 @@ import { useWorkspace } from "@/src/hooks/useWorkspace";
 
 // Components
 import { KanbanColumnSimple } from "./components/KanbanColumnSimple";
+import { TaskCard } from "./components/TaskCard";
 import { TaskModal } from "./components/TaskModal";
 import { ColumnModal } from "./components/ColumnModal";
 import { DeleteConfirmation } from "./components/DeleteConfirmation";
@@ -330,7 +331,92 @@ export default function KanbanBoardPage({ params }) {
 
     return (
       <>
-        <Droppable droppableId="all-columns" direction="horizontal" type="column">
+        <Droppable 
+          droppableId="all-columns" 
+          direction="horizontal" 
+          type="column"
+          renderClone={(provided, snapshot, rubric) => {
+            // Trouver la colonne par son ID (draggableId = "column-{id}")
+            const columnId = rubric.draggableId.replace('column-', '');
+            const column = localColumns.find(c => c.id === columnId);
+            if (!column) return <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps} />;
+            
+            const columnTasks = getLocalTasksByColumn(column.id);
+            const isCollapsedCol = isColumnCollapsed(column.id);
+            
+            // Calculer le maxHeight pour le clone
+            const baseOffset = 280;
+            const cloneMaxHeight = `calc((100vh - ${baseOffset}px) / ${zoomLevel})`;
+            
+            return (
+              <div
+                ref={provided.innerRef}
+                {...provided.draggableProps}
+                {...provided.dragHandleProps}
+                style={{
+                  ...provided.draggableProps.style,
+                }}
+              >
+                {/* Wrapper avec zoom pour avoir la bonne taille */}
+                <div style={{ zoom: zoomLevel }}>
+                  <div
+                    className={`rounded-xl p-1.5 sm:p-2 min-w-[240px] max-w-[240px] sm:min-w-[300px] sm:max-w-[300px] flex flex-col flex-shrink-0 opacity-90 rotate-1 shadow-xl ${
+                      isCollapsedCol ? "max-w-[80px] min-w-[80px]" : ""
+                    }`}
+                    style={{ backgroundColor: `${column.color || "#94a3b8"}08` }}
+                  >
+                    {/* Header de la colonne */}
+                    <div className="flex items-center justify-between gap-2 px-2 mb-2 sm:mb-3">
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <div
+                          className="px-2 py-1 rounded-md text-xs font-medium border flex items-center gap-1"
+                          style={{
+                            backgroundColor: `${column.color || "#94a3b8"}20`,
+                            borderColor: `${column.color || "#94a3b8"}20`,
+                            color: column.color || "#94a3b8"
+                          }}
+                        >
+                          <div
+                            className="w-2 h-2 rounded-full"
+                            style={{ backgroundColor: column.color || "#94a3b8" }}
+                          />
+                          {!isCollapsedCol && <span className="truncate">{column.title}</span>}
+                        </div>
+                        {!isCollapsedCol && (
+                          <span 
+                            className="ml-auto flex-shrink-0 text-xs font-medium"
+                            style={{ color: column.color || "#94a3b8" }}
+                          >
+                            {columnTasks.length}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    {/* Toutes les tâches avec TaskCard */}
+                    {!isCollapsedCol && (
+                      <div 
+                        className="p-2 pb-4 rounded-lg overflow-y-auto"
+                        style={{ maxHeight: cloneMaxHeight }}
+                      >
+                        <div className="flex flex-col gap-2 sm:gap-3">
+                          {columnTasks.map(task => (
+                            <TaskCard
+                              key={task.id}
+                              task={task}
+                              onEdit={() => {}}
+                              onDelete={() => {}}
+                              isDragging={false}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          }}
+        >
           {(provided, snapshot) => (
             <div 
               ref={provided.innerRef}
@@ -884,8 +970,7 @@ export default function KanbanBoardPage({ params }) {
                   <div 
                     className="h-full w-max min-w-full origin-top-left flex flex-nowrap items-start"
                     style={{ 
-                      transform: `scale(${zoomLevel})`,
-                      transformOrigin: 'top left',
+                      zoom: zoomLevel,
                       gap: '16px'
                     }}
                   >
