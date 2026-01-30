@@ -3,13 +3,13 @@
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
-import { Skeleton } from "@/src/components/ui/skeleton";
+import { Loader2 } from "lucide-react";
 
 /**
  * ProRouteGuard - Garde de route pour les fonctionnalités Pro
  *
- * ✅ MODIFIÉ: Logique simplifiée pour accepter "trialing" comme statut valide
- * et éviter les redirections inutiles pendant le chargement
+ * 🔒 SÉCURISÉ: Bloque l'accès pendant le chargement (affiche un loader)
+ * Ne révèle le contenu qu'après confirmation de l'abonnement
  */
 export function ProRouteGuard({
   children,
@@ -18,15 +18,13 @@ export function ProRouteGuard({
 }) {
   const { isActive, loading, subscription, hasInitialized } = useSubscription();
   const router = useRouter();
-  const [isChecking, setIsChecking] = useState(true);
-  const [hasAccess, setHasAccess] = useState(true); // ✅ Par défaut true pour éviter les flashs
+  const [hasAccess, setHasAccess] = useState(false); // 🔒 Par défaut false (bloqué)
   const hasRedirectedRef = useRef(false);
 
   useEffect(() => {
-    // ✅ Pendant le chargement, autoriser l'accès par défaut
+    // 🔒 Pendant le chargement, garder l'accès bloqué
     if (loading || !hasInitialized) {
-      setHasAccess(true);
-      setIsChecking(true);
+      setHasAccess(false);
       return;
     }
 
@@ -35,26 +33,18 @@ export function ProRouteGuard({
 
     if (hasActiveSubscription) {
       setHasAccess(true);
-      setIsChecking(false);
       hasRedirectedRef.current = false;
       return;
     }
 
-    // ✅ Ne rediriger que si on est sûr qu'il n'y a pas d'abonnement
-    // et que ce n'est pas un problème de chargement
+    // 🔒 Pas d'abonnement valide - rediriger
     if (!hasActiveSubscription && subscription !== undefined) {
-      // L'abonnement a été vérifié et l'accès est refusé
+      setHasAccess(false);
       if (!hasRedirectedRef.current) {
         hasRedirectedRef.current = true;
-        // Utiliser un délai pour éviter les redirections pendant les transitions
-        const timeout = setTimeout(() => {
-          router.replace("/dashboard?access=restricted");
-        }, 500);
-        return () => clearTimeout(timeout);
+        router.replace("/dashboard?access=restricted");
       }
     }
-
-    setIsChecking(false);
   }, [
     loading,
     hasInitialized,
@@ -64,17 +54,32 @@ export function ProRouteGuard({
     requirePaidSubscription,
   ]);
 
-  // ✅ Toujours afficher le contenu pendant le chargement
-  // Cela évite les flashs et améliore l'UX
-  if (isChecking || loading || !hasInitialized) {
-    return <>{children}</>;
+  // 🔒 Afficher un loader pendant la vérification (sécurisé)
+  if (loading || !hasInitialized) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center space-y-4">
+          <Loader2 className="w-8 h-8 animate-spin text-[#5A50FF] mx-auto" />
+          <p className="text-sm text-muted-foreground">
+            Vérification de l'accès...
+          </p>
+        </div>
+      </div>
+    );
   }
 
-  // Afficher le contenu si l'accès est autorisé
+  // ✅ Afficher le contenu si l'accès est autorisé
   if (hasAccess) {
     return children;
   }
 
-  // Si pas d'accès, retourner null (la redirection est en cours)
-  return null;
+  // 🔒 Si pas d'accès, afficher le loader (redirection en cours)
+  return (
+    <div className="flex items-center justify-center min-h-[400px]">
+      <div className="text-center space-y-4">
+        <Loader2 className="w-8 h-8 animate-spin text-[#5A50FF] mx-auto" />
+        <p className="text-sm text-muted-foreground">Redirection...</p>
+      </div>
+    </div>
+  );
 }
