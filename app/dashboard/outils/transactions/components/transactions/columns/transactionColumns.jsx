@@ -6,6 +6,8 @@ import {
   Paperclip,
   PenLine,
   Landmark,
+  Link2,
+  CheckCircle2,
 } from "lucide-react";
 import { formatDateToFrench } from "@/src/utils/dateFormatter";
 import { findBank } from "@/lib/banks-config";
@@ -274,6 +276,8 @@ export const columns = [
     cell: ({ row }) => {
       const files = row.original.files || [];
       const receiptFile = row.original.receiptFile;
+      const linkedInvoice = row.original.linkedInvoice;
+      const hasLinkedInvoice = !!linkedInvoice?.id;
       const hasReceipt =
         row.original.hasReceipt || files.length > 0 || !!receiptFile?.url;
       const filesCount =
@@ -285,6 +289,34 @@ export const columns = [
               ? 1
               : 0;
 
+      // Si une facture est liée, afficher un indicateur spécial
+      if (hasLinkedInvoice) {
+        return (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-1.5">
+                  <div className="relative">
+                    <FileTextIcon size={14} className="text-green-600" />
+                    <Link2 size={8} className="text-green-600 absolute -bottom-0.5 -right-0.5" />
+                  </div>
+                  <CheckCircle2 size={12} className="text-green-600" />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <div className="text-center">
+                  <div className="font-medium">Facture liée</div>
+                  <div className="text-xs text-muted-foreground">
+                    {linkedInvoice.number || "N/A"} - {linkedInvoice.clientName || "Client"}
+                  </div>
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        );
+      }
+
+      // Sinon, afficher le compteur de fichiers classique
       return (
         <TooltipProvider>
           <Tooltip>

@@ -104,6 +104,60 @@ export const GET_IMPORTED_INVOICE_STATS = gql`
   }
 `;
 
+export const GET_USER_OCR_QUOTA = gql`
+  query GetUserOcrQuota($workspaceId: ID!) {
+    userOcrQuota(workspaceId: $workspaceId) {
+      plan
+      monthlyQuota
+      usedQuota
+      remainingQuota
+      extraImportsPurchased
+      extraImportsUsed
+      extraImportsAvailable
+      extraImportPrice
+      totalUsedThisMonth
+      totalAvailable
+      month
+      resetDate
+      lastImports {
+        timestamp
+        fileName
+        provider
+        success
+        isExtra
+      }
+    }
+  }
+`;
+
+export const GET_OCR_USAGE_STATS = gql`
+  query GetOcrUsageStats($workspaceId: ID!) {
+    ocrUsageStats(workspaceId: $workspaceId) {
+      claudeVision {
+        used
+        limit
+        available
+      }
+      mindee {
+        used
+        limit
+        available
+      }
+      googleDocumentAi {
+        used
+        limit
+        available
+      }
+      mistral {
+        used
+        limit
+        available
+      }
+      currentProvider
+    }
+  }
+`;
+
 // Mutations
 export const IMPORT_INVOICE = gql`
   ${IMPORTED_INVOICE_FRAGMENT}
@@ -205,6 +259,26 @@ export const DELETE_IMPORTED_INVOICE = gql`
 export const DELETE_IMPORTED_INVOICES = gql`
   mutation DeleteImportedInvoices($ids: [ID!]!) {
     deleteImportedInvoices(ids: $ids)
+  }
+`;
+
+export const PURCHASE_EXTRA_OCR_IMPORTS = gql`
+  mutation PurchaseExtraOcrImports(
+    $workspaceId: ID!
+    $quantity: Int!
+    $paymentId: String
+  ) {
+    purchaseExtraOcrImports(
+      workspaceId: $workspaceId
+      quantity: $quantity
+      paymentId: $paymentId
+    ) {
+      success
+      quantity
+      extraImportsAvailable
+      totalSpent
+      message
+    }
   }
 `;
 
@@ -336,4 +410,38 @@ export function useDeleteImportedInvoice() {
 export function useDeleteImportedInvoices() {
   const [deleteImportedInvoices, { loading, error }] = useMutation(DELETE_IMPORTED_INVOICES);
   return { deleteImportedInvoices, loading, error };
+}
+
+export function useUserOcrQuota(workspaceId) {
+  const { data, loading, error, refetch } = useQuery(GET_USER_OCR_QUOTA, {
+    variables: { workspaceId },
+    skip: !workspaceId,
+    fetchPolicy: "cache-and-network",
+  });
+
+  return {
+    quota: data?.userOcrQuota,
+    loading,
+    error,
+    refetch,
+  };
+}
+
+export function useOcrUsageStats(workspaceId) {
+  const { data, loading, error, refetch } = useQuery(GET_OCR_USAGE_STATS, {
+    variables: { workspaceId },
+    skip: !workspaceId,
+  });
+
+  return {
+    stats: data?.ocrUsageStats,
+    loading,
+    error,
+    refetch,
+  };
+}
+
+export function usePurchaseExtraOcrImports() {
+  const [purchaseExtraOcrImports, { loading, error }] = useMutation(PURCHASE_EXTRA_OCR_IMPORTS);
+  return { purchaseExtraOcrImports, loading, error };
 }

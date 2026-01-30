@@ -96,8 +96,8 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
   // État pour afficher/masquer les IBAN
   const [visibleIbans, setVisibleIbans] = useState({});
 
-  // État pour la déconnexion
-  const [isDisconnecting, setIsDisconnecting] = useState(false);
+  // État pour la déconnexion (stocke l'ID du compte en cours de déconnexion)
+  const [disconnectingAccountId, setDisconnectingAccountId] = useState(null);
 
   // Limites de connexions bancaires selon l'abonnement
   const bankConnectionLimit = useMemo(() => {
@@ -205,7 +205,7 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
           headers: {
             ...(token && { Authorization: `Bearer ${token}` }),
           },
-        }
+        },
       );
 
       if (response.ok) {
@@ -241,7 +241,7 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
     return institutions.filter(
       (inst) =>
         inst.name.toLowerCase().includes(query) ||
-        inst.groupName?.toLowerCase().includes(query)
+        inst.groupName?.toLowerCase().includes(query),
     );
   }, [institutions, searchQuery]);
 
@@ -275,7 +275,7 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
             "x-workspace-id": workspaceId,
             ...(token && { Authorization: `Bearer ${token}` }),
           },
-        }
+        },
       );
 
       if (response.ok) {
@@ -295,12 +295,15 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
     }
   };
 
-  // Déconnecter un compte bancaire
-  const handleDisconnect = async () => {
-    if (!workspaceId) return;
+  // Déconnecter un compte bancaire spécifique
+  const handleDisconnect = async (account) => {
+    if (!workspaceId || !account) return;
+
+    const accountId = account._id || account.id;
+    const itemId = account.raw?.item_id || account.raw?.provider_id;
 
     try {
-      setIsDisconnecting(true);
+      setDisconnectingAccountId(accountId);
       const token = getAuthToken();
       const response = await fetch("/api/banking-connect/disconnect", {
         method: "POST",
@@ -309,12 +312,56 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
           "x-workspace-id": workspaceId,
           ...(token && { Authorization: `Bearer ${token}` }),
         },
+        body: JSON.stringify({
+          accountId: accountId,
+          itemId: itemId,
+        }),
       });
 
       if (response.ok) {
-        toast.success("Compte bancaire déconnecté");
-        setAccounts([]);
-        setIsConnected(false);
+        const data = await response.json();
+
+        // Calculer les nouveaux comptes en filtrant ceux déconnectés
+        let newAccounts;
+        let disconnectedCount = 0;
+
+        if (
+          data.disconnectedAccountIds &&
+          data.disconnectedAccountIds.length > 0
+        ) {
+          newAccounts = accounts.filter(
+            (acc) => !data.disconnectedAccountIds.includes(acc._id || acc.id),
+          );
+          disconnectedCount = data.disconnectedAccountIds.length;
+        } else if (itemId) {
+          // Fallback: retirer par itemId
+          newAccounts = accounts.filter(
+            (acc) =>
+              acc.raw?.item_id !== itemId && acc.raw?.provider_id !== itemId,
+          );
+          disconnectedCount = accounts.length - newAccounts.length;
+        } else {
+          // Fallback: retirer par accountId uniquement
+          newAccounts = accounts.filter(
+            (acc) => (acc._id || acc.id) !== accountId,
+          );
+          disconnectedCount = 1;
+        }
+
+        // Mettre à jour le state
+        setAccounts(newAccounts);
+
+        // Mettre à jour isConnected
+        if (newAccounts.length === 0) {
+          setIsConnected(false);
+        }
+
+        // Afficher le message de succès
+        toast.success(
+          disconnectedCount > 1
+            ? `${disconnectedCount} comptes bancaires déconnectés`
+            : "Compte bancaire déconnecté",
+        );
       } else {
         const errorData = await response.json();
         toast.error(errorData.error || "Erreur de déconnexion");
@@ -323,7 +370,7 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
       toast.error("Erreur lors de la déconnexion");
       console.error("Erreur déconnexion:", err);
     } finally {
-      setIsDisconnecting(false);
+      setDisconnectingAccountId(null);
     }
   };
 
@@ -346,7 +393,7 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
   const getAccountBankLogo = (account) => {
     if (account.institutionLogo) return account.institutionLogo;
     const bankConfig = findBank(
-      account.name || account.bankName || account.institutionName
+      account.name || account.bankName || account.institutionName,
     );
     return bankConfig?.logo || null;
   };
@@ -427,7 +474,7 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
               size="sm"
               onClick={handleOpenModal}
               disabled={!canManageOrgSettings || isConnecting}
-              className="font-normal bg-[#5b4eff] hover:bg-[#4a3ecc]"
+              className="font-normal"
             >
               {isConnecting ? (
                 <LoaderCircle className="h-4 w-4 animate-spin mr-1" />
@@ -554,7 +601,7 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
                         IBAN:{" "}
                         {formatIban(
                           account.iban || account.raw?.iban,
-                          isIbanVisible
+                          isIbanVisible,
                         )}
                       </span>
                       <button
@@ -588,9 +635,14 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
                           <Button
                             variant="ghost"
                             size="sm"
+                            disabled={disconnectingAccountId === accountId}
                             className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            {disconnectingAccountId === accountId ? (
+                              <LoaderCircle className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-4 w-4" />
+                            )}
                           </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
@@ -603,16 +655,23 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
                               <strong>{bankName}</strong>. Vos données de
                               transactions seront conservées mais ne seront plus
                               synchronisées.
+                              {account.raw?.item_id && (
+                                <span className="block mt-2 text-amber-600 dark:text-amber-400">
+                                  Note : Si plusieurs comptes sont liés à cette
+                                  connexion bancaire, ils seront tous
+                                  déconnectés.
+                                </span>
+                              )}
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>Annuler</AlertDialogCancel>
                             <AlertDialogAction
-                              onClick={handleDisconnect}
-                              disabled={isDisconnecting}
+                              onClick={() => handleDisconnect(account)}
+                              disabled={disconnectingAccountId !== null}
                               className="bg-destructive hover:bg-destructive/90"
                             >
-                              {isDisconnecting
+                              {disconnectingAccountId === accountId
                                 ? "Déconnexion..."
                                 : "Déconnecter"}
                             </AlertDialogAction>

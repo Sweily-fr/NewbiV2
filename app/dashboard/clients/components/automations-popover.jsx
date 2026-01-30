@@ -18,6 +18,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/src/components/ui/popover';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/src/components/ui/tabs';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,7 +40,6 @@ import {
   Clock,
   ArrowRight,
   Mail,
-  Settings2,
 } from 'lucide-react';
 import {
   useClientAutomations,
@@ -50,8 +50,13 @@ import {
 } from '@/src/hooks/useClientAutomations';
 import { useClientLists } from '@/src/hooks/useClientLists';
 import { useWorkspace } from '@/src/hooks/useWorkspace';
-import { useCrmEmailAutomations } from '@/src/hooks/useCrmEmailAutomations';
-import AutomationsModal from './automations-modal';
+import {
+  useCrmEmailAutomations,
+  useCreateCrmEmailAutomation,
+  useDeleteCrmEmailAutomation,
+  useToggleCrmEmailAutomation,
+} from '@/src/hooks/useCrmEmailAutomations';
+import { useClientCustomFields } from '@/src/hooks/useClientCustomFields';
 
 const TRIGGER_TYPES = [
   {
@@ -94,6 +99,12 @@ const ACTION_TYPES = [
     value: 'REMOVE_FROM_LIST',
     label: 'Retirer de',
   },
+];
+
+const EMAIL_TIMING_TYPES = [
+  { value: 'ON_DATE', label: 'Le jour même' },
+  { value: 'BEFORE_DATE', label: 'Avant' },
+  { value: 'AFTER_DATE', label: 'Après' },
 ];
 
 function AutomationRow({ automation, lists, onUpdate, onDelete, onToggle }) {
@@ -311,20 +322,227 @@ function NewAutomationRow({ lists, onCreate, onCancel, isCreating }) {
   );
 }
 
+function EmailAutomationRow({ automation, onDelete, onToggle }) {
+  const [isActive, setIsActive] = useState(automation.isActive);
+
+  const handleToggle = () => {
+    const newIsActive = !isActive;
+    setIsActive(newIsActive);
+    onToggle(automation.id);
+  };
+
+  const getTimingLabel = () => {
+    const timingType = automation.timing?.type;
+    const timing = EMAIL_TIMING_TYPES.find(t => t.value === timingType);
+    if (timingType === 'ON_DATE') {
+      return timing?.label || '';
+    }
+    return `${timing?.label || ''} ${automation.timing?.daysOffset || 0}j`;
+  };
+
+  return (
+    <div className="flex items-center gap-2 py-2">
+      <Mail className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium truncate">{automation.name}</p>
+        <p className="text-xs text-muted-foreground truncate">
+          {automation.customField?.name} - {getTimingLabel()} à {automation.timing?.sendHour || 9}h
+        </p>
+      </div>
+
+      <Switch
+        checked={isActive}
+        onCheckedChange={handleToggle}
+        className="data-[state=checked]:bg-[#5b50ff] flex-shrink-0"
+      />
+
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={(e) => {
+          e.stopPropagation();
+          onDelete(automation);
+        }}
+        className="h-8 w-8 text-muted-foreground hover:text-destructive flex-shrink-0"
+      >
+        <Trash2 className="h-4 w-4" />
+      </Button>
+    </div>
+  );
+}
+
+function NewEmailAutomationRow({ dateFields, onCreate, onCancel, isCreating }) {
+  const [formData, setFormData] = useState({
+    name: '',
+    triggerFieldId: '',
+    timing: 'ON_DATE',
+    daysOffset: 1,
+    sendHour: 9,
+    subject: '',
+    body: '',
+  });
+
+  const selectedField = dateFields.find(f => f.id === formData.triggerFieldId);
+
+  const generateName = () => {
+    if (!selectedField) return 'Nouvelle automatisation email';
+    const timing = EMAIL_TIMING_TYPES.find(t => t.value === formData.timing);
+    if (formData.timing === 'ON_DATE') {
+      return `Email - ${selectedField.name}`;
+    }
+    return `Email - ${timing?.label} ${formData.daysOffset}j ${selectedField.name}`;
+  };
+
+  const handleCreate = () => {
+    if (!formData.triggerFieldId) {
+      toast.error('Veuillez sélectionner un champ date');
+      return;
+    }
+    if (!formData.subject.trim()) {
+      toast.error('Veuillez saisir un sujet');
+      return;
+    }
+    if (!formData.body.trim()) {
+      toast.error('Veuillez saisir un contenu');
+      return;
+    }
+    // Structure conforme au schéma GraphQL
+    onCreate({
+      name: formData.name || generateName(),
+      customFieldId: formData.triggerFieldId,
+      timing: {
+        type: formData.timing,
+        daysOffset: formData.timing === 'ON_DATE' ? 0 : formData.daysOffset,
+        sendHour: formData.sendHour,
+      },
+      email: {
+        subject: formData.subject,
+        body: formData.body,
+      },
+      isActive: true,
+    });
+  };
+
+  return (
+    <div className="space-y-3 py-2 border-t">
+      <div className="flex items-center gap-2">
+        <Mail className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+        <span className="text-sm font-medium">Nouvelle automatisation email</span>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        <Select
+          value={formData.triggerFieldId}
+          onValueChange={(value) => setFormData({ ...formData, triggerFieldId: value })}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Champ date..." />
+          </SelectTrigger>
+          <SelectContent className="z-[9999]">
+            {dateFields.map((field) => (
+              <SelectItem key={field.id} value={field.id}>
+                {field.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <div className="flex gap-2">
+          <Select
+            value={formData.timing}
+            onValueChange={(value) => setFormData({ ...formData, timing: value })}
+          >
+            <SelectTrigger className="flex-1">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="z-[9999]">
+              {EMAIL_TIMING_TYPES.map((t) => (
+                <SelectItem key={t.value} value={t.value}>
+                  {t.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {formData.timing !== 'ON_DATE' && (
+            <Input
+              type="number"
+              min="1"
+              max="365"
+              value={formData.daysOffset}
+              onChange={(e) => setFormData({ ...formData, daysOffset: parseInt(e.target.value) || 1 })}
+              className="w-16"
+              placeholder="Jours"
+            />
+          )}
+
+          <Select
+            value={formData.sendHour.toString()}
+            onValueChange={(value) => setFormData({ ...formData, sendHour: parseInt(value) })}
+          >
+            <SelectTrigger className="w-20">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="z-[9999] max-h-48">
+              {Array.from({ length: 24 }, (_, i) => (
+                <SelectItem key={i} value={i.toString()}>
+                  {i}h
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <Input
+        placeholder="Sujet de l'email..."
+        value={formData.subject}
+        onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+      />
+
+      <textarea
+        placeholder="Contenu de l'email... (Variables: {clientName}, {clientEmail}, {customFieldValue})"
+        value={formData.body}
+        onChange={(e) => setFormData({ ...formData, body: e.target.value })}
+        className="w-full min-h-[80px] px-3 py-2 text-sm rounded-md border border-input bg-background resize-none"
+      />
+
+      <div className="flex justify-end gap-2">
+        <Button variant="ghost" size="sm" onClick={onCancel}>
+          Annuler
+        </Button>
+        <Button size="sm" onClick={handleCreate} disabled={isCreating}>
+          {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          Créer
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export default function AutomationsPopover({ trigger }) {
   const { workspaceId } = useWorkspace();
   const { automations, loading: automationsLoading, refetch } = useClientAutomations(workspaceId);
   const { lists, loading: listsLoading } = useClientLists(workspaceId);
-  const { automations: emailAutomations } = useCrmEmailAutomations(workspaceId);
+  const { automations: emailAutomations, refetch: refetchEmailAutomations } = useCrmEmailAutomations(workspaceId);
+  const { fields: customFields } = useClientCustomFields(workspaceId);
   const { createAutomation } = useCreateClientAutomation();
   const { updateAutomation } = useUpdateClientAutomation();
   const { deleteAutomation } = useDeleteClientAutomation();
   const { toggleAutomation } = useToggleClientAutomation();
+  const { createAutomation: createEmailAutomation, loading: creatingEmail } = useCreateCrmEmailAutomation();
+  const { deleteAutomation: deleteEmailAutomation } = useDeleteCrmEmailAutomation();
+  const { toggleAutomation: toggleEmailAutomation } = useToggleCrmEmailAutomation();
 
   const [isOpen, setIsOpen] = useState(false);
   const [showNewForm, setShowNewForm] = useState(false);
+  const [showNewEmailForm, setShowNewEmailForm] = useState(false);
   const [deletingAutomation, setDeletingAutomation] = useState(null);
-  const [showFullModal, setShowFullModal] = useState(false);
+  const [deletingEmailAutomation, setDeletingEmailAutomation] = useState(null);
+
+  // Filtrer les champs de type DATE pour les automatisations email
+  const dateFields = customFields.filter(f => f.fieldType === 'DATE');
 
   const handleCreate = async (input) => {
     setShowNewForm(false);
@@ -360,6 +578,36 @@ export default function AutomationsPopover({ trigger }) {
     });
   };
 
+  // Handlers pour les automatisations email
+  const handleCreateEmail = async (input) => {
+    setShowNewEmailForm(false);
+    try {
+      await createEmailAutomation(workspaceId, input);
+      refetchEmailAutomations();
+      toast.success('Automatisation email créée');
+    } catch (error) {
+      toast.error('Erreur lors de la création');
+    }
+  };
+
+  const handleDeleteEmail = async () => {
+    setDeletingEmailAutomation(null);
+    try {
+      await deleteEmailAutomation(workspaceId, deletingEmailAutomation.id);
+      refetchEmailAutomations();
+      toast.success('Automatisation email supprimée');
+    } catch (error) {
+      toast.error('Erreur lors de la suppression');
+    }
+  };
+
+  const handleToggleEmail = (id) => {
+    toggleEmailAutomation(workspaceId, id).then(() => refetchEmailAutomations()).catch(() => {
+      toast.error('Erreur lors du basculement');
+      refetchEmailAutomations();
+    });
+  };
+
   const isLoading = automationsLoading && automations.length === 0;
   const activeListCount = automations.filter(a => a.isActive).length;
   const activeEmailCount = emailAutomations.filter(a => a.isActive).length;
@@ -367,8 +615,8 @@ export default function AutomationsPopover({ trigger }) {
 
   return (
     <>
-      <Popover open={isOpen || !!deletingAutomation} onOpenChange={(open) => {
-        if (!deletingAutomation) {
+      <Popover open={isOpen || !!deletingAutomation || !!deletingEmailAutomation} onOpenChange={(open) => {
+        if (!deletingAutomation && !deletingEmailAutomation) {
           setIsOpen(open);
         }
       }}>
@@ -390,110 +638,152 @@ export default function AutomationsPopover({ trigger }) {
           )}
         </PopoverTrigger>
         <PopoverContent align="end" className="w-[650px] p-0">
-          <div className="p-4 border-b">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
+          <Tabs defaultValue="lists" className="w-full">
+            {/* Header avec tabs */}
+            <div className="p-4 border-b">
+              <div className="flex items-center gap-2 mb-3">
                 <Zap className="w-4 h-4" style={{ color: '#5b50ff' }} />
                 <h4 className="font-medium">Automatisations</h4>
               </div>
-              <div className="flex items-center gap-2">
-                {activeListCount > 0 && (
-                  <Badge variant="secondary" className="text-xs">
-                    {activeListCount} liste{activeListCount > 1 ? 's' : ''}
-                  </Badge>
-                )}
-                {activeEmailCount > 0 && (
-                  <Badge variant="secondary" className="text-xs">
-                    {activeEmailCount} email{activeEmailCount > 1 ? 's' : ''}
-                  </Badge>
-                )}
-              </div>
+              <TabsList className="w-full">
+                <TabsTrigger value="lists" className="flex-1 gap-2">
+                  <ArrowRight className="w-3 h-3" />
+                  Listes
+                  {activeListCount > 0 && (
+                    <Badge variant="secondary" className="text-xs ml-1">
+                      {activeListCount}
+                    </Badge>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="emails" className="flex-1 gap-2">
+                  <Mail className="w-3 h-3" />
+                  Emails
+                  {activeEmailCount > 0 && (
+                    <Badge variant="secondary" className="text-xs ml-1">
+                      {activeEmailCount}
+                    </Badge>
+                  )}
+                </TabsTrigger>
+              </TabsList>
             </div>
-            <p className="text-sm text-muted-foreground mt-1">
-              Déplacez automatiquement vos contacts entre les listes
-            </p>
-          </div>
 
-          <div className="p-4 space-y-1 max-h-[350px] overflow-y-auto">
-            {isLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="w-6 h-6 animate-spin" />
-              </div>
-            ) : automations.length === 0 && !showNewForm ? (
-              <p className="text-sm text-muted-foreground text-center py-6">
-                Aucune automatisation. Cliquez sur "Ajouter" pour commencer.
+            {/* Onglet Automatisations Listes */}
+            <TabsContent value="lists" className="m-0">
+              <p className="text-xs text-muted-foreground px-4 pt-3">
+                Déplacez automatiquement vos contacts entre les listes
               </p>
-            ) : (
-              <>
-                {automations.map((automation) => (
-                  <AutomationRow
-                    key={automation.id}
-                    automation={automation}
+              <div className="p-4 space-y-1 max-h-[300px] overflow-y-auto">
+                {isLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="w-6 h-6 animate-spin" />
+                  </div>
+                ) : automations.length === 0 && !showNewForm ? (
+                  <p className="text-sm text-muted-foreground text-center py-6">
+                    Aucune automatisation. Cliquez sur "Ajouter" pour commencer.
+                  </p>
+                ) : (
+                  <>
+                    {automations.map((automation) => (
+                      <AutomationRow
+                        key={automation.id}
+                        automation={automation}
+                        lists={lists}
+                        onUpdate={handleUpdate}
+                        onDelete={setDeletingAutomation}
+                        onToggle={handleToggle}
+                      />
+                    ))}
+                  </>
+                )}
+
+                {showNewForm && (
+                  <NewAutomationRow
                     lists={lists}
-                    onUpdate={handleUpdate}
-                    onDelete={setDeletingAutomation}
-                    onToggle={handleToggle}
+                    onCreate={handleCreate}
+                    onCancel={() => setShowNewForm(false)}
                   />
-                ))}
-              </>
-            )}
-
-            {showNewForm && (
-              <NewAutomationRow
-                lists={lists}
-                onCreate={handleCreate}
-                onCancel={() => setShowNewForm(false)}
-              />
-            )}
-          </div>
-
-          <div className="p-4 border-t">
-            {!showNewForm && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowNewForm(true)}
-                className="w-full justify-start text-muted-foreground"
-                disabled={lists.length === 0}
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Ajouter une automatisation
-              </Button>
-            )}
-
-            {lists.length === 0 && (
-              <p className="text-xs text-amber-600 mt-2">
-                Créez d'abord des listes pour configurer des automatisations.
-              </p>
-            )}
-
-            <div className="border-t mt-3 pt-3">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setIsOpen(false);
-                  setShowFullModal(true);
-                }}
-                className="w-full justify-center gap-2"
-              >
-                <Mail className="h-4 w-4" />
-                Automatisations Email
-                {activeEmailCount > 0 && (
-                  <Badge variant="secondary" className="text-xs ml-1">
-                    {activeEmailCount}
-                  </Badge>
                 )}
-              </Button>
-            </div>
-          </div>
+              </div>
+
+              <div className="p-4 border-t">
+                {!showNewForm && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowNewForm(true)}
+                    className="w-full justify-start text-muted-foreground"
+                    disabled={lists.length === 0}
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Ajouter une automatisation
+                  </Button>
+                )}
+
+                {lists.length === 0 && (
+                  <p className="text-xs text-amber-600 mt-2">
+                    Créez d'abord des listes pour configurer des automatisations.
+                  </p>
+                )}
+              </div>
+            </TabsContent>
+
+            {/* Onglet Automatisations Email */}
+            <TabsContent value="emails" className="m-0">
+              <p className="text-xs text-muted-foreground px-4 pt-3">
+                Envoyez des emails automatiques basés sur des dates
+              </p>
+              <div className="p-4 space-y-1 max-h-[300px] overflow-y-auto">
+                {emailAutomations.length === 0 && !showNewEmailForm ? (
+                  <p className="text-sm text-muted-foreground text-center py-6">
+                    Aucune automatisation email. Cliquez sur "Ajouter" pour commencer.
+                  </p>
+                ) : (
+                  <>
+                    {emailAutomations.map((automation) => (
+                      <EmailAutomationRow
+                        key={automation.id}
+                        automation={automation}
+                        onDelete={setDeletingEmailAutomation}
+                        onToggle={handleToggleEmail}
+                      />
+                    ))}
+                  </>
+                )}
+
+                {showNewEmailForm && (
+                  <NewEmailAutomationRow
+                    dateFields={dateFields}
+                    onCreate={handleCreateEmail}
+                    onCancel={() => setShowNewEmailForm(false)}
+                    isCreating={creatingEmail}
+                  />
+                )}
+              </div>
+
+              <div className="p-4 border-t">
+                {!showNewEmailForm && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowNewEmailForm(true)}
+                    className="w-full justify-start text-muted-foreground"
+                    disabled={dateFields.length === 0}
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Ajouter une automatisation email
+                  </Button>
+                )}
+
+                {dateFields.length === 0 && (
+                  <p className="text-xs text-amber-600 mt-2">
+                    Créez d'abord un champ personnalisé de type "Date" pour configurer des automatisations email.
+                  </p>
+                )}
+              </div>
+            </TabsContent>
+          </Tabs>
         </PopoverContent>
       </Popover>
-
-      <AutomationsModal 
-        open={showFullModal} 
-        onOpenChange={setShowFullModal}
-      />
 
       <AlertDialog open={!!deletingAutomation} onOpenChange={() => setDeletingAutomation(null)}>
         <AlertDialogContent className="z-[9999]">
@@ -508,6 +798,28 @@ export default function AutomationsPopover({ trigger }) {
             <AlertDialogCancel>Annuler</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
+              className="bg-destructive text-white hover:bg-destructive/90"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!deletingEmailAutomation} onOpenChange={() => setDeletingEmailAutomation(null)}>
+        <AlertDialogContent className="z-[9999]">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer l'automatisation email</AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir supprimer cette automatisation email ?
+              Cette action est irréversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteEmail}
               className="bg-destructive text-white hover:bg-destructive/90"
             >
               <Trash2 className="w-4 h-4 mr-2" />

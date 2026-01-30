@@ -85,182 +85,157 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
   // Récupérer les organisations
   const { data: organizationsList } = authClient.useListOrganizations();
 
+  // Fonction utilitaire pour formater et dédupliquer les membres
+  const formatAndDeduplicateMembers = (data) => {
+    const emailMap = new Map();
+
+    data.forEach((item) => {
+      let formattedItem;
+
+      if (item.type === "member") {
+        formattedItem = {
+          id: item.id,
+          email: item.user?.email || item.email,
+          name: item.user?.name || item.name || item.user?.email?.split("@")[0],
+          avatar: item.avatar || item.image || item.user?.avatar || item.user?.image,
+          role: item.role,
+          status: "active",
+          type: "member",
+          priority: 1,
+          createdAt: item.createdAt || new Date(),
+        };
+      } else {
+        if (item.status === "canceled") {
+          return;
+        }
+
+        formattedItem = {
+          id: item.id,
+          email: item.email,
+          name: item.email?.split("@")[0],
+          avatar: null,
+          role: item.role,
+          status: item.status || "pending",
+          type: "invitation",
+          priority: item.status === "accepted" ? 2 : 3,
+          createdAt: item.createdAt || new Date(),
+        };
+      }
+
+      const email = formattedItem.email;
+      if (email) {
+        const existing = emailMap.get(email);
+
+        if (
+          !existing ||
+          formattedItem.priority < existing.priority ||
+          (formattedItem.priority === existing.priority &&
+            new Date(formattedItem.createdAt) > new Date(existing.createdAt))
+        ) {
+          emailMap.set(email, formattedItem);
+        }
+      }
+    });
+
+    const deduplicatedMembers = Array.from(emailMap.values());
+    // Exclure les owners
+    return deduplicatedMembers.filter((m) => m.role !== "owner");
+  };
+
   // Charger les organisations et compter les membres
   useEffect(() => {
     if (organizationsList) {
       setOrganizations(organizationsList);
 
-      // Récupérer les membres pour chaque organisation (avec avatars)
+      // ✅ FIX: Utiliser Promise.all pour des appels parallèles au lieu de séquentiels
       const fetchMemberData = async () => {
-        const data = {};
-        for (const org of organizationsList) {
-          try {
-            const response = await fetch(
-              `/api/organizations/${org.id}/members`
-            );
-            const result = await response.json();
+        setLoading(true);
 
-            if (result.success) {
-              // Même logique que dans le modal : filtrer et dédupliquer
-              const emailMap = new Map();
+        try {
+          // Lancer tous les appels API en parallèle
+          const fetchPromises = organizationsList.map(async (org) => {
+            try {
+              const response = await fetch(`/api/organizations/${org.id}/members`);
+              const result = await response.json();
 
-              result.data.forEach((item) => {
-                let formattedItem;
-
-                if (item.type === "member") {
-                  formattedItem = {
-                    email: item.user?.email || item.email,
-                    name: item.user?.name || item.name,
-                    avatar: item.avatar || item.image || item.user?.avatar || item.user?.image,
-                    role: item.role,
-                    status: "active",
-                    type: "member",
-                    priority: 1,
-                    createdAt: item.createdAt || new Date(),
-                  };
-                } else {
-                  if (item.status === "canceled") {
-                    return;
-                  }
-
-                  formattedItem = {
-                    email: item.email,
-                    name: item.email?.split("@")[0],
-                    avatar: null,
-                    role: item.role,
-                    status: item.status || "pending",
-                    type: "invitation",
-                    priority: item.status === "accepted" ? 2 : 3,
-                    createdAt: item.createdAt || new Date(),
-                  };
-                }
-
-                const email = formattedItem.email;
-                if (email) {
-                  const existing = emailMap.get(email);
-
-                  if (
-                    !existing ||
-                    formattedItem.priority < existing.priority ||
-                    (formattedItem.priority === existing.priority &&
-                      new Date(formattedItem.createdAt) >
-                        new Date(existing.createdAt))
-                  ) {
-                    emailMap.set(email, formattedItem);
-                  }
-                }
-              });
-
-              const deduplicatedMembers = Array.from(emailMap.values());
-              // Exclure les owners
-              const membersWithoutOwner = deduplicatedMembers.filter(
-                (m) => m.role !== "owner"
-              );
-              data[org.id] = membersWithoutOwner;
+              if (result.success) {
+                return { orgId: org.id, members: formatAndDeduplicateMembers(result.data) };
+              }
+              return { orgId: org.id, members: [] };
+            } catch (error) {
+              console.error(`Erreur pour l'org ${org.id}:`, error);
+              return { orgId: org.id, members: [] };
             }
-          } catch (error) {
-            console.error(`Erreur pour l'org ${org.id}:`, error);
-            data[org.id] = [];
-          }
+          });
+
+          // Attendre que tous les appels soient terminés
+          const results = await Promise.all(fetchPromises);
+
+          // Construire l'objet de données
+          const data = {};
+          results.forEach(({ orgId, members }) => {
+            data[orgId] = members;
+          });
+
+          setOrgMemberData(data);
+        } catch (error) {
+          console.error("Erreur lors du chargement des membres:", error);
+        } finally {
+          setLoading(false);
         }
-        setOrgMemberData(data);
       };
 
       fetchMemberData();
-      setLoading(false);
     }
   }, [organizationsList, refreshTrigger]);
 
   // Récupérer les membres d'une organisation spécifique
+  // ✅ FIX: Réutiliser les données déjà chargées au lieu de faire un nouvel appel API
   useEffect(() => {
     if (!selectedOrg) {
       setMembers([]);
       return;
     }
 
-    const fetchMembers = async () => {
+    // ✅ Utiliser les données du cache si disponibles
+    const cachedMembers = orgMemberData[selectedOrg.id];
+    if (cachedMembers) {
+      setMembers(cachedMembers);
+    }
+  }, [selectedOrg, orgMemberData]);
+
+  // ✅ Rafraîchir les données de l'organisation sélectionnée quand refreshTrigger change
+  useEffect(() => {
+    if (!selectedOrg || refreshTrigger === 0) return;
+
+    const refreshSelectedOrgMembers = async () => {
       try {
         setMembersLoading(true);
 
-        // Appel API direct pour éviter le bug de Better Auth
         const response = await fetch(
           `/api/organizations/${selectedOrg.id}/members`
         );
         const result = await response.json();
 
         if (result.success) {
-          // Format and deduplicate data
-          const emailMap = new Map();
+          const formattedMembers = formatAndDeduplicateMembers(result.data);
+          setMembers(formattedMembers);
 
-          result.data.forEach((item) => {
-            let formattedItem;
-
-            if (item.type === "member") {
-              formattedItem = {
-                id: item.id,
-                name:
-                  item.user?.name ||
-                  item.name ||
-                  item.user?.email?.split("@")[0],
-                email: item.user?.email || item.email,
-                avatar: item.avatar || item.image || item.user?.avatar || item.user?.image || null,
-                role: item.role,
-                status: "active",
-                type: "member",
-                priority: 1,
-                createdAt: item.createdAt || new Date(),
-              };
-            } else {
-              if (item.status === "canceled") {
-                return;
-              }
-
-              formattedItem = {
-                id: item.id,
-                name: item.email?.split("@")[0],
-                email: item.email,
-                role: item.role,
-                status: item.status || "pending",
-                type: "invitation",
-                priority: item.status === "accepted" ? 2 : 3,
-                createdAt: item.createdAt || new Date(),
-              };
-            }
-
-            const email = formattedItem.email;
-            if (email) {
-              const existing = emailMap.get(email);
-
-              if (
-                !existing ||
-                formattedItem.priority < existing.priority ||
-                (formattedItem.priority === existing.priority &&
-                  new Date(formattedItem.createdAt) >
-                    new Date(existing.createdAt))
-              ) {
-                emailMap.set(email, formattedItem);
-              }
-            }
-          });
-
-          const deduplicatedMembers = Array.from(emailMap.values());
-          const membersWithoutOwner = deduplicatedMembers.filter(
-            (m) => m.role !== "owner"
-          );
-
-          setMembers(membersWithoutOwner);
-        } else {
-          console.error("Error fetching members:", result.error);
+          // ✅ Mettre à jour le cache
+          setOrgMemberData((prev) => ({
+            ...prev,
+            [selectedOrg.id]: formattedMembers,
+          }));
         }
       } catch (error) {
-        console.error("Error fetching members:", error);
+        console.error("Error refreshing members:", error);
       } finally {
         setMembersLoading(false);
       }
     };
 
-    fetchMembers();
-  }, [selectedOrg, refreshTrigger]);
+    refreshSelectedOrgMembers();
+  }, [refreshTrigger]);
 
   // Filter members based on search term (afficher tous les statuts : active, pending, etc.)
   const filteredMembers = members.filter(
@@ -314,7 +289,7 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
         return "bg-blue-100 border-blue-300 text-blue-800 font-normal";
       case "member":
         return "bg-gray-100 border-gray-300 text-gray-800 font-normal";
-      case "guest":
+      case "viewer":
         return "bg-orange-100 border-orange-300 text-orange-800 font-normal";
       case "accountant":
         return "bg-purple-100 border-purple-300 text-purple-800 font-normal";
@@ -331,8 +306,8 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
         return "Administrateur";
       case "member":
         return "Membre";
-      case "guest":
-        return "Invité";
+      case "viewer":
+        return "Lecteur";
       case "accountant":
         return "Comptable";
       case "owner":
@@ -687,13 +662,13 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
                                   </span>
                                 </div>
                               </SelectItem>
-                              <SelectItem value="guest">
+                              <SelectItem value="viewer">
                                 <div className="flex flex-col">
                                   <span className="font-normal text-sm">
-                                    Invité
+                                    Lecteur
                                   </span>
                                   <span className="text-xs text-muted-foreground">
-                                    Invité de l'espace d'équipe
+                                    Consultation uniquement
                                   </span>
                                 </div>
                               </SelectItem>

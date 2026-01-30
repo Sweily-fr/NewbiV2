@@ -63,13 +63,56 @@ export const auth = betterAuth({
         after: async (user) => {
           // ✅ POINT UNIQUE DE CRÉATION D'ORGANISATION
           // S'exécute pour inscription normale ET OAuth
+          // ⚠️ NE PAS créer d'organisation si l'utilisateur a une invitation pending
           try {
             const { mongoDb } = await import("./mongodb.js");
             const { ObjectId } = await import("mongodb");
 
             console.log(
-              `🔄 [USER CREATE] Création organisation pour ${user.email}...`
+              `🔄 [USER CREATE] Vérification pour ${user.email}...`
             );
+
+            // ✅ ÉTAPE 1: Vérifier si l'utilisateur a une invitation pending
+            // Si oui, il rejoindra l'organisation de l'inviteur, pas besoin de créer la sienne
+            const pendingInvitation = await mongoDb
+              .collection("invitation")
+              .findOne({
+                email: user.email.toLowerCase(),
+                status: "pending",
+                // Vérifier que l'invitation n'est pas expirée
+                $or: [
+                  { expiresAt: { $gt: new Date() } },
+                  { expiresAt: { $exists: false } },
+                ],
+              });
+
+            if (pendingInvitation) {
+              console.log(
+                `📨 [USER CREATE] Invitation pending trouvée pour ${user.email} vers org ${pendingInvitation.organizationId}`
+              );
+              console.log(
+                `⏭️ [USER CREATE] Skip création d'organisation - l'utilisateur rejoindra l'org de l'inviteur`
+              );
+
+              // Marquer l'utilisateur comme invité (pas de création d'org)
+              await mongoDb.collection("user").updateOne(
+                { _id: new ObjectId(user.id) },
+                {
+                  $set: {
+                    hasSeenOnboarding: false,
+                    // ✅ Flag pour indiquer que c'est un utilisateur invité
+                    isInvitedUser: true,
+                    pendingInvitationId: pendingInvitation._id.toString(),
+                  },
+                }
+              );
+
+              console.log(
+                `✅ [USER CREATE] Utilisateur ${user.email} marqué comme invité`
+              );
+
+              return user;
+            }
 
             // Vérifier si l'utilisateur a déjà une organisation (cas OAuth avec retry)
             const existingMember = await mongoDb
@@ -82,6 +125,10 @@ export const auth = betterAuth({
               );
               return user;
             }
+
+            console.log(
+              `🏢 [USER CREATE] Pas d'invitation pending, création d'organisation pour ${user.email}...`
+            );
 
             // Générer le nom et le slug de l'organisation
             const organizationName =
@@ -139,6 +186,7 @@ export const auth = betterAuth({
               {
                 $set: {
                   hasSeenOnboarding: false,
+                  isInvitedUser: false, // Pas un utilisateur invité
                 },
               }
             );
@@ -423,6 +471,17 @@ export const auth = betterAuth({
         required: false,
       },
       referralCode: {
+        type: "string",
+        required: false,
+        defaultValue: "",
+      },
+      // ✅ Champs pour les utilisateurs invités (pas d'organisation propre)
+      isInvitedUser: {
+        type: "boolean",
+        required: false,
+        defaultValue: false,
+      },
+      pendingInvitationId: {
         type: "string",
         required: false,
         defaultValue: "",

@@ -41,11 +41,71 @@ const RegisterFormContent = () => {
     // Selon la doc Better Auth, l'erreur est retournée directement dans { data, error }
     const { data, error } = await signUp.email(formData, {
       onSuccess: async (ctx) => {
-        // toast.success("Compte créé avec succès ! Configurons votre espace.");
-
-        // Si c'est une inscription via invitation, stocker l'invitationId pour l'accepter après l'onboarding
+        // ✅ Si c'est une inscription via invitation, accepter l'invitation immédiatement
+        // L'utilisateur invité n'a PAS d'organisation propre, il rejoint celle de l'inviteur
         if (invitationId && invitationEmail) {
-          // Stocker dans localStorage pour l'utiliser après l'onboarding
+          console.log(
+            `📨 [SIGNUP] Inscription via invitation détectée: ${invitationId}`,
+          );
+
+          try {
+            // Accepter l'invitation immédiatement
+            const response = await fetch(`/api/invitations/${invitationId}`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ action: "accept" }),
+            });
+
+            if (response.ok) {
+              const result = await response.json();
+              console.log(`✅ [SIGNUP] Invitation acceptée:`, result);
+
+              // ✅ CRITIQUE: Stocker l'organizationId dans localStorage pour Apollo Client
+              // Le backend retourne l'organizationId après acceptation
+              if (result.organizationId) {
+                localStorage.setItem("active_organization_id", result.organizationId);
+                console.log(`📦 [SIGNUP] Organization ID stocké: ${result.organizationId}`);
+              }
+
+              // ✅ Rafraîchir la session Better Auth pour obtenir le nouveau activeOrganizationId
+              const { authClient } = await import("@/src/lib/auth-client");
+
+              // Définir l'organisation active côté client
+              if (result.organizationId) {
+                await authClient.organization.setActive({
+                  organizationId: result.organizationId,
+                });
+                console.log(`🔄 [SIGNUP] Organisation active définie côté client`);
+              }
+
+              toast.success(
+                "Bienvenue ! Vous avez rejoint l'organisation avec succès.",
+              );
+
+              // ✅ Marquer l'onboarding comme vu pour les utilisateurs invités
+              // Ils n'ont pas besoin de passer par l'onboarding complet
+              await authClient.updateUser({
+                hasSeenOnboarding: true,
+              });
+
+              // Rediriger directement vers le dashboard
+              router.push("/dashboard?welcome=invited");
+              return;
+            } else {
+              const errorData = await response.json();
+              console.error(`❌ [SIGNUP] Erreur acceptation invitation:`, errorData);
+
+              // Si l'invitation a échoué, rediriger quand même vers l'onboarding
+              toast.error(
+                errorData.error || "Erreur lors de l'acceptation de l'invitation",
+              );
+            }
+          } catch (invError) {
+            console.error(`❌ [SIGNUP] Exception acceptation invitation:`, invError);
+            toast.error("Erreur lors de l'acceptation de l'invitation");
+          }
+
+          // En cas d'erreur, stocker l'invitation pour réessayer plus tard
           localStorage.setItem(
             "pendingInvitation",
             JSON.stringify({
@@ -54,17 +114,9 @@ const RegisterFormContent = () => {
               timestamp: Date.now(),
             }),
           );
-
-          console.log(
-            `📋 Invitation ${invitationId} stockée pour acceptation après onboarding`,
-          );
-
-          toast.info(
-            "Configurez votre espace puis vous serez automatiquement connecté.",
-          );
         }
 
-        // Redirection vers l'onboarding après inscription
+        // Redirection vers l'onboarding pour les utilisateurs normaux (non invités)
         router.push("/onboarding?step=1");
       },
       onError: (ctx) => {

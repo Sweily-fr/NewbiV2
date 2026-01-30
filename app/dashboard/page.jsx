@@ -56,7 +56,6 @@ import { useDashboardData } from "@/src/hooks/useDashboardData";
 import { useState, useEffect, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useInvoices } from "@/src/graphql/invoiceQueries";
-import { PricingModal } from "@/src/components/pricing-modal";
 import { ProSubscriptionOverlay } from "@/src/components/pro-subscription-overlay";
 import { BankSyncOverlay } from "@/src/components/bank-sync-overlay";
 import {
@@ -427,7 +426,6 @@ function DashboardContent() {
 
 function DashboardWithSearchParams() {
   const searchParams = useSearchParams();
-  const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
   const [showProAnimation, setShowProAnimation] = useState(false);
 
   // Détecter le succès de paiement Stripe et afficher l'animation Pro
@@ -445,35 +443,14 @@ function DashboardWithSearchParams() {
     }
   }, [searchParams]);
 
-  // Ouvrir le modal de pricing si les paramètres pricing=true ou access=restricted sont présents
-  // MAIS seulement si l'animation Pro n'est pas en cours
-  useEffect(() => {
-    if (showProAnimation) return; // Ne pas ouvrir le modal si l'animation est en cours
-
-    const showPricing = searchParams.get("pricing") === "true";
-    const accessRestricted = searchParams.get("access") === "restricted";
-
-    if (showPricing || accessRestricted) {
-      setIsPricingModalOpen(true);
-      // Nettoyer l'URL des paramètres
-      const cleanUrl = window.location.pathname;
-      window.history.replaceState({}, "", cleanUrl);
-    }
-  }, [searchParams, showProAnimation]);
-
   const handleProAnimationComplete = () => {
     setShowProAnimation(false);
     console.log("✅ Animation Pro terminée, dashboard accessible");
   };
 
-  // Le dashboard principal est accessible sans abonnement
   return (
     <>
       <DashboardContent />
-      <PricingModal
-        isOpen={isPricingModalOpen}
-        onClose={() => setIsPricingModalOpen(false)}
-      />
       <ProSubscriptionOverlay
         isVisible={showProAnimation}
         onComplete={handleProAnimationComplete}
