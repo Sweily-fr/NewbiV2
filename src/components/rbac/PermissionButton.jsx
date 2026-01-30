@@ -38,15 +38,23 @@ export function PermissionButton({
   tooltipNoAccess = "Vous n'avez pas la permission d'effectuer cette action",
   ...buttonProps
 }) {
-  const { hasPermission, hasRole } = usePermissions();
+  const { hasPermission, hasRole, isLoading: isPermissionLoading, isReady } = usePermissions();
   const [hasAccess, setHasAccess] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
     let isMounted = true;
-    
+
     const checkPermission = async () => {
       if (!isMounted) return;
+
+      // ✅ FIX: Attendre que les permissions soient prêtes avant de vérifier
+      // Cela évite les faux "permission denied" pendant le chargement
+      if (isPermissionLoading || !isReady) {
+        setIsChecking(true);
+        return; // Ne pas encore vérifier, attendre que isReady soit true
+      }
+
       setIsChecking(true);
 
       try {
@@ -81,12 +89,12 @@ export function PermissionButton({
     };
 
     checkPermission();
-    
+
     return () => {
       isMounted = false;
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [resource, action, JSON.stringify(roles)]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resource, action, JSON.stringify(roles), isPermissionLoading, isReady]);
 
   // Masquer le bouton si pas d'accès et hideIfNoAccess = true
   if (!isChecking && !hasAccess && hideIfNoAccess) {
@@ -140,12 +148,18 @@ export function PermissionMenuItem({
   className = "",
   ...props
 }) {
-  const { hasPermission, hasRole } = usePermissions();
+  const { hasPermission, hasRole, isLoading: isPermissionLoading, isReady } = usePermissions();
   const [hasAccess, setHasAccess] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
     const checkPermission = async () => {
+      // ✅ FIX: Attendre que les permissions soient prêtes
+      if (isPermissionLoading || !isReady) {
+        setIsChecking(true);
+        return;
+      }
+
       setIsChecking(true);
 
       try {
@@ -169,7 +183,7 @@ export function PermissionMenuItem({
     };
 
     checkPermission();
-  }, [resource, action, roles, hasPermission, hasRole]);
+  }, [resource, action, roles, hasPermission, hasRole, isPermissionLoading, isReady]);
 
   // Masquer l'item si pas d'accès et hideIfNoAccess = true
   if (!isChecking && !hasAccess && hideIfNoAccess) {

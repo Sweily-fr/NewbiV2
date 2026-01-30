@@ -258,12 +258,12 @@ export function OrganizationSwitcherHeader() {
             <span className="text-xs font-normal truncate max-w-[150px]">
               {currentOrganization.name}
             </span>
-            {/* Badge Free/Pro */}
+            {/* Badge Pro */}
             <Badge
               variant="outline"
               className="text-[8px] px-2.5 py-0 h-4 bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700"
             >
-              {isActive() ? "PRO" : "FREE"}
+              PRO
             </Badge>
             {/* Bouton chevron avec hover */}
             <button className="p-1 rounded-md hover:bg-accent transition-colors cursor-pointer outline-none">

@@ -8,7 +8,6 @@ import { SiteHeader } from "@/src/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/src/components/ui/sidebar";
 import { SearchCommand } from "@/src/components/search-command";
 import { SignatureProvider } from "@/src/hooks/use-signature-data";
-import { PricingModal } from "@/src/components/pricing-modal";
 import OnboardingModal from "@/src/components/onboarding-modal";
 import {
   DashboardLayoutProvider,
@@ -46,7 +45,6 @@ function DashboardContent({ children }) {
   const isSignaturePage = pathname?.startsWith(
     "/dashboard/outils/signatures-mail/new"
   );
-  const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
   const [isCommunitySidebarOpen, setIsCommunitySidebarOpen] = useState(false);
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);

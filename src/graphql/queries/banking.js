@@ -88,8 +88,11 @@ export const GET_TRANSACTIONS = gql`
       amount
       currency
       description
+      category
+      expenseCategory
       fromAccount
       toAccount
+      date
       processedAt
       failureReason
       fees {
@@ -107,6 +110,19 @@ export const GET_TRANSACTIONS = gql`
         uploadedAt
       }
       receiptRequired
+      # Champs de rapprochement bancaire
+      linkedInvoiceId
+      linkedInvoice {
+        id
+        number
+        status
+        clientName
+        totalTTC
+        issueDate
+        dueDate
+      }
+      reconciliationStatus
+      reconciliationDate
       createdAt
       updatedAt
     }
@@ -127,8 +143,11 @@ export const GET_TRANSACTION = gql`
       amount
       currency
       description
+      category
+      expenseCategory
       fromAccount
       toAccount
+      date
       processedAt
       failureReason
       fees {
@@ -146,6 +165,19 @@ export const GET_TRANSACTION = gql`
         uploadedAt
       }
       receiptRequired
+      # Champs de rapprochement bancaire
+      linkedInvoiceId
+      linkedInvoice {
+        id
+        number
+        status
+        clientName
+        totalTTC
+        issueDate
+        dueDate
+      }
+      reconciliationStatus
+      reconciliationDate
       createdAt
       updatedAt
     }
@@ -182,6 +214,8 @@ export const GET_TRANSACTION_HISTORY = gql`
       amount
       currency
       description
+      category
+      expenseCategory
       fromAccount
       toAccount
       processedAt
@@ -258,6 +292,26 @@ export const UPLOAD_TRANSACTION_RECEIPT = gql`
         }
         receiptRequired
       }
+    }
+  }
+`;
+
+/**
+ * Mettre à jour une transaction (catégorie, description, etc.)
+ */
+export const UPDATE_TRANSACTION = gql`
+  mutation UpdateTransaction($id: ID!, $input: UpdateTransactionInput!) {
+    updateTransaction(id: $id, input: $input) {
+      id
+      description
+      category
+      expenseCategory
+      amount
+      currency
+      processedAt
+      status
+      metadata
+      updatedAt
     }
   }
 `;

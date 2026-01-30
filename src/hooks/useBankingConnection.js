@@ -146,10 +146,15 @@ export function useBankingConnection(workspaceId) {
 
   /**
    * Déconnecte le compte bancaire
-   * @param {string} providerToDisconnect - Provider spécifique à déconnecter (optionnel)
+   * @param {Object} options - Options de déconnexion
+   * @param {string} options.provider - Provider spécifique à déconnecter (optionnel)
+   * @param {string} options.accountId - ID du compte spécifique à déconnecter (optionnel)
+   * @param {string} options.itemId - ID de l'item/connexion à déconnecter (optionnel)
    */
-  const disconnectBank = async (providerToDisconnect = null) => {
-    if (!workspaceId) return false;
+  const disconnectBank = async (options = {}) => {
+    if (!workspaceId) return { success: false };
+
+    const { provider, accountId, itemId } = options;
 
     try {
       setIsLoading(true);
@@ -163,15 +168,33 @@ export function useBankingConnection(workspaceId) {
           "x-workspace-id": workspaceId,
           ...(token && { Authorization: `Bearer ${token}` }),
         },
-        body: JSON.stringify({ provider: providerToDisconnect }),
+        body: JSON.stringify({
+          provider,
+          accountId,
+          itemId,
+        }),
       });
 
       if (response.ok) {
-        setIsConnected(false);
-        setAccountsCount(0);
-        setHasAccounts(false);
-        setProvider(null);
-        return true;
+        const data = await response.json();
+
+        // Si déconnexion complète (par provider ou tous), réinitialiser l'état
+        if (data.mode === "provider" || !accountId) {
+          setIsConnected(false);
+          setAccountsCount(0);
+          setHasAccounts(false);
+          setProvider(null);
+        } else {
+          // Sinon, rafraîchir le statut pour mettre à jour le compteur
+          await checkConnectionStatus();
+        }
+
+        return {
+          success: true,
+          disconnectedAccountIds: data.disconnectedAccountIds || [],
+          disconnectedItems: data.disconnectedItems || [],
+          mode: data.mode,
+        };
       } else {
         const errorData = await response.json();
         throw new Error(errorData.error || "Erreur de déconnexion");
@@ -179,7 +202,7 @@ export function useBankingConnection(workspaceId) {
     } catch (err) {
       setError(err.message);
       console.error("Erreur déconnexion bancaire:", err);
-      return false;
+      return { success: false, error: err.message };
     } finally {
       setIsLoading(false);
     }

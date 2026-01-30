@@ -514,7 +514,7 @@ export default function InvoiceSidebar({
     <>
       {/* Semi-transparent overlay */}
       <div
-        className={`fixed inset-0 bg-black/50 z-40 transition-opacity duration-300 ${
+        className={`fixed inset-0 z-40 bg-black/30 transition-opacity duration-300 ${
           isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
         }`}
         onClick={onClose}
@@ -522,11 +522,11 @@ export default function InvoiceSidebar({
 
       {/* PDF Preview Section */}
       <div
-        className={`fixed inset-y-0 left-0 md:right-[40%] right-0 z-50 transform transition-transform duration-300 ease-in-out ${
+        className={`fixed inset-y-0 left-0 md:right-[40%] right-0 z-50 transition-transform duration-300 ease-out ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="absolute inset-0 bg-black/80 p-0 flex items-start justify-center overflow-y-auto py-4 md:py-12 px-2 md:px-24">
+        <div className="absolute inset-0 bg-black/60 p-0 flex items-start justify-center overflow-y-auto py-4 md:py-12 px-2 md:px-24">
           <div className="w-[210mm] max-w-full min-h-[calc(100%-4rem)] bg-white">
             <UniversalPreviewPDF
               data={invoice}
@@ -548,7 +548,7 @@ export default function InvoiceSidebar({
 
       {/* Main Sidebar - Hidden on mobile by default, shown in modal */}
       <div
-        className={`fixed inset-y-0 right-0 z-50 md:w-[40%] w-full bg-background border-l shadow-lg transform transition-transform duration-300 ease-in-out flex flex-col ${
+        className={`fixed inset-y-0 right-0 z-50 md:w-[40%] w-full bg-background border-l shadow-lg flex flex-col transition-transform duration-300 ease-out ${
           isOpen
             ? showMobileDetails
               ? "translate-x-0"
@@ -557,22 +557,22 @@ export default function InvoiceSidebar({
         }`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b">
-          <div className="flex items-center gap-3">
-            <h2 className="font-normal text-lg">
+        <div className="flex items-center justify-between px-6 py-4 border-b">
+          <div className="flex items-center gap-2">
+            <h2 className="text-base font-medium">
               Facture {invoice.number || "Brouillon"}
             </h2>
             <span
-              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+              className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium ${
                 invoice.status === "DRAFT"
-                  ? "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100"
+                  ? "bg-gray-50 text-gray-600 dark:bg-gray-900/20 dark:text-gray-400"
                   : invoice.status === "PENDING"
-                    ? "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100"
-                    : invoice.status === "PAID"
-                      ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"
+                    ? "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400"
+                    : invoice.status === "COMPLETED" || invoice.status === "PAID"
+                      ? "bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400"
                       : invoice.status === "OVERDUE"
-                        ? "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-100"
-                        : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100"
+                        ? "bg-orange-50 text-orange-600 dark:bg-orange-900/20 dark:text-orange-400"
+                        : "bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400"
               }`}
             >
               {INVOICE_STATUS_LABELS[invoice.status] || invoice.status}
@@ -584,13 +584,14 @@ export default function InvoiceSidebar({
               <UniversalPDFDownloaderWithFacturX
                 data={invoice}
                 type="invoice"
+                variant="default"
                 enableFacturX={true}
                 previousSituationInvoices={previousSituationInvoices}
               />
             )}
             <Button
               variant="ghost"
-              size="sm"
+              size="icon"
               onClick={(e) => {
                 e.stopPropagation();
                 // Sur mobile, fermer d'abord les détails, puis la sidebar
@@ -601,7 +602,7 @@ export default function InvoiceSidebar({
                   onClose();
                 }
               }}
-              className="h-8 w-8 p-0 relative z-50"
+              className="h-8 w-8"
             >
               <X className="h-4 w-4" />
             </Button>
@@ -609,70 +610,73 @@ export default function InvoiceSidebar({
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-8">
-          {/* Section Suggestion de Rattachement - Affichée en haut si suggestions disponibles */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          {/* Section Paiement détecté */}
           {invoice.status === INVOICE_STATUS.PENDING &&
             !invoice.linkedTransactionId &&
             suggestedTransactions.length > 0 && (
-              <div className="p-4 rounded-lg bg-[#5a50ff]/10 border border-[#5a50ff]/30 space-y-3">
-                <div className="flex items-center gap-2">
-                  <Landmark className="h-5 w-5 text-[#5a50ff]" />
-                  <div>
-                    <h3 className="font-medium text-[#5a50ff]">
-                      Paiement détecté
-                    </h3>
-                    <p className="text-xs text-muted-foreground">
-                      {suggestedTransactions.length === 1
-                        ? "Une transaction correspond à cette facture"
-                        : `${suggestedTransactions.length} transactions correspondent à cette facture`}
-                    </p>
+              <>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Landmark className="h-4 w-4 text-muted-foreground" />
+                      <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+                        Paiement détecté
+                      </p>
+                    </div>
+                    <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400">
+                      {suggestedTransactions.length} correspondance{suggestedTransactions.length > 1 ? "s" : ""}
+                    </span>
+                  </div>
+
+                  <div className="space-y-2">
+                    {suggestedTransactions.slice(0, 3).map((tx) => (
+                      <div
+                        key={tx.id}
+                        className="flex items-center justify-between p-3 rounded-lg border bg-muted/30 hover:bg-muted/50 transition-colors"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-medium">
+                              {formatCurrency(tx.amount)}
+                            </p>
+                            <span className="text-xs text-muted-foreground">
+                              {formatDate(tx.date)}
+                            </span>
+                          </div>
+                          <p className="text-xs text-muted-foreground truncate mt-0.5">
+                            {tx.description}
+                          </p>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="default"
+                          className="ml-3 h-7 text-xs"
+                          onClick={() => handleLinkTransaction(tx.id)}
+                          disabled={linkingTransaction}
+                        >
+                          {linkingTransaction ? (
+                            <LoaderCircle className="h-3 w-3 animate-spin" />
+                          ) : (
+                            "Rattacher"
+                          )}
+                        </Button>
+                      </div>
+                    ))}
                   </div>
                 </div>
-                <div className="space-y-2">
-                  {suggestedTransactions.slice(0, 3).map((tx) => (
-                    <div
-                      key={tx.id}
-                      className="flex items-center justify-between p-3 bg-white dark:bg-gray-900 rounded-lg border"
-                    >
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium">
-                          +{formatCurrency(tx.amount)}
-                        </div>
-                        <div className="text-xs text-muted-foreground truncate">
-                          {tx.description}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {formatDate(tx.date)}
-                        </div>
-                      </div>
-                      <Button
-                        size="sm"
-                        className="ml-2 bg-[#5a50ff] hover:bg-[#4a40ef] text-white"
-                        onClick={() => handleLinkTransaction(tx.id)}
-                        disabled={linkingTransaction}
-                      >
-                        {linkingTransaction ? (
-                          <LoaderCircle className="h-3 w-3 animate-spin" />
-                        ) : (
-                          <>
-                            <Link2 className="h-3 w-3 mr-1" />
-                            Rattacher
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </div>
+
+                <Separator />
+              </>
             )}
 
           {/* Client Info */}
-          <div className="space-y-2.5">
-            <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          <div className="space-y-3">
+            <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
               Client
-            </h3>
+            </p>
             {invoice.client ? (
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <div>
                   <p className="font-medium">
                     {invoice.client.type === "COMPANY"
@@ -710,93 +714,98 @@ export default function InvoiceSidebar({
                 )}
               </div>
             ) : (
-              <p className="text-muted-foreground">Aucun client sélectionné</p>
+              <p className="text-sm text-muted-foreground">Aucun client sélectionné</p>
             )}
           </div>
 
+          <Separator />
+
           {/* Dates */}
-          <div className="space-y-2.5">
-            <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          <div className="space-y-3">
+            <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
               Dates
-            </h3>
-            <div className="space-y-1.5">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Date d'émission</span>
-                <span>{formatDate(invoice.issueDate)}</span>
+            </p>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-normal text-muted-foreground">Date d'émission</span>
+                <span className="text-sm font-normal">{formatDate(invoice.issueDate)}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Date d'échéance</span>
-                <span>{formatDate(invoice.dueDate)}</span>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-normal text-muted-foreground">Date d'échéance</span>
+                <span className="text-sm font-normal">{formatDate(invoice.dueDate)}</span>
               </div>
               {invoice.paymentDate && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-normal text-muted-foreground">
                     Date de paiement
                   </span>
-                  <span>{formatDate(invoice.paymentDate)}</span>
+                  <span className="text-sm font-normal">{formatDate(invoice.paymentDate)}</span>
                 </div>
               )}
             </div>
           </div>
 
+          <Separator />
+
           {/* Articles */}
-          <div className="space-y-2.5">
-            <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          <div className="space-y-3">
+            <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
               Articles
-            </h3>
-            <div className="space-y-1.5">
+            </p>
+            <div className="space-y-2">
               {invoice.items && invoice.items.length > 0 ? (
                 invoice.items.map((item, index) => {
                   const progressPercentage =
                     parseFloat(item.progressPercentage) || 100;
                   return (
                     <div key={index} className="text-sm">
-                      <div className="font-medium">
+                      <p className="font-normal">
                         {item.description || "Article sans description"}
-                      </div>
-                      <div className="text-muted-foreground">
-                        {item.quantity || 0} ×{" "}
-                        {formatCurrency(item.unitPrice || 0)}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {item.quantity || 0} × {formatCurrency(item.unitPrice || 0)}
                         {progressPercentage < 100 && (
-                          <span style={{ color: "#5b50ff" }} className="ml-2">
+                          <span className="text-[#5b50ff] ml-2">
                             ({progressPercentage}% avancement)
                           </span>
                         )}
-                      </div>
+                      </p>
                     </div>
                   );
                 })
               ) : (
-                <p className="text-muted-foreground">Aucun article</p>
+                <p className="text-sm text-muted-foreground">Aucun article</p>
               )}
             </div>
           </div>
 
+          <Separator />
+
           {/* Totals */}
-          <div className="space-y-2.5">
-            <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          <div className="space-y-3">
+            <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
               Totaux
-            </h3>
-            <div className="space-y-1.5">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Sous-total HT</span>
-                <span>{formatCurrency(calculatedTotals.subtotalHT)}</span>
+            </p>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-normal text-muted-foreground">Sous-total HT</span>
+                <span className="text-sm font-normal">{formatCurrency(calculatedTotals.subtotalHT)}</span>
               </div>
               {calculatedTotals.discountAmount > 0 && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Remise</span>
-                  <span>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-normal text-muted-foreground">Remise</span>
+                  <span className="text-sm font-normal">
                     -{formatCurrency(calculatedTotals.discountAmount)}
                   </span>
                 </div>
               )}
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Total HT</span>
-                <span>{formatCurrency(calculatedTotals.totalHT)}</span>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-normal text-muted-foreground">Total HT</span>
+                <span className="text-sm font-normal">{formatCurrency(calculatedTotals.totalHT)}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">TVA</span>
-                <span>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-normal text-muted-foreground">TVA</span>
+                <span className="text-sm font-normal">
                   {invoice.isReverseCharge ? (
                     <span className="text-xs italic text-muted-foreground">
                       Auto-liquidation
@@ -816,11 +825,11 @@ export default function InvoiceSidebar({
                   (calculatedTotals.totalHT * escompteValue) / 100;
 
                 return (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-normal text-muted-foreground">
                       Escompte sur HT ({escompteValue}%)
                     </span>
-                    <span>-{formatCurrency(escompteAmount)}</span>
+                    <span className="text-sm font-normal">-{formatCurrency(escompteAmount)}</span>
                   </div>
                 );
               })()}
@@ -841,18 +850,18 @@ export default function InvoiceSidebar({
                     : 0;
 
                 return (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-normal text-muted-foreground">
                       TVA après escompte
                     </span>
-                    <span>{formatCurrency(tvaAfterEscompte)}</span>
+                    <span className="text-sm font-normal">{formatCurrency(tvaAfterEscompte)}</span>
                   </div>
                 );
               })()}
 
-              <div className="flex justify-between font-medium">
-                <span>Total TTC</span>
-                <span>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Total TTC</span>
+                <span className="text-sm font-medium">
                   {(() => {
                     const escompteValue = parseFloat(invoice.escompte) || 0;
 
@@ -902,11 +911,11 @@ export default function InvoiceSidebar({
                 const retenueAmount = (baseAmount * retenueValue) / 100;
 
                 return (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-normal text-muted-foreground">
                       Retenue de garantie ({retenueValue}%)
                     </span>
-                    <span>-{formatCurrency(retenueAmount)}</span>
+                    <span className="text-sm font-normal">-{formatCurrency(retenueAmount)}</span>
                   </div>
                 );
               })()}
@@ -943,9 +952,9 @@ export default function InvoiceSidebar({
                 }
 
                 return (
-                  <div className="flex justify-between font-bold text-base pt-2 border-t">
-                    <span>Net à payer</span>
-                    <span>{formatCurrency(finalAmount)}</span>
+                  <div className="flex items-center justify-between pt-2 border-t">
+                    <span className="text-sm font-medium">Net à payer</span>
+                    <span className="text-sm font-medium">{formatCurrency(finalAmount)}</span>
                   </div>
                 );
               })()}
@@ -959,7 +968,9 @@ export default function InvoiceSidebar({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Receipt className="h-4 w-4 text-muted-foreground" />
-                <h3 className="font-medium">Avoirs</h3>
+                <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+                  Avoirs
+                </p>
               </div>
               {(invoice.status === INVOICE_STATUS.PENDING ||
                 invoice.status === INVOICE_STATUS.COMPLETED ||
@@ -1064,16 +1075,16 @@ export default function InvoiceSidebar({
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   <Landmark className="h-4 w-4 text-muted-foreground" />
-                  <h3 className="font-medium">Paiement bancaire</h3>
+                  <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+                    Paiement bancaire
+                  </p>
                 </div>
-                <div className="p-3 border rounded-lg bg-green-50 dark:bg-green-900/20">
+                <div className="p-3 border rounded-lg bg-muted/30">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 text-green-600" />
-                      <span className="text-sm font-medium text-green-700 dark:text-green-400">
-                        Paiement rattaché
-                      </span>
-                    </div>
+                    <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400">
+                      <CheckCircle className="h-3 w-3" />
+                      Paiement rattaché
+                    </span>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -1103,7 +1114,9 @@ export default function InvoiceSidebar({
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Landmark className="h-4 w-4 text-muted-foreground" />
-                      <h3 className="font-medium">Paiement bancaire</h3>
+                      <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+                        Paiement bancaire
+                      </p>
                     </div>
                     <Button
                       variant="outline"
@@ -1226,7 +1239,7 @@ export default function InvoiceSidebar({
         </div>
 
         {/* Action Buttons */}
-        <div className="border-t p-6 space-y-3">
+        <div className="border-t px-6 py-4 space-y-3">
           {/* Draft Actions */}
           {invoice.status === INVOICE_STATUS.DRAFT && (
             <div className="flex gap-2">
@@ -1234,7 +1247,7 @@ export default function InvoiceSidebar({
                 variant="outline"
                 onClick={handleEdit}
                 disabled={isLoading}
-                className="flex-1"
+                className="flex-1 font-normal"
               >
                 <Pencil className="h-4 w-4 mr-2" />
                 Éditer
@@ -1242,7 +1255,7 @@ export default function InvoiceSidebar({
               <Button
                 onClick={handleCreateInvoice}
                 disabled={isLoading}
-                className="flex-1"
+                className="flex-1 font-normal"
               >
                 <FileText className="h-4 w-4 mr-2" />
                 Créer la facture

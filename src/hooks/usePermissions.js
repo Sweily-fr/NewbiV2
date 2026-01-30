@@ -9,7 +9,10 @@ import { useState, useEffect, useRef, useCallback } from "react";
  * Hook pour gérer les permissions utilisateur avec Better Auth
  *
  * @example
- * const { hasPermission, canCreate, canEdit, getUserRole } = usePermissions();
+ * const { hasPermission, canCreate, canEdit, getUserRole, isLoading } = usePermissions();
+ *
+ * // Vérifier si les permissions sont prêtes
+ * if (isLoading) return <Spinner />;
  *
  * // Vérifier une permission
  * const canCreateQuote = await canCreate("quotes");
@@ -18,40 +21,53 @@ import { useState, useEffect, useRef, useCallback } from "react";
  * const role = getUserRole();
  */
 export function usePermissions() {
-  const { session } = useUser();
-  const { activeOrganization } = useWorkspace();
+  // ✅ FIX: useUser exporte "isPending" (pas isLoading)
+  const { session, isPending: isSessionLoading } = useUser();
+  // ✅ FIX: useWorkspace exporte "loading" et "organization" (pas isLoading et activeOrganization)
+  const { organization: activeOrganization, loading: isOrgLoading } = useWorkspace();
   const [orgWithMembers, setOrgWithMembers] = useState(null);
+  const [isLoadingMembers, setIsLoadingMembers] = useState(true);
   const hasLoadedRef = useRef(false);
   const permissionCacheRef = useRef(new Map()); // Cache des permissions
+
+  // ✅ FIX: État de chargement global pour éviter les faux "permission denied"
+  const isLoading = isSessionLoading || isOrgLoading || isLoadingMembers;
 
   // Réinitialiser le flag quand l'organisation change
   useEffect(() => {
     hasLoadedRef.current = false;
     setOrgWithMembers(null);
+    setIsLoadingMembers(true); // ✅ FIX: Réinitialiser l'état de chargement
   }, [activeOrganization?.id]);
 
   // Charger l'organisation complète avec les membres
   useEffect(() => {
     if (!activeOrganization || hasLoadedRef.current) return;
-    
+
     hasLoadedRef.current = true;
-    
+
     // Si l'organisation a déjà les membres, l'utiliser directement
     if (activeOrganization.members) {
       setOrgWithMembers(activeOrganization);
+      setIsLoadingMembers(false); // ✅ FIX: Marquer comme chargé
       return;
     }
 
     // Sinon, charger l'organisation complète
-    authClient.organization.getFullOrganization({
-      organizationId: activeOrganization.id,
-    })
+    setIsLoadingMembers(true);
+    authClient.organization
+      .getFullOrganization({
+        organizationId: activeOrganization.id,
+      })
       .then(({ data }) => {
         setOrgWithMembers(data);
       })
       .catch((error) => {
         console.error("Error loading organization members:", error);
         setOrgWithMembers({ ...activeOrganization, members: [] });
+      })
+      .finally(() => {
+        setIsLoadingMembers(false); // ✅ FIX: Toujours marquer comme terminé
       });
   }, [activeOrganization?.id]);
 
@@ -306,6 +322,10 @@ export function usePermissions() {
   };
 
   return {
+    // ✅ FIX: État de chargement pour éviter les faux "permission denied"
+    isLoading,
+    isReady: !isLoading && !!orgWithMembers,
+
     // Vérifications de permissions
     hasPermission,
     checkRolePermission,

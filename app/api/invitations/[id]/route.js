@@ -178,6 +178,24 @@ export async function POST(request, { params }) {
         `✅ ÉTAPE 1 OK: Membre ajouté à l'organisation ${organizationId}`
       );
 
+      // ÉTAPE 2: Nettoyer les flags d'utilisateur invité
+      // L'utilisateur est maintenant un membre à part entière
+      try {
+        console.log("🔄 ÉTAPE 2: Nettoyage des flags utilisateur invité...");
+        await mongoDb.collection("user").updateOne(
+          { _id: new ObjectId(session.user.id) },
+          {
+            $set: {
+              isInvitedUser: false,
+              pendingInvitationId: "",
+            },
+          }
+        );
+        console.log("✅ ÉTAPE 2 OK: Flags utilisateur nettoyés");
+      } catch (cleanupError) {
+        console.warn("⚠️ Erreur nettoyage flags (non-bloquant):", cleanupError);
+      }
+
       // ÉTAPE 3: Définir l'organisation comme active IMMÉDIATEMENT
       try {
         console.log("🔄 ÉTAPE 3: Appel Better Auth setActiveOrganization...");
@@ -186,7 +204,19 @@ export async function POST(request, { params }) {
           body: { organizationId },
         });
         console.log(
-          `✅ ÉTAPE 3 OK: Organisation ${organizationId} définie comme active`
+          `✅ ÉTAPE 3 OK: Organisation ${organizationId} définie comme active (session courante)`
+        );
+
+        // ✅ FIX CRITIQUE: Mettre à jour TOUTES les sessions de l'utilisateur
+        // Pas seulement la session actuelle (pour les appareils multiples)
+        const updateResult = await mongoDb
+          .collection("session")
+          .updateMany(
+            { userId: new ObjectId(session.user.id) },
+            { $set: { activeOrganizationId: organizationId } }
+          );
+        console.log(
+          `✅ ÉTAPE 3 OK: ${updateResult.modifiedCount} session(s) mise(s) à jour avec organizationId`
         );
       } catch (orgError) {
         console.error("⚠️ Erreur setActiveOrganization:", orgError);

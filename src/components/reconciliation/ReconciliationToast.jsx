@@ -83,7 +83,11 @@ export function ReconciliationToastProvider({ children }) {
   const handleLink = useCallback(
     async (transactionId, invoiceId, toastId) => {
       setIsProcessing(true);
-      toastManager.close(toastId);
+      // Marquer la transaction comme traitée pour éviter qu'elle réapparaisse
+      saveIgnoredSuggestion(transactionId);
+      setIgnoredSuggestions((prev) => new Set([...prev, transactionId]));
+      // Fermer tous les toasts de réconciliation pour éviter la confusion
+      toastManager.closeAll();
       try {
         await linkTransaction(transactionId, invoiceId);
         // Le toast est géré par le hook useLinkTransactionToInvoice
@@ -117,7 +121,19 @@ export function ReconciliationToastProvider({ children }) {
     [toastManager]
   );
 
+  // Formater une date de manière courte
+  const formatShortDate = (dateInput) => {
+    if (!dateInput) return "";
+    try {
+      const date = new Date(dateInput);
+      return date.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" });
+    } catch {
+      return "";
+    }
+  };
+
   // Afficher les toasts pour les nouvelles suggestions à haute confiance
+  // Maintenant en pile (plusieurs toasts simultanés)
   useEffect(() => {
     if (isProcessing) return;
 
@@ -129,34 +145,58 @@ export function ReconciliationToastProvider({ children }) {
         s.matchingInvoices.length > 0
     );
 
-    // Afficher max 1 toast à la fois pour ne pas surcharger
-    if (newSuggestions.length > 0) {
-      const suggestion = newSuggestions[0];
-      const transaction = suggestion.transaction;
-      const invoice = suggestion.matchingInvoices[0];
+    // Afficher jusqu'à 5 toasts empilés (du plus récent au plus ancien)
+    const maxToasts = 5;
+    const toastsToShow = newSuggestions.slice(0, maxToasts);
 
-      // Marquer comme affiché
-      setShownSuggestions((prev) => new Set([...prev, transaction.id]));
-
-      // Utiliser le nouveau toastManager avec action
-      const toastId = toastManager.add({
-        title: `Paiement détecté : +${formatCurrency(transaction.amount)}`,
-        description: `${transaction.description} → Facture ${invoice.number} (${invoice.clientName})`,
-        type: "reconciliation",
-        timeout: 30000, // 30 secondes
-        dismissProps: {
-          children: "Ignorer",
-          onClick: () => handleIgnore(transaction.id, toastId),
-        },
-        secondaryActionProps: {
-          children: "Voir",
-          onClick: () => handleViewInvoice(invoice.id, toastId),
-        },
-        actionProps: {
-          children: "Rattacher",
-          onClick: () => handleLink(transaction.id, invoice.id, toastId),
-        },
+    if (toastsToShow.length > 0) {
+      // Marquer toutes les suggestions comme affichées
+      setShownSuggestions((prev) => {
+        const newSet = new Set(prev);
+        toastsToShow.forEach((s) => newSet.add(s.transaction.id));
+        return newSet;
       });
+
+      // Afficher chaque toast avec un léger délai pour l'effet d'empilement
+      toastsToShow.forEach((suggestion, index) => {
+        const transaction = suggestion.transaction;
+        const invoice = suggestion.matchingInvoices[0];
+        const txDate = formatShortDate(transaction.date);
+
+        // Délai progressif pour l'animation d'empilement
+        setTimeout(() => {
+          const toastId = toastManager.add({
+            title: `Paiement détecté : +${formatCurrency(transaction.amount)}${txDate ? ` (${txDate})` : ""}`,
+            description: `${transaction.description} → Facture ${invoice.number} (${invoice.clientName})`,
+            type: "reconciliation",
+            timeout: 120000, // 2 minutes - les toasts de réconciliation restent longtemps
+            dismissProps: {
+              children: "Ignorer",
+              onClick: () => handleIgnore(transaction.id, toastId),
+            },
+            secondaryActionProps: {
+              children: "Voir",
+              onClick: () => handleViewInvoice(invoice.id, toastId),
+            },
+            actionProps: {
+              children: "Rattacher",
+              onClick: () => handleLink(transaction.id, invoice.id, toastId),
+            },
+          });
+        }, index * 150); // 150ms entre chaque toast pour l'effet d'empilement
+      });
+
+      // Si plus de suggestions que le max, afficher un toast informatif
+      if (newSuggestions.length > maxToasts) {
+        setTimeout(() => {
+          toastManager.add({
+            title: `+${newSuggestions.length - maxToasts} autres paiements détectés`,
+            description: "Consultez la section Rapprochement pour voir toutes les suggestions",
+            type: "info",
+            timeout: 10000,
+          });
+        }, maxToasts * 150 + 100);
+      }
     }
   }, [
     suggestions,
@@ -167,7 +207,6 @@ export function ReconciliationToastProvider({ children }) {
     handleViewInvoice,
     handleIgnore,
     toastManager,
-    formatCurrency,
   ]);
 
   return <>{children}</>;

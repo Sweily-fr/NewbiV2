@@ -334,8 +334,8 @@ export function InviteMemberModal({ open, onOpenChange, onSuccess, organizationI
         return "Administrateur";
       case "member":
         return "Membre";
-      case "guest":
-        return "Invité";
+      case "viewer":
+        return "Lecteur";
       case "accountant":
         return "Comptable";
       case "owner":
@@ -514,7 +514,7 @@ export function InviteMemberModal({ open, onOpenChange, onSuccess, organizationI
                                   Administrateur
                                 </span>
                                 <span className="text-xs text-muted-foreground">
-                                  Gestion complète
+                                  Gestion complète (sauf facturation)
                                 </span>
                               </div>
                             </SelectItem>
@@ -524,17 +524,17 @@ export function InviteMemberModal({ open, onOpenChange, onSuccess, organizationI
                                   Membre
                                 </span>
                                 <span className="text-xs text-muted-foreground">
-                                  Accès standard
+                                  Création et envoi de documents
                                 </span>
                               </div>
                             </SelectItem>
-                            <SelectItem value="guest">
+                            <SelectItem value="viewer">
                               <div className="flex flex-col">
                                 <span className="font-normal text-sm">
-                                  Invité
+                                  Lecteur
                                 </span>
                                 <span className="text-xs text-muted-foreground">
-                                  Accès limité
+                                  Consultation uniquement
                                 </span>
                               </div>
                             </SelectItem>
@@ -544,7 +544,7 @@ export function InviteMemberModal({ open, onOpenChange, onSuccess, organizationI
                                   Comptable
                                 </span>
                                 <span className="text-xs text-muted-foreground">
-                                  Accès comptabilité
+                                  Accès finances + validation
                                 </span>
                               </div>
                             </SelectItem>

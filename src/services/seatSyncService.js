@@ -40,7 +40,7 @@ export class SeatSyncService {
    * - Entreprise : 25 utilisateurs inclus, 5 comptables, sièges payants possibles (7,49€/mois)
    *
    * @param {string} organizationId
-   * @param {string} role - Rôle de l'invité (member, admin, guest, accountant)
+   * @param {string} role - Rôle de l'invité (member, admin, viewer, accountant)
    * @returns {Promise<Object>}
    */
   async canInviteMember(organizationId, role = "member") {

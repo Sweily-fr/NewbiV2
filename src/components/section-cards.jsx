@@ -27,7 +27,6 @@ import { useDashboardLayoutContext } from "@/src/contexts/dashboard-layout-conte
 import { isCompanyInfoComplete } from "@/src/hooks/useCompanyInfoGuard";
 import { useSettingsModal } from "@/src/hooks/useSettingsModal";
 import { SettingsModal } from "@/src/components/settings-modal";
-import { PricingModal } from "./pricing-modal";
 import { GridBackground } from "@/src/components/ui/grid-background";
 import { SectionCardsSkeleton } from "@/src/components/section-cards-skeleton";
 import {
@@ -214,7 +213,6 @@ export function SectionCards({ className, activeFilter = "outline" }) {
   const router = useRouter();
   const { isOpen, initialTab, openSettings, closeSettings } =
     useSettingsModal();
-  const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
   const [selectedTool, setSelectedTool] = useState(null);
   const [isInfoDialogOpen, setIsInfoDialogOpen] = useState(false);
   const [isMissingFieldsDialogOpen, setIsMissingFieldsDialogOpen] =
@@ -262,12 +260,6 @@ export function SectionCards({ className, activeFilter = "outline" }) {
 
     // Par défaut, ouvrir l'onglet général
     return "generale";
-  };
-
-  // Fonction pour gérer le clic sur un outil premium
-  const handlePremiumToolClick = (e) => {
-    e.preventDefault();
-    setIsPricingModalOpen(true);
   };
 
   // Fonction pour analyser tous les champs avec leur statut
@@ -483,11 +475,6 @@ export function SectionCards({ className, activeFilter = "outline" }) {
         open={isOpen}
         onOpenChange={closeSettings}
         initialTab={initialTab}
-      />
-
-      <PricingModal
-        isOpen={isPricingModalOpen}
-        onClose={() => setIsPricingModalOpen(false)}
       />
 
       {/* Modal d'information sur l'outil */}
