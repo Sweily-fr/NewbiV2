@@ -170,21 +170,42 @@ export function FloatingTimer() {
           <ScrollArea className="max-h-80">
             <div className="p-2 space-y-1">
               {activeTasks.map((task) => {
-                const startedBy = task.timeTracking?.startedBy;
-                const initials = startedBy?.userName
-                  ? startedBy.userName.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)
-                  : "?";
+                // Utiliser assignedMembersInfo pour afficher les avatars des membres assignés
+                const assignedMembers = task.assignedMembersInfo || [];
+                const maxVisibleAvatars = 3;
+                const visibleMembers = assignedMembers.slice(0, maxVisibleAvatars);
+                const remainingCount = assignedMembers.length - maxVisibleAvatars;
                 
                 return (
                   <div
                     key={task.id}
                     className="flex items-center gap-3 p-2.5 rounded-md hover:bg-accent/50 group"
                   >
-                    {/* Avatar de l'utilisateur qui a lancé le timer */}
-                    <Avatar className="h-6 w-6 flex-shrink-0">
-                      <AvatarImage src={startedBy?.userImage} alt={startedBy?.userName} />
-                      <AvatarFallback className="text-[10px]">{initials}</AvatarFallback>
-                    </Avatar>
+                    {/* Avatars des membres assignés */}
+                    <div className="flex -space-x-2 flex-shrink-0">
+                      {visibleMembers.length > 0 ? (
+                        visibleMembers.map((member) => {
+                          const memberInitials = member.name
+                            ? member.name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)
+                            : member.email?.charAt(0).toUpperCase() || "?";
+                          return (
+                            <Avatar key={member.id || member.userId} className="h-6 w-6 border-2 border-background">
+                              <AvatarImage src={member.image} alt={member.name || member.email} className="object-cover" />
+                              <AvatarFallback className="text-[10px]">{memberInitials}</AvatarFallback>
+                            </Avatar>
+                          );
+                        })
+                      ) : (
+                        <Avatar className="h-6 w-6">
+                          <AvatarFallback className="text-[10px]">?</AvatarFallback>
+                        </Avatar>
+                      )}
+                      {remainingCount > 0 && (
+                        <div className="h-6 w-6 rounded-full bg-muted border-2 border-background flex items-center justify-center">
+                          <span className="text-[10px] text-muted-foreground">+{remainingCount}</span>
+                        </div>
+                      )}
+                    </div>
                     
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{task.title}</p>

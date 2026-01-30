@@ -33,6 +33,9 @@ import { authClient } from "@/src/lib/auth-client";
 import { toast } from "@/src/components/ui/sonner";
 import { useOrganizationInvitations } from "@/src/hooks/useOrganizationInvitations";
 import { useNotificationPreferences } from "@/src/hooks/useNotificationPreferences";
+import { useActivityNotifications } from "@/src/hooks/useActivityNotifications";
+import Link from "next/link";
+import { ClipboardList, ExternalLink } from "lucide-react";
 
 // Configuration des catégories de notifications Phase 1
 const notificationCategories = {
@@ -152,6 +155,16 @@ export function NotificationsSection() {
   } = useNotificationPreferences();
 
   const { listInvitations, cancelInvitation } = useOrganizationInvitations();
+
+  // Hook pour les notifications d'activité (assignations de tâches, etc.)
+  const {
+    notifications: activityNotifications,
+    unreadCount: activityUnreadCount,
+    loading: activityLoading,
+    markAsRead: markActivityAsRead,
+    markAllAsRead: markAllActivityAsRead,
+    deleteNotification: deleteActivityNotification,
+  } = useActivityNotifications();
 
   // Récupérer les invitations reçues par l'utilisateur via Better Auth
   useEffect(() => {
@@ -443,14 +456,14 @@ export function NotificationsSection() {
             className="gap-1 md:gap-2 font-normal flex-col md:flex-row py-2 md:py-1.5 text-xs md:text-sm"
           >
             <div className="flex items-center gap-1 relative">
-              <Bell className="w-4 h-4" />
+              <ClipboardList className="w-4 h-4" />
               <span className="hidden sm:inline">Activité</span>
               {/* Point violet sur mobile, badge sur desktop */}
-              {unreadSentInvitationsCount > 0 && (
+              {activityUnreadCount > 0 && (
                 <>
                   <span className="absolute -top-1 -right-1 w-2 h-2 bg-[#5b4fff] rounded-full sm:hidden"></span>
                   <span className="hidden sm:inline bg-[#5b4eff] text-white text-xs rounded-md px-1.5 py-0.5 ml-1">
-                    {unreadSentInvitationsCount}
+                    {activityUnreadCount}
                   </span>
                 </>
               )}
@@ -558,37 +571,52 @@ export function NotificationsSection() {
           )}
         </TabsContent>
 
-        {/* Contenu: Activité - Invitations envoyées */}
+        {/* Contenu: Activité - Notifications d'assignation de tâches */}
         <TabsContent value="activity" className="space-y-2 mt-6">
-          {loadingSent ? (
+          {activityLoading ? (
             <div className="text-center py-8 text-sm text-muted-foreground">
-              Chargement des invitations envoyées...
+              Chargement des notifications...
             </div>
-          ) : sentInvitations.length === 0 ? (
+          ) : activityNotifications.length === 0 ? (
             <div className="text-center py-8 text-sm text-muted-foreground">
-              Aucune invitation envoyée
+              <ClipboardList className="w-12 h-12 mx-auto mb-3 text-muted-foreground/50" />
+              <p>Aucune notification d&apos;activité</p>
+              <p className="text-xs mt-1">Les assignations de tâches apparaîtront ici</p>
             </div>
           ) : (
             <div className="space-y-0 divide-y divide-border/50">
-              {sentInvitations.map((invitation) => {
-                const statusDisplay = getStatusDisplay(invitation.status);
-
-                // Obtenir l'initiale de l'email
-                const initial = invitation.email.charAt(0).toUpperCase();
+              {activityNotifications.map((notification) => {
+                // Obtenir l'initiale de l'acteur
+                const initial = notification.data?.actorName
+                  ? notification.data.actorName.charAt(0).toUpperCase()
+                  : "?";
 
                 return (
                   <div
-                    key={invitation.id}
+                    key={notification.id}
                     className="group py-4 px-2 hover:bg-muted/30 transition-colors cursor-pointer"
+                    onClick={() => {
+                      if (!notification.read) {
+                        markActivityAsRead(notification.id);
+                      }
+                    }}
                   >
                     <div className="flex items-center gap-4">
-                      {/* Avatar avec initiale */}
+                      {/* Avatar de l'acteur */}
                       <div className="relative flex-shrink-0">
-                        <div className="size-10 rounded-full bg-muted flex items-center justify-center text-sm font-medium text-muted-foreground">
-                          {initial}
-                        </div>
-                        {/* Point bleu pour les invitations non lues */}
-                        {!isRead(invitation.id) && (
+                        {notification.data?.actorImage ? (
+                          <img
+                            src={notification.data.actorImage}
+                            alt={notification.data.actorName}
+                            className="size-10 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="size-10 rounded-full bg-[#5b4fff]/10 flex items-center justify-center text-sm font-medium text-[#5b4fff]">
+                            {initial}
+                          </div>
+                        )}
+                        {/* Point bleu pour les notifications non lues */}
+                        {!notification.read && (
                           <div className="absolute -top-0.5 -right-0.5 size-3 rounded-full bg-[#5b4eff] border-2 border-background"></div>
                         )}
                       </div>
@@ -596,42 +624,49 @@ export function NotificationsSection() {
                       {/* Contenu */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-baseline gap-2">
-                          <p className="text-sm text-foreground truncate">
+                          <p className="text-sm text-foreground">
+                            <span className="font-medium">
+                              {notification.data?.actorName || "Quelqu'un"}
+                            </span>{" "}
                             <span className="font-normal">
-                              Invitation envoyée à
+                              vous a assigné à
                             </span>{" "}
                             <span className="font-medium">
-                              {invitation.email}
+                              {notification.data?.taskTitle || "une tâche"}
                             </span>
                           </p>
                         </div>
-                        <div className="flex items-center gap-2 mt-1">
+                        <div className="flex items-center gap-2 mt-1 flex-wrap">
                           <p className="text-xs text-muted-foreground">
-                            Rôle: {invitation.role}
+                            📋 {notification.data?.boardName || "Tableau"}
                           </p>
-                          {statusDisplay.badge}
+                          <span className="text-xs text-muted-foreground">•</span>
+                          <p className="text-xs text-muted-foreground">
+                            📁 {notification.data?.columnName || "Colonne"}
+                          </p>
                         </div>
                       </div>
 
-                      {invitation.status === "pending" && (
-                        <Button
-                          size="sm"
-                          type="button"
-                          variant="ghost"
-                          className="opacity-0 group-hover:opacity-100 hover:bg-red-100 hover:text-red-500 cursor-pointer transition-opacity text-xs h-7 px-2"
-                          onClick={(e) =>
-                            handleCancelInvitation(e, invitation.id)
-                          }
-                        >
-                          Annuler
-                        </Button>
-                      )}
-                      {/* Date et actions */}
-                      <div className="flex items-center gap-3 flex-shrink-0">
+                      {/* Actions */}
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        {notification.data?.url && (
+                          <Link
+                            href={notification.data.url}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Button
+                              size="sm"
+                              type="button"
+                              className="bg-[#5b4fff] text-white hover:bg-[#5b4fff]/90 cursor-pointer h-7 px-2 text-xs"
+                            >
+                              <ExternalLink className="w-3 h-3 mr-1" />
+                              Voir
+                            </Button>
+                          </Link>
+                        )}
                         <span className="text-xs text-muted-foreground">
-                          {new Date(
-                            invitation.createdAt || Date.now()
-                          ).toLocaleDateString("fr-FR", {
+                          {new Date(notification.createdAt).toLocaleDateString("fr-FR", {
                             day: "numeric",
                             month: "short",
                           })}

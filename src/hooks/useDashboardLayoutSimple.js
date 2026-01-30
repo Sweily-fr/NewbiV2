@@ -517,6 +517,39 @@ export function useDashboardLayoutSimple() {
   };
 
   const isActive = (requirePaidSubscription = false) => {
+    // 🔒 Si l'abonnement est en cours de chargement, vérifier le cache uniquement
+    // Ne PAS autoriser l'accès par défaut (sécurité)
+    if (isLoading && !subscription) {
+      // Vérifier le cache pour éviter les flashs SI un cache valide existe
+      const organizationId =
+        activeOrganization?.id || session?.session?.activeOrganizationId;
+      if (organizationId) {
+        try {
+          const cacheKey = `subscription-${organizationId}`;
+          const cached = localStorage.getItem(cacheKey);
+          if (cached) {
+            const { data: cachedSub, timestamp } = JSON.parse(cached);
+            // Vérifier que le cache n'est pas expiré (5 minutes)
+            const isValidCache = Date.now() - timestamp < 5 * 60 * 1000;
+            if (isValidCache && (cachedSub?.status === "active" || cachedSub?.status === "trialing")) {
+              return true; // Utiliser le cache valide pendant le chargement
+            }
+            // Vérifier aussi les abonnements canceled mais encore valides
+            if (isValidCache && cachedSub?.status === "canceled" && cachedSub?.periodEnd) {
+              if (new Date(cachedSub.periodEnd) > new Date()) {
+                return true;
+              }
+            }
+          }
+        } catch (e) {
+          // Ignorer les erreurs de cache
+        }
+      }
+      // 🔒 Par défaut, NE PAS autoriser l'accès pendant le chargement (sécurité)
+      // Le middleware serveur a déjà validé l'abonnement, donc on attend juste la confirmation client
+      return false;
+    }
+
     // Vérifier si l'abonnement Stripe est actif ou en période d'essai Stripe
     const hasActiveSubscription =
       subscription?.status === "active" || subscription?.status === "trialing";

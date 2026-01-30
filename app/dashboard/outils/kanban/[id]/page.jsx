@@ -2,8 +2,8 @@
 
 import { use, useState, useEffect } from "react";
 import * as React from "react";
-import { useRouter } from "next/navigation";
-import { ArrowLeft, Plus, LoaderCircle, Search, Trash2, AlignLeft, Filter, Users } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { ArrowLeft, Plus, LoaderCircle, Search, Trash2, AlignLeft, Filter, Users, ZoomIn, ZoomOut } from "lucide-react";
 import { toast } from "@/src/components/ui/sonner";
 
 // UI Components
@@ -72,6 +72,7 @@ import { useWorkspace } from "@/src/hooks/useWorkspace";
 
 // Components
 import { KanbanColumnSimple } from "./components/KanbanColumnSimple";
+import { TaskCard } from "./components/TaskCard";
 import { TaskModal } from "./components/TaskModal";
 import { ColumnModal } from "./components/ColumnModal";
 import { DeleteConfirmation } from "./components/DeleteConfirmation";
@@ -98,8 +99,10 @@ import { useMutation } from "@apollo/client";
 
 export default function KanbanBoardPage({ params }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { id } = use(params);
   const [isRedirecting, setIsRedirecting] = React.useState(false);
+  const taskIdFromUrl = searchParams.get("task");
 
   // Hooks
   const { board, loading, error, refetch, getTasksByColumn, workspaceId, markReorderAction } =
@@ -179,11 +182,17 @@ export default function KanbanBoardPage({ params }) {
   // State pour tracker si on drag une colonne
   const [isDraggingColumn, setIsDraggingColumn] = React.useState(false);
   
+  // State pour tracker si on drag (tâche ou colonne) - pour désactiver le scale pendant le drag
+  const [isDragging, setIsDragging] = React.useState(false);
+  
   // État pour les tâches sélectionnées
   const [selectedTaskIds, setSelectedTaskIds] = React.useState(new Set());
 
   // État pour le popover de description du tableau
   const [showBoardDescriptionPopover, setShowBoardDescriptionPopover] = React.useState(false);
+
+  // État pour le niveau de zoom du Kanban (0.7 = 70%, 1 = 100%, 1.3 = 130%)
+  const [zoomLevel, setZoomLevel] = React.useState(1);
 
   // Hook pour le filtrage par membre (AVANT useKanbanDnDSimple pour éviter l'erreur de hoisting)
   const {
@@ -211,7 +220,8 @@ export default function KanbanBoardPage({ params }) {
     // Marquer le temps du drag
     lastDragTimeRef.current = Date.now();
     
-    // Arrêter le drag des colonnes
+    // Arrêter le drag
+    setIsDragging(false);
     if (result.type === 'column') {
       setIsDraggingColumn(false);
     }
@@ -224,8 +234,9 @@ export default function KanbanBoardPage({ params }) {
     // Plus de polling - les subscriptions WebSocket temps réel suffisent
   }, [dndHandleDragEnd]);
 
-  // Détecter le début du drag des colonnes
+  // Détecter le début du drag des colonnes et tâches
   const handleDragStart = React.useCallback((result) => {
+    setIsDragging(true);
     if (result.type === 'column') {
       setIsDraggingColumn(true);
     }
@@ -260,6 +271,18 @@ export default function KanbanBoardPage({ params }) {
   }, [board?.id, board?.columns, board?.tasks]);
 
   const { searchQuery, setSearchQuery, filterTasks: filterTasksBySearch } = useKanbanSearch();
+
+  // Ouvrir automatiquement une tâche si le paramètre ?task= est présent dans l'URL
+  React.useEffect(() => {
+    if (taskIdFromUrl && board?.tasks && !loading) {
+      const taskToOpen = board.tasks.find(t => t.id === taskIdFromUrl);
+      if (taskToOpen && !isEditTaskOpen) {
+        openEditTaskModal(taskToOpen);
+        // Supprimer le paramètre de l'URL après ouverture pour éviter de réouvrir
+        router.replace(`/dashboard/outils/kanban/${id}`, { scroll: false });
+      }
+    }
+  }, [taskIdFromUrl, board?.tasks, loading, isEditTaskOpen, openEditTaskModal, router, id]);
 
   // Fonction de filtrage combinée (recherche + membre)
   const filterTasks = React.useCallback((tasks) => {
@@ -308,25 +331,113 @@ export default function KanbanBoardPage({ params }) {
 
     return (
       <>
-        <div className="flex overflow-x-auto pb-4 -mx-4 px-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-          <Droppable droppableId="all-columns" direction="horizontal" type="column">
-            {(provided, snapshot) => (
-              <div 
+        <Droppable 
+          droppableId="all-columns" 
+          direction="horizontal" 
+          type="column"
+          renderClone={(provided, snapshot, rubric) => {
+            // Trouver la colonne par son ID (draggableId = "column-{id}")
+            const columnId = rubric.draggableId.replace('column-', '');
+            const column = localColumns.find(c => c.id === columnId);
+            if (!column) return <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps} />;
+            
+            const columnTasks = getLocalTasksByColumn(column.id);
+            const isCollapsedCol = isColumnCollapsed(column.id);
+            
+            // Calculer le maxHeight pour le clone
+            const baseOffset = 280;
+            const cloneMaxHeight = `calc((100vh - ${baseOffset}px) / ${zoomLevel})`;
+            
+            return (
+              <div
                 ref={provided.innerRef}
-                {...provided.droppableProps}
-                className="flex flex-nowrap items-start gap-4"
+                {...provided.draggableProps}
+                {...provided.dragHandleProps}
+                style={{
+                  ...provided.draggableProps.style,
+                }}
               >
+                {/* Wrapper avec zoom pour avoir la bonne taille */}
+                <div style={{ zoom: zoomLevel }}>
+                  <div
+                    className={`rounded-xl p-1.5 sm:p-2 min-w-[240px] max-w-[240px] sm:min-w-[300px] sm:max-w-[300px] flex flex-col flex-shrink-0 opacity-90 rotate-1 shadow-xl ${
+                      isCollapsedCol ? "max-w-[80px] min-w-[80px]" : ""
+                    }`}
+                    style={{ backgroundColor: `${column.color || "#94a3b8"}08` }}
+                  >
+                    {/* Header de la colonne */}
+                    <div className="flex items-center justify-between gap-2 px-2 mb-2 sm:mb-3">
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <div
+                          className="px-2 py-1 rounded-md text-xs font-medium border flex items-center gap-1"
+                          style={{
+                            backgroundColor: `${column.color || "#94a3b8"}20`,
+                            borderColor: `${column.color || "#94a3b8"}20`,
+                            color: column.color || "#94a3b8"
+                          }}
+                        >
+                          <div
+                            className="w-2 h-2 rounded-full"
+                            style={{ backgroundColor: column.color || "#94a3b8" }}
+                          />
+                          {!isCollapsedCol && <span className="truncate">{column.title}</span>}
+                        </div>
+                        {!isCollapsedCol && (
+                          <span 
+                            className="ml-auto flex-shrink-0 text-xs font-medium"
+                            style={{ color: column.color || "#94a3b8" }}
+                          >
+                            {columnTasks.length}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    {/* Toutes les tâches avec TaskCard */}
+                    {!isCollapsedCol && (
+                      <div 
+                        className="p-2 pb-4 rounded-lg overflow-y-auto"
+                        style={{ maxHeight: cloneMaxHeight }}
+                      >
+                        <div className="flex flex-col gap-2 sm:gap-3">
+                          {columnTasks.map(task => (
+                            <TaskCard
+                              key={task.id}
+                              task={task}
+                              onEdit={() => {}}
+                              onDelete={() => {}}
+                              isDragging={false}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          }}
+        >
+          {(provided, snapshot) => (
+            <div 
+              ref={provided.innerRef}
+              {...provided.droppableProps}
+              className="flex flex-nowrap items-start gap-4"
+            >
                 {localColumns.map((column, index) => {
                   const columnTasks = filterTasks(
                     getLocalTasksByColumn(column.id)
                   );
                   const isCollapsed = isColumnCollapsed(column.id);
 
+                  // Créer un map de toutes les tâches pour le renderClone
+                  const allTasks = localColumns.flatMap(col => getLocalTasksByColumn(col.id));
+                  
                   return (
                     <KanbanColumnSimple
                       key={column.id}
                       column={column}
                       tasks={columnTasks}
+                      allTasks={allTasks}
                       onAddTask={handleColumnAddTask}
                       onEditTask={handleColumnEditTask}
                       onDeleteTask={handleColumnDeleteTask}
@@ -337,6 +448,7 @@ export default function KanbanBoardPage({ params }) {
                       isLoading={loading}
                       columnIndex={index}
                       isDraggingAnyColumn={isDraggingColumn}
+                      zoomLevel={zoomLevel}
                     />
                   );
                 })}
@@ -360,7 +472,6 @@ export default function KanbanBoardPage({ params }) {
               </div>
             )}
           </Droppable>
-        </div>
       </>
     );
   }, [localColumns, filterTasks, getLocalTasksByColumn, isColumnCollapsed, handleColumnAddTask, handleColumnEditTask, handleColumnDeleteTask, handleColumnEditColumn, handleColumnDeleteColumn, handleColumnToggleCollapse, loading, openAddModal]);
@@ -412,13 +523,12 @@ export default function KanbanBoardPage({ params }) {
 
   return (
     <div 
-      ref={scrollRef}
       key={`kanban-board-${id}-${isBoard ? 'board' : 'list'}`}
-      className="w-full max-w-[100vw] overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+      className="h-[calc(100vh-64px)] flex flex-col overflow-hidden"
       style={{ pointerEvents: isBoard ? 'auto' : 'auto' }}
     >
-      {/* Header */}
-      <div className="sticky left-0 bg-background z-10">
+      {/* Header - Fixe en haut */}
+      <div className="flex-shrink-0 bg-background z-10">
         <div className="flex items-center gap-2 pt-2 pb-2 border-b px-4 sm:px-6">
           <h1 className="text-base font-semibold">{board.title}</h1>
           {board.description && (
@@ -644,6 +754,31 @@ export default function KanbanBoardPage({ params }) {
               </DropdownMenuContent>
             </DropdownMenu>
           </ButtonGroup>
+
+          {/* Contrôles de zoom */}
+          <div className="flex items-center gap-1 ml-auto">
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-9 w-9"
+              onClick={() => setZoomLevel(prev => Math.max(0.5, prev - 0.1))}
+              disabled={zoomLevel <= 0.5}
+            >
+              <ZoomOut className="h-4 w-4" />
+            </Button>
+            <span className="text-xs text-muted-foreground w-12 text-center">
+              {Math.round(zoomLevel * 100)}%
+            </span>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-9 w-9"
+              onClick={() => setZoomLevel(prev => Math.min(1.5, prev + 0.1))}
+              disabled={zoomLevel >= 1.5}
+            >
+              <ZoomIn className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       )}
 
@@ -784,34 +919,36 @@ export default function KanbanBoardPage({ params }) {
         </div>
       )}
 
-      {/* Board Content avec padding pour liste et board */}
-      <div className="w-full px-4 sm:px-6 mt-4">
+      {/* Board Content - Zone scrollable pour les colonnes */}
+      <div className="flex-1 overflow-hidden px-4 sm:px-6 mt-4">
         {isList && (
-          <DragDropContext onDragEnd={handleDragEnd} onDragStart={handleDragStart}>
-            <KanbanListView
-              columns={localColumns}
-              getTasksByColumn={getLocalTasksByColumn}
-              filterTasks={filterTasks}
-              onEditTask={openEditTaskModal}
-              onDeleteTask={handleDeleteTask}
-              onAddTask={openAddTaskModal}
-              onEditColumn={openEditModal}
-              onDeleteColumn={handleDeleteColumn}
-              members={board?.members || []}
-              selectedTaskIds={selectedTaskIds}
-              setSelectedTaskIds={setSelectedTaskIds}
-              moveTask={moveTask}
-              updateTask={updateTask}
-              workspaceId={workspaceId}
-            />
-          </DragDropContext>
+          <div className="h-full overflow-auto">
+            <DragDropContext onDragEnd={handleDragEnd} onDragStart={handleDragStart}>
+              <KanbanListView
+                columns={localColumns}
+                getTasksByColumn={getLocalTasksByColumn}
+                filterTasks={filterTasks}
+                onEditTask={openEditTaskModal}
+                onDeleteTask={handleDeleteTask}
+                onAddTask={openAddTaskModal}
+                onEditColumn={openEditModal}
+                onDeleteColumn={handleDeleteColumn}
+                members={board?.members || []}
+                selectedTaskIds={selectedTaskIds}
+                setSelectedTaskIds={setSelectedTaskIds}
+                moveTask={moveTask}
+                updateTask={updateTask}
+                workspaceId={workspaceId}
+              />
+            </DragDropContext>
+          </div>
         )}
 
         {isBoard && (
           <>
             {loading ? (
-              <div className="flex overflow-x-auto pb-4 -mx-4 px-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                <div className="flex gap-4 sm:gap-6 flex-nowrap items-start">
+              <div className="h-full overflow-x-auto overflow-y-hidden pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                <div className="flex gap-4 sm:gap-6 flex-nowrap items-start h-full">
                   {[1, 2, 3, 4].map((i) => (
                     <div key={i} className="bg-muted/30 rounded-xl p-2 sm:p-3 min-w-[240px] max-w-[240px] sm:min-w-[300px] sm:max-w-[300px] border border-border flex-shrink-0">
                       <div className="h-8 bg-muted rounded mb-3"></div>
@@ -826,20 +963,31 @@ export default function KanbanBoardPage({ params }) {
               </div>
             ) : (
               <DragDropContext onDragEnd={handleDragEnd} onDragStart={handleDragStart}>
-                <div className="min-h-[600px] w-max min-w-full">
-                  {columnsContent ? (
-                    columnsContent
-                  ) : (
-                    <div className="text-center py-12">
-                      <div className="text-muted-foreground mb-4">
-                        Ce tableau ne contient aucune colonne
+                <div 
+                  ref={scrollRef}
+                  className="h-full overflow-x-auto overflow-y-hidden pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+                >
+                  <div 
+                    className="h-full w-max min-w-full origin-top-left flex flex-nowrap items-start"
+                    style={{ 
+                      zoom: zoomLevel,
+                      gap: '16px'
+                    }}
+                  >
+                    {columnsContent ? (
+                      columnsContent
+                    ) : (
+                      <div className="text-center py-12">
+                        <div className="text-muted-foreground mb-4">
+                          Ce tableau ne contient aucune colonne
+                        </div>
+                        <Button variant="default" onClick={openAddModal}>
+                          <Plus className="mr-2 h-4 w-4" />
+                          Créer votre première colonne
+                        </Button>
                       </div>
-                      <Button variant="default" onClick={openAddModal}>
-                        <Plus className="mr-2 h-4 w-4" />
-                        Créer votre première colonne
-                      </Button>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               </DragDropContext>
             )}

@@ -69,6 +69,7 @@ import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { authClient } from "@/src/lib/auth-client";
 import { useOrganizationInvitations } from "@/src/hooks/useOrganizationInvitations";
 import { EmailVerificationBadge } from "@/src/components/email-verification-badge";
+import { useActivityNotifications } from "@/src/hooks/useActivityNotifications";
 
 const data = {
   teams: [
@@ -104,22 +105,18 @@ const data = {
     {
       title: "Factures clients",
       url: "/dashboard/outils/factures",
-      isPro: true,
     },
     {
       title: "Devis",
       url: "/dashboard/outils/devis",
-      isPro: true,
     },
     {
       title: "Liste client (CRM)",
       url: "/dashboard/clients",
-      isPro: true,
     },
     {
       title: "Catalogues",
       url: "/dashboard/catalogues",
-      isPro: true,
     },
   ],
   navAfterVentes: [
@@ -147,12 +144,10 @@ const data = {
     {
       title: "Transfert de fichiers",
       url: "/dashboard/outils/transferts-fichiers",
-      isPro: true,
     },
     {
       title: "Documents partagés",
       url: "/dashboard/outils/documents-partages",
-      isPro: true,
     },
   ],
   navCommunication: [
@@ -406,6 +401,9 @@ export function AppSidebar({
   const [theme, setTheme] = React.useState("light");
   const [notificationCount, setNotificationCount] = React.useState(0);
   const { listInvitations } = useOrganizationInvitations();
+  
+  // Hook pour les notifications d'activité (assignations de tâches)
+  const { unreadCount: activityUnreadCount } = useActivityNotifications();
 
   // Vérifier si l'organisation est un cabinet comptable
   const { isAccountingFirm, loading: orgTypeLoading } = useOrganizationType();
@@ -451,8 +449,8 @@ export function AppSidebar({
           ? sentResult.data?.filter((inv) => inv.status === "pending") || []
           : [];
 
-        // Total des notifications
-        const total = pendingReceived.length + pendingSent.length;
+        // Total des notifications (invitations + activité)
+        const total = pendingReceived.length + pendingSent.length + (activityUnreadCount || 0);
         setNotificationCount(total);
       } catch (error) {
         console.error(
@@ -470,7 +468,7 @@ export function AppSidebar({
       return () => clearInterval(interval);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session?.user?.id]); // Dépendre uniquement de l'ID utilisateur
+  }, [session?.user?.id, activityUnreadCount]); // Dépendre de l'ID utilisateur et des notifications d'activité
 
   // Effet pour détecter le thème depuis localStorage au chargement du composant
   React.useEffect(() => {

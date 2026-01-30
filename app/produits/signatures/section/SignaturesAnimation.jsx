@@ -6,11 +6,11 @@ export function SignaturesAnimation() {
   return (
     <div className="relative w-full h-auto">
       <Image
-        src="/images/lp-signature-mail/Signatures.jpg"
+        src="/lp/signature-mail/Signature.png"
         alt="Signature email professionnelle"
         width={1920}
         height={1080}
-        className="w-full h-auto"
+        className="w-full h-auto object-cover"
         priority
       />
     </div>

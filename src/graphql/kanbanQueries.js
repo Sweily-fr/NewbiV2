@@ -558,6 +558,14 @@ export const GET_ACTIVE_TIMERS = gql`
       title
       boardId
       columnId
+      assignedMembers
+      assignedMembersInfo {
+        id
+        userId
+        name
+        email
+        image
+      }
       timeTracking {
         totalSeconds
         isRunning

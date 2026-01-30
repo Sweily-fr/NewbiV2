@@ -152,12 +152,26 @@ export function TeamSwitcher() {
     try {
       setOrganizationsLoading(true);
       const response = await fetch("/api/organization/list-with-order");
-      if (!response.ok) throw new Error("Erreur chargement organisations");
+      
+      // Si non authentifié (401), ne pas throw d'erreur - laisser le composant gérer
+      if (response.status === 401) {
+        console.warn("Session expirée ou non authentifié");
+        setSortedOrganizations([]);
+        return;
+      }
+      
+      if (!response.ok) {
+        console.error("Erreur API:", response.status, response.statusText);
+        setSortedOrganizations([]);
+        return;
+      }
+      
       const data = await response.json();
       setSortedOrganizations(data.organizations || []);
     } catch (error) {
       console.error("Erreur chargement organisations:", error);
-      setSortedOrganizations([]);
+      // Ne pas vider les organisations en cas d'erreur réseau temporaire
+      // pour éviter le clignotement
     } finally {
       setOrganizationsLoading(false);
     }
@@ -409,9 +423,6 @@ export function TeamSwitcher() {
                 <span className="text-xs text-[#202020]">
                   Ajouter un espace de travail
                 </span>
-                {!isActive() && (
-                  <Crown className="ml-auto h-3 w-3 text-[#5b4fff]" />
-                )}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <div className="flex gap-2 p-2">
@@ -432,14 +443,10 @@ export function TeamSwitcher() {
                   variant="outline"
                   size="sm"
                   onClick={() => setInviteDialogOpen(true)}
-                  disabled={!isActive()}
                   className="flex-1 h-8 text-xs font-normal cursor-pointer relative"
                 >
                   <Users className="size-3 mr-1" />
                   Inviter des membres
-                  {!isActive() && (
-                    <Crown className="size-3 ml-1 text-[#5b4fff]" />
-                  )}
                 </Button>
               </div>
               <div className="p-2 pt-0">

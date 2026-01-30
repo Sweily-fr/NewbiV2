@@ -69,6 +69,8 @@ const FeatureBlock = ({
   imageAlt,
   badgeImage,
   reversed = false,
+  imagePosition = "left center",
+  imageOffset = "",
 }) => {
   return (
     <div className="max-w-7xl mx-auto pt-6 pb-4 px-4 sm:px-6 lg:px-12">
@@ -76,7 +78,7 @@ const FeatureBlock = ({
         className={`grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-start ${reversed ? "" : ""}`}
       >
         {/* Text Content */}
-        <div className={`${reversed ? "lg:order-2 lg:pl-12" : "lg:order-1"}`}>
+        <div className={`${reversed ? "lg:order-2 lg:pl-12" : "lg:order-1 lg:pr-12"}`}>
           <span className="inline-block text-xs font-semibold uppercase tracking-wider text-[#5A50FF] mb-3">
             {badge}
           </span>
@@ -111,7 +113,12 @@ const FeatureBlock = ({
 
         {/* Image Content */}
         <div
-          className={`relative ${reversed ? "lg:order-1 lg:-ml-40" : "lg:order-2 lg:-mr-40"}`}
+          className={`relative ${reversed ? `lg:order-1 ${imageOffset}` : "lg:order-2 lg:-mr-40"}`}
+          style={{
+            backgroundImage: `url(${imageSrc})`,
+            backgroundSize: "cover",
+            backgroundPosition: imagePosition,
+          }}
         >
           <DashedLine position="-top-px" orientation="horizontal" />
           <DashedLine position="-left-px" orientation="vertical" />
@@ -122,14 +129,7 @@ const FeatureBlock = ({
               className="absolute top-4 right-4 w-[100px] xl:w-[120px] h-auto object-contain drop-shadow-lg z-50"
             />
           )}
-          <ImageCard
-            src={imageSrc}
-            alt={imageAlt}
-            width={1760}
-            height={1408}
-            className={`object-cover min-h-[300px] sm:min-h-[400px] lg:min-h-[600px] w-full object-left`}
-            priority
-          />
+          <div className="min-h-[300px] sm:min-h-[400px] lg:min-h-[600px] w-full rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.06),0_8px_20px_-5px_rgba(25,28,33,0.12)] ring-1 ring-gray-950/5" />
         </div>
       </div>
     </div>
@@ -175,6 +175,7 @@ export default function TresorerieComponentsSection() {
       imageSrc: "/sectionComponents2.png",
       imageAlt: "Prévision de trésorerie - Anticipation besoins financiers",
       reversed: true,
+      imageOffset: "lg:-ml-40",
     },
     {
       badge: "SYNCHRONISATION BANCAIRE",
@@ -220,7 +221,7 @@ export default function TresorerieComponentsSection() {
   return (
     <section
       id="features"
-      className="relative isolate overflow-hidden pt-10 sm:pt-20 bg-white"
+      className="relative isolate overflow-x-clip pt-10 sm:pt-20 bg-white"
     >
       <div className="flex flex-col gap-20 sm:gap-32">
         {sections.map((section, index) => (
@@ -234,6 +235,8 @@ export default function TresorerieComponentsSection() {
             imageAlt={section.imageAlt}
             badgeImage={section.badgeImage}
             reversed={section.reversed}
+            imagePosition={section.imagePosition}
+            imageOffset={section.imageOffset}
           />
         ))}
       </div>

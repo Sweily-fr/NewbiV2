@@ -23,7 +23,7 @@ export default function TrustedBySection() {
 
           return (
             <div
-              key={logo.name}
+              key={`${logo.name}-${index}`}
               className={`group relative overflow-hidden border-gray-200
                 ${isSecondInMobileRow ? "border-r-0 md:border-r" : "border-r"}
                 ${isLastRow ? "md:border-b-0" : "border-b"}

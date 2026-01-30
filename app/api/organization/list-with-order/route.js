@@ -3,13 +3,19 @@ import { headers } from "next/headers";
 import { mongoDb } from "@/src/lib/mongodb";
 import { ObjectId } from "mongodb";
 
-export async function GET(request) {
+export async function GET() {
   try {
     // Vérifier l'authentification
-    const session = await auth.api.getSession({ headers: await headers() });
+    let session;
+    try {
+      session = await auth.api.getSession({ headers: await headers() });
+    } catch (sessionError) {
+      console.error("❌ [LIST-ORG] Erreur session:", sessionError.message);
+      return Response.json({ error: "Erreur de session", organizations: [] }, { status: 401 });
+    }
 
     if (!session?.user) {
-      return Response.json({ error: "Non authentifié" }, { status: 401 });
+      return Response.json({ error: "Non authentifié", organizations: [] }, { status: 401 });
     }
 
     // Récupérer les membres de l'utilisateur avec l'ordre

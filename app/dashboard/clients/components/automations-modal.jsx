@@ -63,6 +63,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Check,
+  Mail,
+  Calendar,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -79,6 +81,21 @@ import {
 } from '@/src/hooks/useClientAutomations';
 import { useClientLists } from '@/src/hooks/useClientLists';
 import { useWorkspace } from '@/src/hooks/useWorkspace';
+import { useClientCustomFields } from '@/src/hooks/useClientCustomFields';
+import {
+  useCrmEmailAutomations,
+  useCreateCrmEmailAutomation,
+  useUpdateCrmEmailAutomation,
+  useDeleteCrmEmailAutomation,
+  useToggleCrmEmailAutomation,
+} from '@/src/hooks/useCrmEmailAutomations';
+import EmailAutomationForm from './email-automation-form';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/src/components/ui/tabs';
 
 // Configuration des déclencheurs disponibles
 const TRIGGER_TYPES = [
@@ -734,6 +751,9 @@ function AutomationsTable({ automations, onEdit, onDelete, onToggle }) {
 
 export default function AutomationsModal({ open, onOpenChange }) {
   const { workspaceId } = useWorkspace();
+  const [activeTab, setActiveTab] = useState('lists');
+  
+  // List automations hooks
   const { automations, loading: automationsLoading, refetch } = useClientAutomations(workspaceId);
   const { lists, loading: listsLoading } = useClientLists(workspaceId);
   const { createAutomation, loading: createLoading } = useCreateClientAutomation();
@@ -741,10 +761,27 @@ export default function AutomationsModal({ open, onOpenChange }) {
   const { deleteAutomation, loading: deleteLoading } = useDeleteClientAutomation();
   const { toggleAutomation } = useToggleClientAutomation();
 
+  // Email automations hooks
+  const { automations: emailAutomations, loading: emailAutomationsLoading, refetch: refetchEmailAutomations } = useCrmEmailAutomations(workspaceId);
+  const { fields: customFields, loading: fieldsLoading } = useClientCustomFields(workspaceId);
+  const { createAutomation: createEmailAutomation, loading: createEmailLoading } = useCreateCrmEmailAutomation();
+  const { updateAutomation: updateEmailAutomation, loading: updateEmailLoading } = useUpdateCrmEmailAutomation();
+  const { deleteAutomation: deleteEmailAutomation, loading: deleteEmailLoading } = useDeleteCrmEmailAutomation();
+  const { toggleAutomation: toggleEmailAutomation } = useToggleCrmEmailAutomation();
+
+  // Filter only DATE type fields
+  const dateFields = customFields.filter(f => f.fieldType === 'DATE');
+
   const [showForm, setShowForm] = useState(false);
   const [editingAutomation, setEditingAutomation] = useState(null);
   const [deletingAutomation, setDeletingAutomation] = useState(null);
+  
+  // Email automation states
+  const [showEmailForm, setShowEmailForm] = useState(false);
+  const [editingEmailAutomation, setEditingEmailAutomation] = useState(null);
+  const [deletingEmailAutomation, setDeletingEmailAutomation] = useState(null);
 
+  // List automation handlers
   const handleCreate = async (input) => {
     try {
       await createAutomation(workspaceId, input);
@@ -787,83 +824,283 @@ export default function AutomationsModal({ open, onOpenChange }) {
     }
   };
 
+  // Email automation handlers
+  const handleCreateEmail = async (input) => {
+    try {
+      await createEmailAutomation(workspaceId, input);
+      toast.success('Automatisation email créée');
+      setShowEmailForm(false);
+      refetchEmailAutomations();
+    } catch (error) {
+      toast.error('Erreur lors de la création');
+    }
+  };
+
+  const handleUpdateEmail = async (input) => {
+    try {
+      await updateEmailAutomation(workspaceId, editingEmailAutomation.id, input);
+      toast.success('Automatisation email modifiée');
+      setEditingEmailAutomation(null);
+      refetchEmailAutomations();
+    } catch (error) {
+      toast.error('Erreur lors de la modification');
+    }
+  };
+
+  const handleDeleteEmail = async () => {
+    try {
+      await deleteEmailAutomation(workspaceId, deletingEmailAutomation.id);
+      toast.success('Automatisation email supprimée');
+      setDeletingEmailAutomation(null);
+      refetchEmailAutomations();
+    } catch (error) {
+      toast.error('Erreur lors de la suppression');
+    }
+  };
+
+  const handleToggleEmail = async (id) => {
+    try {
+      await toggleEmailAutomation(workspaceId, id);
+      refetchEmailAutomations();
+    } catch (error) {
+      toast.error('Erreur lors du basculement');
+    }
+  };
+
   const isLoading = automationsLoading || listsLoading;
+  const isEmailLoading = emailAutomationsLoading || fieldsLoading;
+
+  const getTimingLabel = (timing) => {
+    if (!timing) return '';
+    switch (timing.type) {
+      case 'ON_DATE':
+        return 'Le jour même';
+      case 'BEFORE_DATE':
+        return `${timing.daysOffset}j avant`;
+      case 'AFTER_DATE':
+        return `${timing.daysOffset}j après`;
+      default:
+        return '';
+    }
+  };
 
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="!w-[50vw] !max-w-[50vw] max-h-[85vh] overflow-y-auto">
+        <DialogContent className="!w-[55vw] !max-w-[55vw] max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Zap className="w-5 h-5" style={{ color: '#5b50ff' }} />
               Automatisations CRM
             </DialogTitle>
             <DialogDescription>
-              Automatisez le déplacement de vos contacts entre les listes selon des événements
+              Automatisez vos actions CRM : déplacement de contacts et envoi d'emails
             </DialogDescription>
           </DialogHeader>
 
-          {showForm || editingAutomation ? (
-            <AutomationForm
-              automation={editingAutomation}
-              lists={lists}
-              onSave={editingAutomation ? handleUpdate : handleCreate}
-              onCancel={() => {
-                setShowForm(false);
-                setEditingAutomation(null);
-              }}
-              isLoading={createLoading || updateLoading}
-            />
-          ) : (
-            <div className="space-y-4">
-              {/* Bouton créer */}
-              <Button
-                onClick={() => setShowForm(true)}
-                className="w-full"
-                variant="outline"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Nouvelle automatisation
-              </Button>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="lists" className="gap-2">
+                <ArrowRight className="w-4 h-4" />
+                Listes
+                {automations.length > 0 && (
+                  <Badge variant="secondary" className="ml-1 text-xs">
+                    {automations.filter(a => a.isActive).length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="emails" className="gap-2">
+                <Mail className="w-4 h-4" />
+                Emails
+                {emailAutomations.length > 0 && (
+                  <Badge variant="secondary" className="ml-1 text-xs">
+                    {emailAutomations.filter(a => a.isActive).length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+            </TabsList>
 
-              {/* Liste des automatisations */}
-              {isLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="w-6 h-6 animate-spin" />
-                </div>
-              ) : automations.length === 0 ? (
-                <div className="text-center py-8">
-                  <Zap className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
-                  <h3 className="font-medium mb-1">Aucune automatisation</h3>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Créez votre première automatisation pour organiser vos contacts automatiquement
-                  </p>
-                </div>
-              ) : (
-                <AutomationsTable
-                  automations={automations}
-                  onEdit={setEditingAutomation}
-                  onDelete={setDeletingAutomation}
-                  onToggle={handleToggle}
+            {/* Tab: List Automations */}
+            <TabsContent value="lists" className="mt-0">
+              {showForm || editingAutomation ? (
+                <AutomationForm
+                  automation={editingAutomation}
+                  lists={lists}
+                  onSave={editingAutomation ? handleUpdate : handleCreate}
+                  onCancel={() => {
+                    setShowForm(false);
+                    setEditingAutomation(null);
+                  }}
+                  isLoading={createLoading || updateLoading}
                 />
-              )}
+              ) : (
+                <div className="space-y-4">
+                  <Button
+                    onClick={() => setShowForm(true)}
+                    className="w-full"
+                    variant="outline"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Nouvelle automatisation
+                  </Button>
 
-              {/* Info */}
-              {lists.length === 0 && (
-                <Card className="bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800">
-                  <CardContent className="pt-4">
-                    <p className="text-sm text-amber-800 dark:text-amber-200">
-                      Vous devez d'abord créer des listes dans l'onglet "Mes listes" pour pouvoir configurer des automatisations.
-                    </p>
-                  </CardContent>
-                </Card>
+                  {isLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="w-6 h-6 animate-spin" />
+                    </div>
+                  ) : automations.length === 0 ? (
+                    <div className="text-center py-8">
+                      <Zap className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
+                      <h3 className="font-medium mb-1">Aucune automatisation</h3>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Créez votre première automatisation pour organiser vos contacts automatiquement
+                      </p>
+                    </div>
+                  ) : (
+                    <AutomationsTable
+                      automations={automations}
+                      onEdit={setEditingAutomation}
+                      onDelete={setDeletingAutomation}
+                      onToggle={handleToggle}
+                    />
+                  )}
+
+                  {lists.length === 0 && (
+                    <Card className="bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800">
+                      <CardContent className="pt-4">
+                        <p className="text-sm text-amber-800 dark:text-amber-200">
+                          Vous devez d'abord créer des listes dans l'onglet "Mes listes" pour pouvoir configurer des automatisations.
+                        </p>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
               )}
-            </div>
-          )}
+            </TabsContent>
+
+            {/* Tab: Email Automations */}
+            <TabsContent value="emails" className="mt-0">
+              {showEmailForm || editingEmailAutomation ? (
+                <EmailAutomationForm
+                  automation={editingEmailAutomation}
+                  dateFields={dateFields}
+                  onSave={editingEmailAutomation ? handleUpdateEmail : handleCreateEmail}
+                  onCancel={() => {
+                    setShowEmailForm(false);
+                    setEditingEmailAutomation(null);
+                  }}
+                  isLoading={createEmailLoading || updateEmailLoading}
+                />
+              ) : (
+                <div className="space-y-4">
+                  <Button
+                    onClick={() => setShowEmailForm(true)}
+                    className="w-full"
+                    variant="outline"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Nouvelle automatisation email
+                  </Button>
+
+                  {isEmailLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="w-6 h-6 animate-spin" />
+                    </div>
+                  ) : emailAutomations.length === 0 ? (
+                    <div className="text-center py-8">
+                      <Mail className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
+                      <h3 className="font-medium mb-1">Aucune automatisation email</h3>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Envoyez des emails automatiques basés sur les dates de vos champs personnalisés
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="border rounded-lg">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Nom</TableHead>
+                            <TableHead>Champ date</TableHead>
+                            <TableHead>Timing</TableHead>
+                            <TableHead className="text-center">Statut</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {emailAutomations.map((automation) => (
+                            <TableRow key={automation.id} className={!automation.isActive ? 'opacity-60' : ''}>
+                              <TableCell>
+                                <div>
+                                  <p className="font-medium text-sm">{automation.name}</p>
+                                  {automation.description && (
+                                    <p className="text-xs text-muted-foreground truncate max-w-[150px]">
+                                      {automation.description}
+                                    </p>
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className="text-xs">
+                                  <Calendar className="w-3 h-3 mr-1" />
+                                  {automation.customField?.name || 'Champ supprimé'}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <span className="text-sm">{getTimingLabel(automation.timing)}</span>
+                              </TableCell>
+                              <TableCell className="text-center">
+                                <Switch
+                                  checked={automation.isActive}
+                                  onCheckedChange={() => handleToggleEmail(automation.id)}
+                                  className="data-[state=checked]:bg-[#5b50ff]"
+                                />
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                                      <MoreHorizontal className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onClick={() => setEditingEmailAutomation(automation)}>
+                                      <Edit2 className="w-4 h-4 mr-2" />
+                                      Modifier
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() => setDeletingEmailAutomation(automation)}
+                                      className="text-red-600 focus:text-red-600"
+                                    >
+                                      <Trash2 className="w-4 h-4 mr-2" />
+                                      Supprimer
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+
+                  {dateFields.length === 0 && (
+                    <Card className="bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800">
+                      <CardContent className="pt-4">
+                        <p className="text-sm text-amber-800 dark:text-amber-200">
+                          Vous devez d'abord créer un champ personnalisé de type "Date" pour pouvoir configurer des automatisations email.
+                        </p>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
         </DialogContent>
       </Dialog>
 
-      {/* Dialog de confirmation de suppression */}
+      {/* Dialog de confirmation de suppression - List automations */}
       <AlertDialog open={!!deletingAutomation} onOpenChange={() => setDeletingAutomation(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -881,6 +1118,34 @@ export default function AutomationsModal({ open, onOpenChange }) {
               disabled={deleteLoading}
             >
               {deleteLoading ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Trash2 className="w-4 h-4 mr-2" />
+              )}
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Dialog de confirmation de suppression - Email automations */}
+      <AlertDialog open={!!deletingEmailAutomation} onOpenChange={() => setDeletingEmailAutomation(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer l'automatisation email</AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir supprimer l'automatisation email "{deletingEmailAutomation?.name}" ?
+              Cette action est irréversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteEmail}
+              className="bg-destructive text-white hover:bg-destructive/90"
+              disabled={deleteEmailLoading}
+            >
+              {deleteEmailLoading ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
               ) : (
                 <Trash2 className="w-4 h-4 mr-2" />

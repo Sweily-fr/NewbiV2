@@ -1,27 +1,16 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/src/lib/auth";
 
-// Routes qui nécessitent uniquement une authentification (pas d'abonnement requis)
-const AUTH_ONLY_ROUTES = ["/dashboard"];
+// Routes qui nécessitent une authentification ET un abonnement actif
+// ✅ SÉCURISÉ: Vérification côté serveur obligatoire
+const SUBSCRIPTION_REQUIRED_ROUTES = ["/dashboard"];
 
-// Routes qui nécessitent un abonnement actif ou un essai valide
-const PROTECTED_ROUTES = [
+// Routes API qui nécessitent un abonnement actif
+const PROTECTED_API_ROUTES = [
   "/api/graphql",
   "/api/upload",
   "/api/bridge",
   "/api/ocr",
-];
-
-// Routes qui nécessitent spécifiquement un abonnement Pro (pas accessible en Free)
-const PRO_ONLY_ROUTES = [
-  "/dashboard/outils/factures",
-  "/dashboard/outils/devis",
-  "/dashboard/outils/clients",
-  "/dashboard/outils/produits",
-  "/dashboard/outils/transactions",
-  "/dashboard/outils/kanban",
-  "/dashboard/outils/transferts-fichiers",
-  "/dashboard/outils/signatures-mail",
 ];
 
 // Routes exclues de la vérification d'abonnement
@@ -30,13 +19,15 @@ const EXCLUDED_ROUTES = [
   "/accept-invitation",
   "/api/auth",
   "/api/webhooks/stripe",
+  "/api/organizations", // API de vérification d'abonnement
   "/pricing",
   "/checkout",
   "/billing",
+  "/onboarding", // Pages d'onboarding
 ];
 
 export async function subscriptionMiddleware(request) {
-  const { pathname } = request.nextUrl;
+  const { pathname, searchParams } = request.nextUrl;
 
   // Vérifier si la route est exclue
   const isExcludedRoute = EXCLUDED_ROUTES.some((route) =>
@@ -47,23 +38,18 @@ export async function subscriptionMiddleware(request) {
     return NextResponse.next();
   }
 
-  // Vérifier si c'est une route PRO_ONLY (sous-pages du dashboard)
-  const isProOnlyRoute = PRO_ONLY_ROUTES.some((route) =>
+  // Vérifier si c'est une route dashboard (nécessite authentification + abonnement)
+  const isDashboardRoute = SUBSCRIPTION_REQUIRED_ROUTES.some((route) =>
     pathname.startsWith(route)
   );
 
-  // Vérifier si c'est une route qui nécessite uniquement une authentification
-  const isAuthOnlyRoute =
-    AUTH_ONLY_ROUTES.some((route) => pathname.startsWith(route)) &&
-    !isProOnlyRoute;
-
-  // Vérifier si la route nécessite une vérification d'abonnement
-  const isProtectedRoute = PROTECTED_ROUTES.some((route) =>
+  // Vérifier si c'est une route API protégée
+  const isProtectedApiRoute = PROTECTED_API_ROUTES.some((route) =>
     pathname.startsWith(route)
   );
 
-  // Si ce n'est ni une route auth-only ni une route protégée ni une route pro-only, laisser passer
-  if (!isAuthOnlyRoute && !isProtectedRoute && !isProOnlyRoute) {
+  // Si ce n'est ni une route dashboard ni une route API protégée, laisser passer
+  if (!isDashboardRoute && !isProtectedApiRoute) {
     return NextResponse.next();
   }
 
@@ -78,38 +64,75 @@ export async function subscriptionMiddleware(request) {
 
     if (!session?.user) {
       console.log("[Middleware] Redirection vers /auth/login - Pas de session");
-      // Rediriger vers la page de connexion si pas connecté
       return NextResponse.redirect(new URL("/auth/login", request.url));
     }
 
-    // Pour les routes auth-only (comme /dashboard), autoriser l'accès si connecté
-    if (isAuthOnlyRoute && !isProOnlyRoute) {
+    // 🔄 Autoriser l'accès temporaire si on revient de Stripe (webhook en cours)
+    const isReturningFromStripe =
+      searchParams.get("session_id") ||
+      searchParams.get("subscription_success") === "true" ||
+      searchParams.get("payment_success") === "true" ||
+      searchParams.get("welcome") === "true";
+
+    if (isDashboardRoute && isReturningFromStripe) {
+      console.log("[Middleware] Retour de Stripe, accès temporaire autorisé");
       return NextResponse.next();
     }
 
-    // Récupérer les informations d'abonnement Stripe
-    // ⚠️ IMPORTANT: On ne vérifie plus le trial basé sur user.createdAt
-    // Seuls les abonnements Stripe sont acceptés (active, trialing, canceled valide)
+    // 🔒 Vérifier l'abonnement pour les routes dashboard ET les routes API
     const subscription = await auth.api.stripe.getSubscription({
       headers: request.headers,
     });
 
-    const hasActiveSubscription =
+    console.log("[Middleware] Subscription status:", subscription?.status);
+
+    // Vérifier si l'abonnement est valide (actif, trialing, ou canceled mais encore dans la période)
+    const isSubscriptionActive =
       subscription?.status === "active" || subscription?.status === "trialing";
 
-    if (!hasActiveSubscription) {
-      // Pas d'abonnement Stripe actif
-      // Rediriger vers l'onboarding pour choisir un plan
-      console.log("[Middleware] Pas d'abonnement actif, redirection vers /onboarding");
-      return NextResponse.redirect(new URL("/onboarding", request.url));
+    // Vérifier si l'abonnement canceled est encore valide (période non expirée)
+    const isCanceledButValid =
+      subscription?.status === "canceled" &&
+      subscription?.periodEnd &&
+      new Date(subscription.periodEnd) > new Date();
+
+    const hasValidSubscription = isSubscriptionActive || isCanceledButValid;
+
+    if (!hasValidSubscription) {
+      // Pas d'abonnement valide
+      if (isDashboardRoute) {
+        console.log("[Middleware] Pas d'abonnement, redirection vers /onboarding");
+        return NextResponse.redirect(new URL("/onboarding", request.url));
+      }
+
+      if (isProtectedApiRoute) {
+        return NextResponse.json(
+          { error: "Abonnement requis" },
+          { status: 403 }
+        );
+      }
     }
 
-    // L'utilisateur a un abonnement actif, autoriser l'accès
+    // ✅ L'utilisateur a un abonnement valide, autoriser l'accès
     return NextResponse.next();
   } catch (error) {
     console.error("Erreur dans le middleware d'abonnement:", error);
 
-    // En cas d'erreur, rediriger vers la page de connexion
-    return NextResponse.redirect(new URL("/auth/login", request.url));
+    // En cas d'erreur sur les routes API, retourner une erreur JSON
+    if (isProtectedApiRoute) {
+      return NextResponse.json(
+        { error: "Erreur de vérification" },
+        { status: 500 }
+      );
+    }
+
+    // En cas d'erreur sur les routes dashboard, rediriger vers onboarding par sécurité
+    // (mieux vaut bloquer que laisser passer)
+    if (isDashboardRoute) {
+      console.log("[Middleware] Erreur, redirection sécurisée vers /onboarding");
+      return NextResponse.redirect(new URL("/onboarding", request.url));
+    }
+
+    return NextResponse.next();
   }
 }

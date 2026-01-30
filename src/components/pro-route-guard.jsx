@@ -3,102 +3,83 @@
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
-import { Skeleton } from "@/src/components/ui/skeleton";
+import { Loader2 } from "lucide-react";
 
+/**
+ * ProRouteGuard - Garde de route pour les fonctionnalités Pro
+ *
+ * 🔒 SÉCURISÉ: Bloque l'accès pendant le chargement (affiche un loader)
+ * Ne révèle le contenu qu'après confirmation de l'abonnement
+ */
 export function ProRouteGuard({
   children,
   pageName,
   requirePaidSubscription = false,
 }) {
-  const { isActive, loading, subscription, hasInitialized, trial } =
-    useSubscription();
+  const { isActive, loading, subscription, hasInitialized } = useSubscription();
   const router = useRouter();
-  const [isChecking, setIsChecking] = useState(true);
-  const [hasAccess, setHasAccess] = useState(false);
-  const checkTimeoutRef = useRef(null);
+  const [hasAccess, setHasAccess] = useState(false); // 🔒 Par défaut false (bloqué)
   const hasRedirectedRef = useRef(false);
-  const initialCheckDoneRef = useRef(false);
 
   useEffect(() => {
-    // Nettoyer le timeout précédent
-    if (checkTimeoutRef.current) {
-      clearTimeout(checkTimeoutRef.current);
+    // 🔒 Pendant le chargement, garder l'accès bloqué
+    if (loading || !hasInitialized) {
+      setHasAccess(false);
+      return;
     }
 
-    // Attendre que l'initialisation soit complète
-    if (!loading && hasInitialized) {
-      // Ajouter un délai pour permettre la synchronisation complète des données
-      checkTimeoutRef.current = setTimeout(() => {
-        const hasActiveSubscription = isActive();
-        const isPaidSubscription = subscription?.status === "active";
+    // Vérifier l'accès avec isActive() qui gère déjà "trialing"
+    const hasActiveSubscription = isActive(requirePaidSubscription);
 
-        // Vérifier si l'accès est autorisé
-        const accessGranted = requirePaidSubscription
-          ? isPaidSubscription
-          : hasActiveSubscription;
-
-        // ⚠️ IMPORTANT: Vérifier si l'abonnement est vraiment chargé
-        // Si subscription est undefined/null ET qu'on n'a pas de trial, c'est en cours de chargement
-        const isSubscriptionDataLoaded =
-          subscription !== undefined ||
-          trial?.isTrialActive === true ||
-          trial?.hasUsedTrial === true;
-
-        // Ne pas rediriger au premier chargement si les données ne sont pas encore chargées
-        if (!isSubscriptionDataLoaded && !initialCheckDoneRef.current) {
-          return;
-        }
-
-        // Marquer que le premier check est fait
-        if (isSubscriptionDataLoaded && !initialCheckDoneRef.current) {
-          initialCheckDoneRef.current = true;
-        }
-
-        // Ne rediriger que si les données sont chargées ET l'accès est refusé
-        if (
-          !accessGranted &&
-          !hasRedirectedRef.current &&
-          isSubscriptionDataLoaded
-        ) {
-          hasRedirectedRef.current = true;
-          router.replace("/dashboard?access=restricted");
-        } else if (accessGranted) {
-          setHasAccess(true);
-          hasRedirectedRef.current = false; // Reset pour permettre les futures redirections
-        } else if (!isSubscriptionDataLoaded) {
-          return;
-        }
-
-        setIsChecking(false);
-      }, 300); // Délai de 300ms pour la synchronisation
+    if (hasActiveSubscription) {
+      setHasAccess(true);
+      hasRedirectedRef.current = false;
+      return;
     }
 
-    // Cleanup
-    return () => {
-      if (checkTimeoutRef.current) {
-        clearTimeout(checkTimeoutRef.current);
+    // 🔒 Pas d'abonnement valide - rediriger
+    if (!hasActiveSubscription && subscription !== undefined) {
+      setHasAccess(false);
+      if (!hasRedirectedRef.current) {
+        hasRedirectedRef.current = true;
+        router.replace("/dashboard?access=restricted");
       }
-    };
+    }
   }, [
     loading,
     hasInitialized,
-    subscription?.status,
+    subscription,
     router,
     isActive,
-    pageName,
     requirePaidSubscription,
-    trial?.isTrialActive,
   ]);
 
-  // Afficher le contenu pendant la vérification (les pages gèrent leurs propres skeletons)
-  if (isChecking || loading || !hasInitialized) {
-    return <>{children}</>;
+  // 🔒 Afficher un loader pendant la vérification (sécurisé)
+  if (loading || !hasInitialized) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center space-y-4">
+          <Loader2 className="w-8 h-8 animate-spin text-[#5A50FF] mx-auto" />
+          <p className="text-sm text-muted-foreground">
+            Vérification de l'accès...
+          </p>
+        </div>
+      </div>
+    );
   }
 
-  // Afficher le contenu seulement si l'accès est autorisé
-  if (!hasAccess) {
-    return null;
+  // ✅ Afficher le contenu si l'accès est autorisé
+  if (hasAccess) {
+    return children;
   }
 
-  return children;
+  // 🔒 Si pas d'accès, afficher le loader (redirection en cours)
+  return (
+    <div className="flex items-center justify-center min-h-[400px]">
+      <div className="text-center space-y-4">
+        <Loader2 className="w-8 h-8 animate-spin text-[#5A50FF] mx-auto" />
+        <p className="text-sm text-muted-foreground">Redirection...</p>
+      </div>
+    </div>
+  );
 }

@@ -69,12 +69,12 @@ const menuItems = [
       {
         title: "AUTRES OUTILS",
         items: [
-          {
-            name: "Partage de documents",
-            description: "Partagez vos documents en toute sécurité",
-            icon: <Share2 size={18} />,
-            href: "/produits/documents",
-          },
+          // {
+          //   name: "Partage de documents",
+          //   description: "Partagez vos documents en toute sécurité",
+          //   icon: <Share2 size={18} />,
+          //   href: "/produits/documents",
+          // },
           {
             name: "Signature de mail",
             description: "Créez des signatures professionnelles",
@@ -152,7 +152,7 @@ const menuItems = [
             name: "Apporteur d'affaire",
             description: "Devenez partenaire et gagnez des commissions",
             icon: <HandCoins size={18} />,
-            href: "/apporteur-affaire",
+            href: "https://partenaire.newbi.fr",
           },
           // {
           //   name: "Témoignages clients",
