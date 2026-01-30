@@ -86,7 +86,7 @@ const data = {
     {
       name: "Cabinet comptable",
       logo: IconUsers,
-      plan: "Free",
+      plan: "Pro",
     },
   ],
   navMain: [

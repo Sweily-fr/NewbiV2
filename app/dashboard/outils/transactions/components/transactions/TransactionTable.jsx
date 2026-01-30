@@ -19,7 +19,6 @@ import {
 } from "@tanstack/react-table";
 import { toast } from "@/src/components/ui/sonner";
 import { TransactionDetailDrawer } from "../transaction-detail-drawer";
-import { AddTransactionDrawer } from "../add-transaction-drawer";
 import { ReceiptUploadDrawer } from "../receipt-upload-drawer";
 import { ExportDialog } from "../export-dialog";
 import {
@@ -29,6 +28,7 @@ import {
   useDeleteMultipleExpenses,
   useAddExpenseFile,
 } from "@/src/hooks/useExpenses";
+import { useCreateTransaction, useUpdateTransaction, useDeleteTransaction } from "@/src/hooks/useTransactions";
 import { useMutation } from "@apollo/client";
 import { UPLOAD_TRANSACTION_RECEIPT } from "@/src/graphql/queries/banking";
 import { useOrganizationInvitations } from "@/src/hooks/useOrganizationInvitations";
@@ -235,13 +235,11 @@ export default function TransactionTable({
   useEffect(() => {
     const fetchMembers = async () => {
       if (!activeOrg?.id) {
-        console.log("⏳ [DEPENSES] En attente de l'organisation......");
         return;
       }
 
       try {
         setLoadingMembers(true);
-        console.log("[DEPENSES] Organisation chargée:", activeOrg.id);
 
         const result = await getAllCollaborators();
 
@@ -277,15 +275,8 @@ export default function TransactionTable({
             });
           }
 
-          console.log("✅ [DEPENSES] Membres finaux:", formattedMembers);
-          console.log("🖼️ [DEPENSES] Détails des avatars:");
-          formattedMembers.forEach((m) => {
-            console.log(`  - ${m.email}: image="${m.image}"`);
-          });
-
           setOrganizationMembers(formattedMembers);
         } else {
-          console.error("❌ [DEPENSES] Erreur:", result.error);
           setOrganizationMembers([]);
         }
       } catch (error) {
@@ -328,6 +319,9 @@ export default function TransactionTable({
   const refetchExpenses = refetchExpensesProp;
 
   const { createExpense, loading: createExpenseLoading } = useCreateExpense();
+  const { createTransaction, loading: createTransactionLoading } = useCreateTransaction();
+  const { updateTransaction, loading: updateTransactionLoading } = useUpdateTransaction();
+  const { deleteTransaction, loading: deleteTransactionLoading } = useDeleteTransaction();
   const { updateExpense, loading: updateExpenseLoading } = useUpdateExpense();
   const { deleteExpense, loading: deleteExpenseLoading } = useDeleteExpense();
   const { deleteMultipleExpenses, loading: deleteMultipleExpensesLoading } =
@@ -344,7 +338,6 @@ export default function TransactionTable({
       promoteResult?.url &&
       pendingTransactionRef.current
     ) {
-      console.log("✅ [PROMOTE] Fichier promu avec succès:", promoteResult.url);
       const transaction = pendingTransactionRef.current;
       transaction.receiptImage = promoteResult.url;
       pendingTransactionRef.current = null;
@@ -426,12 +419,17 @@ export default function TransactionTable({
         source: expense.source || expense.type || "MANUAL",
         // Indicateurs pour la vue unifiée
         hasReceipt:
-          expense.hasReceipt || (expense.files && expense.files.length > 0),
-        receiptRequired: expense.receiptRequired !== false,
+          expense.hasReceipt || (expense.files && expense.files.length > 0) || !!expense.linkedInvoice?.id,
+        receiptRequired: expense.receiptRequired !== false && !expense.linkedInvoice?.id,
         expenseType: expense.expenseType || "ORGANIZATION",
         assignedMember: expense.assignedMember || null,
         // Données originales de la transaction bancaire si disponibles
         originalTransaction: expense.originalTransaction || null,
+        // Champs de rapprochement bancaire
+        linkedInvoiceId: expense.linkedInvoiceId || null,
+        linkedInvoice: expense.linkedInvoice || null,
+        reconciliationStatus: expense.reconciliationStatus || null,
+        reconciliationDate: expense.reconciliationDate || null,
       };
     });
 
@@ -484,41 +482,56 @@ export default function TransactionTable({
   }, [globalFilter]);
 
   const handleDeleteRows = async () => {
-    const selectedRows = table.getSelectedRowModel().rows;
+    const selectedRows = tableWithFilteredData.getSelectedRowModel().rows;
 
     if (selectedRows.length === 0) {
       toast.error("Aucune transaction sélectionnée");
       return;
     }
 
-    const expenseRows = selectedRows.filter(
-      (row) => row.original.source === "expense"
+    // Filtrer les transactions manuelles (supprimables)
+    const manualRows = selectedRows.filter(
+      (row) => row.original.source === "MANUAL" || row.original.provider === "manual"
     );
-    const invoiceRows = selectedRows.filter(
-      (row) => row.original.source === "invoice"
+    const bankRows = selectedRows.filter(
+      (row) => row.original.source === "BANK" && row.original.provider !== "manual"
     );
 
-    if (invoiceRows.length > 0) {
+    if (bankRows.length > 0) {
       toast.warning(
-        `${invoiceRows.length} facture(s) ignorée(s) (non supprimables)`
+        `${bankRows.length} transaction(s) bancaire(s) ignorée(s) (non supprimables)`
       );
     }
 
-    if (expenseRows.length === 0) {
-      toast.error("Aucune dépense sélectionnée pour la suppression");
+    if (manualRows.length === 0) {
+      toast.error("Aucune transaction manuelle sélectionnée pour la suppression");
       return;
     }
 
     try {
-      const expenseIds = expenseRows.map((row) => row.original.id);
-      const result = await deleteMultipleExpenses(expenseIds);
+      // Supprimer les transactions une par une
+      let deletedCount = 0;
+      let failedCount = 0;
 
-      if (result.success) {
-        table.resetRowSelection();
+      for (const row of manualRows) {
+        const result = await deleteTransaction(row.original.id);
+        if (result.success) {
+          deletedCount++;
+        } else {
+          failedCount++;
+        }
+      }
+
+      if (deletedCount > 0) {
+        tableWithFilteredData.resetRowSelection();
+        toast.success(`${deletedCount} transaction(s) supprimée(s)`);
         await refetchExpenses();
       }
+      if (failedCount > 0) {
+        toast.error(`${failedCount} suppression(s) échouée(s)`);
+      }
     } catch (error) {
-      console.error("Error deleting expenses:", error);
+      console.error("Error deleting transactions:", error);
     }
   };
 
@@ -561,10 +574,23 @@ export default function TransactionTable({
       return;
     }
 
+    // Seules les transactions manuelles peuvent être supprimées
+    if (transaction.source !== "MANUAL" && transaction.provider !== "manual") {
+      toast.error(
+        "Seules les transactions manuelles peuvent être supprimées"
+      );
+      return;
+    }
+
     try {
-      const result = await deleteExpense(transaction.id);
+      const result = await deleteTransaction(transaction.id);
+      if (result.success) {
+        setTimeout(() => {
+          refetchExpenses();
+        }, 300);
+      }
     } catch (error) {
-      console.error("Error deleting expense:", error);
+      console.error("Error deleting transaction:", error);
     }
   };
 
@@ -577,148 +603,56 @@ export default function TransactionTable({
     try {
       let promotedReceiptUrl = transaction.receiptImage;
 
+      // Promotion du fichier temporaire si nécessaire
       if (
         transaction.receiptImage &&
         transaction.receiptImage.includes("/temp/")
       ) {
-        console.log(
-          "📎 [PROMOTE] Promotion du fichier temporaire:",
-          transaction.receiptImage
-        );
         try {
           const urlParts = transaction.receiptImage.split("/");
           const tempKey = urlParts.slice(-3).join("/");
-          console.log("📋 [PROMOTE] Clé extraite:", tempKey);
 
           pendingTransactionRef.current = transaction;
           await promoteTemporaryFile(tempKey);
           return;
         } catch (promoteError) {
-          console.error("❌ [PROMOTE] Erreur promotion:", promoteError);
           promotedReceiptUrl = transaction.receiptImage;
         }
       }
 
       transaction.receiptImage = promotedReceiptUrl;
 
-      if (transaction.type === "INCOME") {
-        const expenseInput = {
-          workspaceId, // ✅ Ajout du workspaceId requis
-          title: transaction.description || "Revenu manuel",
-          description: transaction.description,
-          amount: parseFloat(transaction.amount),
-          currency: "EUR",
-          category: mapCategoryToEnum(transaction.category),
-          date: transaction.date,
-          paymentMethod: mapPaymentMethodToEnum(transaction.paymentMethod),
-          vendor: transaction.vendor || "",
-          status: "PAID",
-          isVatDeductible: false,
-          notes: `[INCOME] ${transaction.description}`,
-        };
+      // Déterminer le type de transaction (DEBIT pour dépense, CREDIT pour revenu)
+      const isIncome = transaction.type === "INCOME";
+      const transactionType = isIncome ? "CREDIT" : "DEBIT";
 
-        const result = await createExpense(expenseInput);
+      // Montant : négatif pour les dépenses, positif pour les revenus
+      const amount = isIncome
+        ? Math.abs(parseFloat(transaction.amount))
+        : -Math.abs(parseFloat(transaction.amount));
 
-        if (
-          result.success &&
-          (promotedReceiptUrl || transaction.receiptImage) &&
-          result.expense?.id
-        ) {
-          try {
-            const fileUrl = promotedReceiptUrl || transaction.receiptImage;
-            await addExpenseFile(result.expense.id, {
-              cloudflareUrl: fileUrl,
-              fileName: "receipt.pdf",
-              mimeType: fileUrl.toLowerCase().endsWith(".pdf")
-                ? "application/pdf"
-                : "image/jpeg",
-              processOCR: false,
-            });
-          } catch (fileError) {
-            console.error("Erreur ajout fichier:", fileError);
-          }
-        }
+      // Construire l'input pour createTransaction
+      const transactionInput = {
+        workspaceId,
+        amount: amount,
+        currency: "EUR",
+        description: transaction.description || (isIncome ? "Revenu manuel" : "Dépense manuelle"),
+        type: transactionType,
+        date: transaction.date,
+        category: mapCategoryToEnum(transaction.category),
+        vendor: transaction.vendor || "",
+        notes: transaction.description || "",
+      };
 
-        if (result.success) {
-          setIsAddTransactionDrawerOpen(false);
-          setTimeout(() => {
-            refetchExpenses();
-          }, 500);
-        }
-      } else {
-        let assignedMember = null;
-        if (transaction.assignedMember && transaction.assignedMember.userId) {
-          assignedMember = {
-            userId: transaction.assignedMember.userId,
-            name: transaction.assignedMember.name,
-            email: transaction.assignedMember.email,
-            image: transaction.assignedMember.image || null,
-          };
-        }
+      const result = await createTransaction(transactionInput);
 
-        const expenseInput = {
-          workspaceId, // ✅ Ajout du workspaceId requis
-          title: transaction.description || "Dépense manuelle",
-          description: transaction.description,
-          amount: parseFloat(transaction.amount),
-          currency: "EUR",
-          category: mapCategoryToEnum(transaction.category),
-          date: transaction.date,
-          paymentMethod: mapPaymentMethodToEnum(transaction.paymentMethod),
-          vendor: transaction.vendor || "",
-          status: "PAID",
-          isVatDeductible: true,
-          notes: `[EXPENSE] ${transaction.description}`,
-          expenseType: transaction.expenseType || "ORGANIZATION",
-        };
-
-        if (assignedMember) {
-          expenseInput.assignedMember = assignedMember;
-        }
-
-        console.log("📝 [CREATE EXPENSE] Données envoyées:", expenseInput);
-        const result = await createExpense(expenseInput);
-        console.log("📝 [CREATE RESULT]", result);
-
-        if (result.success) {
-          if (
-            (promotedReceiptUrl || transaction.receiptImage) &&
-            result.expense?.id
-          ) {
-            console.log(
-              "📎 [ADD FILE] Ajout du fichier pour l'expense:",
-              result.expense.id
-            );
-            const fileUrl = promotedReceiptUrl || transaction.receiptImage;
-            console.log("📎 [ADD FILE] URL Cloudflare:", fileUrl);
-            try {
-              const fileResult = await addExpenseFile(result.expense.id, {
-                cloudflareUrl: fileUrl,
-                fileName: "receipt.pdf",
-                mimeType: fileUrl.toLowerCase().endsWith(".pdf")
-                  ? "application/pdf"
-                  : "image/jpeg",
-                processOCR: false,
-              });
-              console.log(
-                "✅ [ADD FILE] Fichier ajouté avec succès:",
-                fileResult
-              );
-            } catch (fileError) {
-              console.error("❌ [ADD FILE] Erreur ajout fichier:", fileError);
-            }
-          } else {
-            console.log("⚠️ [ADD FILE] Conditions non remplies:", {
-              hasReceiptImage: !!(
-                promotedReceiptUrl || transaction.receiptImage
-              ),
-              hasExpenseId: !!result.expense?.id,
-            });
-          }
-
-          setIsAddTransactionDrawerOpen(false);
+      if (result.success) {
+        setIsAddTransactionDrawerOpen(false);
+        // Le refetch est géré automatiquement par le hook via refetchQueries
+        // Mais on peut aussi forcer un refresh pour s'assurer
+        setTimeout(() => {
           refetchExpenses();
-        }
+        }, 300);
       }
     } catch (error) {
       console.error("Erreur lors de l'ajout de la transaction:", error);
@@ -745,11 +679,6 @@ export default function TransactionTable({
       const transactionId =
         transaction.originalTransaction?.id || transaction.id;
 
-      console.log(
-        "📎 [ATTACH RECEIPT] Upload via GraphQL pour transaction:",
-        transactionId
-      );
-
       // Upload via mutation GraphQL
       const { data } = await uploadReceiptMutation({
         variables: {
@@ -764,11 +693,6 @@ export default function TransactionTable({
           data?.uploadTransactionReceipt?.message || "Erreur lors de l'upload"
         );
       }
-
-      console.log(
-        "✅ [ATTACH RECEIPT] Receipt uploaded successfully:",
-        data.uploadTransactionReceipt.receiptFile?.url
-      );
 
       // Mettre à jour selectedTransaction avec le receiptFile
       if (selectedTransaction) {
@@ -792,62 +716,34 @@ export default function TransactionTable({
     if (!editingTransaction) return;
 
     try {
-      let assignedMember = null;
-      if (updatedTransaction.assignedMember) {
-        assignedMember = {
-          userId: updatedTransaction.assignedMember.userId,
-          name: updatedTransaction.assignedMember.name,
-          email: updatedTransaction.assignedMember.email,
-          image: updatedTransaction.assignedMember.image || null,
-        };
-      }
+      // Déterminer le type de transaction
+      const isIncome = updatedTransaction.type === "INCOME";
+      const transactionType = isIncome ? "CREDIT" : "DEBIT";
+
+      // Montant : négatif pour les dépenses, positif pour les revenus
+      const amount = isIncome
+        ? Math.abs(parseFloat(updatedTransaction.amount))
+        : -Math.abs(parseFloat(updatedTransaction.amount));
 
       const updateInput = {
-        title: updatedTransaction.description || "Transaction modifiée",
-        description: updatedTransaction.description,
-        amount: parseFloat(updatedTransaction.amount),
+        description: updatedTransaction.description || "Transaction modifiée",
+        amount: amount,
         currency: "EUR",
         category: mapCategoryToEnum(updatedTransaction.category),
         date: updatedTransaction.date,
-        paymentMethod: mapPaymentMethodToEnum(updatedTransaction.paymentMethod),
+        type: transactionType,
         vendor: updatedTransaction.vendor,
         notes: updatedTransaction.description,
-        status: "PAID",
-        isVatDeductible: true,
-        expenseType: updatedTransaction.expenseType || "ORGANIZATION",
-        assignedMember: assignedMember,
       };
 
-      const result = await updateExpense(editingTransaction.id, updateInput);
-
-      if (
-        result.success &&
-        updatedTransaction.receiptImage &&
-        editingTransaction.id
-      ) {
-        const isNewImage =
-          updatedTransaction.receiptImage !== editingTransaction.attachment;
-        if (isNewImage) {
-          try {
-            await addExpenseFile(editingTransaction.id, {
-              cloudflareUrl: updatedTransaction.receiptImage,
-              fileName: "receipt.pdf",
-              mimeType: updatedTransaction.receiptImage
-                .toLowerCase()
-                .endsWith(".pdf")
-                ? "application/pdf"
-                : "image/jpeg",
-              processOCR: false,
-            });
-          } catch (fileError) {
-            console.error("Erreur ajout fichier:", fileError);
-          }
-        }
-      }
+      const result = await updateTransaction(editingTransaction.id, updateInput);
 
       if (result.success) {
         handleCloseEditModal();
-        refetchExpenses();
+        // Le refetch est géré automatiquement par le hook via refetchQueries
+        setTimeout(() => {
+          refetchExpenses();
+        }, 300);
       }
     } catch (error) {
       console.error("Erreur lors de la modification de la transaction:", error);
@@ -1533,6 +1429,7 @@ export default function TransactionTable({
       />
 
       {/* Drawers */}
+      {/* Drawer unifié pour visualisation */}
       <TransactionDetailDrawer
         transaction={selectedTransaction}
         open={isDetailDrawerOpen}
@@ -1541,21 +1438,25 @@ export default function TransactionTable({
         onDelete={handleDeleteFromDrawer}
         onAttachReceipt={handleAttachReceipt}
         onRefresh={refetch}
+        onSubmit={handleSaveTransaction}
       />
 
-      <AddTransactionDrawer
+      {/* Drawer unifié pour création */}
+      <TransactionDetailDrawer
         open={isAddTransactionDrawerOpen}
         onOpenChange={setIsAddTransactionDrawerOpen}
         onSubmit={handleAddTransaction}
-        organizationMembers={organizationMembers}
+        onRefresh={refetch}
+        isCreating={true}
       />
 
-      <AddTransactionDrawer
+      {/* Drawer unifié pour édition */}
+      <TransactionDetailDrawer
+        transaction={editingTransaction}
         open={isEditModalOpen}
         onOpenChange={setIsEditModalOpen}
         onSubmit={handleSaveTransaction}
-        transaction={editingTransaction}
-        organizationMembers={organizationMembers}
+        onRefresh={refetch}
       />
 
       <ReceiptUploadDrawer

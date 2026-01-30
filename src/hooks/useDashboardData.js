@@ -63,52 +63,28 @@ export function useDashboardData() {
   });
 
   // Hook GraphQL pour les transactions
+  // Temporairement: network-only pour forcer le rechargement et voir les vraies données
   const {
     data: transactionsData,
     loading: bankLoading,
     refetch: refetchBankTransactions,
   } = useQuery(GET_TRANSACTIONS, {
     variables: { workspaceId, limit: 5000 },
-    fetchPolicy: "cache-first",
+    fetchPolicy: "network-only", // Forcer le rechargement depuis le serveur
     skip: !workspaceId,
   });
 
-  // Rafraîchir les données si le cache est expiré
+  // Rafraîchir les données si le cache est expiré (une seule fois au montage)
   useEffect(() => {
-    if (!workspaceId) return;
+    if (!workspaceId || hasInitialFetch.current) return;
 
-    // Premier chargement ou cache expiré
-    if (!hasInitialFetch.current || !isCacheValid()) {
-      hasInitialFetch.current = true;
+    hasInitialFetch.current = true;
 
-      // Rafraîchir en arrière-plan si on a des données en cache
-      const hasCache =
-        accountsData?.bankingAccounts || transactionsData?.transactions;
-
-      if (hasCache && !isCacheValid()) {
-        // Rafraîchir silencieusement en arrière-plan
-        Promise.all([
-          refetchBankAccounts?.(),
-          refetchBankTransactions?.(),
-          refetchInvoices?.(),
-        ]).then(() => {
-          updateCacheTimestamp();
-        });
-      } else if (!hasCache) {
-        // Premier chargement, marquer le timestamp
-        updateCacheTimestamp();
-      }
+    // Marquer le timestamp au premier chargement
+    if (!isCacheValid()) {
+      updateCacheTimestamp();
     }
-  }, [
-    workspaceId,
-    isCacheValid,
-    updateCacheTimestamp,
-    accountsData,
-    transactionsData,
-    refetchBankAccounts,
-    refetchBankTransactions,
-    refetchInvoices,
-  ]);
+  }, [workspaceId, isCacheValid, updateCacheTimestamp]);
 
   // Extraire les données
   const bankAccounts = accountsData?.bankingAccounts || [];

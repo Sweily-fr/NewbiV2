@@ -323,20 +323,42 @@ const LoginForm = () => {
               body: JSON.stringify({ action: "accept" }),
             });
 
-            if (response.ok) {
-              const result = await response.json();
+            const result = await response.json();
 
-              // ⚠️ IMPORTANT: Ne plus créer de trial organisation
-              // L'utilisateur devra souscrire via Stripe (avec 30 jours d'essai Stripe)
-              if (result.data) {
-                console.log(`✅ Invitation acceptée:`, result.data);
-                toast.success(
-                  "Invitation acceptée ! Bienvenue dans l'organisation."
-                );
-              } else {
-                toast.success(
-                  "Bienvenue ! Votre espace de travail a été créé."
-                );
+            if (response.ok) {
+              console.log(`✅ Invitation acceptée:`, result);
+
+              // ✅ CRITIQUE: Stocker l'organizationId dans localStorage pour Apollo Client
+              if (result.organizationId) {
+                localStorage.setItem("active_organization_id", result.organizationId);
+                console.log(`📦 [LOGIN] Organization ID stocké: ${result.organizationId}`);
+
+                // ✅ Définir l'organisation active côté client Better Auth
+                await authClient.organization.setActive({
+                  organizationId: result.organizationId,
+                });
+                console.log(`🔄 [LOGIN] Organisation active définie côté client`);
+              }
+
+              toast.success(
+                "Invitation acceptée ! Bienvenue dans l'organisation."
+              );
+
+              // ✅ Nettoyer le localStorage après succès
+              localStorage.removeItem("pendingInvitation");
+
+              // ✅ Vérifier si l'utilisateur est un invité (pas d'org propre)
+              // Dans ce cas, marquer l'onboarding comme vu et rediriger vers le dashboard
+              const { data: session } = await authClient.getSession();
+              const isInvitedUser = session?.user?.isInvitedUser;
+
+              if (isInvitedUser) {
+                console.log(`📨 [LOGIN] Utilisateur invité détecté, skip onboarding`);
+                await authClient.updateUser({
+                  hasSeenOnboarding: true,
+                });
+                router.push("/dashboard?welcome=invited");
+                return;
               }
             } else {
               console.error(
@@ -344,6 +366,14 @@ const LoginForm = () => {
               );
               console.error("Status:", response.status);
               console.error("Détails:", result);
+
+              // ✅ Nettoyer le localStorage en cas d'erreur définitive
+              // (invitation expirée, déjà acceptée, etc.)
+              if (response.status === 410 || response.status === 400) {
+                localStorage.removeItem("pendingInvitation");
+                console.log(`🗑️ [LOGIN] Invitation invalide, localStorage nettoyé`);
+              }
+
               toast.error(
                 result.error || "Erreur lors de l'acceptation de l'invitation"
               );
@@ -366,6 +396,19 @@ const LoginForm = () => {
             const organizationId = session?.session?.activeOrganizationId;
             const hasSeenOnboarding = session?.user?.hasSeenOnboarding;
             const userRedirectPage = session?.user?.redirect_after_login;
+            const isInvitedUser = session?.user?.isInvitedUser;
+
+            // ✅ Les utilisateurs invités n'ont pas besoin d'abonnement (ils utilisent celui de l'owner)
+            if (isInvitedUser) {
+              console.log("🎯 [LOGIN] Utilisateur invité, redirection vers dashboard");
+              if (!hasSeenOnboarding) {
+                await authClient.updateUser({
+                  hasSeenOnboarding: true,
+                });
+              }
+              router.push("/dashboard?welcome=invited");
+              return;
+            }
 
             // ⚠️ IMPORTANT: Vérifier l'abonnement Stripe en priorité
             let hasActiveSubscription = false;
@@ -585,14 +628,46 @@ const LoginForm = () => {
             body: JSON.stringify({ action: "accept" }),
           });
 
+          const result = await response.json();
+
           if (response.ok) {
-            const result = await response.json();
+            // ✅ CRITIQUE: Stocker l'organizationId dans localStorage pour Apollo Client
+            if (result.organizationId) {
+              localStorage.setItem("active_organization_id", result.organizationId);
+              console.log(`📦 [2FA] Organization ID stocké: ${result.organizationId}`);
+
+              // ✅ Définir l'organisation active côté client Better Auth
+              await authClient.organization.setActive({
+                organizationId: result.organizationId,
+              });
+              console.log(`🔄 [2FA] Organisation active définie côté client`);
+            }
 
             toast.success(
               "Invitation acceptée ! Bienvenue dans l'organisation."
             );
+
+            // ✅ Nettoyer le localStorage après succès
+            localStorage.removeItem("pendingInvitation");
+
+            // ✅ Vérifier si l'utilisateur est un invité (pas d'org propre)
+            const { data: session } = await authClient.getSession();
+            const isInvitedUser = session?.user?.isInvitedUser;
+
+            if (isInvitedUser) {
+              console.log(`📨 [2FA] Utilisateur invité détecté, skip onboarding`);
+              await authClient.updateUser({
+                hasSeenOnboarding: true,
+              });
+              router.push("/dashboard?welcome=invited");
+              return true;
+            }
           } else {
-            toast.error("Erreur lors de l'acceptation de l'invitation");
+            // ✅ Nettoyer le localStorage en cas d'erreur définitive
+            if (response.status === 410 || response.status === 400) {
+              localStorage.removeItem("pendingInvitation");
+            }
+            toast.error(result.error || "Erreur lors de l'acceptation de l'invitation");
           }
         } catch (error) {
           toast.error("Erreur lors de l'acceptation de l'invitation");
@@ -608,6 +683,19 @@ const LoginForm = () => {
           const organizationId = session?.session?.activeOrganizationId;
           const hasSeenOnboarding = session?.user?.hasSeenOnboarding;
           const userRedirectPage = session?.user?.redirect_after_login;
+          const isInvitedUser = session?.user?.isInvitedUser;
+
+          // ✅ Les utilisateurs invités n'ont pas besoin d'abonnement (ils utilisent celui de l'owner)
+          if (isInvitedUser) {
+            console.log("🎯 [2FA] Utilisateur invité, redirection vers dashboard");
+            if (!hasSeenOnboarding) {
+              await authClient.updateUser({
+                hasSeenOnboarding: true,
+              });
+            }
+            router.push("/dashboard?welcome=invited");
+            return true;
+          }
 
           // ⚠️ IMPORTANT: Vérifier l'abonnement Stripe en priorité
           let hasActiveSubscription = false;

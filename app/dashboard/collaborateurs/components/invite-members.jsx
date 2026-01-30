@@ -146,9 +146,10 @@ export default function InviteMembers({
                       <SelectValue placeholder="Sélectionnez un rôle" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="member">Membre</SelectItem>
                       <SelectItem value="admin">Administrateur</SelectItem>
-                      {/* <SelectItem value="guest">Invité</SelectItem> */}
+                      <SelectItem value="member">Membre</SelectItem>
+                      <SelectItem value="viewer">Lecteur</SelectItem>
+                      <SelectItem value="accountant">Comptable</SelectItem>
                     </SelectContent>
                   </Select>
                 )}

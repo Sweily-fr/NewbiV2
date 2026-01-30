@@ -35,7 +35,8 @@ export function RBACRouteGuard({
   toastMessage = "Vous n'avez pas la permission d'accéder à cette page",
 }) {
   const router = useRouter();
-  const { hasPermission } = usePermissions();
+  // ✅ FIX: Récupérer isLoading et isReady pour attendre que les permissions soient prêtes
+  const { hasPermission, isLoading: isPermissionLoading, isReady } = usePermissions();
   const [isChecking, setIsChecking] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
   const toastShownRef = useRef(false); // Pour éviter les toasts multiples
@@ -44,6 +45,13 @@ export function RBACRouteGuard({
     let isMounted = true; // Pour éviter les mises à jour après démontage
 
     const checkAccess = async () => {
+      // ✅ FIX: Attendre que les permissions soient prêtes avant de vérifier
+      // Cela évite les faux "permission denied" pendant le chargement
+      if (isPermissionLoading || !isReady) {
+        setIsChecking(true);
+        return; // Ne pas encore vérifier, attendre que isReady soit true
+      }
+
       setIsChecking(true);
 
       try {
@@ -101,6 +109,8 @@ export function RBACRouteGuard({
     fallbackUrl,
     showToast,
     toastMessage,
+    isPermissionLoading, // ✅ FIX: Dépendance ajoutée
+    isReady, // ✅ FIX: Dépendance ajoutée
   ]);
 
   // Afficher le loading pendant la vérification

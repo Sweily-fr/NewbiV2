@@ -299,6 +299,7 @@ export const GET_MY_TRANSFERS = gql`
         id
         files {
           id
+          fileId
           fileName
           originalName
           size

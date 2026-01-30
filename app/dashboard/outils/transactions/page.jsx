@@ -35,6 +35,110 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
+import { getTransactionCategory } from "@/lib/bank-categories-config";
+
+// Mapping des noms de catégories (bank-categories-config) vers les clés (category-icons-config)
+const categoryNameToKey = {
+  // Alimentation
+  "Alimentation": "MEALS",
+  "Restaurants": "MEALS",
+  "Courses": "MEALS",
+
+  // Transport
+  "Transport": "TRAVEL",
+  "Carburant": "TRAVEL",
+  "Transports en commun": "TRAVEL",
+  "Taxi/VTC": "TRAVEL",
+  "Parking": "TRAVEL",
+
+  // Logement
+  "Logement": "ACCOMMODATION",
+  "Loyer": "RENT",
+  "Charges": "UTILITIES",
+  "Assurance habitation": "INSURANCE",
+
+  // Loisirs
+  "Loisirs": "OTHER",
+  "Sorties": "OTHER",
+  "Voyages": "TRAVEL",
+  "Sport": "OTHER",
+
+  // Santé
+  "Santé": "SERVICES",
+  "Médecin": "SERVICES",
+  "Pharmacie": "SERVICES",
+  "Mutuelle": "INSURANCE",
+
+  // Shopping
+  "Shopping": "OFFICE_SUPPLIES",
+  "Vêtements": "OTHER",
+  "High-tech": "HARDWARE",
+  "Maison": "OFFICE_SUPPLIES",
+
+  // Services
+  "Services": "SERVICES",
+  "Téléphone/Internet": "SUBSCRIPTIONS",
+  "Abonnements": "SUBSCRIPTIONS",
+  "Banque": "SERVICES",
+
+  // Impôts
+  "Impôts & Taxes": "TAXES",
+  "Impôt sur le revenu": "TAXES",
+  "Taxe foncière": "TAXES",
+
+  // Éducation
+  "Éducation": "TRAINING",
+  "Formation": "TRAINING",
+  "Livres": "TRAINING",
+
+  // Revenus (pour les transactions positives)
+  "Salaire": "OTHER",
+  "Prime": "OTHER",
+  "Remboursement": "OTHER",
+  "Revenus professionnels": "SERVICES",
+  "Facturation": "SERVICES",
+  "Honoraires": "SERVICES",
+  "Aides & Allocations": "OTHER",
+  "CAF": "OTHER",
+  "Pôle Emploi": "OTHER",
+  "Investissements": "OTHER",
+  "Dividendes": "OTHER",
+  "Intérêts": "OTHER",
+  "Virements reçus": "OTHER",
+  "Virement interne": "OTHER",
+  "Autre revenu": "OTHER",
+
+  // Autre
+  "Autre": "OTHER",
+  "Non catégorisé": "OTHER",
+};
+
+// Clés de catégories valides (hors "OTHER")
+const SPECIFIC_CATEGORY_KEYS = [
+  "OFFICE_SUPPLIES", "TRAVEL", "MEALS", "ACCOMMODATION",
+  "SOFTWARE", "HARDWARE", "SERVICES", "MARKETING",
+  "TAXES", "RENT", "UTILITIES", "SALARIES",
+  "INSURANCE", "MAINTENANCE", "TRAINING", "SUBSCRIPTIONS"
+];
+
+// Fonction pour obtenir la catégorie compatible avec category-icons-config
+const getSmartCategory = (transaction) => {
+  // Vérifier si on a une catégorie SPÉCIFIQUE (pas "OTHER")
+  if (transaction.category && SPECIFIC_CATEGORY_KEYS.includes(transaction.category)) {
+    return transaction.category;
+  }
+  if (transaction.expenseCategory && SPECIFIC_CATEGORY_KEYS.includes(transaction.expenseCategory)) {
+    return transaction.expenseCategory;
+  }
+  if (transaction.metadata?.bridgeCategoryMapped && SPECIFIC_CATEGORY_KEYS.includes(transaction.metadata.bridgeCategoryMapped)) {
+    return transaction.metadata.bridgeCategoryMapped;
+  }
+
+  // Si category est "OTHER" ou null, utiliser l'analyse intelligente basée sur la description
+  const categoryInfo = getTransactionCategory(transaction);
+  const categoryName = categoryInfo?.name || "Autre";
+  return categoryNameToKey[categoryName] || "OTHER";
+};
 
 function GestionDepensesContent() {
   const searchParams = useSearchParams();
@@ -51,34 +155,40 @@ function GestionDepensesContent() {
     refreshData,
   } = useDashboardData();
 
-  // Transformer les transactions pour le format attendu par le tableau
-  const expenses = (transactions || []).map((tx) => ({
-    id: tx.id,
-    type: tx.amount > 0 ? "INCOME" : "BANK_TRANSACTION",
-    source: tx.provider === "manual" ? "MANUAL" : "BANK",
-    title: tx.description,
-    description: tx.description,
-    amount: tx.amount,
-    currency: tx.currency,
-    date: tx.processedAt || tx.date || tx.createdAt,
-    category: tx.expenseCategory || tx.metadata?.category || "OTHER",
-    vendor: tx.metadata?.vendor || null,
-    hasReceipt: !!tx.receiptFile?.url,
-    receiptFile: tx.receiptFile, // Passer le receiptFile complet pour le drawer
-    receiptRequired: tx.amount < 0 && !tx.receiptFile?.url,
-    status: tx.status === "completed" ? "PAID" : tx.status?.toUpperCase(),
-    paymentMethod: tx.type === "debit" ? "CARD" : "BANK_TRANSFER",
-    bankName: tx.metadata?.bankName || null,
-    provider: tx.provider,
-    originalTransaction: {
+  // Transformer les transactions pour le format attendu par le tableau (mémorisé)
+  const expenses = useMemo(() => {
+    return (transactions || []).map((tx) => ({
       id: tx.id,
-      externalId: tx.externalId,
+      type: tx.amount > 0 ? "INCOME" : "BANK_TRANSACTION",
+      source: tx.provider === "manual" ? "MANUAL" : "BANK",
+      title: tx.description,
+      description: tx.description,
+      amount: tx.amount,
+      currency: tx.currency,
+      date: tx.processedAt || tx.date || tx.createdAt,
+      category: getSmartCategory(tx),
+      vendor: tx.metadata?.vendor || null,
+      hasReceipt: !!tx.receiptFile?.url || !!tx.linkedInvoice?.id,
+      receiptFile: tx.receiptFile,
+      receiptRequired: tx.amount < 0 && !tx.receiptFile?.url && !tx.linkedInvoice?.id,
+      status: tx.status === "completed" ? "PAID" : tx.status?.toUpperCase(),
+      paymentMethod: tx.type === "debit" ? "CARD" : "BANK_TRANSFER",
+      bankName: tx.metadata?.bankName || null,
       provider: tx.provider,
-      fromAccount: tx.fromAccount,
-    },
-    createdAt: tx.createdAt,
-    updatedAt: tx.updatedAt,
-  }));
+      originalTransaction: {
+        id: tx.id,
+        externalId: tx.externalId,
+        provider: tx.provider,
+        fromAccount: tx.fromAccount,
+      },
+      linkedInvoiceId: tx.linkedInvoiceId || null,
+      linkedInvoice: tx.linkedInvoice || null,
+      reconciliationStatus: tx.reconciliationStatus || null,
+      reconciliationDate: tx.reconciliationDate || null,
+      createdAt: tx.createdAt,
+      updatedAt: tx.updatedAt,
+    }));
+  }, [transactions]);
 
   const loading = bankLoading;
   const error = null;
