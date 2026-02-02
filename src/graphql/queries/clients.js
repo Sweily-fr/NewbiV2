@@ -26,6 +26,7 @@ export const GET_CLIENTS = gql`
         }
         siret
         vatNumber
+        isInternational
         contacts {
           id
           position
@@ -72,6 +73,7 @@ export const GET_CLIENT = gql`
       }
       siret
       vatNumber
+      isInternational
       contacts {
         id
         position
