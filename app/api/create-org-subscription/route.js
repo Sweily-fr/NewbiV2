@@ -156,9 +156,18 @@ export async function POST(request) {
         planName: planName,
         isAnnual: isAnnual ? "true" : "false",
         organizationId: session.session?.activeOrganizationId || "",
+        // Données entreprise
         employeeCount: organizationData.employeeCount || "",
         companyName: organizationData.companyName || "",
         siret: organizationData.siret || "",
+        siren: organizationData.siren || "",
+        legalForm: organizationData.legalForm || "",
+        addressStreet: (organizationData.addressStreet || "").substring(0, 100),
+        addressCity: organizationData.addressCity || "",
+        addressZipCode: organizationData.addressZipCode || "",
+        addressCountry: organizationData.addressCountry || "France",
+        activitySector: organizationData.activitySector || "",
+        activityCategory: (organizationData.activityCategory || "").substring(0, 100),
       },
       subscription_data: {
         // ✅ Trial de 30 jours - L'utilisateur ne sera pas prélevé avant 30 jours

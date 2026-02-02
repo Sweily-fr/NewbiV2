@@ -9,7 +9,7 @@ import DashboardClientLayout from "./dashboard-client-layout";
  * Vérifie si l'utilisateur a un abonnement actif via son organisation
  * @param {string} userId - ID de l'utilisateur
  * @param {string|null} activeOrgId - ID de l'organisation active (optionnel)
- * @returns {Promise<{hasSubscription: boolean, reason?: string}>}
+ * @returns {Promise<{hasSubscription: boolean, reason?: string, organizationId?: string}>}
  */
 async function checkSubscription(userId, activeOrgId) {
   try {
@@ -43,14 +43,17 @@ async function checkSubscription(userId, activeOrgId) {
 
     console.log(`[Dashboard Layout] Vérification abonnement pour org: ${organizationId}`);
 
-    // 2. Vérifier l'abonnement de l'organisation
+    // 2. Vérifier l'abonnement de l'organisation (recherche avec les deux formats d'ID)
     const subscription = await mongoDb.collection("subscription").findOne({
-      referenceId: organizationId,
+      $or: [
+        { referenceId: organizationId },
+        { organizationId: organizationId },
+      ],
     });
 
     if (!subscription) {
       console.log(`[Dashboard Layout] Aucun abonnement pour org: ${organizationId}`);
-      return { hasSubscription: false, reason: "no_subscription" };
+      return { hasSubscription: false, reason: "no_subscription", organizationId };
     }
 
     console.log(`[Dashboard Layout] Abonnement trouvé - Status: ${subscription.status}`);
@@ -64,13 +67,44 @@ async function checkSubscription(userId, activeOrgId) {
       new Date(subscription.periodEnd) > new Date();
 
     if (isActive || isCanceledButValid) {
-      return { hasSubscription: true };
+      return { hasSubscription: true, organizationId };
     }
 
-    return { hasSubscription: false, reason: "subscription_expired" };
+    return { hasSubscription: false, reason: "subscription_expired", organizationId };
   } catch (error) {
     console.error("[Dashboard Layout] Erreur vérification abonnement:", error);
     return { hasSubscription: false, reason: "error" };
+  }
+}
+
+/**
+ * Vérifie si l'utilisateur revient d'un paiement Stripe récent et valide
+ * @param {string} organizationId - ID de l'organisation
+ * @returns {Promise<boolean>}
+ */
+async function checkRecentStripePayment(organizationId) {
+  try {
+    // Vérifier s'il y a une session de checkout récente (< 5 min) pour cette organisation
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+
+    // Chercher un abonnement créé très récemment (le webhook peut être en cours)
+    const recentSubscription = await mongoDb.collection("subscription").findOne({
+      $or: [
+        { referenceId: organizationId },
+        { organizationId: organizationId },
+      ],
+      createdAt: { $gte: fiveMinutesAgo },
+    });
+
+    if (recentSubscription) {
+      console.log("[Dashboard Layout] Abonnement récent trouvé, bypass autorisé");
+      return true;
+    }
+
+    return false;
+  } catch (error) {
+    console.error("[Dashboard Layout] Erreur vérification paiement récent:", error);
+    return false;
   }
 }
 
@@ -81,13 +115,6 @@ async function checkSubscription(userId, activeOrgId) {
 export default async function DashboardLayout({ children }) {
   // Récupérer les headers de la requête
   const headersList = await headers();
-
-  // Vérifier si on revient de Stripe (bypass temporaire)
-  const referer = headersList.get("referer") || "";
-  const isReturningFromStripe =
-    referer.includes("session_id") ||
-    referer.includes("subscription_success") ||
-    referer.includes("payment_success");
 
   // Récupérer la session utilisateur côté serveur
   let session;
@@ -108,20 +135,23 @@ export default async function DashboardLayout({ children }) {
 
   console.log(`[Dashboard Layout] Session trouvée pour: ${session.user.email}`);
 
-  // Si on revient de Stripe, autoriser l'accès temporairement
-  // (le webhook doit d'abord créer l'abonnement)
-  if (isReturningFromStripe) {
-    console.log("[Dashboard Layout] Retour de Stripe, accès temporaire autorisé");
-    return <DashboardClientLayout>{children}</DashboardClientLayout>;
-  }
-
   // Vérifier l'abonnement
-  const { hasSubscription, reason } = await checkSubscription(
+  const { hasSubscription, reason, organizationId } = await checkSubscription(
     session.user.id,
     session.session?.activeOrganizationId
   );
 
   console.log(`[Dashboard Layout] hasSubscription: ${hasSubscription}, reason: ${reason}`);
+
+  // Si pas d'abonnement valide, vérifier s'il y a un paiement Stripe récent (webhook en cours)
+  if (!hasSubscription && organizationId) {
+    const hasRecentPayment = await checkRecentStripePayment(organizationId);
+
+    if (hasRecentPayment) {
+      console.log("[Dashboard Layout] Paiement récent détecté, accès temporaire autorisé");
+      return <DashboardClientLayout>{children}</DashboardClientLayout>;
+    }
+  }
 
   // Si pas d'abonnement valide, rediriger vers onboarding
   if (!hasSubscription) {

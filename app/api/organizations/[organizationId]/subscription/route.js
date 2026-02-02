@@ -22,31 +22,65 @@ export async function GET(request, { params }) {
 
     // Vérifier que l'utilisateur appartient à cette organisation
     // Essayer avec string et ObjectId car le format peut varier
-    const memberCheck = await mongoDb.collection("member").findOne({
-      userId: new ObjectId(session.user.id),
-      $or: [
-        { organizationId: organizationId },
-        { organizationId: new ObjectId(organizationId) },
-      ],
-    });
+    let memberCheck = null;
+    try {
+      const userObjectId = new ObjectId(session.user.id);
+      const orgObjectId = new ObjectId(organizationId);
+
+      memberCheck = await mongoDb.collection("member").findOne({
+        $and: [
+          { $or: [{ userId: userObjectId }, { userId: session.user.id }] },
+          { $or: [{ organizationId: orgObjectId }, { organizationId: organizationId }] },
+        ],
+      });
+    } catch (memberError) {
+      console.warn(`⚠️ [SUB-API] Erreur recherche membre:`, memberError.message);
+    }
+
+    console.log(`👤 [SUB-API] Member check pour userId: ${session.user.id}, orgId: ${organizationId}:`, memberCheck ? "trouvé" : "non trouvé");
 
     if (!memberCheck) {
       console.log(
-        `❌ Membre non trouvé pour userId: ${session.user.id}, orgId: ${organizationId}`
+        `❌ [SUB-API] Membre non trouvé pour userId: ${session.user.id}, orgId: ${organizationId}`
       );
       return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
     }
 
     // Récupérer l'abonnement (peut être stocké avec referenceId ou organizationId)
-    const subscription = await mongoDb.collection("subscription").findOne({
-      $or: [
-        { organizationId: organizationId },
-        { referenceId: organizationId },
-      ],
-    });
+    console.log(`🔍 [SUB-API] Recherche abonnement pour org: ${organizationId}`);
+
+    // Essayer avec différents formats d'ID
+    let subscription = null;
+    try {
+      const orgObjectId = new ObjectId(organizationId);
+      subscription = await mongoDb.collection("subscription").findOne({
+        $or: [
+          { organizationId: organizationId },
+          { organizationId: orgObjectId },
+          { referenceId: organizationId },
+          { referenceId: orgObjectId.toString() },
+        ],
+      });
+    } catch (e) {
+      // Si organizationId n'est pas un ObjectId valide, chercher seulement en string
+      subscription = await mongoDb.collection("subscription").findOne({
+        $or: [
+          { organizationId: organizationId },
+          { referenceId: organizationId },
+        ],
+      });
+    }
+
+    console.log(`📋 [SUB-API] Abonnement trouvé:`, subscription ? {
+      _id: subscription._id,
+      plan: subscription.plan,
+      status: subscription.status,
+      referenceId: subscription.referenceId,
+    } : null);
 
     if (!subscription) {
       // Retourner null si pas d'abonnement
+      console.log(`❌ [SUB-API] Aucun abonnement trouvé pour org: ${organizationId}`);
       return NextResponse.json({
         plan: null,
         status: null,

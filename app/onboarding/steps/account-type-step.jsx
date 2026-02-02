@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { Button } from "@/src/components/ui/button";
 import { Lock } from "lucide-react";
 
@@ -28,22 +27,8 @@ export default function AccountTypeStep({
   const handleSelectType = (typeId) => {
     updateFormData({
       accountType: typeId,
-      hasNoCompany: false,
     });
     // Transition automatique après sélection
-    setTimeout(() => {
-      onNext();
-    }, 300);
-  };
-
-  // "Je n'ai pas d'entreprise" - Continue vers l'étape suivante (choix du plan)
-  // L'utilisateur doit quand même s'abonner
-  const handleNoCompany = () => {
-    updateFormData({
-      accountType: "business", // Type par défaut
-      hasNoCompany: true,
-    });
-    // Continuer vers l'étape suivante
     setTimeout(() => {
       onNext();
     }, 300);
@@ -120,57 +105,15 @@ export default function AccountTypeStep({
         })}
       </div>
 
-      {/* Option "Je n'ai pas d'entreprise" - Continue vers le flux normal */}
-      <button
-        onClick={handleNoCompany}
-        className={`w-full p-4 rounded-xl border transition-all duration-200 flex items-center gap-4 ${
-          formData.hasNoCompany
-            ? "border-[#5A50FF] bg-[#5A50FF]/5"
-            : "border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 bg-white dark:bg-gray-950"
-        }`}
-      >
-        <div className="flex-shrink-0">
-          <div
-            className={`w-10 h-10 rounded-full flex items-center justify-center ${
-              formData.hasNoCompany
-                ? "bg-[#5A50FF] text-white"
-                : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"
-            }`}
-          >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-            </svg>
-          </div>
-        </div>
-        <div className="flex-1 text-left">
-          <h3
-            className={`text-sm font-medium ${
-              formData.hasNoCompany ? "text-[#5A50FF]" : "text-foreground"
-            }`}
-          >
-            Je n'ai pas d'entreprise
-          </h3>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Continuer sans associer d'entreprise
-          </p>
-        </div>
-        {formData.hasNoCompany && (
-          <div className="ml-auto w-2 h-2 rounded-full bg-[#5A50FF]" />
-        )}
-      </button>
+      {/* Info */}
+      <p className="text-xs text-center text-muted-foreground">
+        L'accès à Newbi est réservé aux entreprises immatriculées en France.
+      </p>
 
       <div className="flex items-center justify-end pt-4">
         <Button
           onClick={onNext}
-          disabled={!selectedType && !formData.hasNoCompany}
+          disabled={!selectedType}
           className="min-w-[120px]"
         >
           Continuer

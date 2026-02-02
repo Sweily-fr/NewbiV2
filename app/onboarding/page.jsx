@@ -23,6 +23,10 @@ function OnboardingContent() {
   const [currentStep, setCurrentStep] = useState(1);
   const [isChecking, setIsChecking] = useState(true);
 
+  // État pour savoir si c'est un utilisateur existant qui doit renouveler
+  const [isReturningUser, setIsReturningUser] = useState(false);
+  const [existingOrgData, setExistingOrgData] = useState(null);
+
   // Vérifier si l'utilisateur a déjà complété l'onboarding ET a un abonnement actif
   useEffect(() => {
     const checkOnboardingStatus = async () => {
@@ -30,9 +34,9 @@ function OnboardingContent() {
         const { data: session } = await authClient.getSession();
         const hasSeenOnboarding = session?.user?.hasSeenOnboarding;
 
-        // ✅ S'assurer qu'une organisation active est définie
+        // ✅ Vérifier si l'utilisateur a une organisation
         let activeOrg = null;
-        const { data: orgData } = await authClient.organization.getActive();
+        const { data: orgData } = await authClient.organization.getFullOrganization();
         activeOrg = orgData;
 
         if (!activeOrg) {
@@ -53,11 +57,13 @@ function OnboardingContent() {
               `✅ [ONBOARDING] Organisation active définie: ${organizations[0].id}`,
             );
           } else {
-            console.warn(
-              "⚠️ [ONBOARDING] Aucune organisation trouvée pour l'utilisateur",
+            // ✅ NOUVEAU FLUX: Nouvel utilisateur sans organisation
+            // C'est normal - l'organisation sera créée APRÈS le paiement via le webhook Stripe
+            console.log(
+              "✅ [ONBOARDING] Nouvel utilisateur sans organisation - flux normal, l'organisation sera créée après paiement",
             );
             setIsChecking(false);
-            return;
+            return; // Laisser l'utilisateur continuer l'onboarding normalement
           }
         } else {
           console.log(
@@ -91,10 +97,27 @@ function OnboardingContent() {
               return;
             } else {
               console.log(
-                "⚠️ [ONBOARDING] Utilisateur a complété l'onboarding mais n'a pas d'abonnement actif, affichage du flux d'abonnement",
+                "⚠️ [ONBOARDING] Utilisateur existant sans abonnement actif, affichage direct du choix de plan",
               );
-              // L'utilisateur doit compléter le flux d'abonnement
-              // On ne redirige pas vers dashboard, on continue sur l'onboarding
+
+              // ✅ C'est un utilisateur existant qui revient - on lui montre directement l'étape de paiement
+              setIsReturningUser(true);
+              setExistingOrgData({
+                companyName: activeOrg.companyName || activeOrg.name,
+                siret: activeOrg.siret,
+                siren: activeOrg.siren,
+                employeeCount: activeOrg.employeeCount,
+                accountType: activeOrg.organizationType || "business",
+                legalForm: activeOrg.legalForm,
+                addressStreet: activeOrg.addressStreet,
+                addressCity: activeOrg.addressCity,
+                addressZipCode: activeOrg.addressZipCode,
+                addressCountry: activeOrg.addressCountry || "France",
+              });
+
+              // Rediriger directement vers l'étape de choix du plan
+              setCurrentStep(4);
+              router.replace("/onboarding?step=4");
             }
           } catch (error) {
             console.error("❌ [ONBOARDING] Erreur vérification abonnement:", error);
@@ -112,9 +135,42 @@ function OnboardingContent() {
     checkOnboardingStatus();
   }, [router]);
 
-  // Synchroniser l'étape avec l'URL
+  // Si c'est un utilisateur existant, pré-remplir les données
+  useEffect(() => {
+    if (isReturningUser && existingOrgData) {
+      setFormData((prev) => ({
+        ...prev,
+        ...existingOrgData,
+      }));
+    }
+  }, [isReturningUser, existingOrgData]);
+
+  // Synchroniser l'étape avec l'URL et gérer les erreurs
   useEffect(() => {
     const step = searchParams.get("step");
+    const error = searchParams.get("error");
+    const canceled = searchParams.get("canceled");
+
+    // Gérer les erreurs de retour
+    if (error === "subscription_timeout") {
+      toast.error(
+        "Le paiement est en cours de traitement. Veuillez réessayer dans quelques instants.",
+        { duration: 5000 }
+      );
+    } else if (error === "unknown") {
+      toast.error(
+        "Une erreur est survenue. Veuillez réessayer.",
+        { duration: 5000 }
+      );
+    }
+
+    // Gérer l'annulation de paiement
+    if (canceled === "true") {
+      toast.info("Paiement annulé. Vous pouvez choisir un autre plan.", {
+        duration: 4000,
+      });
+    }
+
     if (step) {
       const stepNumber = parseInt(step, 10);
       if (stepNumber >= 1 && stepNumber <= totalSteps) {
@@ -124,7 +180,6 @@ function OnboardingContent() {
   }, [searchParams]);
   const [formData, setFormData] = useState({
     accountType: "", // 'business' ou 'accounting_firm'
-    hasNoCompany: false,
     siren: "",
     goals: [],
     name: "",
@@ -250,7 +305,10 @@ function OnboardingContent() {
             addressStreet: formData.addressStreet,
             addressCity: formData.addressCity,
             addressZipCode: formData.addressZipCode,
+            addressCountry: formData.addressCountry || "France",
             employeeCount: formData.employeeCount,
+            activitySector: formData.activitySector,
+            activityCategory: formData.activityCategory,
           },
         }),
       });
@@ -284,7 +342,8 @@ function OnboardingContent() {
             formData={formData}
             updateFormData={updateFormData}
             onNext={handlePaymentRedirect}
-            onBack={handleBack}
+            onBack={isReturningUser ? null : handleBack}
+            isReturningUser={isReturningUser}
           />
         </div>
       )}
@@ -771,7 +830,8 @@ function OnboardingContent() {
               formData={formData}
               updateFormData={updateFormData}
               onNext={handlePaymentRedirect}
-              onBack={handleBack}
+              onBack={isReturningUser ? null : handleBack}
+              isReturningUser={isReturningUser}
             />
           )}
 
