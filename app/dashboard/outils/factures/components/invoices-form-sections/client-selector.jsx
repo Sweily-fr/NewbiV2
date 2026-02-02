@@ -199,6 +199,13 @@ export default function ClientSelector({
       };
     }
 
+    // S'assurer que isInternational est défini
+    // Détecter automatiquement si le pays n'est pas la France
+    if (completedClient.isInternational === undefined || completedClient.isInternational === null) {
+      const country = completedClient.address?.country?.toLowerCase() || "france";
+      completedClient.isInternational = country !== "france" && country !== "fr";
+    }
+
     // Pour les clients INDIVIDUAL, s'assurer que firstName et lastName existent
     if (
       completedClient.type === "INDIVIDUAL" &&

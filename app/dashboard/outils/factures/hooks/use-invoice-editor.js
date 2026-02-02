@@ -221,14 +221,6 @@ export function useInvoiceEditor({
             clientErrors.push("code postal manquant");
           if (!client.address?.country || client.address.country.trim() === "")
             clientErrors.push("pays manquant");
-          if (
-            client.type === "COMPANY" &&
-            (!client.vatNumber || client.vatNumber.trim() === "")
-          ) {
-            clientErrors.push(
-              "numéro de TVA manquant (obligatoire pour les entreprises)"
-            );
-          }
 
           // Si le client est valide, supprimer l'erreur
           if (clientErrors.length === 0) {
@@ -1031,16 +1023,6 @@ export function useInvoiceEditor({
         clientErrors.push("pays manquant");
       }
 
-      // Vérifier le numéro de TVA pour les entreprises
-      if (
-        client.type === "COMPANY" &&
-        (!client.vatNumber || client.vatNumber.trim() === "")
-      ) {
-        clientErrors.push(
-          "numéro de TVA manquant (obligatoire pour les entreprises)"
-        );
-      }
-
       if (clientErrors.length > 0) {
         errors.client = {
           message: `Le client "${client.name || "Sans nom"}" a des informations incomplètes:\n${clientErrors.join(", ")}`,
@@ -1362,16 +1344,6 @@ export function useInvoiceEditor({
       }
       if (!client.address?.country || client.address.country.trim() === "") {
         clientErrors.push("pays manquant");
-      }
-
-      // Vérifier le numéro de TVA pour les entreprises
-      if (
-        client.type === "COMPANY" &&
-        (!client.vatNumber || client.vatNumber.trim() === "")
-      ) {
-        clientErrors.push(
-          "numéro de TVA manquant (obligatoire pour les entreprises)"
-        );
       }
 
       if (clientErrors.length > 0) {
