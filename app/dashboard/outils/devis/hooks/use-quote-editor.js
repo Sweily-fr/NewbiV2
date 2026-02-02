@@ -184,10 +184,6 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
               }
             }
             
-            // Validation du numéro de TVA
-            if (!client.vatNumber || client.vatNumber.trim() === "") {
-              clientErrors.push("numéro de TVA manquant (obligatoire pour les entreprises)");
-            }
           }
           
           // Construire le nom d'affichage du client

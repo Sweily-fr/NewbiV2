@@ -55,6 +55,7 @@ export const CLIENT_FRAGMENT = gql`
     lastName
     siret
     vatNumber
+    isInternational
     address {
       street
       city
