@@ -342,19 +342,47 @@ export const stripePlugin = stripe({
               );
 
               // Créer l'organisation APRÈS le paiement
-              const orgName = session.metadata?.orgName;
+              const orgName = session.metadata?.orgName || "Mon entreprise";
               const orgType = session.metadata?.orgType;
               const orgInvitedEmails = session.metadata?.orgInvitedEmails;
 
-              if (!orgName || !userId) {
+              // Récupérer les données entreprise depuis les metadata
+              const companyName = session.metadata?.companyName || orgName;
+              const siret = session.metadata?.siret;
+              const siren = session.metadata?.siren;
+              const employeeCount = session.metadata?.employeeCount;
+              const legalForm = session.metadata?.legalForm;
+              const addressStreet = session.metadata?.addressStreet;
+              const addressCity = session.metadata?.addressCity;
+              const addressZipCode = session.metadata?.addressZipCode;
+              const addressCountry = session.metadata?.addressCountry || "France";
+              const activitySector = session.metadata?.activitySector;
+              const activityCategory = session.metadata?.activityCategory;
+
+              if (!userId) {
                 console.error(
-                  "❌ [STRIPE WEBHOOK] Données organisation manquantes"
+                  "❌ [STRIPE WEBHOOK] userId manquant dans les metadata"
                 );
                 break;
               }
 
               // Créer l'organisation via Better Auth
               const { mongoDb } = await import("./mongodb.js");
+
+              // ✅ Vérifier que le SIRET n'est pas déjà utilisé (double sécurité)
+              if (siret) {
+                const existingOrg = await mongoDb.collection("organization").findOne({
+                  siret: siret,
+                });
+
+                if (existingOrg) {
+                  console.error(
+                    `❌ [STRIPE WEBHOOK] SIRET ${siret} déjà utilisé par l'organisation: ${existingOrg.name}`
+                  );
+                  // TODO: Annuler l'abonnement Stripe et notifier l'utilisateur
+                  break;
+                }
+              }
               const { ObjectId } = require("mongodb");
               const orgSlug = `org-${userId.slice(-8)}-${Date.now().toString(36)}`;
 
@@ -362,6 +390,20 @@ export const stripePlugin = stripe({
                 name: orgName,
                 slug: orgSlug,
                 createdAt: new Date(),
+                // ✅ Ajouter les données entreprise directement sur l'organisation
+                companyName: companyName,
+                siret: siret || "",
+                siren: siren || "",
+                employeeCount: employeeCount || "",
+                organizationType: orgType || "business",
+                legalForm: legalForm || "",
+                addressStreet: addressStreet || "",
+                addressCity: addressCity || "",
+                addressZipCode: addressZipCode || "",
+                addressCountry: addressCountry || "France",
+                activitySector: activitySector || "",
+                activityCategory: activityCategory || "",
+                onboardingCompleted: true, // ✅ Marquer directement comme complété
                 metadata: JSON.stringify({
                   type: orgType,
                   invitedEmails: orgInvitedEmails,
@@ -394,11 +436,25 @@ export const stripePlugin = stripe({
                   { $set: { activeOrganizationId: referenceId } }
                 );
 
+              // ✅ Mettre à jour l'utilisateur avec hasSeenOnboarding: true
+              await mongoDb.collection("user").updateOne(
+                { _id: new ObjectId(userId) },
+                {
+                  $set: {
+                    hasSeenOnboarding: true,
+                    updatedAt: new Date(),
+                  },
+                }
+              );
+
               console.log(
                 `✅ [STRIPE WEBHOOK] Organisation créée: ${referenceId}`
               );
               console.log(
                 `✅ [STRIPE WEBHOOK] ${updateResult.modifiedCount} session(s) mise(s) à jour avec activeOrganizationId`
+              );
+              console.log(
+                `✅ [STRIPE WEBHOOK] hasSeenOnboarding défini à true pour userId: ${userId}`
               );
 
               // ⚠️ IMPORTANT : Créer l'abonnement AVANT d'envoyer les invitations
@@ -449,11 +505,32 @@ export const stripePlugin = stripe({
                   // ✅ Créer l'abonnement directement dans MongoDB
                   await mongoDb
                     .collection("subscription")
-                    .insertOne(subscriptionData);
+                    .insertOne({
+                      ...subscriptionData,
+                      createdAt: new Date(),
+                      updatedAt: new Date(),
+                    });
 
                   console.log(
                     `✅ [STRIPE WEBHOOK] Abonnement créé via adapter pour nouvelle org: ${referenceId}`
                   );
+
+                  // ✅ CORRECTION: Marquer l'onboarding comme complété sur l'organisation
+                  const isOnboarding = session.metadata?.isOnboarding === "true";
+                  if (isOnboarding) {
+                    await mongoDb.collection("organization").updateOne(
+                      { _id: organizationObjectId },
+                      {
+                        $set: {
+                          onboardingCompleted: true,
+                          updatedAt: new Date(),
+                        },
+                      }
+                    );
+                    console.log(
+                      `✅ [STRIPE WEBHOOK] onboardingCompleted défini à true pour org: ${referenceId}`
+                    );
+                  }
                 } else {
                   console.log(
                     `✅ [STRIPE WEBHOOK] Abonnement existe déjà pour cette org: ${referenceId}`
@@ -793,53 +870,78 @@ export const stripePlugin = stripe({
                 `✅ [STRIPE WEBHOOK] Abonnement créé avec id: ${newId.toString()}`
               );
 
-              // ✅ Gérer le statut trial de l'organisation selon le statut de l'abonnement
+              // ✅ Gérer le statut trial de l'organisation et marquer onboarding comme complété
               if (referenceId) {
                 try {
+                  // Vérifier si c'est un flux onboarding
+                  const isOnboarding =
+                    subscription.metadata?.isOnboarding === "true" ||
+                    (event.type === "checkout.session.completed" && event.data.object?.metadata?.isOnboarding === "true");
+
                   if (subscription.status === "trialing") {
                     // Abonnement en période d'essai - Activer le trial Stripe sur l'organisation
                     const trialEnd = subscription.trial_end
                       ? new Date(subscription.trial_end * 1000)
                       : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 jours par défaut
 
+                    const updateData = {
+                      isTrialActive: true,
+                      trialStartDate: new Date().toISOString(),
+                      trialEndDate: trialEnd.toISOString(),
+                      stripeTrialActive: true, // Marquer que c'est un trial Stripe
+                      updatedAt: new Date(),
+                    };
+
+                    // ✅ CORRECTION: Marquer onboardingCompleted si c'est un flux onboarding
+                    if (isOnboarding) {
+                      updateData.onboardingCompleted = true;
+                    }
+
                     const orgUpdateResult = await mongoDb
                       .collection("organization")
                       .updateOne(
                         { _id: new ObjectId(referenceId) },
-                        {
-                          $set: {
-                            isTrialActive: true,
-                            trialStartDate: new Date().toISOString(),
-                            trialEndDate: trialEnd.toISOString(),
-                            stripeTrialActive: true, // Marquer que c'est un trial Stripe
-                            updatedAt: new Date(),
-                          },
-                        }
+                        { $set: updateData }
                       );
                     if (orgUpdateResult.modifiedCount > 0) {
                       console.log(
                         `✅ [STRIPE WEBHOOK] Trial Stripe activé pour l'organisation ${referenceId} jusqu'au ${trialEnd.toLocaleDateString('fr-FR')}`
                       );
+                      if (isOnboarding) {
+                        console.log(
+                          `✅ [STRIPE WEBHOOK] onboardingCompleted défini à true pour org: ${referenceId}`
+                        );
+                      }
                     }
                   } else if (subscription.status === "active") {
                     // Abonnement actif - Désactiver le trial
+                    const updateData = {
+                      isTrialActive: false,
+                      hasUsedTrial: true,
+                      stripeTrialActive: false,
+                      updatedAt: new Date(),
+                    };
+
+                    // ✅ CORRECTION: Marquer onboardingCompleted si c'est un flux onboarding
+                    if (isOnboarding) {
+                      updateData.onboardingCompleted = true;
+                    }
+
                     const orgUpdateResult = await mongoDb
                       .collection("organization")
                       .updateOne(
                         { _id: new ObjectId(referenceId) },
-                        {
-                          $set: {
-                            isTrialActive: false,
-                            hasUsedTrial: true,
-                            stripeTrialActive: false,
-                            updatedAt: new Date(),
-                          },
-                        }
+                        { $set: updateData }
                       );
                     if (orgUpdateResult.modifiedCount > 0) {
                       console.log(
                         `✅ [STRIPE WEBHOOK] Trial désactivé pour l'organisation ${referenceId}`
                       );
+                      if (isOnboarding) {
+                        console.log(
+                          `✅ [STRIPE WEBHOOK] onboardingCompleted défini à true pour org: ${referenceId}`
+                        );
+                      }
                     }
                   }
                 } catch (trialError) {
