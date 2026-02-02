@@ -61,25 +61,23 @@ export const auth = betterAuth({
     user: {
       create: {
         after: async (user) => {
-          // ✅ POINT UNIQUE DE CRÉATION D'ORGANISATION
-          // S'exécute pour inscription normale ET OAuth
-          // ⚠️ NE PAS créer d'organisation si l'utilisateur a une invitation pending
+          // ✅ NOUVEAU FLUX : NE PAS créer d'organisation au signup
+          // L'organisation sera créée APRÈS le paiement Stripe dans le webhook
+          // Exception : utilisateurs invités qui rejoignent une org existante
           try {
             const { mongoDb } = await import("./mongodb.js");
             const { ObjectId } = await import("mongodb");
 
             console.log(
-              `🔄 [USER CREATE] Vérification pour ${user.email}...`
+              `🔄 [USER CREATE] Configuration pour ${user.email}...`
             );
 
-            // ✅ ÉTAPE 1: Vérifier si l'utilisateur a une invitation pending
-            // Si oui, il rejoindra l'organisation de l'inviteur, pas besoin de créer la sienne
+            // Vérifier si l'utilisateur a une invitation pending
             const pendingInvitation = await mongoDb
               .collection("invitation")
               .findOne({
                 email: user.email.toLowerCase(),
                 status: "pending",
-                // Vérifier que l'invitation n'est pas expirée
                 $or: [
                   { expiresAt: { $gt: new Date() } },
                   { expiresAt: { $exists: false } },
@@ -88,19 +86,15 @@ export const auth = betterAuth({
 
             if (pendingInvitation) {
               console.log(
-                `📨 [USER CREATE] Invitation pending trouvée pour ${user.email} vers org ${pendingInvitation.organizationId}`
-              );
-              console.log(
-                `⏭️ [USER CREATE] Skip création d'organisation - l'utilisateur rejoindra l'org de l'inviteur`
+                `📨 [USER CREATE] Invitation pending trouvée pour ${user.email}`
               );
 
-              // Marquer l'utilisateur comme invité (pas de création d'org)
+              // Marquer l'utilisateur comme invité
               await mongoDb.collection("user").updateOne(
                 { _id: new ObjectId(user.id) },
                 {
                   $set: {
                     hasSeenOnboarding: false,
-                    // ✅ Flag pour indiquer que c'est un utilisateur invité
                     isInvitedUser: true,
                     pendingInvitationId: pendingInvitation._id.toString(),
                   },
@@ -110,175 +104,70 @@ export const auth = betterAuth({
               console.log(
                 `✅ [USER CREATE] Utilisateur ${user.email} marqué comme invité`
               );
-
               return user;
             }
 
-            // Vérifier si l'utilisateur a déjà une organisation (cas OAuth avec retry)
-            const existingMember = await mongoDb
-              .collection("member")
-              .findOne({ userId: new ObjectId(user.id) });
-
-            if (existingMember) {
-              console.log(
-                `✅ [USER CREATE] Organisation déjà existante pour ${user.email}, skip création`
-              );
-              return user;
-            }
-
-            console.log(
-              `🏢 [USER CREATE] Pas d'invitation pending, création d'organisation pour ${user.email}...`
-            );
-
-            // Générer le nom et le slug de l'organisation
-            const organizationName =
-              user.name || `Espace ${user.email.split("@")[0]}'s`;
-            const organizationSlug = `org-${user.id.slice(-8)}`;
-
-            const now = new Date();
-
-            // Créer l'organisation avec onboardingCompleted: false
-            // L'onboarding définira le type d'organisation (business ou accounting_firm)
-            // Note: Plus de trial - les utilisateurs s'abonnent directement pendant l'onboarding
-            const orgResult = await mongoDb
-              .collection("organization")
-              .insertOne({
-                name: organizationName,
-                slug: organizationSlug,
-                logo: null,
-                metadata: {
-                  autoCreated: true,
-                  createdAt: now.toISOString(),
-                  createdVia: user.accounts?.[0]?.providerId || "email",
-                },
-                // ✅ Nouveaux champs pour le système comptable
-                organizationType: null, // Sera défini pendant l'onboarding: 'business' ou 'accounting_firm'
-                onboardingCompleted: false, // Sera mis à true après l'onboarding
-                // Trial désactivé - paiement obligatoire pendant l'onboarding
-                trialStartDate: null,
-                trialEndDate: null,
-                isTrialActive: false,
-                hasUsedTrial: false,
-                createdAt: now,
-              });
-
-            const organizationId = orgResult.insertedId;
-            console.log(
-              `✅ [USER CREATE] Organisation créée: ${organizationId}`
-            );
-
-            // Créer le membre owner
-            await mongoDb.collection("member").insertOne({
-              organizationId: organizationId,
-              userId: new ObjectId(user.id),
-              email: user.email,
-              role: "owner",
-              createdAt: now,
-            });
-
-            console.log(
-              `✅ [USER CREATE] Membre owner créé pour ${user.email}`
-            );
-
-            // ✅ S'assurer que hasSeenOnboarding est défini à false
+            // ✅ NOUVEAU : Ne PAS créer d'organisation ici
+            // L'utilisateur passera par l'onboarding et l'org sera créée après paiement
             await mongoDb.collection("user").updateOne(
               { _id: new ObjectId(user.id) },
               {
                 $set: {
                   hasSeenOnboarding: false,
-                  isInvitedUser: false, // Pas un utilisateur invité
+                  isInvitedUser: false,
                 },
               }
             );
 
             console.log(
-              `✅ [USER CREATE] hasSeenOnboarding initialisé à false pour ${user.email}`
+              `✅ [USER CREATE] Utilisateur ${user.email} créé - organisation sera créée après paiement`
             );
           } catch (error) {
-            // ⚠️ IMPORTANT : Ne pas bloquer l'inscription si erreur
             console.error(
-              "❌ [USER CREATE] Erreur création organisation:",
+              "❌ [USER CREATE] Erreur:",
               error
             );
-            console.error(
-              "⚠️ [USER CREATE] Inscription continue malgré l'erreur"
-            );
-            // TODO: Envoyer notification admin pour investigation
           }
 
-          // ✅ Toujours retourner l'utilisateur pour ne pas bloquer l'inscription
           return user;
         },
       },
     },
     session: {
       create: {
-        // ✅ CORRECTION CRITIQUE : Utiliser before au lieu de after
-        // Better Auth lit activeOrganizationId AVANT que after ne s'exécute
-        // Documentation : https://www.better-auth.com/docs/plugins/organization#active-organization
         before: async (session) => {
           try {
             const { mongoDb } = await import("./mongodb.js");
             const { ObjectId } = await import("mongodb");
 
             console.log(
-              `🔍 [SESSION CREATE BEFORE] Recherche organisation pour userId: ${session.userId}`
+              `🔍 [SESSION CREATE] Recherche organisation pour userId: ${session.userId}`
             );
 
-            // ✅ Chercher directement une organisation owner
-            const ownerMember = await mongoDb.collection("member").findOne({
+            // Chercher une organisation où l'utilisateur est membre
+            const member = await mongoDb.collection("member").findOne({
               userId: new ObjectId(session.userId),
-              role: "owner",
             });
 
-            if (ownerMember) {
+            if (member) {
               console.log(
-                `✅ [SESSION CREATE BEFORE] Organisation owner trouvée: ${ownerMember.organizationId}`
+                `✅ [SESSION CREATE] Organisation trouvée: ${member.organizationId}`
               );
-
-              // ✅ Retourner la session AVEC activeOrganizationId
               return {
                 data: {
                   ...session,
-                  activeOrganizationId: ownerMember.organizationId.toString(),
+                  activeOrganizationId: member.organizationId.toString(),
                 },
               };
             }
 
-            // Fallback : chercher n'importe quelle organisation
+            // Pas d'organisation = nouvel utilisateur qui n'a pas encore payé
             console.log(
-              "⚠️ [SESSION CREATE BEFORE] Pas d'organisation owner, recherche fallback..."
-            );
-
-            const anyMember = await mongoDb.collection("member").findOne({
-              userId: new ObjectId(session.userId),
-            });
-
-            if (anyMember) {
-              console.log(
-                `✅ [SESSION CREATE BEFORE] Organisation trouvée (fallback): ${anyMember.organizationId} (role: ${anyMember.role})`
-              );
-
-              // ✅ Retourner la session AVEC activeOrganizationId
-              return {
-                data: {
-                  ...session,
-                  activeOrganizationId: anyMember.organizationId.toString(),
-                },
-              };
-            }
-
-            // Aucune organisation trouvée
-            console.warn(
-              "⚠️ [SESSION CREATE BEFORE] Aucune organisation trouvée"
+              `ℹ️ [SESSION CREATE] Pas d'organisation pour ${session.userId} (nouvel utilisateur)`
             );
             return { data: session };
           } catch (error) {
-            // ⚠️ Ne pas bloquer la connexion si erreur
-            console.error("❌ [SESSION CREATE BEFORE] Erreur:", error);
-            console.warn(
-              "⚠️ [SESSION CREATE BEFORE] Connexion continue malgré l'erreur"
-            );
+            console.error("❌ [SESSION CREATE] Erreur:", error);
             return { data: session };
           }
         },

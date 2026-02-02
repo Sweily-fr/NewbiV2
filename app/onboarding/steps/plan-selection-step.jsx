@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
-import { Check, ArrowLeft, Gift } from "lucide-react";
+import { Check, ArrowLeft, Gift, AlertCircle, Loader2 } from "lucide-react";
 import { getAssetUrl } from "@/src/lib/image-utils";
 
 const plans = [
@@ -79,10 +79,15 @@ export default function PlanSelectionStep({
   updateFormData,
   onNext,
   onBack,
+  isReturningUser = false,
 }) {
   const [isAnnual, setIsAnnual] = useState(formData.billingPeriod === "annual");
+  const [loadingPlan, setLoadingPlan] = useState(null);
 
   const handleSelectPlan = (planKey) => {
+    // Afficher le loader sur le bouton cliqué
+    setLoadingPlan(planKey);
+
     // Mettre à jour le state ET passer les données directement à onNext
     // pour éviter le problème de timing avec les états asynchrones de React
     const selectedData = {
@@ -124,32 +129,53 @@ export default function PlanSelectionStep({
         <img src={getAssetUrl("newbiLetter.png")} alt="Newbi" className="h-5" />
       </div>
 
-      {/* Back Button */}
-      <div className="absolute top-4 left-4">
-        <Button
-          variant="ghost"
-          onClick={onBack}
-          className="flex items-center gap-2"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          {/* Retour */}
-        </Button>
-      </div>
+      {/* Back Button - only show if onBack is provided */}
+      {onBack && (
+        <div className="absolute top-4 left-4">
+          <Button
+            variant="ghost"
+            onClick={onBack}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            {/* Retour */}
+          </Button>
+        </div>
+      )}
+
+      {/* Banner pour les utilisateurs existants */}
+      {isReturningUser && (
+        <div className="w-full max-w-3xl mb-2">
+          <div className="flex items-center gap-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 px-4 py-3">
+            <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0" />
+            <div className="text-sm">
+              <p className="font-medium text-amber-800 dark:text-amber-200">
+                Votre abonnement a expiré
+              </p>
+              <p className="text-amber-700 dark:text-amber-300 text-xs mt-0.5">
+                Choisissez un plan pour continuer à accéder à votre espace.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Header - Title */}
       <div className="text-center max-w-2xl">
         <h1 className="text-3xl font-medium md:text-3xl tracking-tight">
-          Choisissez votre abonnement
+          {isReturningUser ? "Renouvelez votre abonnement" : "Choisissez votre abonnement"}
         </h1>
         <p className="text-xs text-muted-foreground mt-1">
           Économisez 10% en optant pour la facturation annuelle
         </p>
       </div>
-      {/* 30-day Free Trial Badge */}
-      <p className="text-xs text-muted-foreground flex items-center gap-1.5 mt-2">
-        <Gift className="w-3.5 h-3.5 text-primary" />
-        Profitez de 30 jours d'essai gratuit, sans engagement
-      </p>
+      {/* 30-day Free Trial Badge - only for new users */}
+      {!isReturningUser && (
+        <p className="text-xs text-muted-foreground flex items-center gap-1.5 mt-2">
+          <Gift className="w-3.5 h-3.5 text-primary" />
+          Profitez de 30 jours d'essai gratuit, sans engagement
+        </p>
+      )}
 
       {/* Toggle Mensuel/Annuel */}
       <div className="flex w-fit rounded-full bg-muted p-1">
@@ -255,13 +281,18 @@ export default function PlanSelectionStep({
               {/* CTA Button */}
               <Button
                 onClick={() => handleSelectPlan(plan.key)}
+                disabled={loadingPlan !== null}
                 className={`w-full h-10 text-sm font-medium ${
                   plan.featured
                     ? "bg-white text-[#5A50FF] hover:bg-white/90"
                     : "bg-[#202020] hover:bg-[#303030] text-white"
                 }`}
               >
-                Choisir ce plan
+                {loadingPlan === plan.key ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  "Choisir ce plan"
+                )}
               </Button>
             </div>
           </div>

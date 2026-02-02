@@ -386,16 +386,20 @@ export const useOrganizationInvitations = () => {
           }
         }
 
-        // Better Auth attend 'memberId' et 'newRole' comme paramètres
+        // Better Auth attend 'memberId' et 'role' comme paramètres
+        console.log("🔄 updateMemberRole params:", { memberId, role: newRole, orgId });
+
         const { data, error } = await organization.updateMemberRole({
           memberId: memberId,
-          newRole: newRole,
+          role: newRole,  // ✅ Better Auth utilise "role", pas "newRole"
           organizationId: orgId,
         });
 
         if (error) {
           console.error("❌ Erreur updateMemberRole:", error);
-          toast.error("Erreur lors de la mise à jour du rôle");
+          // Afficher le message d'erreur détaillé
+          const errorMessage = error.message || error.error || error.statusText || "Erreur lors de la mise à jour du rôle";
+          toast.error(errorMessage);
           return { success: false, error };
         }
 

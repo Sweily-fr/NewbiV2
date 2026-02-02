@@ -3,17 +3,13 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
-import { Input } from "@/src/components/ui/input";
 import { Separator } from "@/src/components/ui/separator";
+import { Switch } from "@/src/components/ui/switch";
+import { Card, CardContent } from "@/src/components/ui/card";
 import {
   LoaderCircle,
   Check,
-  Crown,
-  HelpCircle,
-  Mail,
-  Shield,
   AlertTriangle,
-  CircleCheck,
   Users,
 } from "lucide-react";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
@@ -30,32 +26,86 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/src/components/ui/dialog";
-import { Switch } from "@/src/components/ui/switch";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/src/components/ui/tooltip";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/src/components/ui/alert-dialog";
+import { cn } from "@/src/lib/utils";
+
+// Configuration des plans
+const PLANS_CONFIG = [
+  {
+    key: "freelance",
+    name: "Freelance",
+    monthlyPrice: 17.99,
+    annualPrice: 16.19,
+    annualTotal: 157.56,
+    features: [
+      "1 utilisateur inclus",
+      "Facturation & Devis illimités",
+      "Gestion client (CRM)",
+      "20 OCR reçus par mois",
+      "1 signature email",
+      "Transfert fichiers 5Go",
+    ],
+  },
+  {
+    key: "pme",
+    name: "PME",
+    monthlyPrice: 48.99,
+    annualPrice: 44.09,
+    annualTotal: 529.08,
+    popular: true,
+    features: [
+      "Jusqu'à 10 utilisateurs",
+      "Tout le plan Freelance",
+      "Relances automatiques",
+      "OCR illimité",
+      "3 comptes bancaires",
+      "10 signatures email",
+    ],
+  },
+  {
+    key: "entreprise",
+    name: "Entreprise",
+    monthlyPrice: 94.99,
+    annualPrice: 85.49,
+    annualTotal: 1025.88,
+    features: [
+      "Jusqu'à 25 utilisateurs",
+      "Tout le plan PME",
+      "5 comptes bancaires",
+      "25 signatures email",
+      "Accès API",
+      "Support dédié",
+    ],
+  },
+];
 
 export function SubscriptionSection({
   canManageSubscription: canManageSubscriptionProp,
 }) {
   const [isLoading, setIsLoading] = useState(false);
-  const [promoCode, setPromoCode] = useState("");
-  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [loadingPlan, setLoadingPlan] = useState(null);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [showPlanChangeModal, setShowPlanChangeModal] = useState(false);
   const [planChangePreview, setPlanChangePreview] = useState(null);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
   const [isAnnual, setIsAnnual] = useState(false);
   const [seatsInfo, setSeatsInfo] = useState(null);
+
   const { isActive, loading, subscription, refreshSubscription } =
     useSubscription();
   const { data: session } = useSession();
   const { isOwner } = usePermissions();
 
-  // Utiliser la prop si fournie, sinon vérifier le rôle
   const canManageSubscription =
     canManageSubscriptionProp !== undefined
       ? canManageSubscriptionProp
@@ -84,20 +134,29 @@ export function SubscriptionSection({
     }
   }, [session, isActive]);
 
-  // Ouvrir la modal de preview avant changement de plan
-  const openPlanChangeModal = async (plan) => {
-    // Si pas d'abonnement existant, créer directement
+  // Fonction pour formater les dates
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleDateString("fr-FR", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    });
+  };
+
+  // Ouvrir la preview de changement de plan
+  const openPlanChangeModal = async (planKey) => {
     if (!subscription || !subscription.stripeSubscriptionId) {
-      handleDirectUpgrade(plan);
+      handleDirectUpgrade(planKey);
       return;
     }
 
-    // Si c'est le même plan, ne rien faire
-    if (subscription.plan === plan) {
+    if (subscription.plan === planKey) {
       return;
     }
 
-    setSelectedPlan(plan);
+    setSelectedPlan(planKey);
+    setLoadingPlan(planKey);
     setIsLoadingPreview(true);
     setShowPlanChangeModal(true);
 
@@ -108,6 +167,7 @@ export function SubscriptionSection({
       if (!activeOrgId) {
         toast.error("Aucune organisation active trouvée");
         setShowPlanChangeModal(false);
+        setLoadingPlan(null);
         return;
       }
 
@@ -115,7 +175,7 @@ export function SubscriptionSection({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          newPlan: plan,
+          newPlan: planKey,
           isAnnual: isAnnual,
           organizationId: activeOrgId,
         }),
@@ -126,7 +186,14 @@ export function SubscriptionSection({
       if (response.ok && data.success) {
         setPlanChangePreview(data.preview);
       } else {
-        toast.error(data.error || "Erreur lors de la prévisualisation");
+        // Gérer les états bloqués (past_due, unpaid, etc.)
+        if (data.blockedState) {
+          toast.error(data.message || "Votre abonnement présente un problème");
+        } else if (data.paidSeatsBlocking) {
+          toast.error(data.message || "Veuillez retirer les sièges supplémentaires d'abord");
+        } else {
+          toast.error(data.error || "Erreur lors de la prévisualisation");
+        }
         setShowPlanChangeModal(false);
       }
     } catch (error) {
@@ -135,12 +202,13 @@ export function SubscriptionSection({
       setShowPlanChangeModal(false);
     } finally {
       setIsLoadingPreview(false);
+      setLoadingPlan(null);
     }
   };
 
-  // Création directe d'abonnement (sans abonnement existant)
-  const handleDirectUpgrade = async (plan) => {
-    setIsLoading(true);
+  // Création directe d'abonnement
+  const handleDirectUpgrade = async (planKey) => {
+    setLoadingPlan(planKey);
     try {
       const response = await fetch("/api/create-org-subscription", {
         method: "POST",
@@ -149,7 +217,7 @@ export function SubscriptionSection({
           organizationData: {
             name: "Existing Organization",
             type: "existing",
-            planName: plan,
+            planName: planKey,
             isAnnual: isAnnual,
           },
         }),
@@ -165,7 +233,7 @@ export function SubscriptionSection({
     } catch (error) {
       toast.error(`Erreur: ${error.message || "Erreur inconnue"}`);
     } finally {
-      setIsLoading(false);
+      setLoadingPlan(null);
     }
   };
 
@@ -185,16 +253,25 @@ export function SubscriptionSection({
           newPlan: selectedPlan,
           isAnnual: isAnnual,
           organizationId: activeOrgId,
+          validationToken: planChangePreview.validationToken,
         }),
       });
 
       const data = await response.json();
 
       if (response.ok && data.success) {
+        // Afficher le succès
         toast.success(data.message || "Plan changé avec succès !");
+
+        // Afficher les warnings éventuels
+        if (data.warnings && data.warnings.length > 0) {
+          data.warnings.forEach((warning) => {
+            toast.warning(warning.message, { duration: 5000 });
+          });
+        }
+
         setShowPlanChangeModal(false);
 
-        // Vider les caches
         try {
           localStorage.removeItem(`subscription-${activeOrgId}`);
           localStorage.removeItem("user-cache");
@@ -206,9 +283,27 @@ export function SubscriptionSection({
           window.location.reload();
         }, 800);
       } else {
-        toast.error(
-          data.error || data.message || "Erreur lors du changement de plan"
-        );
+        // Gérer les différents cas d'erreur
+        if (data.requireNewPreview) {
+          // Les données ont changé, rafraîchir la prévisualisation
+          toast.error(data.message || "Les données ont changé, veuillez recharger");
+          setPlanChangePreview(null);
+          setShowPlanChangeModal(false);
+          // Rouvrir automatiquement le modal avec les nouvelles données
+          setTimeout(() => {
+            openPlanChangeModal(selectedPlan);
+          }, 500);
+        } else if (data.subscriptionStatus) {
+          // État bloqué de l'abonnement
+          toast.error(data.message || "Votre abonnement présente un problème");
+        } else if (data.paidSeats > 0) {
+          // Sièges payants bloquants
+          toast.error(data.message || "Retirez d'abord les sièges supplémentaires");
+        } else {
+          toast.error(
+            data.error || data.message || "Erreur lors du changement de plan"
+          );
+        }
       }
     } catch (error) {
       toast.error(`Erreur: ${error.message || "Erreur inconnue"}`);
@@ -217,15 +312,7 @@ export function SubscriptionSection({
     }
   };
 
-  // Ancienne fonction renommée pour compatibilité
-  const handleUpgrade = async (plan) => {
-    openPlanChangeModal(plan);
-  };
-
-  const openCancelModal = () => {
-    setShowCancelModal(true);
-  };
-
+  // Gestion de la résiliation
   const handleCancellation = async () => {
     setIsLoading(true);
     try {
@@ -241,566 +328,259 @@ export function SubscriptionSection({
         return;
       }
 
-      console.log("🔄 Résiliation de l'abonnement:", {
-        subscriptionId: subscription.id, // ✅ Better Auth cherche par id interne, pas stripeSubscriptionId
-        stripeSubscriptionId: subscription.stripeSubscriptionId,
-        referenceId: sessionData.session.activeOrganizationId,
-        subscription: subscription,
-      });
-
       const { data, error } = await authClient.subscription.cancel({
-        subscriptionId: subscription.id, // ✅ Utiliser l'id interne Better Auth
+        subscriptionId: subscription.id,
         referenceId: sessionData.session.activeOrganizationId,
         returnUrl: `${window.location.origin}/dashboard`,
       });
 
       if (error) {
-        console.error(
-          "Erreur lors de la résiliation:",
-          error,
-          JSON.stringify(error, null, 2)
-        );
         toast.error(
           `Erreur lors de la résiliation: ${error.message || "Erreur inconnue"}`
         );
         return;
       }
 
-      setShowCancelModal(false);
+      setShowCancelDialog(false);
 
       if (data?.url) {
         window.location.href = data.url;
       }
     } catch (error) {
-      console.error("Exception lors de la résiliation:", error);
       toast.error("Erreur lors de la résiliation");
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Fonction pour formater les dates
-  const formatDate = (dateString) => {
-    console.log(dateString);
-    if (!dateString) return "N/A";
-    return new Date(dateString).toLocaleDateString("fr-FR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
+  // Formater le prix
+  const formatPrice = (amount) => {
+    return amount.toFixed(2).replace(".", ",");
   };
-
-  // Fonction pour formater le prix
-  const formatPrice = (amount, currency = "EUR") => {
-    if (!amount) return "N/A";
-    return new Intl.NumberFormat("fr-FR", {
-      style: "currency",
-      currency: currency,
-    }).format(amount);
-  };
-
-  // Récupérer le prix depuis Stripe (TTC)
-  const getSubscriptionPrice = () => {
-    const prices = {
-      freelance: 17.99,
-      pme: 48.99,
-      entreprise: 94.99,
-      pro: 17.99, // Legacy
-    };
-    return prices[subscription?.plan] || 0;
-  };
-
-  const plans = [
-    {
-      name: "Freelance",
-      monthlyPrice: "17,99 €/mois",
-      annualPrice: "16,19 €/mois",
-      annualTotal: "157,56 € TTC/an",
-      description: "Parfait pour les indépendants et freelances",
-      features: [
-        "1 utilisateur",
-        "1 workspace inclus",
-        "Facturation complète",
-        "Gestion client",
-        "OCR des reçus",
-        "Catalogue produits",
-      ],
-      limits: {
-        users: 1,
-        workspaces: 1,
-      },
-      current: subscription?.plan === "freelance",
-      planKey: "freelance",
-      featured: false,
-    },
-    {
-      name: "PME",
-      monthlyPrice: "48,99 €/mois",
-      annualPrice: "44,09 €/mois",
-      annualTotal: "529,08 € TTC/an",
-      description: "Idéal pour les petites et moyennes entreprises",
-      features: [
-        "Jusqu'à 10 utilisateurs",
-        "1 workspace inclus",
-        "Toutes les fonctionnalités Freelance",
-        "Connexion comptes bancaires",
-        "Gestion de trésorerie",
-        "Transfert de fichiers sécurisé",
-      ],
-      limits: {
-        users: 10,
-        workspaces: 1,
-      },
-      current: subscription?.plan === "pme",
-      planKey: "pme",
-      featured: true,
-    },
-    {
-      name: "Entreprise",
-      monthlyPrice: "94,99 €/mois",
-      annualPrice: "85,49 €/mois",
-      annualTotal: "1 025,88 € TTC/an",
-      description: "Pour les grandes équipes qui ont besoin d'évolutivité",
-      features: [
-        "Jusqu'à 25 utilisateurs",
-        "1 workspace inclus",
-        "Toutes les fonctionnalités PME",
-        "Support prioritaire",
-        "Rapports avancés",
-        "API access",
-      ],
-      limits: {
-        users: 25,
-        workspaces: 1,
-      },
-      current: subscription?.plan === "entreprise",
-      planKey: "entreprise",
-      featured: false,
-    },
-  ];
 
   return (
-    <div className="space-y-8">
-      {/* Titre */}
-      <div>
-        <h2 className="text-lg font-medium mb-1">
-          {isActive() ? "Gestion de l'abonnement" : "Abonnement"}
-        </h2>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col gap-1">
+        <h3 className="text-lg font-medium">Abonnement</h3>
         <Separator className="hidden md:block" />
-
-        {/* Message de permission */}
-        {!canManageSubscription && (
-          <div className="mt-4">
-            <Callout type="warning" noMargin>
-              <p>
-                Seul le <strong>propriétaire</strong> de l'organisation peut
-                gérer l'abonnement (changement de plan, résiliation).
-              </p>
-            </Callout>
-          </div>
-        )}
       </div>
 
-      <div className="space-y-4">
-        {/* Section Forfait actif - Version compacte et épurée */}
-        {isActive() && subscription && (
-          <div
-            className={`flex items-center justify-between py-2 px-3 rounded-md border ${
-              subscription.cancelAtPeriodEnd
-                ? "bg-orange-50/50 dark:bg-orange-950/10 border-orange-200 dark:border-orange-900/30"
-                : "bg-gray-50/50 dark:bg-[#252525]/30 border-gray-100 dark:border-[#313131]/50"
-            }`}
-          >
-            <div className="flex items-center gap-3 flex-wrap">
-              <div className="flex items-center gap-2">
-                <h3 className="text-sm font-medium">
-                  {subscription?.plan === "freelance"
-                    ? "Pack Freelance"
-                    : subscription?.plan === "pme"
-                      ? "Pack PME"
-                      : subscription?.plan === "entreprise"
-                        ? "Pack Entreprise"
-                        : "Pack Pro"}
-                </h3>
-                {subscription.cancelAtPeriodEnd ||
-                subscription.status === "canceled" ? (
-                  <Badge
-                    variant="outline"
-                    className="text-[10px] px-1.5 py-0 h-4 border-orange-400 text-orange-600 dark:border-orange-600 dark:text-orange-400"
-                  >
-                    Résilié
-                  </Badge>
-                ) : (
-                  <Badge
-                    variant="outline"
-                    className="text-[10px] px-1.5 py-0 h-4 border-[#5b50fe] text-[#5b50fe]"
-                  >
-                    Actuel
-                  </Badge>
-                )}
-              </div>
-              <span className="text-xs text-gray-500">•</span>
-              <p className="text-xs text-gray-500">
-                {formatPrice(getSubscriptionPrice())} TTC / mois
-                {subscription.status === "trialing" && " (Essai)"}
-              </p>
-              <span className="text-xs text-gray-500 hidden md:inline">•</span>
-              <p className="text-xs text-gray-400 hidden md:block">
-                {subscription.cancelAtPeriodEnd ||
-                subscription.status === "canceled"
-                  ? `Accès aux outils Pro jusqu'au ${formatDate(subscription.periodEnd)}`
-                  : `Prochain prélèvement : ${formatDate(subscription.periodEnd)}`}
-              </p>
-            </div>
-            {!subscription.cancelAtPeriodEnd &&
-              subscription.status !== "canceled" && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/20"
-                  onClick={openCancelModal}
-                  disabled={isLoading || !canManageSubscription}
-                  title={
-                    !canManageSubscription
-                      ? "Seul le propriétaire peut résilier l'abonnement"
-                      : ""
-                  }
-                >
-                  {isLoading ? (
-                    <LoaderCircle className="h-3 w-3 animate-spin" />
-                  ) : (
-                    "Résilier"
-                  )}
-                </Button>
-              )}
-          </div>
-        )}
+      {/* Message de permission */}
+      {!canManageSubscription && (
+        <Callout type="warning" noMargin>
+          <p>
+            Seul le <strong>propriétaire</strong> de l'organisation peut
+            gérer l'abonnement.
+          </p>
+        </Callout>
+      )}
 
-        {/* Section Utilisation des sièges */}
-        {isActive() && seatsInfo && (
-          <div
-            className={`py-3 px-4 rounded-md border ${
-              seatsInfo.additionalSeats > 0
-                ? "bg-blue-50/50 dark:bg-blue-950/10 border-blue-100 dark:border-blue-900/30"
-                : "bg-gray-50/50 dark:bg-[#252525]/30 border-gray-100 dark:border-[#313131]/50"
-            }`}
-          >
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <h4
-                    className={`text-sm font-medium ${
-                      seatsInfo.additionalSeats > 0
-                        ? "text-blue-900 dark:text-blue-100"
-                        : "text-gray-900 dark:text-gray-100"
-                    }`}
-                  >
-                    {seatsInfo.additionalSeats > 0
-                      ? "Sièges additionnels"
-                      : "Utilisation des sièges"}
-                  </h4>
-                  {seatsInfo.additionalSeats > 0 && (
-                    <Badge
-                      variant="outline"
-                      className="text-[10px] px-1.5 py-0 h-4 border-blue-300 text-blue-700 dark:border-blue-700 dark:text-blue-300"
-                    >
-                      {seatsInfo.additionalSeats} siège
-                      {seatsInfo.additionalSeats > 1 ? "s" : ""}
-                    </Badge>
-                  )}
-                </div>
-                <p
-                  className={`text-xs mb-2 ${
-                    seatsInfo.additionalSeats > 0
-                      ? "text-blue-700 dark:text-blue-300"
-                      : "text-gray-600 dark:text-gray-400"
-                  }`}
-                >
-                  Vous utilisez actuellement{" "}
-                  <strong>
-                    {seatsInfo.currentMembers} membre
-                    {seatsInfo.currentMembers > 1 ? "s" : ""}
-                  </strong>{" "}
-                  sur les <strong>{seatsInfo.includedSeats} inclus</strong> dans
-                  votre plan {seatsInfo.plan}.
-                  {seatsInfo.availableSeats > 0 && (
-                    <>
-                      {" "}
-                      Il vous reste{" "}
-                      <strong>
-                        {seatsInfo.availableSeats} siège
-                        {seatsInfo.availableSeats > 1 ? "s" : ""} disponible
-                        {seatsInfo.availableSeats > 1 ? "s" : ""}
-                      </strong>
-                      .
-                    </>
-                  )}
-                </p>
-                {seatsInfo.additionalSeats > 0 && (
-                  <div className="flex items-center gap-2 text-xs">
-                    <span className="text-blue-600 dark:text-blue-400">
-                      Coût additionnel :{" "}
-                      <strong>
-                        {(
-                          seatsInfo.additionalSeats * seatsInfo.seatCost
-                        ).toFixed(2)}{" "}
-                        €/mois
-                      </strong>
-                    </span>
-                    <span className="text-blue-500">•</span>
-                    <span className="text-blue-600/70 dark:text-blue-400/70">
-                      {seatsInfo.seatCost} € par siège supplémentaire
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
+      {/* Info abonnement actuel si résilié */}
+      {isActive() && subscription && (subscription.cancelAtPeriodEnd || subscription.status === "canceled") && (
+        <Callout type="warning" noMargin>
+          <p>
+            Votre abonnement est résilié. Vous conservez l'accès jusqu'au{" "}
+            <strong>{formatDate(subscription.periodEnd)}</strong>.
+          </p>
+        </Callout>
+      )}
 
-        {/* Alerte si proche de la limite */}
-        {isActive() &&
-          seatsInfo &&
-          seatsInfo.availableSeats > 0 &&
-          seatsInfo.availableSeats <= 2 && (
-            <Callout type="warning" noMargin>
-              <p className="text-xs">
-                <strong>Attention !</strong> Il ne vous reste que{" "}
-                <strong>
-                  {seatsInfo.availableSeats} siège
-                  {seatsInfo.availableSeats > 1 ? "s" : ""} disponible
-                  {seatsInfo.availableSeats > 1 ? "s" : ""}
-                </strong>
-                . Au-delà, chaque membre supplémentaire sera facturé{" "}
-                <strong>7,49€/mois</strong>.
-              </p>
-            </Callout>
-          )}
-
-        {/* Section Comparaison des forfaits */}
-        <div>
-          <div className="text-center mb-4 mt-8">
-            <h3 className="text-xl font-semibold mb-1">
-              Choisissez le plan qui vous convient
-            </h3>
-            <p className="text-muted-foreground mb-3 text-xs">
-              Sélectionnez l'offre adaptée à vos besoins
+      {/* Sièges supplémentaires */}
+      {seatsInfo && seatsInfo.additionalSeats > 0 && (
+        <div className="flex items-center justify-between rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/10 p-3">
+          <div className="flex items-center gap-3">
+            <Users className="h-4 w-4 text-blue-600" />
+            <p className="text-sm">
+              <span className="font-medium">{seatsInfo.additionalSeats} siège{seatsInfo.additionalSeats > 1 ? "s" : ""} supplémentaire{seatsInfo.additionalSeats > 1 ? "s" : ""}</span>
+              <span className="text-muted-foreground"> · 7,49 €/siège/mois</span>
             </p>
-
-            {/* Switch Mensuel/Annuel */}
-            <div className="inline-flex items-center gap-2 bg-muted p-0.5 rounded-lg mb-4">
-              <button
-                onClick={() => setIsAnnual(false)}
-                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                  !isAnnual
-                    ? "bg-background shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                Mensuel
-              </button>
-              <button
-                onClick={() => setIsAnnual(true)}
-                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                  isAnnual
-                    ? "bg-background shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                Annuel
-                <span className="ml-2 text-xs text-[#5b50fe]">-10%</span>
-              </button>
-            </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {plans.map((plan, index) => (
+          <p className="text-sm font-medium text-blue-600">
+            +{formatPrice(seatsInfo.additionalSeats * 7.49)} €/mois
+          </p>
+        </div>
+      )}
+
+      {/* Toggle Mensuel/Annuel */}
+      <div className="flex items-center justify-center gap-3">
+        <span className={cn(
+          "text-sm",
+          !isAnnual ? "text-foreground font-medium" : "text-muted-foreground"
+        )}>
+          Mensuel
+        </span>
+        <Switch
+          checked={isAnnual}
+          onCheckedChange={setIsAnnual}
+        />
+        <span className={cn(
+          "text-sm",
+          isAnnual ? "text-foreground font-medium" : "text-muted-foreground"
+        )}>
+          Annuel
+          <span className="ml-1.5 text-xs text-[#5b50fe]">-10%</span>
+        </span>
+      </div>
+
+      {/* Grille des plans */}
+      <Card className="shadow-none">
+        <CardContent className="p-0 grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x">
+          {PLANS_CONFIG.map((plan) => {
+            const isCurrentPlan = subscription?.plan === plan.key;
+            const price = isAnnual ? plan.annualPrice : plan.monthlyPrice;
+
+            return (
               <div
-                key={index}
-                className={`flex flex-col rounded-lg border p-4 text-left ${
-                  plan.featured
-                    ? "border-[#5b50fe] shadow-lg ring-1 ring-[#5b50fe]/10 relative"
-                    : "border-gray-200 dark:border-[#313131]/90"
-                } dark:bg-[#252525]`}
+                key={plan.key}
+                className={cn(
+                  "flex flex-col gap-6 p-5",
+                  plan.popular && "bg-muted/50 md:rounded-none first:rounded-t-xl last:rounded-b-xl md:first:rounded-l-xl md:last:rounded-r-xl md:first:rounded-tr-none md:last:rounded-bl-none"
+                )}
               >
-                {/* Header de la carte */}
-                <div className="text-center">
-                  <div className="inline-flex items-center gap-2">
-                    <Badge
-                      variant={plan.featured ? "default" : "secondary"}
-                      className={
-                        plan.featured ? "bg-[#5b50fe] text-xs" : "text-xs"
-                      }
-                    >
-                      <span className="font-normal">{plan.name}</span>
-                    </Badge>
-                    {plan.featured && (
-                      <span className="rounded-full bg-[#5b50fe]/10 px-1.5 py-0.5 text-[10px] font-medium text-[#5b50fe]">
-                        Le plus populaire
-                      </span>
+                {/* Header du plan */}
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xl font-medium">{plan.name}</h4>
+                    {plan.popular && (
+                      <Badge className="bg-[#5b50fe] text-white text-xs font-normal rounded-md px-2 py-0.5">
+                        Populaire
+                      </Badge>
+                    )}
+                    {isCurrentPlan && !plan.popular && (
+                      <Badge variant="outline" className="text-[#5b50fe] border-[#5b50fe]/30 text-xs font-normal">
+                        Actuel
+                      </Badge>
                     )}
                   </div>
-                  <h4 className="mb-1 mt-3 text-xl font-medium text-[#5b50fe]">
-                    {isAnnual ? plan.annualPrice : plan.monthlyPrice}
-                  </h4>
+
+                  {/* Prix */}
+                  <div className="flex items-baseline">
+                    <span className="text-muted-foreground text-sm">€</span>
+                    <span className="text-3xl font-medium tabular-nums">
+                      {formatPrice(price)}
+                    </span>
+                    <span className="text-muted-foreground text-sm ml-1">/mois</span>
+                  </div>
+
                   {isAnnual && (
-                    <p className="text-[10px] text-muted-foreground">
-                      {plan.annualTotal} facturé annuellement
-                    </p>
-                  )}
-                  {plan.description && (
-                    <p className="text-[10px] text-muted-foreground">
-                      {plan.description}
+                    <p className="text-xs text-muted-foreground -mt-2">
+                      {formatPrice(plan.annualTotal)} € facturé annuellement
                     </p>
                   )}
                 </div>
 
-                {/* Divider */}
-                <div className="my-3 border-t border-gray-200 dark:border-[#313131]/90" />
-
-                {/* Liste des fonctionnalités - Afficher seulement 3 + tooltip */}
-                <ul className="space-y-2 mb-4 flex-grow">
-                  {plan.features.slice(0, 3).map((feature, featureIndex) => (
-                    <li
-                      key={featureIndex}
-                      className="flex items-center text-xs"
-                    >
-                      <CircleCheck className="mr-2 h-4 w-4 text-[#5b50fe] flex-shrink-0" />
-                      <span className="text-muted-foreground">{feature}</span>
-                    </li>
+                {/* Features */}
+                <div className="flex flex-col gap-2">
+                  {plan.features.map((feature, idx) => (
+                    <div key={idx} className="flex items-start gap-2">
+                      <Check className="h-4 w-4 text-[#5b50fe] mt-0.5 shrink-0" />
+                      <p className="text-sm text-muted-foreground">{feature}</p>
+                    </div>
                   ))}
-                  {plan.features.length > 3 && (
-                    <li className="flex items-center text-xs">
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <button className="flex items-center text-[#5b50fe] hover:text-[#4a3fe8] transition-colors">
-                              <CircleCheck className="mr-2 h-4 w-4 flex-shrink-0" />
-                              <span className="font-medium">
-                                Et {plan.features.length - 3} autres...
-                              </span>
-                            </button>
-                          </TooltipTrigger>
-                          <TooltipContent side="top" className="max-w-xs p-3">
-                            <ul className="space-y-1.5">
-                              {plan.features.slice(3).map((feature, idx) => (
-                                <li
-                                  key={idx}
-                                  className="flex items-start text-xs"
-                                >
-                                  <CircleCheck className="mr-2 h-3 w-3 text-[#5b50fe] flex-shrink-0 mt-0.5" />
-                                  <span>{feature}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </li>
-                  )}
-                </ul>
+                </div>
 
-                {/* Boutons selon le plan */}
-                <div className="mt-auto pt-6">
-                  {!plan.current && (
+                {/* Bouton */}
+                <div className="flex flex-1 items-end pt-2">
+                  {isCurrentPlan ? (
                     <Button
-                      size="sm"
-                      className={`w-full ${
-                        plan.featured
-                          ? "bg-[#5b50fe] hover:bg-[#4a3fe8]"
-                          : "bg-secondary hover:bg-secondary/80"
-                      }`}
-                      variant={plan.featured ? "default" : "secondary"}
-                      onClick={() => handleUpgrade(plan.planKey)}
-                      disabled={isLoading || !canManageSubscription}
-                      title={
-                        !canManageSubscription
-                          ? "Seul le propriétaire peut changer d'abonnement"
-                          : ""
-                      }
+                      variant="outline"
+                      className="w-full cursor-default"
+                      disabled
                     >
-                      {isLoading ? (
-                        <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                      <Check className="h-4 w-4 mr-2" />
+                      Plan actuel
+                    </Button>
+                  ) : (
+                    <Button
+                      variant={plan.popular ? "default" : "secondary"}
+                      className={cn(
+                        "w-full cursor-pointer",
+                        plan.popular && "bg-[#5b50fe] hover:bg-[#4a3fe8]"
+                      )}
+                      onClick={() => openPlanChangeModal(plan.key)}
+                      disabled={loadingPlan === plan.key || !canManageSubscription}
+                    >
+                      {loadingPlan === plan.key ? (
+                        <LoaderCircle className="h-4 w-4 animate-spin" />
                       ) : (
-                        `Choisir ${plan.name}`
+                        "Choisir"
                       )}
                     </Button>
                   )}
-
-                  {plan.current && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="w-full"
-                      disabled
-                    >
-                      <Check className="mr-2 h-4 w-4" />
-                      Plan actuel
-                    </Button>
-                  )}
                 </div>
               </div>
-            ))}
-          </div>
+            );
+          })}
+        </CardContent>
+      </Card>
+
+      {/* Bouton de résiliation */}
+      {isActive() && subscription && !subscription.cancelAtPeriodEnd && subscription.status !== "canceled" && (
+        <div className="flex justify-end">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowCancelDialog(true)}
+            disabled={!canManageSubscription || isLoading}
+            className="text-xs text-muted-foreground hover:text-red-600 cursor-pointer"
+          >
+            Résilier l'abonnement
+          </Button>
         </div>
-      </div>
+      )}
 
-      {/* Modal de confirmation de résiliation */}
-      <Dialog open={showCancelModal} onOpenChange={setShowCancelModal}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+      {/* Dialog de confirmation de résiliation */}
+      <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-red-500" />
-              Confirmer la résiliation
-            </DialogTitle>
-            <DialogDescription className="text-left">
-              Êtes-vous sûr de vouloir résilier votre abonnement Pro ? Cette
-              action est irréversible et vous perdrez l'accès à toutes les
-              fonctionnalités premium.
-            </DialogDescription>
-          </DialogHeader>
+              Résilier l'abonnement
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir résilier votre abonnement ? Vous conserverez
+              l'accès jusqu'au {formatDate(subscription?.periodEnd)}.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
 
-          <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 my-4">
-            <h4 className="font-medium text-sm mb-2">
-              Fonctionnalités que vous perdrez :
-            </h4>
-            <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
-              <li>• Facturation complète (devis → factures, TVA, relances)</li>
-              <li>• Connexion comptes bancaires</li>
-              <li>• Gestion de trésorerie</li>
-              <li>• OCR des reçus et factures</li>
-              <li>• Transfert de fichiers sécurisé</li>
-              <li>• Gestion client avancée</li>
-              <li>• Catalogue produits et services</li>
+          <div className="bg-muted rounded-lg p-4 my-2">
+            <p className="text-sm font-medium mb-2">Vous perdrez l'accès à :</p>
+            <ul className="text-sm text-muted-foreground space-y-1.5">
+              <li className="flex items-center gap-2">
+                <span className="text-red-500 text-xs">✕</span>
+                Facturation complète
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="text-red-500 text-xs">✕</span>
+                Connexion comptes bancaires
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="text-red-500 text-xs">✕</span>
+                OCR des reçus
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="text-red-500 text-xs">✕</span>
+                Gestion client avancée
+              </li>
             </ul>
           </div>
 
-          <DialogFooter className="gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setShowCancelModal(false)}
-              disabled={isLoading}
-            >
-              Annuler
-            </Button>
-            <Button
-              variant="destructive"
+          <AlertDialogFooter>
+            <AlertDialogCancel className="cursor-pointer">Annuler</AlertDialogCancel>
+            <AlertDialogAction
               onClick={handleCancellation}
               disabled={isLoading}
+              className="bg-red-600 hover:bg-red-700 cursor-pointer"
             >
-              {isLoading ? (
-                <>
-                  <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
-                  Résiliation...
-                </>
-              ) : (
-                "Confirmer la résiliation"
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+              {isLoading && <LoaderCircle className="h-4 w-4 animate-spin mr-2" />}
+              Confirmer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
-      {/* Modal de confirmation de changement de plan - Style Qonto */}
+      {/* Modal de changement de plan */}
       <Dialog
         open={showPlanChangeModal}
         onOpenChange={(open) => {
@@ -811,271 +591,122 @@ export function SubscriptionSection({
           }
         }}
       >
-        <DialogContent className="sm:max-w-lg p-0 gap-0 overflow-hidden">
+        <DialogContent className="sm:max-w-md p-0 gap-0 overflow-hidden">
           {isLoadingPreview ? (
             <div className="flex items-center justify-center py-16">
-              <LoaderCircle className="h-8 w-8 animate-spin text-gray-400" />
+              <LoaderCircle className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
           ) : planChangePreview ? (
             <>
-              {/* Header */}
               <div className="px-6 pt-6 pb-4">
-                <DialogTitle className="text-base font-medium text-gray-900 dark:text-gray-100">
-                  Modifier votre abonnement
+                <DialogTitle className="text-base font-medium">
+                  Confirmer le changement
                 </DialogTitle>
-                <DialogDescription className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  Vérifiez les détails avant de confirmer
-                </DialogDescription>
               </div>
 
-              {/* Contenu */}
-              <div className="px-6 pb-6 space-y-4 max-h-[60vh] overflow-y-auto">
+              <div className="px-6 pb-6 space-y-4">
                 {/* Changement de plan */}
-                <div className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-800">
-                  <div className="flex items-center gap-3">
-                    <div className="flex flex-col">
-                      <span className="text-xs text-gray-500 dark:text-gray-400">
-                        Plan actuel
-                      </span>
-                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                        {planChangePreview.currentPlan.displayName}
-                      </span>
-                    </div>
-                    <div className="text-gray-300 dark:text-gray-600">→</div>
-                    <div className="flex flex-col">
-                      <span className="text-xs text-gray-500 dark:text-gray-400">
-                        Nouveau plan
-                      </span>
-                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                        {planChangePreview.newPlan.displayName}
-                      </span>
-                    </div>
+                <div className="flex items-center justify-between py-3 border-b">
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-muted-foreground">
+                      {planChangePreview.currentPlan.displayName}
+                    </span>
+                    <span className="text-muted-foreground">→</span>
+                    <span className="font-medium">
+                      {planChangePreview.newPlan.displayName}
+                    </span>
                   </div>
                   <Badge
                     variant="outline"
-                    className={`text-xs ${
+                    className={cn(
+                      "text-xs font-normal",
                       planChangePreview.change.isUpgrade
-                        ? "border-green-200 text-green-700 dark:border-green-800 dark:text-green-400"
-                        : "border-orange-200 text-orange-700 dark:border-orange-800 dark:text-orange-400"
-                    }`}
+                        ? "border-green-200 text-green-700"
+                        : "border-orange-200 text-orange-700"
+                    )}
                   >
-                    {planChangePreview.change.isUpgrade
-                      ? "Upgrade"
-                      : "Downgrade"}
+                    {planChangePreview.change.isUpgrade ? "Upgrade" : "Downgrade"}
                   </Badge>
                 </div>
 
-                {/* Détails de facturation */}
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600 dark:text-gray-400">
-                      Tarif mensuel
-                    </span>
-                    <div className="text-right">
-                      <span className="text-sm text-gray-400 line-through mr-2">
-                        {planChangePreview.currentPlan.price.toFixed(2)} €
-                      </span>
-                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                        {planChangePreview.newPlan.price.toFixed(2)} €
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600 dark:text-gray-400">
-                      Cycle de facturation
-                    </span>
-                    <span className="text-sm text-gray-900 dark:text-gray-100">
-                      {planChangePreview.billing.billingCycle}
+                {/* Détails */}
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Nouveau tarif</span>
+                    <span className="font-medium">
+                      {formatPrice(planChangePreview.newPlan.price)} €/mois
                     </span>
                   </div>
-
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600 dark:text-gray-400">
-                      Prise d'effet
-                    </span>
-                    <span className="text-sm text-gray-900 dark:text-gray-100">
-                      {planChangePreview.change.effectiveDate}
-                    </span>
-                  </div>
-
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600 dark:text-gray-400">
-                      Prochaine facturation
-                    </span>
-                    <span className="text-sm text-gray-900 dark:text-gray-100">
-                      {planChangePreview.billing.nextBillingDate}
-                    </span>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Prise d'effet</span>
+                    <span>{planChangePreview.change.effectiveDate}</span>
                   </div>
                 </div>
 
                 {/* Prorata */}
                 {planChangePreview.proration && (
-                  <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 space-y-2">
+                  <div className={cn(
+                    "rounded-lg p-3 text-sm",
+                    planChangePreview.proration.isCredit
+                      ? "bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800"
+                      : "bg-muted"
+                  )}>
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600 dark:text-gray-400">
-                        Ajustement au prorata
+                      <span className="text-muted-foreground">
+                        {planChangePreview.proration.isCredit ? "Crédit sur prochaine facture" : "Ajustement prorata"}
                       </span>
-                      <span className={`text-sm font-medium`}>
-                        {planChangePreview.proration.prorationAmount >= 0
-                          ? "+"
-                          : ""}
-                        {planChangePreview.proration.prorationAmount.toFixed(2)}{" "}
-                        €
+                      <span className={cn(
+                        "font-medium",
+                        planChangePreview.proration.isCredit && "text-green-600"
+                      )}>
+                        {planChangePreview.proration.prorationAmount >= 0 ? "+" : ""}
+                        {formatPrice(planChangePreview.proration.prorationAmount)} €
                       </span>
                     </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      {planChangePreview.proration.prorationAmount >= 0
-                        ? "Ce montant sera ajouté à votre prochaine facture"
-                        : "Ce crédit sera déduit de votre prochaine facture"}
-                    </p>
+                    {planChangePreview.proration.message && (
+                      <p className="text-xs text-muted-foreground mt-1.5">
+                        {planChangePreview.proration.message}
+                      </p>
+                    )}
                   </div>
                 )}
 
-                {/* Comparaison des limites */}
-                <div className="border border-gray-100 dark:border-gray-800 rounded-lg overflow-hidden">
-                  <div className="bg-gray-50 dark:bg-gray-800/50 px-4 py-2">
-                    <span className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">
-                      Limites du plan
-                    </span>
-                  </div>
-                  <div className="divide-y divide-gray-100 dark:divide-gray-800">
-                    <div className="flex justify-between items-center px-4 py-2.5">
-                      <span className="text-sm text-gray-600 dark:text-gray-400">
-                        Utilisateurs
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-400">
-                          {planChangePreview.currentPlan.limits.users}
-                        </span>
-                        <span className="text-gray-300 dark:text-gray-600">
-                          →
-                        </span>
-                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                          {planChangePreview.newPlan.limits.users}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex justify-between items-center px-4 py-2.5">
-                      <span className="text-sm text-gray-600 dark:text-gray-400">
-                        Comptes bancaires
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-400">
-                          {planChangePreview.currentPlan.limits.bankAccounts}
-                        </span>
-                        <span className="text-gray-300 dark:text-gray-600">
-                          →
-                        </span>
-                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                          {planChangePreview.newPlan.limits.bankAccounts}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Alerte downgrade si trop de membres */}
+                {/* Alerte downgrade - membres */}
                 {planChangePreview.change.memberCheck &&
                   !planChangePreview.change.memberCheck.canDowngrade && (
-                    <div className="space-y-3">
-                      <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
-                        <div className="flex gap-3">
-                          <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
-                          <div className="flex-1">
-                            <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
-                              Action requise avant le changement
-                            </p>
-                            <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
-                              Vous avez{" "}
-                              {
-                                planChangePreview.change.memberCheck
-                                  .currentMembers
-                              }{" "}
-                              membres mais le plan{" "}
-                              {planChangePreview.newPlan.displayName} est limité
-                              à {planChangePreview.change.memberCheck.newLimit}.
-                              Retirez{" "}
-                              {
-                                planChangePreview.change.memberCheck
-                                  .membersToRemove
-                              }{" "}
-                              membre(s) pour continuer.
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Liste des membres à retirer */}
-                      {planChangePreview.change.memberCheck.membersList &&
-                        planChangePreview.change.memberCheck.membersList
-                          .length > 0 && (
-                          <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-                            <div className="bg-gray-50 dark:bg-gray-800/50 px-4 py-2 border-b border-gray-200 dark:border-gray-700">
-                              <span className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">
-                                Membres suggérés à retirer (
-                                {
-                                  planChangePreview.change.memberCheck
-                                    .membersToRemove
-                                }
-                                )
-                              </span>
-                            </div>
-                            <div className="divide-y divide-gray-100 dark:divide-gray-800 max-h-40 overflow-y-auto">
-                              {planChangePreview.change.memberCheck.membersList.map(
-                                (member) => (
-                                  <div
-                                    key={member.id}
-                                    className="flex items-center justify-between px-4 py-2.5"
-                                  >
-                                    <div className="flex items-center gap-3">
-                                      <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                                        <span className="text-xs font-medium text-gray-600 dark:text-gray-300">
-                                          {member.name
-                                            ?.charAt(0)
-                                            ?.toUpperCase() || "?"}
-                                        </span>
-                                      </div>
-                                      <div>
-                                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                          {member.name}
-                                        </p>
-                                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                                          {member.email}
-                                        </p>
-                                      </div>
-                                    </div>
-                                    <Badge
-                                      variant="outline"
-                                      className="text-xs capitalize"
-                                    >
-                                      {member.role}
-                                    </Badge>
-                                  </div>
-                                )
-                              )}
-                            </div>
-                          </div>
+                    <Callout type="warning" noMargin>
+                      <p className="text-sm">
+                        {planChangePreview.change.memberCheck.pendingInvitations > 0 ? (
+                          <>
+                            Vous avez {planChangePreview.change.memberCheck.currentMembers} membre(s) actif(s) et{" "}
+                            {planChangePreview.change.memberCheck.pendingInvitations} invitation(s) en attente,
+                            soit {planChangePreview.change.memberCheck.totalAfterPending} au total.
+                            Le plan est limité à {planChangePreview.change.memberCheck.newLimit}.
+                            Retirez des membres ou annulez des invitations d'abord.
+                          </>
+                        ) : (
+                          <>
+                            Vous avez {planChangePreview.change.memberCheck.currentMembers} membres
+                            mais ce plan est limité à {planChangePreview.change.memberCheck.newLimit}.
+                            Retirez {planChangePreview.change.memberCheck.membersToRemove} membre(s) d'abord.
+                          </>
                         )}
-
-                      {/* Bouton vers gestion des membres */}
-                      <Button
-                        variant="outline"
-                        className="w-full text-sm"
-                        onClick={() => {
-                          setShowPlanChangeModal(false);
-                          window.location.href = "/dashboard";
-                        }}
-                      >
-                        <Users className="mr-2 h-4 w-4" />
-                        Gérer les membres de l'équipe
-                      </Button>
-                    </div>
+                      </p>
+                    </Callout>
                   )}
+
+                {/* Alerte sièges payants */}
+                {planChangePreview.change.paidSeats > 0 && planChangePreview.change.isDowngrade && (
+                  <Callout type="warning" noMargin>
+                    <p className="text-sm">
+                      Vous avez {planChangePreview.change.paidSeats} siège(s) supplémentaire(s) payant(s).
+                      Retirez-les dans la section "Espaces" avant de changer de plan.
+                    </p>
+                  </Callout>
+                )}
               </div>
 
-              {/* Footer */}
-              <div className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-100 dark:border-gray-800 flex justify-end gap-3">
+              <div className="px-6 py-4 bg-muted/50 border-t flex justify-end gap-3">
                 <Button
                   variant="outline"
                   onClick={() => {
@@ -1084,7 +715,7 @@ export function SubscriptionSection({
                     setSelectedPlan(null);
                   }}
                   disabled={isLoading}
-                  className="text-sm"
+                  className="cursor-pointer"
                 >
                   Annuler
                 </Button>
@@ -1093,18 +724,13 @@ export function SubscriptionSection({
                   disabled={
                     isLoading ||
                     (planChangePreview.change.memberCheck &&
-                      !planChangePreview.change.memberCheck.canDowngrade)
+                      !planChangePreview.change.memberCheck.canDowngrade) ||
+                    (planChangePreview.change.paidSeats > 0 && planChangePreview.change.isDowngrade)
                   }
-                  className="text-sm bg-gray-900 hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100"
+                  className="bg-[#5b50fe] hover:bg-[#4a3fe8] cursor-pointer"
                 >
-                  {isLoading ? (
-                    <>
-                      <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
-                      Modification...
-                    </>
-                  ) : (
-                    "Confirmer le changement"
-                  )}
+                  {isLoading && <LoaderCircle className="h-4 w-4 animate-spin mr-2" />}
+                  Confirmer
                 </Button>
               </div>
             </>
