@@ -363,6 +363,44 @@ export async function sendPaymentSucceededEmail({
   }
 }
 
+// Fonction pour envoyer un email de début de période d'essai
+export async function sendTrialStartedEmail({
+  to,
+  customerName,
+  plan,
+  trialEndDate,
+}) {
+  await sendEmail({
+    to,
+    subject: "Bienvenue sur Newbi - Votre essai gratuit de 30 jours commence",
+    html: emailTemplates.trialStarted({
+      customerName,
+      plan,
+      trialEndDate,
+    }),
+  });
+}
+
+// Fonction pour envoyer un email de fin d'essai imminente (3 jours avant)
+export async function sendTrialEndingEmail({
+  to,
+  customerName,
+  plan,
+  trialEndDate,
+  amount,
+}) {
+  await sendEmail({
+    to,
+    subject: "Votre essai Newbi se termine dans 3 jours",
+    html: emailTemplates.trialEnding({
+      customerName,
+      plan,
+      trialEndDate,
+      amount,
+    }),
+  });
+}
+
 // Fonction pour envoyer un email d'invitation d'organisation
 export async function sendOrganizationInvitationEmail(data) {
   // Construire le lien d'invitation avec les informations de base
