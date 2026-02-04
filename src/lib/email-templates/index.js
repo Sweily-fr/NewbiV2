@@ -22,6 +22,9 @@ import { trialEnding } from "./subscription/trial-ending.js";
 import { paymentSucceeded } from "./payment/succeeded.js";
 import { paymentFailed } from "./payment/failed.js";
 
+// Invoice templates
+import { invoicePaymentReceived } from "./invoice/payment-received.js";
+
 // Seats templates
 import { seatLimitWarning } from "./seats/limit-warning.js";
 import { additionalSeatAdded } from "./seats/additional-added.js";
@@ -51,6 +54,9 @@ export const emailTemplates = {
   // Payment
   paymentSucceeded,
   paymentFailed,
+
+  // Invoice
+  invoicePaymentReceived,
 
   // Seats
   seatLimitWarning,
