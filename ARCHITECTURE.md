@@ -352,6 +352,55 @@ npm run lint     # ESLint
 
 ---
 
+## Système d'Emails d'Abonnement
+
+### Provider
+
+- **Resend API** via `src/lib/resend.js`
+- Sender: `Newbi <noreply@newbi.sweily.fr>`
+
+### Templates (`src/lib/email-templates/`)
+
+| Catégorie | Template | Déclencheur |
+|-----------|----------|-------------|
+| **Subscription** | `subscription/created.js` | `sendSubscriptionCreatedEmail()` (non utilisé automatiquement) |
+| | `subscription/cancelled.js` | Webhook `customer.subscription.deleted` |
+| | `subscription/changed.js` | API `/change-subscription-plan` |
+| | `subscription/renewal-reminder.js` | Webhook `invoice.upcoming` (désactivé) |
+| | `subscription/trial-started.js` | Webhook `invoice.paid` (si billing_reason=subscription_create + status=trialing) |
+| | `subscription/trial-ending.js` | Webhook `customer.subscription.trial_will_end` |
+| **Payment** | `payment/succeeded.js` | Webhook `invoice.paid` (paiement réel) |
+| | `payment/failed.js` | Webhook `invoice.payment_failed` |
+
+### Fonctions d'envoi (`src/lib/auth-utils.js`)
+
+| Fonction | Usage |
+|----------|-------|
+| `sendSubscriptionCreatedEmail()` | Nouvel abonnement (non appelée automatiquement) |
+| `sendSubscriptionCancelledEmail()` | Annulation d'abonnement |
+| `sendSubscriptionChangedEmail()` | Changement de plan |
+| `sendPaymentSucceededEmail()` | Paiement réussi (avec facture PDF en pièce jointe) |
+| `sendPaymentFailedEmail()` | Échec de paiement |
+| `sendTrialStartedEmail()` | Début de période d'essai |
+| `sendTrialEndingEmail()` | Fin d'essai imminente (3 jours avant) |
+| `sendRenewalReminderEmail()` | Rappel de renouvellement (désactivé) |
+
+### Webhooks Stripe (`src/lib/auth-plugins.js`)
+
+| Événement | Action |
+|-----------|--------|
+| `invoice.paid` | Si trial → `sendTrialStartedEmail()`, sinon → `sendPaymentSucceededEmail()` |
+| `invoice.payment_failed` | `sendPaymentFailedEmail()` |
+| `customer.subscription.deleted` | `sendSubscriptionCancelledEmail()` |
+| `customer.subscription.trial_will_end` | `sendTrialEndingEmail()` |
+| `invoice.upcoming` | Désactivé (était `sendRenewalReminderEmail()`) |
+
+### Déduplication
+
+Utilise `global._processedStripeEvents` (Set) avec expiration 1h pour éviter les emails en double lors de webhooks multiples.
+
+---
+
 ## Flux de Données
 
 ### Authentification

@@ -15,6 +15,8 @@ import { subscriptionChanged } from "./subscription/changed.js";
 import { subscriptionCreated } from "./subscription/created.js";
 import { subscriptionCancelled } from "./subscription/cancelled.js";
 import { renewalReminder } from "./subscription/renewal-reminder.js";
+import { trialStarted } from "./subscription/trial-started.js";
+import { trialEnding } from "./subscription/trial-ending.js";
 
 // Payment templates
 import { paymentSucceeded } from "./payment/succeeded.js";
@@ -43,6 +45,8 @@ export const emailTemplates = {
   subscriptionCreated,
   subscriptionCancelled,
   renewalReminder,
+  trialStarted,
+  trialEnding,
 
   // Payment
   paymentSucceeded,
