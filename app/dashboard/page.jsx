@@ -258,7 +258,7 @@ function DashboardContent() {
       <BankSyncOverlay isVisible={isBankSyncing} />
 
       <div className="flex flex-col gap-4 py-8 sm:p-6 md:gap-6 md:py-6 p-4 md:p-6">
-        <div className="flex items-center justify-between w-full mb-4 md:mb-6">
+        <div className="flex items-center justify-between w-full mb-2">
           <div className="flex flex-col">
             <h1 className="text-2xl font-semibold">
               Bonjour {session?.user?.name},
@@ -274,12 +274,12 @@ function DashboardContent() {
           </div>
           {/* <BankingConnectButton /> */}
         </div>
-        <div className="flex flex-col gap-3 w-full">
+        {/* Barre de recherche et actions rapides temporairement désactivées */}
+        {/* <div className="flex flex-col gap-3 w-full">
           <Comp333
             className="w-full h-11 flex items-center text-sm md:text-sm placeholder:text-sm md:placeholder:text-sm"
             placeholder="Rechercher des transactions ou lancer une action"
           />
-          {/* Conteneur avec scroll horizontal sur mobile, flex-wrap sur tablette et desktop */}
           <div className="overflow-x-auto lg:overflow-x-visible w-full scrollbar-hide">
             <div className="flex gap-2 lg:gap-3 lg:flex-wrap w-max lg:w-full">
               <Button
@@ -358,8 +358,8 @@ function DashboardContent() {
               </Button>
             </div>
           </div>
-        </div>
-        <div className="flex flex-col md:flex-row gap-4 md:gap-6 w-full mt-4">
+        </div> */}
+        <div className="flex flex-col md:flex-row gap-4 md:gap-6 w-full">
           <BankBalanceCard
             className="shadow-xs w-full md:w-1/2"
             expenses={paidExpenses}

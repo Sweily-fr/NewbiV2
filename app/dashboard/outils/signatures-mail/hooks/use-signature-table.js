@@ -414,7 +414,7 @@ export const useSignatures = () => {
               newSignatures = cacheData.getMyEmailSignatures.filter(
                 (sig) => sig.id !== signatureId
               );
-              toast.info('Signature supprimée');
+              // Pas de toast ici - le handler s'en charge pour éviter les doublons
             } else if (type === 'CREATED' && signature) {
               // Ajouter la nouvelle signature au cache
               newSignatures = [signature, ...cacheData.getMyEmailSignatures];
@@ -462,21 +462,26 @@ export const useSignatureActions = () => {
     {
       refetchQueries: [],
       awaitRefetchQueries: false,
-      update: (cache, { data }) => {
-        if (data?.deleteEmailSignature) {
-          const existingData = cache.readQuery({
-            query: GET_MY_EMAIL_SIGNATURES,
-          });
-
-          if (existingData?.getMyEmailSignatures) {
-            const newSignatures = existingData.getMyEmailSignatures.filter(
-              (sig) => sig.id !== data.deleteEmailSignature
-            );
-
-            cache.writeQuery({
+      update: (cache, { data }, { variables }) => {
+        // Utiliser l'ID des variables de la mutation, pas le résultat booléen
+        if (data?.deleteEmailSignature && variables?.id) {
+          try {
+            const existingData = cache.readQuery({
               query: GET_MY_EMAIL_SIGNATURES,
-              data: { getMyEmailSignatures: newSignatures },
             });
+
+            if (existingData?.getMyEmailSignatures) {
+              const newSignatures = existingData.getMyEmailSignatures.filter(
+                (sig) => sig.id !== variables.id
+              );
+
+              cache.writeQuery({
+                query: GET_MY_EMAIL_SIGNATURES,
+                data: { getMyEmailSignatures: newSignatures },
+              });
+            }
+          } catch (error) {
+            console.error('❌ Erreur lors de la mise à jour du cache:', error);
           }
         }
       },
@@ -488,6 +493,29 @@ export const useSignatureActions = () => {
     {
       refetchQueries: [],
       awaitRefetchQueries: false,
+      update: (cache, { data }, { variables }) => {
+        // Utiliser les IDs des variables de la mutation
+        if (data?.deleteMultipleEmailSignatures && variables?.ids) {
+          try {
+            const existingData = cache.readQuery({
+              query: GET_MY_EMAIL_SIGNATURES,
+            });
+
+            if (existingData?.getMyEmailSignatures) {
+              const newSignatures = existingData.getMyEmailSignatures.filter(
+                (sig) => !variables.ids.includes(sig.id)
+              );
+
+              cache.writeQuery({
+                query: GET_MY_EMAIL_SIGNATURES,
+                data: { getMyEmailSignatures: newSignatures },
+              });
+            }
+          } catch (error) {
+            console.error('❌ Erreur lors de la mise à jour du cache:', error);
+          }
+        }
+      },
     }
   );
 
@@ -537,11 +565,12 @@ export const useSignatureActions = () => {
     }
 
     try {
-      // Pas de update function - la subscription Redis s'en charge
+      // La fonction update du cache met à jour l'interface immédiatement
+      // La subscription Redis sert de backup pour les autres clients
       await deleteSignature({
         variables: { id: signatureId },
       });
-      // Pas de toast ici - la subscription s'en charge
+      toast.success("Signature supprimée avec succès");
     } catch (error) {
       console.error("Erreur lors de la suppression:", error);
       toast.error("Erreur lors de la suppression de la signature");
@@ -609,11 +638,12 @@ export const useSignatureActions = () => {
 
   const handleDeleteMultiple = async (signatureIds) => {
     try {
-      // Pas de update function - la subscription Redis s'en charge
+      // La fonction update du cache met à jour l'interface immédiatement
+      // La subscription Redis sert de backup pour les autres clients
       await deleteMultipleSignatures({
         variables: { ids: signatureIds },
       });
-      // Pas de toast ici - la subscription s'en charge
+      toast.success(`${signatureIds.length} signature(s) supprimée(s) avec succès`);
     } catch (error) {
       console.error("Erreur lors de la suppression multiple:", error);
       toast.error("Erreur lors de la suppression des signatures");

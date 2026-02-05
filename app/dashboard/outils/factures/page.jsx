@@ -208,7 +208,7 @@ function InvoicesContent() {
                     size="icon"
                     onClick={() => setTriggerImport(true)}
                   >
-                    <ArrowRightFromLine className="h-4 w-4" strokeWidth={1.5} />
+                    <Download className="h-4 w-4" strokeWidth={1.5} />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent

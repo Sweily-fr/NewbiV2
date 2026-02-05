@@ -370,14 +370,9 @@ export function TaskModal({
   const [membersPopoverOpen, setMembersPopoverOpen] = useState(false);
   const [showDescription, setShowDescription] = useState(!!taskForm.description);
   const [tagsInputFocused, setTagsInputFocused] = useState(false);
-  
+
   // Récupérer les infos des membres assignés
   const { members: membersInfo } = useAssignedMembersInfo(taskForm.assignedMembers || []);
-  
-  // Mettre à jour showDescription quand taskForm.description change
-  useEffect(() => {
-    setShowDescription(!!taskForm.description);
-  }, [taskForm.description]);
   
   // Générer une couleur pour un tag basée sur son nom
   const getTagColor = (tagName) => {
