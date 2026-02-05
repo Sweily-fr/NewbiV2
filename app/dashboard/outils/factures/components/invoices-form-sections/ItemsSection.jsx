@@ -44,7 +44,7 @@ const calculateItemTotal = (
   let subtotal = (quantity || 1) * (unitPrice || 0);
 
   // Appliquer le pourcentage d'avancement
-  const progress = Math.min(Math.max(progressPercentage || 100, 0), 100);
+  const progress = Math.min(Math.max(progressPercentage ?? 100, 0), 100);
   subtotal = subtotal * (progress / 100);
 
   // Appliquer la remise si elle existe
@@ -142,7 +142,7 @@ export default function ItemsSection({
       discount: discount,
       discountType: discountType === "percentage" ? "PERCENTAGE" : discountType,
       vatExemptionText: productData.vatExemptionText || "",
-      progressPercentage: productData.progressPercentage || 100,
+      progressPercentage: productData.progressPercentage ?? 100,
       total: calculateItemTotal(
         quantity,
         unitPrice,
@@ -542,7 +542,7 @@ export default function ItemsSection({
                                       const progressPercentage =
                                         watch(
                                           `items.${index}.progressPercentage`
-                                        ) || 100;
+                                        ) ?? 100;
 
                                       const total = calculateItemTotal(
                                         newQuantity,
@@ -697,7 +697,7 @@ export default function ItemsSection({
                                     const progressPercentage =
                                       watch(
                                         `items.${index}.progressPercentage`
-                                      ) || 100;
+                                      ) ?? 100;
 
                                     const total = calculateItemTotal(
                                       quantity,
@@ -937,7 +937,7 @@ export default function ItemsSection({
                                   const progressPercentage =
                                     watch(
                                       `items.${index}.progressPercentage`
-                                    ) || 100;
+                                    ) ?? 100;
                                   const total = calculateItemTotal(
                                     quantity,
                                     unitPrice,
@@ -1027,7 +1027,7 @@ export default function ItemsSection({
                                     const progressPercentage =
                                       watch(
                                         `items.${index}.progressPercentage`
-                                      ) || 100;
+                                      ) ?? 100;
 
                                     const total = calculateItemTotal(
                                       quantity,
@@ -1078,11 +1078,14 @@ export default function ItemsSection({
                                             watch(`items.${index}.unitPrice`)
                                           ) || 0;
                                         const progressPercentage =
-                                          parseFloat(
-                                            watch(
-                                              `items.${index}.progressPercentage`
-                                            )
-                                          ) || 100;
+                                          (() => {
+                                            const p = parseFloat(
+                                              watch(
+                                                `items.${index}.progressPercentage`
+                                              )
+                                            );
+                                            return isNaN(p) ? 100 : p;
+                                          })();
 
                                         const total = calculateItemTotal(
                                           quantity,

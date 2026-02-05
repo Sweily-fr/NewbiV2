@@ -1,7 +1,7 @@
 "use client";
 
 import { useFormContext } from "react-hook-form";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { useLazyQuery } from "@apollo/client";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import {
@@ -30,6 +30,9 @@ export default function ProgressSection({ canEdit = true }) {
   // État pour stocker l'avancement cumulé des factures précédentes
   const [previousProgress, setPreviousProgress] = useState(0);
   const [previousInvoicesCount, setPreviousInvoicesCount] = useState(0);
+
+  // Ref pour éviter les modifications de données au montage initial
+  const isInitialMountRef = useRef(true);
 
   // Requête pour récupérer les factures de situation précédentes
   const [fetchPreviousInvoices, { data: previousInvoicesData }] = useLazyQuery(
@@ -83,32 +86,10 @@ export default function ProgressSection({ canEdit = true }) {
 
       setPreviousProgress(Math.min(totalProgress, 100));
 
-      // Pré-remplir le pourcentage avec le solde restant si c'est une nouvelle facture
-      // et que le pourcentage actuel est à 100% (valeur par défaut)
-      if (!currentInvoiceId && totalProgress > 0) {
-        const remaining = Math.max(0, 100 - totalProgress);
-        const currentGlobalProgress = getValues("globalProgressPercentage");
-
-        // Ne pré-remplir que si le pourcentage est encore à la valeur par défaut (100)
-        if (
-          currentGlobalProgress === 100 ||
-          currentGlobalProgress === undefined
-        ) {
-          setValue("globalProgressPercentage", remaining, {
-            shouldDirty: true,
-          });
-
-          // Appliquer aussi aux articles si mode uniforme
-          const currentItems = getValues("items") || [];
-          currentItems.forEach((_, index) => {
-            setValue(`items.${index}.progressPercentage`, remaining, {
-              shouldDirty: true,
-            });
-          });
-        }
-      }
+      // Le pré-remplissage du pourcentage restant est géré par InvoiceInfoSection
+      // au moment de la liaison (pas au montage de ce composant)
     }
-  }, [previousInvoicesData, currentInvoiceId, getValues, setValue]);
+  }, [previousInvoicesData, currentInvoiceId]);
 
   // Ne pas afficher si ce n'est pas une facture de situation
   if (invoiceType !== "situation") {
@@ -187,7 +168,13 @@ export default function ProgressSection({ canEdit = true }) {
   };
 
   // Synchroniser le pourcentage global avec les articles quand le mode change
+  // (pas au montage initial pour éviter de modifier les calculs au changement d'étape)
   useEffect(() => {
+    if (isInitialMountRef.current) {
+      isInitialMountRef.current = false;
+      return;
+    }
+    if (invoiceType !== "situation") return;
     if (progressMode === "uniform" && items.length > 0) {
       const currentGlobalProgress =
         getValues("globalProgressPercentage") ?? 100;
@@ -202,7 +189,7 @@ export default function ProgressSection({ canEdit = true }) {
         }
       });
     }
-  }, [progressMode, items.length]);
+  }, [progressMode, items.length, invoiceType]);
 
   return (
     <Card className="border-0 shadow-none bg-transparent mb-0 mt-8 p-0">
