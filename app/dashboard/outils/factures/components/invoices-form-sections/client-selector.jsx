@@ -553,7 +553,7 @@ export default function ClientSelector({
         error.message.includes("409") ||
         error.message.toLowerCase().includes("existe déjà") ||
         error.message.toLowerCase().includes("email existe") ||
-        error.extensions?.exception?.code === "ALREADY_EXISTS"
+        error.extensions?.code === "ALREADY_EXISTS" || error.code === "ALREADY_EXISTS"
       ) {
         errorMessage =
           "Un client avec cet email existe déjà. Veuillez utiliser un email différent ou sélectionner ce client dans la liste.";
