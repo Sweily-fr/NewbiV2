@@ -60,7 +60,7 @@ export function generateFacturXXML(invoiceData, documentType = 'invoice') {
   // Calculer les totaux par taux de TVA
   const vatBreakdown = {};
   items.forEach(item => {
-    const vatRate = item.vatRate || 20;
+    const vatRate = item.vatRate ?? 20;
     const quantity = parseFloat(item.quantity) || 0;
     const unitPrice = parseFloat(item.unitPrice) || 0;
     let itemTotal = quantity * unitPrice;
@@ -135,7 +135,7 @@ export function generateFacturXXML(invoiceData, documentType = 'invoice') {
         <ram:ApplicableTradeTax>
           <ram:TypeCode>VAT</ram:TypeCode>
           <ram:CategoryCode>S</ram:CategoryCode>
-          <ram:RateApplicablePercent>${item.vatRate || 20}</ram:RateApplicablePercent>
+          <ram:RateApplicablePercent>${item.vatRate ?? 20}</ram:RateApplicablePercent>
         </ram:ApplicableTradeTax>
         <ram:SpecifiedTradeSettlementLineMonetarySummation>
           <ram:LineTotalAmount>${itemTotal.toFixed(2)}</ram:LineTotalAmount>

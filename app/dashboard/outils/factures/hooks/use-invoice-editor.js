@@ -2270,7 +2270,9 @@ function transformFormDataToInput(formData, previousStatus = null) {
           discountType: (item.discountType || "PERCENTAGE").toUpperCase(),
           details: item.details || "",
           vatExemptionText: vatExemptionText,
-          progressPercentage: parseFloat(item.progressPercentage) || 100,
+          progressPercentage: item.progressPercentage !== undefined && item.progressPercentage !== null && item.progressPercentage !== ''
+            ? parseFloat(item.progressPercentage)
+            : 100,
         };
       }) || [],
     discount: parseFloat(formData.discount) || 0,
