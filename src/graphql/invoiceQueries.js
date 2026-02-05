@@ -1095,7 +1095,7 @@ export const useCreateLinkedInvoice = () => {
       if (
         error.graphQLErrors &&
         error.graphQLErrors.some(
-          (e) => e.extensions?.exception?.code === "COMPANY_INFO_INCOMPLETE"
+          (e) => e.extensions?.code === "COMPANY_INFO_INCOMPLETE" || e.code === "COMPANY_INFO_INCOMPLETE"
         )
       ) {
         toast.error("Informations d'entreprise incomplètes", {
