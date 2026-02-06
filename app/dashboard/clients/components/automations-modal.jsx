@@ -980,7 +980,18 @@ export default function AutomationsModal({ open, onOpenChange }) {
 
             {/* Tab: Email Automations */}
             <TabsContent value="emails" className="mt-0">
-              {showEmailForm || editingEmailAutomation ? (
+              {dateFields.length === 0 && !showEmailForm && !editingEmailAutomation ? (
+                <div className="text-center py-8">
+                  <Calendar className="w-12 h-12 mx-auto text-amber-500/70 mb-4" />
+                  <h3 className="font-medium mb-2">Aucun champ date disponible</h3>
+                  <p className="text-sm text-muted-foreground mb-2 max-w-md mx-auto">
+                    Les automatisations email se déclenchent en fonction d'un champ personnalisé de type <strong>"Date"</strong> sur vos clients.
+                  </p>
+                  <p className="text-sm text-amber-700 dark:text-amber-400">
+                    Créez d'abord un champ personnalisé de type "Date" dans le gestionnaire de champs pour pouvoir configurer des automatisations email.
+                  </p>
+                </div>
+              ) : showEmailForm || editingEmailAutomation ? (
                 <EmailAutomationForm
                   automation={editingEmailAutomation}
                   dateFields={dateFields}
@@ -1082,16 +1093,6 @@ export default function AutomationsModal({ open, onOpenChange }) {
                         </TableBody>
                       </Table>
                     </div>
-                  )}
-
-                  {dateFields.length === 0 && (
-                    <Card className="bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800">
-                      <CardContent className="pt-4">
-                        <p className="text-sm text-amber-800 dark:text-amber-200">
-                          Vous devez d'abord créer un champ personnalisé de type "Date" pour pouvoir configurer des automatisations email.
-                        </p>
-                      </CardContent>
-                    </Card>
                   )}
                 </div>
               )}

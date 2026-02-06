@@ -272,70 +272,108 @@ Cordialement,
 
             <div className="space-y-2">
               <Label>Quand envoyer l'email *</Label>
-              <Select
-                value={formData.timing.type}
-                onValueChange={(value) => setFormData({
-                  ...formData,
-                  timing: { ...formData.timing, type: value }
-                })}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Sélectionner le timing" />
-                </SelectTrigger>
-                <SelectContent>
-                  {TIMING_TYPES.map((timing) => (
-                    <SelectItem key={timing.value} value={timing.value}>
-                      {timing.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {selectedTiming && (
-                <p className="text-xs text-muted-foreground">{selectedTiming.description}</p>
+
+              {formData.timing.type === 'ON_DATE' ? (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Select
+                    value={formData.timing.type}
+                    onValueChange={(value) => setFormData({
+                      ...formData,
+                      timing: { ...formData.timing, type: value }
+                    })}
+                  >
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {TIMING_TYPES.map((timing) => (
+                        <SelectItem key={timing.value} value={timing.value}>
+                          {timing.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <span className="text-sm text-muted-foreground">à</span>
+                  <Input
+                    type="number"
+                    min="0"
+                    max="23"
+                    value={formData.timing.sendHour}
+                    onChange={(e) => {
+                      const hour = parseInt(e.target.value, 10);
+                      if (!isNaN(hour) && hour >= 0 && hour <= 23) {
+                        setFormData({
+                          ...formData,
+                          timing: { ...formData.timing, sendHour: hour }
+                        });
+                      }
+                    }}
+                    className="w-16 text-center"
+                  />
+                  <span className="text-sm text-muted-foreground">h00</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    min="1"
+                    max="365"
+                    value={formData.timing.daysOffset}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      timing: { ...formData.timing, daysOffset: e.target.value }
+                    })}
+                    className="w-16 text-center flex-shrink-0"
+                  />
+                  <span className="text-sm text-muted-foreground flex-shrink-0 whitespace-nowrap">
+                    jour{formData.timing.daysOffset > 1 ? 's' : ''}
+                  </span>
+                  <Select
+                    value={formData.timing.type}
+                    onValueChange={(value) => setFormData({
+                      ...formData,
+                      timing: { ...formData.timing, type: value }
+                    })}
+                  >
+                    <SelectTrigger className="w-[130px] flex-shrink-0">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {TIMING_TYPES.map((timing) => (
+                        <SelectItem key={timing.value} value={timing.value}>
+                          {timing.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <span className="text-sm text-muted-foreground flex-shrink-0">à</span>
+                  <Input
+                    type="number"
+                    min="0"
+                    max="23"
+                    value={formData.timing.sendHour}
+                    onChange={(e) => {
+                      const hour = parseInt(e.target.value, 10);
+                      if (!isNaN(hour) && hour >= 0 && hour <= 23) {
+                        setFormData({
+                          ...formData,
+                          timing: { ...formData.timing, sendHour: hour }
+                        });
+                      }
+                    }}
+                    className="w-16 text-center flex-shrink-0"
+                  />
+                  <span className="text-sm text-muted-foreground flex-shrink-0">h00</span>
+                </div>
               )}
-            </div>
 
-            {formData.timing.type !== 'ON_DATE' && (
-              <div className="space-y-2">
-                <Label htmlFor="daysOffset">Nombre de jours</Label>
-                <Input
-                  id="daysOffset"
-                  className="w-full"
-                  type="number"
-                  min="1"
-                  max="365"
-                  value={formData.timing.daysOffset}
-                  onChange={(e) => setFormData({
-                    ...formData,
-                    timing: { ...formData.timing, daysOffset: e.target.value }
-                  })}
-                />
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <Label>Heure d'envoi</Label>
-              <div className="flex items-center gap-2 w-24">
-                <Input
-                  type="number"
-                  min="0"
-                  max="23"
-                  value={formData.timing.sendHour}
-                  onChange={(e) => {
-                    const hour = parseInt(e.target.value, 10);
-                    if (!isNaN(hour) && hour >= 0 && hour <= 23) {
-                      setFormData({
-                        ...formData,
-                        timing: { ...formData.timing, sendHour: hour }
-                      });
-                    }
-                  }}
-                  className="w-16 text-center"
-                />
-                <span className="text-sm text-muted-foreground">h00</span>
-              </div>
               <p className="text-xs text-muted-foreground">
-                Heure à laquelle l'email sera envoyé (fuseau horaire Paris)
+                {formData.timing.type === 'ON_DATE'
+                  ? 'L\'email sera envoyé le jour même de la date du champ personnalisé'
+                  : formData.timing.type === 'BEFORE_DATE'
+                  ? `L'email sera envoyé ${formData.timing.daysOffset || 0} jour${formData.timing.daysOffset > 1 ? 's' : ''} avant la date du champ personnalisé`
+                  : `L'email sera envoyé ${formData.timing.daysOffset || 0} jour${formData.timing.daysOffset > 1 ? 's' : ''} après la date du champ personnalisé`}
+                {' '}(fuseau horaire Paris)
               </p>
             </div>
           </div>
