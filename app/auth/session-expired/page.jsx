@@ -4,7 +4,7 @@ import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/src/components/ui/button";
 import { Shield, LogIn, LoaderCircle } from "lucide-react";
-import Link from "next/link";
+
 
 // Composant interne qui utilise useSearchParams
 function SessionExpiredContent() {
@@ -114,12 +114,12 @@ function SessionExpiredContent() {
             {/* Lien support */}
             <p className="mt-4 text-sm text-muted-foreground dark:text-muted-foreground">
               Un problème ?{" "}
-              <Link
-                href="/support"
+              <a
+                href="mailto:contact@newbi.fr"
                 className="font-medium text-primary hover:text-primary/90 dark:text-primary hover:dark:text-primary/90"
               >
                 Contactez le support
-              </Link>
+              </a>
             </p>
           </div>
         </div>
@@ -189,12 +189,12 @@ function SessionExpiredContent() {
 
           {/* Lien support */}
           <p className="mt-4 text-center text-sm text-muted-foreground">
-            <Link
-              href="/support"
+            <a
+              href="mailto:contact@newbi.fr"
               className="font-medium text-primary hover:text-primary/90"
             >
               Contactez le support
-            </Link>
+            </a>
           </p>
         </div>
       </div>

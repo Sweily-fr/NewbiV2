@@ -1861,8 +1861,17 @@ export default function NewSignaturePage() {
 
   // Gestion de la touche Espace pour le pan
   React.useEffect(() => {
+    const isEditableElement = (el) => {
+      if (!el) return false;
+      const tag = el.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return true;
+      if (el.isContentEditable) return true;
+      return false;
+    };
+
     const handleKeyDown = (e) => {
       if (e.code === "Space" && !e.repeat) {
+        if (isEditableElement(document.activeElement)) return;
         e.preventDefault();
         setIsSpacePressed(true);
       }
