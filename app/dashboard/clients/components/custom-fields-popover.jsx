@@ -381,12 +381,7 @@ export default function CustomFieldsPopover({ trigger }) {
               className="font-normal"
             >
               <Settings2 className="mr-2 h-4 w-4" />
-              Champs personnalisés
-              {activeCount > 0 && (
-                <Badge variant="secondary" className="ml-2 text-xs">
-                  {activeCount}
-                </Badge>
-              )}
+              Personnalisé
             </Button>
           )}
         </PopoverTrigger>

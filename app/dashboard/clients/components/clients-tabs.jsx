@@ -75,7 +75,7 @@ export default function ClientsTabs() {
           <Input
             ref={inputRef}
             className={cn(
-              "w-full sm:w-[490px] lg:w-[490px] ps-9",
+              "w-full sm:w-[300px] ps-9",
               Boolean(globalFilter) && "pe-9"
             )}
             value={globalFilter}
