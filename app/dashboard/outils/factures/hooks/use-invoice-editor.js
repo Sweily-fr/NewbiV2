@@ -936,6 +936,22 @@ export function useInvoiceEditor({
     }
   }, [organization, setValue, getValues]);
 
+  // Pre-fill items from Kanban conversion (via sessionStorage)
+  useEffect(() => {
+    if (mode === 'create' && isFormInitialized) {
+      const kanbanItems = sessionStorage.getItem('kanbanInvoiceItems');
+      if (kanbanItems) {
+        try {
+          const items = JSON.parse(kanbanItems);
+          setValue('items', items);
+          sessionStorage.removeItem('kanbanInvoiceItems');
+        } catch (e) {
+          sessionStorage.removeItem('kanbanInvoiceItems');
+        }
+      }
+    }
+  }, [mode, isFormInitialized, setValue]);
+
   // Auto-save handler - DISABLED
   // const handleAutoSave = useCallback(async () => {
   //   if (mode !== "edit" || !invoiceId || formData.status !== "DRAFT") {

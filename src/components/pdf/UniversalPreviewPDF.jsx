@@ -1143,7 +1143,7 @@ const UniversalPreviewPDF = ({
                               whiteSpace: "nowrap",
                             }}
                           >
-                            {item.quantity}
+                            {parseFloat(Number(item.quantity).toFixed(4))}
                             {item.unit ? ` ${item.unit}` : ""}
                           </td>
                           <td

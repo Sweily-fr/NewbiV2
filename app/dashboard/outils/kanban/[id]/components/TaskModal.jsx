@@ -794,7 +794,7 @@ export function TaskModal({
                     </button>
                   )}
                   <div 
-                    className="h-10 rounded-md border border-input px-3 py-2 text-sm ring-offset-background transition-all focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 cursor-text overflow-y-auto"
+                    className="min-h-10 rounded-md border border-input px-3 py-2 text-sm ring-offset-background transition-all focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 cursor-text"
                     onClick={() => {
                       if (!tagsInputFocused) {
                         setTagsInputFocused(true);
@@ -1415,7 +1415,7 @@ export function TaskModal({
                         </button>
                       )}
                       <div 
-                        className="h-10 rounded-md border border-input px-3 py-2 text-sm ring-offset-background transition-all focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 cursor-text overflow-y-auto"
+                        className="min-h-10 rounded-md border border-input px-3 py-2 text-sm ring-offset-background transition-all focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 cursor-text"
                         onClick={() => {
                           if (!tagsInputFocused) {
                             setTagsInputFocused(true);
