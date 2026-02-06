@@ -1,9 +1,9 @@
 "use client";
 
-import { use, useState, useEffect } from "react";
+import { use, useState, useEffect, useMemo } from "react";
 import * as React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, Plus, LoaderCircle, Search, Trash2, AlignLeft, Filter, Users, ZoomIn, ZoomOut } from "lucide-react";
+import { ArrowLeft, Plus, LoaderCircle, Search, Trash2, AlignLeft, Filter, Users, ZoomIn, ZoomOut, FileText, Euro } from "lucide-react";
 import { toast } from "@/src/components/ui/sonner";
 
 // UI Components
@@ -80,6 +80,7 @@ import { KanbanListView } from "./components/KanbanListView";
 import { KanbanGanttView } from "./components/KanbanGanttView";
 import { MemberFilterButton } from "./components/MemberFilterButton";
 import { ShareBoardDialog } from "./components/ShareBoardDialog";
+import { ConvertToInvoiceModal } from "./components/ConvertToInvoiceModal";
 import {
   GET_BOARD,
   CREATE_COLUMN,
@@ -194,6 +195,9 @@ export default function KanbanBoardPage({ params }) {
   // État pour le niveau de zoom du Kanban (0.7 = 70%, 1 = 100%, 1.3 = 130%)
   const [zoomLevel, setZoomLevel] = React.useState(1);
 
+  // État pour la modale de conversion en facture
+  const [showConvertModal, setShowConvertModal] = useState(false);
+
   // Hook pour le filtrage par membre (AVANT useKanbanDnDSimple pour éviter l'erreur de hoisting)
   const {
     selectedMemberId,
@@ -290,6 +294,69 @@ export default function KanbanBoardPage({ params }) {
     filtered = filterTasksByMember(filtered);
     return filtered;
   }, [filterTasksBySearch, filterTasksByMember]);
+
+  // Calcule le temps effectif en secondes (inclut le timer actif, comme TimerDisplay)
+  const getEffectiveSeconds = React.useCallback((tt) => {
+    let total = tt.totalSeconds || 0;
+    if (tt.isRunning && tt.currentStartTime) {
+      const elapsed = Math.floor((Date.now() - new Date(tt.currentStartTime).getTime()) / 1000);
+      if (elapsed > 0) total += elapsed;
+    }
+    return Math.max(0, total);
+  }, []);
+
+  // Tâches facturables = temps effectif > 0 ET tarif horaire défini
+  const billableTasks = useMemo(() => {
+    if (!board?.tasks) return [];
+    return board.tasks.filter(task => {
+      if (!task.timeTracking?.hourlyRate || task.timeTracking.hourlyRate <= 0) return false;
+      return getEffectiveSeconds(task.timeTracking) > 0;
+    });
+  }, [board?.tasks, getEffectiveSeconds]);
+
+  // Prix total du projet
+  const projectTotalPrice = useMemo(() => {
+    return billableTasks.reduce((sum, task) => {
+      const tt = task.timeTracking;
+      const hours = getEffectiveSeconds(tt) / 3600;
+      let billableHours = hours;
+      if (tt.roundingOption === 'up') billableHours = Math.ceil(hours);
+      else if (tt.roundingOption === 'down') billableHours = Math.floor(hours);
+      return sum + (billableHours * tt.hourlyRate);
+    }, 0);
+  }, [billableTasks, getEffectiveSeconds]);
+
+  // Formatage monétaire
+  const formatCurrency = React.useCallback((amount) =>
+    new Intl.NumberFormat("fr-FR", {
+      style: "currency", currency: "EUR",
+      minimumFractionDigits: 2, maximumFractionDigits: 2,
+    }).format(amount), []);
+
+  // Conversion tâches Kanban → facture
+  const handleConvertToInvoice = React.useCallback((selectedTasks) => {
+    const items = selectedTasks.map(task => {
+      const tt = task.timeTracking;
+      const hours = getEffectiveSeconds(tt) / 3600;
+      let billableHours = hours;
+      if (tt.roundingOption === 'up') billableHours = Math.ceil(hours);
+      else if (tt.roundingOption === 'down') billableHours = Math.floor(hours);
+      return {
+        description: task.title,
+        details: task.description || "",
+        quantity: billableHours,
+        unitPrice: tt.hourlyRate,
+        vatRate: 20,
+        unit: "heure",
+        discount: 0,
+        discountType: "PERCENTAGE",
+        progressPercentage: 100,
+      };
+    });
+    sessionStorage.setItem('kanbanInvoiceItems', JSON.stringify(items));
+    setShowConvertModal(false);
+    router.push('/dashboard/outils/factures/new');
+  }, [router, getEffectiveSeconds]);
 
   const {
     isColumnCollapsed,
@@ -753,31 +820,53 @@ export default function KanbanBoardPage({ params }) {
                 </DropdownMenuSub>
               </DropdownMenuContent>
             </DropdownMenu>
+
+            {/* Bouton Convertir en facture */}
+            {billableTasks.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2 h-9"
+                onClick={() => setShowConvertModal(true)}
+              >
+                <FileText className="h-4 w-4" />
+                <span className="hidden lg:inline">Convertir en facture</span>
+              </Button>
+            )}
           </ButtonGroup>
 
-          {/* Contrôles de zoom */}
-          <div className="flex items-center gap-1 ml-auto">
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-9 w-9"
-              onClick={() => setZoomLevel(prev => Math.max(0.5, prev - 0.1))}
-              disabled={zoomLevel <= 0.5}
-            >
-              <ZoomOut className="h-4 w-4" />
-            </Button>
-            <span className="text-xs text-muted-foreground w-12 text-center">
-              {Math.round(zoomLevel * 100)}%
+          {/* Prix total */}
+          {billableTasks.length > 0 && (
+            <span className="text-sm font-medium whitespace-nowrap">
+              Dossier à <span className="bg-[#5b50ff]/10 text-[#5b50ff] px-2.5 py-1 rounded-md text-sm font-semibold ml-1.5">{formatCurrency(projectTotalPrice)}</span>
             </span>
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-9 w-9"
-              onClick={() => setZoomLevel(prev => Math.min(1.5, prev + 0.1))}
-              disabled={zoomLevel >= 1.5}
-            >
-              <ZoomIn className="h-4 w-4" />
-            </Button>
+          )}
+
+          {/* Contrôles de zoom */}
+          <div className="flex items-center gap-2 ml-auto">
+            <div className="flex items-center gap-1">
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-9 w-9"
+                onClick={() => setZoomLevel(prev => Math.max(0.5, prev - 0.1))}
+                disabled={zoomLevel <= 0.5}
+              >
+                <ZoomOut className="h-4 w-4" />
+              </Button>
+              <span className="text-xs text-muted-foreground w-12 text-center">
+                {Math.round(zoomLevel * 100)}%
+              </span>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-9 w-9"
+                onClick={() => setZoomLevel(prev => Math.min(1.5, prev + 0.1))}
+                disabled={zoomLevel >= 1.5}
+              >
+                <ZoomIn className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
       )}
@@ -899,7 +988,27 @@ export default function KanbanBoardPage({ params }) {
                 </DropdownMenuSub>
               </DropdownMenuContent>
             </DropdownMenu>
+
+            {/* Bouton Convertir en facture */}
+            {billableTasks.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2 h-9"
+                onClick={() => setShowConvertModal(true)}
+              >
+                <FileText className="h-4 w-4" />
+                <span className="hidden lg:inline">Convertir en facture</span>
+              </Button>
+            )}
           </ButtonGroup>
+
+          {/* Prix total */}
+          {billableTasks.length > 0 && (
+            <span className="text-sm font-medium whitespace-nowrap">
+              Dossier à <span className="bg-[#5b50ff]/10 text-[#5b50ff] px-2.5 py-1 rounded-md text-sm font-semibold ml-1.5">{formatCurrency(projectTotalPrice)}</span>
+            </span>
+          )}
         </div>
       )}
 
@@ -1088,6 +1197,16 @@ export default function KanbanBoardPage({ params }) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <ConvertToInvoiceModal
+        open={showConvertModal}
+        onOpenChange={setShowConvertModal}
+        tasks={billableTasks}
+        onConvert={handleConvertToInvoice}
+        getEffectiveSeconds={getEffectiveSeconds}
+        columns={localColumns}
+        members={members}
+      />
     </div>
   );
 }

@@ -541,6 +541,15 @@ export const STOP_TIMER = gql`
   ${TASK_FRAGMENT}
 `;
 
+export const RESET_TIMER = gql`
+  mutation ResetTimer($taskId: ID!, $workspaceId: ID) {
+    resetTimer(taskId: $taskId, workspaceId: $workspaceId) {
+      ...TaskFields
+    }
+  }
+  ${TASK_FRAGMENT}
+`;
+
 export const UPDATE_TIMER_SETTINGS = gql`
   mutation UpdateTimerSettings($taskId: ID!, $hourlyRate: Float, $roundingOption: String, $workspaceId: ID) {
     updateTimerSettings(taskId: $taskId, hourlyRate: $hourlyRate, roundingOption: $roundingOption, workspaceId: $workspaceId) {
