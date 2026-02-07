@@ -32,6 +32,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
 import { CompanyInfoGuard } from "@/src/components/company-info-guard";
 import { useInvoices, INVOICE_STATUS } from "@/src/graphql/invoiceQueries";
+import { useImportedInvoices } from "@/src/graphql/importedInvoiceQueries";
+import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { useToastManager } from "@/src/components/ui/toast-manager";
 import { SendDocumentModal } from "./components/send-document-modal";
 
@@ -122,18 +124,11 @@ function InvoicesContent() {
 
   // Récupérer les factures pour les stats
   const { invoices, loading: invoicesLoading } = useInvoices();
+  const { workspaceId } = useRequiredWorkspace();
+  const { importedInvoices, loading: importedLoading } = useImportedInvoices(workspaceId);
 
   // Calculer les statistiques
   const invoiceStats = useMemo(() => {
-    if (!invoices || invoices.length === 0) {
-      return {
-        totalBilled: 0,
-        totalPaid: 0,
-        overdueAmount: 0,
-        overdueCount: 0,
-      };
-    }
-
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -142,34 +137,65 @@ function InvoicesContent() {
     let overdueAmount = 0;
     let overdueCount = 0;
 
-    invoices.forEach((invoice) => {
-      // Utiliser finalTotalHT (après remises) ou totalHT si non disponible
-      const invoiceAmount = invoice.finalTotalHT ?? invoice.totalHT ?? 0;
-      
-      // Exclure les brouillons du CA facturé
-      if (invoice.status !== INVOICE_STATUS.DRAFT) {
-        totalBilled += invoiceAmount;
-      }
+    // Factures créées dans Newbi
+    if (invoices && invoices.length > 0) {
+      invoices.forEach((invoice) => {
+        // Utiliser finalTotalHT (après remises) ou totalHT si non disponible
+        const invoiceAmount = invoice.finalTotalHT ?? invoice.totalHT ?? 0;
 
-      // CA payé = factures terminées
-      if (invoice.status === INVOICE_STATUS.COMPLETED) {
-        totalPaid += invoiceAmount;
-      }
-
-      // Factures en retard = en attente + date d'échéance dépassée
-      if (invoice.status === INVOICE_STATUS.PENDING && invoice.dueDate) {
-        // dueDate peut être un timestamp en string ou un format ISO
-        const dueDateValue = typeof invoice.dueDate === 'string' && /^\d+$/.test(invoice.dueDate)
-          ? parseInt(invoice.dueDate, 10)
-          : invoice.dueDate;
-        const dueDate = new Date(dueDateValue);
-        dueDate.setHours(0, 0, 0, 0);
-        if (dueDate < today) {
-          overdueAmount += invoiceAmount;
-          overdueCount++;
+        // Exclure les brouillons du CA facturé
+        if (invoice.status !== INVOICE_STATUS.DRAFT) {
+          totalBilled += invoiceAmount;
         }
-      }
-    });
+
+        // CA payé = factures terminées
+        if (invoice.status === INVOICE_STATUS.COMPLETED) {
+          totalPaid += invoiceAmount;
+        }
+
+        // Factures en retard = en attente + date d'échéance dépassée
+        if (invoice.status === INVOICE_STATUS.PENDING && invoice.dueDate) {
+          // dueDate peut être un timestamp en string ou un format ISO
+          const dueDateValue = typeof invoice.dueDate === 'string' && /^\d+$/.test(invoice.dueDate)
+            ? parseInt(invoice.dueDate, 10)
+            : invoice.dueDate;
+          const dueDate = new Date(dueDateValue);
+          dueDate.setHours(0, 0, 0, 0);
+          if (dueDate < today) {
+            overdueAmount += invoiceAmount;
+            overdueCount++;
+          }
+        }
+      });
+    }
+
+    // Factures importées via OCR
+    if (importedInvoices && importedInvoices.length > 0) {
+      importedInvoices.forEach((imported) => {
+        if (imported.status !== "VALIDATED") return;
+
+        const amount = imported.totalHT ?? 0;
+
+        // CA facturé : toutes les factures validées
+        totalBilled += amount;
+
+        // CA payé : factures validées avec une date de paiement
+        if (imported.paymentDate) {
+          totalPaid += amount;
+        } else if (imported.dueDate) {
+          // Factures en retard : validées, sans paiement, date d'échéance dépassée
+          const dueDateValue = typeof imported.dueDate === 'string' && /^\d+$/.test(imported.dueDate)
+            ? parseInt(imported.dueDate, 10)
+            : imported.dueDate;
+          const dueDate = new Date(dueDateValue);
+          dueDate.setHours(0, 0, 0, 0);
+          if (dueDate < today) {
+            overdueAmount += amount;
+            overdueCount++;
+          }
+        }
+      });
+    }
 
     return {
       totalBilled,
@@ -177,7 +203,7 @@ function InvoicesContent() {
       overdueAmount,
       overdueCount,
     };
-  }, [invoices]);
+  }, [invoices, importedInvoices]);
 
   // Formater les montants
   const formatAmount = (amount) => {
@@ -317,7 +343,7 @@ function InvoicesContent() {
               </div>
               <div className="flex items-baseline gap-1">
                 <span className="text-lg font-medium tracking-tight">
-                  {invoicesLoading
+                  {invoicesLoading || importedLoading
                     ? "..."
                     : `${formatAmount(invoiceStats.totalBilled)} €`}
                 </span>
@@ -348,7 +374,7 @@ function InvoicesContent() {
               </div>
               <div className="flex items-baseline gap-1">
                 <span className="text-lg font-medium tracking-tight">
-                  {invoicesLoading
+                  {invoicesLoading || importedLoading
                     ? "..."
                     : `${formatAmount(invoiceStats.totalPaid)} €`}
                 </span>
@@ -384,7 +410,7 @@ function InvoicesContent() {
             </div>
             <div className="flex items-baseline gap-1">
               <span className="text-lg font-medium tracking-tight">
-                {invoicesLoading
+                {invoicesLoading || importedLoading
                   ? "..."
                   : `${formatAmount(invoiceStats.overdueAmount)} €`}
               </span>
