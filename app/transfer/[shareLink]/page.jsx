@@ -289,7 +289,7 @@ export default function TransferPage() {
       const totalSize = files.reduce((acc, f) => acc + (f.size || 0), 0);
 
       // Filtrer les téléchargements autorisés pour exclure les images si filigrane
-      const downloadableFileIds = files.map((f) => f.fileId || f.id);
+      const downloadableFileIds = files.map((f) => f.id);
       const filteredDownloads = authData.downloads.filter((d) =>
         downloadableFileIds.includes(d.fileId)
       );
@@ -325,7 +325,7 @@ export default function TransferPage() {
         for (let i = 0; i < filteredDownloads.length; i++) {
           const downloadInfo = filteredDownloads[i];
           const file = files.find(
-            (f) => (f.fileId || f.id) === downloadInfo.fileId
+            (f) => f.id === downloadInfo.fileId
           );
           const fileSize = file?.size || 0;
 
