@@ -14,7 +14,7 @@ import { ScrollArea } from "@/src/components/ui/scroll-area";
 import { Upload, FileText, X, Check, AlertCircle, Loader2 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
-import { useMutation } from "@apollo/client";
+import { useMutation, useApolloClient } from "@apollo/client";
 import { UPLOAD_DOCUMENT } from "@/src/graphql/mutations/documentUpload";
 import {
   IMPORT_INVOICE,
@@ -42,6 +42,7 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
   const isImporting = phase === PHASE.UPLOADING;
 
   const { workspaceId } = useRequiredWorkspace();
+  const client = useApolloClient();
   const [uploadDocument] = useMutation(UPLOAD_DOCUMENT);
   const [importInvoice] = useMutation(IMPORT_INVOICE);
 
@@ -126,6 +127,8 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
     // Compteurs de progression
     let processedCount = 0;
     let successCount = 0;
+    let quotaExceeded = false;
+    let quotaErrorMessage = "";
 
     // Configuration parallélisation - RÉDUIT pour éviter rate limiting Mistral
     const PARALLEL_STREAMS = 3; // 3 streams max pour respecter les limites API Mistral
@@ -185,6 +188,8 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
 
     // Fonction pour traiter un fichier (upload + OCR)
     const processFile = async (file) => {
+      if (quotaExceeded) return;
+
       try {
         // Étape 1: Upload vers Cloudflare
         const { data: uploadData } = await uploadDocument({
@@ -209,6 +214,9 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
 
         if (importData?.importInvoice?.success) {
           successCount++;
+        } else if (importData?.importInvoice?.error?.includes("Quota OCR")) {
+          quotaExceeded = true;
+          quotaErrorMessage = importData.importInvoice.error;
         }
       } catch (error) {
         // Silencieux - le retry automatique backend gère les erreurs
@@ -228,9 +236,9 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
       const activePromises = new Set();
       let lastStartTime = 0;
 
-      while (queue.length > 0 || activePromises.size > 0) {
+      while ((queue.length > 0 && !quotaExceeded) || activePromises.size > 0) {
         // Lancer de nouveaux streams tant qu'on n'a pas atteint la limite
-        while (queue.length > 0 && activePromises.size < PARALLEL_STREAMS) {
+        while (queue.length > 0 && activePromises.size < PARALLEL_STREAMS && !quotaExceeded) {
           // Respecter le délai minimum entre les démarrages
           const now = Date.now();
           const timeSinceLastStart = now - lastStartTime;
@@ -260,20 +268,31 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
       // Toast final
       toast.dismiss(toastId);
 
-      const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
-      const elapsedMinutes = Math.floor(elapsedSeconds / 60);
-      const elapsedSecondsRemainder = elapsedSeconds % 60;
-      const timeDisplay =
-        elapsedMinutes > 0
-          ? `${elapsedMinutes}min ${elapsedSecondsRemainder}s`
-          : `${elapsedSeconds}s`;
+      if (quotaExceeded) {
+        toast.error(quotaErrorMessage, { duration: 8000 });
+        if (successCount > 0) {
+          toast.success(
+            `${successCount} facture(s) importée(s) avant l'atteinte du quota.`,
+            { duration: 5000 }
+          );
+        }
+      } else {
+        const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
+        const elapsedMinutes = Math.floor(elapsedSeconds / 60);
+        const elapsedSecondsRemainder = elapsedSeconds % 60;
+        const timeDisplay =
+          elapsedMinutes > 0
+            ? `${elapsedMinutes}min ${elapsedSecondsRemainder}s`
+            : `${elapsedSeconds}s`;
 
-      toast.success(
-        `${successCount} facture(s) importée(s) en ${timeDisplay} !`,
-        { duration: 5000 }
-      );
+        toast.success(
+          `${successCount} facture(s) importée(s) en ${timeDisplay} !`,
+          { duration: 5000 }
+        );
+      }
 
-      // Rafraîchir la liste des factures
+      // Rafraîchir la liste des factures via Apollo Client (plus fiable que le callback)
+      await client.refetchQueries({ include: [GET_IMPORTED_INVOICES] });
       onImportSuccess?.();
     } catch (error) {
       console.error("Import error:", error);
