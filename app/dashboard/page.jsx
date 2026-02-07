@@ -37,7 +37,23 @@ import {
   CreditCard,
   TrendingUp,
   TrendingDown,
+  Building2,
+  ChevronsUpDown,
+  Check,
 } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/src/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+  CommandList,
+} from "@/src/components/ui/command";
+import { cn } from "@/src/lib/utils";
 // Bridge components removed
 import { useUser } from "@/src/lib/auth/hooks";
 import { authClient } from "@/src/lib/auth-client";
@@ -91,6 +107,10 @@ function DashboardContent() {
   } = useDashboardData();
 
   const { workspaceId } = useWorkspace();
+
+  // État pour le filtre de compte bancaire
+  const [selectedAccountId, setSelectedAccountId] = useState("all");
+  const [accountPopoverOpen, setAccountPopoverOpen] = useState(false);
 
   // État pour l'overlay de synchronisation bancaire
   const [isBankSyncing, setIsBankSyncing] = useState(false);
@@ -199,15 +219,78 @@ function DashboardContent() {
     }
   }, [session?.user?.id, checkAndUpdateAccountStatus, refetchStatus]);
 
-  // Données pour les graphiques (incluant les transactions bancaires)
+  // Filtrage des données par compte bancaire sélectionné
+  const filteredTransactions = useMemo(() => {
+    if (selectedAccountId === "all") return transactions || [];
+    const account = (bankAccounts || []).find(
+      (a) => a.id === selectedAccountId || a.externalId === selectedAccountId
+    );
+    if (!account) return transactions || [];
+    return (transactions || []).filter(
+      (tx) =>
+        tx.fromAccount === account.externalId ||
+        tx.fromAccount === account.id
+    );
+  }, [transactions, selectedAccountId, bankAccounts]);
+
+  const filteredBankAccounts = useMemo(() => {
+    if (selectedAccountId === "all") return bankAccounts || [];
+    return (bankAccounts || []).filter(
+      (a) => a.id === selectedAccountId || a.externalId === selectedAccountId
+    );
+  }, [bankAccounts, selectedAccountId]);
+
+  const filteredBalance = useMemo(() => {
+    if (selectedAccountId === "all") return bankBalance;
+    const account = (bankAccounts || []).find(
+      (a) => a.id === selectedAccountId || a.externalId === selectedAccountId
+    );
+    return account?.balance?.current ?? 0;
+  }, [selectedAccountId, bankAccounts, bankBalance]);
+
+  const filteredTotalIncome = useMemo(() => {
+    if (selectedAccountId === "all") return totalIncome;
+    return filteredTransactions
+      .filter((tx) => tx.amount > 0)
+      .reduce((sum, tx) => sum + tx.amount, 0);
+  }, [selectedAccountId, totalIncome, filteredTransactions]);
+
+  const filteredTotalExpenses = useMemo(() => {
+    if (selectedAccountId === "all") return totalExpenses;
+    return Math.abs(
+      filteredTransactions
+        .filter((tx) => tx.amount < 0)
+        .reduce((sum, tx) => sum + tx.amount, 0)
+    );
+  }, [selectedAccountId, totalExpenses, filteredTransactions]);
+
+  const filteredPaidExpenses = useMemo(() => {
+    if (selectedAccountId === "all") return paidExpenses || [];
+    // Les paidExpenses n'ont pas de fromAccount, on les retourne telles quelles
+    // Le filtrage principal se fait via filteredTransactions pour les graphiques
+    return paidExpenses || [];
+  }, [selectedAccountId, paidExpenses]);
+
+  const selectedAccountLabel = useMemo(() => {
+    if (selectedAccountId === "all") return "Tous les comptes";
+    const account = (bankAccounts || []).find(
+      (a) => a.id === selectedAccountId || a.externalId === selectedAccountId
+    );
+    if (!account) return "Tous les comptes";
+    const name = account.name || account.institutionName || account.bankName || "Compte";
+    const lastIban = account.iban ? ` ···${account.iban.slice(-4)}` : "";
+    return `${name}${lastIban}`;
+  }, [selectedAccountId, bankAccounts]);
+
+  // Données pour les graphiques (incluant les transactions bancaires filtrées)
   const incomeChartData = useMemo(
-    () => processIncomeForCharts(paidInvoices || [], transactions || []),
-    [paidInvoices, transactions]
+    () => processIncomeForCharts(paidInvoices || [], filteredTransactions),
+    [paidInvoices, filteredTransactions]
   );
   const expenseChartData = useMemo(
     () =>
-      processExpensesWithBankForCharts(paidExpenses || [], transactions || []),
-    [paidExpenses, transactions]
+      processExpensesWithBankForCharts(filteredPaidExpenses, filteredTransactions),
+    [filteredPaidExpenses, filteredTransactions]
   );
 
   // Debug pour vérifier l'état du cache
@@ -263,6 +346,91 @@ function DashboardContent() {
             <h1 className="text-2xl font-semibold">
               Bonjour {session?.user?.name},
             </h1>
+            {/* Filtre de compte bancaire */}
+            {(bankAccounts || []).length > 0 && (
+              <Popover open={accountPopoverOpen} onOpenChange={setAccountPopoverOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    role="combobox"
+                    aria-expanded={accountPopoverOpen}
+                    className="h-7 px-2 text-sm font-normal text-muted-foreground hover:text-foreground gap-1 w-fit mt-1"
+                  >
+                    <Building2 className="h-3.5 w-3.5" />
+                    {selectedAccountLabel}
+                    <ChevronsUpDown className="h-3 w-3 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[280px] p-0" align="start">
+                  <Command>
+                    <CommandList>
+                      <CommandEmpty>Aucun compte trouvé.</CommandEmpty>
+                      <CommandGroup>
+                        <CommandItem
+                          value="all"
+                          onSelect={() => {
+                            setSelectedAccountId("all");
+                            setAccountPopoverOpen(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              selectedAccountId === "all" ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          <div className="flex items-center gap-2">
+                            <Building2 className="h-4 w-4 text-muted-foreground" />
+                            <span>Tous les comptes</span>
+                          </div>
+                        </CommandItem>
+                        {(bankAccounts || []).map((account) => {
+                          const accountName = account.name || account.institutionName || account.bankName || "Compte";
+                          const lastIban = account.iban ? ` ···${account.iban.slice(-4)}` : "";
+                          const isSelected = selectedAccountId === account.id || selectedAccountId === account.externalId;
+                          return (
+                            <CommandItem
+                              key={account.id}
+                              value={account.id}
+                              onSelect={() => {
+                                setSelectedAccountId(account.id);
+                                setAccountPopoverOpen(false);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  isSelected ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              <div className="flex items-center gap-2 min-w-0">
+                                {account.institutionLogo ? (
+                                  <img
+                                    src={account.institutionLogo}
+                                    alt=""
+                                    className="h-4 w-4 rounded-sm object-contain flex-shrink-0"
+                                  />
+                                ) : (
+                                  <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                                )}
+                                <div className="flex flex-col min-w-0">
+                                  <span className="truncate text-sm">{accountName}{lastIban}</span>
+                                  {account.balance?.current != null && (
+                                    <span className="text-xs text-muted-foreground">
+                                      {formatCurrency(account.balance.current)}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </CommandItem>
+                          );
+                        })}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            )}
             {process.env.NODE_ENV === "development" &&
               cacheInfo?.lastUpdate && (
                 <p className="text-xs text-gray-500 mt-1">
@@ -364,15 +532,15 @@ function DashboardContent() {
             className="shadow-xs w-full md:w-1/2"
             expenses={paidExpenses}
             invoices={paidInvoices}
-            totalIncome={totalIncome}
-            totalExpenses={totalExpenses}
-            bankAccounts={bankAccounts}
-            bankBalance={bankBalance}
+            totalIncome={filteredTotalIncome}
+            totalExpenses={filteredTotalExpenses}
+            bankAccounts={filteredBankAccounts}
+            bankBalance={filteredBalance}
             isLoading={isLoading}
           />
           <RecentTransactionsCard
             className="shadow-xs w-full md:w-1/2"
-            transactions={transactions}
+            transactions={filteredTransactions}
             limit={5}
             isLoading={isLoading}
           />
@@ -380,15 +548,15 @@ function DashboardContent() {
         {/* Graphique de trésorerie - Pleine largeur (MODE BANCAIRE PUR) */}
         <div className="w-full">
           <TreasuryChart
-            bankTransactions={transactions}
+            bankTransactions={filteredTransactions}
             className="shadow-xs"
-            initialBalance={bankBalance || 0}
+            initialBalance={filteredBalance || 0}
           />
         </div>
         <div className="flex flex-col md:flex-row gap-4 md:gap-6 w-full">
           <ChartAreaInteractive
             title="Entrées"
-            description={formatCurrency(totalIncome)}
+            description={formatCurrency(filteredTotalIncome)}
             height="200px"
             className="shadow-xs w-full md:w-1/2"
             config={incomeChartConfig}
@@ -397,7 +565,7 @@ function DashboardContent() {
           />
           <ChartAreaInteractive
             title="Sorties"
-            description={formatCurrency(totalExpenses)}
+            description={formatCurrency(filteredTotalExpenses)}
             height="200px"
             className="shadow-xs w-full md:w-1/2"
             config={expenseChartConfig}
@@ -410,12 +578,12 @@ function DashboardContent() {
         <div className="flex flex-col md:flex-row gap-4 md:gap-6 w-full">
           <IncomeCategoryChart
             invoices={paidInvoices}
-            bankTransactions={transactions}
+            bankTransactions={filteredTransactions}
             className="shadow-xs w-full md:w-1/2"
           />
           <ExpenseCategoryChart
             expenses={paidExpenses}
-            bankTransactions={transactions}
+            bankTransactions={filteredTransactions}
             className="shadow-xs w-full md:w-1/2"
           />
         </div>

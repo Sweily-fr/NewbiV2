@@ -97,7 +97,7 @@ export function NavDocuments({ items }) {
       isPro: true,
     },
     {
-      name: "Projets",
+      name: "Tâches",
       url: "/dashboard/outils/kanban",
       icon: LayoutGrid,
       iconName: "LayoutGrid",

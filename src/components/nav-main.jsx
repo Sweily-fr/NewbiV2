@@ -352,7 +352,7 @@ export function NavMain({
           <SidebarMenuItem>
             <DropdownMenuTrigger asChild>
               <SidebarMenuButton
-                tooltip="Projets"
+                tooltip="Tâches"
                 className={cn(
                   "bg-transparent w-full cursor-pointer",
                   isKanbanActive &&
@@ -360,7 +360,7 @@ export function NavMain({
                 )}
               >
                 <FolderKanban />
-                <span>Projets</span>
+                <span>Tâches</span>
                 <ChevronRight className="ml-auto h-4 w-4" />
               </SidebarMenuButton>
             </DropdownMenuTrigger>
@@ -424,7 +424,7 @@ export function NavMain({
                   onClick={handleLinkClick}
                   className="flex items-center gap-2 px-2 py-2 cursor-pointer text-muted-foreground"
                 >
-                  <span className="text-xs">Tous les dossiers</span>
+                  <span className="text-xs">Toutes les listes</span>
                 </Link>
               </DropdownMenuItem>
 
@@ -452,7 +452,7 @@ export function NavMain({
         <SidebarMenuItem>
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
-              tooltip="Projets"
+              tooltip="Tâches"
               className={cn(
                 "bg-transparent w-full cursor-pointer",
                 isKanbanActive &&
@@ -460,7 +460,7 @@ export function NavMain({
               )}
             >
               <FolderKanban />
-              <span>Projets</span>
+              <span>Tâches</span>
               <ChevronRight className="ml-auto h-4 w-4" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
@@ -478,7 +478,7 @@ export function NavMain({
                 className="cursor-pointer flex items-center gap-2 font-medium"
               >
                 <LayoutGrid className="h-4 w-4" />
-                <span className="text-sm">Tous les dossiers</span>
+                <span className="text-sm">Toutes les listes</span>
               </Link>
             </DropdownMenuItem>
 
@@ -537,7 +537,7 @@ export function NavMain({
                 onClick={handleLinkClick}
                 className="cursor-pointer flex items-center gap-2 px-2 py-2 text-muted-foreground"
               >
-                <span className="text-xs">Tous les dossiers</span>
+                <span className="text-xs">Toutes les listes</span>
               </Link>
             </DropdownMenuItem>
           </DropdownMenuContent>

@@ -551,7 +551,7 @@ export function SettingsModal({
                                 <span className="flex font-normal items-center gap-2">
                                   {item.label}
                                   {item.isNew && (
-                                    <span className="px-1.5 py-0.5 text-[10px] font-medium bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 rounded-md">
+                                    <span className="px-1.5 py-0.5 text-[10px] font-medium bg-green-500/10 border border-green-500/30 text-green-600 dark:text-green-400 rounded-md">
                                       nouveau
                                     </span>
                                   )}

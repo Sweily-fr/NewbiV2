@@ -192,7 +192,7 @@ const columns = [
     cell: ({ row }) => (
       <Badge variant="outline" className="text-muted-foreground px-1.5">
         {row.original.status === "Done" ? (
-          <IconCircleCheckFilled className="fill-green-500 dark:fill-green-400" />
+          <IconCircleCheckFilled className="fill-green-600 dark:fill-green-400" />
         ) : (
           <LoaderCircle className="h-4 w-4 animate-spin" />
         )}
@@ -412,7 +412,7 @@ export function DataTable({ data: initialData, textButton, link, onEdit, onDelet
       cell: ({ row }) => (
         <Badge variant="outline" className="text-muted-foreground px-1.5">
           {row.original.status === "Done" ? (
-            <IconCircleCheckFilled className="fill-green-500 dark:fill-green-400" />
+            <IconCircleCheckFilled className="fill-green-600 dark:fill-green-400" />
           ) : (
             <LoaderCircle className="h-4 w-4 animate-spin" />
           )}

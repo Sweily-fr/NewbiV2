@@ -25,7 +25,7 @@ export default function FacturationSection() {
         return (
           <Badge
             variant="secondary"
-            className="bg-green-50 text-green-700 text-xs border-green-200"
+            className="bg-green-50 text-green-600 text-xs border-green-200"
           >
             Payée
           </Badge>

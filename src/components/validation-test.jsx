@@ -79,7 +79,7 @@ export default function ValidationTest() {
                 {validation && (
                   <div className={`text-xs p-2 rounded ${
                     validation.isValid 
-                      ? "text-green-700 bg-green-50" 
+                      ? "text-green-600 bg-green-50"
                       : "text-red-700 bg-red-50"
                   }`}>
                     {validation.isValid ? "✅ Valide" : `❌ ${validation.message}`}
