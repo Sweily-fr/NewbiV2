@@ -621,7 +621,7 @@ export function SubscriptionSection({
                     className={cn(
                       "text-xs font-normal",
                       planChangePreview.change.isUpgrade
-                        ? "border-green-200 text-green-700"
+                        ? "border-green-200 text-green-600"
                         : "border-orange-200 text-orange-700"
                     )}
                   >

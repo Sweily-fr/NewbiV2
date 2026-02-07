@@ -457,13 +457,13 @@ const LoginForm = () => {
                 factures: "/dashboard/outils/factures",
                 devis: "/dashboard/outils/devis",
                 clients: "/dashboard/clients",
+                transactions: "/dashboard/outils/transactions",
                 depenses: "/dashboard/outils/transactions",
                 signatures: "/dashboard/outils/signatures-mail",
                 transferts: "/dashboard/outils/transferts-fichiers",
+                "documents-partages": "/dashboard/outils/documents-partages",
                 catalogues: "/dashboard/catalogues",
                 collaborateurs: "/dashboard/collaborateurs",
-                analytics: "/dashboard/analytics",
-                favoris: "/dashboard/favoris",
               };
 
               redirectPath = routeMap[userRedirectPage] || "/dashboard";
@@ -743,9 +743,11 @@ const LoginForm = () => {
               factures: "/dashboard/outils/factures",
               devis: "/dashboard/outils/devis",
               clients: "/dashboard/clients",
+              transactions: "/dashboard/outils/transactions",
               depenses: "/dashboard/outils/transactions",
               signatures: "/dashboard/outils/signatures-mail",
               transferts: "/dashboard/outils/transferts-fichiers",
+              "documents-partages": "/dashboard/outils/documents-partages",
               catalogues: "/dashboard/catalogues",
               collaborateurs: "/dashboard/collaborateurs",
               analytics: "/dashboard/analytics",

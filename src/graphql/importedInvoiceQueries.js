@@ -292,7 +292,7 @@ export const IMPORTED_INVOICE_STATUS_LABELS = {
 
 export const IMPORTED_INVOICE_STATUS_COLORS = {
   PENDING_REVIEW: "bg-amber-100 text-amber-800 border-amber-200",
-  VALIDATED: "bg-green-100 text-green-800 border-green-200",
+  VALIDATED: "bg-green-50 text-green-600 border-green-200",
   REJECTED: "bg-red-100 text-red-800 border-red-200",
   ARCHIVED: "bg-gray-100 text-gray-800 border-gray-200",
 };

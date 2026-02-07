@@ -1215,7 +1215,7 @@ export const CLIENT_TYPE_LABELS = {
 export const INVOICE_STATUS_COLORS = {
   [INVOICE_STATUS.DRAFT]: "bg-gray-100 text-gray-800 border-gray-200",
   [INVOICE_STATUS.PENDING]: "bg-orange-100 text-orange-800 border-orange-200",
-  [INVOICE_STATUS.COMPLETED]: "bg-green-100 text-green-800 border-green-200",
+  [INVOICE_STATUS.COMPLETED]: "bg-green-50 text-green-600 border-green-200",
   [INVOICE_STATUS.CANCELED]: "bg-red-100 text-red-800 border-red-200",
 };
 

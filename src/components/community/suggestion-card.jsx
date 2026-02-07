@@ -210,7 +210,7 @@ export function SuggestionCard({ suggestion, onUpdate, isValidated = false }) {
                 disabled={validateLoading || unvalidateLoading}
               >
                 {suggestion.status === 'validated' ? (
-                  <CheckCircle2 className="h-3.5 w-3.5 mr-1.5 text-green-500" />
+                  <CheckCircle2 className="h-3.5 w-3.5 mr-1.5 text-green-600" />
                 ) : (
                   <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
                 )}
@@ -229,7 +229,7 @@ export function SuggestionCard({ suggestion, onUpdate, isValidated = false }) {
               <div className="flex flex-col gap-1 items-end">
                 <p className="text-xs font-medium text-muted-foreground"></p>
                 <Badge variant="outline" >
-                  <CheckIcon className="h-6 w-6 text-green-500 flex-shrink-0" />
+                  <CheckIcon className="h-6 w-6 text-green-600 flex-shrink-0" />
                   {suggestion.type === 'bug' ? 'Correctif appliqué' : 'Développement validé'}
                 </Badge>
               </div>

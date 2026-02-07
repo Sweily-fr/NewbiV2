@@ -160,7 +160,7 @@ export function CompanyInfoGuard({ children }) {
                       </span>
                       {field.completed ? (
                         <Check
-                          className="stroke-emerald-500 shrink-0"
+                          className="stroke-green-600 shrink-0"
                           size={16}
                           strokeWidth={2}
                           aria-hidden="true"
@@ -198,7 +198,7 @@ export function CompanyInfoGuard({ children }) {
                       </span>
                       {field.completed ? (
                         <Check
-                          className="stroke-emerald-500 shrink-0"
+                          className="stroke-green-600 shrink-0"
                           size={16}
                           strokeWidth={2}
                           aria-hidden="true"

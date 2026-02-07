@@ -21,6 +21,9 @@ import {
   ChevronDown,
   Edit3,
   Upload,
+  Building2,
+  ChevronsUpDown,
+  Check,
 } from "lucide-react";
 import {
   ButtonGroup,
@@ -35,6 +38,19 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/src/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+  CommandList,
+} from "@/src/components/ui/command";
+import { cn } from "@/src/lib/utils";
 import { getTransactionCategory } from "@/lib/bank-categories-config";
 
 // Mapping des noms de catégories (bank-categories-config) vers les clés (category-icons-config)
@@ -146,18 +162,58 @@ function GestionDepensesContent() {
   const [triggerAddManual, setTriggerAddManual] = useState(false);
   const [triggerAddOcr, setTriggerAddOcr] = useState(false);
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
+  const [selectedAccountId, setSelectedAccountId] = useState("all");
+  const [accountPopoverOpen, setAccountPopoverOpen] = useState(false);
 
   // Récupération des transactions (bancaires + manuelles) depuis la collection transactions
   const {
     transactions,
     bankBalance,
+    bankAccounts,
     isLoading: bankLoading,
     refreshData,
   } = useDashboardData();
 
+  // Solde affiché selon le compte sélectionné
+  const displayedBalance = useMemo(() => {
+    if (selectedAccountId === "all") return bankBalance || 0;
+    const account = (bankAccounts || []).find(
+      (a) => a.id === selectedAccountId || a.externalId === selectedAccountId
+    );
+    return account?.balance?.current ?? 0;
+  }, [selectedAccountId, bankAccounts, bankBalance]);
+
+  // Label du compte sélectionné
+  const selectedAccountLabel = useMemo(() => {
+    if (selectedAccountId === "all") return "Tous les comptes";
+    const account = (bankAccounts || []).find(
+      (a) => a.id === selectedAccountId || a.externalId === selectedAccountId
+    );
+    if (!account) return "Tous les comptes";
+    const name = account.name || account.institutionName || account.bankName || "Compte";
+    const lastIban = account.iban ? ` ···${account.iban.slice(-4)}` : "";
+    return `${name}${lastIban}`;
+  }, [selectedAccountId, bankAccounts]);
+
   // Transformer les transactions pour le format attendu par le tableau (mémorisé)
   const expenses = useMemo(() => {
-    return (transactions || []).map((tx) => ({
+    let txList = transactions || [];
+
+    // Filtrer par compte bancaire si un compte est sélectionné
+    if (selectedAccountId !== "all") {
+      const account = (bankAccounts || []).find(
+        (a) => a.id === selectedAccountId || a.externalId === selectedAccountId
+      );
+      if (account) {
+        txList = txList.filter(
+          (tx) =>
+            tx.fromAccount === account.externalId ||
+            tx.fromAccount === account.id
+        );
+      }
+    }
+
+    return txList.map((tx) => ({
       id: tx.id,
       type: tx.amount > 0 ? "INCOME" : "BANK_TRANSACTION",
       source: tx.provider === "manual" ? "MANUAL" : "BANK",
@@ -188,7 +244,7 @@ function GestionDepensesContent() {
       createdAt: tx.createdAt,
       updatedAt: tx.updatedAt,
     }));
-  }, [transactions]);
+  }, [transactions, selectedAccountId, bankAccounts]);
 
   const loading = bankLoading;
   const error = null;
@@ -249,7 +305,7 @@ function GestionDepensesContent() {
                 {loading ? (
                   <Skeleton className="h-9 w-40" />
                 ) : (
-                  `${formatAmount(bankBalance || 0)} €`
+                  `${formatAmount(displayedBalance)} €`
                 )}
               </h1>
               <button
@@ -266,7 +322,90 @@ function GestionDepensesContent() {
                 )}
               </button>
             </div>
-            <p className="text-sm mt-2">Solde disponible</p>
+            <div className="flex items-center gap-2 mt-2">
+              <Popover open={accountPopoverOpen} onOpenChange={setAccountPopoverOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    role="combobox"
+                    aria-expanded={accountPopoverOpen}
+                    className="h-7 px-2 text-sm font-normal text-muted-foreground hover:text-foreground gap-1"
+                  >
+                    <Building2 className="h-3.5 w-3.5" />
+                    {selectedAccountLabel}
+                    <ChevronsUpDown className="h-3 w-3 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[280px] p-0" align="start">
+                  <Command>
+                    <CommandList>
+                      <CommandEmpty>Aucun compte trouvé.</CommandEmpty>
+                      <CommandGroup>
+                        <CommandItem
+                          value="all"
+                          onSelect={() => {
+                            setSelectedAccountId("all");
+                            setAccountPopoverOpen(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              selectedAccountId === "all" ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          <div className="flex items-center gap-2">
+                            <Building2 className="h-4 w-4 text-muted-foreground" />
+                            <span>Tous les comptes</span>
+                          </div>
+                        </CommandItem>
+                        {(bankAccounts || []).map((account) => {
+                          const accountName = account.name || account.institutionName || account.bankName || "Compte";
+                          const lastIban = account.iban ? ` ···${account.iban.slice(-4)}` : "";
+                          const isSelected = selectedAccountId === account.id || selectedAccountId === account.externalId;
+                          return (
+                            <CommandItem
+                              key={account.id}
+                              value={account.id}
+                              onSelect={() => {
+                                setSelectedAccountId(account.id);
+                                setAccountPopoverOpen(false);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  isSelected ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              <div className="flex items-center gap-2 min-w-0">
+                                {account.institutionLogo ? (
+                                  <img
+                                    src={account.institutionLogo}
+                                    alt=""
+                                    className="h-4 w-4 rounded-sm object-contain flex-shrink-0"
+                                  />
+                                ) : (
+                                  <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                                )}
+                                <div className="flex flex-col min-w-0">
+                                  <span className="truncate text-sm">{accountName}{lastIban}</span>
+                                  {account.balance?.current != null && (
+                                    <span className="text-xs text-muted-foreground">
+                                      {formatAmount(account.balance.current)} €
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </CommandItem>
+                          );
+                        })}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
           </div>
           <div className="flex gap-2">
             <TooltipProvider>
@@ -368,7 +507,7 @@ function GestionDepensesContent() {
                   {loading ? (
                     <Skeleton className="h-8 w-32" />
                   ) : (
-                    `${formatAmount(bankBalance || 0)} €`
+                    `${formatAmount(displayedBalance)} €`
                   )}
                 </h1>
                 <button
@@ -385,7 +524,56 @@ function GestionDepensesContent() {
                   )}
                 </button>
               </div>
-              <p className="text-muted-foreground text-sm">Solde disponible</p>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button className="flex items-center gap-1 text-muted-foreground text-sm mt-1 hover:text-foreground transition-colors">
+                    <Building2 className="h-3.5 w-3.5" />
+                    {selectedAccountLabel}
+                    <ChevronsUpDown className="h-3 w-3 opacity-50" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[260px] p-0" align="start">
+                  <Command>
+                    <CommandList>
+                      <CommandEmpty>Aucun compte trouvé.</CommandEmpty>
+                      <CommandGroup>
+                        <CommandItem
+                          value="all"
+                          onSelect={() => setSelectedAccountId("all")}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              selectedAccountId === "all" ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          Tous les comptes
+                        </CommandItem>
+                        {(bankAccounts || []).map((account) => {
+                          const accountName = account.name || account.institutionName || account.bankName || "Compte";
+                          const lastIban = account.iban ? ` ···${account.iban.slice(-4)}` : "";
+                          const isSelected = selectedAccountId === account.id || selectedAccountId === account.externalId;
+                          return (
+                            <CommandItem
+                              key={account.id}
+                              value={account.id}
+                              onSelect={() => setSelectedAccountId(account.id)}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  isSelected ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              <span className="truncate">{accountName}{lastIban}</span>
+                            </CommandItem>
+                          );
+                        })}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
             <div className="flex gap-2">
               <Button
