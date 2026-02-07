@@ -301,10 +301,24 @@ export function SecuritySection({
     return "Localisation inconnue";
   };
 
-  // Charger les sessions au montage du composant
+  // Charger les sessions et les settings au montage du composant
   useEffect(() => {
     if (session?.user) {
       fetchDeviceSessions();
+      // Charger les paramètres de session depuis l'API
+      fetch("/api/session-settings", { credentials: "include" })
+        .then((res) => res.ok ? res.json() : null)
+        .then((data) => {
+          if (data && !data.error) {
+            setSecuritySettings((prev) => ({
+              ...prev,
+              sessionDuration: data.sessionDuration ?? prev.sessionDuration,
+              inactivityTimeout: data.inactivityTimeout ?? prev.inactivityTimeout,
+              maxSessions: data.maxSessions ?? prev.maxSessions,
+            }));
+          }
+        })
+        .catch(() => {});
     }
   }, [session?.user]);
 
@@ -339,12 +353,12 @@ export function SecuritySection({
     }
   };
 
-  const revokeSession = (deviceId) => {
-    toast.success("Session révoquée avec succès");
+  const revokeSession = async (deviceId) => {
+    await handleLogoutDevice(deviceId);
   };
 
-  const revokeAllSessions = () => {
-    toast.success("Toutes les sessions ont été révoquées");
+  const revokeAllSessions = async () => {
+    await handleLogoutAllOtherDevices();
   };
 
   // Fonction pour gérer le toggle 2FA
@@ -400,28 +414,25 @@ export function SecuritySection({
     setIsSessionLoading(true);
 
     try {
-      // Convertir les valeurs UI en secondes pour Better Auth
-      let sessionConfig = {};
+      const response = await fetch("/api/session-settings", {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ [setting]: parseInt(value) }),
+      });
 
-      if (setting === "sessionDuration") {
-        // Convertir jours en secondes
-        sessionConfig.expiresIn = parseInt(value) * 24 * 60 * 60;
+      if (!response.ok) {
+        throw new Error("Erreur serveur");
       }
 
-      if (setting === "inactivityTimeout") {
-        // Convertir heures en secondes pour updateAge
-        sessionConfig.updateAge = parseInt(value) * 60 * 60;
-      }
+      const data = await response.json();
 
-      // Mettre à jour l'état local
       setSecuritySettings((prev) => ({
         ...prev,
-        [setting]: parseInt(value),
+        sessionDuration: data.sessionDuration ?? prev.sessionDuration,
+        inactivityTimeout: data.inactivityTimeout ?? prev.inactivityTimeout,
+        maxSessions: data.maxSessions ?? prev.maxSessions,
       }));
-
-      // TODO: Implémenter l'API pour mettre à jour la configuration de session
-      // Cette fonctionnalité nécessiterait une API personnalisée car Better Auth
-      // ne permet pas de modifier la configuration de session à chaud
 
       toast.success("Paramètres de session mis à jour");
     } catch (error) {
@@ -469,36 +480,23 @@ export function SecuritySection({
   // Fonction pour déconnecter tous les autres appareils
   const handleLogoutAllOtherDevices = async () => {
     try {
-      // Déconnecter toutes les sessions sauf la session actuelle
-      const otherDevices = devices.filter(
-        (device) => !device.current && device.sessionToken
-      );
+      const response = await fetch("/api/revoke-all-other-sessions", {
+        method: "POST",
+        credentials: "include",
+      });
 
-      if (otherDevices.length === 0) {
-        toast.info("Aucun autre appareil connecté");
+      if (!response.ok) {
+        toast.error("Erreur lors de la déconnexion globale");
         return;
       }
 
-      // Révoquer toutes les autres sessions
-      const revokePromises = otherDevices.map((device) =>
-        authClient.multiSession.revoke({ sessionToken: device.sessionToken })
-      );
+      const result = await response.json();
 
-      const results = await Promise.allSettled(revokePromises);
-
-      // Vérifier les résultats
-      const failedRevocations = results.filter(
-        (result) => result.status === "rejected"
-      );
-
-      if (failedRevocations.length > 0) {
-        console.error("Certaines révocations ont échoué:", failedRevocations);
-        toast.error(
-          `Erreur lors de la déconnexion de ${failedRevocations.length} appareil(s)`
-        );
+      if (result.revokedCount === 0) {
+        toast.info("Aucun autre appareil connecté");
       } else {
         toast.success(
-          `${otherDevices.length} appareil(s) déconnecté(s) avec succès`
+          `${result.revokedCount} session(s) déconnectée(s) avec succès`
         );
       }
 

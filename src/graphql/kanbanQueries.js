@@ -28,6 +28,7 @@ export const GET_BOARDS = gql`
       id
       title
       description
+      totalBillableAmount
       createdAt
       updatedAt
     }

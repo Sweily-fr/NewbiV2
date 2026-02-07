@@ -10,7 +10,7 @@ import {
 } from "@tanstack/react-table";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import { Button } from "@/src/components/ui/button";
-import { ArrowUpDown, Eye, Edit, Trash2 } from "lucide-react";
+import { ArrowUpDown, Eye, Edit, Trash2, Euro } from "lucide-react";
 
 // Custom filter function for multi-column search
 const multiColumnFilterFn = (row, columnId, filterValue) => {
@@ -35,6 +35,12 @@ export function useKanbanBoardsTable({
   formatDate,
 }) {
   const [globalFilter, setGlobalFilter] = useState("");
+
+  // Vérifier si au moins un board a un montant facturable
+  const hasBillableAmount = useMemo(
+    () => data.some((board) => board.totalBillableAmount),
+    [data]
+  );
 
   // Define columns
   const columns = useMemo(
@@ -72,7 +78,7 @@ export function useKanbanBoardsTable({
             className="flex items-center cursor-pointer font-normal"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
-            Nom du dossier
+            Nom de la liste
             <ArrowUpDown className="ml-2 h-4 w-4" />
           </div>
         ),
@@ -92,6 +98,41 @@ export function useKanbanBoardsTable({
         size: 300,
         enableHiding: false,
       },
+      ...(hasBillableAmount
+        ? [
+            {
+              accessorKey: "totalBillableAmount",
+              header: ({ column }) => (
+                <div
+                  className="flex items-center cursor-pointer font-normal"
+                  onClick={() =>
+                    column.toggleSorting(column.getIsSorted() === "asc")
+                  }
+                >
+                  Montant du dossier
+                  <ArrowUpDown className="ml-2 h-4 w-4" />
+                </div>
+              ),
+              cell: ({ row }) => {
+                const amount = row.getValue("totalBillableAmount");
+                if (!amount)
+                  return <span className="text-muted-foreground">-</span>;
+                return (
+                  <span className="inline-flex items-center gap-1 font-medium text-[#5b50ff]">
+                    <Euro className="h-3.5 w-3.5" />
+                    {new Intl.NumberFormat("fr-FR", {
+                      style: "currency",
+                      currency: "EUR",
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    }).format(amount)}
+                  </span>
+                );
+              },
+              size: 160,
+            },
+          ]
+        : []),
       {
         accessorKey: "createdAt",
         header: ({ column }) => (
@@ -184,7 +225,7 @@ export function useKanbanBoardsTable({
         enableHiding: false,
       },
     ],
-    [onEdit, onDelete, onPreview, formatDate]
+    [onEdit, onDelete, onPreview, formatDate, hasBillableAmount]
   );
 
   // Create table instance

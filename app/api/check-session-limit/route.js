@@ -6,61 +6,77 @@ import { ObjectId } from "mongodb";
 
 export async function GET(req) {
   try {
-    console.log("🔍 [CHECK-SESSION-LIMIT] Vérification de la limite de sessions...");
-    
-    // Récupérer la session de l'utilisateur connecté
     const session = await auth.api.getSession({
       headers: await headers(),
     });
 
     if (!session?.user) {
-      console.log("❌ [CHECK-SESSION-LIMIT] Pas de session utilisateur");
       return NextResponse.json(
         { error: "Non authentifié" },
         { status: 401 }
       );
     }
 
-    console.log("👤 [CHECK-SESSION-LIMIT] Utilisateur ID (string):", session.user.id);
-    console.log("👤 [CHECK-SESSION-LIMIT] Type:", typeof session.user.id);
-
-    // Convertir l'ID utilisateur en ObjectId pour MongoDB
-    const userObjectId = new ObjectId(session.user.id);
-    console.log("👤 [CHECK-SESSION-LIMIT] Utilisateur ID (ObjectId):", userObjectId);
-
-    // Interroger MongoDB directement pour compter les sessions actives
+    const userId = session.user.id;
+    const userObjectId = new ObjectId(userId);
     const now = new Date();
-    
-    // Essayer avec ObjectId ET avec string (pour compatibilité)
+
+    // Lire les settings de l'organisation (maxSessions, inactivityTimeout)
+    let maxSessions = 1;
+    let inactivityTimeoutHours = 12;
+    const orgId = session.session?.activeOrganizationId;
+
+    if (orgId) {
+      try {
+        const org = await mongoDb
+          .collection("organization")
+          .findOne(
+            { _id: new ObjectId(orgId) },
+            { projection: { sessionSettings: 1 } }
+          );
+        if (org?.sessionSettings) {
+          maxSessions = org.sessionSettings.maxSessions ?? 1;
+          inactivityTimeoutHours = org.sessionSettings.inactivityTimeout ?? 12;
+        }
+      } catch (e) {
+        // Continuer avec les valeurs par défaut
+      }
+    }
+
+    // Seuil d'inactivité : supprimer les sessions sans activité depuis X heures
+    const inactivityThreshold = new Date(
+      now.getTime() - inactivityTimeoutHours * 60 * 60 * 1000
+    );
+
+    // Nettoyer les sessions inactives (updatedAt < seuil) en une seule opération
+    await mongoDb.collection("session").deleteMany({
+      $or: [
+        { userId: userObjectId },
+        { userId: userId },
+      ],
+      updatedAt: { $lt: inactivityThreshold },
+      // Ne pas supprimer la session actuelle
+      token: { $ne: session.session?.token },
+    });
+
+    // Récupérer les sessions actives restantes (non expirées)
     const activeSessions = await mongoDb
       .collection("session")
       .find({
         $or: [
-          { userId: userObjectId }, // Format ObjectId
-          { userId: session.user.id }, // Format string
+          { userId: userObjectId },
+          { userId: userId },
         ],
-        expiresAt: { $gt: now }, // Sessions non expirées
+        expiresAt: { $gt: now },
       })
       .toArray();
 
-    console.log("📊 [CHECK-SESSION-LIMIT] Sessions actives trouvées:", activeSessions.length);
-    console.log("📋 [CHECK-SESSION-LIMIT] Détails sessions:", activeSessions.map(s => ({
-      token: s.token?.substring(0, 10) + "...",
-      userAgent: s.userAgent?.substring(0, 50),
-      createdAt: s.createdAt,
-    })));
-
-    // Limite de sessions (doit correspondre à la config dans auth-plugins.js)
-    const MAX_SESSIONS = 1;
-
-    const hasReachedLimit = activeSessions.length > MAX_SESSIONS;
-
-    console.log(`${hasReachedLimit ? '⚠️' : '✅'} [CHECK-SESSION-LIMIT] Limite ${hasReachedLimit ? 'atteinte' : 'OK'} (${activeSessions.length}/${MAX_SESSIONS})`);
+    const hasReachedLimit = activeSessions.length > maxSessions;
 
     return NextResponse.json({
       hasReachedLimit,
       sessionCount: activeSessions.length,
-      maxSessions: MAX_SESSIONS,
+      maxSessions,
       sessions: activeSessions.map(s => ({
         id: s._id.toString(),
         token: s.token,
