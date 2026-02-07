@@ -18,7 +18,7 @@ const SuccessToast = ({ message, isMobile }) => (
         style={{ color: "#ffffff" }}
       >
         <CircleCheck
-          className="me-3 -mt-0.5 inline-flex text-emerald-500"
+          className="me-3 -mt-0.5 inline-flex text-green-600"
           size={isMobile ? 18 : 16}
           aria-hidden="true"
         />

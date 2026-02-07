@@ -11,6 +11,7 @@ export const GET_BANKING_ACCOUNTS = gql`
       id
       externalId
       provider
+      name
       type
       status
       balance {
@@ -22,6 +23,8 @@ export const GET_BANKING_ACCOUNTS = gql`
       iban
       bic
       bankName
+      institutionName
+      institutionLogo
       accountHolder {
         name
         email

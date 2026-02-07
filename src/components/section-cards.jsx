@@ -577,7 +577,7 @@ export function SectionCards({ className, activeFilter = "outline" }) {
                         {field.completed ? (
                           <>
                             <Check
-                              className="inline-flex stroke-emerald-500"
+                              className="inline-flex stroke-green-600"
                               size={16}
                               strokeWidth={2}
                               aria-hidden="true"
@@ -605,7 +605,7 @@ export function SectionCards({ className, activeFilter = "outline" }) {
                         {field.completed ? (
                           <>
                             <Check
-                              className="inline-flex stroke-emerald-500"
+                              className="inline-flex stroke-green-600"
                               size={16}
                               strokeWidth={2}
                               aria-hidden="true"

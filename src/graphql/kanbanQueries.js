@@ -180,6 +180,7 @@ export const CREATE_BOARD = gql`
       id
       title
       description
+      totalBillableAmount
       createdAt
       updatedAt
     }
@@ -192,6 +193,7 @@ export const UPDATE_BOARD = gql`
       id
       title
       description
+      totalBillableAmount
       createdAt
       updatedAt
     }
@@ -464,6 +466,7 @@ export const BOARD_FRAGMENT = gql`
     id
     title
     description
+    totalBillableAmount
     createdAt
     updatedAt
   }

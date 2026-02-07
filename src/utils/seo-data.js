@@ -206,35 +206,35 @@ export const seoData = {
 
   // Page Signatures
   signatures: {
-    title: "Signature Électronique Professionnelle - Newbi",
+    title: "Générateur de Signature Mail Gratuit | Newbi",
     description:
-      "Créez et gérez vos signatures électroniques professionnelles. Conformité légale, templates personnalisables et intégration email simplifiée. Outil gratuit.",
+      "Créez des signatures mail professionnelles gratuitement. Compatible Gmail, Outlook et Apple Mail. Templates personnalisables, export HTML et prévisualisation en temps réel.",
     keywords:
-      "signature électronique, signature email, signature professionnelle, template signature, email professionnel, générateur signature, outil gratuit",
-    canonical: `${baseUrl}/dashboard/outils/signatures-de-mail`,
+      "générateur signature mail gratuit, créer signature email professionnelle, signature gmail, signature outlook, template signature mail, signature email HTML, outil signature mail gratuit en ligne",
+    canonical: `${baseUrl}/produits/signatures`,
     openGraph: {
-      title: "Signatures Électroniques Professionnelles - Newbi",
+      title: "Créez des Signatures Mail Professionnelles Gratuitement | Newbi",
       description:
-        "Créez des signatures email professionnelles en quelques clics. Templates personnalisables et conformité garantie.",
+        "Renforcez votre image de marque avec des signatures mail élégantes. Templates prêts à l'emploi, compatible tous clients email. 100% gratuit.",
       image: `/images/op-newbi.png`,
       type: "website",
       locale: "fr_FR",
     },
     twitter: {
       card: "summary_large_image",
-      title: "Signatures Électroniques Professionnelles - Newbi",
+      title: "Signatures Mail Professionnelles Gratuites | Newbi",
       description:
-        "Créez des signatures email professionnelles en quelques clics.",
+        "Générateur de signatures mail gratuit. Templates pro, compatible Gmail, Outlook et Apple Mail.",
       image: `/images/op-newbi.png`,
     },
     jsonLd: {
       "@context": "https://schema.org",
       "@type": "SoftwareApplication",
-      name: "Newbi Signatures",
+      name: "Newbi - Générateur de Signatures Mail",
       applicationCategory: "BusinessApplication",
       operatingSystem: "Web",
-      description: "Générateur de signatures électroniques professionnelles",
-      url: `${baseUrl}/dashboard/outils/signatures-de-mail`,
+      description: "Générateur gratuit de signatures mail professionnelles compatible Gmail, Outlook et Apple Mail",
+      url: `${baseUrl}/produits/signatures`,
       publisher: {
         "@type": "Organization",
         name: "Newbi",

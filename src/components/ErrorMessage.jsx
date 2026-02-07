@@ -34,9 +34,9 @@ export function ErrorMessage({
       iconColor: 'text-blue-500'
     },
     success: {
-      container: 'bg-green-50 border-green-200 text-green-800',
+      container: 'bg-green-50 border-green-200 text-green-600',
       icon: CheckCircle,
-      iconColor: 'text-green-500'
+      iconColor: 'text-green-600'
     }
   };
 

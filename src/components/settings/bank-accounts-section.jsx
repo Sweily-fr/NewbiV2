@@ -581,7 +581,7 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
                         }
                         className={`text-[10px] px-1.5 py-0 ${
                           status.variant === "success"
-                            ? "bg-green-100 text-green-700 border-green-200"
+                            ? "bg-green-50 text-green-600 border-green-200"
                             : ""
                         }`}
                       >
