@@ -42,7 +42,7 @@ export const useOcr = () => {
     }
   );
 
-  const processDocument = async (file, options = {}) => {
+  const processDocument = async (file, workspaceId, options = {}) => {
     try {
       setIsProcessing(true);
       setError(null);
@@ -51,6 +51,7 @@ export const useOcr = () => {
       await processDocumentOcr({
         variables: {
           file,
+          workspaceId,
           options: {
             model: "mistral-ocr-latest",
             includeImageBase64: false,

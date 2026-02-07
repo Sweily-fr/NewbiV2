@@ -15,7 +15,6 @@ import {
   ButtonGroup,
   ButtonGroupSeparator,
 } from "@/src/components/ui/button-group";
-import { Progress } from "@/src/components/ui/progress";
 import { Separator } from "@/src/components/ui/separator";
 import {
   UploadIcon,
@@ -33,7 +32,6 @@ import {
   Link2,
 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
-import { useDocumentUpload } from "@/src/hooks/useDocumentUpload";
 import { useOcr } from "@/src/hooks/useOcr";
 import { useExpense } from "@/src/hooks/useExpense";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
@@ -50,19 +48,9 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
   // Hook pour récupérer le workspace
   const { workspaceId } = useRequiredWorkspace();
 
-  // Hook pour l'upload vers Cloudflare
-  const {
-    isUploading,
-    uploadProgress,
-    uploadError,
-    uploadResult,
-    uploadDocument,
-    resetUpload,
-  } = useDocumentUpload();
-
   // Hook OCR
   const {
-    processDocumentFromUrl,
+    processDocument,
     ocrResult,
     isProcessing,
     error: ocrError,
@@ -110,7 +98,7 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
 
   // Gestion de la sélection de fichier
   const handleFileSelect = useCallback(
-    async (file) => {
+    (file) => {
       // Validation du fichier
       const allowedTypes = [
         "image/jpeg",
@@ -131,11 +119,8 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
       }
 
       setSelectedFile(file);
-
-      // Upload immédiat vers Cloudflare dans le compartiment "ocr"
-      await uploadDocument(file, "ocr");
     },
-    [uploadDocument]
+    []
   );
 
   // Gestion de l'input file
@@ -152,8 +137,7 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
   // Suppression du fichier
   const handleRemoveFile = useCallback(() => {
     setSelectedFile(null);
-    resetUpload();
-  }, [resetUpload]);
+  }, []);
 
   // Fermeture du drawer
   const handleClose = useCallback(() => {
@@ -162,28 +146,18 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
     onOpenChange(false);
   }, [handleRemoveFile, resetOcr, onOpenChange]);
 
-  // Traitement du reçu avec OCR
+  // Traitement du reçu avec OCR — envoi direct du fichier au backend
   const handleProcessReceipt = useCallback(async () => {
-    if (uploadResult && selectedFile) {
+    if (selectedFile) {
       try {
-        await processDocumentFromUrl(
-          uploadResult.url,
-          selectedFile.name,
-          selectedFile.type,
-          uploadResult.fileSize,
-          workspaceId,
-          {
-            model: "mistral-ocr-latest",
-            includeImageBase64: false,
-          }
-        );
+        await processDocument(selectedFile, workspaceId);
       } catch (error) {
         console.error("❌ Erreur OCR:", error);
       }
     } else {
-      console.warn("⚠️ Pas de fichier uploadé ou upload en cours");
+      console.warn("⚠️ Pas de fichier sélectionné");
     }
-  }, [uploadResult, selectedFile, processDocumentFromUrl]);
+  }, [selectedFile, processDocument, workspaceId]);
 
   // Chercher des correspondances après l'OCR
   const searchMatches = useCallback(
@@ -445,32 +419,7 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
                     </Button>
                   </div>
 
-                  {/* Barre de progression upload */}
-                  {isUploading && (
-                    <div className="mt-3">
-                      <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
-                        <span>Upload en cours...</span>
-                        <span>{uploadProgress}%</span>
-                      </div>
-                      <Progress value={uploadProgress} className="h-2" />
-                    </div>
-                  )}
                 </div>
-              )}
-
-              {/* Informations sur le traitement */}
-              {selectedFile && uploadResult && (
-                <Callout type="info" noMargin>
-                  <div>
-                    <h4 className="font-normal text-sm">
-                      Prêt pour le traitement
-                    </h4>
-                    <p className="text-xs">
-                      Le fichier a été uploadé avec succès. Cliquez sur "Traiter
-                      le reçu" pour lancer l'analyse OCR.
-                    </p>
-                  </div>
-                </Callout>
               )}
             </div>
           )}
@@ -485,13 +434,6 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
           />
 
           {/* Erreurs */}
-          {uploadError && (
-            <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 dark:bg-red-950/20 p-3 rounded-lg">
-              <AlertCircleIcon className="h-4 w-4" />
-              Erreur upload: {uploadError.message || uploadError}
-            </div>
-          )}
-
           {ocrError && (
             <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 dark:bg-red-950/20 p-3 rounded-lg">
               <AlertCircleIcon className="h-4 w-4" />
@@ -514,7 +456,7 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
                 ocrResult={ocrResult}
                 onValidate={handleValidateOcr}
                 isCreatingExpense={isCreatingExpense || isReconciling}
-                imageUrl={uploadResult?.url}
+                imageUrl={selectedFile ? URL.createObjectURL(selectedFile) : null}
                 isEditing={isEditing}
                 setIsEditing={setIsEditing}
               />
@@ -659,17 +601,10 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
               </Button>
               <Button
                 onClick={handleProcessReceipt}
-                disabled={
-                  !selectedFile || !uploadResult || isUploading || isProcessing
-                }
+                disabled={!selectedFile || isProcessing}
                 className="bg-primary hover:bg-primary/90 cursor-pointer font-normal"
               >
-                {isUploading ? (
-                  <>
-                    <LoaderCircle className="h-4 w-4 mr-2 animate-spin" />
-                    Upload...
-                  </>
-                ) : isProcessing ? (
+                {isProcessing ? (
                   <>
                     <LoaderCircle className="h-4 w-4 mr-2 animate-spin" />
                     Traitement OCR...
