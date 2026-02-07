@@ -23,9 +23,20 @@ if (!global._mongoClient) {
   global._mongoClient = client;
   
   // Connexion immédiate pour éviter timeout au premier appel
-  clientPromise = client.connect().then(() => {
+  clientPromise = client.connect().then(async () => {
     global._mongoDb = client.db(dbName);
     console.log("✅ MongoDB connected successfully");
+
+    // Créer un TTL index sur expiresAt pour nettoyer automatiquement les sessions expirées
+    try {
+      await global._mongoDb.collection("session").createIndex(
+        { expiresAt: 1 },
+        { expireAfterSeconds: 0, background: true }
+      );
+    } catch (e) {
+      // Index existe déjà ou erreur non critique
+    }
+
     return client;
   }).catch((err) => {
     console.error("❌ MongoDB initial connection error:", err);

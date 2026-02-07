@@ -108,7 +108,7 @@ function KanbanPageContent() {
       {/* Header */}
       <div className="flex items-start justify-between px-4 sm:px-6 pt-4 sm:pt-6 flex-shrink-0">
         <div>
-          <h1 className="text-2xl font-medium mb-2">Dossiers Kanban</h1>
+          <h1 className="text-2xl font-medium mb-2">Mes listes de tâches</h1>
         </div>
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
@@ -117,15 +117,15 @@ function KanbanPageContent() {
               className="font-normal bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
             >
               <Plus className="h-4 w-4 mr-2" />
-              Nouveau dossier
+              Nouvelle liste
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[425px] p-6">
             <form onSubmit={handleCreateBoard}>
               <DialogHeader>
-                <DialogTitle>Créer un nouveau dossier</DialogTitle>
+                <DialogTitle>Créer une nouvelle liste</DialogTitle>
                 <DialogDescription>
-                  Créez un nouveau dossier Kanban pour organiser vos tâches.
+                  Créez une nouvelle liste pour organiser vos tâches.
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
@@ -142,7 +142,7 @@ function KanbanPageContent() {
                         title: e.target.value,
                       }))
                     }
-                    placeholder="Nom du dossier"
+                    placeholder="Nom de la liste"
                     required
                   />
                 </div>
@@ -159,7 +159,7 @@ function KanbanPageContent() {
                         description: e.target.value,
                       }))
                     }
-                    placeholder="Description du dossier (optionnel)"
+                    placeholder="Description de la liste (optionnel)"
                     rows={3}
                   />
                 </div>
@@ -192,7 +192,7 @@ function KanbanPageContent() {
       <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-4 flex-shrink-0">
         <div className="relative max-w-md">
           <Input
-            placeholder="Rechercher un dossier..."
+            placeholder="Rechercher une liste..."
             value={globalFilter ?? ""}
             onChange={(event) => setGlobalFilter(event.target.value)}
             className="w-full sm:w-[400px] ps-9"
@@ -213,9 +213,9 @@ function KanbanPageContent() {
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Supprimer les dossiers</AlertDialogTitle>
+                <AlertDialogTitle>Supprimer les listes</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Êtes-vous sûr de vouloir supprimer {selectedRows.length} dossier(s) ?
+                  Êtes-vous sûr de vouloir supprimer {selectedRows.length} liste(s) ?
                   Cette action est irréversible et supprimera également toutes les
                   colonnes et tâches associées.
                 </AlertDialogDescription>
@@ -265,7 +265,7 @@ function KanbanPageContent() {
                 Commencez votre organisation
               </h3>
               <p className="text-sm text-muted-foreground">
-                Créez votre premier dossier Kanban pour organiser vos tâches et
+                Créez votre première liste pour organiser vos tâches et
                 projets
               </p>
             </div>
@@ -274,7 +274,7 @@ function KanbanPageContent() {
               variant="default"
               className="flex items-center gap-2 font-normal"
             >
-              Créer votre premier dossier
+              Créer votre première liste
             </Button>
           </div>
         </div>
@@ -350,8 +350,8 @@ function KanbanPageContent() {
                       className="h-24 text-center p-2"
                     >
                       {globalFilter
-                        ? "Aucun dossier trouvé."
-                        : "Aucun dossier créé."}
+                        ? "Aucune liste trouvée."
+                        : "Aucune liste créée."}
                     </td>
                   </tr>
                 )}
@@ -457,10 +457,10 @@ function KanbanPageContent() {
           <form onSubmit={handleUpdateBoard}>
             <DialogHeader className="border-b pb-6 mb-6">
               <DialogTitle className="text-2xl font-bold text-foreground">
-                Modifier le dossier
+                Modifier la liste
               </DialogTitle>
               <DialogDescription className="text-muted-foreground mt-2">
-                Modifiez les informations de votre dossier Kanban.
+                Modifiez les informations de votre liste.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-6">
@@ -474,7 +474,7 @@ function KanbanPageContent() {
                   onChange={(e) =>
                     setFormData((prev) => ({ ...prev, title: e.target.value }))
                   }
-                  placeholder="Nom du dossier"
+                  placeholder="Nom de la liste"
                   required
                   className="rounded-lg"
                 />
@@ -492,7 +492,7 @@ function KanbanPageContent() {
                       description: e.target.value,
                     }))
                   }
-                  placeholder="Description du dossier (optionnel)"
+                  placeholder="Description de la liste (optionnel)"
                   rows={4}
                   className="rounded-lg resize-none"
                 />
@@ -530,10 +530,10 @@ function KanbanPageContent() {
         <AlertDialogContent className="sm:max-w-[425px]">
           <AlertDialogHeader className="border-b pb-4">
             <AlertDialogTitle className="text-foreground">
-              Supprimer le dossier
+              Supprimer la liste
             </AlertDialogTitle>
             <AlertDialogDescription className="text-muted-foreground">
-              Êtes-vous sûr de vouloir supprimer ce dossier ? Cette action est
+              Êtes-vous sûr de vouloir supprimer cette liste ? Cette action est
               irréversible et supprimera également toutes les colonnes et tâches
               associées.
             </AlertDialogDescription>
@@ -608,7 +608,7 @@ export default function KanbanPage() {
     <RoleRouteGuard 
       roles={["owner", "admin", "member", "viewer"]}
       fallbackUrl="/dashboard"
-      toastMessage="Vous n'avez pas accès aux dossiers Kanban. Cette fonctionnalité est réservée aux membres de l'équipe."
+      toastMessage="Vous n'avez pas accès aux listes de tâches. Cette fonctionnalité est réservée aux membres de l'équipe."
     >
       <KanbanPageContent />
     </RoleRouteGuard>
