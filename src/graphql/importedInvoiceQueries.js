@@ -159,6 +159,20 @@ export const GET_OCR_USAGE_STATS = gql`
 `;
 
 // Mutations
+export const IMPORT_INVOICE_DIRECT = gql`
+  ${IMPORTED_INVOICE_FRAGMENT}
+  mutation ImportInvoiceDirect($file: Upload!, $workspaceId: ID!) {
+    importInvoiceDirect(file: $file, workspaceId: $workspaceId) {
+      success
+      invoice {
+        ...ImportedInvoiceFields
+      }
+      error
+      isDuplicate
+    }
+  }
+`;
+
 export const IMPORT_INVOICE = gql`
   ${IMPORTED_INVOICE_FRAGMENT}
   mutation ImportInvoice(

@@ -4,10 +4,10 @@ import { gql } from "@apollo/client";
  * Mutations GraphQL pour l'OCR avec Mistral
  */
 
-// Mutation originale qui upload le fichier ET fait l'OCR
+// Mutation OCR direct — envoie le fichier directement au backend (pas de pré-upload Cloudflare)
 export const PROCESS_DOCUMENT_OCR = gql`
-  mutation ProcessDocumentOcr($file: Upload!, $options: OcrOptions) {
-    processDocumentOcr(file: $file, options: $options) {
+  mutation ProcessDocumentOcr($file: Upload!, $workspaceId: String!, $options: OcrOptions) {
+    processDocumentOcr(file: $file, workspaceId: $workspaceId, options: $options) {
       success
       extractedText
       financialAnalysis
