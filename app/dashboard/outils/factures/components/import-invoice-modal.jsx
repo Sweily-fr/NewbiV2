@@ -15,9 +15,8 @@ import { Upload, FileText, X, Check, AlertCircle, Loader2 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { useMutation, useApolloClient } from "@apollo/client";
-import { UPLOAD_DOCUMENT } from "@/src/graphql/mutations/documentUpload";
 import {
-  IMPORT_INVOICE,
+  IMPORT_INVOICE_DIRECT,
   GET_IMPORTED_INVOICES,
 } from "@/src/graphql/importedInvoiceQueries";
 import { toast } from "sonner";
@@ -43,8 +42,7 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
 
   const { workspaceId } = useRequiredWorkspace();
   const client = useApolloClient();
-  const [uploadDocument] = useMutation(UPLOAD_DOCUMENT);
-  const [importInvoice] = useMutation(IMPORT_INVOICE);
+  const [importInvoiceDirect] = useMutation(IMPORT_INVOICE_DIRECT);
 
   const handleClose = () => {
     if (!isImporting) {
@@ -186,41 +184,26 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
       );
     };
 
-    // Fonction pour traiter un fichier (upload + OCR)
+    // Fonction pour traiter un fichier — un seul appel (OCR direct + upload Cloudflare côté serveur)
     const processFile = async (file) => {
       if (quotaExceeded) return;
 
       try {
-        // Étape 1: Upload vers Cloudflare
-        const { data: uploadData } = await uploadDocument({
-          variables: { file, folderType: "importedInvoice" },
-        });
-
-        if (!uploadData?.uploadDocument?.success) {
-          throw new Error("Upload échoué");
-        }
-
-        // Étape 2: Lancer immédiatement le traitement OCR
-        const { data: importData } = await importInvoice({
+        const { data: importData } = await importInvoiceDirect({
           variables: {
+            file,
             workspaceId,
-            cloudflareUrl: uploadData.uploadDocument.url,
-            cloudflareKey: uploadData.uploadDocument.key,
-            fileName: file.name,
-            mimeType: file.type,
-            fileSize: file.size,
           },
         });
 
-        if (importData?.importInvoice?.success) {
+        if (importData?.importInvoiceDirect?.success) {
           successCount++;
-        } else if (importData?.importInvoice?.error?.includes("Quota OCR")) {
+        } else if (importData?.importInvoiceDirect?.error?.includes("Quota OCR")) {
           quotaExceeded = true;
-          quotaErrorMessage = importData.importInvoice.error;
+          quotaErrorMessage = importData.importInvoiceDirect.error;
         }
       } catch (error) {
-        // Silencieux - le retry automatique backend gère les erreurs
-        console.warn(`Retry en cours pour ${file.name}...`);
+        console.warn(`Erreur pour ${file.name}:`, error.message);
       } finally {
         processedCount++;
         updateToast();
