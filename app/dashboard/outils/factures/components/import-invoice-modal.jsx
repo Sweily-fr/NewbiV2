@@ -189,21 +189,27 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
       if (quotaExceeded) return;
 
       try {
-        const { data: importData } = await importInvoiceDirect({
+        const { data: importData, errors } = await importInvoiceDirect({
           variables: {
             file,
             workspaceId,
           },
         });
 
+        if (errors?.length) {
+          console.error(`❌ Erreur GraphQL pour ${file.name}:`, errors[0].message);
+        }
+
         if (importData?.importInvoiceDirect?.success) {
           successCount++;
         } else if (importData?.importInvoiceDirect?.error?.includes("Quota OCR")) {
           quotaExceeded = true;
           quotaErrorMessage = importData.importInvoiceDirect.error;
+        } else if (importData?.importInvoiceDirect?.error) {
+          console.error(`❌ Import échoué pour ${file.name}:`, importData.importInvoiceDirect.error);
         }
       } catch (error) {
-        console.warn(`Erreur pour ${file.name}:`, error.message);
+        console.error(`❌ Erreur réseau pour ${file.name}:`, error.message);
       } finally {
         processedCount++;
         updateToast();
@@ -273,14 +279,18 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
           { duration: 5000 }
         );
       }
-
-      // Rafraîchir la liste des factures via Apollo Client (plus fiable que le callback)
-      await client.refetchQueries({ include: [GET_IMPORTED_INVOICES] });
-      onImportSuccess?.();
     } catch (error) {
       console.error("Import error:", error);
       toast.dismiss(toastId);
       toast.error("Erreur lors de l'import des factures");
+    } finally {
+      // Toujours rafraîchir la liste, même en cas d'erreur
+      try {
+        await client.refetchQueries({ include: [GET_IMPORTED_INVOICES] });
+      } catch (e) {
+        console.warn("⚠️ refetchQueries échoué:", e.message);
+      }
+      onImportSuccess?.();
     }
   };
 
