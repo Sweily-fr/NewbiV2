@@ -15,6 +15,12 @@ export const CREATE_EVENT = gql`
         color
         location
         type
+        emailReminder {
+          enabled
+          anticipation
+          status
+          scheduledFor
+        }
         createdAt
         updatedAt
       }
@@ -37,6 +43,12 @@ export const UPDATE_EVENT = gql`
         color
         location
         type
+        emailReminder {
+          enabled
+          anticipation
+          status
+          scheduledFor
+        }
         createdAt
         updatedAt
       }

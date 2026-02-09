@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { RiCalendarLine, RiDeleteBinLine } from "@remixicon/react";
+import { RiCalendarLine, RiDeleteBinLine, RiCheckLine, RiLoader4Line } from "@remixicon/react";
 import { format, isBefore } from "date-fns";
 import { fr } from "date-fns/locale";
 import { sanitizeInput, detectInjectionAttempt } from "@/src/lib/validation";
@@ -42,6 +42,8 @@ import {
 } from "@/src/components/ui/select";
 import { Textarea } from "@/src/components/ui/textarea";
 import { EmailReminderToggle } from "@/src/components/email-reminder-toggle";
+import { Separator } from "@/src/components/ui/separator";
+import { useCalendarConnections, usePushEventToCalendar } from "@/src/hooks/useCalendarConnections";
 
 // Props interface converted to JSDoc for JavaScript
 /**
@@ -52,7 +54,36 @@ import { EmailReminderToggle } from "@/src/components/email-reminder-toggle";
  * @param {Function} onDelete
  */
 
+const providerIcons = {
+  google: (
+    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" />
+      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+    </svg>
+  ),
+  microsoft: (
+    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M0 0h11.5v11.5H0zM12.5 0H24v11.5H12.5zM0 12.5h11.5V24H0zM12.5 12.5H24V24H12.5z" />
+    </svg>
+  ),
+  apple: (
+    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
+    </svg>
+  ),
+};
+
+const providerLabels = {
+  google: "Google Calendar",
+  microsoft: "Microsoft Outlook",
+  apple: "Apple Calendar",
+};
+
 export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
+  const isReadOnly = event?.isReadOnly || false;
+  const eventSource = event?.source || "newbi";
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [startDate, setStartDate] = useState(() => new Date());
@@ -67,6 +98,34 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
   const [fieldErrors, setFieldErrors] = useState({});
   const [startDateOpen, setStartDateOpen] = useState(false);
   const [endDateOpen, setEndDateOpen] = useState(false);
+  const [pushingConnectionId, setPushingConnectionId] = useState(null);
+  const [justSyncedIds, setJustSyncedIds] = useState([]);
+
+  const { connections } = useCalendarConnections();
+  const { pushEvent, loading: pushLoading } = usePushEventToCalendar();
+
+  const activeConnections = connections.filter((c) => c.status === "active");
+
+  const isAlreadySynced = (connectionId) => {
+    return (
+      justSyncedIds.includes(connectionId) ||
+      event?.externalCalendarLinks?.some(
+        (link) => link.calendarConnectionId === connectionId
+      )
+    );
+  };
+
+  const showSyncSection =
+    event?.id && !isReadOnly && activeConnections.length > 0;
+
+  const handlePushEvent = async (connectionId) => {
+    setPushingConnectionId(connectionId);
+    const success = await pushEvent(event.id, connectionId);
+    if (success) {
+      setJustSyncedIds((prev) => [...prev, connectionId]);
+    }
+    setPushingConnectionId(null);
+  };
 
   useEffect(() => {
     if (event) {
@@ -85,6 +144,7 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
       setColor(event.color || "sky");
       setEmailReminder(event.emailReminder || { enabled: false, anticipation: null });
       setError(null); // Reset error when opening dialog
+      setJustSyncedIds([]); // Reset sync state for new event
     } else {
       resetForm();
     }
@@ -296,12 +356,18 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>
-            {event?.id ? "Modifier l'événement" : "Créer un événement"}
+            {isReadOnly
+              ? "Détails de l'événement"
+              : event?.id
+                ? "Modifier l'événement"
+                : "Créer un événement"}
           </DialogTitle>
-          <DialogDescription className="sr-only">
-            {event?.id
-              ? "Modifier les détails de cet événement"
-              : "Ajouter un nouvel événement à votre calendrier"}
+          <DialogDescription className={isReadOnly ? "" : "sr-only"}>
+            {isReadOnly
+              ? `Événement synchronisé depuis ${eventSource === "google" ? "Google Calendar" : eventSource === "microsoft" ? "Microsoft Outlook" : eventSource === "apple" ? "Apple Calendar" : "un calendrier externe"} (lecture seule)`
+              : event?.id
+                ? "Modifier les détails de cet événement"
+                : "Ajouter un nouvel événement à votre calendrier"}
           </DialogDescription>
         </DialogHeader>
         {error && (
@@ -317,6 +383,7 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
             <Input
               id="title"
               value={title}
+              disabled={isReadOnly}
               onChange={(e) => {
                 setTitle(e.target.value);
                 // Effacer l'erreur du champ quand l'utilisateur tape
@@ -338,6 +405,7 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
             <Textarea
               id="description"
               value={description}
+              disabled={isReadOnly}
               onChange={(e) => {
                 setDescription(e.target.value);
                 // Effacer l'erreur du champ quand l'utilisateur tape
@@ -360,7 +428,7 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
               <Label htmlFor="start-date" className="font-normal">
                 Date de début
               </Label>
-              <Popover open={startDateOpen} onOpenChange={setStartDateOpen}>
+              <Popover open={!isReadOnly && startDateOpen} onOpenChange={setStartDateOpen}>
                 <PopoverTrigger asChild>
                   <Button
                     id="start-date"
@@ -414,7 +482,7 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
                 <Label htmlFor="start-time" className="font-normal">
                   Heure de début
                 </Label>
-                <Select value={startTime} onValueChange={setStartTime}>
+                <Select value={startTime} onValueChange={setStartTime} disabled={isReadOnly}>
                   <SelectTrigger id="start-time">
                     <SelectValue placeholder="Choisir l'heure" />
                   </SelectTrigger>
@@ -433,7 +501,7 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
           <div className="flex gap-4">
             <div className="flex-1 *:not-first:mt-1.5">
               <Label htmlFor="end-date">Date de fin</Label>
-              <Popover open={endDateOpen} onOpenChange={setEndDateOpen}>
+              <Popover open={!isReadOnly && endDateOpen} onOpenChange={setEndDateOpen}>
                 <PopoverTrigger asChild>
                   <Button
                     id="end-date"
@@ -482,7 +550,7 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
             {!allDay && (
               <div className="min-w-28 *:not-first:mt-1.5">
                 <Label htmlFor="end-time">Heure de fin</Label>
-                <Select value={endTime} onValueChange={setEndTime}>
+                <Select value={endTime} onValueChange={setEndTime} disabled={isReadOnly}>
                   <SelectTrigger id="end-time">
                     <SelectValue placeholder="Choisir l'heure" />
                   </SelectTrigger>
@@ -502,6 +570,7 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
             <Checkbox
               id="all-day"
               checked={allDay}
+              disabled={isReadOnly}
               onCheckedChange={(checked) => setAllDay(checked === true)}
             />
             <Label htmlFor="all-day">Toute la journée</Label>
@@ -512,6 +581,7 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
             <Input
               id="location"
               value={location}
+              disabled={isReadOnly}
               onChange={(e) => {
                 setLocation(e.target.value);
                 // Effacer l'erreur du champ quand l'utilisateur tape
@@ -528,10 +598,12 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
             )}
           </div>
 
-          <EmailReminderToggle
-            value={emailReminder}
-            onChange={setEmailReminder}
-          />
+          {!isReadOnly && (
+            <EmailReminderToggle
+              value={emailReminder}
+              onChange={setEmailReminder}
+            />
+          )}
 
           <fieldset className="space-y-4">
             <legend className="text-foreground text-sm leading-none font-medium">
@@ -541,6 +613,7 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
               className="flex gap-1.5"
               defaultValue={colorOptions[0]?.value}
               value={color}
+              disabled={isReadOnly}
               onValueChange={(value) => setColor(value)}
             >
               {colorOptions.map((colorOption) => (
@@ -558,30 +631,91 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
               ))}
             </RadioGroup>
           </fieldset>
+
+          {showSyncSection && (
+            <div className="space-y-3">
+              <Separator />
+              <p className="text-sm font-medium text-foreground">
+                Synchroniser avec un calendrier
+              </p>
+              <div className="space-y-2">
+                {activeConnections.map((connection) => {
+                  const synced = isAlreadySynced(connection.id);
+                  const isPushing = pushingConnectionId === connection.id;
+
+                  return (
+                    <div
+                      key={connection.id}
+                      className="flex items-center justify-between rounded-md border px-3 py-2"
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-muted-foreground shrink-0">
+                          {providerIcons[connection.provider]}
+                        </span>
+                        <span className="text-sm truncate">
+                          {connection.accountEmail || connection.accountName || providerLabels[connection.provider]}
+                        </span>
+                      </div>
+                      {synced ? (
+                        <span className="inline-flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400 shrink-0">
+                          <RiCheckLine size={14} />
+                          Synchronisé
+                        </span>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={pushLoading}
+                          onClick={() => handlePushEvent(connection.id)}
+                          className="shrink-0 h-7 text-xs"
+                        >
+                          {isPushing ? (
+                            <RiLoader4Line size={14} className="animate-spin" />
+                          ) : (
+                            "Envoyer"
+                          )}
+                        </Button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
         <DialogFooter className="flex-row sm:justify-between">
-          {event?.id && (
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={handleDelete}
-              className="font-normal"
-              aria-label="Delete event"
-            >
-              <RiDeleteBinLine size={16} aria-hidden="true" />
-            </Button>
+          {isReadOnly ? (
+            <div className="flex flex-1 justify-end">
+              <Button variant="outline" onClick={onClose}>
+                Fermer
+              </Button>
+            </div>
+          ) : (
+            <>
+              {event?.id && (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={handleDelete}
+                  className="font-normal"
+                  aria-label="Delete event"
+                >
+                  <RiDeleteBinLine size={16} aria-hidden="true" />
+                </Button>
+              )}
+              <div className="flex flex-1 justify-end gap-2">
+                <Button variant="outline" onClick={onClose}>
+                  Annuler
+                </Button>
+                <Button
+                  className="bg-[#5a50ff] hover:bg-[#5a50ff]/90 font-normal"
+                  onClick={handleSave}
+                >
+                  Enregistrer
+                </Button>
+              </div>
+            </>
           )}
-          <div className="flex flex-1 justify-end gap-2">
-            <Button variant="outline" onClick={onClose}>
-              Annuler
-            </Button>
-            <Button
-              className="bg-[#5a50ff] hover:bg-[#5a50ff]/90 font-normal"
-              onClick={handleSave}
-            >
-              Enregistrer
-            </Button>
-          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

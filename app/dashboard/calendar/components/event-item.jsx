@@ -5,6 +5,7 @@ import { useMemo } from "react";
 import { differenceInMinutes, format, getMinutes, isPast } from "date-fns";
 
 import { getBorderRadiusClasses, getEventColorClasses } from "./index";
+import { ExternalEventBadge } from "./external-event-badge";
 import { cn } from "@/src/lib/utils";
 
 // Using date-fns format with custom formatting:
@@ -233,7 +234,10 @@ export function EventItem({
       {...dndListeners}
       {...dndAttributes}
     >
-      <div className="text-sm font-medium">{event.title}</div>
+      <div className="flex items-center gap-1.5 text-sm font-medium">
+        {event.title}
+        <ExternalEventBadge source={event.source} />
+      </div>
       <div className="text-xs opacity-70">
         {event.allDay ? (
           <span>Toute la journée</span>
