@@ -35,6 +35,8 @@ import {
   WeekCellsHeight,
   WeekView,
 } from "./index";
+import { CalendarConnectionsPanel } from "./calendar-connections-panel";
+import { CalendarSyncButton } from "./calendar-sync-button";
 import { cn } from "@/src/lib/utils";
 import { Button } from "@/src/components/ui/button";
 import {
@@ -162,20 +164,11 @@ export function EventCalendar({
     if (event.id) {
       onEventUpdate?.(event);
       // Show toast notification when an event is updated
-      toast(`Événement "${event.title}" modifié`, {
-        description: format(new Date(event.start), "d MMM yyyy", { locale: fr }),
-        position: "bottom-left",
-      });
+      toast.success(`Événement "${event.title}" modifié — ${format(new Date(event.start), "d MMM yyyy", { locale: fr })}`);
     } else {
-      onEventAdd?.({
-        ...event,
-        id: Math.random().toString(36).substring(2, 11),
-      });
+      onEventAdd?.(event);
       // Show toast notification when an event is added
-      toast(`Événement "${event.title}" ajouté`, {
-        description: format(new Date(event.start), "d MMM yyyy", { locale: fr }),
-        position: "bottom-left",
-      });
+      toast.success(`Événement "${event.title}" ajouté — ${format(new Date(event.start), "d MMM yyyy", { locale: fr })}`);
     }
     setIsEventDialogOpen(false);
     setSelectedEvent(null);
@@ -189,27 +182,27 @@ export function EventCalendar({
 
     // Show toast notification when an event is deleted
     if (deletedEvent) {
-      toast(`Événement "${deletedEvent.title}" supprimé`, {
-        description: format(new Date(deletedEvent.start), "d MMM yyyy", { locale: fr }),
-        position: "bottom-left",
-      });
+      toast.success(`Événement "${deletedEvent.title}" supprimé — ${format(new Date(deletedEvent.start), "d MMM yyyy", { locale: fr })}`);
     }
   };
 
   const handleEventUpdate = (updatedEvent) => {
+    // Block drag-and-drop for read-only events
+    if (updatedEvent.isReadOnly) {
+      toast.info("Les événements externes ne peuvent pas être déplacés");
+      return;
+    }
+
     onEventUpdate?.(updatedEvent);
 
     // Show toast notification when an event is updated via drag and drop
-    toast(`Événement "${updatedEvent.title}" déplacé`, {
-      description: format(new Date(updatedEvent.start), "d MMM yyyy", { locale: fr }),
-      position: "bottom-left",
-    });
+    toast.success(`Événement "${updatedEvent.title}" déplacé — ${format(new Date(updatedEvent.start), "d MMM yyyy", { locale: fr })}`);
   };
 
   const viewTitle = useMemo(() => {
-    if (view === "month") {
+    if (view === "mois") {
       return format(currentDate, "MMMM yyyy", { locale: fr });
-    } else if (view === "week") {
+    } else if (view === "semaine") {
       const start = startOfWeek(currentDate, { weekStartsOn: 0 });
       const end = endOfWeek(currentDate, { weekStartsOn: 0 });
       if (isSameMonth(start, end)) {
@@ -217,7 +210,7 @@ export function EventCalendar({
       } else {
         return `${format(start, "MMM", { locale: fr })} - ${format(end, "MMM yyyy", { locale: fr })}`;
       }
-    } else if (view === "day") {
+    } else if (view === "jour") {
       return (
         <>
           <span className="min-[480px]:hidden" aria-hidden="true">
@@ -298,6 +291,8 @@ export function EventCalendar({
             </h2>
           </div>
           <div className="flex items-center gap-2">
+            <CalendarSyncButton />
+            <CalendarConnectionsPanel />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button

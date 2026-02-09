@@ -17,7 +17,7 @@ export const useEvents = (options = {}) => {
     startDate,
     endDate,
     type,
-    limit = 100,
+    limit = 500,
     offset = 0,
     skip = false,
     workspaceId,
@@ -27,19 +27,21 @@ export const useEvents = (options = {}) => {
   const finalWorkspaceId = workspaceId || contextWorkspaceId;
   
 
+  const queryVariables = {
+    startDate,
+    endDate,
+    type,
+    limit,
+    offset,
+    workspaceId: finalWorkspaceId,
+    includeExternalCalendars: true,
+  };
+
   const { data, loading: queryLoading, error, refetch } = useQuery(GET_EVENTS, {
-    variables: {
-      startDate,
-      endDate,
-      type,
-      limit,
-      offset,
-      workspaceId: finalWorkspaceId,
-    },
+    variables: queryVariables,
     skip: skip || !finalWorkspaceId,
     errorPolicy: "all",
   });
-
 
   return {
     events: data?.getEvents?.events || [],
@@ -83,12 +85,7 @@ export const useCreateEvent = () => {
   const { workspaceId } = useWorkspace();
   
   const [createEventMutation, { loading, error }] = useMutation(CREATE_EVENT, {
-    refetchQueries: [
-      {
-        query: GET_EVENTS,
-        variables: { limit: 100, offset: 0, workspaceId },
-      },
-    ],
+    refetchQueries: ["GetEvents"],
     awaitRefetchQueries: true,
   });
 
@@ -100,9 +97,6 @@ export const useCreateEvent = () => {
       });
 
       if (result.data?.createEvent?.success) {
-        toast.success(
-          result.data.createEvent.message || "Événement créé avec succès"
-        );
         return result.data.createEvent.event;
       } else {
         toast.error(
@@ -132,12 +126,7 @@ export const useUpdateEvent = () => {
   const { workspaceId } = useWorkspace();
   
   const [updateEventMutation, { loading, error }] = useMutation(UPDATE_EVENT, {
-    refetchQueries: [
-      {
-        query: GET_EVENTS,
-        variables: { limit: 100, offset: 0, workspaceId },
-      },
-    ],
+    refetchQueries: ["GetEvents"],
     awaitRefetchQueries: true,
   });
 
@@ -149,9 +138,6 @@ export const useUpdateEvent = () => {
       });
 
       if (result.data?.updateEvent?.success) {
-        toast.success(
-          result.data.updateEvent.message || "Événement mis à jour avec succès"
-        );
         return result.data.updateEvent.event;
       } else {
         toast.error(
@@ -181,12 +167,7 @@ export const useDeleteEvent = () => {
   const { workspaceId } = useWorkspace();
   
   const [deleteEventMutation, { loading, error }] = useMutation(DELETE_EVENT, {
-    refetchQueries: [
-      {
-        query: GET_EVENTS,
-        variables: { limit: 100, offset: 0, workspaceId },
-      },
-    ],
+    refetchQueries: ["GetEvents"],
     awaitRefetchQueries: true,
   });
 
@@ -198,9 +179,6 @@ export const useDeleteEvent = () => {
       });
 
       if (result.data?.deleteEvent?.success) {
-        toast.success(
-          result.data.deleteEvent.message || "Événement supprimé avec succès"
-        );
         return true;
       } else {
         toast.error(
@@ -232,12 +210,7 @@ export const useSyncInvoiceEvents = () => {
   const [syncInvoiceEventsMutation, { loading, error }] = useMutation(
     SYNC_INVOICE_EVENTS,
     {
-      refetchQueries: [
-        {
-          query: GET_EVENTS,
-          variables: { limit: 100, offset: 0, workspaceId },
-        },
-      ],
+      refetchQueries: ["GetEvents"],
       awaitRefetchQueries: true,
     }
   );
