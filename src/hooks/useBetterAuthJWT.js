@@ -41,9 +41,9 @@ export const useBetterAuthJWT = () => {
       setIsLoadingToken(true);
 
       try {
-        const { getSession } = await import("@/src/lib/auth-client");
+        const { authClient } = await import("@/src/lib/auth-client");
 
-        await getSession({
+        await authClient.getSession({
           fetchOptions: {
             onSuccess: (ctx) => {
               // Vérifier les deux noms de headers possibles (Better Auth peut utiliser l'un ou l'autre)
@@ -85,9 +85,9 @@ export const useBetterAuthJWT = () => {
     if (session?.user) {
       setIsLoadingToken(true);
       try {
-        const { getSession } = await import("@/src/lib/auth-client");
+        const { authClient } = await import("@/src/lib/auth-client");
 
-        await getSession({
+        await authClient.getSession({
           fetchOptions: {
             onSuccess: (ctx) => {
               // Vérifier les deux noms de headers possibles

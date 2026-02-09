@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import { addDays, setHours, setMinutes, subDays } from "date-fns";
 import Loading from "./loading";
 
@@ -10,10 +11,32 @@ import { toast } from "@/src/components/ui/sonner";
 
 export default function Component() {
   // Récupération des événements depuis la base de données
-  const { events: dbEvents, loading, error } = useEvents();
+  const { events: dbEvents, loading, error, refetch } = useEvents();
 
   // Opérations sur les événements
   const { createEvent, updateEvent, deleteEvent } = useEventOperations();
+
+  // Gérer les paramètres URL OAuth
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const calendarConnected = searchParams.get("calendar_connected");
+    const calendarError = searchParams.get("calendar_error");
+
+    if (calendarConnected) {
+      const providerNames = { google: "Google Calendar", microsoft: "Microsoft Outlook", apple: "Apple Calendar" };
+      toast.success(`${providerNames[calendarConnected] || calendarConnected} connecté avec succès`);
+      refetch();
+      // Clean URL params
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+
+    if (calendarError) {
+      toast.error(`Erreur de connexion calendrier: ${calendarError}`);
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, [searchParams, refetch]);
+
 
   // Transformer les événements avec useMemo pour éviter les re-renders inutiles
   const localEvents = useMemo(() => {
@@ -34,15 +57,20 @@ export default function Component() {
       type: event.type,
       invoiceId: event.invoiceId,
       invoice: event.invoice,
+      source: event.source || "newbi",
+      visibility: event.visibility || "workspace",
+      isReadOnly: event.isReadOnly || false,
+      externalEventId: event.externalEventId,
+      externalCalendarLinks: event.externalCalendarLinks || [],
     }));
-    
+
     return transformed;
   }, [dbEvents, loading]);
 
   // Gestionnaire pour ajouter un événement
   const handleEventAdd = async (event) => {
     try {
-      const newEvent = await createEvent({
+      const input = {
         title: event.title,
         description: event.description,
         start: event.start.toISOString(),
@@ -51,7 +79,9 @@ export default function Component() {
         color: event.color || "sky",
         location: event.location,
         type: "MANUAL",
-      });
+        emailReminder: event.emailReminder?.enabled ? event.emailReminder : undefined,
+      };
+      await createEvent(input);
     } catch (error) {
       console.error("Erreur lors de l'ajout de l'événement:", error);
       toast.error("Erreur lors de l'ajout de l'événement");
@@ -60,6 +90,12 @@ export default function Component() {
 
   // Gestionnaire pour mettre à jour un événement
   const handleEventUpdate = async (updatedEvent) => {
+    // Ne pas permettre la mise à jour des événements en lecture seule
+    if (updatedEvent.isReadOnly) {
+      toast.error("Les événements externes ne peuvent pas être modifiés");
+      return;
+    }
+
     try {
       const result = await updateEvent({
         id: updatedEvent.id,
@@ -71,6 +107,7 @@ export default function Component() {
         color: updatedEvent.color,
         location: updatedEvent.location,
         type: updatedEvent.type || "MANUAL",
+        emailReminder: updatedEvent.emailReminder,
       });
     } catch (error) {
       console.error("Erreur lors de la mise à jour de l'événement:", error);
