@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { CalendarCheck2 } from "lucide-react";
 import {
   addDays,
   addMonths,
@@ -258,15 +257,10 @@ export function EventCalendar({
           <div className="flex items-center gap-1 sm:gap-4">
             <Button
               variant="outline"
-              className="max-[479px]:aspect-square max-[479px]:p-0! font-normal"
+              className="font-normal"
               onClick={handleToday}
             >
-              <CalendarCheck2
-                className="min-[480px]:hidden"
-                size={16}
-                aria-hidden="true"
-              />
-              <span className="max-[479px]:sr-only">Aujourd'hui</span>
+              Aujourd'hui
             </Button>
             <div className="flex items-center sm:gap-2">
               <Button
@@ -297,15 +291,10 @@ export function EventCalendar({
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="outline"
-                  className="gap-1.5 max-[479px]:h-8 font-normal"
+                  className="gap-1.5 font-normal"
                 >
                   <span>
-                    <span className="min-[480px]:hidden" aria-hidden="true">
-                      {view.charAt(0).toUpperCase()}
-                    </span>
-                    <span className="max-[479px]:sr-only">
-                      {view.charAt(0).toUpperCase() + view.slice(1)}
-                    </span>
+                    {view.charAt(0).toUpperCase() + view.slice(1)}
                   </span>
                   <ChevronDownIcon
                     className="-me-1 opacity-60"
