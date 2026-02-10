@@ -15,7 +15,9 @@ import { ProRouteGuard } from "@/src/components/pro-route-guard";
 
 function ClientsContent() {
   const [dialogOpen, setDialogOpen] = useState(false);
-  
+  const [activeTab, setActiveTab] = useState("all");
+  const [createListDialogOpen, setCreateListDialogOpen] = useState(false);
+
   // Fonction pour ouvrir le dialogue depuis le bouton dans TableUser
   const handleOpenInviteDialog = () => {
     setDialogOpen(true);
@@ -28,31 +30,57 @@ function ClientsContent() {
         {/* Header */}
         <div className="flex items-start justify-between px-4 sm:px-6 pt-4 sm:pt-6">
           <div>
-            <h1 className="text-2xl font-medium mb-2">Gestion des contacts</h1>
+            <h1 className="text-2xl font-medium mb-2">
+              {activeTab === "lists" ? "Gestion des listes" : "Gestion des contacts"}
+            </h1>
           </div>
           <div className="flex gap-2">
             <AutomationsPopover />
-            <ButtonGroup>
-              <Button
-                onClick={handleOpenInviteDialog}
-                className="cursor-pointer font-normal bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
-              >
-                Nouveau contact
-              </Button>
-              <ButtonGroupSeparator />
-              <Button
-                onClick={handleOpenInviteDialog}
-                size="icon"
-                className="cursor-pointer bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
-              >
-                <Plus size={16} aria-hidden="true" />
-              </Button>
-            </ButtonGroup>
+            {activeTab === "lists" ? (
+              <ButtonGroup>
+                <Button
+                  onClick={() => setCreateListDialogOpen(true)}
+                  className="cursor-pointer font-normal bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
+                >
+                  Nouvelle liste
+                </Button>
+                <ButtonGroupSeparator />
+                <Button
+                  onClick={() => setCreateListDialogOpen(true)}
+                  size="icon"
+                  className="cursor-pointer bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
+                >
+                  <Plus size={16} aria-hidden="true" />
+                </Button>
+              </ButtonGroup>
+            ) : (
+              <ButtonGroup>
+                  <Button
+                    onClick={handleOpenInviteDialog}
+                    className="cursor-pointer font-normal bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
+                  >
+                    Nouveau contact
+                  </Button>
+                  <ButtonGroupSeparator />
+                  <Button
+                    onClick={handleOpenInviteDialog}
+                    size="icon"
+                    className="cursor-pointer bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
+                  >
+                    <Plus size={16} aria-hidden="true" />
+                  </Button>
+                </ButtonGroup>
+            )}
           </div>
         </div>
 
         {/* Tabs */}
-        <ClientsTabs />
+        <ClientsTabs
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          createListDialogOpen={createListDialogOpen}
+          onCreateListDialogChange={setCreateListDialogOpen}
+        />
       </div>
 
       {/* Mobile Layout - Style Notion */}
@@ -69,7 +97,12 @@ function ClientsContent() {
 
         {/* Tabs */}
         <div className="px-4">
-          <ClientsTabs />
+          <ClientsTabs
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            createListDialogOpen={createListDialogOpen}
+            onCreateListDialogChange={setCreateListDialogOpen}
+          />
         </div>
 
         {/* Bouton flottant mobile avec protection RBAC */}

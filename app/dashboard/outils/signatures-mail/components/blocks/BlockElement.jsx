@@ -456,21 +456,19 @@ export default function BlockElement({
 
       case ELEMENT_TYPES.LOGO:
         const logoSrc = signatureData?.logo || signatureData?.companyLogo || "/newbiLetter.png";
+        const logoWidth = signatureData?.logoSize || props.maxWidth || 100;
         return (
           <div
             className="flex items-center justify-start"
-            style={{
-              maxWidth: props.maxWidth || 100,
-              maxHeight: props.maxHeight || 32,
-            }}
           >
             <img
               src={logoSrc}
               alt="Logo"
-              className="max-w-full max-h-full object-contain"
               style={{
-                height: `${signatureData?.logoSize || props.maxHeight || 32}px`,
+                width: `${logoWidth}px`,
+                height: "auto",
                 objectFit: "contain",
+                display: "block",
               }}
             />
           </div>

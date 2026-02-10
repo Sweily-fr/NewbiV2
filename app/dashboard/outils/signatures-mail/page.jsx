@@ -4,6 +4,10 @@ import { Suspense, useState } from "react";
 import { Plus, Monitor } from "lucide-react";
 import { RoleRouteGuard } from "@/src/components/rbac/RBACRouteGuard";
 import { Button } from "@/src/components/ui/button";
+import {
+  ButtonGroup,
+  ButtonGroupSeparator,
+} from "@/src/components/ui/button-group";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { Card, CardContent } from "@/src/components/ui/card";
 import SignatureTable from "./components/table/signature-table";
@@ -179,12 +183,22 @@ function SignaturesContent() {
           <div>
             <h1 className="text-2xl font-medium mb-2">Signatures Mail</h1>
           </div>
-          <Button
-            onClick={handleCreateSignature}
-            className="font-normal bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
-          >
-            Créer une signature
-          </Button>
+          <ButtonGroup>
+            <Button
+              onClick={handleCreateSignature}
+              className="cursor-pointer font-normal bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
+            >
+              Créer une signature
+            </Button>
+            <ButtonGroupSeparator />
+            <Button
+              onClick={handleCreateSignature}
+              size="icon"
+              className="cursor-pointer bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
+            >
+              <Plus size={16} aria-hidden="true" />
+            </Button>
+          </ButtonGroup>
         </div>
 
         {/* Table - Pleine largeur */}
