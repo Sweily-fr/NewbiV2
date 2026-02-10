@@ -251,7 +251,7 @@ export function EventCalendar({
       <CalendarDndProvider onEventUpdate={handleEventUpdate}>
         <div
           className={cn(
-            "flex items-center justify-between p-2 sm:p-4",
+            "flex flex-wrap items-center justify-between gap-2 p-2 sm:flex-nowrap sm:p-4",
             className
           )}
         >
