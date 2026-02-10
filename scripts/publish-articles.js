@@ -62,6 +62,7 @@ if (!skipImages && process.env.GOOGLE_API_KEY) {
     execSync(`python3 ${IMAGE_SCRIPT} ${slugArgs}`, {
       stdio: "inherit",
       env: { ...process.env },
+      timeout: 660000, // 11 min hard kill (script has its own 10min soft timeout)
     });
   } catch (err) {
     console.error("Warning: Image generation failed. Articles are published but some images may be missing.");
