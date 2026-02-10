@@ -1,7 +1,6 @@
-import React, { useState, useCallback, useRef, useMemo, useEffect } from 'react';
-import { Paperclip, X, Loader2, Upload, ZoomIn, FileText } from 'lucide-react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { Paperclip, X, Loader2, Upload, ZoomIn, FileText, FileSpreadsheet } from 'lucide-react';
 import { Button } from '@/src/components/ui/button';
-import { Progress } from '@/src/components/ui/progress';
 import { cn } from '@/src/lib/utils';
 import {
   Dialog,
@@ -23,16 +22,10 @@ const VALID_TYPES = [
 
 const ACCEPT_STRING = "image/jpeg,image/png,image/gif,image/webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/plain,text/csv,.doc,.docx,.xls,.xlsx,.pdf,.txt,.csv";
 
-/**
- * Vérifie si un type MIME correspond à une image
- */
 function isImageType(contentType) {
   return contentType?.startsWith('image/');
 }
 
-/**
- * Formate une taille de fichier en texte lisible
- */
 function formatFileSize(bytes) {
   if (!bytes) return '';
   if (bytes < 1024) return `${bytes} o`;
@@ -40,79 +33,48 @@ function formatFileSize(bytes) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`;
 }
 
-/**
- * Composant pour afficher un fichier (image ou document) avec possibilité de suppression
- */
-function FilePreview({ file, onDelete, isDeleting }) {
-  const [isZoomed, setIsZoomed] = useState(false);
-  const isImage = isImageType(file.contentType || file.type);
+function getFileExtension(fileName) {
+  return fileName?.split('.').pop()?.toLowerCase() || '';
+}
 
-  if (isImage) {
-    return (
-      <div className="relative group">
-        <Dialog open={isZoomed} onOpenChange={setIsZoomed}>
-          <DialogTrigger asChild>
-            <div className="relative cursor-pointer overflow-hidden rounded-lg border border-border hover:border-primary/50 transition-colors">
-              <img
-                src={file.url || file._localUrl}
-                alt={file.fileName || file.name}
-                className="w-full h-24 object-cover"
-              />
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                <ZoomIn className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-              </div>
-            </div>
-          </DialogTrigger>
-          <DialogContent className="max-w-4xl p-0 overflow-hidden">
-            <VisuallyHidden>
-              <DialogTitle>Aperçu de l&apos;image</DialogTitle>
-            </VisuallyHidden>
+function getFileIcon(file) {
+  const contentType = file.contentType || file.type || '';
+  const ext = getFileExtension(file.fileName || file.name);
+  if (contentType.includes('excel') || contentType.includes('spreadsheet') || ['xls', 'xlsx', 'csv'].includes(ext)) {
+    return FileSpreadsheet;
+  }
+  return FileText;
+}
+
+function ImagePreview({ file, onDelete, isDeleting }) {
+  const [isZoomed, setIsZoomed] = useState(false);
+
+  return (
+    <div className="relative group">
+      <Dialog open={isZoomed} onOpenChange={setIsZoomed}>
+        <DialogTrigger asChild>
+          <div className="relative cursor-pointer overflow-hidden rounded-lg border border-border hover:border-primary/50 transition-colors">
             <img
               src={file.url || file._localUrl}
               alt={file.fileName || file.name}
-              className="w-full h-auto max-h-[80vh] object-contain"
+              className="w-full h-24 object-cover"
             />
-          </DialogContent>
-        </Dialog>
-
-        {onDelete && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete(file.id ?? file._localIndex);
-            }}
-            disabled={isDeleting}
-            className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-white text-black border border-gray-200 shadow-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-100 disabled:opacity-50"
-          >
-            {isDeleting ? (
-              <Loader2 className="h-3 w-3 animate-spin" />
-            ) : (
-              <X className="h-3 w-3" />
-            )}
-          </button>
-        )}
-
-        <p className="text-xs text-muted-foreground mt-1 truncate max-w-[120px]">
-          {file.fileName || file.name}
-        </p>
-      </div>
-    );
-  }
-
-  // Document (non-image) preview
-  return (
-    <div className="relative group">
-      <div className="relative overflow-hidden rounded-lg border border-border hover:border-primary/50 transition-colors p-3 h-24 flex flex-col items-center justify-center gap-1 bg-muted/30">
-        <FileText className="h-8 w-8 text-muted-foreground" />
-        <p className="text-xs text-muted-foreground truncate max-w-full text-center">
-          {file.fileName || file.name}
-        </p>
-        {(file.fileSize || file.size) && (
-          <p className="text-[10px] text-muted-foreground/70">
-            {formatFileSize(file.fileSize || file.size)}
-          </p>
-        )}
-      </div>
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+              <ZoomIn className="h-5 w-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+            </div>
+          </div>
+        </DialogTrigger>
+        <DialogContent className="max-w-4xl p-0 overflow-hidden">
+          <VisuallyHidden>
+            <DialogTitle>Aperçu de l&apos;image</DialogTitle>
+          </VisuallyHidden>
+          <img
+            src={file.url || file._localUrl}
+            alt={file.fileName || file.name}
+            className="w-full h-auto max-h-[80vh] object-contain"
+          />
+        </DialogContent>
+      </Dialog>
 
       {onDelete && (
         <button
@@ -121,7 +83,7 @@ function FilePreview({ file, onDelete, isDeleting }) {
             onDelete(file.id ?? file._localIndex);
           }}
           disabled={isDeleting}
-          className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-white text-black border border-gray-200 shadow-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-100 disabled:opacity-50"
+          className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-white dark:bg-gray-800 text-muted-foreground border border-border shadow-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-500 disabled:opacity-50"
         >
           {isDeleting ? (
             <Loader2 className="h-3 w-3 animate-spin" />
@@ -130,18 +92,51 @@ function FilePreview({ file, onDelete, isDeleting }) {
           )}
         </button>
       )}
+
+      <p className="text-xs text-muted-foreground mt-1 truncate max-w-[120px]">
+        {file.fileName || file.name}
+      </p>
     </div>
   );
 }
 
-/**
- * Composant d'upload de fichiers (images + documents) avec drag-and-drop
- * Utilisable dans la description des tâches et les commentaires
- *
- * Modes :
- * - Standard (par défaut) : upload immédiat via onUpload callback
- * - Local (localMode=true) : buffer les fichiers localement pour upload différé (mode création)
- */
+function DocumentPreview({ file, onDelete, isDeleting }) {
+  const Icon = getFileIcon(file);
+  const ext = getFileExtension(file.fileName || file.name);
+
+  return (
+    <div className="group flex items-center gap-2.5 rounded-lg border border-border hover:bg-accent/50 transition-colors px-3 py-2">
+      <Icon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+      <div className="flex-1 min-w-0 flex items-baseline gap-2">
+        <p className="text-sm text-foreground truncate">
+          {file.fileName || file.name}
+        </p>
+        {(file.fileSize || file.size) && (
+          <span className="text-xs text-muted-foreground flex-shrink-0">
+            {formatFileSize(file.fileSize || file.size)}
+          </span>
+        )}
+      </div>
+      {onDelete && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete(file.id ?? file._localIndex);
+          }}
+          disabled={isDeleting}
+          className="flex-shrink-0 p-1 rounded text-muted-foreground/40 opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-500 disabled:opacity-50"
+        >
+          {isDeleting ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <X className="h-3.5 w-3.5" />
+          )}
+        </button>
+      )}
+    </div>
+  );
+}
+
 export function TaskImageUpload({
   images = [],
   onUpload,
@@ -153,7 +148,6 @@ export function TaskImageUpload({
   className,
   compact = false,
   placeholder = "Glissez des fichiers ici ou cliquez pour sélectionner",
-  // Props pour le mode local (création de tâche)
   localMode = false,
   pendingFiles = [],
   onAddFiles,
@@ -164,19 +158,17 @@ export function TaskImageUpload({
   const [localPreviews, setLocalPreviews] = useState([]);
   const fileInputRef = useRef(null);
   const prevPendingFilesRef = useRef(pendingFiles);
+  const dragCounterRef = useRef(0);
 
-  // Calculer le nombre total de fichiers (serveur + local)
   const totalFiles = localMode ? pendingFiles.length : images.length;
   const canAddMore = totalFiles < maxImages;
 
-  // Générer les previews locales pour les fichiers en attente
   useEffect(() => {
     if (!localMode) {
       if (localPreviews.length > 0) setLocalPreviews([]);
       return;
     }
 
-    // Éviter les re-renders inutiles si la référence n'a pas changé
     if (pendingFiles === prevPendingFilesRef.current && localPreviews.length === pendingFiles.length) {
       return;
     }
@@ -207,7 +199,6 @@ export function TaskImageUpload({
 
     setLocalPreviews(previews);
 
-    // Cleanup object URLs on unmount or when files change
     return () => {
       previews.forEach(p => {
         if (p._localUrl) URL.revokeObjectURL(p._localUrl);
@@ -222,6 +213,7 @@ export function TaskImageUpload({
   const handleDragEnter = useCallback((e) => {
     e.preventDefault();
     e.stopPropagation();
+    dragCounterRef.current++;
     if (!disabled && !isUploading) {
       setIsDragging(true);
     }
@@ -230,7 +222,10 @@ export function TaskImageUpload({
   const handleDragLeave = useCallback((e) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsDragging(false);
+    dragCounterRef.current--;
+    if (dragCounterRef.current === 0) {
+      setIsDragging(false);
+    }
   }, []);
 
   const handleDragOver = useCallback((e) => {
@@ -241,6 +236,7 @@ export function TaskImageUpload({
   const handleDrop = useCallback(async (e) => {
     e.preventDefault();
     e.stopPropagation();
+    dragCounterRef.current = 0;
     setIsDragging(false);
 
     if (disabled || isUploading) return;
@@ -279,7 +275,6 @@ export function TaskImageUpload({
       }
     }
 
-    // Reset input
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -309,11 +304,12 @@ export function TaskImageUpload({
     }
   }, [disabled, isUploading]);
 
-  // Fichiers à afficher
   const displayFiles = localMode ? localPreviews : images;
+  const imageFiles = displayFiles.filter(f => isImageType(f.contentType || f.type));
+  const documentFiles = displayFiles.filter(f => !isImageType(f.contentType || f.type));
 
   return (
-    <div className={cn("space-y-3", className)}>
+    <div className={cn("space-y-2", className)}>
       {/* Zone de drop */}
       {canAddMore && (
         <div
@@ -323,11 +319,11 @@ export function TaskImageUpload({
           onDrop={handleDrop}
           onClick={handleClick}
           className={cn(
-            "relative border-2 border-dashed rounded-lg transition-all cursor-pointer",
-            compact ? "p-3" : "p-6",
+            "relative border-2 border-dashed rounded-lg transition-colors cursor-pointer",
+            compact ? "p-3" : "p-4",
             isDragging
               ? "border-primary bg-primary/5"
-              : "border-border hover:border-primary/50 hover:bg-accent/5",
+              : "border-border hover:border-muted-foreground/30",
             (disabled || isUploading) && "opacity-50 cursor-not-allowed",
           )}
         >
@@ -341,48 +337,51 @@ export function TaskImageUpload({
             disabled={disabled || isUploading}
           />
 
-          <div className={cn(
-            "flex items-center justify-center gap-3",
-            compact ? "flex-row" : "flex-col"
-          )}>
-            {isUploading ? (
-              <>
-                <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                <div className="flex-1 max-w-xs">
-                  <Progress value={uploadProgress} className="h-2" />
-                  <p className="text-xs text-muted-foreground mt-1 text-center">
-                    Upload en cours... {uploadProgress}%
-                  </p>
+          {isUploading ? (
+            <div className="flex items-center gap-3">
+              <Loader2 className="h-4 w-4 animate-spin text-primary flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-primary rounded-full transition-[width] duration-200"
+                    style={{ width: `${uploadProgress}%` }}
+                  />
                 </div>
-              </>
-            ) : (
-              <>
-                {isDragging ? (
-                  <Upload className="h-8 w-8 text-primary" />
-                ) : (
-                  <Paperclip className={cn(
-                    "text-muted-foreground",
-                    compact ? "h-5 w-5" : "h-8 w-8"
-                  )} />
-                )}
-                <p className={cn(
-                  "text-muted-foreground text-center",
-                  compact ? "text-xs" : "text-sm"
-                )}>
-                  {isDragging ? "Déposez les fichiers ici" : placeholder}
+              </div>
+              <span className="text-xs text-muted-foreground tabular-nums flex-shrink-0">{uploadProgress}%</span>
+            </div>
+          ) : (
+            <div className={cn(
+              "flex items-center justify-center gap-2",
+              compact ? "flex-row" : "flex-col gap-1.5"
+            )}>
+              {isDragging ? (
+                <Upload className="h-5 w-5 text-primary" />
+              ) : (
+                <Paperclip className={cn("text-muted-foreground/60", compact ? "h-4 w-4" : "h-5 w-5")} />
+              )}
+              <p className={cn(
+                "text-muted-foreground",
+                compact ? "text-xs" : "text-sm"
+              )}>
+                {isDragging ? "Déposez les fichiers ici" : placeholder}
+              </p>
+              {!compact && totalFiles > 0 && (
+                <p className="text-[11px] text-muted-foreground/50">
+                  {totalFiles}/{maxImages}
                 </p>
-              </>
-            )}
-          </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
-      {/* Grille de fichiers */}
-      {displayFiles.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-          {displayFiles.map((file, index) => (
-            <FilePreview
-              key={file.id ?? file._localIndex ?? index}
+      {/* Images en grille */}
+      {imageFiles.length > 0 && (
+        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+          {imageFiles.map((file, index) => (
+            <ImagePreview
+              key={file.id ?? file._localIndex ?? `img-${index}`}
               file={file}
               onDelete={localMode ? handleDelete : (onDelete ? handleDelete : null)}
               isDeleting={deletingImageId === (file.id ?? file._localIndex)}
@@ -391,7 +390,20 @@ export function TaskImageUpload({
         </div>
       )}
 
-      {/* Message si limite atteinte */}
+      {/* Documents en liste */}
+      {documentFiles.length > 0 && (
+        <div className="space-y-1">
+          {documentFiles.map((file, index) => (
+            <DocumentPreview
+              key={file.id ?? file._localIndex ?? `doc-${index}`}
+              file={file}
+              onDelete={localMode ? handleDelete : (onDelete ? handleDelete : null)}
+              isDeleting={deletingImageId === (file.id ?? file._localIndex)}
+            />
+          ))}
+        </div>
+      )}
+
       {!canAddMore && (
         <p className="text-xs text-muted-foreground text-center">
           Limite de {maxImages} fichiers atteinte
@@ -401,10 +413,6 @@ export function TaskImageUpload({
   );
 }
 
-/**
- * Version inline pour les champs de texte (description, commentaires)
- * Permet le paste d'images et affiche un bouton d'ajout
- */
 export function TaskImageUploadInline({
   onUpload,
   isUploading = false,
