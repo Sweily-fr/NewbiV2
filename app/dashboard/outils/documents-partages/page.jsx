@@ -23,6 +23,8 @@ import {
   useMoveSharedFolder,
   useCreateDefaultFolders,
   useDownloadFolder,
+  useDownloadSelection,
+  useSelectionInfo,
   useTrashItems,
   useRestoreFromTrash,
   useEmptyTrash,
@@ -31,6 +33,8 @@ import {
   useBulkUpdateTags,
 } from "@/src/hooks/useSharedDocuments";
 import { DraggableTree } from "./components/DraggableTree";
+import DocumentAutomationsModal from "./components/document-automations-modal";
+import { useDocumentAutomations } from "@/src/hooks/useDocumentAutomations";
 import { Button } from "@/src/components/ui/button";
 import {
   ButtonGroup,
@@ -124,6 +128,9 @@ import {
   FilterX,
   GripVertical,
   PanelLeft,
+  Package,
+  Check,
+  Zap,
 } from "lucide-react";
 import {
   Popover,
@@ -199,6 +206,7 @@ export default function DocumentsPartagesPage() {
   // États
   const [selectedFolder, setSelectedFolder] = useState(null); // null = "Documents à classer"
   const [selectedDocuments, setSelectedDocuments] = useState([]);
+  const [selectedFolders, setSelectedFolders] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState(() => {
     if (typeof window !== "undefined") {
@@ -208,6 +216,7 @@ export default function DocumentsPartagesPage() {
   }); // "list" ou "grid"
   const [isUploading, setIsUploading] = useState(false);
   const [isDragActive, setIsDragActive] = useState(false);
+  const [showAutomationsModal, setShowAutomationsModal] = useState(false);
   const fileInputRef = useRef(null);
   const folderInputRef = useRef(null);
 
@@ -422,6 +431,10 @@ export default function DocumentsPartagesPage() {
   const { moveFolder, loading: moveFolderLoading } = useMoveSharedFolder();
   const { downloadFolder, loading: downloadFolderLoading } =
     useDownloadFolder();
+  const { downloadSelection, loading: downloadSelectionLoading } =
+    useDownloadSelection();
+  const { fetchSelectionInfo, loading: selectionInfoLoading } =
+    useSelectionInfo();
   const {
     createDefaultFolders,
     isCreating: isCreatingDefaultFolders,
@@ -451,6 +464,13 @@ export default function DocumentsPartagesPage() {
     loading: permanentDeleteFoldersLoading,
   } = usePermanentlyDeleteFolders();
   const { bulkUpdateTags, loading: bulkTagsLoading } = useBulkUpdateTags();
+
+  // Automatisations (pour le badge du bouton)
+  const { automations: documentAutomations } = useDocumentAutomations(workspaceId);
+  const activeAutomationsCount = useMemo(
+    () => documentAutomations?.filter(a => a.isActive).length || 0,
+    [documentAutomations]
+  );
 
   // État pour la gestion des tags en masse
   const [showBulkTagsModal, setShowBulkTagsModal] = useState(false);
@@ -531,8 +551,9 @@ export default function DocumentsPartagesPage() {
         if (showDetailsPanel) {
           setShowDetailsPanel(false);
           setSelectedDocumentDetails(null);
-        } else if (selectedDocuments.length > 0) {
+        } else if (selectedDocuments.length > 0 || selectedFolders.length > 0) {
           setSelectedDocuments([]);
+          setSelectedFolders([]);
         }
       }
 
@@ -553,7 +574,7 @@ export default function DocumentsPartagesPage() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedDocuments, filteredDocuments, showDetailsPanel]);
+  }, [selectedDocuments, selectedFolders, filteredDocuments, showDetailsPanel]);
 
   // Compter les documents "à classer"
   const pendingCount = stats?.pendingDocuments || 0;
@@ -593,6 +614,18 @@ export default function DocumentsPartagesPage() {
 
   // État pour le context menu du tree
   const [treeContextMenu, setTreeContextMenu] = useState(null);
+
+  // ZIP download dialog
+  const [showZipDialog, setShowZipDialog] = useState(false);
+  const [zipSelectionInfo, setZipSelectionInfo] = useState(null);
+  const [excludedSubfolders, setExcludedSubfolders] = useState([]);
+
+  // Context menu for main content area
+  const [contentContextMenu, setContentContextMenu] = useState(null);
+
+  // Long-press for mobile
+  const longPressTimerRef = useRef(null);
+  const longPressTriggeredRef = useRef(false);
 
   // Gestion de l'upload avec progression
   const handleFileUpload = useCallback(
@@ -799,6 +832,172 @@ export default function DocumentsPartagesPage() {
   const handleDownload = (doc) => {
     window.open(doc.fileUrl, "_blank");
   };
+
+  // Folder selection toggle
+  // Get all descendant folder IDs recursively
+  const getDescendantFolderIds = useCallback(
+    (parentId) => {
+      const descendants = [];
+      const children = folders.filter((f) => f.parentId === parentId);
+      for (const child of children) {
+        descendants.push(child.id);
+        descendants.push(...getDescendantFolderIds(child.id));
+      }
+      return descendants;
+    },
+    [folders]
+  );
+
+  const toggleFolderSelection = useCallback(
+    (folderId) => {
+      const allFolderIds = [folderId, ...getDescendantFolderIds(folderId)];
+      const folderIdSet = new Set(allFolderIds);
+
+      // Find all documents inside these folders
+      const docIdsInFolders = allDocuments
+        .filter((d) => d.folderId && folderIdSet.has(d.folderId))
+        .map((d) => d.id);
+
+      setSelectedFolders((prev) => {
+        const isSelected = prev.includes(folderId);
+        if (isSelected) {
+          const toRemove = new Set(allFolderIds);
+          return prev.filter((id) => !toRemove.has(id));
+        } else {
+          const next = new Set(prev);
+          allFolderIds.forEach((id) => next.add(id));
+          return [...next];
+        }
+      });
+
+      setSelectedDocuments((prev) => {
+        const isSelected = selectedFolders.includes(folderId);
+        if (isSelected) {
+          // Uncheck: remove documents in these folders
+          const toRemove = new Set(docIdsInFolders);
+          return prev.filter((id) => !toRemove.has(id));
+        } else {
+          // Check: add documents in these folders
+          const next = new Set(prev);
+          docIdsInFolders.forEach((id) => next.add(id));
+          return [...next];
+        }
+      });
+    },
+    [getDescendantFolderIds, allDocuments, selectedFolders]
+  );
+
+  // Check if any folders have subfolders
+  const hasSubfolders = useCallback(
+    (folderIds) => {
+      return folderIds.some((folderId) =>
+        folders.some((f) => f.parentId === folderId)
+      );
+    },
+    [folders]
+  );
+
+  // Open ZIP configuration dialog or download directly
+  const handleZipDownload = useCallback(async () => {
+    const folderIds = selectedFolders;
+    const docIds = selectedDocuments;
+
+    if (folderIds.length === 0 && docIds.length === 0) {
+      toast.error("Aucun élément sélectionné");
+      return;
+    }
+
+    // If there are folders with subfolders, show the dialog
+    if (folderIds.length > 0 && hasSubfolders(folderIds)) {
+      // Fetch info about the selection
+      const info = await fetchSelectionInfo({ folderIds, documentIds: docIds });
+      if (info) {
+        setZipSelectionInfo(info);
+        setExcludedSubfolders([]);
+        setShowZipDialog(true);
+      }
+      return;
+    }
+
+    // Direct download without dialog
+    await downloadSelection({ folderIds, documentIds: docIds });
+  }, [selectedFolders, selectedDocuments, hasSubfolders, fetchSelectionInfo, downloadSelection]);
+
+  // Execute ZIP download with exclusions
+  const handleZipDownloadConfirm = useCallback(async () => {
+    await downloadSelection({
+      folderIds: selectedFolders,
+      documentIds: selectedDocuments,
+      excludedFolderIds: excludedSubfolders,
+    });
+    setShowZipDialog(false);
+    setZipSelectionInfo(null);
+    setExcludedSubfolders([]);
+  }, [selectedFolders, selectedDocuments, excludedSubfolders, downloadSelection]);
+
+  // Toggle subfolder exclusion
+  const toggleSubfolderExclusion = useCallback((subfolderId) => {
+    setExcludedSubfolders((prev) =>
+      prev.includes(subfolderId)
+        ? prev.filter((id) => id !== subfolderId)
+        : [...prev, subfolderId]
+    );
+  }, []);
+
+  // Handle content area context menu
+  const handleContentContextMenu = useCallback(
+    (e) => {
+      // Only show if there's a selection
+      if (selectedFolders.length === 0 && selectedDocuments.length === 0) return;
+      e.preventDefault();
+      setContentContextMenu({ x: e.clientX, y: e.clientY });
+    },
+    [selectedFolders, selectedDocuments]
+  );
+
+  // Mobile long-press handlers
+  const handleTouchStart = useCallback(
+    (e) => {
+      if (selectedFolders.length === 0 && selectedDocuments.length === 0) return;
+      longPressTriggeredRef.current = false;
+      longPressTimerRef.current = setTimeout(() => {
+        longPressTriggeredRef.current = true;
+        const touch = e.touches[0];
+        setContentContextMenu({ x: touch.clientX, y: touch.clientY });
+      }, 600);
+    },
+    [selectedFolders, selectedDocuments]
+  );
+
+  const handleTouchMove = useCallback(() => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  }, []);
+
+  // Close content context menu on click outside
+  useEffect(() => {
+    if (!contentContextMenu) return;
+    const handleClick = () => setContentContextMenu(null);
+    window.addEventListener("click", handleClick);
+    return () => window.removeEventListener("click", handleClick);
+  }, [contentContextMenu]);
+
+  // Clear folder selection when navigating
+  useEffect(() => {
+    setSelectedFolders([]);
+  }, [selectedFolder, showTrash]);
+
+  // Total selection count (folders + documents)
+  const totalSelectionCount = selectedFolders.length + selectedDocuments.length;
 
   // Open document details panel
   const handleOpenDetails = (doc) => {
@@ -1015,6 +1214,7 @@ export default function DocumentsPartagesPage() {
   };
 
   return (
+    <>
     <div
       className="h-[calc(100vh-4rem)] flex flex-col overflow-hidden"
       onDragOver={handleDragOver}
@@ -1047,6 +1247,32 @@ export default function DocumentsPartagesPage() {
               <h1 className="text-lg sm:text-2xl font-medium truncate">Documents partagés</h1>
             </div>
             <div className="flex items-center gap-1.5 sm:gap-2">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={activeAutomationsCount > 0 ? "default" : "secondary"}
+                      size="icon"
+                      className="relative"
+                      style={activeAutomationsCount > 0 ? { backgroundColor: '#5b50ff' } : {}}
+                      onClick={() => setShowAutomationsModal(true)}
+                    >
+                      <Zap className="h-4 w-4" strokeWidth={1.5} />
+                      {activeAutomationsCount > 0 && (
+                        <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-white text-[#5b50ff] text-[10px] font-semibold shadow-sm border">
+                          {activeAutomationsCount}
+                        </span>
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="bottom"
+                    className="bg-[#202020] text-white border-0"
+                  >
+                    <p>Automatisations</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -1152,6 +1378,8 @@ export default function DocumentsPartagesPage() {
                       documents={allDocuments}
                       pendingCount={pendingCount}
                       selectedFolder={selectedFolder}
+                      selectedFolders={selectedFolders}
+                      onToggleFolderSelection={toggleFolderSelection}
                       onMove={handleTreeMove}
                       onMoveFolder={handleTreeMoveFolder}
                       onSelectFolder={(folderId) => {
@@ -1248,6 +1476,8 @@ export default function DocumentsPartagesPage() {
                     documents={allDocuments}
                     pendingCount={pendingCount}
                     selectedFolder={selectedFolder}
+                    selectedFolders={selectedFolders}
+                    onToggleFolderSelection={toggleFolderSelection}
                     onMove={handleTreeMove}
                     onMoveFolder={handleTreeMoveFolder}
                     onSelectFolder={(folderId) => {
@@ -1313,6 +1543,21 @@ export default function DocumentsPartagesPage() {
                                   ? "Téléchargement..."
                                   : "Télécharger en ZIP"}
                               </DropdownMenuItem>
+                              {/* Download selection as ZIP when multiple folders are selected */}
+                              {selectedFolders.length > 1 && (
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setTreeContextMenu(null);
+                                    handleZipDownload();
+                                  }}
+                                  disabled={downloadSelectionLoading}
+                                >
+                                  <Package className="size-4 mr-2" />
+                                  {downloadSelectionLoading
+                                    ? "Préparation..."
+                                    : `Télécharger la sélection (${selectedFolders.length})`}
+                                </DropdownMenuItem>
+                              )}
                               {/* Separator seulement si Renommer ou Supprimer sera affiché */}
                               {!treeContextMenu.item.isSystem && (
                                 <DropdownMenuSeparator />
@@ -1434,7 +1679,13 @@ export default function DocumentsPartagesPage() {
         )}
 
         {/* Content area */}
-        <div className="flex-1 flex flex-col overflow-hidden min-h-0">
+        <div
+          className="flex-1 flex flex-col overflow-hidden min-h-0"
+          onContextMenu={handleContentContextMenu}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
           {/* Toolbar */}
           <div className="flex-shrink-0 px-2 sm:px-4 min-h-12 sm:min-h-14 border-b bg-background flex flex-col justify-center py-1.5 sm:py-2">
             {/* Upload Progress Bar */}
@@ -1605,69 +1856,127 @@ export default function DocumentsPartagesPage() {
                 ) : (
                   /* Normal document actions */
                   <>
-                    {selectedDocuments.length > 0 && (
+                    {totalSelectionCount > 0 && (
                       <>
                         <span className="text-xs font-normal text-muted-foreground hidden sm:inline">
-                          {selectedDocuments.length} sélectionné(s)
+                          {totalSelectionCount} sélectionné(s)
+                          {selectedFolders.length > 0 && selectedDocuments.length > 0 && (
+                            <span className="ml-0.5">
+                              ({selectedFolders.length} dossier{selectedFolders.length > 1 ? "s" : ""}, {selectedDocuments.length} doc{selectedDocuments.length > 1 ? "s" : ""})
+                            </span>
+                          )}
                         </span>
+                        {/* ZIP download button */}
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Button
                                 variant="secondary"
                                 size="icon"
-                                onClick={() => setShowMoveModal(true)}
+                                onClick={handleZipDownload}
+                                disabled={downloadSelectionLoading || selectionInfoLoading}
                               >
-                                <FolderInput
-                                  className="h-4 w-4"
-                                  strokeWidth={1.5}
-                                />
+                                {downloadSelectionLoading || selectionInfoLoading ? (
+                                  <LoaderCircle className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Package className="h-4 w-4" strokeWidth={1.5} />
+                                )}
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent
                               side="bottom"
                               className="bg-[#202020] text-white border-0"
                             >
-                              <p>Déplacer</p>
+                              <p>Télécharger en ZIP</p>
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
+                        {selectedDocuments.length > 0 && (
+                          <>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="secondary"
+                                    size="icon"
+                                    onClick={() => setShowMoveModal(true)}
+                                  >
+                                    <FolderInput
+                                      className="h-4 w-4"
+                                      strokeWidth={1.5}
+                                    />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent
+                                  side="bottom"
+                                  className="bg-[#202020] text-white border-0"
+                                >
+                                  <p>Déplacer</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => setShowDeleteModal(true)}
+                                    className="bg-destructive/10 text-destructive hover:bg-destructive/20 hover:text-destructive"
+                                  >
+                                    <Trash2 className="h-4 w-4" strokeWidth={1.5} />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent
+                                  side="bottom"
+                                  className="bg-[#202020] text-white border-0"
+                                >
+                                  <p>Supprimer</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="secondary"
+                                    size="icon"
+                                    onClick={() => setShowBulkTagsModal(true)}
+                                  >
+                                    <Tag className="h-4 w-4" strokeWidth={1.5} />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent
+                                  side="bottom"
+                                  className="bg-[#202020] text-white border-0"
+                                >
+                                  <p>Gérer les tags</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </>
+                        )}
+                        {/* Clear selection */}
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => setShowDeleteModal(true)}
-                                className="bg-destructive/10 text-destructive hover:bg-destructive/20 hover:text-destructive"
+                                onClick={() => {
+                                  setSelectedDocuments([]);
+                                  setSelectedFolders([]);
+                                }}
+                                className="h-8 w-8"
                               >
-                                <Trash2 className="h-4 w-4" strokeWidth={1.5} />
+                                <X className="h-4 w-4" />
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent
                               side="bottom"
                               className="bg-[#202020] text-white border-0"
                             >
-                              <p>Supprimer</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="secondary"
-                                size="icon"
-                                onClick={() => setShowBulkTagsModal(true)}
-                              >
-                                <Tag className="h-4 w-4" strokeWidth={1.5} />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent
-                              side="bottom"
-                              className="bg-[#202020] text-white border-0"
-                            >
-                              <p>Gérer les tags</p>
+                              <p>Tout désélectionner</p>
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
@@ -1917,9 +2226,9 @@ export default function DocumentsPartagesPage() {
             {showTrash ? (
               /* Trash view */
               trashInitialLoading ? (
-                <div className="space-y-2 py-2">
+                <div className="space-y-2 p-2 sm:p-4">
                   {[1, 2, 3, 4, 5].map((i) => (
-                    <Skeleton key={i} className="h-14 w-full" />
+                    <Skeleton key={i} className="h-14 w-full rounded-lg" />
                   ))}
                 </div>
               ) : trashItemsCount === 0 ? (
@@ -2307,9 +2616,9 @@ export default function DocumentsPartagesPage() {
                 )}
 
                 {docsInitialLoading ? (
-                  <div className="space-y-2 py-2">
+                  <div className="space-y-2 p-2 sm:p-4">
                     {[1, 2, 3, 4, 5].map((i) => (
-                      <Skeleton key={i} className="h-14 w-full" />
+                      <Skeleton key={i} className="h-14 w-full rounded-lg" />
                     ))}
                   </div>
                 ) : filteredDocuments.length === 0 ? (
@@ -3366,6 +3675,245 @@ export default function DocumentsPartagesPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Content area context menu */}
+      {contentContextMenu && (
+        <DropdownMenu
+          open={!!contentContextMenu}
+          onOpenChange={(open) => !open && setContentContextMenu(null)}
+        >
+          <DropdownMenuTrigger asChild>
+            <div
+              style={{
+                position: "fixed",
+                left: contentContextMenu.x,
+                top: contentContextMenu.y,
+                width: 1,
+                height: 1,
+                pointerEvents: "none",
+              }}
+            />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" side="bottom">
+            <DropdownMenuItem
+              onClick={() => {
+                setContentContextMenu(null);
+                handleZipDownload();
+              }}
+              disabled={downloadSelectionLoading || selectionInfoLoading}
+            >
+              <Package className="size-4 mr-2" />
+              {downloadSelectionLoading
+                ? "Préparation..."
+                : `Télécharger en ZIP (${totalSelectionCount})`}
+            </DropdownMenuItem>
+            {selectedDocuments.length > 0 && (
+              <>
+                <DropdownMenuItem
+                  onClick={() => {
+                    setContentContextMenu(null);
+                    setShowMoveModal(true);
+                  }}
+                >
+                  <FolderInput className="size-4 mr-2" />
+                  Déplacer
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="text-destructive focus:text-destructive"
+                  onClick={() => {
+                    setContentContextMenu(null);
+                    setShowDeleteModal(true);
+                  }}
+                >
+                  <Trash2 className="size-4 mr-2" />
+                  Supprimer
+                </DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
+
+      {/* ZIP Configuration Dialog */}
+      <Dialog open={showZipDialog} onOpenChange={setShowZipDialog}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Configurer le téléchargement ZIP</DialogTitle>
+            <DialogDescription>
+              Sélectionnez les sous-dossiers à inclure dans l'archive.
+            </DialogDescription>
+          </DialogHeader>
+          {zipSelectionInfo && (
+            <div className="space-y-4 max-h-[400px] overflow-y-auto">
+              {/* Folders tree */}
+              {zipSelectionInfo.folders.map((folder) => (
+                <div key={folder.id} className="space-y-1">
+                  <div className="flex items-center gap-2 py-1">
+                    <FolderClosed className="size-4 text-primary/70 shrink-0" />
+                    <span className="font-medium text-sm">{folder.name}</span>
+                    <span className="text-xs text-muted-foreground ml-auto">
+                      {folder.filesCount} fichier{folder.filesCount > 1 ? "s" : ""} — {formatFileSize(folder.totalSize)}
+                    </span>
+                  </div>
+                  {folder.subfolders.length > 0 && (
+                    <div className="ml-6 space-y-0.5">
+                      {folder.subfolders.map((sub) => (
+                        <label
+                          key={sub.id}
+                          className="flex items-center gap-2 py-1 px-2 rounded hover:bg-accent/40 cursor-pointer"
+                        >
+                          <button
+                            onClick={() => toggleSubfolderExclusion(sub.id)}
+                            className={cn(
+                              "size-4 rounded border flex items-center justify-center shrink-0 transition-colors",
+                              !excludedSubfolders.includes(sub.id)
+                                ? "bg-primary border-primary text-primary-foreground"
+                                : "border-muted-foreground/40"
+                            )}
+                          >
+                            {!excludedSubfolders.includes(sub.id) && (
+                              <Check className="size-3" strokeWidth={2.5} />
+                            )}
+                          </button>
+                          <FolderClosed className="size-3.5 text-muted-foreground/70 shrink-0" />
+                          <span className={cn(
+                            "text-sm flex-1",
+                            excludedSubfolders.includes(sub.id) && "text-muted-foreground line-through"
+                          )}>
+                            {sub.name}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {sub.filesCount} fichier{sub.filesCount > 1 ? "s" : ""} — {formatFileSize(sub.size)}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              {/* Individual documents */}
+              {zipSelectionInfo.documents.length > 0 && (
+                <div className="space-y-1">
+                  <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                    Documents individuels
+                  </div>
+                  {zipSelectionInfo.documents.map((doc) => (
+                    <div
+                      key={doc.id}
+                      className="flex items-center gap-2 py-1 px-2"
+                    >
+                      <File className="size-3.5 text-muted-foreground/70 shrink-0" />
+                      <span className="text-sm truncate flex-1">{doc.name}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {formatFileSize(doc.size)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Summary */}
+              <Separator />
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Total</span>
+                <span className="font-medium">
+                  {zipSelectionInfo.totalFiles - zipSelectionInfo.folders.reduce(
+                    (sum, f) => sum + f.subfolders.filter((s) => excludedSubfolders.includes(s.id)).reduce((acc, s) => acc + s.filesCount, 0),
+                    0
+                  )} fichier(s) — {formatFileSize(
+                    zipSelectionInfo.totalSize - zipSelectionInfo.folders.reduce(
+                      (sum, f) => sum + f.subfolders.filter((s) => excludedSubfolders.includes(s.id)).reduce((acc, s) => acc + s.size, 0),
+                      0
+                    )
+                  )}
+                </span>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowZipDialog(false);
+                setZipSelectionInfo(null);
+              }}
+            >
+              Annuler
+            </Button>
+            <Button
+              onClick={handleZipDownloadConfirm}
+              disabled={downloadSelectionLoading}
+              className="bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
+            >
+              {downloadSelectionLoading ? (
+                <LoaderCircle className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <Download className="h-4 w-4 mr-2" />
+              )}
+              Télécharger
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Mobile floating action bar */}
+      {isMobile && totalSelectionCount > 0 && !showTrash && (
+        <div className="fixed bottom-4 left-4 right-4 z-50 bg-background border rounded-xl shadow-lg px-4 py-3 flex items-center justify-between gap-2">
+          <span className="text-sm font-medium">
+            {totalSelectionCount} sélectionné{totalSelectionCount > 1 ? "s" : ""}
+          </span>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleZipDownload}
+              disabled={downloadSelectionLoading || selectionInfoLoading}
+            >
+              {downloadSelectionLoading || selectionInfoLoading ? (
+                <LoaderCircle className="h-4 w-4 animate-spin" />
+              ) : (
+                <Download className="h-4 w-4" />
+              )}
+            </Button>
+            {selectedDocuments.length > 0 && (
+              <>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setShowMoveModal(true)}
+                >
+                  <FolderInput className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowDeleteModal(true)}
+                  className="bg-destructive/10 text-destructive hover:bg-destructive/20 hover:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setSelectedDocuments([]);
+                setSelectedFolders([]);
+              }}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
+    <DocumentAutomationsModal
+      open={showAutomationsModal}
+      onOpenChange={setShowAutomationsModal}
+    />
+    </>
   );
 }

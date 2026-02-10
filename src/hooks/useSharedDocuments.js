@@ -1023,6 +1023,123 @@ export function useDownloadFolder() {
   return { downloadFolder, loading };
 }
 
+/**
+ * Hook pour télécharger une sélection de dossiers/documents en ZIP
+ */
+export function useDownloadSelection() {
+  const { workspaceId } = useWorkspace();
+  const [loading, setLoading] = React.useState(false);
+
+  const downloadSelection = async ({ folderIds = [], documentIds = [], excludedFolderIds = [] } = {}) => {
+    if (!workspaceId) {
+      toast.error("Paramètres manquants");
+      return;
+    }
+
+    if (folderIds.length === 0 && documentIds.length === 0) {
+      toast.error("Aucun élément sélectionné");
+      return;
+    }
+
+    const token = localStorage.getItem("bearer_token");
+    if (!token) {
+      toast.error("Non authentifié");
+      return;
+    }
+
+    setLoading(true);
+    const loadingToast = toast.loading("Préparation du téléchargement...");
+
+    try {
+      const response = await fetch("/api/shared-documents/download-selection", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ folderIds, documentIds, excludedFolderIds, workspaceId }),
+      });
+
+      if (!response.ok) {
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          const error = await response.json();
+          throw new Error(error.message || "Erreur lors du téléchargement");
+        } else {
+          throw new Error(`Erreur ${response.status}: ${response.statusText}`);
+        }
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "documents.zip";
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast.dismiss(loadingToast);
+      toast.success("Téléchargement terminé");
+    } catch (error) {
+      console.error("Erreur téléchargement sélection:", error);
+      toast.dismiss(loadingToast);
+      toast.error(error.message || "Erreur lors du téléchargement");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { downloadSelection, loading };
+}
+
+/**
+ * Hook pour récupérer les infos d'une sélection (sous-dossiers, taille, etc.)
+ */
+export function useSelectionInfo() {
+  const { workspaceId } = useWorkspace();
+  const [loading, setLoading] = React.useState(false);
+  const [data, setData] = React.useState(null);
+
+  const fetchSelectionInfo = async ({ folderIds = [], documentIds = [] } = {}) => {
+    if (!workspaceId) return null;
+
+    const token = localStorage.getItem("bearer_token");
+    if (!token) return null;
+
+    setLoading(true);
+    try {
+      const response = await fetch("/api/shared-documents/selection-info", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ folderIds, documentIds, workspaceId }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Erreur lors de la récupération des informations");
+      }
+
+      const result = await response.json();
+      if (result.success) {
+        setData(result.data);
+        return result.data;
+      }
+      return null;
+    } catch (error) {
+      console.error("Erreur récupération info sélection:", error);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return { fetchSelectionInfo, data, loading };
+}
+
 // ==================== HOOKS POUR LA CORBEILLE ====================
 
 /**
