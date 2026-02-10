@@ -270,7 +270,7 @@ def _call_gemini_with_timeout(client, prompt, aspect_ratio, timeout=IMAGE_TIMEOU
         except Exception as e:
             error[0] = e
 
-    thread = threading.Thread(target=_call)
+    thread = threading.Thread(target=_call, daemon=True)
     thread.start()
     thread.join(timeout=timeout)
 
@@ -434,8 +434,7 @@ def main():
     print(f"  Timeout per image: {IMAGE_TIMEOUT}s")
     print(f"  Max retries: {MAX_RETRIES}")
     print(f"  Global timeout: {GLOBAL_TIMEOUT}s ({GLOBAL_TIMEOUT // 60}min)")
-    print("=" * 60)
-    sys.stdout.flush()
+    print("=" * 60, flush=True)
 
     for slug in args.slugs:
         if _check_global_timeout():
@@ -445,8 +444,9 @@ def main():
 
     elapsed = time.time() - _global_start
     print(f"\nDone in {int(elapsed)}s.")
-    # Always exit 0 — image failures should not block article publishing
-    sys.exit(0)
+    sys.stdout.flush()
+    # Force-exit to kill any lingering daemon threads (hanging API calls)
+    os._exit(0)
 
 
 if __name__ == "__main__":

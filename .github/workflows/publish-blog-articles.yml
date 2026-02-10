@@ -10,6 +10,9 @@ on:
         required: false
         default: '3'
 
+permissions:
+  contents: write
+
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -36,6 +39,7 @@ jobs:
       - name: Publish articles and generate images
         env:
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          PYTHONUNBUFFERED: '1'
         run: node scripts/publish-articles.js ${{ github.event.inputs.count || '3' }}
 
       - name: Commit and push changes
