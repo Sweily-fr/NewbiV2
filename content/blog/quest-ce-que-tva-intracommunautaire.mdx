@@ -1,0 +1,364 @@
+---
+title: Qu'est-ce que la TVA intracommunautaire ? Guide pour entrepreneurs
+description: >-
+  Comprendre la TVA intracommunautaire : numéro, obligations, déclaration et cas
+  d'exonération. Guide pratique pour les entreprises françaises.
+date: '2026-02-10'
+category: glossaire
+sector: null
+keyword: TVA intracommunautaire
+author: Newbi
+image: /blog/quest-ce-que-tva-intracommunautaire/hero.webp
+published: false
+publishDate: null
+---
+
+import Image from "next/image"
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex gap-2 mb-8">
+  <Badge variant="secondary">Glossaire</Badge>
+  <Badge variant="outline">7 min de lecture</Badge>
+</div>
+
+Dès lors qu'une entreprise française réalise des échanges commerciaux avec un partenaire situé dans un autre État membre de l'Union européenne, elle est confrontée à la question de la **TVA intracommunautaire**. Ce mécanisme fiscal, parfois perçu comme complexe, constitue pourtant un pilier fondamental du marché unique européen. Que vous vendiez des marchandises à un client allemand, achetiez des matières premières en Italie ou fournissiez une prestation de conseil à une société espagnole, la TVA intracommunautaire détermine qui paie la taxe, dans quel pays et selon quelles modalités. Maîtriser ces règles est indispensable pour facturer correctement, éviter les redressements fiscaux et optimiser votre trésorerie.
+
+<figure className="my-8">
+  <Image
+    src="/blog/quest-ce-que-tva-intracommunautaire/hero.webp"
+    alt="Illustration du fonctionnement de la TVA intracommunautaire entre pays de l'Union européenne"
+    width={1200}
+    height={630}
+    priority
+    fill={false}
+    className="rounded-lg w-full h-auto"
+  />
+  <figcaption className="text-center text-sm text-muted-foreground mt-2">
+    La TVA intracommunautaire régit les échanges de biens et services entre les États membres de l'UE.
+  </figcaption>
+</figure>
+
+<div className="not-prose flex justify-center my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Créer mes factures conformes avec Newbi</Link>
+  </Button>
+</div>
+
+## Qu'est-ce que la TVA intracommunautaire ?
+
+La TVA intracommunautaire désigne l'ensemble des règles de taxe sur la valeur ajoutée applicables aux transactions réalisées entre entreprises situées dans différents pays de l'Union européenne. Contrairement aux opérations domestiques où la TVA est collectée par le vendeur et reversée à l'État, les échanges intracommunautaires obéissent à des mécanismes spécifiques destinés à éviter la double imposition et les distorsions de concurrence.
+
+Le principe fondamental repose sur une idée simple : **la TVA est due dans le pays de destination du bien ou du service**, et non dans le pays d'origine. Ce principe se décline différemment selon que l'on parle de biens ou de services, et selon que les parties sont des professionnels (B2B) ou des particuliers (B2C).
+
+### Le numéro de TVA intracommunautaire : format et obtention
+
+Chaque entreprise assujettie à la TVA dans l'Union européenne se voit attribuer un **numéro d'identification de TVA intracommunautaire**. En France, ce numéro est composé de la manière suivante :
+
+- Le préfixe pays : **FR**
+- Une clé de contrôle à **2 chiffres** (calculée à partir du SIREN)
+- Le numéro **SIREN** de l'entreprise (9 chiffres)
+
+Soit un format : **FR XX 123 456 789** (13 caractères au total).
+
+Ce numéro est attribué automatiquement par le Service des Impôts des Entreprises (SIE) lors de l'immatriculation de l'entreprise, dès lors que celle-ci est assujettie à la TVA. Il figure sur votre attestation d'assujettissement et doit apparaître sur toutes vos factures adressées à des clients européens.
+
+<div className="not-prose my-8">
+  <Callout type="info">
+    Les auto-entrepreneurs bénéficiant de la franchise en base de TVA ne disposent pas de numéro de TVA intracommunautaire par défaut. Ils doivent en faire la demande auprès de leur SIE lorsqu'ils réalisent des acquisitions intracommunautaires dépassant 10 000 euros par an ou des prestations de services avec un partenaire européen. Pour en savoir plus, consultez notre guide sur <Link href="/blog/tva-auto-entrepreneur-seuils-franchise">la TVA et l'auto-entrepreneur</Link>.
+  </Callout>
+</div>
+
+### Vérifier un numéro de TVA intracommunautaire
+
+Avant toute transaction intracommunautaire, il est impératif de vérifier la validité du numéro de TVA de votre partenaire commercial. Le système européen **VIES** (VAT Information Exchange System), accessible en ligne sur le site de la Commission européenne, permet de contrôler instantanément la validité d'un numéro de TVA. Cette vérification constitue une obligation de diligence : en cas de fraude de votre partenaire, vous pourriez perdre le bénéfice de l'exonération si vous n'avez pas effectué ce contrôle.
+
+## Les règles de TVA selon le type d'opération
+
+Le traitement de la TVA intracommunautaire varie considérablement selon la nature de la transaction. Voici un panorama complet des différentes situations.
+
+### Livraisons et acquisitions intracommunautaires de biens
+
+Lorsqu'une entreprise française vend des biens à une entreprise assujettie dans un autre État membre, on parle de **livraison intracommunautaire**. Cette opération est **exonérée de TVA** en France, à condition que :
+
+- L'acheteur dispose d'un numéro de TVA intracommunautaire valide
+- Les biens quittent physiquement le territoire français
+- Le vendeur dispose de preuves de transport (CMR, connaissement, etc.)
+
+En contrepartie, l'acheteur réalise une **acquisition intracommunautaire** dans son pays et doit y déclarer la TVA selon le mécanisme de l'autoliquidation.
+
+### Prestations de services intracommunautaires
+
+Pour les services rendus en B2B entre entreprises de l'UE, la règle générale (article 259-1° du CGI, transposant l'article 44 de la directive TVA) stipule que **la TVA est due dans le pays du preneur** (le client). Le prestataire français facture donc hors taxe et mentionne sur la facture la mention d'autoliquidation. C'est le client étranger qui autoliquide la TVA dans son propre pays.
+
+Il existe cependant des exceptions notables pour certains services rattachés à un lieu physique : les prestations liées à un immeuble (TVA du lieu de l'immeuble), les transports de passagers, les événements culturels ou sportifs, la restauration, etc. Pour approfondir la facturation de services, consultez notre article sur <Link href="/blog/facturer-prestation-service-consultant">comment facturer une prestation de service en tant que consultant</Link>.
+
+<div className="not-prose my-8 overflow-x-auto">
+  <Table>
+    <TableCaption>Comparatif des règles de TVA intracommunautaire selon le type de client</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[200px]">Critère</TableHead>
+        <TableHead>B2B (entre professionnels)</TableHead>
+        <TableHead>B2C (vers un particulier)</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Livraison de biens</TableCell>
+        <TableCell>Exonération dans le pays du vendeur. Autoliquidation par l'acheteur dans son pays.</TableCell>
+        <TableCell>TVA du pays de destination si le seuil de 10 000 EUR de ventes à distance est dépassé (guichet unique OSS).</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Prestations de services (règle générale)</TableCell>
+        <TableCell>TVA due dans le pays du preneur (client). Autoliquidation par le client.</TableCell>
+        <TableCell>TVA due dans le pays du prestataire (vendeur).</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Mention sur la facture</TableCell>
+        <TableCell>"Autoliquidation - article 283-2 du CGI" ou "Reverse charge - art. 196 directive 2006/112/CE"</TableCell>
+        <TableCell>TVA du pays applicable mentionnée sur la facture.</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Numéro de TVA requis</TableCell>
+        <TableCell>Oui, les deux parties doivent avoir un numéro de TVA intracommunautaire valide.</TableCell>
+        <TableCell>Non requis pour le client particulier.</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Déclarations spécifiques</TableCell>
+        <TableCell>DEB (biens), DES (services), CA3 lignes intracommunautaires.</TableCell>
+        <TableCell>Déclaration OSS si applicable.</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+## Le mécanisme d'autoliquidation
+
+L'**autoliquidation** est le coeur du dispositif intracommunautaire en B2B. Concrètement, au lieu que le vendeur collecte la TVA et la reverse au Trésor public de son pays, c'est l'acheteur qui :
+
+1. Déclare la TVA due sur son acquisition dans sa propre déclaration de TVA
+2. Déduit simultanément cette même TVA (s'il dispose d'un droit à déduction intégral)
+
+Le résultat est une opération neutre en termes de trésorerie pour l'acheteur, tout en garantissant que la TVA est bien déclarée dans le pays de consommation. Ce mécanisme évite aux entreprises d'avoir à s'immatriculer à la TVA dans chaque État membre où elles réalisent des ventes.
+
+<figure className="my-8">
+  <Image
+    src="/blog/quest-ce-que-tva-intracommunautaire/autoliquidation-schema.webp"
+    alt="Schéma explicatif du mécanisme d'autoliquidation de la TVA intracommunautaire entre deux entreprises européennes"
+    width={800}
+    height={450}
+    className="rounded-lg w-full h-auto"
+  />
+  <figcaption className="text-center text-sm text-muted-foreground mt-2">
+    Le mécanisme d'autoliquidation permet une neutralité fiscale pour les échanges B2B au sein de l'UE.
+  </figcaption>
+</figure>
+
+<div className="not-prose flex justify-center my-8">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Découvrir notre module de facturation</Link>
+  </Button>
+</div>
+
+## Les obligations déclaratives
+
+### La Déclaration d'Échanges de Biens (DEB) / EMEBI
+
+Depuis 2022, la DEB a été remplacée par deux dispositifs distincts :
+
+- **L'enquête statistique EMEBI** (Enquête Mensuelle sur les Échanges de Biens Intracommunautaires), gérée par la Douane, obligatoire pour les entreprises dépassant certains seuils d'échanges
+- **L'état récapitulatif TVA**, déposé sur le portail douanier, qui recense les livraisons intracommunautaires de biens
+
+Ces déclarations doivent être soumises **mensuellement**, au plus tard le 10e jour ouvrable suivant le mois de référence.
+
+### La Déclaration Européenne de Services (DES)
+
+La **DES** concerne les prestations de services fournies à des preneurs assujettis dans d'autres États membres. Elle doit être déposée au plus tard le 10e jour ouvrable du mois suivant la réalisation de la prestation. Elle recense pour chaque client : son numéro de TVA intracommunautaire et le montant total HT des prestations réalisées.
+
+### La déclaration de TVA (CA3)
+
+Les opérations intracommunautaires doivent être reportées sur des lignes spécifiques de la déclaration de TVA CA3 :
+
+- **Ligne 06** : livraisons intracommunautaires (exonérées)
+- **Ligne 03** : acquisitions intracommunautaires
+- **Ligne 3B** : prestations de services pour lesquelles vous autoliquidez la TVA
+- **Ligne 17** : TVA autoliquidée sur acquisitions intracommunautaires
+
+<div className="not-prose my-8">
+  <Callout type="warning">
+    Le non-respect des obligations déclaratives (DES, état récapitulatif, CA3) expose l'entreprise à des amendes pouvant atteindre **750 euros par déclaration manquante** et à la perte du bénéfice de l'exonération de TVA sur les livraisons intracommunautaires. De plus, avec l'arrivée de la <Link href="/blog/facturation-electronique-obligatoire-2026">facturation électronique obligatoire en 2026</Link>, ces contrôles seront renforcés.
+  </Callout>
+</div>
+
+## Les mentions obligatoires sur la facture
+
+Pour qu'une facture intracommunautaire soit conforme, elle doit comporter, en plus des <Link href="/blog/mentions-obligatoires-facture">mentions obligatoires classiques</Link>, les éléments suivants :
+
+<div className="not-prose my-8 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le numéro de TVA intracommunautaire du vendeur</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le numéro de TVA intracommunautaire de l'acheteur (obligatoire en B2B)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La mention d'exonération de TVA avec la référence légale : "Exonération de TVA - article 262 ter I du CGI" pour les livraisons de biens</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La mention "Autoliquidation" pour les prestations de services (article 283-2 du CGI)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le montant hors taxe de l'opération en euros</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La devise utilisée si différente de l'euro, avec le taux de change appliqué</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Les conditions de livraison (Incoterms) pour les livraisons de biens</span>
+  </div>
+</div>
+
+## Le guichet unique OSS pour les ventes B2C
+
+Depuis le 1er juillet 2021, le **One-Stop Shop (OSS)** simplifie les obligations TVA des entreprises qui vendent des biens ou des services à des particuliers dans d'autres États membres. Au lieu de s'immatriculer dans chaque pays de destination, l'entreprise peut déclarer et payer la TVA due dans tous les États membres via un guichet unique dans son pays d'établissement.
+
+Le seuil unique de **10 000 euros** de chiffre d'affaires annuel en ventes à distance vers d'autres États membres déclenche l'obligation d'appliquer la TVA du pays du client. En dessous de ce seuil, l'entreprise peut continuer à appliquer la TVA française.
+
+<div className="not-prose my-8">
+  <Callout type="tip">
+    Si vous réalisez des ventes à distance vers plusieurs pays de l'UE, l'inscription au guichet unique OSS vous évitera de devoir vous immatriculer à la TVA dans chacun de ces pays. C'est un gain administratif considérable, notamment pour les e-commerçants. L'inscription se fait directement sur le portail impots.gouv.fr.
+  </Callout>
+</div>
+
+## Cas particuliers et points de vigilance
+
+### Les opérations triangulaires
+
+Une opération triangulaire implique trois entreprises situées dans trois États membres différents. Par exemple : une entreprise française (A) vend à une entreprise allemande (B) qui revend à une entreprise italienne (C), mais les biens sont expédiés directement de la France vers l'Italie. Un régime simplifié (article 141 de la directive TVA) permet d'éviter que l'intermédiaire B ne doive s'immatriculer en Italie, à condition de respecter des conditions strictes de facturation et de déclaration.
+
+### Les livraisons avec installation ou montage
+
+Lorsque des biens sont livrés avec installation ou montage dans un autre État membre, l'opération n'est pas considérée comme une livraison intracommunautaire classique. Le vendeur doit généralement s'immatriculer à la TVA dans le pays de destination et y collecter la TVA locale.
+
+### Les stocks en consignation (call-off stock)
+
+Depuis 2020, le régime du **call-off stock** permet à un vendeur de transférer des biens vers un entrepôt situé dans un autre État membre sans déclencher immédiatement une acquisition intracommunautaire, à condition que l'acquéreur soit identifié dès le départ et que les biens soient effectivement vendus dans un délai de 12 mois.
+
+## En résumé
+
+Voici les points essentiels à retenir sur la TVA intracommunautaire :
+
+- **Le numéro de TVA intracommunautaire** (format FR + 2 chiffres + SIREN) est indispensable pour toute opération avec un partenaire européen
+- **En B2B, l'autoliquidation** est le mécanisme central : le vendeur facture HT, l'acheteur déclare et déduit la TVA dans son pays
+- **Les livraisons intracommunautaires de biens** sont exonérées en France sous conditions strictes (numéro de TVA valide, preuve de transport)
+- **Les prestations de services B2B** suivent la règle du lieu du preneur : TVA due dans le pays du client
+- **Les obligations déclaratives** sont multiples : état récapitulatif TVA, DES, lignes spécifiques de la CA3
+- **La vérification du numéro de TVA** du partenaire via VIES est une obligation de diligence incontournable
+- **Le guichet unique OSS** simplifie les ventes B2C à distance au sein de l'UE
+
+<div className="not-prose flex justify-center my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement pour vos factures intracommunautaires</Link>
+  </Button>
+</div>
+
+## Questions fréquentes
+
+<div className="not-prose my-12">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Comment obtenir un numéro de TVA intracommunautaire ?</AccordionTrigger>
+      <AccordionContent>
+        Le numéro de TVA intracommunautaire est attribué automatiquement par le Service des Impôts des Entreprises (SIE) lors de l'immatriculation de votre entreprise, dès lors que vous êtes assujetti à la TVA. Il figure sur votre certificat d'inscription au répertoire SIRENE et sur votre attestation d'assujettissement. Si vous êtes auto-entrepreneur en franchise en base de TVA, vous devez en faire la demande spécifique auprès de votre SIE lorsque vous réalisez des acquisitions intracommunautaires supérieures à 10 000 euros ou des prestations de services intracommunautaires.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Quelle est la différence entre autoliquidation et exonération de TVA ?</AccordionTrigger>
+      <AccordionContent>
+        L'exonération signifie qu'aucune TVA n'est due sur l'opération (comme pour une livraison intracommunautaire de biens). L'autoliquidation, en revanche, signifie que la TVA est bien due, mais c'est l'acheteur (et non le vendeur) qui la déclare et la reverse dans son propre pays. Dans le cas d'une prestation de services B2B intracommunautaire, le prestataire facture hors taxe et le client autoliquide la TVA dans sa déclaration. Le résultat est souvent neutre pour l'acheteur car il déduit simultanément la TVA qu'il autoliquide.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Quelles sanctions en cas de non-respect des obligations intracommunautaires ?</AccordionTrigger>
+      <AccordionContent>
+        Les sanctions peuvent être significatives. L'absence de déclaration DES ou d'état récapitulatif TVA expose à une amende de 750 euros par déclaration manquante. Si l'administration fiscale constate que vous avez appliqué à tort une exonération de TVA sur une livraison intracommunautaire (par exemple sans vérifier le numéro de TVA du client), elle peut exiger le paiement de la TVA française majorée de pénalités de retard (0,20 % par mois) et d'une majoration de 40 % en cas de manquement délibéré.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Un auto-entrepreneur doit-il facturer la TVA sur une prestation intracommunautaire ?</AccordionTrigger>
+      <AccordionContent>
+        Un auto-entrepreneur en franchise en base de TVA facture normalement hors taxe ses prestations, y compris à des clients européens. Toutefois, s'il fournit une prestation de services à un client professionnel dans un autre État membre, il doit obtenir un numéro de TVA intracommunautaire et déposer une DES, même s'il reste en franchise. Le client européen autoliquidera alors la TVA dans son pays. Pour les acquisitions de biens intracommunautaires, si le montant dépasse 10 000 euros par an, l'auto-entrepreneur devra autoliquider la TVA sur ses achats.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Comment fonctionne le guichet unique OSS pour la TVA ?</AccordionTrigger>
+      <AccordionContent>
+        Le guichet unique OSS (One-Stop Shop) permet aux entreprises qui vendent des biens ou des services numériques à des particuliers dans d'autres États membres de l'UE de déclarer et payer la TVA due dans tous ces pays via un portail unique dans leur pays d'établissement. En France, l'inscription se fait sur impots.gouv.fr. Vous déposez une déclaration trimestrielle récapitulant vos ventes par pays de destination et le montant de TVA correspondant. Le fisc français se charge ensuite de reverser la TVA aux États membres concernés. Ce système évite de s'immatriculer à la TVA dans chaque pays de vente.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>
+
+<script type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Comment obtenir un numéro de TVA intracommunautaire ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Le numéro de TVA intracommunautaire est attribué automatiquement par le Service des Impôts des Entreprises (SIE) lors de l'immatriculation de votre entreprise, dès lors que vous êtes assujetti à la TVA. Si vous êtes auto-entrepreneur en franchise en base de TVA, vous devez en faire la demande spécifique auprès de votre SIE lorsque vous réalisez des acquisitions intracommunautaires supérieures à 10 000 euros ou des prestations de services intracommunautaires."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Quelle est la différence entre autoliquidation et exonération de TVA ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "L'exonération signifie qu'aucune TVA n'est due sur l'opération. L'autoliquidation signifie que la TVA est bien due, mais c'est l'acheteur qui la déclare et la reverse dans son propre pays. Dans le cas d'une prestation de services B2B intracommunautaire, le prestataire facture hors taxe et le client autoliquide la TVA dans sa déclaration."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Quelles sanctions en cas de non-respect des obligations intracommunautaires ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "L'absence de déclaration DES ou d'état récapitulatif TVA expose à une amende de 750 euros par déclaration manquante. L'administration fiscale peut exiger le paiement de la TVA française majorée de pénalités de retard et d'une majoration de 40 % en cas de manquement délibéré."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Un auto-entrepreneur doit-il facturer la TVA sur une prestation intracommunautaire ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Un auto-entrepreneur en franchise en base de TVA facture normalement hors taxe. Toutefois, s'il fournit une prestation de services à un client professionnel dans un autre État membre, il doit obtenir un numéro de TVA intracommunautaire et déposer une DES. Le client européen autoliquidera alors la TVA dans son pays."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Comment fonctionne le guichet unique OSS pour la TVA ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Le guichet unique OSS permet aux entreprises qui vendent des biens ou des services numériques à des particuliers dans d'autres États membres de déclarer et payer la TVA due dans tous ces pays via un portail unique dans leur pays d'établissement. En France, l'inscription se fait sur impots.gouv.fr avec une déclaration trimestrielle récapitulant les ventes par pays de destination."
+          }
+        }
+      ]
+    })
+  }}
+/>

@@ -1,3 +1,5 @@
+import { getAllPosts } from "@/src/lib/blog";
+
 /**
  * Sitemap dynamique pour newbi.fr
  * Généré automatiquement par Next.js
@@ -6,7 +8,7 @@
 export default function sitemap() {
   const baseUrl = process.env.NEXT_PUBLIC_BETTER_AUTH_URL || "https://newbi.fr";
 
-  return [
+  const staticPages = [
     // Page d'accueil - Priorité maximale
     {
       url: baseUrl,
@@ -47,6 +49,14 @@ export default function sitemap() {
       priority: 0.8,
     },
 
+    // Blog listing
+    {
+      url: `${baseUrl}/blog`,
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.8,
+    },
+
     // Pages informatives - Priorité moyenne
     {
       url: `${baseUrl}/faq`,
@@ -75,4 +85,14 @@ export default function sitemap() {
       priority: 0.3,
     },
   ];
+
+  const posts = getAllPosts();
+  const blogPages = posts.map((post) => ({
+    url: `${baseUrl}/blog/${post.slug}`,
+    lastModified: new Date(post.publishDate || post.date),
+    changeFrequency: "monthly",
+    priority: 0.7,
+  }));
+
+  return [...staticPages, ...blogPages];
 }

@@ -1,0 +1,389 @@
+---
+title: Gérer plusieurs entreprises avec un seul logiciel de facturation
+description: >-
+  Comment gérer la facturation de plusieurs entreprises depuis un seul outil :
+  multi-comptes, séparation comptable et gain de temps avec Newbi.
+date: '2026-02-10'
+category: guide
+sector: null
+keyword: multi-entreprises gestion facturation
+author: Newbi
+image: /blog/multi-entreprises-gestion-facturation/hero.webp
+published: false
+publishDate: null
+---
+
+import Image from "next/image"
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-8">
+  <Badge variant="secondary">Guide</Badge>
+  <Badge variant="outline">7 min de lecture</Badge>
+</div>
+
+# Gérer plusieurs entreprises avec un seul logiciel de facturation
+
+La **multi-entreprises gestion facturation** est un enjeu majeur pour les entrepreneurs qui cumulent plusieurs structures juridiques. Qu'il s'agisse d'une holding et de ses filiales, d'une SCI couplée à une activité de consulting, ou tout simplement de plusieurs micro-entreprises, jongler entre différents outils de facturation devient vite un cauchemar administratif. Pourtant, il existe des solutions modernes qui permettent de centraliser la gestion de toutes vos entités depuis une seule interface, sans jamais mélanger les données comptables. Découvrez comment simplifier votre quotidien et gagner un temps précieux.
+
+<div className="not-prose my-8">
+  <Image
+    src="/blog/multi-entreprises-gestion-facturation/hero.webp"
+    alt="Gestion de la facturation multi-entreprises depuis un tableau de bord unique"
+    width={1200}
+    height={630}
+    className="rounded-xl border"
+    priority
+  />
+</div>
+
+<div className="not-prose my-6">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Centraliser la facturation de mes entreprises</Link>
+  </Button>
+</div>
+
+## Qui a besoin d'une gestion multi-entreprises ?
+
+La gestion multi-entreprises ne concerne pas uniquement les grands groupes. De nombreux profils d'entrepreneurs sont confrontés à cette problématique au quotidien.
+
+### Les entrepreneurs en série (serial entrepreneurs)
+
+Vous avez lancé une première activité qui fonctionne, puis une deuxième, et peut-être une troisième. Chaque projet a sa propre structure juridique, son propre [numéro SIRET](/blog/quest-ce-que-numero-siret-siren), et ses propres obligations fiscales. Gérer la facturation de chacune de ces entités séparément, avec des outils différents, multiplie les risques d'erreur et le temps passé sur l'administratif.
+
+### Les structures de type holding
+
+Une holding détient des parts dans plusieurs sociétés opérationnelles. La société mère doit facturer des prestations de management fees aux filiales, tandis que chaque filiale a sa propre activité de facturation. La séparation des flux financiers est ici une obligation légale absolue.
+
+### SCI + activité principale
+
+Configuration extrêmement courante en France : un entrepreneur qui possède une SCI (Société Civile Immobilière) pour gérer ses locaux professionnels ou ses investissements immobiliers, en parallèle de son activité principale (SARL, SAS, micro-entreprise). Les deux structures facturent, encaissent, et doivent tenir une comptabilité distincte.
+
+### Consultants et freelances multi-activités
+
+Certains indépendants exercent plusieurs activités sous des statuts différents : une micro-entreprise pour du conseil, une SASU pour une activité de formation, par exemple. Chaque entité a ses propres seuils de TVA, ses propres [mentions obligatoires sur les factures](/blog/mentions-obligatoires-facture) et ses propres obligations déclaratives.
+
+## Les défis concrets de la gestion multi-entreprises
+
+Gérer plusieurs entreprises en matière de facturation soulève des problématiques très concrètes que tout entrepreneur multi-structures connaît.
+
+### Des numéros SIRET et SIREN distincts
+
+Chaque entreprise dispose de son propre identifiant légal. Une facture émise au nom de la mauvaise entité est tout simplement invalide. Il est impératif que votre outil de facturation cloisonne parfaitement les informations de chaque structure.
+
+### Une numérotation de factures séparée
+
+La loi impose une numérotation chronologique et continue des factures pour chaque entité. Impossible de partager une séquence de numérotation entre deux entreprises distinctes : la facture F-2026-001 de votre SASU n'a rien à voir avec la facture F-2026-001 de votre SCI.
+
+### Des comptes bancaires dédiés
+
+Chaque structure doit disposer de son propre compte bancaire professionnel. Le suivi de [trésorerie](/blog/comment-gerer-tresorerie-entreprise) doit être réalisé entreprise par entreprise, avec un rapprochement bancaire propre à chaque entité.
+
+### Des régimes de TVA potentiellement différents
+
+Une micro-entreprise peut être en franchise de TVA, tandis qu'une SAS est assujettie. Mélanger les deux régimes sur un même outil mal configuré peut entraîner des erreurs de facturation lourdes de conséquences fiscales.
+
+<div className="not-prose my-8">
+  <Callout variant="warning" title="Ne mélangez jamais les données de vos entreprises">
+    Mélanger les factures, les clients ou les numérotations entre deux entités juridiques distinctes constitue une faute comptable grave. En cas de contrôle fiscal, cela peut entraîner un rejet de comptabilité, des redressements et des pénalités. Chaque entreprise doit avoir ses propres données parfaitement cloisonnées, même si vous les gérez depuis un seul outil.
+  </Callout>
+</div>
+
+## La solution : un logiciel avec gestion multi-espaces
+
+La réponse à ces défis réside dans un logiciel de facturation qui propose nativement la gestion multi-entreprises via un système d'espaces de travail (workspaces) séparés.
+
+### Comment fonctionne le multi-espace chez Newbi
+
+Avec Newbi, vous créez un compte unique et ajoutez autant d'espaces de travail que vous avez d'entreprises. Chaque espace dispose de :
+
+<div className="not-prose my-6">
+  <ul className="space-y-3">
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span>Ses propres informations légales (SIRET, TVA intracommunautaire, forme juridique)</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span>Sa propre base de clients et de produits</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span>Sa propre numérotation de factures, devis et avoirs</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span>Son propre compte bancaire connecté pour le rapprochement</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span>Son propre régime de TVA et ses paramètres fiscaux</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span>Ses propres modèles de documents personnalisés (logo, couleurs, mentions)</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span>Son propre tableau de bord avec chiffre d'affaires et indicateurs dédiés</span>
+    </li>
+  </ul>
+</div>
+
+Le basculement entre espaces se fait en un clic, directement depuis le tableau de bord. Vous passez de la gestion de votre SCI à celle de votre activité de consulting en une seconde, sans jamais vous déconnecter.
+
+<div className="not-prose my-8">
+  <Callout variant="tip" title="Astuce : utilisez les espaces de travail Newbi">
+    Dans Newbi, chaque espace de travail est totalement indépendant. Vous pouvez même inviter des collaborateurs différents sur chaque espace : votre comptable pour la SCI, votre assistante pour la SASU. Les permissions sont gérées espace par espace, pour un cloisonnement total et une collaboration efficace.
+  </Callout>
+</div>
+
+### Un tableau de bord unifié
+
+L'avantage décisif d'un [logiciel de gestion tout-en-un pour TPE](/blog/logiciel-gestion-tout-en-un-tpe) comme Newbi, c'est de pouvoir consulter une vue d'ensemble de toutes vos entreprises. Chiffre d'affaires global, factures en attente de paiement, trésorerie consolidée : vous avez une vision à 360 degrés de votre écosystème entrepreneurial sans ouvrir plusieurs applications.
+
+## Comparatif : gestion mono-entreprise vs multi-entreprises
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Comparaison entre la gestion avec un seul outil vs plusieurs outils séparés</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[300px]">Critère</TableHead>
+        <TableHead>Outils séparés (un par entreprise)</TableHead>
+        <TableHead>Outil unique multi-entreprises (Newbi)</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Nombre de comptes à gérer</TableCell>
+        <TableCell>Un compte par entreprise</TableCell>
+        <TableCell>Un seul compte pour tout</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Séparation des données</TableCell>
+        <TableCell>Naturelle (outils différents)</TableCell>
+        <TableCell>Garantie par les espaces de travail</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Basculement entre entreprises</TableCell>
+        <TableCell>Déconnexion / reconnexion</TableCell>
+        <TableCell>Un clic depuis le menu</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Vue consolidée</TableCell>
+        <TableCell>Impossible (données dispersées)</TableCell>
+        <TableCell>Tableau de bord global disponible</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Coût mensuel</TableCell>
+        <TableCell>Multiplié par le nombre d'entreprises</TableCell>
+        <TableCell>Formule multi-entreprises avantageuse</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Gestion des collaborateurs</TableCell>
+        <TableCell>Invitations séparées sur chaque outil</TableCell>
+        <TableCell>Permissions par espace de travail</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Risque de mélange de données</TableCell>
+        <TableCell>Faible mais temps perdu élevé</TableCell>
+        <TableCell>Nul grâce au cloisonnement natif</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Export comptable</TableCell>
+        <TableCell>Un export par outil</TableCell>
+        <TableCell>Un export par espace, depuis un seul endroit</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+## Les obligations légales par entité : ce qu'il faut respecter
+
+Chaque entreprise, quelle que soit sa forme juridique, doit respecter un certain nombre d'obligations en matière de facturation. Voici les points essentiels à vérifier pour chaque structure.
+
+### Mentions obligatoires sur les factures
+
+Les [mentions obligatoires sur une facture](/blog/mentions-obligatoires-facture) varient selon le statut de l'entreprise. Une micro-entreprise en franchise de TVA doit afficher la mention "TVA non applicable, art. 293 B du CGI", tandis qu'une société assujettie doit indiquer son numéro de TVA intracommunautaire et détailler la TVA applicable.
+
+### Numérotation et archivage
+
+Chaque entité doit disposer d'une numérotation chronologique propre, sans rupture ni doublon. Les factures doivent être archivées pendant 10 ans pour chaque structure, de manière distincte et traçable.
+
+### Conformité e-invoicing
+
+Avec l'entrée en vigueur progressive de la facturation électronique obligatoire en France, chaque entreprise assujettie à la TVA devra émettre et recevoir ses factures via une plateforme de dématérialisation partenaire (PDP). Votre outil de facturation doit être capable de gérer cette conformité pour chacune de vos entités séparément.
+
+<div className="not-prose my-8">
+  <Image
+    src="/blog/multi-entreprises-gestion-facturation/workspace-switch.webp"
+    alt="Basculement entre espaces de travail multi-entreprises dans Newbi"
+    width={800}
+    height={450}
+    className="rounded-xl border"
+  />
+</div>
+
+<div className="not-prose my-6">
+  <Button asChild variant="outline">
+    <Link href="/tarifs">Voir les offres multi-entreprises</Link>
+  </Button>
+</div>
+
+## Comment mettre en place votre gestion multi-entreprises avec Newbi
+
+La mise en place est simple et ne prend que quelques minutes par entreprise.
+
+<div className="not-prose my-6">
+  <ul className="space-y-3">
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span><strong>Étape 1 :</strong> Créez votre compte Newbi et configurez votre première entreprise (informations légales, logo, coordonnées bancaires)</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span><strong>Étape 2 :</strong> Ajoutez un nouvel espace de travail pour chaque entreprise supplémentaire depuis les paramètres de votre compte</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span><strong>Étape 3 :</strong> Renseignez les informations légales propres à chaque entité (SIRET, adresse, régime fiscal, numéro de TVA)</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span><strong>Étape 4 :</strong> Personnalisez les modèles de factures et devis pour chaque entreprise (logo, couleurs, mentions légales spécifiques)</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span><strong>Étape 5 :</strong> Connectez le compte bancaire de chaque entreprise pour automatiser le rapprochement bancaire</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span><strong>Étape 6 :</strong> Invitez vos collaborateurs ou votre comptable sur les espaces concernés avec les bons niveaux de permission</span>
+    </li>
+  </ul>
+</div>
+
+## Les avantages concrets au quotidien
+
+Centraliser la facturation de plusieurs entreprises dans un seul outil ne se résume pas à un simple confort. Les bénéfices sont tangibles et mesurables.
+
+**Gain de temps considérable.** Plus besoin de jongler entre plusieurs applications, plusieurs identifiants, plusieurs interfaces. Tout est accessible depuis un point d'entrée unique. Les entrepreneurs multi-structures rapportent en moyenne 3 à 5 heures gagnées par mois sur les tâches administratives.
+
+**Réduction des erreurs.** Le cloisonnement natif des espaces de travail élimine le risque d'émettre une facture avec les mauvaises coordonnées, le mauvais SIRET ou le mauvais régime de TVA. Chaque espace est configuré une fois pour toutes.
+
+**Meilleure visibilité financière.** En consultant la vue d'ensemble, vous identifiez immédiatement quelle entreprise performe, laquelle a des impayés, et où se situe votre trésorerie globale. C'est un outil de pilotage stratégique autant qu'un outil de facturation.
+
+**Coût maîtrisé.** Au lieu de payer un abonnement complet pour chaque entreprise sur des outils différents, Newbi propose des formules multi-entreprises qui permettent de réduire significativement le budget logiciel.
+
+## En résumé
+
+La **multi-entreprises gestion facturation** est un besoin réel pour un nombre croissant d'entrepreneurs en France. Que vous gériez une holding, une SCI en parallèle de votre activité principale, ou simplement plusieurs projets entrepreneuriaux, il est essentiel de disposer d'un outil qui garantit la séparation légale des données tout en offrant une expérience unifiée et fluide. Newbi a été conçu pour répondre exactement à ce besoin : des espaces de travail indépendants, un basculement instantané, un tableau de bord global et une conformité légale assurée pour chaque entité. Fini les tableurs croisés et les connexions multiples, place à une gestion sereine et professionnelle de toutes vos entreprises.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Gérer toutes mes entreprises avec Newbi</Link>
+  </Button>
+</div>
+
+## Questions fréquentes
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="faq-1">
+      <AccordionTrigger>Peut-on gérer un nombre illimité d'entreprises avec Newbi ?</AccordionTrigger>
+      <AccordionContent>
+        Newbi permet de créer plusieurs espaces de travail correspondant chacun à une entreprise distincte. Le nombre d'espaces disponibles dépend de votre formule d'abonnement. Consultez notre page tarifs pour connaître les détails de chaque offre et choisir celle qui correspond à votre situation.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-2">
+      <AccordionTrigger>Les données de mes différentes entreprises sont-elles vraiment séparées ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, totalement. Chaque espace de travail fonctionne de manière indépendante avec ses propres clients, factures, devis, produits, numérotation et paramètres fiscaux. Il est techniquement impossible de mélanger les données entre deux espaces. Cette architecture garantit la conformité comptable et fiscale de chacune de vos entités.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-3">
+      <AccordionTrigger>Puis-je inviter des collaborateurs différents sur chaque entreprise ?</AccordionTrigger>
+      <AccordionContent>
+        Absolument. Le système de permissions de Newbi est géré espace par espace. Vous pouvez inviter votre comptable uniquement sur la SCI, votre assistante commerciale sur votre SASU, et garder un accès administrateur global sur tous les espaces. Chaque collaborateur ne voit que les données de l'espace auquel il a été invité.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-4">
+      <AccordionTrigger>Est-ce que chaque entreprise peut avoir son propre modèle de facture ?</AccordionTrigger>
+      <AccordionContent>
+        Oui. Chaque espace de travail dispose de ses propres paramètres de personnalisation : logo, couleurs, mentions légales, conditions générales de vente, coordonnées bancaires et modèles de documents. Vos factures reflètent fidèlement l'identité de chaque entreprise, tout en étant gérées depuis la même interface.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>
+
+<script type="application/ld+json" dangerouslySetInnerHTML={{__html: JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Gérer plusieurs entreprises avec un seul logiciel de facturation",
+  "description": "Comment gérer la facturation de plusieurs entreprises depuis un seul outil : multi-comptes, séparation comptable et gain de temps avec Newbi.",
+  "author": {
+    "@type": "Organization",
+    "name": "Newbi",
+    "url": "https://newbi.fr"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Newbi",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://newbi.fr/logo.png"
+    }
+  },
+  "datePublished": "2026-02-10",
+  "dateModified": "2026-02-10",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://newbi.fr/blog/multi-entreprises-gestion-facturation"
+  },
+  "image": "https://newbi.fr/blog/multi-entreprises-gestion-facturation/hero.webp",
+  "keywords": "multi-entreprises gestion facturation, facturation multi-sociétés, logiciel facturation plusieurs entreprises, gestion multi-comptes",
+  "FAQPage": {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Peut-on gérer un nombre illimité d'entreprises avec Newbi ?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Newbi permet de créer plusieurs espaces de travail correspondant chacun à une entreprise distincte. Le nombre d'espaces disponibles dépend de votre formule d'abonnement. Consultez notre page tarifs pour connaître les détails de chaque offre et choisir celle qui correspond à votre situation."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Les données de mes différentes entreprises sont-elles vraiment séparées ?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Oui, totalement. Chaque espace de travail fonctionne de manière indépendante avec ses propres clients, factures, devis, produits, numérotation et paramètres fiscaux. Il est techniquement impossible de mélanger les données entre deux espaces."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Puis-je inviter des collaborateurs différents sur chaque entreprise ?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Absolument. Le système de permissions de Newbi est géré espace par espace. Vous pouvez inviter votre comptable uniquement sur la SCI, votre assistante commerciale sur votre SASU, et garder un accès administrateur global sur tous les espaces."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Est-ce que chaque entreprise peut avoir son propre modèle de facture ?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Oui. Chaque espace de travail dispose de ses propres paramètres de personnalisation : logo, couleurs, mentions légales, conditions générales de vente, coordonnées bancaires et modèles de documents."
+        }
+      }
+    ]
+  }
+})}} />

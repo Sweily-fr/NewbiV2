@@ -1,0 +1,354 @@
+---
+title: 'Facture BTP : mentions spécifiques et obligations pour artisans'
+description: >-
+  Tout savoir sur la facturation dans le BTP : mentions obligatoires, garantie
+  décennale, retenue de garantie et modèle de facture pour artisans.
+date: '2026-02-10'
+category: guide
+sector: BTP / Artisans
+keyword: facture BTP artisan
+author: Newbi
+image: /blog/facture-btp-artisan-mentions-specifiques/hero.webp
+published: false
+publishDate: null
+---
+
+import Image from "next/image"
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex gap-2 my-4">
+  <Badge>Guide</Badge>
+  <Badge variant="secondary">BTP</Badge>
+  <Badge variant="outline">10 min de lecture</Badge>
+</div>
+
+La facturation dans le **BTP** est soumise à des règles spécifiques qui s'ajoutent aux [mentions obligatoires standard](/blog/mentions-obligatoires-facture). Assurance décennale, retenue de garantie, situations de travaux, TVA réduite : un artisan du bâtiment doit maîtriser ces particularités pour établir des factures conformes et éviter les litiges. Ce guide complet vous explique tout ce qu'il faut savoir sur la **facture BTP pour artisans**.
+
+<div className="not-prose my-8 relative aspect-video overflow-hidden rounded-lg">
+  <Image
+    src="/blog/facture-btp-artisan-mentions-specifiques/hero.webp"
+    alt="Exemple de facture BTP avec mentions spécifiques pour artisans du bâtiment"
+    fill
+    className="object-cover"
+    priority
+    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 720px"
+  />
+</div>
+
+<div className="not-prose flex justify-center my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Créer mes factures BTP avec Newbi</Link>
+  </Button>
+</div>
+
+## Les mentions obligatoires spécifiques au BTP
+
+En plus des mentions communes à toutes les factures, une facture BTP doit impérativement comporter :
+
+<figure className="not-prose my-8">
+  <div className="relative aspect-video overflow-hidden rounded-lg border">
+    <Image
+      src="/blog/facture-btp-artisan-mentions-specifiques/section-1.webp"
+      alt="Schéma des mentions obligatoires spécifiques aux factures BTP"
+      fill
+      className="object-cover"
+      sizes="(max-width: 768px) 100vw, 720px"
+    />
+  </div>
+  <figcaption className="mt-2 text-center text-sm text-muted-foreground">
+    Les mentions spécifiques au BTP à ajouter sur vos factures
+  </figcaption>
+</figure>
+
+### 1. L'assurance décennale
+
+Depuis la loi Pinel de 2014, tout artisan du BTP doit mentionner sur ses factures (et ses devis) :
+
+- Le **nom et les coordonnées de l'assureur** décennale
+- Le **numéro de police** d'assurance
+- La **zone géographique de couverture**
+
+Cette obligation s'applique à tous les professionnels du bâtiment dont les travaux sont soumis à la garantie décennale. Pour en savoir plus, consultez notre article sur l'[assurance décennale pour artisans](/blog/obligation-assurance-decennale-artisan).
+
+<Callout type="warning">
+  L'absence de mention de l'assurance décennale sur une facture ou un devis est passible d'une amende de **1 500 €** (3 000 € en cas de récidive). De plus, le client peut utiliser cette omission en cas de litige.
+</Callout>
+
+### 2. La qualification professionnelle
+
+Les artisans du BTP doivent également mentionner :
+
+- Le **numéro d'inscription au répertoire des métiers** (RM)
+- La ville du répertoire des métiers
+- Le cas échéant, les **qualifications et certifications** (Qualibat, RGE, etc.)
+
+### 3. L'adresse du chantier
+
+Contrairement aux factures de services classiques, une facture BTP doit préciser l'**adresse exacte du chantier** où les travaux sont réalisés. C'est essentiel pour :
+
+- La traçabilité des travaux
+- La justification du taux de TVA réduit (si applicable)
+- La couverture par l'assurance décennale
+
+## La TVA dans le BTP : quel taux appliquer ?
+
+Le BTP bénéficie de taux de TVA réduits dans certaines situations. Le choix du bon taux est crucial.
+
+<div className="not-prose my-8 overflow-x-auto">
+  <Table>
+    <TableCaption>Taux de TVA applicables dans le BTP en 2026</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead>Type de travaux</TableHead>
+        <TableHead>Condition</TableHead>
+        <TableHead>Taux de TVA</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-semibold">Construction neuve</TableCell>
+        <TableCell>Bâtiment neuf ou extension</TableCell>
+        <TableCell>20 %</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-semibold">Rénovation</TableCell>
+        <TableCell>Logement de + de 2 ans, amélioration</TableCell>
+        <TableCell>10 %</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-semibold">Rénovation énergétique</TableCell>
+        <TableCell>Travaux d'amélioration énergétique (isolation, chauffage)</TableCell>
+        <TableCell>5,5 %</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-semibold">Travaux d'urgence</TableCell>
+        <TableCell>Selon la nature (dépannage, réparation)</TableCell>
+        <TableCell>10 % ou 20 %</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+<Callout type="info">
+  Pour appliquer un taux réduit de TVA (10 % ou 5,5 %), vous devez obtenir une **attestation simplifiée** (formulaire CERFA n°1301-SD) signée par le client, confirmant que le logement a plus de 2 ans et que les travaux remplissent les conditions requises. Conservez ce document avec la facture.
+</Callout>
+
+Pour un guide complet sur les taux, consultez notre article sur les [taux de TVA en France](/blog/taux-tva-france-guide-complet).
+
+## La retenue de garantie
+
+Dans le BTP, le maître d'ouvrage (client) peut retenir **5 % du montant TTC** de chaque facture à titre de garantie. Cette retenue de garantie :
+
+- Protège le client contre d'éventuelles malfaçons
+- Est restituée au plus tard **1 an après la réception des travaux** (sauf réserves non levées)
+- Doit être clairement mentionnée sur la facture
+
+### Comment facturer avec retenue de garantie
+
+Votre facture doit faire apparaître :
+
+1. Le montant total HT des travaux
+2. La TVA
+3. Le montant total TTC
+4. La retenue de garantie de 5 % (en déduction)
+5. Le **net à payer** (montant TTC moins la retenue)
+
+<figure className="not-prose my-8">
+  <div className="relative aspect-video overflow-hidden rounded-lg border">
+    <Image
+      src="/blog/facture-btp-artisan-mentions-specifiques/retenue-garantie.webp"
+      alt="Exemple de calcul de retenue de garantie sur une facture BTP"
+      fill
+      className="object-cover"
+      sizes="(max-width: 768px) 100vw, 720px"
+    />
+  </div>
+  <figcaption className="mt-2 text-center text-sm text-muted-foreground">
+    Exemple de facturation avec retenue de garantie de 5 %
+  </figcaption>
+</figure>
+
+## Les factures de situation de travaux
+
+Pour les chantiers importants, les artisans émettent des **factures de situation** (ou factures d'avancement) qui correspondent à un pourcentage d'avancement des travaux. Pour un guide détaillé, consultez notre article sur la [facture de situation de travaux BTP](/blog/facture-situation-travaux-btp).
+
+Chaque facture de situation doit mentionner :
+
+- Le **pourcentage d'avancement** global
+- Le **montant cumulé** des travaux réalisés
+- Le montant des **situations précédentes** (déjà facturé)
+- Le **montant de la situation actuelle** (différence)
+- La retenue de garantie sur le montant de la situation
+
+<div className="not-prose flex justify-center my-6">
+  <Button asChild variant="outline">
+    <Link href="https://meet.brevo.com/sweily/newbi">Demander une démo facturation BTP</Link>
+  </Button>
+</div>
+
+## Autoliquidation de TVA en sous-traitance
+
+Quand un artisan travaille en **sous-traitance**, la TVA est autoliquidée par le donneur d'ordre (entrepreneur principal). Cela signifie :
+
+- Le sous-traitant facture **HT** (sans TVA)
+- Il inscrit sur sa facture : **« Autoliquidation de TVA — article 283-2 nonies du CGI »**
+- C'est le donneur d'ordre qui déclare et paie la TVA
+
+<Callout type="danger">
+  L'autoliquidation est **obligatoire** en sous-traitance BTP. Facturer la TVA alors qu'elle devrait être autoliquidée est une erreur grave qui peut entraîner un redressement fiscal.
+</Callout>
+
+## Le devis BTP : un complément indispensable
+
+Avant la facture, le [devis de travaux BTP](/blog/devis-travaux-btp-guide) est essentiel. Il doit être encore plus détaillé qu'un devis classique :
+
+<div className="not-prose my-8">
+  <ul className="grid gap-3" role="list">
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span className="text-muted-foreground">Détail des lots et des postes de travaux</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span className="text-muted-foreground">Quantités et métrés précis</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span className="text-muted-foreground">Mention de l'assurance décennale</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span className="text-muted-foreground">Délais de réalisation</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span className="text-muted-foreground">Conditions de la retenue de garantie</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span className="text-muted-foreground">Taux de TVA applicable avec justification</span>
+    </li>
+  </ul>
+</div>
+
+## Pourquoi utiliser un logiciel de facturation BTP
+
+Un logiciel adapté au BTP comme Newbi vous offre :
+
+- Les mentions d'**assurance décennale** pré-remplies
+- La gestion de la **retenue de garantie** automatique
+- Les **factures de situation** avec calcul d'avancement
+- La mention d'**autoliquidation** pour la sous-traitance
+- Le choix du **taux de TVA** avec vérification
+- Le [suivi de trésorerie](/blog/comment-gerer-tresorerie-entreprise) adapté aux longs chantiers
+
+Consultez aussi notre [Top 6 des logiciels de facturation pour artisans](/blog/top-6-logiciels-facturation-artisan).
+
+## En résumé
+
+La facturation BTP demande une attention particulière aux mentions spécifiques :
+
+- Mentionnez toujours votre **assurance décennale** (nom, numéro, zone)
+- Indiquez l'**adresse du chantier** sur chaque facture
+- Appliquez le **bon taux de TVA** (20 %, 10 % ou 5,5 %) avec l'attestation client
+- Gérez la **retenue de garantie** de 5 % correctement
+- Utilisez l'**autoliquidation** en sous-traitance
+- Établissez des **factures de situation** pour les chantiers longs
+
+Un logiciel de facturation adapté au BTP comme Newbi intègre toutes ces spécificités pour vous garantir des factures conformes sans effort.
+
+<div className="not-prose flex justify-center my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement pendant 30 jours</Link>
+  </Button>
+</div>
+
+## Questions fréquentes
+
+<div className="not-prose my-12">
+  <Accordion type="multiple">
+    <AccordionItem value="faq-0">
+      <AccordionTrigger>L'assurance décennale est-elle obligatoire sur les factures BTP ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, depuis la loi Pinel de 2014, les artisans du BTP doivent mentionner les coordonnées de leur assurance décennale (nom, numéro de police, zone de couverture) sur tous leurs devis et factures. L'amende pour non-respect est de 1 500 € (3 000 € en récidive).
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-1">
+      <AccordionTrigger>Quand appliquer la TVA à 10 % dans le BTP ?</AccordionTrigger>
+      <AccordionContent>
+        Le taux réduit de 10 % s'applique aux travaux d'amélioration, de transformation, d'aménagement et d'entretien réalisés dans des logements d'habitation achevés depuis plus de 2 ans. Le client doit fournir une attestation CERFA confirmant ces conditions.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-2">
+      <AccordionTrigger>Comment fonctionne la retenue de garantie de 5 % ?</AccordionTrigger>
+      <AccordionContent>
+        Le maître d'ouvrage peut retenir 5 % du montant TTC de chaque facture. Cette somme est consignée et restituée au plus tard 1 an après la réception des travaux, sauf si des réserves n'ont pas été levées. La retenue doit être mentionnée sur la facture.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-3">
+      <AccordionTrigger>Qu'est-ce que l'autoliquidation de TVA en sous-traitance BTP ?</AccordionTrigger>
+      <AccordionContent>
+        Quand un artisan travaille comme sous-traitant, il facture hors taxes (sans TVA) et mentionne « Autoliquidation de TVA — article 283-2 nonies du CGI ». C'est l'entrepreneur principal qui déclare et paie la TVA à la place du sous-traitant.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-4">
+      <AccordionTrigger>Newbi gère-t-il les factures de situation de travaux ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, Newbi permet de créer des factures de situation avec pourcentage d'avancement, montant cumulé, déduction des situations précédentes et retenue de garantie. L'outil calcule automatiquement les montants pour chaque situation.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>
+
+<script type="application/ld+json" dangerouslySetInnerHTML={{__html: JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "L'assurance décennale est-elle obligatoire sur les factures BTP ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Oui, depuis la loi Pinel de 2014. Amende de 1 500 € pour non-respect."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Quand appliquer la TVA à 10 % dans le BTP ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Pour les travaux dans des logements de plus de 2 ans avec attestation CERFA du client."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Comment fonctionne la retenue de garantie ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "5 % du montant TTC retenu et restitué au plus tard 1 an après réception des travaux."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Qu'est-ce que l'autoliquidation en sous-traitance BTP ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Le sous-traitant facture HT. L'entrepreneur principal déclare et paie la TVA."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Newbi gère-t-il les factures de situation ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Oui, avec avancement, cumul, déduction des situations précédentes et retenue de garantie."
+      }
+    }
+  ]
+})}} />

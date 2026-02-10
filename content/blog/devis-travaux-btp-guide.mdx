@@ -1,0 +1,446 @@
+---
+title: Comment rédiger un devis de travaux BTP conforme et détaillé
+description: >-
+  Rédigez un devis de travaux BTP conforme : mentions obligatoires, postes de
+  dépenses, modèle téléchargeable et astuces pour convaincre vos clients.
+date: '2026-02-10'
+category: guide
+sector: BTP / Artisans
+keyword: devis travaux BTP
+author: Newbi
+image: /blog/devis-travaux-btp-guide/hero.webp
+published: false
+publishDate: null
+---
+
+import Image from "next/image"
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex flex-wrap gap-2 mb-8">
+  <Badge variant="outline">Guide</Badge>
+  <Badge variant="secondary">BTP / Artisans</Badge>
+  <Badge variant="outline">Lecture : 9 min</Badge>
+</div>
+
+Dans le secteur du bâtiment et des travaux publics, le **devis travaux BTP** est bien plus qu'un simple document commercial. C'est un engagement contractuel qui protège autant l'artisan que le client, et qui conditionne la bonne exécution du chantier. Un devis mal rédigé peut entraîner des litiges, des retards de paiement, voire la remise en cause de votre responsabilité décennale. Pourtant, nombreux sont les professionnels du BTP qui sous-estiment l'importance d'un devis conforme, détaillé et structuré. Ce guide complet vous accompagne pas à pas pour rédiger des devis irréprochables, conformes à la réglementation en vigueur, et suffisamment convaincants pour remporter vos marchés.
+
+<figure className="my-8">
+  <Image
+    src="/blog/devis-travaux-btp-guide/hero.webp"
+    alt="Artisan du BTP rédigeant un devis de travaux détaillé sur un bureau de chantier"
+    width={1200}
+    height={630}
+    priority
+    fill={false}
+    className="rounded-lg w-full h-auto"
+  />
+</figure>
+
+<div className="not-prose flex justify-center my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Créer mon devis BTP gratuitement</Link>
+  </Button>
+</div>
+
+## Pourquoi le devis est-il obligatoire dans le BTP ?
+
+En France, le devis est **obligatoire** pour tout travail dont le montant dépasse 150 euros TTC, conformément à l'arrêté du 2 mars 1990 relatif à la publicité des prix des prestations de dépannage, réparation et entretien dans le secteur du bâtiment. Au-delà de cette obligation légale, le devis remplit plusieurs fonctions essentielles dans le secteur du BTP.
+
+### Un cadre juridique protecteur
+
+Une fois signé par le client, le devis vaut contrat. Il engage les deux parties sur le périmètre des travaux, les délais, les prix et les conditions d'exécution. En cas de litige, c'est le document de référence que le tribunal examinera en priorité. Pour les travaux importants, il constitue la base de tout recours au titre de la garantie de parfait achèvement ou de la **garantie décennale**.
+
+### Un outil de confiance commerciale
+
+Un devis clair, détaillé et professionnel rassure votre client. Il démontre votre sérieux, votre maîtrise technique et votre transparence. Dans un secteur où la concurrence est forte, la qualité de votre devis peut faire la différence entre un chantier décroché et une opportunité manquée.
+
+<div className="not-prose my-8">
+  <Callout type="info">
+    Depuis le 1er avril 2022, les devis des professionnels du bâtiment doivent obligatoirement mentionner les informations relatives à la gestion des déchets de chantier, conformément à la loi anti-gaspillage (AGEC). Pensez à intégrer cette mention dans vos modèles.
+  </Callout>
+</div>
+
+## Les mentions obligatoires d'un devis travaux BTP
+
+Un devis conforme doit comporter un certain nombre de mentions imposées par le Code de la consommation et les réglementations spécifiques au BTP. Voici la liste exhaustive des éléments à ne jamais oublier.
+
+### Informations sur l'entreprise
+
+- Raison sociale ou nom de l'entrepreneur individuel
+- Numéro SIRET et code APE/NAF
+- Adresse du siège social
+- Numéro de téléphone et adresse e-mail
+- Numéro d'inscription au registre du commerce (RCS) ou au répertoire des métiers (RM)
+- **Numéro d'assurance décennale** et nom de l'assureur
+- Mention de la qualification professionnelle (Qualibat, RGE, etc.)
+
+### Informations sur le client
+
+- Nom ou raison sociale du client
+- Adresse complète du chantier (si différente de l'adresse du client)
+- Adresse de facturation
+
+### Détails des travaux
+
+- Description précise de chaque poste de travaux
+- Quantités et unités de mesure (m2, mL, forfait, unité, etc.)
+- Prix unitaire HT de chaque poste
+- Montant total HT par poste
+- Fournitures détaillées avec références si nécessaire
+- Main-d'oeuvre détaillée par poste
+
+### Informations financières
+
+- Montant total HT
+- Taux de TVA applicables (20 %, 10 % ou 5,5 % selon la nature des travaux)
+- Montant de la TVA
+- Montant total TTC
+- Conditions de paiement (acompte, échéancier, retenue de garantie)
+- Durée de validité du devis
+
+<div className="not-prose my-8 overflow-x-auto">
+  <Table>
+    <TableCaption>Taux de TVA applicables selon le type de travaux BTP</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead>Type de travaux</TableHead>
+        <TableHead>Taux de TVA</TableHead>
+        <TableHead>Conditions</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell>Construction neuve</TableCell>
+        <TableCell>20 %</TableCell>
+        <TableCell>Tous travaux de construction neuve, extensions, surélévations</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell>Rénovation / amélioration</TableCell>
+        <TableCell>10 %</TableCell>
+        <TableCell>Logement achevé depuis plus de 2 ans, travaux d'amélioration, transformation ou entretien</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell>Rénovation énergétique</TableCell>
+        <TableCell>5,5 %</TableCell>
+        <TableCell>Travaux d'amélioration de la performance énergétique (isolation, chauffage, etc.) et travaux induits</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell>Travaux d'urgence / dépannage</TableCell>
+        <TableCell>10 % ou 20 %</TableCell>
+        <TableCell>Selon l'ancienneté du logement et la nature de l'intervention</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell>Gros oeuvre (neuf)</TableCell>
+        <TableCell>20 %</TableCell>
+        <TableCell>Fondations, maçonnerie, charpente dans le cadre d'une construction neuve</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+Pour approfondir les mentions spécifiques aux factures du BTP, consultez notre article dédié sur les [mentions obligatoires des factures BTP pour artisans](/blog/facture-btp-artisan-mentions-specifiques).
+
+## Structurer les postes de dépenses d'un devis BTP
+
+La clarté de la ventilation des postes est un critère déterminant pour la crédibilité de votre devis. Un client du BTP s'attend à retrouver une organisation logique qui reflète le déroulement du chantier.
+
+### Les grandes catégories de postes
+
+Un devis de travaux BTP bien structuré s'articule généralement autour des postes suivants :
+
+1. **Préparation du chantier** : installation de chantier, balisage, protection des existants, démarches administratives
+2. **Gros oeuvre** : terrassement, fondations, maçonnerie, béton armé, charpente
+3. **Second oeuvre** : isolation, plâtrerie, menuiseries, électricité, plomberie, carrelage, peinture
+4. **Finitions** : revêtements de sol, peinture décorative, équipements sanitaires
+5. **Nettoyage et évacuation** : nettoyage de fin de chantier, évacuation des déchets (mention AGEC)
+
+<figure className="my-8">
+  <Image
+    src="/blog/devis-travaux-btp-guide/section-1.webp"
+    alt="Exemple de ventilation des postes de dépenses dans un devis de travaux BTP détaillé"
+    width={800}
+    height={450}
+    className="rounded-lg w-full h-auto"
+  />
+  <figcaption className="text-center text-sm text-muted-foreground mt-2">
+    Exemple de structure de devis BTP avec ventilation par postes de travaux
+  </figcaption>
+</figure>
+
+### Détailler la main-d'oeuvre et les fournitures
+
+Pour chaque poste, dissociez systématiquement :
+
+- **Les fournitures** : matériaux, équipements, consommables, avec si possible les références produit et les marques
+- **La main-d'oeuvre** : temps estimé, taux horaire, nombre d'ouvriers mobilisés
+- **Les prestations sous-traitées** : le cas échéant, identifiez les lots confiés à des sous-traitants
+
+Cette transparence permet au client de comparer vos tarifs poste par poste et renforce la confiance. Elle facilite également la gestion des avenants en cours de chantier.
+
+<div className="not-prose flex justify-center my-8">
+  <Button asChild variant="outline">
+    <Link href="/produits/devis">Découvrir notre outil de création de devis</Link>
+  </Button>
+</div>
+
+## L'assurance décennale et les garanties dans le devis
+
+L'un des éléments distinctifs du devis BTP par rapport aux devis d'autres secteurs est l'obligation de mentionner les assurances professionnelles. C'est un point de vigilance majeur.
+
+### La mention de l'assurance décennale
+
+Tout professionnel du BTP réalisant des travaux de construction ou de rénovation structurelle est tenu de souscrire une **assurance de responsabilité civile décennale**. Le devis doit obligatoirement mentionner :
+
+- Le nom de la compagnie d'assurance
+- Le numéro du contrat d'assurance
+- La couverture géographique du contrat
+- La période de validité de la garantie
+
+Pour en savoir plus sur cette obligation, nous vous recommandons notre article sur l'[obligation d'assurance décennale pour les artisans](/blog/obligation-assurance-decennale-artisan).
+
+<div className="not-prose my-8">
+  <Callout type="warning">
+    L'absence de mention de l'assurance décennale sur un devis constitue une infraction passible d'une amende de 75 000 euros et d'une peine de six mois d'emprisonnement. Ne prenez aucun risque : vérifiez systématiquement que cette information figure sur tous vos devis.
+  </Callout>
+</div>
+
+### La retenue de garantie
+
+Pour les chantiers d'un montant significatif, le devis peut prévoir une **retenue de garantie** de 5 % maximum du montant TTC des travaux. Cette retenue, encadrée par la loi du 16 juillet 1971, est conservée par le maître d'ouvrage pendant un an après la réception des travaux pour couvrir d'éventuelles réserves. Pensez à préciser clairement dans votre devis :
+
+- Le pourcentage de retenue appliqué
+- Les conditions de libération de la retenue
+- La possibilité de substituer une caution bancaire
+
+## Conditions de paiement et acomptes
+
+La gestion financière d'un chantier BTP passe par un échéancier de paiement bien défini dès le devis. Voici les bonnes pratiques.
+
+### Structurer l'échéancier
+
+Un échéancier type pour un chantier BTP peut se présenter ainsi :
+
+- **Acompte à la signature** : 20 % à 30 % du montant TTC
+- **Appels de fonds intermédiaires** : factures de situation à chaque étape clé du chantier
+- **Solde à la réception** : le reliquat, déduction faite de la retenue de garantie éventuelle
+
+Pour les chantiers importants, les factures de situation sont indispensables. Découvrez comment les établir dans notre guide sur la [facture de situation de travaux BTP](/blog/facture-situation-travaux-btp).
+
+### Pénalités de retard
+
+N'oubliez pas de mentionner les pénalités de retard applicables en cas de non-paiement, conformément aux articles L441-10 et suivants du Code de commerce. Le taux minimal est celui de la BCE majoré de 10 points, et l'indemnité forfaitaire de recouvrement est fixée à 40 euros.
+
+## Checklist : les points essentiels de votre devis BTP
+
+Avant d'envoyer votre devis, vérifiez que tous les éléments suivants sont bien présents.
+
+<div className="not-prose my-8 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+    <span>Coordonnées complètes de l'entreprise (SIRET, RCS/RM, adresse)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+    <span>Numéro et date du devis, durée de validité</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+    <span>Coordonnées du client et adresse du chantier</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+    <span>Description détaillée de chaque poste de travaux (quantités, unités, prix unitaires)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+    <span>Séparation main-d'oeuvre et fournitures pour chaque lot</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+    <span>Taux de TVA correctement appliqués (20 %, 10 % ou 5,5 %)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+    <span>Attestation simplifiée de TVA jointe pour les taux réduits</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+    <span>Mention de l'assurance décennale (assureur, numéro de contrat, couverture)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+    <span>Conditions de paiement, acompte et échéancier</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+    <span>Retenue de garantie précisée le cas échéant</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+    <span>Délais d'exécution et planning prévisionnel</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+    <span>Mention de la gestion des déchets de chantier (loi AGEC)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+    <span>Espace pour la signature du client avec mention "Bon pour accord"</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+    <span>Conditions générales de vente (CGV) en annexe ou au verso</span>
+  </div>
+</div>
+
+## Astuces pour rédiger un devis BTP convaincant
+
+Au-delà de la conformité réglementaire, votre devis est un outil de vente. Voici quelques conseils pour maximiser votre taux de conversion.
+
+### Soigner la présentation
+
+Un devis professionnel commence par une mise en page soignée. Utilisez votre logo, une typographie lisible et une structure aérée. Numérotez vos devis de manière séquentielle pour faciliter le suivi. Avec un outil comme Newbi, vous pouvez générer des devis au format PDF professionnel en quelques clics, avec votre identité visuelle intégrée.
+
+### Ajouter des notes techniques
+
+Pour les travaux complexes, n'hésitez pas à ajouter des notes explicatives sous chaque poste. Par exemple, précisez les caractéristiques techniques des matériaux choisis, les normes respectées (DTU, NF) ou les raisons d'un choix technique plutôt qu'un autre. Cette démarche pédagogique valorise votre expertise.
+
+### Proposer des variantes
+
+Lorsque c'est pertinent, proposez une ou deux variantes (option standard et option premium). Cela donne au client un sentiment de choix et peut augmenter le panier moyen de votre devis. Présentez ces variantes clairement, avec un comparatif prix/avantages.
+
+<div className="not-prose my-8">
+  <Callout type="tip">
+    Envoyez votre devis dans les 48 heures suivant la visite du chantier. Les études montrent que le taux d'acceptation chute significativement au-delà de ce délai. Avec un logiciel de devis adapté, vous pouvez même rédiger votre devis directement sur le chantier depuis votre tablette ou smartphone.
+  </Callout>
+</div>
+
+Pour maîtriser les fondamentaux de la rédaction de devis dans tous les secteurs, consultez également notre guide complet sur [comment faire un devis professionnel](/blog/comment-faire-devis-professionnel).
+
+## Les erreurs courantes à éviter
+
+Certaines erreurs reviennent fréquemment dans les devis BTP et peuvent avoir des conséquences lourdes.
+
+### Descriptions trop vagues
+
+Indiquer simplement "travaux de plomberie : 3 500 euros" sans détailler les prestations est une source de litiges. Chaque ligne doit être suffisamment précise pour qu'un tiers puisse comprendre exactement ce qui est inclus et ce qui ne l'est pas.
+
+### Oublier les exclusions
+
+Précisez toujours ce qui n'est **pas** inclus dans votre devis. Par exemple : "Hors démolition de l'existant", "Hors raccordement au réseau public", "Hors fourniture et pose du revêtement de sol". Ces exclusions vous protègent contre les réclamations ultérieures.
+
+### Sous-estimer les délais
+
+Un planning irréaliste mettra en péril votre relation client et pourra entraîner des pénalités de retard. Intégrez des marges raisonnables pour les aléas (intempéries, retards de livraison, découvertes en cours de chantier).
+
+### Négliger la TVA applicable
+
+L'application du mauvais taux de TVA est une erreur fréquente qui peut coûter cher. Rappelez-vous que le taux réduit de 10 % pour les travaux de rénovation nécessite une **attestation simplifiée** signée par le client. Sans ce document, vous devrez appliquer le taux normal de 20 % et supporter la différence en cas de redressement fiscal.
+
+## En résumé
+
+Rédiger un **devis travaux BTP** conforme et convaincant demande rigueur et méthode. Voici les points essentiels à retenir :
+
+- Le devis est **obligatoire** pour tout travail supérieur à 150 euros TTC et vaut contrat une fois signé
+- Les **mentions obligatoires** incluent l'identification de l'entreprise, l'assurance décennale, le détail des postes, les taux de TVA et les conditions de paiement
+- La **ventilation par postes** (gros oeuvre, second oeuvre, finitions) avec séparation main-d'oeuvre/fournitures est indispensable pour la transparence
+- Les **taux de TVA BTP** varient selon la nature des travaux : 20 % pour le neuf, 10 % pour la rénovation, 5,5 % pour la performance énergétique
+- La **retenue de garantie** (5 % maximum) et l'**échéancier de paiement** doivent être clairement définis
+- La **présentation professionnelle** et la réactivité dans l'envoi augmentent significativement le taux d'acceptation
+- Un outil de gestion comme Newbi vous permet d'automatiser la création de devis conformes, de suivre leur statut et de les convertir en factures en un clic
+
+<div className="not-prose flex justify-center my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement pour mes devis BTP</Link>
+  </Button>
+</div>
+
+## Questions fréquentes
+
+<div className="not-prose my-12">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Un devis BTP est-il obligatoire pour tous les travaux ?</AccordionTrigger>
+      <AccordionContent>
+        Le devis est obligatoire pour toute prestation de dépannage, réparation ou entretien dans le bâtiment dont le montant dépasse 150 euros TTC. En dessous de ce seuil, il reste fortement recommandé pour éviter tout litige. Pour les marchés publics, le devis est systématiquement exigé quel que soit le montant.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Quelle est la durée de validité d'un devis de travaux ?</AccordionTrigger>
+      <AccordionContent>
+        La durée de validité n'est pas fixée par la loi : c'est à vous de la déterminer. En pratique, une durée de 30 à 90 jours est courante dans le BTP. Au-delà, les prix des matériaux peuvent fluctuer. Passé ce délai, vous êtes en droit de réviser votre offre. Indiquez toujours clairement la date limite de validité sur votre devis.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Comment appliquer le bon taux de TVA sur un devis BTP ?</AccordionTrigger>
+      <AccordionContent>
+        Le taux de TVA dépend de la nature des travaux et de l'ancienneté du logement. Le taux normal de 20 % s'applique aux constructions neuves. Le taux intermédiaire de 10 % concerne les travaux de rénovation, d'amélioration ou d'entretien dans un logement achevé depuis plus de 2 ans. Le taux réduit de 5,5 % est réservé aux travaux d'amélioration de la performance énergétique. Pour bénéficier des taux réduits, le client doit signer une attestation simplifiée (cerfa n°13948) que vous devez conserver.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Peut-on modifier un devis après signature du client ?</AccordionTrigger>
+      <AccordionContent>
+        Un devis signé vaut contrat et engage les deux parties. Toute modification doit faire l'objet d'un avenant écrit, signé par les deux parties, décrivant les travaux supplémentaires ou modificatifs, leur coût et leur impact sur le planning. Ne commencez jamais des travaux supplémentaires sans avenant signé, sous peine de ne pas pouvoir les facturer.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Faut-il mentionner l'assurance décennale sur chaque devis ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, c'est une obligation légale pour tout professionnel du BTP réalisant des travaux de construction ou de rénovation structurelle. Vous devez indiquer le nom de votre assureur, le numéro de votre contrat et la couverture géographique. L'absence de cette mention est passible d'une amende de 75 000 euros. Cette obligation s'applique également aux sous-traitants intervenant sur le chantier.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>
+
+<script type="application/ld+json" dangerouslySetInnerHTML={{__html: JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Un devis BTP est-il obligatoire pour tous les travaux ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Le devis est obligatoire pour toute prestation de dépannage, réparation ou entretien dans le bâtiment dont le montant dépasse 150 euros TTC. En dessous de ce seuil, il reste fortement recommandé pour éviter tout litige. Pour les marchés publics, le devis est systématiquement exigé quel que soit le montant."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Quelle est la durée de validité d'un devis de travaux ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "La durée de validité n'est pas fixée par la loi : c'est à vous de la déterminer. En pratique, une durée de 30 à 90 jours est courante dans le BTP. Au-delà, les prix des matériaux peuvent fluctuer. Passé ce délai, vous êtes en droit de réviser votre offre. Indiquez toujours clairement la date limite de validité sur votre devis."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Comment appliquer le bon taux de TVA sur un devis BTP ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Le taux de TVA dépend de la nature des travaux et de l'ancienneté du logement. Le taux normal de 20 % s'applique aux constructions neuves. Le taux intermédiaire de 10 % concerne les travaux de rénovation, d'amélioration ou d'entretien dans un logement achevé depuis plus de 2 ans. Le taux réduit de 5,5 % est réservé aux travaux d'amélioration de la performance énergétique. Pour bénéficier des taux réduits, le client doit signer une attestation simplifiée (cerfa n°13948) que vous devez conserver."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Peut-on modifier un devis après signature du client ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Un devis signé vaut contrat et engage les deux parties. Toute modification doit faire l'objet d'un avenant écrit, signé par les deux parties, décrivant les travaux supplémentaires ou modificatifs, leur coût et leur impact sur le planning. Ne commencez jamais des travaux supplémentaires sans avenant signé, sous peine de ne pas pouvoir les facturer."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Faut-il mentionner l'assurance décennale sur chaque devis ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Oui, c'est une obligation légale pour tout professionnel du BTP réalisant des travaux de construction ou de rénovation structurelle. Vous devez indiquer le nom de votre assureur, le numéro de votre contrat et la couverture géographique. L'absence de cette mention est passible d'une amende de 75 000 euros. Cette obligation s'applique également aux sous-traitants intervenant sur le chantier."
+      }
+    }
+  ]
+})}} />

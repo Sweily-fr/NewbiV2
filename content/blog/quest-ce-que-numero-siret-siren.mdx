@@ -1,0 +1,304 @@
+---
+title: Qu'est-ce que le numéro SIRET et SIREN ? Différences et utilisation
+description: >-
+  Comprendre la différence entre SIRET et SIREN : définition, comment les
+  obtenir, où les trouver et leur utilisation sur vos factures et devis.
+date: '2026-02-10'
+category: glossaire
+sector: null
+keyword: numéro SIRET SIREN
+author: Newbi
+image: /blog/quest-ce-que-numero-siret-siren/hero.webp
+published: false
+publishDate: null
+---
+
+import Image from "next/image"
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex gap-2 my-4">
+  <Badge>Glossaire</Badge>
+  <Badge variant="secondary">Entreprise</Badge>
+  <Badge variant="outline">6 min de lecture</Badge>
+</div>
+
+Le **numéro SIRET** et le **numéro SIREN** sont deux identifiants attribués à toute entreprise en France. Ils apparaissent sur vos factures, devis, contrats et documents officiels. Pourtant, beaucoup d'entrepreneurs confondent les deux. Ce guide clarifie leurs différences, leur utilité et où les trouver.
+
+<div className="not-prose my-8 relative aspect-video overflow-hidden rounded-lg">
+  <Image
+    src="/blog/quest-ce-que-numero-siret-siren/hero.webp"
+    alt="Illustration des numéros SIREN et SIRET avec leur structure et leur rôle"
+    fill
+    className="object-cover"
+    priority
+    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 720px"
+  />
+</div>
+
+<div className="not-prose flex justify-center my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Gérer mon entreprise avec Newbi</Link>
+  </Button>
+</div>
+
+## Le numéro SIREN : l'identité de votre entreprise
+
+Le SIREN (Système d'Identification du Répertoire des ENtreprises) est un numéro unique de **9 chiffres** attribué par l'INSEE à chaque entreprise lors de sa création.
+
+<figure className="not-prose my-8">
+  <div className="relative aspect-video overflow-hidden rounded-lg border">
+    <Image
+      src="/blog/quest-ce-que-numero-siret-siren/section-1.webp"
+      alt="Décomposition du numéro SIREN en 9 chiffres avec explication de chaque partie"
+      fill
+      className="object-cover"
+      sizes="(max-width: 768px) 100vw, 720px"
+    />
+  </div>
+  <figcaption className="mt-2 text-center text-sm text-muted-foreground">
+    Structure du numéro SIREN : 9 chiffres uniques par entreprise
+  </figcaption>
+</figure>
+
+**Caractéristiques du SIREN** :
+- **9 chiffres** attribués séquentiellement par l'INSEE
+- **Unique** pour chaque entreprise (personne morale ou physique)
+- **Permanent** : ne change jamais, même en cas de déménagement
+- Attribué lors de l'**immatriculation** de l'entreprise
+
+Le SIREN identifie votre **entité juridique**. Que vous ayez un ou dix établissements, le SIREN reste le même.
+
+## Le numéro SIRET : l'identité de votre établissement
+
+Le SIRET (Système d'Identification du Répertoire des ÉTablissements) est un numéro de **14 chiffres** qui identifie chaque établissement de votre entreprise.
+
+**SIRET = SIREN (9 chiffres) + NIC (5 chiffres)**
+
+Le NIC (Numéro Interne de Classement) identifie chaque établissement. Si votre entreprise a plusieurs établissements (bureau, atelier, boutique), chacun a un SIRET différent mais partage le même SIREN.
+
+<div className="not-prose my-8 overflow-x-auto">
+  <Table>
+    <TableCaption>Différences entre SIREN et SIRET</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead>Critère</TableHead>
+        <TableHead>SIREN</TableHead>
+        <TableHead>SIRET</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-semibold">Nombre de chiffres</TableCell>
+        <TableCell>9</TableCell>
+        <TableCell>14</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-semibold">Identifie</TableCell>
+        <TableCell>L'entreprise (entité juridique)</TableCell>
+        <TableCell>L'établissement (lieu d'activité)</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-semibold">Unicité</TableCell>
+        <TableCell>1 par entreprise</TableCell>
+        <TableCell>1 par établissement</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-semibold">Change en cas de déménagement</TableCell>
+        <TableCell>Non</TableCell>
+        <TableCell>Oui (nouveau NIC)</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-semibold">Sur les factures</TableCell>
+        <TableCell>Obligatoire (minimum)</TableCell>
+        <TableCell>Recommandé</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+<Callout type="info">
+  Le SIREN est le minimum obligatoire sur vos [factures](/blog/mentions-obligatoires-facture). Cependant, il est recommandé d'indiquer le SIRET complet car il identifie précisément l'établissement émetteur. Avec la [facturation électronique 2026](/blog/facturation-electronique-obligatoire-2026), le SIREN du client deviendra également obligatoire.
+</Callout>
+
+## Comment obtenir son SIREN et SIRET ?
+
+### Lors de la création d'entreprise
+
+Votre SIREN et SIRET vous sont attribués automatiquement par l'INSEE lors de votre immatriculation :
+
+- **Auto-entrepreneur** : vous recevez un certificat d'inscription au répertoire SIRENE sous 1 à 4 semaines après votre déclaration sur le guichet unique
+- **Société (SAS, SARL, etc.)** : le SIREN figure sur l'extrait Kbis délivré par le greffe du tribunal de commerce
+- **Profession libérale** : le SIREN est attribué lors de l'inscription à l'URSSAF
+
+### Où trouver son SIREN/SIRET ?
+
+- Sur votre **avis de situation INSEE** (disponible sur sirene.fr)
+- Sur votre **extrait Kbis** (pour les sociétés)
+- Sur votre **certificat d'inscription** (pour les auto-entrepreneurs)
+- Sur le site **annuaire-entreprises.data.gouv.fr** (recherche publique)
+
+## SIREN, SIRET et code APE : ne pas confondre
+
+En plus du SIREN et du SIRET, l'INSEE vous attribue un **code APE** (Activité Principale Exercée) composé de 4 chiffres et une lettre (ex: 6201Z pour la programmation informatique). Ce code :
+
+- Identifie votre **secteur d'activité**
+- Détermine la **convention collective** applicable
+- N'apparaît pas obligatoirement sur les factures (mais c'est une bonne pratique)
+
+<figure className="not-prose my-8">
+  <div className="relative aspect-video overflow-hidden rounded-lg border">
+    <Image
+      src="/blog/quest-ce-que-numero-siret-siren/identifiants.webp"
+      alt="Récapitulatif des identifiants d'entreprise : SIREN, SIRET, code APE et numéro TVA"
+      fill
+      className="object-cover"
+      sizes="(max-width: 768px) 100vw, 720px"
+    />
+  </div>
+  <figcaption className="mt-2 text-center text-sm text-muted-foreground">
+    Les identifiants d'entreprise : SIREN, SIRET, code APE et TVA intracommunautaire
+  </figcaption>
+</figure>
+
+## Le numéro de TVA intracommunautaire
+
+Distinct du SIREN, le numéro de TVA intracommunautaire est attribué par l'administration fiscale aux entreprises assujetties à la TVA. Il est composé de :
+
+- **FR** (code pays)
+- **2 chiffres** (clé de contrôle)
+- Votre **SIREN** (9 chiffres)
+
+Exemple : FR 12 123456789
+
+Ce numéro est obligatoire sur vos factures si vous êtes assujetti à la [TVA](/blog/taux-tva-france-guide-complet). Consultez notre article sur la [TVA intracommunautaire](/blog/quest-ce-que-tva-intracommunautaire) pour en savoir plus.
+
+<div className="not-prose flex justify-center my-6">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Créer des factures conformes avec Newbi</Link>
+  </Button>
+</div>
+
+## Utilisation du SIREN et SIRET sur vos documents
+
+### Sur vos factures et devis
+
+Le SIREN (minimum) ou le SIRET (recommandé) doit apparaître sur tous vos documents commerciaux : factures, devis, [avoirs](/blog/quest-ce-que-avoir-credit), [bons de commande](/blog/quest-ce-que-bon-commande).
+
+### Sur vos documents officiels
+
+Le SIREN/SIRET doit figurer sur :
+
+- Vos cartes de visite
+- Votre papier à en-tête
+- Vos [conditions générales de vente](/blog/quest-ce-que-conditions-generales-vente)
+- Votre site internet (mentions légales)
+
+<Callout type="tip">
+  Avec Newbi, votre SIREN/SIRET est renseigné une seule fois dans votre profil et apparaît automatiquement sur tous vos devis, factures et avoirs. Plus de risque d'oubli.
+</Callout>
+
+## En résumé
+
+- Le **SIREN** (9 chiffres) identifie votre entreprise, il est permanent
+- Le **SIRET** (14 chiffres = SIREN + NIC) identifie chaque établissement
+- Le SIREN est **obligatoire** sur vos factures, le SIRET est recommandé
+- Avec la **e-facturation 2026**, le SIREN du client devient aussi obligatoire
+- Le code APE identifie votre activité, le numéro de TVA votre assujettissement
+
+Newbi intègre automatiquement votre SIREN/SIRET sur tous vos documents commerciaux pour garantir la conformité.
+
+<div className="not-prose flex justify-center my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement pendant 30 jours</Link>
+  </Button>
+</div>
+
+## Questions fréquentes
+
+<div className="not-prose my-12">
+  <Accordion type="multiple">
+    <AccordionItem value="faq-0">
+      <AccordionTrigger>Le SIREN change-t-il en cas de déménagement ?</AccordionTrigger>
+      <AccordionContent>
+        Non, le SIREN ne change jamais. C'est le SIRET qui change car le NIC (les 5 derniers chiffres) est lié à l'établissement. En cas de déménagement, un nouveau SIRET vous est attribué mais votre SIREN reste identique.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-1">
+      <AccordionTrigger>Faut-il mettre le SIREN ou le SIRET sur ses factures ?</AccordionTrigger>
+      <AccordionContent>
+        Le SIREN est le minimum légal obligatoire. Cependant, il est fortement recommandé d'indiquer le SIRET complet (14 chiffres) qui identifie précisément l'établissement. Avec la facturation électronique 2026, le SIREN du client sera également requis.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-2">
+      <AccordionTrigger>Comment retrouver le SIREN d'une entreprise ?</AccordionTrigger>
+      <AccordionContent>
+        Vous pouvez rechercher le SIREN de n'importe quelle entreprise sur annuaire-entreprises.data.gouv.fr ou sur societe.com en tapant le nom de l'entreprise. Vous trouverez le SIREN, le SIRET, le code APE et d'autres informations publiques.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-3">
+      <AccordionTrigger>Un auto-entrepreneur a-t-il un SIREN et un SIRET ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, tout auto-entrepreneur reçoit un SIREN et un SIRET lors de sa déclaration d'activité. Ce sont des identifiants attribués par l'INSEE à toute personne exerçant une activité économique, quel que soit le statut juridique.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-4">
+      <AccordionTrigger>Combien de temps faut-il pour obtenir son SIREN ?</AccordionTrigger>
+      <AccordionContent>
+        Le délai varie selon le type de structure : 1 à 4 semaines pour un auto-entrepreneur (après déclaration sur le guichet unique), quelques jours pour une société (après immatriculation au greffe). L'INSEE attribue le SIREN et vous envoie un avis de situation.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>
+
+<script type="application/ld+json" dangerouslySetInnerHTML={{__html: JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Le SIREN change-t-il en cas de déménagement ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Non. Seul le SIRET change car le NIC est lié à l'établissement."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "SIREN ou SIRET sur les factures ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Le SIREN est le minimum obligatoire, le SIRET complet est recommandé."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Comment retrouver le SIREN d'une entreprise ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Sur annuaire-entreprises.data.gouv.fr ou societe.com en cherchant le nom."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Un auto-entrepreneur a-t-il un SIREN ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Oui, tout auto-entrepreneur reçoit un SIREN et un SIRET de l'INSEE."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Combien de temps pour obtenir son SIREN ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "1 à 4 semaines pour un auto-entrepreneur, quelques jours pour une société."
+      }
+    }
+  ]
+})}} />

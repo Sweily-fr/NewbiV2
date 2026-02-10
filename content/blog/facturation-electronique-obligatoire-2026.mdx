@@ -1,0 +1,417 @@
+---
+title: 'Facturation électronique obligatoire en 2026 : tout ce qui change'
+description: >-
+  La facturation électronique devient obligatoire en 2026. Calendrier,
+  obligations, sanctions et comment se préparer avec un logiciel conforme.
+date: '2026-02-10'
+category: reglementaire
+sector: null
+keyword: facturation électronique obligatoire 2026
+author: Newbi
+image: /blog/facturation-electronique-obligatoire-2026/hero.webp
+published: true
+publishDate: '2026-02-10'
+---
+
+import Image from "next/image"
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex gap-2 my-4">
+  <Badge>Réglementaire</Badge>
+  <Badge variant="secondary">Facturation</Badge>
+  <Badge variant="outline">10 min de lecture</Badge>
+</div>
+
+La **facturation électronique obligatoire** arrive en France en 2026. Cette réforme majeure concerne toutes les entreprises assujetties à la TVA — des grandes entreprises aux auto-entrepreneurs. Calendrier précis, obligations concrètes, sanctions encourues et solutions pour vous mettre en conformité : voici tout ce que vous devez savoir pour aborder sereinement cette transition.
+
+<div className="not-prose my-8 relative aspect-video overflow-hidden rounded-lg">
+  <Image
+    src="/blog/facturation-electronique-obligatoire-2026/hero.webp"
+    alt="Illustration de la transition vers la facturation électronique obligatoire en 2026 en France"
+    fill
+    className="object-cover"
+    priority
+    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 720px"
+  />
+</div>
+
+<div className="not-prose flex justify-center my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Préparer ma facturation électronique avec Newbi</Link>
+  </Button>
+</div>
+
+## Qu'est-ce que la facturation électronique ?
+
+La facturation électronique (ou e-invoicing) ne se résume pas à envoyer un PDF par email. Il s'agit d'un processus où la facture est **créée, transmise, reçue et archivée** dans un format électronique structuré, via une plateforme dédiée.
+
+<figure className="not-prose my-8">
+  <div className="relative aspect-video overflow-hidden rounded-lg border">
+    <Image
+      src="/blog/facturation-electronique-obligatoire-2026/section-1.webp"
+      alt="Schéma du flux de facturation électronique entre émetteur, plateforme et destinataire"
+      fill
+      className="object-cover"
+      sizes="(max-width: 768px) 100vw, 720px"
+    />
+  </div>
+  <figcaption className="mt-2 text-center text-sm text-muted-foreground">
+    Le flux de la facturation électronique : émetteur → plateforme → destinataire
+  </figcaption>
+</figure>
+
+Concrètement, les factures doivent être transmises dans l'un de ces formats :
+
+- **Factur-X** : format hybride PDF + XML (le plus courant)
+- **UBL** (Universal Business Language) : format XML structuré
+- **CII** (Cross-Industry Invoice) : norme internationale XML
+
+Un simple PDF envoyé par mail ne sera plus considéré comme une facture électronique conforme.
+
+<Callout type="warning">
+  Un PDF envoyé par email n'est **pas** une facture électronique au sens de la réforme. Le fichier doit contenir des données structurées (XML) et transiter par une plateforme certifiée.
+</Callout>
+
+## Le calendrier de la réforme : les dates clés
+
+Le calendrier a été repoussé plusieurs fois. Voici les dates définitives confirmées par la loi de finances :
+
+<div className="not-prose my-8 overflow-x-auto">
+  <Table>
+    <TableCaption>Calendrier de déploiement de la facturation électronique en France</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead>Date</TableHead>
+        <TableHead>Obligation</TableHead>
+        <TableHead>Entreprises concernées</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-semibold">1er septembre 2026</TableCell>
+        <TableCell>Réception obligatoire</TableCell>
+        <TableCell>Toutes les entreprises</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-semibold">1er septembre 2026</TableCell>
+        <TableCell>Émission obligatoire</TableCell>
+        <TableCell>Grandes entreprises et ETI</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-semibold">1er septembre 2027</TableCell>
+        <TableCell>Émission obligatoire</TableCell>
+        <TableCell>PME et micro-entreprises</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+Cela signifie que dès **septembre 2026**, toutes les entreprises devront être techniquement capables de **recevoir** des factures électroniques. Les petites entreprises et auto-entrepreneurs auront un an supplémentaire pour l'émission.
+
+## Qui est concerné par la facturation électronique ?
+
+### Entreprises concernées
+
+La réforme concerne **toutes les entreprises assujetties à la TVA** en France, quel que soit leur statut :
+
+<div className="not-prose my-8">
+  <ul className="grid gap-3" role="list">
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span className="text-muted-foreground">Grandes entreprises (GE)</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span className="text-muted-foreground">Entreprises de taille intermédiaire (ETI)</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span className="text-muted-foreground">PME (petites et moyennes entreprises)</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span className="text-muted-foreground">TPE (très petites entreprises)</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span className="text-muted-foreground">Auto-entrepreneurs et micro-entrepreneurs</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span className="text-muted-foreground">Professions libérales assujetties à la TVA</span>
+    </li>
+  </ul>
+</div>
+
+### Transactions concernées
+
+L'obligation s'applique aux transactions **B2B domestiques** (entre entreprises établies en France). Les factures B2C (vers les particuliers) et les opérations internationales ne sont pas soumises à l'e-invoicing, mais font l'objet du **e-reporting** (déclaration des données de transaction).
+
+<figure className="not-prose my-8">
+  <div className="relative aspect-video overflow-hidden rounded-lg border">
+    <Image
+      src="/blog/facturation-electronique-obligatoire-2026/transactions.webp"
+      alt="Schéma des transactions concernées par la facturation électronique et le e-reporting"
+      fill
+      className="object-cover"
+      sizes="(max-width: 768px) 100vw, 720px"
+    />
+  </div>
+  <figcaption className="mt-2 text-center text-sm text-muted-foreground">
+    E-invoicing (B2B France) vs E-reporting (B2C et international)
+  </figcaption>
+</figure>
+
+## PPF et PDP : les plateformes de la e-facturation
+
+Pour émettre et recevoir des factures électroniques, vous devrez passer par une **plateforme** :
+
+### Le PPF (Portail Public de Facturation)
+
+Le [PPF](/blog/quest-ce-que-ppf-portail-public-facturation) est la plateforme gratuite mise à disposition par l'État (basée sur Chorus Pro). Elle permet à toutes les entreprises d'émettre et recevoir des factures électroniques.
+
+### Les PDP (Plateformes de Dématérialisation Partenaires)
+
+Les [PDP](/blog/quest-ce-que-pdp-plateforme-dematerialisation) sont des plateformes privées immatriculées par l'administration fiscale. Elles offrent des services à valeur ajoutée :
+
+- Intégration avec votre logiciel de gestion
+- Conversion automatique des formats
+- Services de rapprochement et de suivi
+- Support technique dédié
+
+<Callout type="tip">
+  Newbi s'intègre avec les principales PDP pour que la transition soit transparente. Vos factures sont automatiquement converties au format Factur-X et transmises à la plateforme de votre choix.
+</Callout>
+
+<div className="not-prose flex justify-center my-6">
+  <Button asChild variant="outline">
+    <Link href="https://meet.brevo.com/sweily/newbi">Demander une démo</Link>
+  </Button>
+</div>
+
+## Le e-reporting : l'autre volet de la réforme
+
+En plus de la facturation électronique (e-invoicing), la réforme introduit le **e-reporting** : l'obligation de transmettre certaines données de transaction à l'administration fiscale.
+
+Le e-reporting concerne :
+
+- Les transactions **B2C** (ventes aux particuliers)
+- Les transactions **internationales** (export, import)
+- Les transactions avec des entreprises non établies en France
+
+Les données transmises incluent le montant, la TVA, la date et l'identification des parties.
+
+## Les sanctions en cas de non-conformité
+
+Ne pas se conformer à la facturation électronique entraîne des sanctions :
+
+<div className="not-prose my-8 overflow-x-auto">
+  <Table>
+    <TableCaption>Sanctions liées à la facturation électronique</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead>Infraction</TableHead>
+        <TableHead>Sanction</TableHead>
+        <TableHead>Plafond</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell>Non-émission de facture électronique</TableCell>
+        <TableCell>15 € par facture</TableCell>
+        <TableCell>15 000 € par an</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell>Non-transmission des données (e-reporting)</TableCell>
+        <TableCell>250 € par transmission</TableCell>
+        <TableCell>15 000 € par an</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell>Utilisation d'une plateforme non immatriculée</TableCell>
+        <TableCell>15 000 €</TableCell>
+        <TableCell>—</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+<Callout type="danger">
+  Les sanctions sont appliquées **par facture** non conforme. Pour une entreprise émettant 100 factures par mois, cela peut représenter **1 500 € par mois** de pénalités.
+</Callout>
+
+## Comment se préparer dès maintenant : 5 actions concrètes
+
+### 1. Faites l'état des lieux de votre facturation actuelle
+
+Analysez votre processus de facturation actuel :
+- Combien de factures émettez-vous par mois ?
+- Quel format utilisez-vous (PDF, Word, Excel, logiciel) ?
+- Comment transmettez-vous vos factures (email, courrier) ?
+
+### 2. Choisissez un logiciel de facturation conforme
+
+Si vous utilisez encore Excel ou Word pour vos factures, c'est le moment de migrer vers un logiciel conforme. Newbi génère des factures au format [Factur-X](/blog/facturx-format-facture-electronique) et se connecte aux plateformes de dématérialisation.
+
+### 3. Vérifiez vos données de facturation
+
+Assurez-vous que toutes vos informations sont à jour :
+- Numéro SIREN/SIRET
+- Numéro de TVA intracommunautaire
+- Adresse du siège social
+- Coordonnées bancaires
+
+### 4. Informez vos clients et fournisseurs
+
+Prévenez vos partenaires commerciaux de la transition. Demandez-leur leur numéro SIREN et leur plateforme de réception préférée (PPF ou PDP).
+
+### 5. Testez avant l'échéance
+
+Ne attendez pas le dernier moment. Commencez à émettre des factures au format électronique dès que possible pour identifier et corriger les éventuels problèmes.
+
+<figure className="not-prose my-8">
+  <div className="relative aspect-video overflow-hidden rounded-lg border">
+    <Image
+      src="/blog/facturation-electronique-obligatoire-2026/preparation.webp"
+      alt="Checklist de préparation à la facturation électronique 2026"
+      fill
+      className="object-cover"
+      sizes="(max-width: 768px) 100vw, 720px"
+    />
+  </div>
+  <figcaption className="mt-2 text-center text-sm text-muted-foreground">
+    Les 5 étapes pour se préparer à la facturation électronique
+  </figcaption>
+</figure>
+
+## Les avantages de la facturation électronique
+
+Au-delà de l'obligation légale, la facturation électronique présente de nombreux avantages :
+
+- **Gain de temps** : automatisation de la saisie, envoi instantané
+- **Réduction des erreurs** : données structurées validées automatiquement
+- **Économies** : plus de papier, d'impression ni d'affranchissement
+- **Traçabilité** : suivi en temps réel du statut des factures
+- **Trésorerie** : accélération des paiements grâce aux délais raccourcis
+- **Écologie** : réduction de l'empreinte carbone
+
+## En résumé
+
+La facturation électronique obligatoire en 2026 est une opportunité de moderniser votre gestion. Les points à retenir :
+
+- **Septembre 2026** : toutes les entreprises doivent pouvoir recevoir des factures électroniques
+- **Septembre 2027** : les PME et micro-entreprises devront émettre en format électronique
+- Les factures doivent transiter par le **PPF** ou une **PDP** certifiée
+- Les formats acceptés sont **Factur-X**, **UBL** et **CII**
+- Les sanctions peuvent atteindre **15 000 € par an**
+
+Newbi vous accompagne dans cette transition avec un logiciel déjà compatible Factur-X et connecté aux plateformes de dématérialisation. Anticipez dès maintenant pour être serein le jour J.
+
+<div className="not-prose flex justify-center my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement pendant 30 jours</Link>
+  </Button>
+</div>
+
+## Questions fréquentes
+
+<div className="not-prose my-12">
+  <Accordion type="multiple">
+    <AccordionItem value="faq-0">
+      <AccordionTrigger>La facturation électronique est-elle obligatoire pour les auto-entrepreneurs ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, tous les assujettis à la TVA sont concernés, y compris les auto-entrepreneurs. La réception sera obligatoire dès septembre 2026, et l'émission à partir de septembre 2027 pour les micro-entreprises.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-1">
+      <AccordionTrigger>Un PDF envoyé par email est-il une facture électronique ?</AccordionTrigger>
+      <AccordionContent>
+        Non. Une facture électronique au sens de la réforme doit contenir des données structurées (XML) et transiter par une plateforme certifiée (PPF ou PDP). Un simple PDF par email ne sera plus conforme pour les échanges B2B.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-2">
+      <AccordionTrigger>Quelle est la différence entre le PPF et une PDP ?</AccordionTrigger>
+      <AccordionContent>
+        Le PPF (Portail Public de Facturation) est la plateforme gratuite de l'État. Les PDP (Plateformes de Dématérialisation Partenaires) sont des plateformes privées certifiées qui offrent des services à valeur ajoutée : intégration logicielle, conversion de formats, support dédié.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-3">
+      <AccordionTrigger>Quel format de facture électronique choisir ?</AccordionTrigger>
+      <AccordionContent>
+        Le format Factur-X est le plus recommandé pour les TPE et PME car il combine un PDF lisible par l'humain et des données XML structurées. Les formats UBL et CII sont plus adaptés aux grandes entreprises avec des systèmes ERP.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-4">
+      <AccordionTrigger>Combien coûte la mise en conformité ?</AccordionTrigger>
+      <AccordionContent>
+        Le coût dépend de votre situation actuelle. Si vous utilisez déjà un logiciel de facturation moderne comme Newbi, la transition peut être quasi-transparente. Si vous facturez sur Excel ou Word, comptez le prix d'un abonnement à un logiciel de facturation (à partir de 17,99 €/mois avec Newbi).
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-5">
+      <AccordionTrigger>Les factures B2C sont-elles concernées par la facturation électronique ?</AccordionTrigger>
+      <AccordionContent>
+        Les factures B2C ne sont pas soumises à l'e-invoicing (facturation électronique). En revanche, elles sont soumises au e-reporting : vous devrez transmettre les données de ces transactions à l'administration fiscale via votre plateforme.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>
+
+<script type="application/ld+json" dangerouslySetInnerHTML={{__html: JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "La facturation électronique est-elle obligatoire pour les auto-entrepreneurs ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Oui, tous les assujettis à la TVA sont concernés, y compris les auto-entrepreneurs. La réception sera obligatoire dès septembre 2026, et l'émission à partir de septembre 2027."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Un PDF envoyé par email est-il une facture électronique ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Non. Une facture électronique doit contenir des données structurées (XML) et transiter par une plateforme certifiée (PPF ou PDP)."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Quelle est la différence entre le PPF et une PDP ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Le PPF est la plateforme gratuite de l'État. Les PDP sont des plateformes privées certifiées offrant des services à valeur ajoutée."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Quel format de facture électronique choisir ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Le format Factur-X est le plus recommandé pour les TPE et PME car il combine un PDF lisible et des données XML structurées."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Combien coûte la mise en conformité ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Si vous utilisez déjà un logiciel moderne, la transition peut être transparente. Sinon, comptez à partir de 17,99 €/mois avec un outil comme Newbi."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Les factures B2C sont-elles concernées ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Les factures B2C ne sont pas soumises à l'e-invoicing mais au e-reporting : transmission des données de transaction à l'administration fiscale."
+      }
+    }
+  ]
+})}} />

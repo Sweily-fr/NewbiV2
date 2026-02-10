@@ -1,0 +1,377 @@
+---
+title: 'Facturation pour formateurs indépendants : guide complet'
+description: >-
+  Guide de facturation pour formateurs : TVA formation, exonération Qualiopi,
+  convention de formation, mentions obligatoires et modèle de facture.
+date: '2026-02-10'
+category: guide
+sector: Coachs / Formateurs
+keyword: facturation formateur indépendant
+author: Newbi
+image: /blog/facture-formateur-independant/hero.webp
+published: false
+publishDate: null
+---
+
+import Image from "next/image"
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-8">
+  <Badge>Guide</Badge>
+  <Badge variant="secondary">Formateur</Badge>
+  <Badge variant="outline">9 min de lecture</Badge>
+</div>
+
+# Facturation pour formateurs indépendants : guide complet
+
+La **facturation formateur indépendant** obéit à des règles spécifiques qui la distinguent de la facturation classique des professions libérales. Entre l'exonération de TVA sur les prestations de formation, le numéro de déclaration d'activité, la certification Qualiopi et la facturation aux OPCO, les particularités sont nombreuses. Ce guide détaille chaque obligation pour vous permettre d'établir des factures conformes et d'exercer votre activité de formateur en toute sérénité.
+
+<figure>
+  <Image
+    src="/blog/facture-formateur-independant/hero.webp"
+    alt="Formateur indépendant établissant une facture de formation professionnelle"
+    width={1200}
+    height={630}
+    priority
+  />
+  <figcaption>Maîtriser la facturation est essentiel pour tout formateur indépendant souhaitant exercer en conformité.</figcaption>
+</figure>
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Créer mes factures de formation gratuitement</Link>
+  </Button>
+</div>
+
+## L'exonération de TVA sur les prestations de formation
+
+L'un des avantages majeurs du statut de formateur indépendant réside dans la possibilité d'être **exonéré de TVA** sur les prestations de formation professionnelle continue. Cette exonération est prévue par l'**article 261-4-4° a du Code général des impôts (CGI)**.
+
+### Comment obtenir l'exonération ?
+
+Pour en bénéficier, vous devez déposer une demande d'attestation auprès de la **DREETS** (Direction régionale de l'économie, de l'emploi, du travail et des solidarités) de votre région. La procédure se déroule ainsi :
+
+1. **Obtenir votre numéro de déclaration d'activité (NDA)** auprès de la DREETS en déposant le formulaire Cerfa n° 10782*05 dans les trois mois suivant la conclusion de votre premier contrat ou convention de formation.
+2. **Déposer une demande d'attestation d'exonération de TVA** via le formulaire Cerfa n° 3511. La DREETS dispose de trois mois pour répondre. Le silence vaut acceptation.
+3. Une fois l'attestation obtenue, vos factures de formation sont émises **hors TVA** avec la mention obligatoire : *"TVA non applicable, article 261-4-4° a du CGI"*.
+
+<div className="not-prose my-6">
+  <Callout type="warning" title="Numéro de déclaration d'activité obligatoire">
+    Tout formateur indépendant dispensant des actions de formation professionnelle continue doit obligatoirement détenir un **numéro de déclaration d'activité (NDA)**. Exercer sans ce numéro vous expose à une amende pouvant atteindre **4 500 euros**. Ce numéro doit figurer sur toutes vos factures, conventions et contrats de formation, précédé de la mention : *"Enregistré sous le numéro ... auprès du préfet de la région ... Cet enregistrement ne vaut pas agrément de l'État."*
+  </Callout>
+</div>
+
+### Exonération de TVA : ce qu'il faut savoir
+
+L'exonération ne s'applique qu'aux prestations de **formation professionnelle continue**. Si vous réalisez également des prestations de conseil, de coaching non certifiant ou d'autres activités annexes, celles-ci restent soumises à la TVA selon le régime de droit commun (ou à la franchise en base si vous êtes auto-entrepreneur sous les seuils).
+
+Consultez notre article sur la [TVA et les seuils de franchise en base pour auto-entrepreneur](/blog/tva-auto-entrepreneur-seuils-franchise) pour bien comprendre les implications.
+
+## Formateur avec vs sans exonération de TVA : comparatif
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Comparatif des obligations selon le régime de TVA du formateur</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[280px]">Critère</TableHead>
+        <TableHead>Avec exonération TVA (art. 261-4-4° a)</TableHead>
+        <TableHead>Sans exonération TVA</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">TVA sur factures de formation</TableCell>
+        <TableCell>Pas de TVA collectée</TableCell>
+        <TableCell>TVA à 20 % (taux normal)</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Mention obligatoire TVA</TableCell>
+        <TableCell>"TVA non applicable, art. 261-4-4° a du CGI"</TableCell>
+        <TableCell>Taux et montant de TVA détaillés</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Récupération de TVA sur achats</TableCell>
+        <TableCell>Non (pas de déduction possible)</TableCell>
+        <TableCell>Oui (TVA déductible sur charges)</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Déclaration de TVA</TableCell>
+        <TableCell>Aucune pour les prestations exonérées</TableCell>
+        <TableCell>CA3 mensuelle ou trimestrielle</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Attestation DREETS</TableCell>
+        <TableCell>Obligatoire (Cerfa n° 3511)</TableCell>
+        <TableCell>Non nécessaire</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Intérêt principal</TableCell>
+        <TableCell>Prix plus compétitif pour clients non assujettis (particuliers, OPCO)</TableCell>
+        <TableCell>Récupération de TVA si investissements élevés</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+## La certification Qualiopi et son impact sur la facturation
+
+Depuis le 1er janvier 2022, la **certification Qualiopi** est obligatoire pour tout organisme de formation souhaitant bénéficier de **fonds publics ou mutualisés** (OPCO, Pôle emploi, Régions, etc.). En tant que formateur indépendant, vous êtes considéré comme un organisme de formation à part entière.
+
+### Ce que Qualiopi change sur vos factures
+
+Lorsque vous êtes certifié Qualiopi, vous devez faire figurer :
+
+- Le **logo Qualiopi** sur vos documents commerciaux (facultatif sur la facture, mais courant).
+- Votre **numéro de certification Qualiopi** sur les conventions et contrats de formation.
+- La mention de la ou des **catégories d'actions** couvertes par votre certification (actions de formation, bilans de compétences, VAE, apprentissage).
+
+Sans Qualiopi, vous pouvez toujours facturer des formations, mais vos clients ne pourront pas mobiliser de financements publics ou mutualisés pour les régler. Cela réduit considérablement votre marché potentiel, notamment auprès des entreprises qui souhaitent faire prendre en charge les formations par leur OPCO.
+
+## Convention de formation vs contrat de formation
+
+Avant même d'émettre une facture, le formateur indépendant doit formaliser la prestation via un document contractuel. Le choix entre **convention** et **contrat** dépend du statut du client :
+
+- **Convention de formation** (article L.6353-1 du Code du travail) : conclue avec une **personne morale** (entreprise, association, collectivité). C'est le cas le plus fréquent.
+- **Contrat de formation** (article L.6353-3 du Code du travail) : conclu avec une **personne physique** qui finance elle-même sa formation (à titre individuel, hors financement employeur).
+
+Ces documents doivent contenir : l'intitulé de la formation, la durée, les objectifs pédagogiques, les moyens mis en oeuvre, les modalités de contrôle des connaissances, le prix et les conditions de règlement. Ils constituent la base juridique de votre facturation.
+
+## Mentions obligatoires spécifiques aux factures de formation
+
+En plus des [mentions obligatoires classiques d'une facture](/blog/mentions-obligatoires-facture), la facture d'un formateur indépendant doit comporter des éléments supplémentaires :
+
+<div className="not-prose my-8 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>**Numéro de déclaration d'activité (NDA)** avec la mention réglementaire complète</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>**Numéro SIRET** et forme juridique de votre organisme de formation</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>**Intitulé précis de la formation** dispensée</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>**Dates et durée** de la formation (en heures)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>**Nom et prénom des stagiaires** concernés (ou référence à la convention)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>**Mention TVA** adaptée : exonération art. 261-4-4° a du CGI ou TVA au taux applicable</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>**Numéro Qualiopi** si vous êtes certifié</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>**Référence de la convention ou du contrat** de formation associé</span>
+  </div>
+</div>
+
+Pour aller plus loin sur les obligations communes à toutes les professions libérales, consultez notre [guide de facturation en profession libérale](/blog/facture-profession-liberale-guide).
+
+## Facturer un OPCO : les spécificités
+
+La facturation à un **OPCO** (Opérateur de compétences) suit un processus bien encadré. Les OPCO exigent généralement :
+
+1. **Un dossier complet en amont** : convention de formation signée, programme détaillé, devis validé par l'entreprise bénéficiaire.
+2. **Une facture après réalisation** : émise une fois la formation dispensée, accompagnée des feuilles de présence (émargements), de l'attestation de fin de formation et parfois d'une évaluation.
+3. **Un règlement différé** : les OPCO règlent souvent sous 30 à 60 jours. Prévoyez votre trésorerie en conséquence.
+4. **La certification Qualiopi** : indispensable pour que l'OPCO accepte de financer la formation.
+
+La facture adressée à l'OPCO doit mentionner clairement l'entreprise bénéficiaire, le nombre d'heures réalisées et le coût horaire ou forfaitaire convenu. Certains OPCO utilisent des plateformes en ligne sur lesquelles vous devez déposer vos factures et justificatifs.
+
+<figure>
+  <Image
+    src="/blog/facture-formateur-independant/facturation-opco.webp"
+    alt="Processus de facturation d'une formation professionnelle à un OPCO"
+    width={800}
+    height={450}
+  />
+  <figcaption>Le processus de facturation à un OPCO requiert rigueur et documents justificatifs complets.</figcaption>
+</figure>
+
+<div className="not-prose my-8">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Facturer mes formations</Link>
+  </Button>
+</div>
+
+## Le bilan pédagogique et financier (BPF)
+
+Chaque année, tout formateur déclaré doit transmettre un **bilan pédagogique et financier (BPF)** à la DREETS avant le **30 avril**. Ce document récapitule l'ensemble de votre activité de formation de l'année civile précédente :
+
+- **Chiffre d'affaires** lié à la formation professionnelle continue
+- **Nombre de stagiaires** formés
+- **Nombre d'heures de formation** dispensées
+- **Répartition par type de public** (salariés, demandeurs d'emploi, particuliers)
+- **Répartition par source de financement** (entreprises, OPCO, fonds propres, etc.)
+
+Le BPF est déclaré en ligne sur la plateforme *Mon Activité Formation* du ministère du Travail. L'absence de dépôt du BPF entraîne la **caducité de votre numéro de déclaration d'activité**, ce qui vous interdirait de poursuivre votre activité de formation.
+
+## La sous-traitance entre formateurs
+
+Il est courant qu'un formateur indépendant fasse appel à un confrère en **sous-traitance** pour certaines missions. Voici les règles à respecter :
+
+- Le **donneur d'ordre** (formateur principal) reste responsable vis-à-vis du client final. C'est lui qui facture le client.
+- Le **sous-traitant** facture le donneur d'ordre. Sa facture doit comporter son propre NDA et respecter les mêmes obligations de mentions.
+- Si le donneur d'ordre est exonéré de TVA et que le sous-traitant ne l'est pas, ce dernier facture avec TVA. Le donneur d'ordre ne pourra pas la récupérer.
+- Un **contrat de sous-traitance** doit formaliser la relation : missions confiées, conditions financières, obligations respectives, propriété intellectuelle des supports pédagogiques.
+
+Pour les formateurs qui établissent également des devis en amont, notre [modèle de devis pour coach et formateur](/blog/devis-coach-formateur-modele) vous aidera à structurer vos propositions commerciales.
+
+<div className="not-prose my-6">
+  <Callout type="tip" title="Gagnez du temps avec les modèles Newbi">
+    Newbi propose des **modèles de factures et devis pré-configurés pour les formateurs indépendants**. Les mentions obligatoires (NDA, exonération TVA, référence convention) sont intégrées automatiquement. Vous n'avez plus qu'à renseigner les détails de votre formation et à envoyer votre facture en quelques clics.
+  </Callout>
+</div>
+
+## Récapitulatif : les points essentiels de la facturation formateur indépendant
+
+Pour résumer, voici les éléments clés à retenir pour une **facturation formateur indépendant** conforme :
+
+- **Obtenez votre NDA** auprès de la DREETS dans les trois mois suivant votre première prestation de formation.
+- **Demandez l'exonération de TVA** si vos prestations relèvent exclusivement de la formation professionnelle continue.
+- **Passez la certification Qualiopi** pour accéder aux financements OPCO et publics.
+- **Établissez une convention ou un contrat de formation** avant chaque prestation.
+- **Intégrez toutes les mentions obligatoires** sur vos factures, y compris le NDA, les dates, la durée et l'intitulé de la formation.
+- **Déposez votre BPF chaque année** avant le 30 avril pour conserver votre numéro de déclaration.
+- **Formalisez la sous-traitance** par écrit lorsque vous collaborez avec d'autres formateurs.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Créer mon compte formateur gratuit sur Newbi</Link>
+  </Button>
+</div>
+
+## Questions fréquentes
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Un formateur auto-entrepreneur doit-il avoir un numéro de déclaration d'activité ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, le statut juridique (auto-entrepreneur, EURL, SASU, etc.) n'a aucune incidence sur cette obligation. Dès lors que vous dispensez des actions de formation professionnelle continue, vous devez obtenir un numéro de déclaration d'activité (NDA) auprès de la DREETS, quel que soit votre régime fiscal ou social.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Peut-on bénéficier de l'exonération de TVA sans la certification Qualiopi ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, l'exonération de TVA (article 261-4-4° a du CGI) et la certification Qualiopi sont deux démarches totalement indépendantes. L'exonération de TVA est accordée par la DREETS sur demande, tandis que Qualiopi est une certification qualité délivrée par un organisme certificateur accrédité. Vous pouvez être exonéré de TVA sans être certifié Qualiopi, et inversement.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Comment facturer si je réalise à la fois du conseil et de la formation ?</AccordionTrigger>
+      <AccordionContent>
+        Vous devez impérativement distinguer les deux activités sur vos factures. Les prestations de formation exonérées de TVA doivent apparaître séparément des prestations de conseil soumises à TVA. Il est recommandé d'établir des factures distinctes pour chaque type de prestation afin d'éviter toute confusion lors d'un contrôle fiscal ou d'un contrôle de la DREETS.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Quels documents fournir à un OPCO pour être payé ?</AccordionTrigger>
+      <AccordionContent>
+        Les pièces généralement exigées par les OPCO sont : la convention de formation signée, le programme détaillé de la formation, les feuilles d'émargement (présence) signées par les stagiaires, l'attestation de fin de formation, l'évaluation des acquis et votre facture conforme. Certains OPCO peuvent demander des documents complémentaires comme un rapport pédagogique. Vérifiez toujours les exigences spécifiques de l'OPCO concerné.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Que se passe-t-il si je ne dépose pas mon bilan pédagogique et financier ?</AccordionTrigger>
+      <AccordionContent>
+        L'absence de dépôt du BPF avant le 30 avril entraîne la caducité de votre numéro de déclaration d'activité. Cela signifie que vous perdez le droit d'exercer en tant qu'organisme de formation. Vous devrez alors effectuer une nouvelle déclaration si vous souhaitez reprendre votre activité. De plus, si vous avez bénéficié de l'exonération de TVA, celle-ci sera également remise en cause.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>
+
+<script
+  type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Un formateur auto-entrepreneur doit-il avoir un numéro de déclaration d'activité ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Oui, le statut juridique n'a aucune incidence sur cette obligation. Dès lors que vous dispensez des actions de formation professionnelle continue, vous devez obtenir un numéro de déclaration d'activité (NDA) auprès de la DREETS, quel que soit votre régime fiscal ou social."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Peut-on bénéficier de l'exonération de TVA sans la certification Qualiopi ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Oui, l'exonération de TVA (article 261-4-4° a du CGI) et la certification Qualiopi sont deux démarches totalement indépendantes. Vous pouvez être exonéré de TVA sans être certifié Qualiopi, et inversement."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Comment facturer si je réalise à la fois du conseil et de la formation ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Vous devez distinguer les deux activités sur vos factures. Les prestations de formation exonérées de TVA doivent apparaître séparément des prestations de conseil soumises à TVA. Il est recommandé d'établir des factures distinctes pour chaque type de prestation."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Quels documents fournir à un OPCO pour être payé ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Les pièces généralement exigées sont : la convention de formation signée, le programme détaillé, les feuilles d'émargement, l'attestation de fin de formation, l'évaluation des acquis et votre facture conforme. Vérifiez toujours les exigences spécifiques de l'OPCO concerné."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Que se passe-t-il si je ne dépose pas mon bilan pédagogique et financier ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "L'absence de dépôt du BPF avant le 30 avril entraîne la caducité de votre numéro de déclaration d'activité. Vous perdez le droit d'exercer en tant qu'organisme de formation et devrez effectuer une nouvelle déclaration pour reprendre votre activité."
+          }
+        }
+      ]
+    })
+  }}
+/>
+
+<script
+  type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "Facturation pour formateurs indépendants : guide complet",
+      "description": "Guide de facturation pour formateurs : TVA formation, exonération Qualiopi, convention de formation, mentions obligatoires et modèle de facture.",
+      "author": {
+        "@type": "Organization",
+        "name": "Newbi"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "Newbi",
+        "url": "https://newbi.co"
+      },
+      "datePublished": "2026-02-10",
+      "dateModified": "2026-02-10",
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "https://newbi.co/blog/facture-formateur-independant"
+      },
+      "image": "https://newbi.co/blog/facture-formateur-independant/hero.webp",
+      "keywords": ["facturation formateur indépendant", "exonération TVA formation", "Qualiopi", "numéro déclaration activité", "OPCO", "bilan pédagogique et financier"]
+    })
+  }}
+/>

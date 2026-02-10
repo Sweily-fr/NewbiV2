@@ -1,0 +1,432 @@
+---
+title: 'Facturation pour infirmiers libéraux : guide des spécificités'
+description: >-
+  Guide de facturation pour infirmiers libéraux : cotation NGAP, tiers payant,
+  facturation CPAM, TVA et logiciel adapté aux IDEL.
+date: '2026-02-10'
+category: guide
+sector: Professions médicales
+keyword: facturation infirmier libéral
+author: Newbi
+image: /blog/gestion-facturation-infirmier-liberal/hero.webp
+published: false
+publishDate: null
+---
+
+import Image from "next/image"
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex flex-wrap gap-2 mb-8">
+  <Badge>Guide</Badge>
+  <Badge variant="secondary">Médical</Badge>
+  <Badge variant="outline">9 min de lecture</Badge>
+</div>
+
+# Facturation pour infirmiers libéraux : guide complet des spécificités
+
+La **facturation infirmier libéral** obéit à des règles très particulières qui la distinguent radicalement de la facturation classique des indépendants. Entre la cotation NGAP, le tiers payant, la télétransmission SESAM-Vitale et les règles d'exonération de TVA, un IDEL (infirmier diplômé d'État libéral) doit maîtriser un cadre réglementaire dense pour être correctement rémunéré et rester en conformité avec les organismes d'Assurance maladie.
+
+Ce guide détaille l'ensemble des spécificités de la facturation des infirmiers libéraux : nomenclature des actes, mécanismes de remboursement, obligations fiscales et outils adaptés pour simplifier votre gestion au quotidien.
+
+<figure className="my-10">
+  <Image
+    src="/blog/gestion-facturation-infirmier-liberal/hero.webp"
+    alt="Facturation pour infirmiers libéraux : cotation NGAP, tiers payant et télétransmission"
+    width={1200}
+    height={630}
+    className="rounded-xl w-full"
+    priority
+  />
+  <figcaption className="text-center text-sm text-muted-foreground mt-3">
+    La facturation IDEL repose sur la nomenclature NGAP et le système SESAM-Vitale.
+  </figcaption>
+</figure>
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Créer mon compte Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## La nomenclature NGAP : socle de la facturation infirmier libéral
+
+La Nomenclature Générale des Actes Professionnels (NGAP) constitue le référentiel obligatoire pour coter chaque acte réalisé par un infirmier libéral. Contrairement aux médecins spécialistes qui utilisent la CCAM, les IDEL relèvent exclusivement de la NGAP pour la quasi-totalité de leurs interventions.
+
+### Les principales lettres-clés
+
+Chaque acte infirmier est identifié par une **lettre-clé** associée à un coefficient. Le tarif remboursé est le produit de la valeur de la lettre-clé par le coefficient. Voici les lettres-clés essentielles :
+
+- **AMI** (Acte Médical Infirmier) : actes techniques (injections, pansements, perfusions, prélèvements sanguins).
+- **AIS** (Acte Infirmier de Soins) : soins de nursing et d'hygiène (toilette, aide à la mobilisation, surveillance d'un patient dépendant).
+- **DI** (Démarche de soins infirmiers) : évaluation initiale de la dépendance d'un patient pour établir un plan de soins.
+- **BSI** (Bilan de Soins Infirmiers) : forfaits journaliers remplaçant progressivement la DSI pour les patients dépendants.
+
+### Tableau des principaux actes et tarifs conventionnés
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Tarifs conventionnés des principaux actes infirmiers (NGAP 2025-2026)</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead>Acte</TableHead>
+        <TableHead>Lettre-clé</TableHead>
+        <TableHead>Coefficient</TableHead>
+        <TableHead className="text-right">Tarif conventionné</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Injection intraveineuse</TableCell>
+        <TableCell>AMI</TableCell>
+        <TableCell>4</TableCell>
+        <TableCell className="text-right">12,60 EUR</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Injection sous-cutanée</TableCell>
+        <TableCell>AMI</TableCell>
+        <TableCell>1</TableCell>
+        <TableCell className="text-right">3,15 EUR</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Pansement lourd et complexe</TableCell>
+        <TableCell>AMI</TableCell>
+        <TableCell>4</TableCell>
+        <TableCell className="text-right">12,60 EUR</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Perfusion (surveillance, 1re heure)</TableCell>
+        <TableCell>AMI</TableCell>
+        <TableCell>9</TableCell>
+        <TableCell className="text-right">28,35 EUR</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Prélèvement sanguin</TableCell>
+        <TableCell>AMI</TableCell>
+        <TableCell>1,5</TableCell>
+        <TableCell className="text-right">4,73 EUR</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Séance de soins infirmiers (AIS 3)</TableCell>
+        <TableCell>AIS</TableCell>
+        <TableCell>3</TableCell>
+        <TableCell className="text-right">7,95 EUR</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Séance de soins infirmiers (AIS 4)</TableCell>
+        <TableCell>AIS</TableCell>
+        <TableCell>4</TableCell>
+        <TableCell className="text-right">10,60 EUR</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">BSI forfait léger (BSA)</TableCell>
+        <TableCell>BSI</TableCell>
+        <TableCell>-</TableCell>
+        <TableCell className="text-right">13,00 EUR / jour</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">BSI forfait intermédiaire (BSB)</TableCell>
+        <TableCell>BSI</TableCell>
+        <TableCell>-</TableCell>
+        <TableCell className="text-right">18,20 EUR / jour</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">BSI forfait lourd (BSC)</TableCell>
+        <TableCell>BSI</TableCell>
+        <TableCell>-</TableCell>
+        <TableCell className="text-right">28,70 EUR / jour</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+Ces tarifs sont ceux applicables en secteur conventionné. Ils sont régulièrement revalorisés par avenant conventionnel entre les syndicats infirmiers et l'Assurance maladie.
+
+## Le tiers payant : part obligatoire et part complémentaire
+
+Le système de **tiers payant** est central dans la facturation infirmier libéral. Il permet au patient de ne pas avancer les frais de soins, l'infirmier étant directement payé par les organismes payeurs.
+
+### Part CPAM (régime obligatoire)
+
+L'Assurance maladie rembourse en général **60 %** du tarif conventionné pour les actes courants. Ce pourcentage passe à **100 %** dans certaines situations :
+
+- Affection de longue durée (ALD) exonérante
+- Maternité (du 6e mois de grossesse au 12e jour après l'accouchement)
+- Accident du travail ou maladie professionnelle
+- Bénéficiaires de la CSS (Complémentaire Santé Solidaire)
+- Soins liés à un acte de prévention
+
+### Part complémentaire (mutuelle)
+
+Les **40 % restants** (le ticket modérateur) sont pris en charge par la mutuelle ou complémentaire santé du patient. L'infirmier peut pratiquer le tiers payant complémentaire, ce qui signifie qu'il facture directement la mutuelle pour la part non couverte par la CPAM.
+
+Pour fluidifier ce mécanisme, les IDEL utilisent des logiciels compatibles avec les **services en ligne ROC** (Retour en Organisme Complémentaire) qui permettent de vérifier les droits du patient et de facturer en tiers payant intégral.
+
+## Télétransmission SESAM-Vitale : une obligation conventionnelle
+
+Tout infirmier libéral conventionné est tenu de **télétransmettre ses feuilles de soins électroniques (FSE)** via le système SESAM-Vitale. Ce dispositif remplace les feuilles de soins papier et accélère considérablement les remboursements.
+
+### Les prérequis techniques
+
+- **Carte CPS** (Carte de Professionnel de Santé) : authentifie l'infirmier.
+- **Lecteur de carte Vitale** : appareil portable ou intégré au logiciel de facturation.
+- **Logiciel agréé SESAM-Vitale** : pour créer, signer et envoyer les FSE.
+- **Connexion internet** : pour la télétransmission vers les caisses.
+
+La télétransmission permet de recevoir les paiements CPAM sous **5 à 7 jours ouvrés** en moyenne, contre plusieurs semaines en facturation papier. C'est un levier majeur pour bien [gérer sa trésorerie en tant qu'indépendant](/blog/comment-gerer-tresorerie-entreprise).
+
+<figure className="my-10">
+  <Image
+    src="/blog/gestion-facturation-infirmier-liberal/sesam-vitale-idel.webp"
+    alt="Télétransmission SESAM-Vitale pour la facturation infirmier libéral"
+    width={800}
+    height={450}
+    className="rounded-xl w-full"
+  />
+  <figcaption className="text-center text-sm text-muted-foreground mt-3">
+    La télétransmission via SESAM-Vitale est obligatoire pour les IDEL conventionnés.
+  </figcaption>
+</figure>
+
+## Exonération de TVA pour les actes de soins
+
+<div className="not-prose my-8">
+  <Callout variant="info" title="Exonération de TVA pour les actes médicaux">
+    En vertu de l'article **261-4-1 du Code Général des Impôts**, les soins dispensés aux personnes par les membres des professions médicales et paramédicales réglementées sont **exonérés de TVA**. Cette exonération couvre l'intégralité des actes infirmiers à visée thérapeutique, qu'ils soient conventionnés ou non. Vous n'avez donc pas à collecter ni à reverser de TVA sur vos honoraires de soins.
+  </Callout>
+</div>
+
+Cette exonération s'applique de plein droit et ne dépend pas du régime fiscal de l'infirmier (BNC réel ou micro-BNC). Elle concerne :
+
+- Tous les actes cotés en AMI, AIS, BSI
+- Les indemnités de déplacement (IFD, IFK)
+- Les majorations (nuit, dimanche, jours fériés, urgences)
+- Les actes hors nomenclature à visée thérapeutique
+
+En revanche, certaines activités annexes d'un infirmier libéral ne bénéficient **pas** de cette exonération. C'est le cas des prestations de formation, de conseil, de vente de matériel médical ou de toute activité sans lien direct avec le soin au patient. Pour ces activités, les [règles classiques de TVA s'appliquent](/blog/tva-auto-entrepreneur-seuils-franchise), y compris la franchise en base si les seuils ne sont pas dépassés.
+
+<div className="not-prose my-8">
+  <Callout variant="default" title="Astuce : Newbi pour la facturation non-médicale">
+    Si vous réalisez des activités complémentaires (formations, consulting, vente de matériel), **Newbi** vous permet de créer des factures conformes avec les [mentions obligatoires](/blog/mentions-obligatoires-facture) requises, y compris la gestion de la TVA. C'est le complément idéal de votre logiciel de télétransmission SESAM-Vitale pour gérer l'ensemble de votre activité libérale.
+  </Callout>
+</div>
+
+## Facturation directe au patient : dépassements et indemnités
+
+Si la majorité des paiements provient du tiers payant, certains montants restent à la charge directe du patient.
+
+### L'indemnité forfaitaire de déplacement (IFD)
+
+Lorsque l'infirmier se déplace au domicile du patient, une **IFD** (indemnité forfaitaire de déplacement) de **2,50 EUR** est facturée. Elle couvre les frais de déplacement dans un rayon de 2 km autour du cabinet. Au-dela, des **indemnités kilométriques (IFK)** s'ajoutent selon un barème conventionnel (plaine, montagne, pied/ski).
+
+### Les majorations
+
+Plusieurs majorations viennent s'ajouter au tarif de base :
+
+- **Majoration de nuit** (20h-23h et 5h-8h) : acte majoré
+- **Majoration de nuit profonde** (23h-5h) : majoration plus importante
+- **Majoration dimanche et jours fériés**
+- **MAU** (Majoration d'Acte Unique) : lorsqu'un seul acte AMI est réalisé lors du passage
+- **MCI** (Majoration de Coordination Infirmière) : pour la coordination avec le médecin traitant
+
+### Le dépassement pour exigence particulière du patient
+
+Un infirmier conventionné ne peut pas pratiquer de dépassements d'honoraires sauf en cas d'**exigence particulière du patient** (par exemple, visite à un horaire non justifié médicalement). Ce dépassement, codé **DE**, n'est pas remboursé et reste intégralement à la charge du patient.
+
+## SCM et rétrocession d'honoraires : les cas particuliers
+
+### La Société Civile de Moyens (SCM)
+
+De nombreux infirmiers libéraux exercent au sein d'une **SCM** (Société Civile de Moyens) pour mutualiser les charges : local, secrétariat, matériel, véhicule. La SCM n'exerce pas elle-même l'activité de soins ; chaque associé facture individuellement ses actes et rétrocède à la SCM une quote-part pour couvrir les frais partagés.
+
+Du point de vue fiscal, la quote-part versée à la SCM constitue une **charge déductible** du BNC de l'infirmier. La SCM elle-même est transparente fiscalement (régime des sociétés de personnes).
+
+### La rétrocession d'honoraires
+
+En cas de **remplacement** ou de **collaboration libérale**, l'infirmier titulaire perçoit les honoraires et en rétrocède une partie (généralement entre 80 % et 95 %) au remplaçant ou collaborateur. Cette rétrocession doit faire l'objet d'une [facture conforme](/blog/facture-profession-liberale-guide) mentionnant le montant rétrocédé, et elle est déductible pour le titulaire.
+
+Le remplaçant, quant a lui, déclare la rétrocession comme recette dans sa déclaration 2035 (BNC).
+
+<div className="not-prose my-8">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Gérer ma facturation IDEL</Link>
+  </Button>
+</div>
+
+## Ce que Newbi apporte aux infirmiers libéraux
+
+Newbi ne remplace pas votre logiciel de télétransmission SESAM-Vitale, mais il complète parfaitement votre gestion administrative pour tout ce qui ne releve pas de la facturation CPAM.
+
+<div className="not-prose my-8 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+    <span>Facturation des activités annexes (formations, vente de matériel, consulting) avec TVA ou mention d'exonération</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+    <span>Création de factures de rétrocession d'honoraires conformes entre titulaire et remplaçant</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+    <span>Gestion des quotes-parts SCM et facturation entre associés</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+    <span>Suivi de trésorerie et rapprochement bancaire pour visualiser vos encaissements CPAM et complémentaires</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+    <span>Gestion des notes de frais et dépenses professionnelles (carburant, matériel, assurance RCP)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+    <span>Tableau de bord avec indicateurs de chiffre d'affaires, charges et résultat net</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+    <span>Export comptable compatible avec votre AGA (Association de Gestion Agréée)</span>
+  </div>
+</div>
+
+## En résumé
+
+La **facturation infirmier libéral** repose sur un système dual : d'un côté la facturation SESAM-Vitale des actes de soins cotés en NGAP (AMI, AIS, BSI), de l'autre la gestion administrative classique pour les activités annexes, les rétrocessions et les charges de SCM. Les points essentiels a retenir :
+
+1. **La NGAP est votre référentiel** : chaque acte doit être correctement coté avec la bonne lettre-clé et le bon coefficient.
+2. **Le tiers payant est la norme** : la CPAM (60 % ou 100 %) et les mutuelles vous paient directement via la télétransmission.
+3. **La TVA ne s'applique pas** aux actes de soins (art. 261-4-1 CGI), mais elle s'applique aux activités non médicales.
+4. **Les IFD et majorations** complètent vos honoraires lors des déplacements et interventions hors horaires classiques.
+5. **Un logiciel complémentaire** comme Newbi est indispensable pour gérer la facturation non-CPAM, les rétrocessions et le suivi financier global.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="faq-1">
+      <AccordionTrigger>Un infirmier libéral doit-il facturer la TVA sur ses actes de soins ?</AccordionTrigger>
+      <AccordionContent>
+        Non. L'article 261-4-1 du Code Général des Impôts exonère de TVA l'ensemble des soins dispensés par les professions médicales et paramédicales réglementées. Cette exonération couvre tous les actes infirmiers à visée thérapeutique (AMI, AIS, BSI), les majorations et les indemnités de déplacement. En revanche, si vous exercez des activités complémentaires sans lien direct avec le soin (formation, conseil, vente de matériel), ces prestations sont soumises aux règles classiques de TVA.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-2">
+      <AccordionTrigger>Quelle est la différence entre la DSI et le BSI ?</AccordionTrigger>
+      <AccordionContent>
+        La Démarche de Soins Infirmiers (DSI) était l'ancien dispositif d'évaluation de la dépendance d'un patient. Elle a été progressivement remplacée par le Bilan de Soins Infirmiers (BSI), qui fonctionne sous forme de forfaits journaliers (BSA, BSB, BSC) en fonction du niveau de dépendance du patient. Le BSI est désormais obligatoire pour tous les patients dépendants et se réalise directement via votre logiciel de télétransmission agréé.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-3">
+      <AccordionTrigger>Comment facturer une rétrocession d'honoraires entre infirmiers ?</AccordionTrigger>
+      <AccordionContent>
+        Le titulaire du cabinet perçoit l'intégralité des honoraires via la télétransmission SESAM-Vitale. Il reverse ensuite au remplaçant ou collaborateur un pourcentage convenu (généralement 80 % à 95 %). Cette rétrocession doit faire l'objet d'une facture émise par le remplaçant, mentionnant le montant rétrocédé, les dates de remplacement et les coordonnées des deux parties. Newbi vous permet de créer ces factures de rétrocession rapidement et en conformité avec les obligations légales.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-4">
+      <AccordionTrigger>Quels sont les délais de paiement de la CPAM par télétransmission ?</AccordionTrigger>
+      <AccordionContent>
+        En télétransmission via SESAM-Vitale, les remboursements CPAM sont généralement virés sous 5 à 7 jours ouvrés après l'envoi de la feuille de soins électronique. Ce délai peut varier légèrement selon les caisses et les périodes. Pour les paiements des mutuelles (tiers payant complémentaire), le délai est souvent un peu plus long, entre 10 et 15 jours. La télétransmission reste nettement plus rapide que la facturation papier, qui peut prendre plusieurs semaines.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-5">
+      <AccordionTrigger>Newbi peut-il remplacer mon logiciel SESAM-Vitale ?</AccordionTrigger>
+      <AccordionContent>
+        Non, Newbi ne remplace pas votre logiciel de télétransmission SESAM-Vitale agréé (comme Vega, Intellio, Agathe, etc.). Newbi est un outil complémentaire conçu pour gérer tout ce qui ne relève pas de la facturation CPAM : factures d'activités annexes, rétrocessions d'honoraires, quotes-parts de SCM, suivi de trésorerie, gestion des dépenses et export comptable pour votre AGA. Les deux outils fonctionnent ensemble pour couvrir l'intégralité de votre gestion financière d'IDEL.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>
+
+<script type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "Facturation pour infirmiers libéraux : guide des spécificités",
+      "description": "Guide de facturation pour infirmiers libéraux : cotation NGAP, tiers payant, facturation CPAM, TVA et logiciel adapté aux IDEL.",
+      "author": {
+        "@type": "Organization",
+        "name": "Newbi",
+        "url": "https://newbi.co"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "Newbi",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://newbi.co/logo.png"
+        }
+      },
+      "datePublished": "2026-02-10",
+      "dateModified": "2026-02-10",
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "https://newbi.co/blog/gestion-facturation-infirmier-liberal"
+      },
+      "image": "https://newbi.co/blog/gestion-facturation-infirmier-liberal/hero.webp",
+      "keywords": ["facturation infirmier libéral", "NGAP", "IDEL", "tiers payant", "SESAM-Vitale", "cotation AMI", "BSI", "TVA soins infirmiers"],
+      "articleSection": "Guide",
+      "inLanguage": "fr-FR"
+    })
+  }}
+/>
+
+<script type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Un infirmier libéral doit-il facturer la TVA sur ses actes de soins ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Non. L'article 261-4-1 du Code Général des Impôts exonère de TVA l'ensemble des soins dispensés par les professions médicales et paramédicales réglementées. Cette exonération couvre tous les actes infirmiers à visée thérapeutique (AMI, AIS, BSI), les majorations et les indemnités de déplacement."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Quelle est la différence entre la DSI et le BSI ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "La Démarche de Soins Infirmiers (DSI) était l'ancien dispositif d'évaluation de la dépendance. Elle a été remplacée par le Bilan de Soins Infirmiers (BSI), qui fonctionne sous forme de forfaits journaliers (BSA, BSB, BSC) en fonction du niveau de dépendance du patient."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Comment facturer une rétrocession d'honoraires entre infirmiers ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Le titulaire perçoit les honoraires via SESAM-Vitale et reverse au remplaçant un pourcentage convenu (80 % à 95 %). Cette rétrocession doit faire l'objet d'une facture émise par le remplaçant mentionnant le montant, les dates et les coordonnées des parties."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Quels sont les délais de paiement de la CPAM par télétransmission ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "En télétransmission via SESAM-Vitale, les remboursements CPAM arrivent sous 5 à 7 jours ouvrés. Pour les mutuelles en tiers payant complémentaire, le délai est de 10 à 15 jours en moyenne."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Newbi peut-il remplacer mon logiciel SESAM-Vitale ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Non, Newbi est un outil complémentaire pour gérer la facturation non-CPAM : activités annexes, rétrocessions, quotes-parts de SCM, suivi de trésorerie et export comptable pour votre AGA."
+          }
+        }
+      ]
+    })
+  }}
+/>

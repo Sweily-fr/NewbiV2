@@ -1,0 +1,416 @@
+---
+title: Qu'est-ce que le PPF (Portail Public de Facturation) ?
+description: >-
+  Comprendre le PPF : rôle du portail public de facturation, fonctionnalités,
+  différence avec les PDP et comment il s'intègre à votre logiciel.
+date: '2026-02-10'
+category: glossaire
+sector: null
+keyword: PPF portail public facturation
+author: Newbi
+image: /blog/quest-ce-que-ppf-portail-public-facturation/hero.webp
+published: false
+publishDate: null
+---
+
+import Image from "next/image"
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Glossaire</Badge>
+  <Badge variant="outline">8 min de lecture</Badge>
+</div>
+
+# Qu'est-ce que le PPF (Portail Public de Facturation) ?
+
+La réforme de la facturation électronique bouleverse le quotidien des entreprises françaises. Au coeur de ce dispositif se trouve le **PPF portail public facturation**, une plateforme gratuite mise en place par l'État pour centraliser les échanges de factures entre professionnels. Mais quel est exactement son rôle ? Quelles sont ses fonctionnalités ? Et surtout, est-il suffisant pour votre entreprise ou devez-vous passer par une PDP ? Ce guide complet répond à toutes vos questions.
+
+<figure className="my-8">
+  <Image
+    src="/blog/quest-ce-que-ppf-portail-public-facturation/hero.webp"
+    alt="Le Portail Public de Facturation (PPF) : plateforme gratuite de l'État pour la facturation électronique"
+    width={1200}
+    height={630}
+    className="rounded-lg"
+    priority
+  />
+  <figcaption className="text-center text-sm text-muted-foreground mt-2">
+    Le PPF est la plateforme publique et gratuite au coeur de la réforme de la facturation électronique en France.
+  </figcaption>
+</figure>
+
+<div className="not-prose my-6">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Créer mon compte Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Définition du PPF : le portail public de facturation
+
+Le **Portail Public de Facturation (PPF)** est une plateforme numérique gratuite développée et gérée par l'**AIFE** (Agence pour l'Informatique Financière de l'État) sous la tutelle de la **DGFiP** (Direction Générale des Finances Publiques). Il s'appuie sur l'infrastructure existante de **Chorus Pro**, le portail déjà utilisé pour la facturation destinée au secteur public.
+
+Concrètement, le PPF est le socle minimum garanti par l'État dans le cadre de la [facturation électronique obligatoire à partir de 2026](/blog/facturation-electronique-obligatoire-2026). Toute entreprise assujettie à la TVA en France pourra l'utiliser gratuitement pour envoyer et recevoir des factures au format électronique structuré.
+
+## Les rôles fondamentaux du PPF
+
+Le PPF remplit plusieurs missions essentielles dans l'écosystème de la facturation électronique :
+
+### 1. Annuaire centralisé des entreprises
+
+Le PPF gère un **annuaire centralisé** qui recense toutes les entreprises françaises assujetties à la TVA. Cet annuaire permet de savoir par quelle plateforme (PPF ou PDP) chaque entreprise souhaite recevoir ses factures. Il constitue le point de référence unique pour le routage des documents.
+
+### 2. Réception et émission de factures
+
+Le portail permet à toute entreprise d'**émettre des factures** à destination de ses clients professionnels (e-invoicing B2B) et de **recevoir des factures** de ses fournisseurs. Il joue le rôle d'intermédiaire neutre et gratuit pour ces échanges.
+
+### 3. Transmission des données fiscales à la DGFiP
+
+Le PPF collecte et transmet automatiquement les **données de facturation** à l'administration fiscale. Cette transmission concerne aussi bien les factures B2B (e-invoicing) que les données de transactions B2C et internationales via le mécanisme d'**e-reporting**.
+
+### 4. E-reporting des transactions
+
+Pour les opérations qui ne relèvent pas du e-invoicing (ventes aux particuliers, transactions avec des partenaires étrangers), le PPF assure la collecte des données de **e-reporting** et leur transmission à la DGFiP. Ce mécanisme permet à l'administration fiscale de disposer d'une vision complète de l'activité économique.
+
+<div className="not-prose my-6">
+  <Callout type="info" title="Le PPF est entièrement gratuit">
+    L'utilisation du Portail Public de Facturation est gratuite pour toutes les entreprises. C'est un service public financé par l'État, conçu pour garantir que chaque entreprise, quelle que soit sa taille, puisse se conformer à l'obligation de facturation électronique sans coût supplémentaire lié à la plateforme d'échange.
+  </Callout>
+</div>
+
+## Fonctionnalités du PPF
+
+Le PPF offre un ensemble de fonctionnalités essentielles, bien que volontairement **basiques** :
+
+- **Émission de factures** dans les formats structurés acceptés : [Factur-X](/blog/facturx-format-facture-electronique), UBL et CII
+- **Réception de factures** provenant de fournisseurs utilisant le PPF ou une PDP
+- **Consultation et archivage temporaire** des factures échangées
+- **Saisie manuelle** de factures directement sur le portail (pour les petites structures)
+- **Dépôt de fichiers** de factures au format structuré
+- **E-reporting** des transactions non couvertes par le e-invoicing
+- **Suivi du cycle de vie** des factures (envoyée, reçue, acceptée, refusée)
+- **Gestion de l'annuaire** : choix de la plateforme de réception
+
+Le PPF ne propose pas de fonctionnalités avancées comme l'intégration automatique avec un ERP, la conversion de formats, l'enrichissement de données ou un accompagnement personnalisé. Pour ces besoins, il faut se tourner vers une [Plateforme de Dématérialisation Partenaire (PDP)](/blog/quest-ce-que-pdp-plateforme-dematerialisation).
+
+## PPF vs PDP : quelles différences ?
+
+La distinction entre le PPF et les PDP est au coeur de la compréhension de la réforme. Voici un comparatif détaillé :
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Comparatif entre le PPF (Portail Public de Facturation) et les PDP (Plateformes de Dématérialisation Partenaires)</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[200px]">Critère</TableHead>
+        <TableHead>PPF (Portail Public)</TableHead>
+        <TableHead>PDP (Plateforme Partenaire)</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Coût</TableCell>
+        <TableCell>Gratuit</TableCell>
+        <TableCell>Payant (abonnement ou à la facture)</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Opérateur</TableCell>
+        <TableCell>État (AIFE / DGFiP)</TableCell>
+        <TableCell>Entreprises privées immatriculées par la DGFiP</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Fonctionnalités</TableCell>
+        <TableCell>Basiques (envoi, réception, saisie)</TableCell>
+        <TableCell>Avancées (intégration ERP, conversion, enrichissement)</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Intégration logiciel</TableCell>
+        <TableCell>API limitée</TableCell>
+        <TableCell>API complètes, connecteurs ERP, flux automatisés</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Accompagnement</TableCell>
+        <TableCell>Documentation en ligne</TableCell>
+        <TableCell>Support dédié, conseil, onboarding</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Conversion de formats</TableCell>
+        <TableCell>Non</TableCell>
+        <TableCell>Oui (PDF vers Factur-X, UBL, CII)</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Archivage légal</TableCell>
+        <TableCell>Non garanti sur la durée légale</TableCell>
+        <TableCell>Archivage à valeur probante disponible</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Idéal pour</TableCell>
+        <TableCell>TPE, micro-entreprises, faible volume</TableCell>
+        <TableCell>PME, ETI, grandes entreprises, volumes importants</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+En résumé, le **PPF est le minimum gratuit** garanti par l'État, tandis que les **PDP apportent des services à valeur ajoutée** moyennant un coût. Les deux sont complémentaires dans l'écosystème de la facturation électronique.
+
+## Qui devrait utiliser le PPF plutôt qu'une PDP ?
+
+Le choix entre PPF et PDP dépend de la taille de votre entreprise, de votre volume de factures et de vos besoins en automatisation.
+
+**Le PPF est adapté si vous :**
+
+<div className="not-prose my-4 space-y-2">
+  <div className="flex items-start gap-2">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Êtes une micro-entreprise ou une TPE avec un faible volume de factures</span>
+  </div>
+  <div className="flex items-start gap-2">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>N'avez pas besoin d'intégration automatisée avec un logiciel comptable</span>
+  </div>
+  <div className="flex items-start gap-2">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Pouvez saisir ou déposer vos factures manuellement</span>
+  </div>
+  <div className="flex items-start gap-2">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Souhaitez une solution sans coût supplémentaire</span>
+  </div>
+  <div className="flex items-start gap-2">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Disposez du temps nécessaire pour gérer vos factures manuellement</span>
+  </div>
+</div>
+
+**Une PDP est recommandée si vous :**
+
+- Traitez un volume significatif de factures chaque mois
+- Avez besoin d'une intégration fluide avec votre logiciel de gestion ou ERP
+- Souhaitez automatiser vos flux de facturation de bout en bout
+- Avez besoin de services complémentaires (conversion de formats, archivage légal, tableau de bord avancé)
+- Voulez bénéficier d'un accompagnement personnalisé
+
+Pour les [PME soumises aux obligations de facturation électronique](/blog/obligations-facture-electronique-pme), le recours à une PDP ou à un logiciel connecté est souvent la solution la plus efficiente.
+
+## Comment s'inscrire sur le PPF ?
+
+L'inscription sur le PPF suivra un processus simple en plusieurs étapes :
+
+1. **Rendez-vous sur le portail** : le PPF sera accessible via une URL dédiée fournie par l'AIFE (évolution de Chorus Pro).
+2. **Identification de l'entreprise** : renseignez votre numéro SIREN/SIRET pour identifier votre structure.
+3. **Création du compte** : désignez un administrateur et créez votre espace entreprise.
+4. **Configuration de l'annuaire** : indiquez si vous souhaitez recevoir vos factures via le PPF directement ou via une PDP partenaire.
+5. **Paramétrage** : configurez vos préférences de réception, vos formats privilégiés et vos habilitations d'accès.
+
+L'inscription sera ouverte progressivement selon le calendrier de la réforme, en commençant par l'obligation de **réception** pour toutes les entreprises, puis l'obligation d'**émission** selon la taille de l'entreprise.
+
+<figure className="my-8">
+  <Image
+    src="/blog/quest-ce-que-ppf-portail-public-facturation/schema-ppf-pdp.webp"
+    alt="Schéma de fonctionnement du PPF et des PDP dans la facturation électronique"
+    width={1200}
+    height={630}
+    className="rounded-lg"
+  />
+  <figcaption className="text-center text-sm text-muted-foreground mt-2">
+    Le PPF et les PDP fonctionnent en complémentarité pour assurer la circulation des factures électroniques.
+  </figcaption>
+</figure>
+
+## Intégration du PPF avec votre logiciel de facturation
+
+L'un des enjeux majeurs pour les entreprises est la **connexion entre leur logiciel de gestion et le PPF**. Plusieurs scénarios sont possibles :
+
+### Utilisation directe du PPF
+
+Vous accédez au portail web du PPF pour saisir, déposer ou consulter vos factures. Cette approche convient aux très petites structures mais devient vite chronophage au-delà de quelques factures par mois.
+
+### Connexion via API
+
+Le PPF met à disposition une **API** permettant aux éditeurs de logiciels de se connecter directement. Votre logiciel de facturation peut ainsi envoyer et recevoir des factures via le PPF de manière automatisée, sans intervention manuelle.
+
+### Passage par une PDP connectée
+
+Votre logiciel se connecte à une PDP immatriculée, qui se charge ensuite de communiquer avec le PPF et l'annuaire centralisé. Cette option offre plus de souplesse et de fonctionnalités avancées.
+
+<div className="not-prose my-6">
+  <Callout type="tip" title="Newbi se connecte au PPF et aux PDP">
+    Newbi est conçu pour s'intégrer nativement à l'écosystème de la facturation électronique. Que vous choisissiez de passer par le PPF directement ou par une PDP partenaire, Newbi génère vos factures aux formats conformes (Factur-X, UBL, CII) et assure la transmission automatique de vos documents. Vous n'avez pas à vous soucier de la complexité technique de la réforme.
+  </Callout>
+</div>
+
+<div className="not-prose my-6">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Se préparer avec Newbi</Link>
+  </Button>
+</div>
+
+## Ce qu'il faut retenir sur le PPF
+
+Le Portail Public de Facturation est une pièce centrale de la réforme de la facturation électronique en France. Voici les points essentiels :
+
+<div className="not-prose my-4 space-y-2">
+  <div className="flex items-start gap-2">
+    <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+    <span>Le PPF est une plateforme <strong>gratuite</strong> gérée par l'État (AIFE/DGFiP)</span>
+  </div>
+  <div className="flex items-start gap-2">
+    <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+    <span>Il est basé sur l'infrastructure de <strong>Chorus Pro</strong></span>
+  </div>
+  <div className="flex items-start gap-2">
+    <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+    <span>Il gère l'<strong>annuaire centralisé</strong> des entreprises</span>
+  </div>
+  <div className="flex items-start gap-2">
+    <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+    <span>Il permet l'émission, la réception de factures et le <strong>e-reporting</strong></span>
+  </div>
+  <div className="flex items-start gap-2">
+    <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+    <span>Ses fonctionnalités restent <strong>basiques</strong> par rapport aux PDP</span>
+  </div>
+  <div className="flex items-start gap-2">
+    <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+    <span>Il accepte les formats <strong>Factur-X, UBL et CII</strong></span>
+  </div>
+  <div className="flex items-start gap-2">
+    <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+    <span>Un logiciel comme <strong>Newbi</strong> peut s'y connecter automatiquement</span>
+  </div>
+</div>
+
+Que vous optiez pour le PPF seul ou pour une PDP en complément, l'essentiel est de vous **préparer dès maintenant** à la facturation électronique. Choisir un logiciel compatible et générer vos factures dans les bons formats vous fera gagner un temps précieux le moment venu.
+
+<div className="not-prose my-8 text-center">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur le PPF
+
+<div className="not-prose my-6">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Le PPF est-il obligatoire pour toutes les entreprises ?</AccordionTrigger>
+      <AccordionContent>
+        Non, le PPF n'est pas obligatoire en lui-même. Ce qui est obligatoire, c'est la facturation électronique. Chaque entreprise peut choisir de passer par le PPF (gratuit) ou par une PDP (Plateforme de Dématérialisation Partenaire) immatriculée. En revanche, toutes les entreprises seront référencées dans l'annuaire centralisé géré par le PPF.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Quelle est la différence entre le PPF et Chorus Pro ?</AccordionTrigger>
+      <AccordionContent>
+        Chorus Pro est le portail utilisé depuis 2017 pour la facturation électronique à destination du secteur public (B2G). Le PPF est une évolution de Chorus Pro, étendue aux échanges entre entreprises privées (B2B). Le PPF reprend l'infrastructure technique de Chorus Pro tout en l'adaptant aux besoins de la facturation interentreprises et du e-reporting.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Peut-on utiliser le PPF et une PDP en même temps ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, c'est tout à fait possible. Vous pouvez par exemple choisir de recevoir vos factures via une PDP (pour bénéficier de ses services avancés) tout en utilisant le PPF pour certaines opérations. L'annuaire centralisé du PPF permet justement de définir votre plateforme de réception préférée.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Quels formats de facture le PPF accepte-t-il ?</AccordionTrigger>
+      <AccordionContent>
+        Le PPF accepte trois formats de facture électronique structurée : Factur-X (format hybride PDF/XML), UBL (Universal Business Language) et CII (Cross Industry Invoice). Les factures au format PDF simple ne seront pas acceptées car elles ne contiennent pas de données structurées exploitables. Un logiciel comme Newbi génère automatiquement vos factures dans ces formats conformes.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Quand le PPF sera-t-il disponible ?</AccordionTrigger>
+      <AccordionContent>
+        Le PPF est progressivement mis en place dans le cadre du calendrier de la réforme de la facturation électronique. L'obligation de réception des factures électroniques concerne toutes les entreprises dès septembre 2026. L'obligation d'émission sera ensuite étendue progressivement selon la taille de l'entreprise. Il est recommandé de se préparer dès maintenant en adoptant un logiciel compatible.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>
+
+---
+
+**Articles connexes :**
+
+- [Qu'est-ce qu'une PDP (Plateforme de Dématérialisation Partenaire) ?](/blog/quest-ce-que-pdp-plateforme-dematerialisation)
+- [Facturation électronique obligatoire en 2026 : ce qu'il faut savoir](/blog/facturation-electronique-obligatoire-2026)
+- [Factur-X : le format de facture électronique expliqué](/blog/facturx-format-facture-electronique)
+- [Obligations de facture électronique pour les PME](/blog/obligations-facture-electronique-pme)
+
+<script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Qu'est-ce que le PPF (Portail Public de Facturation) ?",
+  "description": "Comprendre le PPF : rôle du portail public de facturation, fonctionnalités, différence avec les PDP et comment il s'intègre à votre logiciel.",
+  "author": {
+    "@type": "Organization",
+    "name": "Newbi",
+    "url": "https://www.newbi.co"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Newbi",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://www.newbi.co/logo.png"
+    }
+  },
+  "datePublished": "2026-02-10",
+  "dateModified": "2026-02-10",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://www.newbi.co/blog/quest-ce-que-ppf-portail-public-facturation"
+  },
+  "image": "https://www.newbi.co/blog/quest-ce-que-ppf-portail-public-facturation/hero.webp",
+  "keywords": "PPF portail public facturation, facturation électronique, Chorus Pro, PDP, e-invoicing, e-reporting"
+}) }} />
+
+<script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Le PPF est-il obligatoire pour toutes les entreprises ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Non, le PPF n'est pas obligatoire en lui-même. Ce qui est obligatoire, c'est la facturation électronique. Chaque entreprise peut choisir de passer par le PPF (gratuit) ou par une PDP (Plateforme de Dématérialisation Partenaire) immatriculée. En revanche, toutes les entreprises seront référencées dans l'annuaire centralisé géré par le PPF."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Quelle est la différence entre le PPF et Chorus Pro ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Chorus Pro est le portail utilisé depuis 2017 pour la facturation électronique à destination du secteur public (B2G). Le PPF est une évolution de Chorus Pro, étendue aux échanges entre entreprises privées (B2B). Le PPF reprend l'infrastructure technique de Chorus Pro tout en l'adaptant aux besoins de la facturation interentreprises et du e-reporting."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Peut-on utiliser le PPF et une PDP en même temps ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Oui, c'est tout à fait possible. Vous pouvez par exemple choisir de recevoir vos factures via une PDP tout en utilisant le PPF pour certaines opérations. L'annuaire centralisé du PPF permet justement de définir votre plateforme de réception préférée."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Quels formats de facture le PPF accepte-t-il ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Le PPF accepte trois formats de facture électronique structurée : Factur-X (format hybride PDF/XML), UBL (Universal Business Language) et CII (Cross Industry Invoice). Les factures au format PDF simple ne seront pas acceptées."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Quand le PPF sera-t-il disponible ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Le PPF est progressivement mis en place dans le cadre du calendrier de la réforme de la facturation électronique. L'obligation de réception des factures électroniques concerne toutes les entreprises dès septembre 2026. L'obligation d'émission sera ensuite étendue progressivement selon la taille de l'entreprise."
+      }
+    }
+  ]
+}) }} />

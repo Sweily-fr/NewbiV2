@@ -1,0 +1,402 @@
+---
+title: Comment créer un catalogue de produits et services pour votre entreprise
+description: >-
+  Créez un catalogue produits/services professionnel : structure, prix,
+  descriptions et comment l'intégrer à votre facturation pour gagner du temps.
+date: '2026-02-10'
+category: guide
+sector: null
+keyword: créer catalogue produits services
+author: Newbi
+image: /blog/comment-creer-catalogue-produits-services/hero.webp
+published: false
+publishDate: null
+---
+
+import Image from "next/image"
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-8">
+  <Badge variant="secondary">Guide</Badge>
+  <Badge variant="outline">7 min de lecture</Badge>
+</div>
+
+# Comment créer un catalogue de produits et services pour votre entreprise
+
+Vous perdez un temps precieux a ressaisir vos tarifs a chaque devis ou facture ? **Créer un catalogue produits services** structuré est la solution pour gagner en efficacité, en cohérence et en professionnalisme. Que vous vendiez des prestations intellectuelles, des produits physiques ou des forfaits, un catalogue bien conçu transforme radicalement votre processus de facturation.
+
+Dans ce guide complet, nous allons voir pourquoi un catalogue est indispensable, comment le structurer correctement, quelles bonnes pratiques adopter et surtout comment l'intégrer directement a votre outil de facturation pour automatiser la saisie de vos lignes de factures et devis.
+
+<figure className="my-8">
+  <Image
+    src="/blog/comment-creer-catalogue-produits-services/hero.webp"
+    alt="Catalogue de produits et services pour la facturation"
+    width={1200}
+    height={630}
+    className="rounded-lg"
+    priority
+  />
+  <figcaption className="text-center text-sm text-muted-foreground mt-2">
+    Un catalogue produits/services bien organisé simplifie toute votre facturation.
+  </figcaption>
+</figure>
+
+## Pourquoi créer un catalogue de produits et services ?
+
+Beaucoup d'entrepreneurs et de freelances saisissent manuellement chaque ligne de leurs factures. Résultat : des incohérences de prix, des descriptions qui varient d'un document a l'autre et un temps considérable perdu sur des taches répétitives.
+
+### Cohérence tarifaire garantie
+
+Un catalogue centralise tous vos tarifs en un seul endroit. Chaque produit ou service dispose d'un prix de référence unique. Fini les erreurs de saisie ou les écarts de prix entre deux devis pour la meme prestation. Vos clients reçoivent des documents parfaitement cohérents, ce qui renforce votre crédibilité professionnelle.
+
+### Rapidité de création des documents
+
+Plutot que de rédiger chaque ligne de facture depuis zéro, vous sélectionnez simplement un produit dans votre catalogue. La description, le prix unitaire HT, le taux de TVA et l'unité se remplissent automatiquement. En quelques clics, votre facture ou devis est pret.
+
+### Réduction des erreurs
+
+Les erreurs de facturation sont courantes quand on saisit tout manuellement : mauvais taux de TVA, description incomplète, prix incorrect. Un catalogue élimine ces risques car les informations sont prédéfinies et vérifiées. Pour approfondir ce sujet, consultez notre article sur les <Link href="/blog/erreurs-facturation-independants">erreurs de facturation les plus fréquentes chez les indépendants</Link>.
+
+<div className="not-prose my-8">
+  <Callout variant="info" title="Le saviez-vous ?">
+    Les professionnels qui utilisent un catalogue de produits intégré a leur outil de facturation gagnent en moyenne **15 a 20 minutes par facture**. Sur un mois, cela représente plusieurs heures récupérées pour se concentrer sur son coeur de métier.
+  </Callout>
+</div>
+
+## Comment structurer votre catalogue
+
+Un catalogue efficace repose sur une structure claire et complète. Voici les champs essentiels que chaque fiche produit ou service doit contenir.
+
+### Les champs indispensables
+
+- **Référence** : un code unique pour identifier rapidement chaque article (ex. PREST-001, PROD-042)
+- **Nom** : l'intitulé court et explicite du produit ou service
+- **Description** : un texte détaillé qui apparaitra sur vos factures et devis
+- **Unité** : l'unité de mesure applicable (heure, jour, forfait, pièce, m², kg, etc.)
+- **Prix unitaire HT** : le tarif hors taxes de référence
+- **Taux de TVA** : le taux applicable (20 %, 10 %, 5,5 %, 0 % pour auto-entrepreneur)
+- **Catégorie** : le regroupement logique pour organiser votre catalogue
+
+### Exemple de catalogue structuré
+
+Voici un exemple concret de catalogue pour un consultant/développeur web freelance :
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Exemple de catalogue produits et services pour un freelance</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead>Référence</TableHead>
+        <TableHead>Nom</TableHead>
+        <TableHead>Description</TableHead>
+        <TableHead>Unité</TableHead>
+        <TableHead className="text-right">Prix HT</TableHead>
+        <TableHead className="text-right">TVA</TableHead>
+        <TableHead>Catégorie</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">DEV-001</TableCell>
+        <TableCell>Développement web</TableCell>
+        <TableCell>Développement front-end ou back-end sur mesure</TableCell>
+        <TableCell>jour</TableCell>
+        <TableCell className="text-right">550,00 EUR</TableCell>
+        <TableCell className="text-right">20 %</TableCell>
+        <TableCell>Développement</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">CON-001</TableCell>
+        <TableCell>Conseil stratégique</TableCell>
+        <TableCell>Accompagnement et conseil en stratégie digitale</TableCell>
+        <TableCell>heure</TableCell>
+        <TableCell className="text-right">120,00 EUR</TableCell>
+        <TableCell className="text-right">20 %</TableCell>
+        <TableCell>Conseil</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">DES-001</TableCell>
+        <TableCell>Maquette UI/UX</TableCell>
+        <TableCell>Création de maquettes graphiques et prototypes interactifs</TableCell>
+        <TableCell>forfait</TableCell>
+        <TableCell className="text-right">1 800,00 EUR</TableCell>
+        <TableCell className="text-right">20 %</TableCell>
+        <TableCell>Design</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">MAINT-001</TableCell>
+        <TableCell>Maintenance mensuelle</TableCell>
+        <TableCell>Maintenance préventive, mises a jour et corrections de bugs</TableCell>
+        <TableCell>forfait</TableCell>
+        <TableCell className="text-right">450,00 EUR</TableCell>
+        <TableCell className="text-right">20 %</TableCell>
+        <TableCell>Maintenance</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">FORM-001</TableCell>
+        <TableCell>Formation technique</TableCell>
+        <TableCell>Formation personnalisée sur les outils et technologies web</TableCell>
+        <TableCell>heure</TableCell>
+        <TableCell className="text-right">95,00 EUR</TableCell>
+        <TableCell className="text-right">20 %</TableCell>
+        <TableCell>Formation</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">HOST-001</TableCell>
+        <TableCell>Hébergement web</TableCell>
+        <TableCell>Hébergement sur serveur dédié avec certificat SSL inclus</TableCell>
+        <TableCell>mois</TableCell>
+        <TableCell className="text-right">35,00 EUR</TableCell>
+        <TableCell className="text-right">20 %</TableCell>
+        <TableCell>Infrastructure</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+Ce type de structure fonctionne aussi bien pour des prestations de service que pour des produits physiques. Si vous vendez des prestations de conseil, notre guide sur <Link href="/blog/facturer-prestation-service-consultant">comment facturer une prestation de service en tant que consultant</Link> vous sera également utile.
+
+## Les unités de mesure courantes
+
+Le choix de l'unité est crucial car il détermine la façon dont votre client comprend votre tarification. Voici les unités les plus utilisées selon les secteurs :
+
+<div className="not-prose my-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+  <div className="rounded-lg border p-4">
+    <h4 className="font-semibold mb-3">Prestations de services</h4>
+    <ul className="space-y-2">
+      <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-600 shrink-0" /> <span><strong>Heure</strong> : consulting, formation, coaching</span></li>
+      <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-600 shrink-0" /> <span><strong>Jour</strong> : missions longues, développement, audit</span></li>
+      <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-600 shrink-0" /> <span><strong>Forfait</strong> : projets a prix fixe, abonnements</span></li>
+    </ul>
+  </div>
+  <div className="rounded-lg border p-4">
+    <h4 className="font-semibold mb-3">Produits et biens</h4>
+    <ul className="space-y-2">
+      <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-600 shrink-0" /> <span><strong>Pièce</strong> : articles unitaires, composants</span></li>
+      <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-600 shrink-0" /> <span><strong>m²</strong> : surfaces, revêtements, travaux</span></li>
+      <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-600 shrink-0" /> <span><strong>kg</strong> : matières premières, denrées</span></li>
+    </ul>
+  </div>
+</div>
+
+## Bonnes pratiques pour un catalogue efficace
+
+### Rédigez des descriptions claires et complètes
+
+Chaque description doit etre suffisamment détaillée pour que votre client comprenne exactement ce qui est inclus. Évitez les intitulés vagues comme "Prestation" ou "Service". Préférez des formulations précises : "Développement d'une application web responsive avec back-end Node.js, incluant les tests unitaires et la documentation technique".
+
+Ces descriptions apparaitront sur vos devis et factures. Elles doivent respecter les <Link href="/blog/mentions-obligatoires-facture">mentions obligatoires d'une facture</Link> et permettre une compréhension immédiate de la prestation.
+
+### Mettez votre catalogue a jour régulièrement
+
+Vos tarifs évoluent, vos prestations aussi. Planifiez une révision trimestrielle de votre catalogue pour :
+
+<div className="not-prose my-6">
+  <ul className="space-y-2">
+    <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-600 shrink-0" /> Ajuster les prix en fonction de l'inflation ou de votre expérience</li>
+    <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-600 shrink-0" /> Ajouter de nouvelles prestations ou produits</li>
+    <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-600 shrink-0" /> Retirer les offres obsolètes ou peu demandées</li>
+    <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-600 shrink-0" /> Vérifier la conformité des taux de TVA</li>
+    <li className="flex items-center gap-2"><Check className="h-4 w-4 text-green-600 shrink-0" /> Affiner les descriptions selon les retours clients</li>
+  </ul>
+</div>
+
+### Organisez par catégories logiques
+
+Plus votre catalogue grandit, plus l'organisation par catégories devient essentielle. Regroupez vos produits et services par type d'activité, par gamme de prix ou par clientèle cible. Cela facilite la recherche lors de la création de vos documents commerciaux.
+
+### Utilisez des références uniques
+
+Attribuez un code a chaque article. Ce système de références permet de retrouver instantanément un produit, d'éviter les doublons et de faciliter le suivi comptable. Adoptez une convention claire : les trois premières lettres pour la catégorie, suivies d'un numéro séquentiel.
+
+## Intégrer votre catalogue a votre facturation
+
+La véritable puissance d'un catalogue se révèle quand il est directement connecté a votre outil de facturation. Voici comment cela fonctionne concrètement.
+
+### Sélection et remplissage automatique
+
+Lorsque vous créez une facture ou un devis, vous sélectionnez un produit depuis votre catalogue. Toutes les informations (nom, description, prix HT, TVA, unité) se remplissent automatiquement dans la ligne du document. Il ne vous reste qu'a ajuster la quantité si nécessaire.
+
+Ce mécanisme est particulièrement appréciable quand vous rédigez un <Link href="/blog/comment-faire-devis-professionnel">devis professionnel</Link> comportant de nombreuses lignes : chaque ajout de produit prend quelques secondes au lieu de plusieurs minutes.
+
+<figure className="my-8">
+  <Image
+    src="/blog/comment-creer-catalogue-produits-services/catalogue-facturation.webp"
+    alt="Intégration du catalogue produits dans la facturation Newbi"
+    width={1200}
+    height={630}
+    className="rounded-lg"
+  />
+  <figcaption className="text-center text-sm text-muted-foreground mt-2">
+    Sur Newbi, sélectionnez un produit depuis votre catalogue et la ligne de facture se remplit automatiquement.
+  </figcaption>
+</figure>
+
+### Import CSV pour démarrer rapidement
+
+Si vous avez déja une liste de produits dans un tableur (Excel, Google Sheets), la plupart des outils de facturation modernes proposent un import CSV. Préparez votre fichier avec les colonnes : référence, nom, description, unité, prix HT, taux de TVA, catégorie. L'import se fait en quelques clics et votre catalogue est immédiatement opérationnel.
+
+<div className="not-prose my-8">
+  <Callout variant="tip" title="Astuce Newbi">
+    Avec Newbi, vous pouvez créer et gérer votre catalogue de produits et services directement depuis votre espace. Chaque produit enregistré est réutilisable en un clic dans vos factures et devis. Vous pouvez également importer un catalogue existant au format CSV pour démarrer encore plus vite.
+  </Callout>
+</div>
+
+<div className="not-prose flex flex-col sm:flex-row gap-4 my-8">
+  <Button asChild>
+    <Link href="/auth/signup">Créer mon catalogue gratuitement</Link>
+  </Button>
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Créer mon catalogue Newbi</Link>
+  </Button>
+</div>
+
+## Checklist : créer votre catalogue en 7 étapes
+
+Avant de vous lancer, assurez-vous de suivre cette liste pour un catalogue complet et fonctionnel :
+
+<div className="not-prose my-8">
+  <ul className="space-y-3">
+    <li className="flex items-start gap-3"><Check className="h-5 w-5 text-green-600 shrink-0 mt-0.5" /> <span>Lister tous vos produits et services actuels</span></li>
+    <li className="flex items-start gap-3"><Check className="h-5 w-5 text-green-600 shrink-0 mt-0.5" /> <span>Définir une convention de références (ex. CAT-001)</span></li>
+    <li className="flex items-start gap-3"><Check className="h-5 w-5 text-green-600 shrink-0 mt-0.5" /> <span>Rédiger des descriptions précises pour chaque article</span></li>
+    <li className="flex items-start gap-3"><Check className="h-5 w-5 text-green-600 shrink-0 mt-0.5" /> <span>Choisir l'unité de mesure adaptée (heure, jour, forfait, pièce, m², kg)</span></li>
+    <li className="flex items-start gap-3"><Check className="h-5 w-5 text-green-600 shrink-0 mt-0.5" /> <span>Fixer les prix unitaires HT et les taux de TVA</span></li>
+    <li className="flex items-start gap-3"><Check className="h-5 w-5 text-green-600 shrink-0 mt-0.5" /> <span>Organiser les articles par catégories</span></li>
+    <li className="flex items-start gap-3"><Check className="h-5 w-5 text-green-600 shrink-0 mt-0.5" /> <span>Intégrer le catalogue a votre outil de facturation (ou importer via CSV)</span></li>
+  </ul>
+</div>
+
+## En résumé
+
+Créer un **catalogue de produits et services** n'est pas un simple exercice d'organisation : c'est un investissement qui vous fait gagner du temps a chaque facture, élimine les erreurs de saisie et renforce votre image professionnelle auprès de vos clients.
+
+Les points essentiels a retenir :
+
+- **Structurez** votre catalogue avec les champs indispensables : référence, nom, description, unité, prix HT, TVA et catégorie
+- **Rédigez** des descriptions claires qui apparaitront directement sur vos documents commerciaux
+- **Organisez** par catégories et mettez a jour régulièrement vos tarifs
+- **Intégrez** votre catalogue a votre outil de facturation pour un remplissage automatique des lignes
+- **Importez** vos données existantes via CSV pour démarrer sans tout ressaisir
+
+Avec un catalogue bien tenu et un outil de facturation adapté, la création de vos devis et factures devient un processus fluide et sans friction.
+
+<div className="not-prose flex justify-center my-10">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Créer mon catalogue produits gratuitement sur Newbi</Link>
+  </Button>
+</div>
+
+## Questions fréquentes
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Quelle est la différence entre un produit et un service dans un catalogue ?</AccordionTrigger>
+      <AccordionContent>
+        Un produit désigne un bien matériel livré au client (composant, marchandise, fourniture), tandis qu'un service correspond a une prestation immatérielle (conseil, développement, formation). Dans votre catalogue, les deux se gèrent de la meme manière avec les memes champs. La principale différence réside dans l'unité de mesure : les produits utilisent généralement "pièce", "kg" ou "m²", tandis que les services se facturent a l'"heure", au "jour" ou au "forfait".
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Puis-je modifier le prix d'un produit lors de la création d'une facture ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, absolument. Le catalogue fournit un prix de référence qui se remplit automatiquement, mais vous pouvez toujours ajuster le prix unitaire sur une facture ou un devis spécifique. C'est utile pour accorder une remise ponctuelle ou adapter votre tarif a un projet particulier sans modifier le tarif de référence dans votre catalogue.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Comment importer mon catalogue existant depuis Excel ?</AccordionTrigger>
+      <AccordionContent>
+        La plupart des outils de facturation, dont Newbi, proposent un import au format CSV. Exportez votre fichier Excel en CSV, en veillant a avoir les colonnes suivantes : référence, nom, description, unité, prix HT, taux de TVA et catégorie. Importez ensuite ce fichier dans votre outil. L'ensemble de vos produits et services sera disponible immédiatement dans votre catalogue.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Combien de produits peut contenir un catalogue ?</AccordionTrigger>
+      <AccordionContent>
+        Il n'y a pas de limite technique sur Newbi. Vous pouvez enregistrer autant de produits et services que nécessaire. L'important est de bien organiser votre catalogue par catégories et d'utiliser des références claires pour retrouver facilement chaque article. Meme avec plusieurs centaines de références, un catalogue bien structuré reste facile a utiliser au quotidien.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>
+
+<script
+  type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "Comment créer un catalogue de produits et services pour votre entreprise",
+      "description": "Créez un catalogue produits/services professionnel : structure, prix, descriptions et comment l'intégrer à votre facturation pour gagner du temps.",
+      "author": {
+        "@type": "Organization",
+        "name": "Newbi",
+        "url": "https://newbi.co"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "Newbi",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://newbi.co/logo.png"
+        }
+      },
+      "datePublished": "2026-02-10",
+      "dateModified": "2026-02-10",
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "https://newbi.co/blog/comment-creer-catalogue-produits-services"
+      },
+      "image": "https://newbi.co/blog/comment-creer-catalogue-produits-services/hero.webp",
+      "keywords": "créer catalogue produits services, catalogue produits, catalogue services, facturation, gestion produits"
+    })
+  }}
+/>
+
+<script
+  type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Quelle est la différence entre un produit et un service dans un catalogue ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Un produit désigne un bien matériel livré au client (composant, marchandise, fourniture), tandis qu'un service correspond à une prestation immatérielle (conseil, développement, formation). Dans votre catalogue, les deux se gèrent de la même manière avec les mêmes champs. La principale différence réside dans l'unité de mesure."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Puis-je modifier le prix d'un produit lors de la création d'une facture ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Oui, absolument. Le catalogue fournit un prix de référence qui se remplit automatiquement, mais vous pouvez toujours ajuster le prix unitaire sur une facture ou un devis spécifique pour accorder une remise ponctuelle ou adapter votre tarif."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Comment importer mon catalogue existant depuis Excel ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "La plupart des outils de facturation, dont Newbi, proposent un import au format CSV. Exportez votre fichier Excel en CSV avec les colonnes : référence, nom, description, unité, prix HT, taux de TVA et catégorie, puis importez ce fichier dans votre outil."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Combien de produits peut contenir un catalogue ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Il n'y a pas de limite technique sur Newbi. Vous pouvez enregistrer autant de produits et services que nécessaire. L'important est de bien organiser votre catalogue par catégories et d'utiliser des références claires."
+          }
+        }
+      ]
+    })
+  }}
+/>
