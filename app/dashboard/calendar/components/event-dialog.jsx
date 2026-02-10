@@ -1,12 +1,24 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { RiCalendarLine, RiDeleteBinLine, RiCheckLine, RiLoader4Line } from "@remixicon/react";
+import {
+  RiCalendarLine,
+  RiDeleteBinLine,
+  RiCheckLine,
+  RiLoader4Line,
+} from "@remixicon/react";
+import {
+  CalendarDays,
+  Clock,
+  MapPin,
+  AlignLeft,
+  Send,
+  Tag,
+} from "lucide-react";
 import { format, isBefore } from "date-fns";
 import { fr } from "date-fns/locale";
 import { sanitizeInput, detectInjectionAttempt } from "@/src/lib/validation";
 
-// Types removed for JavaScript compatibility
 import {
   DefaultEndHour,
   DefaultStartHour,
@@ -18,13 +30,13 @@ import { Button } from "@/src/components/ui/button";
 import { Calendar } from "@/src/components/ui/calendar";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/src/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/src/components/ui/sheet";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import {
@@ -32,7 +44,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/src/components/ui/popover";
-import { RadioGroup, RadioGroupItem } from "@/src/components/ui/radio-group";
 import {
   Select,
   SelectContent,
@@ -43,16 +54,10 @@ import {
 import { Textarea } from "@/src/components/ui/textarea";
 import { EmailReminderToggle } from "@/src/components/email-reminder-toggle";
 import { Separator } from "@/src/components/ui/separator";
-import { useCalendarConnections, usePushEventToCalendar } from "@/src/hooks/useCalendarConnections";
-
-// Props interface converted to JSDoc for JavaScript
-/**
- * @param {Object|null} event
- * @param {boolean} isOpen
- * @param {Function} onClose
- * @param {Function} onSave
- * @param {Function} onDelete
- */
+import {
+  useCalendarConnections,
+  usePushEventToCalendar,
+} from "@/src/hooks/useCalendarConnections";
 
 const providerIcons = {
   google: (
@@ -81,6 +86,51 @@ const providerLabels = {
   apple: "Apple Calendar",
 };
 
+const colorOptions = [
+  {
+    value: "sky",
+    label: "Ciel",
+    bg: "bg-sky-400",
+    ring: "ring-sky-400/30",
+    dot: "bg-sky-400",
+  },
+  {
+    value: "amber",
+    label: "Ambre",
+    bg: "bg-amber-400",
+    ring: "ring-amber-400/30",
+    dot: "bg-amber-400",
+  },
+  {
+    value: "violet",
+    label: "Violet",
+    bg: "bg-violet-400",
+    ring: "ring-violet-400/30",
+    dot: "bg-violet-400",
+  },
+  {
+    value: "rose",
+    label: "Rose",
+    bg: "bg-rose-400",
+    ring: "ring-rose-400/30",
+    dot: "bg-rose-400",
+  },
+  {
+    value: "emerald",
+    label: "Vert",
+    bg: "bg-emerald-400",
+    ring: "ring-emerald-400/30",
+    dot: "bg-emerald-400",
+  },
+  {
+    value: "orange",
+    label: "Orange",
+    bg: "bg-orange-400",
+    ring: "ring-orange-400/30",
+    dot: "bg-orange-400",
+  },
+];
+
 export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
   const isReadOnly = event?.isReadOnly || false;
   const eventSource = event?.source || "newbi";
@@ -93,7 +143,10 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
   const [allDay, setAllDay] = useState(false);
   const [location, setLocation] = useState("");
   const [color, setColor] = useState("sky");
-  const [emailReminder, setEmailReminder] = useState({ enabled: false, anticipation: null });
+  const [emailReminder, setEmailReminder] = useState({
+    enabled: false,
+    anticipation: null,
+  });
   const [error, setError] = useState(null);
   const [fieldErrors, setFieldErrors] = useState({});
   const [startDateOpen, setStartDateOpen] = useState(false);
@@ -142,9 +195,11 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
       setAllDay(event.allDay || false);
       setLocation(event.location || "");
       setColor(event.color || "sky");
-      setEmailReminder(event.emailReminder || { enabled: false, anticipation: null });
-      setError(null); // Reset error when opening dialog
-      setJustSyncedIds([]); // Reset sync state for new event
+      setEmailReminder(
+        event.emailReminder || { enabled: false, anticipation: null }
+      );
+      setError(null);
+      setJustSyncedIds([]);
     } else {
       resetForm();
     }
@@ -171,7 +226,6 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
     return `${hours}:${minutes.toString().padStart(2, "0")}`;
   };
 
-  // Memoize time options so they're only calculated once
   const timeOptions = useMemo(() => {
     const options = [];
     for (let hour = StartHour; hour <= EndHour; hour++) {
@@ -179,16 +233,14 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
         const formattedHour = hour.toString().padStart(2, "0");
         const formattedMinute = minute.toString().padStart(2, "0");
         const value = `${formattedHour}:${formattedMinute}`;
-        // Use a fixed date to avoid unnecessary date object creations
         const date = new Date(2000, 0, 1, hour, minute);
         const label = format(date, "H:mm", { locale: fr });
         options.push({ value, label });
       }
     }
     return options;
-  }, []); // Empty dependency array ensures this only runs once
+  }, []);
 
-  // Patterns de validation pour les événements
   const eventValidationPatterns = {
     title: {
       pattern: /^[a-zA-ZÀ-ÿ0-9\s\-&'.,()!?]{1,200}$/,
@@ -206,15 +258,13 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
     },
   };
 
-  // Fonction de validation des champs
   const validateField = (fieldName, value) => {
     if (!value && fieldName === "title") {
       return "Le titre est requis";
     }
 
-    if (!value) return null; // Champs optionnels
+    if (!value) return null;
 
-    // Vérification des tentatives d'injection
     if (detectInjectionAttempt(value)) {
       return "Caractères non autorisés détectés";
     }
@@ -256,40 +306,34 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
       end.setHours(23, 59, 59, 999);
     }
 
-    // Validate that end date is not before start date
     if (isBefore(end, start)) {
-      setError("La date de fin ne peut pas être antérieure à la date de début");
+      setError(
+        "La date de fin ne peut pas être antérieure à la date de début"
+      );
       return;
     }
 
-    // Validation des champs
     const errors = {};
     const titleValue = title.trim();
     const descriptionValue = description.trim();
     const locationValue = location.trim();
 
-    // Validation du titre
     const titleError = validateField("title", titleValue);
     if (titleError) errors.title = titleError;
 
-    // Validation de la description
     const descriptionError = validateField("description", descriptionValue);
     if (descriptionError) errors.description = descriptionError;
 
-    // Validation du lieu
     const locationError = validateField("location", locationValue);
     if (locationError) errors.location = locationError;
 
-    // Si des erreurs de validation existent, les afficher
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
       return;
     }
 
-    // Réinitialiser les erreurs de champs
     setFieldErrors({});
 
-    // Use generic title if empty
     const eventTitle = titleValue || "(sans titre)";
 
     onSave({
@@ -311,293 +355,319 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
     }
   };
 
-  // Updated color options to match types.ts
-  const colorOptions = [
-    {
-      value: "sky",
-      label: "Sky",
-      bgClass: "bg-sky-400 data-[state=checked]:bg-sky-400",
-      borderClass: "border-sky-400 data-[state=checked]:border-sky-400",
-    },
-    {
-      value: "amber",
-      label: "Amber",
-      bgClass: "bg-amber-400 data-[state=checked]:bg-amber-400",
-      borderClass: "border-amber-400 data-[state=checked]:border-amber-400",
-    },
-    {
-      value: "violet",
-      label: "Violet",
-      bgClass: "bg-violet-400 data-[state=checked]:bg-violet-400",
-      borderClass: "border-violet-400 data-[state=checked]:border-violet-400",
-    },
-    {
-      value: "rose",
-      label: "Rose",
-      bgClass: "bg-rose-400 data-[state=checked]:bg-rose-400",
-      borderClass: "border-rose-400 data-[state=checked]:border-rose-400",
-    },
-    {
-      value: "emerald",
-      label: "Emerald",
-      bgClass: "bg-emerald-400 data-[state=checked]:bg-emerald-400",
-      borderClass: "border-emerald-400 data-[state=checked]:border-emerald-400",
-    },
-    {
-      value: "orange",
-      label: "Orange",
-      bgClass: "bg-orange-400 data-[state=checked]:bg-orange-400",
-      borderClass: "border-orange-400 data-[state=checked]:border-orange-400",
-    },
-  ];
-
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>
-            {isReadOnly
-              ? "Détails de l'événement"
-              : event?.id
-                ? "Modifier l'événement"
-                : "Créer un événement"}
-          </DialogTitle>
-          <DialogDescription className={isReadOnly ? "" : "sr-only"}>
-            {isReadOnly
-              ? `Événement synchronisé depuis ${eventSource === "google" ? "Google Calendar" : eventSource === "microsoft" ? "Microsoft Outlook" : eventSource === "apple" ? "Apple Calendar" : "un calendrier externe"} (lecture seule)`
-              : event?.id
-                ? "Modifier les détails de cet événement"
-                : "Ajouter un nouvel événement à votre calendrier"}
-          </DialogDescription>
-        </DialogHeader>
+    <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <SheetContent className="w-[420px] sm:w-[460px] sm:max-w-[460px] flex flex-col p-0">
+        {/* Header */}
+        <SheetHeader className="px-6 pt-6 pb-0">
+          <div className="flex items-center gap-3">
+            <CalendarDays
+              className={cn(
+                "h-5 w-5 shrink-0",
+                {
+                  "text-sky-400": color === "sky",
+                  "text-amber-400": color === "amber",
+                  "text-violet-400": color === "violet",
+                  "text-rose-400": color === "rose",
+                  "text-emerald-400": color === "emerald",
+                  "text-orange-400": color === "orange",
+                }
+              )}
+            />
+            <div>
+              <SheetTitle className="text-base">
+                {isReadOnly
+                  ? "Détails de l'événement"
+                  : event?.id
+                    ? "Modifier l'événement"
+                    : "Nouvel événement"}
+              </SheetTitle>
+              <SheetDescription className="text-xs">
+                {isReadOnly
+                  ? `Synchronisé depuis ${eventSource === "google" ? "Google Calendar" : eventSource === "microsoft" ? "Microsoft Outlook" : eventSource === "apple" ? "Apple Calendar" : "un calendrier externe"}`
+                  : event?.id
+                    ? "Modifiez les détails ci-dessous"
+                    : "Remplissez les informations de votre événement"}
+              </SheetDescription>
+            </div>
+          </div>
+        </SheetHeader>
+
+        <Separator className="mt-4" />
+
+        {/* Error banner */}
         {error && (
-          <div className="bg-destructive/15 text-destructive rounded-md px-3 py-2 text-sm">
+          <div className="mx-6 mt-4 rounded-lg bg-destructive/10 border border-destructive/20 px-4 py-3 text-sm text-destructive">
             {error}
           </div>
         )}
-        <div className="grid gap-4 py-4">
-          <div className="*:not-first:mt-1.5">
-            <Label htmlFor="title" className="font-normal">
-              Titre
-            </Label>
+
+        {/* Form content - scrollable */}
+        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+          {/* Title */}
+          <div className="space-y-2">
             <Input
               id="title"
               value={title}
               disabled={isReadOnly}
               onChange={(e) => {
                 setTitle(e.target.value);
-                // Effacer l'erreur du champ quand l'utilisateur tape
                 if (fieldErrors.title) {
                   setFieldErrors((prev) => ({ ...prev, title: null }));
                 }
               }}
-              className={fieldErrors.title ? "border-red-500" : ""}
+              placeholder="Titre de l'événement"
+              className={cn(
+                "h-11 text-base font-medium border-0 border-b rounded-none px-0 shadow-none focus-visible:ring-0 focus-visible:border-primary",
+                fieldErrors.title && "border-red-500"
+              )}
             />
             {fieldErrors.title && (
-              <p className="text-sm text-red-500 mt-1">{fieldErrors.title}</p>
+              <p className="text-xs text-red-500">{fieldErrors.title}</p>
             )}
           </div>
 
-          <div className="*:not-first:mt-1.5">
-            <Label htmlFor="description" className="font-normal">
-              Description
-            </Label>
-            <Textarea
-              id="description"
-              value={description}
-              disabled={isReadOnly}
-              onChange={(e) => {
-                setDescription(e.target.value);
-                // Effacer l'erreur du champ quand l'utilisateur tape
-                if (fieldErrors.description) {
-                  setFieldErrors((prev) => ({ ...prev, description: null }));
-                }
-              }}
-              rows={3}
-              className={fieldErrors.description ? "border-red-500" : ""}
-            />
-            {fieldErrors.description && (
-              <p className="text-sm text-red-500 mt-1">
-                {fieldErrors.description}
-              </p>
-            )}
-          </div>
+          {/* Date & Time section */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Clock className="h-4 w-4" />
+              <span className="text-sm font-medium">Date et heure</span>
+            </div>
 
-          <div className="flex gap-4">
-            <div className="flex-1 *:not-first:mt-1.5">
-              <Label htmlFor="start-date" className="font-normal">
-                Date de début
-              </Label>
-              <Popover open={!isReadOnly && startDateOpen} onOpenChange={setStartDateOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    id="start-date"
-                    variant={"outline"}
-                    className={cn(
-                      "group bg-background hover:bg-background border-input w-full justify-between px-3 font-normal outline-offset-0 outline-none focus-visible:outline-[3px]",
-                      !startDate && "text-muted-foreground"
-                    )}
-                  >
-                    <span
+            <div className="rounded-xl border bg-muted/30 p-4 space-y-3">
+              {/* Start */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground w-10 shrink-0">
+                  Début
+                </span>
+                <Popover
+                  open={!isReadOnly && startDateOpen}
+                  onOpenChange={setStartDateOpen}
+                >
+                  <PopoverTrigger asChild>
+                    <Button
+                      id="start-date"
+                      variant="outline"
+                      size="sm"
                       className={cn(
-                        "truncate",
+                        "h-8 flex-1 justify-start gap-2 font-normal text-xs",
                         !startDate && "text-muted-foreground"
                       )}
                     >
+                      <RiCalendarLine size={14} className="text-muted-foreground" />
                       {startDate
-                        ? format(startDate, "PPP", { locale: fr })
-                        : "Choisir une date"}
-                    </span>
-                    <RiCalendarLine
-                      size={16}
-                      className="text-muted-foreground/80 shrink-0"
-                      aria-hidden="true"
-                    />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-2" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={startDate}
-                    defaultMonth={startDate}
-                    locale={fr}
-                    onSelect={(date) => {
-                      if (date) {
-                        setStartDate(date);
-                        // If end date is before the new start date, update it to match the start date
-                        if (isBefore(endDate, date)) {
-                          setEndDate(date);
+                        ? format(startDate, "EEE d MMM yyyy", { locale: fr })
+                        : "Choisir"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-2" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={startDate}
+                      defaultMonth={startDate}
+                      locale={fr}
+                      onSelect={(date) => {
+                        if (date) {
+                          setStartDate(date);
+                          if (isBefore(endDate, date)) {
+                            setEndDate(date);
+                          }
+                          setError(null);
+                          setStartDateOpen(false);
                         }
-                        setError(null);
-                        setStartDateOpen(false);
-                      }
-                    }}
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
+                      }}
+                    />
+                  </PopoverContent>
+                </Popover>
 
-            {!allDay && (
-              <div className="min-w-28 *:not-first:mt-1.5">
-                <Label htmlFor="start-time" className="font-normal">
-                  Heure de début
-                </Label>
-                <Select value={startTime} onValueChange={setStartTime} disabled={isReadOnly}>
-                  <SelectTrigger id="start-time">
-                    <SelectValue placeholder="Choisir l'heure" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {timeOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-          </div>
-
-          <div className="flex gap-4">
-            <div className="flex-1 *:not-first:mt-1.5">
-              <Label htmlFor="end-date">Date de fin</Label>
-              <Popover open={!isReadOnly && endDateOpen} onOpenChange={setEndDateOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    id="end-date"
-                    variant={"outline"}
-                    className={cn(
-                      "group bg-background hover:bg-background border-input w-full justify-between px-3 font-normal outline-offset-0 outline-none focus-visible:outline-[3px]",
-                      !endDate && "text-muted-foreground"
-                    )}
+                {!allDay && (
+                  <Select
+                    value={startTime}
+                    onValueChange={setStartTime}
+                    disabled={isReadOnly}
                   >
-                    <span
+                    <SelectTrigger className="h-8 w-24 text-xs">
+                      <SelectValue placeholder="Heure" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {timeOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+
+              {/* End */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground w-10 shrink-0">
+                  Fin
+                </span>
+                <Popover
+                  open={!isReadOnly && endDateOpen}
+                  onOpenChange={setEndDateOpen}
+                >
+                  <PopoverTrigger asChild>
+                    <Button
+                      id="end-date"
+                      variant="outline"
+                      size="sm"
                       className={cn(
-                        "truncate",
+                        "h-8 flex-1 justify-start gap-2 font-normal text-xs",
                         !endDate && "text-muted-foreground"
                       )}
                     >
+                      <RiCalendarLine size={14} className="text-muted-foreground" />
                       {endDate
-                        ? format(endDate, "PPP", { locale: fr })
-                        : "Choisir une date"}
-                    </span>
-                    <RiCalendarLine
-                      size={16}
-                      className="text-muted-foreground/80 shrink-0"
-                      aria-hidden="true"
+                        ? format(endDate, "EEE d MMM yyyy", { locale: fr })
+                        : "Choisir"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-2" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={endDate}
+                      defaultMonth={endDate}
+                      locale={fr}
+                      disabled={{ before: startDate }}
+                      onSelect={(date) => {
+                        if (date) {
+                          setEndDate(date);
+                          setError(null);
+                          setEndDateOpen(false);
+                        }
+                      }}
                     />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-2" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={endDate}
-                    defaultMonth={endDate}
-                    locale={fr}
-                    disabled={{ before: startDate }}
-                    onSelect={(date) => {
-                      if (date) {
-                        setEndDate(date);
-                        setError(null);
-                        setEndDateOpen(false);
-                      }
-                    }}
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
+                  </PopoverContent>
+                </Popover>
 
-            {!allDay && (
-              <div className="min-w-28 *:not-first:mt-1.5">
-                <Label htmlFor="end-time">Heure de fin</Label>
-                <Select value={endTime} onValueChange={setEndTime} disabled={isReadOnly}>
-                  <SelectTrigger id="end-time">
-                    <SelectValue placeholder="Choisir l'heure" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {timeOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {!allDay && (
+                  <Select
+                    value={endTime}
+                    onValueChange={setEndTime}
+                    disabled={isReadOnly}
+                  >
+                    <SelectTrigger className="h-8 w-24 text-xs">
+                      <SelectValue placeholder="Heure" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {timeOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
-            )}
+
+              {/* All day toggle */}
+              <div className="flex items-center gap-2 pt-1">
+                <Checkbox
+                  id="all-day"
+                  checked={allDay}
+                  disabled={isReadOnly}
+                  onCheckedChange={(checked) => setAllDay(checked === true)}
+                  className="h-3.5 w-3.5"
+                />
+                <Label htmlFor="all-day" className="text-xs text-muted-foreground cursor-pointer">
+                  Toute la journée
+                </Label>
+              </div>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Checkbox
-              id="all-day"
-              checked={allDay}
-              disabled={isReadOnly}
-              onCheckedChange={(checked) => setAllDay(checked === true)}
-            />
-            <Label htmlFor="all-day">Toute la journée</Label>
-          </div>
-
-          <div className="*:not-first:mt-1.5">
-            <Label htmlFor="location">Lieu</Label>
+          {/* Location */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <MapPin className="h-4 w-4" />
+              <span className="text-sm font-medium">Lieu</span>
+            </div>
             <Input
               id="location"
               value={location}
               disabled={isReadOnly}
               onChange={(e) => {
                 setLocation(e.target.value);
-                // Effacer l'erreur du champ quand l'utilisateur tape
                 if (fieldErrors.location) {
                   setFieldErrors((prev) => ({ ...prev, location: null }));
                 }
               }}
-              className={fieldErrors.location ? "border-red-500" : ""}
+              placeholder="Ajouter un lieu"
+              className={cn(
+                "h-9 text-sm",
+                fieldErrors.location && "border-red-500"
+              )}
             />
             {fieldErrors.location && (
-              <p className="text-sm text-red-500 mt-1">
-                {fieldErrors.location}
+              <p className="text-xs text-red-500">{fieldErrors.location}</p>
+            )}
+          </div>
+
+          {/* Description */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <AlignLeft className="h-4 w-4" />
+              <span className="text-sm font-medium">Description</span>
+            </div>
+            <Textarea
+              id="description"
+              value={description}
+              disabled={isReadOnly}
+              onChange={(e) => {
+                setDescription(e.target.value);
+                if (fieldErrors.description) {
+                  setFieldErrors((prev) => ({
+                    ...prev,
+                    description: null,
+                  }));
+                }
+              }}
+              placeholder="Ajouter une description"
+              rows={3}
+              className={cn(
+                "text-sm resize-none",
+                fieldErrors.description && "border-red-500"
+              )}
+            />
+            {fieldErrors.description && (
+              <p className="text-xs text-red-500">
+                {fieldErrors.description}
               </p>
             )}
           </div>
 
+          {/* Color label */}
+          {!isReadOnly && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Tag className="h-4 w-4" />
+                <span className="text-sm font-medium">Etiquette</span>
+              </div>
+              <div className="flex items-center gap-2">
+                {colorOptions.map((colorOption) => (
+                  <button
+                    key={colorOption.value}
+                    type="button"
+                    onClick={() => setColor(colorOption.value)}
+                    className={cn(
+                      "h-7 w-7 rounded-full transition-all",
+                      colorOption.dot,
+                      color === colorOption.value
+                        ? "ring-2 ring-offset-2 ring-offset-background " +
+                            colorOption.ring
+                        : "hover:scale-110"
+                    )}
+                    aria-label={colorOption.label}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Email reminder */}
           {!isReadOnly && (
             <EmailReminderToggle
               value={emailReminder}
@@ -605,39 +675,15 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
             />
           )}
 
-          <fieldset className="space-y-4">
-            <legend className="text-foreground text-sm leading-none font-medium">
-              Etiquette
-            </legend>
-            <RadioGroup
-              className="flex gap-1.5"
-              defaultValue={colorOptions[0]?.value}
-              value={color}
-              disabled={isReadOnly}
-              onValueChange={(value) => setColor(value)}
-            >
-              {colorOptions.map((colorOption) => (
-                <RadioGroupItem
-                  key={colorOption.value}
-                  id={`color-${colorOption.value}`}
-                  value={colorOption.value}
-                  aria-label={colorOption.label}
-                  className={cn(
-                    "size-6 shadow-none",
-                    colorOption.bgClass,
-                    colorOption.borderClass
-                  )}
-                />
-              ))}
-            </RadioGroup>
-          </fieldset>
-
+          {/* Calendar sync section */}
           {showSyncSection && (
             <div className="space-y-3">
-              <Separator />
-              <p className="text-sm font-medium text-foreground">
-                Synchroniser avec un calendrier
-              </p>
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Send className="h-4 w-4" />
+                <span className="text-sm font-medium">
+                  Synchroniser avec un calendrier
+                </span>
+              </div>
               <div className="space-y-2">
                 {activeConnections.map((connection) => {
                   const synced = isAlreadySynced(connection.id);
@@ -646,14 +692,16 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
                   return (
                     <div
                       key={connection.id}
-                      className="flex items-center justify-between rounded-md border px-3 py-2"
+                      className="flex items-center justify-between rounded-xl border bg-muted/30 px-4 py-3"
                     >
-                      <div className="flex items-center gap-2 min-w-0">
+                      <div className="flex items-center gap-2.5 min-w-0">
                         <span className="text-muted-foreground shrink-0">
                           {providerIcons[connection.provider]}
                         </span>
                         <span className="text-sm truncate">
-                          {connection.accountEmail || connection.accountName || providerLabels[connection.provider]}
+                          {connection.accountEmail ||
+                            connection.accountName ||
+                            providerLabels[connection.provider]}
                         </span>
                       </div>
                       {synced ? (
@@ -670,7 +718,10 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
                           className="shrink-0 h-7 text-xs"
                         >
                           {isPushing ? (
-                            <RiLoader4Line size={14} className="animate-spin" />
+                            <RiLoader4Line
+                              size={14}
+                              className="animate-spin"
+                            />
                           ) : (
                             "Envoyer"
                           )}
@@ -683,41 +734,49 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
             </div>
           )}
         </div>
-        <DialogFooter className="flex-row sm:justify-between">
+
+        {/* Footer */}
+        <SheetFooter className="mt-0 px-6 py-0">
+          <Separator className="mb-4" />
+          <div className="pb-4">
           {isReadOnly ? (
-            <div className="flex flex-1 justify-end">
+            <div className="flex w-full justify-end">
               <Button variant="outline" onClick={onClose}>
                 Fermer
               </Button>
             </div>
           ) : (
-            <>
-              {event?.id && (
+            <div className="flex w-full items-center justify-between">
+              {event?.id ? (
                 <Button
-                  variant="outline"
-                  size="icon"
+                  variant="ghost"
+                  size="sm"
                   onClick={handleDelete}
-                  className="font-normal"
-                  aria-label="Delete event"
+                  className="text-destructive hover:text-destructive hover:bg-destructive/10 gap-1.5"
                 >
-                  <RiDeleteBinLine size={16} aria-hidden="true" />
+                  <RiDeleteBinLine size={16} />
+                  Supprimer
                 </Button>
+              ) : (
+                <div />
               )}
-              <div className="flex flex-1 justify-end gap-2">
-                <Button variant="outline" onClick={onClose}>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={onClose}>
                   Annuler
                 </Button>
                 <Button
-                  className="bg-[#5a50ff] hover:bg-[#5a50ff]/90 font-normal"
+                  size="sm"
+                  className="bg-[#5a50ff] hover:bg-[#5a50ff]/90"
                   onClick={handleSave}
                 >
-                  Enregistrer
+                  {event?.id ? "Enregistrer" : "Créer"}
                 </Button>
               </div>
-            </>
+            </div>
           )}
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          </div>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   );
 }
