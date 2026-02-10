@@ -7,6 +7,7 @@ import React, {
   useRef,
   useEffect,
 } from "react";
+import { useIsMobile } from "@/src/hooks/use-mobile";
 import {
   useSharedDocuments,
   useSharedFolders,
@@ -122,12 +123,18 @@ import {
   Filter,
   FilterX,
   GripVertical,
+  PanelLeft,
 } from "lucide-react";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/src/components/ui/popover";
+import {
+  Sheet,
+  SheetContent,
+  SheetTitle,
+} from "@/src/components/ui/sheet";
 import {
   Select,
   SelectContent,
@@ -186,6 +193,9 @@ const formatTotalSize = (bytes) => {
 };
 
 export default function DocumentsPartagesPage() {
+  const isMobile = useIsMobile();
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+
   // États
   const [selectedFolder, setSelectedFolder] = useState(null); // null = "Documents à classer"
   const [selectedDocuments, setSelectedDocuments] = useState([]);
@@ -1031,15 +1041,23 @@ export default function DocumentsPartagesPage() {
 
       {/* Header */}
       <div className="flex-shrink-0 border-b bg-background">
-        <div className="px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-medium mb-2">Documents partagés</h1>
-              {/* <p className="text-sm text-muted-foreground mt-0.5">
-                Partagez vos documents administratifs avec votre comptable
-              </p> */}
+        <div className="px-3 py-3 sm:px-6 sm:py-4">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              {/* Mobile sidebar toggle */}
+              {isMobile && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="shrink-0 md:hidden"
+                  onClick={() => setMobileSidebarOpen(true)}
+                >
+                  <PanelLeft className="h-5 w-5" />
+                </Button>
+              )}
+              <h1 className="text-lg sm:text-2xl font-medium truncate">Documents partagés</h1>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2">
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -1063,15 +1081,15 @@ export default function DocumentsPartagesPage() {
                 <DropdownMenuTrigger asChild>
                   <Button
                     disabled={isUploading || uploadLoading}
-                    className="cursor-pointer font-normal bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90 gap-2"
+                    className="cursor-pointer font-normal bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90 gap-1.5 sm:gap-2"
                   >
                     {isUploading || uploadLoading ? (
                       <LoaderCircle className="h-4 w-4 animate-spin" />
                     ) : (
                       <Plus size={16} aria-hidden="true" />
                     )}
-                    Ajouter
-                    <ChevronDown className="h-4 w-4 opacity-50" />
+                    <span className="hidden sm:inline">Ajouter</span>
+                    <ChevronDown className="h-4 w-4 opacity-50 hidden sm:block" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
@@ -1110,234 +1128,326 @@ export default function DocumentsPartagesPage() {
 
       {/* Main content */}
       <div className="flex-1 flex overflow-hidden min-h-0">
-        {/* Sidebar - Tree avec Dossiers et Documents */}
-        <div
-          ref={sidebarRef}
-          className="border-r bg-muted/20 flex-shrink-0 flex flex-col relative overflow-hidden min-h-0"
-          style={{
-            width: sidebarWidth,
-            minWidth: sidebarWidth,
-            maxWidth: sidebarWidth,
-          }}
-        >
-          <div className="px-3 h-14 border-b flex items-center justify-between">
-            <span className="text-xs font-medium text-muted-foreground/80 uppercase tracking-wide">
-              Explorateur
-            </span>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 w-6 p-0 opacity-60 hover:opacity-100"
-              onClick={() => {
-                setNewFolderParentId(selectedFolder);
-                setShowNewFolderModal(true);
-              }}
-            >
-              <FolderPlus className="h-3.5 w-3.5" />
-            </Button>
-          </div>
-          <div className="flex-1 overflow-y-auto">
-            {foldersInitialLoading || allDocsInitialLoading ? (
-              <div className="space-y-2 p-2">
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <Skeleton key={i} className="h-7 w-full" />
-                ))}
+        {/* Mobile Sidebar - Sheet drawer */}
+        {isMobile && (
+          <Sheet open={mobileSidebarOpen} onOpenChange={setMobileSidebarOpen}>
+            <SheetContent side="left" className="w-[280px] p-0 flex flex-col">
+              <SheetTitle className="sr-only">Explorateur de fichiers</SheetTitle>
+              <div className="px-3 h-14 border-b flex items-center justify-between">
+                <span className="text-xs font-medium text-muted-foreground/80 uppercase tracking-wide">
+                  Explorateur
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0 opacity-60 hover:opacity-100"
+                  onClick={() => {
+                    setNewFolderParentId(selectedFolder);
+                    setShowNewFolderModal(true);
+                  }}
+                >
+                  <FolderPlus className="h-3.5 w-3.5" />
+                </Button>
               </div>
-            ) : (
-              <div className="pt-2 pb-2">
-                <DraggableTree
-                  folders={folders}
-                  documents={allDocuments}
-                  pendingCount={pendingCount}
-                  selectedFolder={selectedFolder}
-                  onMove={handleTreeMove}
-                  onMoveFolder={handleTreeMoveFolder}
-                  onSelectFolder={(folderId) => {
-                    setSelectedFolder(folderId);
-                    setShowTrash(false);
-                  }}
-                  onSelectDocument={(docId) => setSelectedDocuments([docId])}
-                  onContextMenu={(e, itemId, item) => {
-                    e.preventDefault();
-                    setTreeContextMenu({
-                      x: e.clientX,
-                      y: e.clientY,
-                      itemId,
-                      item,
-                    });
-                  }}
-                />
-
-                {/* Context Menu for tree items - using DropdownMenu for programmatic control */}
-                {treeContextMenu && (
-                  <DropdownMenu
-                    open={!!treeContextMenu}
-                    onOpenChange={(open) => !open && setTreeContextMenu(null)}
-                  >
-                    <DropdownMenuTrigger asChild>
-                      <div
-                        style={{
-                          position: "fixed",
-                          left: treeContextMenu.x,
-                          top: treeContextMenu.y,
-                          width: 1,
-                          height: 1,
-                          pointerEvents: "none",
-                        }}
-                      />
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start" side="bottom">
-                      {treeContextMenu.item.isFolder &&
-                        !treeContextMenu.item.isInbox && (
-                          <>
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setNewFolderParentId(treeContextMenu.itemId);
-                                setShowNewFolderModal(true);
-                                setTreeContextMenu(null);
-                              }}
-                            >
-                              <FolderPlus className="size-4 mr-2" />
-                              Nouveau sous-dossier
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => {
-                                downloadFolder(
-                                  treeContextMenu.itemId,
-                                  treeContextMenu.item.name,
-                                );
-                                setTreeContextMenu(null);
-                              }}
-                              disabled={downloadFolderLoading}
-                            >
-                              <Download className="size-4 mr-2" />
-                              {downloadFolderLoading
-                                ? "Téléchargement..."
-                                : "Télécharger en ZIP"}
-                            </DropdownMenuItem>
-                            {/* Separator seulement si Renommer ou Supprimer sera affiché */}
-                            {!treeContextMenu.item.isSystem && (
-                              <DropdownMenuSeparator />
-                            )}
-                          </>
-                        )}
-                      {/* Renommer - pas pour les dossiers système */}
-                      {!treeContextMenu.item.isSystem && (
-                        <DropdownMenuItem
-                          onClick={() => {
-                            const isFolder = treeContextMenu.item.isFolder;
-                            const itemId = treeContextMenu.itemId;
-                            const id = isFolder
-                              ? itemId
-                              : itemId.replace("doc-", "");
-                            setItemToRename({
-                              id,
-                              name: treeContextMenu.item.name,
-                              type: isFolder ? "folder" : "document",
-                            });
-                            setNewName(treeContextMenu.item.name);
-                            setShowRenameModal(true);
-                            setTreeContextMenu(null);
-                          }}
-                        >
-                          <Pencil className="size-4 mr-2" />
-                          Renommer
-                        </DropdownMenuItem>
-                      )}
-                      {!treeContextMenu.item.isFolder && (
-                        <DropdownMenuItem
-                          onClick={() => {
-                            if (treeContextMenu.item.data?.fileUrl) {
-                              window.open(
-                                treeContextMenu.item.data.fileUrl,
-                                "_blank",
-                              );
-                            }
-                            setTreeContextMenu(null);
-                          }}
-                        >
-                          <Download className="size-4 mr-2" />
-                          Télécharger
-                        </DropdownMenuItem>
-                      )}
-                      {/* Supprimer - pas pour inbox ni dossiers système */}
-                      {!treeContextMenu.item.isInbox &&
-                        !treeContextMenu.item.isSystem && (
-                          <>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              className="text-destructive focus:text-destructive"
-                              onClick={() => {
-                                if (treeContextMenu.item.isFolder) {
-                                  setFolderToDelete(treeContextMenu.itemId);
-                                  setShowDeleteFolderModal(true);
-                                } else {
-                                  const docId = treeContextMenu.itemId.replace(
-                                    "doc-",
-                                    "",
-                                  );
-                                  setSelectedDocuments([docId]);
-                                  setShowDeleteModal(true);
-                                }
-                                setTreeContextMenu(null);
-                              }}
-                            >
-                              <Trash2 className="size-4 mr-2" />
-                              Supprimer
-                            </DropdownMenuItem>
-                          </>
-                        )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+              <div className="flex-1 overflow-y-auto">
+                {foldersInitialLoading || allDocsInitialLoading ? (
+                  <div className="space-y-2 p-2">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <Skeleton key={i} className="h-7 w-full" />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="pt-2 pb-2">
+                    <DraggableTree
+                      folders={folders}
+                      documents={allDocuments}
+                      pendingCount={pendingCount}
+                      selectedFolder={selectedFolder}
+                      onMove={handleTreeMove}
+                      onMoveFolder={handleTreeMoveFolder}
+                      onSelectFolder={(folderId) => {
+                        setSelectedFolder(folderId);
+                        setShowTrash(false);
+                        setMobileSidebarOpen(false);
+                      }}
+                      onSelectDocument={(docId) => {
+                        setSelectedDocuments([docId]);
+                        setMobileSidebarOpen(false);
+                      }}
+                      onContextMenu={(e, itemId, item) => {
+                        e.preventDefault();
+                        setTreeContextMenu({
+                          x: e.clientX,
+                          y: e.clientY,
+                          itemId,
+                          item,
+                        });
+                      }}
+                    />
+                  </div>
                 )}
               </div>
-            )}
-          </div>
-
-          {/* Corbeille button */}
-          <div className="px-2 py-2 border-t">
-            <button
-              onClick={() => {
-                setShowTrash(true);
-                setSelectedFolder(null);
-              }}
-              className={cn(
-                "w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors",
-                showTrash
-                  ? "bg-accent text-accent-foreground"
-                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
-              )}
-            >
-              <Trash2 className="h-4 w-4" />
-              <span>Corbeille</span>
-              {trashItemsCount > 0 && (
-                <Badge
-                  variant="secondary"
-                  className="ml-auto font-normal h-5 px-1.5 text-xs"
+              {/* Corbeille button */}
+              <div className="px-2 py-2 border-t">
+                <button
+                  onClick={() => {
+                    setShowTrash(true);
+                    setSelectedFolder(null);
+                    setMobileSidebarOpen(false);
+                  }}
+                  className={cn(
+                    "w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors",
+                    showTrash
+                      ? "bg-accent text-accent-foreground"
+                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                  )}
                 >
-                  {trashItemsCount}
-                </Badge>
-              )}
-            </button>
-          </div>
+                  <Trash2 className="h-4 w-4" />
+                  <span>Corbeille</span>
+                  {trashItemsCount > 0 && (
+                    <Badge
+                      variant="secondary"
+                      className="ml-auto font-normal h-5 px-1.5 text-xs"
+                    >
+                      {trashItemsCount}
+                    </Badge>
+                  )}
+                </button>
+              </div>
+            </SheetContent>
+          </Sheet>
+        )}
 
-          {/* Resize handle */}
+        {/* Desktop Sidebar - Tree avec Dossiers et Documents */}
+        {!isMobile && (
           <div
-            className={cn(
-              "absolute right-0 top-0 bottom-0 w-[3px] cursor-col-resize hover:bg-primary/10 transition-colors",
-              isResizing && "bg-primary/20",
-            )}
-            onMouseDown={(e) => {
-              e.preventDefault();
-              setIsResizing(true);
+            ref={sidebarRef}
+            className="border-r bg-muted/20 flex-shrink-0 flex flex-col relative overflow-hidden min-h-0"
+            style={{
+              width: sidebarWidth,
+              minWidth: sidebarWidth,
+              maxWidth: sidebarWidth,
             }}
-          />
-        </div>
+          >
+            <div className="px-3 h-14 border-b flex items-center justify-between">
+              <span className="text-xs font-medium text-muted-foreground/80 uppercase tracking-wide">
+                Explorateur
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0 opacity-60 hover:opacity-100"
+                onClick={() => {
+                  setNewFolderParentId(selectedFolder);
+                  setShowNewFolderModal(true);
+                }}
+              >
+                <FolderPlus className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              {foldersInitialLoading || allDocsInitialLoading ? (
+                <div className="space-y-2 p-2">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <Skeleton key={i} className="h-7 w-full" />
+                  ))}
+                </div>
+              ) : (
+                <div className="pt-2 pb-2">
+                  <DraggableTree
+                    folders={folders}
+                    documents={allDocuments}
+                    pendingCount={pendingCount}
+                    selectedFolder={selectedFolder}
+                    onMove={handleTreeMove}
+                    onMoveFolder={handleTreeMoveFolder}
+                    onSelectFolder={(folderId) => {
+                      setSelectedFolder(folderId);
+                      setShowTrash(false);
+                    }}
+                    onSelectDocument={(docId) => setSelectedDocuments([docId])}
+                    onContextMenu={(e, itemId, item) => {
+                      e.preventDefault();
+                      setTreeContextMenu({
+                        x: e.clientX,
+                        y: e.clientY,
+                        itemId,
+                        item,
+                      });
+                    }}
+                  />
+
+                  {/* Context Menu for tree items - using DropdownMenu for programmatic control */}
+                  {treeContextMenu && (
+                    <DropdownMenu
+                      open={!!treeContextMenu}
+                      onOpenChange={(open) => !open && setTreeContextMenu(null)}
+                    >
+                      <DropdownMenuTrigger asChild>
+                        <div
+                          style={{
+                            position: "fixed",
+                            left: treeContextMenu.x,
+                            top: treeContextMenu.y,
+                            width: 1,
+                            height: 1,
+                            pointerEvents: "none",
+                          }}
+                        />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" side="bottom">
+                        {treeContextMenu.item.isFolder &&
+                          !treeContextMenu.item.isInbox && (
+                            <>
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setNewFolderParentId(treeContextMenu.itemId);
+                                  setShowNewFolderModal(true);
+                                  setTreeContextMenu(null);
+                                }}
+                              >
+                                <FolderPlus className="size-4 mr-2" />
+                                Nouveau sous-dossier
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  downloadFolder(
+                                    treeContextMenu.itemId,
+                                    treeContextMenu.item.name,
+                                  );
+                                  setTreeContextMenu(null);
+                                }}
+                                disabled={downloadFolderLoading}
+                              >
+                                <Download className="size-4 mr-2" />
+                                {downloadFolderLoading
+                                  ? "Téléchargement..."
+                                  : "Télécharger en ZIP"}
+                              </DropdownMenuItem>
+                              {/* Separator seulement si Renommer ou Supprimer sera affiché */}
+                              {!treeContextMenu.item.isSystem && (
+                                <DropdownMenuSeparator />
+                              )}
+                            </>
+                          )}
+                        {/* Renommer - pas pour les dossiers système */}
+                        {!treeContextMenu.item.isSystem && (
+                          <DropdownMenuItem
+                            onClick={() => {
+                              const isFolder = treeContextMenu.item.isFolder;
+                              const itemId = treeContextMenu.itemId;
+                              const id = isFolder
+                                ? itemId
+                                : itemId.replace("doc-", "");
+                              setItemToRename({
+                                id,
+                                name: treeContextMenu.item.name,
+                                type: isFolder ? "folder" : "document",
+                              });
+                              setNewName(treeContextMenu.item.name);
+                              setShowRenameModal(true);
+                              setTreeContextMenu(null);
+                            }}
+                          >
+                            <Pencil className="size-4 mr-2" />
+                            Renommer
+                          </DropdownMenuItem>
+                        )}
+                        {!treeContextMenu.item.isFolder && (
+                          <DropdownMenuItem
+                            onClick={() => {
+                              if (treeContextMenu.item.data?.fileUrl) {
+                                window.open(
+                                  treeContextMenu.item.data.fileUrl,
+                                  "_blank",
+                                );
+                              }
+                              setTreeContextMenu(null);
+                            }}
+                          >
+                            <Download className="size-4 mr-2" />
+                            Télécharger
+                          </DropdownMenuItem>
+                        )}
+                        {/* Supprimer - pas pour inbox ni dossiers système */}
+                        {!treeContextMenu.item.isInbox &&
+                          !treeContextMenu.item.isSystem && (
+                            <>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                className="text-destructive focus:text-destructive"
+                                onClick={() => {
+                                  if (treeContextMenu.item.isFolder) {
+                                    setFolderToDelete(treeContextMenu.itemId);
+                                    setShowDeleteFolderModal(true);
+                                  } else {
+                                    const docId = treeContextMenu.itemId.replace(
+                                      "doc-",
+                                      "",
+                                    );
+                                    setSelectedDocuments([docId]);
+                                    setShowDeleteModal(true);
+                                  }
+                                  setTreeContextMenu(null);
+                                }}
+                              >
+                                <Trash2 className="size-4 mr-2" />
+                                Supprimer
+                              </DropdownMenuItem>
+                            </>
+                          )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Corbeille button */}
+            <div className="px-2 py-2 border-t">
+              <button
+                onClick={() => {
+                  setShowTrash(true);
+                  setSelectedFolder(null);
+                }}
+                className={cn(
+                  "w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors",
+                  showTrash
+                    ? "bg-accent text-accent-foreground"
+                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                )}
+              >
+                <Trash2 className="h-4 w-4" />
+                <span>Corbeille</span>
+                {trashItemsCount > 0 && (
+                  <Badge
+                    variant="secondary"
+                    className="ml-auto font-normal h-5 px-1.5 text-xs"
+                  >
+                    {trashItemsCount}
+                  </Badge>
+                )}
+              </button>
+            </div>
+
+            {/* Resize handle */}
+            <div
+              className={cn(
+                "absolute right-0 top-0 bottom-0 w-[3px] cursor-col-resize hover:bg-primary/10 transition-colors",
+                isResizing && "bg-primary/20",
+              )}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                setIsResizing(true);
+              }}
+            />
+          </div>
+        )}
 
         {/* Content area */}
         <div className="flex-1 flex flex-col overflow-hidden min-h-0">
           {/* Toolbar */}
-          <div className="flex-shrink-0 px-4 min-h-14 border-b bg-background flex flex-col justify-center py-2">
+          <div className="flex-shrink-0 px-2 sm:px-4 min-h-12 sm:min-h-14 border-b bg-background flex flex-col justify-center py-1.5 sm:py-2">
             {/* Upload Progress Bar */}
             {isUploading && !showTrash && (
               <div className="mb-2 space-y-1.5">
@@ -1352,24 +1462,24 @@ export default function DocumentsPartagesPage() {
               </div>
             )}
 
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center justify-between gap-2 sm:gap-4">
               {/* Breadcrumb / Trash header */}
               {showTrash ? (
                 <div className="flex items-center gap-2 min-w-0 flex-1">
-                  <Trash2 className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-normal">Corbeille</span>
+                  <Trash2 className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <span className="font-normal text-sm sm:text-base">Corbeille</span>
                   <span className="text-xs font-normal text-muted-foreground">
-                    ({trashItemsCount} élément{trashItemsCount > 1 ? "s" : ""})
+                    ({trashItemsCount})
                   </span>
                 </div>
               ) : (
-                <div className="flex items-center gap-1 min-w-0 flex-1">
+                <div className="flex items-center gap-1 min-w-0 flex-1 overflow-hidden">
                   <button
                     onClick={() => {
                       setSelectedFolder(null);
                       setShowTrash(false);
                     }}
-                    className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
+                    className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors shrink-0"
                   >
                     <Home className="h-4 w-4" />
                   </button>
@@ -1378,14 +1488,14 @@ export default function DocumentsPartagesPage() {
                       key={item.id || "inbox"}
                       className="flex items-center gap-1 min-w-0"
                     >
-                      <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
                       <button
                         onClick={() => {
                           setSelectedFolder(item.id);
                           setShowTrash(false);
                         }}
                         className={cn(
-                          "truncate max-w-[150px] text-sm transition-colors",
+                          "truncate max-w-[80px] sm:max-w-[150px] text-xs sm:text-sm transition-colors",
                           index === breadcrumbPath.length - 1
                             ? "font-medium text-foreground"
                             : "text-muted-foreground hover:text-foreground",
@@ -1394,7 +1504,8 @@ export default function DocumentsPartagesPage() {
                         {item.isInbox ? (
                           <span className="flex items-center gap-1">
                             <Inbox className="h-3.5 w-3.5 text-amber-500" />
-                            {item.name}
+                            <span className="hidden sm:inline">{item.name}</span>
+                            <span className="sm:hidden">Inbox</span>
                           </span>
                         ) : (
                           item.name
@@ -1402,20 +1513,20 @@ export default function DocumentsPartagesPage() {
                       </button>
                     </div>
                   ))}
-                  <span className="text-xs text-muted-foreground ml-1">
+                  <span className="text-xs text-muted-foreground ml-1 shrink-0">
                     ({filteredDocuments.length}
                     {hasMore ? "+" : ""})
                   </span>
                 </div>
               )}
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                 {showTrash ? (
                   /* Trash actions */
                   <>
                     {selectedTrashCount > 0 && (
                       <>
-                        <span className="text-xs font-normal text-muted-foreground">
+                        <span className="text-xs font-normal text-muted-foreground hidden sm:inline">
                           {selectedTrashCount} sélectionné(s)
                         </span>
                         <TooltipProvider>
@@ -1470,14 +1581,27 @@ export default function DocumentsPartagesPage() {
                       </>
                     )}
                     {trashItemsCount > 0 && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowEmptyTrashModal(true)}
-                        className="text-destructive hover:text-destructive"
-                      >
-                        Vider la corbeille
-                      </Button>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setShowEmptyTrashModal(true)}
+                              className="text-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4 sm:mr-1.5" />
+                              <span className="hidden sm:inline">Vider la corbeille</span>
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent
+                            side="bottom"
+                            className="bg-[#202020] text-white border-0 sm:hidden"
+                          >
+                            <p>Vider la corbeille</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     )}
                   </>
                 ) : (
@@ -1485,7 +1609,7 @@ export default function DocumentsPartagesPage() {
                   <>
                     {selectedDocuments.length > 0 && (
                       <>
-                        <span className="text-xs font-normal text-muted-foreground">
+                        <span className="text-xs font-normal text-muted-foreground hidden sm:inline">
                           {selectedDocuments.length} sélectionné(s)
                         </span>
                         <TooltipProvider>
@@ -1600,15 +1724,34 @@ export default function DocumentsPartagesPage() {
                     </TooltipProvider>
 
                     {/* Recherche */}
-                    <div className="relative">
+                    <div className="relative hidden sm:block">
                       <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
                         placeholder="Rechercher..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-8 w-48 h-8 text-sm"
+                        className="pl-8 w-32 md:w-48 h-8 text-sm"
                       />
                     </div>
+                    {/* Mobile search icon toggle */}
+                    {isMobile && (
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" size="icon" className="h-8 w-8 sm:hidden">
+                            <Search className="h-4 w-4" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-64 p-2" align="end">
+                          <Input
+                            placeholder="Rechercher..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="h-8 text-sm"
+                            autoFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    )}
 
                     {/* Filtres avancés */}
                     <Popover>
@@ -1623,11 +1766,11 @@ export default function DocumentsPartagesPage() {
                           ) : (
                             <Filter className="h-4 w-4" />
                           )}
-                          Filtres
+                          <span className="hidden sm:inline">Filtres</span>
                           {hasActiveFilters && (
                             <Badge
                               variant="secondary"
-                              className="ml-1 h-5 px-1.5 text-xs"
+                              className="ml-0.5 sm:ml-1 h-5 px-1.5 text-xs"
                             >
                               {
                                 [
@@ -1794,8 +1937,8 @@ export default function DocumentsPartagesPage() {
               ) : (
                 <div>
                   {/* Header */}
-                  <div className="flex items-center gap-3 px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider border-b">
-                    <span className="w-6"></span>
+                  <div className="flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider border-b">
+                    <span className="w-6 hidden sm:block"></span>
                     <Checkbox
                       checked={
                         selectedTrashFolders.length === trashFolders.length &&
@@ -1823,10 +1966,10 @@ export default function DocumentsPartagesPage() {
                       className="h-4 w-4"
                     />
                     <span className="flex-1">Nom</span>
-                    <span className="w-24 text-right">Taille</span>
-                    <span className="w-40 text-right">Supprimé le</span>
-                    <span className="w-24 text-right">Jours restants</span>
-                    <span className="w-10"></span>
+                    <span className="w-24 text-right hidden sm:block">Taille</span>
+                    <span className="w-40 text-right hidden lg:block">Supprimé le</span>
+                    <span className="w-24 text-right hidden md:block">Jours restants</span>
+                    <span className="w-8 sm:w-10"></span>
                   </div>
 
                   {/* Trashed folders with their contents */}
@@ -1840,7 +1983,7 @@ export default function DocumentsPartagesPage() {
                         {/* Folder row */}
                         <div
                           className={cn(
-                            "flex items-center gap-3 px-4 py-3 hover:bg-accent/50 transition-colors group border-b",
+                            "flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-2.5 sm:py-3 hover:bg-accent/50 transition-colors group border-b",
                             selectedTrashFolders.includes(folder.id) &&
                               "bg-accent/30",
                           )}
@@ -1852,7 +1995,7 @@ export default function DocumentsPartagesPage() {
                               toggleTrashFolderExpanded(folder.id)
                             }
                             className={cn(
-                              "w-6 h-6 flex items-center justify-center rounded hover:bg-accent",
+                              "w-6 h-6 flex items-center justify-center rounded hover:bg-accent hidden sm:flex",
                               !hasDocuments && "invisible",
                             )}
                           >
@@ -1870,7 +2013,13 @@ export default function DocumentsPartagesPage() {
                             }
                             className="h-4 w-4"
                           />
-                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <div
+                            className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0"
+                            onClick={() =>
+                              hasDocuments &&
+                              toggleTrashFolderExpanded(folder.id)
+                            }
+                          >
                             {isExpanded ? (
                               <FolderOpen
                                 className="h-4 w-4 flex-shrink-0"
@@ -1897,7 +2046,7 @@ export default function DocumentsPartagesPage() {
                               </p>
                             </div>
                           </div>
-                          <span className="w-24 text-right text-sm text-muted-foreground">
+                          <span className="w-24 text-right text-sm text-muted-foreground hidden sm:block">
                             {hasDocuments
                               ? formatFileSize(
                                   docsInFolder.reduce(
@@ -1907,7 +2056,7 @@ export default function DocumentsPartagesPage() {
                                 )
                               : "—"}
                           </span>
-                          <span className="w-40 text-right text-sm text-muted-foreground">
+                          <span className="w-40 text-right text-sm text-muted-foreground hidden lg:block">
                             {format(
                               new Date(folder.trashedAt),
                               "d MMM yyyy HH:mm",
@@ -1916,7 +2065,7 @@ export default function DocumentsPartagesPage() {
                               },
                             )}
                           </span>
-                          <span className="w-24 text-right">
+                          <span className="w-24 text-right hidden md:block">
                             <Badge
                               variant={
                                 folder.daysUntilPermanentDeletion <= 7
@@ -1933,7 +2082,7 @@ export default function DocumentsPartagesPage() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100"
+                                className="h-8 w-8 p-0 sm:opacity-0 sm:group-hover:opacity-100"
                               >
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>
@@ -1971,13 +2120,13 @@ export default function DocumentsPartagesPage() {
                             <div
                               key={`doc-${doc.id}`}
                               className={cn(
-                                "flex items-center gap-3 px-4 py-2.5 hover:bg-accent/30 transition-colors group border-b bg-muted/20",
+                                "flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-2 sm:py-2.5 hover:bg-accent/30 transition-colors group border-b bg-muted/20",
                                 selectedTrashDocuments.includes(doc.id) &&
                                   "bg-accent/20",
                               )}
                             >
-                              <span className="w-6"></span>
-                              <span className="w-4 border-l-2 border-b-2 border-muted-foreground/30 h-4 rounded-bl-sm"></span>
+                              <span className="w-6 hidden sm:block"></span>
+                              <span className="w-4 border-l-2 border-b-2 border-muted-foreground/30 h-4 rounded-bl-sm hidden sm:block"></span>
                               <Checkbox
                                 checked={selectedTrashDocuments.includes(
                                   doc.id,
@@ -1987,27 +2136,30 @@ export default function DocumentsPartagesPage() {
                                 }
                                 className="h-4 w-4"
                               />
-                              <div className="flex items-center gap-3 flex-1 min-w-0">
+                              <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
                                 {getFileIcon(doc.mimeType, doc.fileExtension)}
                                 <div className="flex-1 min-w-0">
                                   <p className="text-sm font-normal truncate">
                                     {doc.name}
                                   </p>
+                                  <p className="text-xs text-muted-foreground sm:hidden">
+                                    {formatFileSize(doc.fileSize)}
+                                  </p>
                                 </div>
                               </div>
-                              <span className="w-24 text-right text-sm text-muted-foreground">
+                              <span className="w-24 text-right text-sm text-muted-foreground hidden sm:block">
                                 {formatFileSize(doc.fileSize)}
                               </span>
-                              <span className="w-40 text-right text-sm text-muted-foreground">
+                              <span className="w-40 text-right text-sm text-muted-foreground hidden lg:block">
                                 —
                               </span>
-                              <span className="w-24 text-right">—</span>
+                              <span className="w-24 text-right hidden md:block">—</span>
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100"
+                                    className="h-8 w-8 p-0 sm:opacity-0 sm:group-hover:opacity-100"
                                   >
                                     <MoreHorizontal className="h-4 w-4" />
                                   </Button>
@@ -2048,12 +2200,12 @@ export default function DocumentsPartagesPage() {
                     <div
                       key={`doc-${doc.id}`}
                       className={cn(
-                        "flex items-center gap-3 px-4 py-3 hover:bg-accent/50 transition-colors group border-b",
+                        "flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-2.5 sm:py-3 hover:bg-accent/50 transition-colors group border-b",
                         selectedTrashDocuments.includes(doc.id) &&
                           "bg-accent/30",
                       )}
                     >
-                      <span className="w-6"></span>
+                      <span className="w-6 hidden sm:block"></span>
                       <Checkbox
                         checked={selectedTrashDocuments.includes(doc.id)}
                         onCheckedChange={() =>
@@ -2061,28 +2213,31 @@ export default function DocumentsPartagesPage() {
                         }
                         className="h-4 w-4"
                       />
-                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                      <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
                         {getFileIcon(doc.mimeType, doc.fileExtension)}
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-normal truncate">
                             {doc.name}
                           </p>
+                          <p className="text-xs text-muted-foreground sm:hidden">
+                            {formatFileSize(doc.fileSize)}
+                          </p>
                           {doc.description && (
-                            <p className="text-xs text-muted-foreground truncate">
+                            <p className="text-xs text-muted-foreground truncate hidden sm:block">
                               {doc.description}
                             </p>
                           )}
                         </div>
                       </div>
-                      <span className="w-24 text-right text-sm text-muted-foreground">
+                      <span className="w-24 text-right text-sm text-muted-foreground hidden sm:block">
                         {formatFileSize(doc.fileSize)}
                       </span>
-                      <span className="w-40 text-right text-sm text-muted-foreground">
+                      <span className="w-40 text-right text-sm text-muted-foreground hidden lg:block">
                         {format(new Date(doc.trashedAt), "d MMM yyyy HH:mm", {
                           locale: fr,
                         })}
                       </span>
-                      <span className="w-24 text-right">
+                      <span className="w-24 text-right hidden md:block">
                         <Badge
                           variant={
                             doc.daysUntilPermanentDeletion <= 7
@@ -2099,7 +2254,7 @@ export default function DocumentsPartagesPage() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100"
+                            className="h-8 w-8 p-0 sm:opacity-0 sm:group-hover:opacity-100"
                           >
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
@@ -2172,7 +2327,7 @@ export default function DocumentsPartagesPage() {
                   /* Vue liste */
                   <div>
                     {/* Header */}
-                    <div className="flex items-center gap-3 px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider border-b">
+                    <div className="flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider border-b">
                       <Checkbox
                         checked={
                           selectedDocuments.length ===
@@ -2190,20 +2345,20 @@ export default function DocumentsPartagesPage() {
                         {getSortIcon("name")}
                       </button>
                       <button
-                        className="w-24 flex items-center gap-1 justify-end hover:text-foreground transition-colors"
+                        className="w-24 hidden sm:flex items-center gap-1 justify-end hover:text-foreground transition-colors"
                         onClick={() => handleSort("fileSize")}
                       >
                         Taille
                         {getSortIcon("fileSize")}
                       </button>
                       <button
-                        className="w-32 flex items-center gap-1 justify-end hover:text-foreground transition-colors"
+                        className="w-24 sm:w-32 hidden md:flex items-center gap-1 justify-end hover:text-foreground transition-colors"
                         onClick={() => handleSort("createdAt")}
                       >
                         Date
                         {getSortIcon("createdAt")}
                       </button>
-                      <span className="w-10"></span>
+                      <span className="w-8 sm:w-10"></span>
                     </div>
 
                     {/* Documents */}
@@ -2212,7 +2367,7 @@ export default function DocumentsPartagesPage() {
                         <div
                           key={doc.id}
                           className={cn(
-                            "flex items-center gap-3 px-4 py-3 hover:bg-accent/50 transition-colors group cursor-pointer select-none",
+                            "flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-2.5 sm:py-3 hover:bg-accent/50 transition-colors group cursor-pointer select-none",
                             selectedDocuments.includes(doc.id) &&
                               "bg-accent/30",
                           )}
@@ -2233,16 +2388,16 @@ export default function DocumentsPartagesPage() {
                             onClick={(e) => e.stopPropagation()}
                             className="h-4 w-4"
                           />
-                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
                             {getFileIcon(doc.mimeType, doc.fileExtension)}
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-1.5 sm:gap-2">
                                 <p className="text-sm font-normal truncate">
                                   {doc.name}
                                 </p>
-                                {/* Tags inline */}
+                                {/* Tags inline - hide on mobile */}
                                 {doc.tags && doc.tags.length > 0 && (
-                                  <div className="flex items-center gap-1 flex-shrink-0">
+                                  <div className="hidden sm:flex items-center gap-1 flex-shrink-0">
                                     {doc.tags.slice(0, 2).map((tag) => (
                                       <span
                                         key={tag}
@@ -2268,17 +2423,21 @@ export default function DocumentsPartagesPage() {
                                   </div>
                                 )}
                               </div>
+                              {/* Show file size inline on mobile */}
+                              <p className="text-xs text-muted-foreground sm:hidden">
+                                {formatFileSize(doc.fileSize)}
+                              </p>
                               {doc.description && (
-                                <p className="text-xs text-muted-foreground truncate">
+                                <p className="text-xs text-muted-foreground truncate hidden sm:block">
                                   {doc.description}
                                 </p>
                               )}
                             </div>
                           </div>
-                          <span className="w-24 text-right text-sm text-muted-foreground">
+                          <span className="w-24 text-right text-sm text-muted-foreground hidden sm:block">
                             {formatFileSize(doc.fileSize)}
                           </span>
-                          <span className="w-32 text-right text-sm text-muted-foreground">
+                          <span className="w-24 sm:w-32 text-right text-sm text-muted-foreground hidden md:block">
                             {format(new Date(doc.createdAt), "d MMM yyyy", {
                               locale: fr,
                             })}
@@ -2288,7 +2447,7 @@ export default function DocumentsPartagesPage() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100"
+                                className="h-8 w-8 p-0 sm:opacity-0 sm:group-hover:opacity-100"
                               >
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>
@@ -2368,13 +2527,13 @@ export default function DocumentsPartagesPage() {
                   </div>
                 ) : (
                   /* Vue grille */
-                  <div className="px-4 py-2">
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                  <div className="px-2 sm:px-4 py-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-4">
                       {filteredDocuments.map((doc) => (
                         <div
                           key={doc.id}
                           className={cn(
-                            "group relative border rounded-xl p-4 hover:border-[#5b4eff]/50 hover:shadow-sm transition-all cursor-pointer select-none",
+                            "group relative border rounded-lg sm:rounded-xl p-3 sm:p-4 hover:border-[#5b4eff]/50 hover:shadow-sm transition-all cursor-pointer select-none",
                             selectedDocuments.includes(doc.id) &&
                               "border-[#5b4eff] bg-[#5b4eff]/5",
                           )}
@@ -3122,21 +3281,21 @@ export default function DocumentsPartagesPage() {
         open={!!previewDocument}
         onOpenChange={(open) => !open && setPreviewDocument(null)}
       >
-        <DialogContent className="max-w-6xl h-[85vh] flex flex-col p-0">
-          <DialogHeader className="px-6 pt-6 pb-4 border-b">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3 min-w-0">
+        <DialogContent className="max-w-[95vw] sm:max-w-6xl h-[90vh] sm:h-[85vh] flex flex-col p-0">
+          <DialogHeader className="px-3 pt-3 pb-2 sm:px-6 sm:pt-6 sm:pb-4 border-b">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
                 {previewDocument &&
                   getFileIcon(
                     previewDocument.mimeType,
                     previewDocument.fileExtension,
-                    "h-5 w-5 text-muted-foreground flex-shrink-0",
+                    "h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground flex-shrink-0",
                   )}
                 <div className="min-w-0">
-                  <DialogTitle className="truncate">
+                  <DialogTitle className="truncate text-sm sm:text-base">
                     {previewDocument?.name || previewDocument?.originalName}
                   </DialogTitle>
-                  <DialogDescription className="text-xs mt-1">
+                  <DialogDescription className="text-xs mt-0.5 sm:mt-1">
                     {previewDocument &&
                       formatFileSize(previewDocument.fileSize)}{" "}
                     •{" "}
@@ -3149,24 +3308,26 @@ export default function DocumentsPartagesPage() {
                   </DialogDescription>
                 </div>
               </div>
-              <div className="flex items-center gap-2 ml-4">
+              <div className="flex items-center gap-1.5 sm:gap-2 ml-2 sm:ml-4 shrink-0">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() =>
                     window.open(previewDocument?.fileUrl, "_blank")
                   }
+                  className="h-8 px-2 sm:px-3"
                 >
-                  <ExternalLink className="h-4 w-4 mr-2" />
-                  Ouvrir
+                  <ExternalLink className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Ouvrir</span>
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => handleDownload(previewDocument)}
+                  className="h-8 px-2 sm:px-3"
                 >
-                  <Download className="h-4 w-4 mr-2" />
-                  Télécharger
+                  <Download className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Télécharger</span>
                 </Button>
               </div>
             </div>
