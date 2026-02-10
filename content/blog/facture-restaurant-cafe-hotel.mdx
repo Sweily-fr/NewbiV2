@@ -1,0 +1,424 @@
+---
+title: 'Facturation en restauration (CHR) : obligations et spécificités'
+description: >-
+  Tout sur la facturation en restauration, café et hôtellerie : ticket de
+  caisse, facture client, TVA restauration et logiciel de caisse conforme.
+date: '2026-02-10'
+category: guide
+sector: Restaurants / CHR
+keyword: facturation restauration CHR
+author: Newbi
+image: /blog/facture-restaurant-cafe-hotel/hero.webp
+published: false
+publishDate: null
+---
+
+import Image from "next/image"
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex flex-wrap gap-2 mb-6">
+  <Badge>Guide</Badge>
+  <Badge variant="secondary">CHR</Badge>
+  <Badge variant="outline">9 min de lecture</Badge>
+</div>
+
+# Facturation en restauration (CHR) : obligations et spécificités
+
+La **facturation restauration CHR** (Cafés, Hôtels, Restaurants) obéit à des règles bien précises qui diffèrent sensiblement de la facturation classique entre entreprises. Ticket de caisse, facture sur demande, taux de TVA multiples, logiciel de caisse certifié NF525 : les professionnels du secteur doivent jongler avec un cadre réglementaire exigeant sous peine de sanctions lourdes.
+
+Que vous soyez restaurateur, cafetier ou hôtelier, ce guide complet vous détaille toutes les obligations liées à la **facturation restauration CHR**, les seuils à connaître, les taux de TVA applicables et les outils pour rester en conformité en 2026.
+
+<figure>
+  <Image
+    src="/blog/facture-restaurant-cafe-hotel/hero.webp"
+    alt="Facturation en restauration CHR : ticket de caisse et facture client"
+    width={1200}
+    height={630}
+    className="rounded-xl"
+    priority
+  />
+  <figcaption className="text-center text-sm text-muted-foreground mt-2">
+    La facturation en restauration comporte des obligations spécifiques que chaque professionnel CHR doit maîtriser.
+  </figcaption>
+</figure>
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Créer mon compte Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Ticket de caisse vs facture en restauration : quelle différence ?
+
+En restauration, la majorité des ventes s'effectuent auprès de particuliers. La distinction entre ticket de caisse et facture est donc fondamentale pour la **facturation restauration CHR**.
+
+### Le ticket de caisse (note)
+
+Pour les ventes aux particuliers, le restaurateur est tenu de délivrer une **note** (communément appelée ticket de caisse) dès lors que le montant dépasse **25 euros TTC**. En dessous de ce seuil, la remise d'une note n'est obligatoire que si le client en fait la demande.
+
+La note doit comporter les informations suivantes :
+- La date et le numéro de la note
+- Le nom et l'adresse de l'établissement
+- Le détail des prestations (désignation, quantité, prix)
+- Le montant total TTC
+- La mention de la TVA applicable
+
+### La facture client (B2B)
+
+Lorsqu'un client professionnel (entreprise, association) demande une **facture**, l'établissement CHR est tenu de l'émettre avec l'ensemble des [mentions obligatoires prévues par la loi](/blog/mentions-obligatoires-facture). Cela concerne notamment les repas d'affaires, les séminaires, les réservations de groupes ou les nuitées d'hôtel pour des déplacements professionnels.
+
+La facture doit alors inclure le numéro SIRET, le numéro de TVA intracommunautaire, le détail de chaque ligne avec le taux de TVA correspondant, les conditions de règlement et toutes les autres mentions légales.
+
+### Le seuil des 25 euros TTC
+
+Ce seuil est souvent méconnu des professionnels CHR. En dessous de 25 euros TTC, vous n'êtes pas obligé de remettre un ticket spontanément. Au-delà, la remise de la note est **systématique et obligatoire**, même sans demande du client. Le non-respect de cette obligation est passible d'une amende de 150 euros par infraction constatée.
+
+## Les taux de TVA en restauration : un vrai casse-tête
+
+La gestion de la TVA constitue l'une des principales complexités de la **facturation restauration CHR**. Plusieurs taux coexistent selon la nature du produit ou du service, le mode de consommation et le type d'établissement. Consultez notre [guide complet sur les taux de TVA en France](/blog/taux-tva-france-guide-complet) pour une vision globale.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Taux de TVA applicables en restauration (CHR) en 2026</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead>Type de produit / service</TableHead>
+        <TableHead>Consommation sur place</TableHead>
+        <TableHead>Vente à emporter</TableHead>
+        <TableHead>Remarque</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Plats cuisinés, entrées, desserts</TableCell>
+        <TableCell>10 %</TableCell>
+        <TableCell>5,5 %</TableCell>
+        <TableCell>Consommation immédiate vs différée</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Boissons non alcoolisées</TableCell>
+        <TableCell>10 %</TableCell>
+        <TableCell>5,5 %</TableCell>
+        <TableCell>Eaux, jus, sodas, cafés, thés</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Boissons alcoolisées</TableCell>
+        <TableCell>20 %</TableCell>
+        <TableCell>20 %</TableCell>
+        <TableCell>Taux normal, quel que soit le mode de consommation</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Hébergement hôtelier</TableCell>
+        <TableCell>10 %</TableCell>
+        <TableCell>—</TableCell>
+        <TableCell>Nuitée, petit-déjeuner inclus ou non</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Petit-déjeuner (séparé)</TableCell>
+        <TableCell>10 %</TableCell>
+        <TableCell>5,5 %</TableCell>
+        <TableCell>Si facturé séparément de la nuitée</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Service en salle, couverts</TableCell>
+        <TableCell>10 %</TableCell>
+        <TableCell>—</TableCell>
+        <TableCell>Inclus dans la prestation sur place</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Traiteur (livraison sans service)</TableCell>
+        <TableCell>—</TableCell>
+        <TableCell>5,5 %</TableCell>
+        <TableCell>Sans mise à disposition de personnel</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Traiteur (avec service sur place)</TableCell>
+        <TableCell>10 %</TableCell>
+        <TableCell>—</TableCell>
+        <TableCell>Avec personnel, vaisselle, installation</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+La distinction entre **consommation sur place (10 %)** et **vente à emporter (5,5 %)** est essentielle. Pour les établissements proposant les deux modes, chaque ligne de la facture ou du ticket doit clairement indiquer le taux applicable. Les **boissons alcoolisées** restent systématiquement soumises au taux de **20 %**, indépendamment du lieu de consommation.
+
+<div className="not-prose my-8">
+  <Callout variant="warning" title="Attention : erreur fréquente sur la TVA">
+    Une mauvaise ventilation des taux de TVA sur les tickets de caisse est l'une des premières causes de redressement fiscal en restauration. Veillez à paramétrer correctement votre logiciel de caisse pour distinguer automatiquement les produits sur place, à emporter et les boissons alcoolisées. En cas de contrôle, l'administration fiscale vérifie systématiquement la cohérence entre les taux déclarés et les produits vendus.
+  </Callout>
+</div>
+
+## Logiciel de caisse NF525 : une obligation incontournable
+
+Depuis le 1er janvier 2018, tout professionnel assujetti à la TVA qui enregistre les règlements de ses clients au moyen d'un logiciel ou système de caisse doit utiliser un **logiciel certifié NF525** (ou disposer d'une attestation individuelle de conformité délivrée par l'éditeur).
+
+Cette certification garantit quatre principes fondamentaux :
+- **Inaltérabilité** : les données enregistrées ne peuvent être modifiées sans laisser de trace
+- **Sécurisation** : les données sont protégées contre toute altération frauduleuse
+- **Conservation** : les données sont archivées pendant la durée légale (6 ans)
+- **Archivage** : les clôtures périodiques sont conservées et accessibles en cas de contrôle
+
+Le non-respect de cette obligation expose le professionnel à une amende de **7 500 euros**, assortie de l'obligation de se mettre en conformité dans un délai de 60 jours.
+
+<div className="not-prose my-8">
+  <Callout variant="destructive" title="Obligation NF525 : sanctions renforcées en 2026">
+    Depuis 2024, les contrôles se sont intensifiés dans le secteur CHR. L'administration fiscale dispose désormais d'équipes dédiées qui vérifient la conformité des logiciels de caisse lors des contrôles sur place. En 2026, avec le déploiement progressif de la facturation électronique, les incohérences entre les données de caisse et les déclarations de TVA sont détectées de manière quasi automatique. Ne prenez aucun risque : assurez-vous que votre système est bien certifié.
+  </Callout>
+</div>
+
+## Facturation électronique 2026 : ce qui change pour le secteur CHR
+
+L'[obligation de facturation électronique](/blog/facturation-electronique-obligatoire-2026) se déploie progressivement en France. Pour les professionnels de la restauration, les impacts sont les suivants :
+
+- **Factures B2B** : toutes les factures émises à destination de clients professionnels devront transiter par une plateforme de dématérialisation partenaire (PDP) ou le portail public de facturation
+- **E-reporting** : les transactions B2C (ventes aux particuliers) devront faire l'objet d'un reporting électronique, transmettant à l'administration les données de TVA agrégées
+- **Calendrier** : les grandes entreprises sont concernées dès septembre 2026 en émission, les ETI, PME et micro-entreprises suivront selon un calendrier progressif
+
+Pour le secteur CHR, cela signifie que votre logiciel de caisse devra être capable de générer des flux de e-reporting conformes, et que vos factures B2B devront être émises au format structuré (Factur-X, UBL ou CII).
+
+<figure>
+  <Image
+    src="/blog/facture-restaurant-cafe-hotel/tva-restauration.webp"
+    alt="Taux de TVA en restauration : sur place, à emporter et alcool"
+    width={800}
+    height={450}
+    className="rounded-xl"
+  />
+  <figcaption className="text-center text-sm text-muted-foreground mt-2">
+    Les trois taux de TVA en restauration : 5,5 % (emporter), 10 % (sur place) et 20 % (alcool).
+  </figcaption>
+</figure>
+
+## Notes de frais et factures clients : les bonnes pratiques
+
+Les professionnels en déplacement sollicitent régulièrement une **facture** pour justifier leurs notes de frais. Voici les bonnes pratiques pour satisfaire ces demandes tout en restant conforme :
+
+<div className="not-prose my-8 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Émettre une facture distincte du ticket de caisse, avec toutes les mentions obligatoires légales</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Indiquer clairement le nom de l'entreprise, son adresse et son numéro de TVA intracommunautaire</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Ventiler chaque ligne par taux de TVA (10 %, 5,5 %, 20 %) avec le détail des montants HT et TTC</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Préciser le nombre de couverts et les noms des convives si le client le demande (obligatoire au-delà de 150 euros pour les notes de frais)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Numéroter les factures de manière séquentielle et sans rupture dans la chronologie</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Conserver un double de chaque facture émise pendant au moins 10 ans (obligation comptable)</span>
+  </div>
+</div>
+
+Pour les établissements qui gèrent un volume important de demandes de factures clients, un **logiciel de facturation dédié** complémentaire au logiciel de caisse permet de gagner un temps considérable tout en garantissant la conformité.
+
+<div className="not-prose my-8">
+  <Callout title="Astuce Newbi pour la facturation CHR">
+    Avec Newbi, vous pouvez créer des factures conformes en quelques clics, avec ventilation automatique des taux de TVA restauration. Enregistrez vos clients professionnels réguliers pour accélérer l'émission de factures lors des repas d'affaires. Newbi gère également la numérotation séquentielle et l'archivage légal de vos documents.
+  </Callout>
+</div>
+
+<div className="not-prose my-8">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Facturer en restauration avec Newbi</Link>
+  </Button>
+</div>
+
+## Spécificités par type d'établissement
+
+### Restaurant traditionnel
+
+Le restaurant classique doit gérer la ventilation TVA entre plats (10 %), boissons sans alcool sur place (10 %) et boissons alcoolisées (20 %). Les menus ou formules doivent faire l'objet d'une ventilation proportionnelle lorsqu'ils incluent des produits soumis à des taux différents.
+
+### Restauration rapide
+
+La [restauration rapide](/blog/facture-restauration-rapide-obligations) présente une particularité : la question du sur place ou à emporter se pose pour chaque transaction. Le taux passe de 10 % à 5,5 % pour les ventes à emporter, ce qui nécessite un paramétrage rigoureux du logiciel de caisse.
+
+### Café et bar
+
+Les cafés doivent distinguer les boissons non alcoolisées (10 % sur place) des boissons alcoolisées (20 % systématique). Les viennoiseries et en-cas consommés sur place sont à 10 %, à emporter à 5,5 %.
+
+### Hôtellerie
+
+L'hébergement est soumis au taux réduit de 10 %. Lorsque le petit-déjeuner est inclus dans le prix de la nuitée, il suit le même taux. En revanche, s'il est facturé séparément, il relève du 10 % sur place ou 5,5 % à emporter. Le minibar suit les règles habituelles : 5,5 % ou 10 % pour les produits alimentaires, 20 % pour l'alcool.
+
+## Récapitulatif : les obligations de facturation restauration CHR
+
+En résumé, tout professionnel du secteur CHR doit respecter les règles suivantes pour sa **facturation restauration CHR** :
+
+<div className="not-prose my-8 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Remettre une note obligatoire pour toute addition supérieure à 25 euros TTC</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Émettre une facture conforme sur demande de tout client professionnel</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Appliquer les bons taux de TVA : 5,5 % (emporter), 10 % (sur place), 20 % (alcool)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Utiliser un logiciel de caisse certifié NF525 obligatoire</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Préparer la transition vers la facturation électronique et le e-reporting 2026</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Conserver l'ensemble des documents comptables pendant la durée légale</span>
+  </div>
+</div>
+
+## Passez à la facturation conforme avec Newbi
+
+Ne laissez pas la complexité de la **facturation restauration CHR** freiner votre activité. Newbi vous accompagne avec un logiciel de facturation simple, conforme et pensé pour les professionnels du secteur. Créez vos factures en quelques clics, gérez la ventilation TVA automatiquement et anticipez sereinement l'obligation de facturation électronique.
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+  <Button asChild variant="outline" size="lg">
+    <Link href="/produits/factures">Découvrir la facturation Newbi</Link>
+  </Button>
+</div>
+
+## FAQ : facturation en restauration (CHR)
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Un restaurant est-il obligé de donner un ticket de caisse ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, pour toute addition dont le montant dépasse 25 euros TTC, le restaurateur doit obligatoirement remettre une note au client, même si celui-ci ne la demande pas. En dessous de ce seuil, la note n'est remise que sur demande. Depuis le 1er août 2023, l'impression systématique du ticket n'est plus obligatoire (loi anti-gaspillage), mais le client peut toujours en demander un.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Quels sont les taux de TVA applicables en restauration ?</AccordionTrigger>
+      <AccordionContent>
+        Trois taux coexistent en restauration : 5,5 % pour les ventes à emporter de produits alimentaires et boissons non alcoolisées, 10 % pour la consommation sur place (plats, boissons sans alcool, hébergement hôtelier), et 20 % pour les boissons alcoolisées quel que soit le mode de consommation. La ventilation correcte entre ces taux est essentielle pour éviter tout redressement fiscal.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Qu'est-ce que la certification NF525 et est-elle obligatoire ?</AccordionTrigger>
+      <AccordionContent>
+        La certification NF525 atteste qu'un logiciel ou système de caisse respecte les conditions d'inaltérabilité, de sécurisation, de conservation et d'archivage des données de transaction. Elle est obligatoire depuis le 1er janvier 2018 pour tout professionnel assujetti à la TVA utilisant un logiciel de caisse. L'absence de certification expose à une amende de 7 500 euros.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Un restaurateur doit-il émettre une facture pour un client professionnel ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, tout client professionnel (entreprise, association, administration) peut exiger une facture conforme comportant toutes les mentions obligatoires légales. Le restaurateur ne peut pas refuser cette demande. La facture doit détailler les prestations, ventiler les taux de TVA, et mentionner les coordonnées complètes des deux parties, y compris les numéros de TVA intracommunautaire.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Comment la facturation électronique impacte-t-elle le secteur CHR en 2026 ?</AccordionTrigger>
+      <AccordionContent>
+        La facturation électronique obligatoire impacte le secteur CHR de deux manières. Premièrement, toutes les factures émises à destination de clients professionnels (B2B) devront être transmises au format électronique structuré via une plateforme de dématérialisation. Deuxièmement, les ventes aux particuliers (B2C) feront l'objet d'un e-reporting : les données de TVA agrégées devront être transmises à l'administration fiscale. Les restaurateurs doivent s'assurer que leur logiciel de caisse et leur solution de facturation sont compatibles avec ces nouvelles obligations.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>
+
+<script type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "Facturation en restauration (CHR) : obligations et spécificités",
+      "description": "Tout sur la facturation en restauration, café et hôtellerie : ticket de caisse, facture client, TVA restauration et logiciel de caisse conforme.",
+      "author": {
+        "@type": "Organization",
+        "name": "Newbi",
+        "url": "https://newbi.fr"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "Newbi",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://newbi.fr/logo.png"
+        }
+      },
+      "datePublished": "2026-02-10",
+      "dateModified": "2026-02-10",
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "https://newbi.fr/blog/facture-restaurant-cafe-hotel"
+      },
+      "image": "https://newbi.fr/blog/facture-restaurant-cafe-hotel/hero.webp",
+      "keywords": "facturation restauration CHR, ticket de caisse restaurant, TVA restauration, logiciel caisse NF525, facture restaurant"
+    })
+  }}
+/>
+
+<script type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Un restaurant est-il obligé de donner un ticket de caisse ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Oui, pour toute addition dont le montant dépasse 25 euros TTC, le restaurateur doit obligatoirement remettre une note au client. En dessous de ce seuil, la note n'est remise que sur demande. Depuis le 1er août 2023, l'impression systématique du ticket n'est plus obligatoire (loi anti-gaspillage), mais le client peut toujours en demander un."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Quels sont les taux de TVA applicables en restauration ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Trois taux coexistent en restauration : 5,5 % pour les ventes à emporter, 10 % pour la consommation sur place et l'hébergement hôtelier, et 20 % pour les boissons alcoolisées quel que soit le mode de consommation."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Qu'est-ce que la certification NF525 et est-elle obligatoire ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "La certification NF525 atteste qu'un logiciel de caisse respecte les conditions d'inaltérabilité, de sécurisation, de conservation et d'archivage des données. Elle est obligatoire depuis le 1er janvier 2018. L'absence de certification expose à une amende de 7 500 euros."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Un restaurateur doit-il émettre une facture pour un client professionnel ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Oui, tout client professionnel peut exiger une facture conforme comportant toutes les mentions obligatoires légales. Le restaurateur ne peut pas refuser cette demande."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Comment la facturation électronique impacte-t-elle le secteur CHR en 2026 ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "La facturation électronique impacte le secteur CHR de deux manières : les factures B2B devront être transmises au format électronique structuré, et les ventes B2C feront l'objet d'un e-reporting avec transmission des données de TVA agrégées à l'administration fiscale."
+          }
+        }
+      ]
+    })
+  }}
+/>

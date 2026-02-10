@@ -1,0 +1,432 @@
+---
+title: Comment facturer ses honoraires en tant qu'agent immobilier
+description: >-
+  Guide de facturation pour agents immobiliers : honoraires d'agence, TVA
+  immobilière, mentions Alur et modèle de facture d'honoraires.
+date: '2026-02-10'
+category: guide
+sector: Agents immobiliers
+keyword: facture honoraires agent immobilier
+author: Newbi
+image: /blog/facture-agent-immobilier-honoraires/hero.webp
+published: false
+publishDate: null
+---
+
+import Image from "next/image"
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex flex-wrap gap-2 mb-6">
+  <Badge>Guide</Badge>
+  <Badge variant="secondary">Immobilier</Badge>
+  <Badge variant="outline">8 min de lecture</Badge>
+</div>
+
+# Comment facturer ses honoraires en tant qu'agent immobilier
+
+La **facture honoraires agent immobilier** est un document essentiel qui encadre la relation commerciale entre le professionnel de l'immobilier et ses clients. Que vous soyez agent immobilier independant, gerant d'agence ou mandataire, savoir etablir une facture conforme est indispensable pour exercer en toute legalite. Entre la loi Alur, la TVA sur les honoraires et les mentions obligatoires specifiques au secteur, les regles de facturation dans l'immobilier comportent de nombreuses particularites qu'il faut maitriser.
+
+Ce guide complet vous explique comment facturer vos honoraires immobiliers, quelles mentions inclure et comment vous conformer a la reglementation en vigueur.
+
+<figure>
+  <Image
+    src="/blog/facture-agent-immobilier-honoraires/hero.webp"
+    alt="Facture honoraires agent immobilier : guide complet de facturation"
+    width={1200}
+    height={630}
+    className="rounded-lg"
+    priority
+  />
+  <figcaption className="text-center text-sm text-muted-foreground mt-2">
+    Facturer ses honoraires immobiliers dans les regles de l'art
+  </figcaption>
+</figure>
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Creer ma premiere facture d'honoraires</Link>
+  </Button>
+</div>
+
+## Les differents types d'honoraires en immobilier
+
+Les agents immobiliers percoivent des honoraires pour differents types de prestations. Chaque categorie repond a des regles de facturation et de plafonnement specifiques.
+
+### Honoraires de vente immobiliere
+
+Les honoraires de vente representent la commission percue par l'agent immobilier lors de la conclusion d'une transaction de vente. Ils sont generalement calcules en pourcentage du prix de vente du bien et varient en fonction de la valeur du bien, de la politique tarifaire de l'agence et de la negociation avec le client.
+
+En pratique, les honoraires de vente se situent entre **3 % et 8 % du prix de vente** du bien. Plus le bien est cher, plus le pourcentage tend a diminuer. Ces honoraires ne sont dus qu'a la conclusion effective de la vente, c'est-a-dire a la signature de l'acte authentique chez le notaire.
+
+### Honoraires de location
+
+Pour les transactions locatives, les honoraires de l'agent immobilier sont **strictement plafonnes par la loi Alur** depuis 2014. Le plafonnement s'applique aux frais mis a la charge du locataire et varie selon la zone geographique :
+
+- **Zone tres tendue** (Paris et communes limitrophes) : 12 EUR/m² de surface habitable
+- **Zone tendue** : 10 EUR/m² de surface habitable
+- **Reste du territoire** : 8 EUR/m² de surface habitable
+
+A ces frais s'ajoutent les honoraires d'etat des lieux, plafonnes a **3 EUR/m²** sur tout le territoire.
+
+### Honoraires de gestion locative
+
+Les honoraires de gestion locative correspondent a la remuneration de l'agent pour la gestion courante d'un bien loue au nom du proprietaire. Ils sont generalement factures **mensuellement** sous forme de pourcentage des loyers encaisses, habituellement entre **5 % et 10 % TTC** du loyer charges comprises.
+
+La facturation de la gestion locative s'effectue sur une base recurrente, avec un prelevement mensuel directement sur les loyers percus avant reversement au proprietaire bailleur.
+
+## Tableau recapitulatif des honoraires par type de transaction
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Recapitulatif des honoraires immobiliers par type de prestation</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead>Type de transaction</TableHead>
+        <TableHead>Honoraires habituels</TableHead>
+        <TableHead>Qui paie ?</TableHead>
+        <TableHead>TVA applicable</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Vente immobiliere</TableCell>
+        <TableCell>3 % a 8 % du prix de vente</TableCell>
+        <TableCell>Acquereur ou vendeur (selon mandat)</TableCell>
+        <TableCell>20 %</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Location (frais locataire)</TableCell>
+        <TableCell>8 a 12 EUR/m² selon la zone</TableCell>
+        <TableCell>Locataire (plafonne) + Bailleur</TableCell>
+        <TableCell>20 %</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Etat des lieux</TableCell>
+        <TableCell>3 EUR/m² maximum</TableCell>
+        <TableCell>Locataire</TableCell>
+        <TableCell>20 %</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Gestion locative</TableCell>
+        <TableCell>5 % a 10 % du loyer CC</TableCell>
+        <TableCell>Proprietaire bailleur</TableCell>
+        <TableCell>20 %</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Syndic de copropriete</TableCell>
+        <TableCell>Forfait annuel variable</TableCell>
+        <TableCell>Copropriete</TableCell>
+        <TableCell>20 %</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+## Obligations de la loi Alur en matiere de facturation
+
+La loi Alur (loi pour l'Acces au Logement et un Urbanisme Renove) du 24 mars 2014 a considerablement renforce les obligations de transparence des agents immobiliers concernant leurs honoraires.
+
+<div className="not-prose my-6">
+  <Callout variant="warning" title="Obligations d'affichage loi Alur">
+    Le non-respect des obligations d'affichage des honoraires prevues par la loi Alur est passible d'une amende pouvant atteindre **15 000 EUR pour une personne physique** et **75 000 EUR pour une personne morale**. Assurez-vous de respecter scrupuleusement ces exigences.
+  </Callout>
+</div>
+
+### Affichage obligatoire des honoraires TTC
+
+Tout agent immobilier doit afficher ses honoraires de maniere visible et lisible :
+
+- **En vitrine d'agence** : bareme complet des honoraires TTC, exprime en pourcentage du prix de vente ou en euros
+- **Sur le site internet** de l'agence : meme bareme complet accessible facilement
+- **Sur chaque annonce immobiliere** : montant des honoraires TTC et indication de la partie qui les supporte (acquereur ou vendeur)
+
+Les honoraires doivent systematiquement etre affiches **toutes taxes comprises (TTC)**, que le client soit un particulier ou un professionnel.
+
+### Mention "a la charge de l'acquereur" ou "a la charge du vendeur"
+
+Chaque annonce de vente doit obligatoirement preciser si les honoraires sont a la charge de l'acquereur ou du vendeur. Cette mention a des consequences directes sur la facturation :
+
+- **Honoraires charge acquereur** : le prix affiche dans l'annonce inclut les honoraires. La facture est adressee a l'acquereur.
+- **Honoraires charge vendeur** : le prix affiche est le prix net vendeur. La facture est adressee au vendeur qui regle les honoraires sur le produit de la vente.
+
+## TVA sur les honoraires immobiliers
+
+Les honoraires d'agence immobiliere sont soumis a la **TVA au taux normal de 20 %**. Cette regle s'applique a l'ensemble des prestations de l'agent immobilier : vente, location, gestion locative et syndic.
+
+La facture doit donc faire apparaitre distinctement :
+
+- Le montant HT des honoraires
+- Le taux de TVA applicable (20 %)
+- Le montant de la TVA
+- Le montant TTC
+
+Seuls les agents immobiliers beneficiant du regime de la **franchise en base de TVA** (micro-entrepreneurs dont le chiffre d'affaires ne depasse pas les seuils en vigueur) sont dispenses de facturer la TVA. Dans ce cas, la mention *"TVA non applicable, article 293 B du CGI"* doit figurer sur la facture.
+
+## Mentions obligatoires sur la facture d'honoraires
+
+Au-dela des [mentions obligatoires communes a toute facture](/blog/mentions-obligatoires-facture), la facture d'un agent immobilier doit comporter des mentions specifiques au secteur.
+
+### Mentions specifiques a l'immobilier
+
+- **Numero de carte professionnelle CCI** : delivree par la Chambre de Commerce et d'Industrie, elle est obligatoire pour exercer et doit figurer sur tous les documents commerciaux, dont les factures
+- **Reference du mandat** : numero et date du mandat de vente ou de location en vertu duquel l'agent intervient
+- **Designation precise du bien** : adresse complete et nature du bien concerne par la transaction
+- **Identite du client facture** : acquereur, vendeur ou bailleur selon le cas
+- **Garantie financiere** : nom et adresse de l'organisme garant
+
+Le mandat est un prealable indispensable a toute facturation. **Sans mandat ecrit et signe, l'agent immobilier ne peut reclamer aucun honoraire.** C'est une regle d'ordre public inscrite dans la loi Hoguet du 2 janvier 1970.
+
+### Le mandat, condition prealable a la facturation
+
+Il existe plusieurs types de mandats :
+
+- **Mandat simple** : le proprietaire peut confier la vente ou la location a plusieurs agences
+- **Mandat exclusif** : seule l'agence mandatee est autorisee a proposer le bien
+- **Mandat semi-exclusif** : l'agence est mandatee mais le proprietaire conserve le droit de trouver un acquereur lui-meme
+
+Quel que soit le type de mandat, celui-ci doit preciser le montant des honoraires et indiquer qui les supporte. La facture d'honoraires doit etre coherente avec les termes du mandat.
+
+## Facturer au vendeur ou a l'acquereur : quelles differences ?
+
+Le choix de facturer les honoraires au vendeur ou a l'acquereur a des implications pratiques et fiscales.
+
+**Facturation a l'acquereur** :
+- Les honoraires sont inclus dans le prix de vente affiche
+- L'acquereur paie les droits de mutation (frais de notaire) sur le prix incluant les honoraires
+- La facture est emise au nom de l'acquereur apres la signature de l'acte authentique
+
+**Facturation au vendeur** :
+- Les honoraires sont deduits du prix de vente que percoit le vendeur
+- L'acquereur paie les droits de mutation sur le prix net vendeur (hors honoraires), ce qui est plus avantageux pour lui
+- La facture est emise au nom du vendeur
+
+Pour la [gestion globale de votre activite d'agent immobilier](/blog/gestion-entreprise-agent-immobilier), le choix entre ces deux options doit etre reflechi en amont et clairement indique dans le mandat.
+
+<figure>
+  <Image
+    src="/blog/facture-agent-immobilier-honoraires/exemple-facture.webp"
+    alt="Exemple de facture d'honoraires agent immobilier avec mentions obligatoires"
+    width={800}
+    height={500}
+    className="rounded-lg"
+  />
+  <figcaption className="text-center text-sm text-muted-foreground mt-2">
+    Exemple de facture d'honoraires conforme pour un agent immobilier
+  </figcaption>
+</figure>
+
+<div className="not-prose my-8">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Facturer mes honoraires immobiliers</Link>
+  </Button>
+</div>
+
+## Gestion locative : une facturation recurrente
+
+La gestion locative implique une facturation reguliere, generalement mensuelle. L'agent immobilier gestionnaire facture ses honoraires sous forme de pourcentage des loyers encaisses.
+
+Chaque facture mensuelle de gestion locative doit detailler :
+
+- Le montant du loyer encaisse (charges comprises)
+- Le pourcentage applique pour les frais de gestion
+- Le montant HT des honoraires
+- La TVA a 20 %
+- Le montant TTC preleve
+- Le solde reverse au proprietaire
+
+Pour un suivi rigoureux de vos clients bailleurs et de vos factures recurrentes, l'utilisation d'un [CRM adapte a votre activite](/blog/crm-gestion-client-independant) est fortement recommandee.
+
+N'oubliez pas non plus de bien gerer vos [delais de paiement](/blog/quest-ce-que-delai-paiement-facture) pour maintenir une tresorerie saine.
+
+<div className="not-prose my-6">
+  <Callout variant="tip" title="Simplifiez votre facturation avec Newbi">
+    Newbi vous permet de creer des factures d'honoraires conformes a la reglementation immobiliere en quelques clics. Ajoutez automatiquement votre numero de carte professionnelle CCI, la reference du mandat et toutes les mentions obligatoires. Generez vos factures recurrentes pour la gestion locative et suivez vos encaissements en temps reel.
+  </Callout>
+</div>
+
+## Checklist : les indispensables de la facture d'honoraires immobilier
+
+<div className="not-prose my-8 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Numero de facture unique et sequentiel</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Date d'emission et date d'echeance de la facture</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Identite complete de l'agence (SIREN, siege social, forme juridique)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Numero de carte professionnelle CCI obligatoire</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Garantie financiere (nom et coordonnees de l'organisme)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Reference du mandat (numero et date)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Designation precise du bien immobilier concerne</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Identite complete du client facture (acquereur ou vendeur)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Montant HT, TVA (20 %) et montant TTC des honoraires</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Conditions et delai de paiement</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Penalites de retard et indemnite forfaitaire de recouvrement</span>
+  </div>
+</div>
+
+## En resume
+
+La facturation des honoraires en tant qu'agent immobilier repond a des regles strictes imposees par la loi Hoguet, la loi Alur et le Code de commerce. Chaque facture doit refleter les termes du mandat, mentionner le numero de carte professionnelle CCI, respecter le plafonnement des honoraires de location et afficher clairement la TVA a 20 %. Que vous facturiez une vente, une location ou de la gestion locative, la conformite de vos factures est un gage de professionnalisme et de securite juridique.
+
+En utilisant un outil de facturation adapte comme Newbi, vous vous assurez de ne rien oublier et de gagner un temps precieux dans votre activite quotidienne.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement pour mes factures immobilieres</Link>
+  </Button>
+</div>
+
+## Questions frequentes
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Un agent immobilier peut-il facturer des honoraires sans mandat ?</AccordionTrigger>
+      <AccordionContent>
+        Non, c'est formellement interdit. La loi Hoguet du 2 janvier 1970 impose la signature prealable d'un mandat ecrit pour que l'agent immobilier puisse pretendre au paiement de ses honoraires. Sans mandat valide, aucune remuneration ne peut etre reclamee, meme si l'agent a effectivement realise des prestations. Toute facture emise sans mandat est juridiquement contestable.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Quel taux de TVA s'applique sur les honoraires d'agence immobiliere ?</AccordionTrigger>
+      <AccordionContent>
+        Les honoraires d'agence immobiliere sont soumis a la TVA au taux normal de 20 %, quel que soit le type de prestation (vente, location, gestion locative). Seuls les agents immobiliers en micro-entreprise beneficiant de la franchise en base de TVA n'appliquent pas la TVA et doivent alors mentionner "TVA non applicable, article 293 B du CGI" sur leurs factures.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Quand l'agent immobilier peut-il emettre sa facture d'honoraires de vente ?</AccordionTrigger>
+      <AccordionContent>
+        La facture d'honoraires de vente ne peut etre emise qu'a la conclusion definitive de la transaction, c'est-a-dire a la signature de l'acte authentique de vente chez le notaire. L'agent ne peut exiger aucun paiement avant cette etape, sauf dans des cas tres specifiques prevus par le mandat (comme une clause penale en cas de desistement de l'acquereur apres compromis).
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Comment sont plafonnes les honoraires de location depuis la loi Alur ?</AccordionTrigger>
+      <AccordionContent>
+        La loi Alur plafonne les frais d'agence mis a la charge du locataire en fonction de la zone geographique : 12 EUR/m² en zone tres tendue (Paris et communes limitrophes), 10 EUR/m² en zone tendue et 8 EUR/m² dans le reste du territoire. Les frais d'etat des lieux sont plafonnes a 3 EUR/m² sur tout le territoire. La part a la charge du locataire ne peut jamais depasser celle facturee au bailleur.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Le numero de carte professionnelle CCI est-il obligatoire sur la facture ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, le numero de carte professionnelle delivree par la Chambre de Commerce et d'Industrie (CCI) doit figurer sur tous les documents commerciaux de l'agent immobilier, y compris les factures. Cette carte atteste que le professionnel remplit les conditions legales pour exercer l'activite d'agent immobilier (garantie financiere, assurance RCP, aptitude professionnelle). Son absence sur une facture constitue un manquement reglementaire.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>
+
+<script type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "Comment facturer ses honoraires en tant qu'agent immobilier",
+      "description": "Guide de facturation pour agents immobiliers : honoraires d'agence, TVA immobiliere, mentions Alur et modele de facture d'honoraires.",
+      "author": {
+        "@type": "Organization",
+        "name": "Newbi",
+        "url": "https://newbi.co"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "Newbi",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://newbi.co/logo.png"
+        }
+      },
+      "datePublished": "2026-02-10",
+      "dateModified": "2026-02-10",
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "https://newbi.co/blog/facture-agent-immobilier-honoraires"
+      },
+      "image": "https://newbi.co/blog/facture-agent-immobilier-honoraires/hero.webp",
+      "keywords": "facture honoraires agent immobilier, honoraires agence immobiliere, TVA immobilier, loi Alur facturation, carte professionnelle CCI"
+    })
+  }}
+/>
+
+<script type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Un agent immobilier peut-il facturer des honoraires sans mandat ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Non, c'est formellement interdit. La loi Hoguet du 2 janvier 1970 impose la signature prealable d'un mandat ecrit pour que l'agent immobilier puisse pretendre au paiement de ses honoraires. Sans mandat valide, aucune remuneration ne peut etre reclamee."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Quel taux de TVA s'applique sur les honoraires d'agence immobiliere ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Les honoraires d'agence immobiliere sont soumis a la TVA au taux normal de 20 %, quel que soit le type de prestation. Seuls les agents en micro-entreprise beneficiant de la franchise en base de TVA n'appliquent pas la TVA."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Quand l'agent immobilier peut-il emettre sa facture d'honoraires de vente ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "La facture d'honoraires de vente ne peut etre emise qu'a la conclusion definitive de la transaction, c'est-a-dire a la signature de l'acte authentique de vente chez le notaire."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Comment sont plafonnes les honoraires de location depuis la loi Alur ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "La loi Alur plafonne les frais d'agence a la charge du locataire selon la zone : 12 EUR/m2 en zone tres tendue, 10 EUR/m2 en zone tendue et 8 EUR/m2 dans le reste du territoire. Les frais d'etat des lieux sont plafonnes a 3 EUR/m2."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Le numero de carte professionnelle CCI est-il obligatoire sur la facture ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Oui, le numero de carte professionnelle delivree par la CCI doit figurer sur tous les documents commerciaux de l'agent immobilier, y compris les factures. Son absence constitue un manquement reglementaire."
+          }
+        }
+      ]
+    })
+  }}
+/>

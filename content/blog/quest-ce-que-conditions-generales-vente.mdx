@@ -1,0 +1,359 @@
+---
+title: Qu'est-ce que les CGV (Conditions Générales de Vente) ? Guide complet
+description: >-
+  Tout savoir sur les CGV : définition, mentions obligatoires, différence
+  CGV/CGU, modèle et comment les intégrer à vos devis et factures.
+date: '2026-02-10'
+category: glossaire
+sector: null
+keyword: conditions générales de vente CGV
+author: Newbi
+image: /blog/quest-ce-que-conditions-generales-vente/hero.webp
+published: false
+publishDate: null
+---
+
+import Image from "next/image"
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-8">
+  <Badge variant="secondary">Glossaire</Badge>
+  <Badge variant="outline">8 min de lecture</Badge>
+</div>
+
+# Qu'est-ce que les CGV (Conditions Générales de Vente) ? Guide complet
+
+Les **conditions générales de vente** (CGV) constituent le socle juridique de toute relation commerciale entre un vendeur et ses clients. Que vous soyez auto-entrepreneur, freelance ou dirigeant de PME, comprendre et rédiger correctement vos **conditions générales de vente** est indispensable pour sécuriser vos transactions, prévenir les litiges et respecter la loi. Ce guide complet vous explique tout ce que vous devez savoir sur les CGV : leur définition légale, les mentions obligatoires, les différences avec les CGU, et surtout comment les intégrer facilement à vos devis et factures.
+
+<figure>
+  <Image
+    src="/blog/quest-ce-que-conditions-generales-vente/hero.webp"
+    alt="Conditions générales de vente CGV : guide complet pour les professionnels"
+    width={1200}
+    height={630}
+    className="rounded-xl"
+    priority
+  />
+  <figcaption className="text-center text-sm text-muted-foreground mt-2">
+    Les CGV encadrent juridiquement chaque vente de produit ou prestation de service.
+  </figcaption>
+</figure>
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Définition juridique des CGV
+
+Les **conditions générales de vente** sont définies par l'**article L441-1 du Code de commerce**. Elles constituent le socle unique de la négociation commerciale et regroupent l'ensemble des informations que le vendeur doit communiquer à tout acheteur de produits ou demandeur de prestations de services.
+
+Concrètement, les CGV forment un document contractuel qui précise les droits et obligations de chaque partie dans le cadre d'une transaction commerciale. Elles s'appliquent dès lors qu'un client passe commande ou accepte un devis, et ont valeur de contrat une fois acceptées.
+
+Les CGV remplissent trois fonctions essentielles :
+
+1. **Informer** le client sur les conditions de la vente avant la transaction.
+2. **Encadrer** juridiquement la relation commerciale pour prévenir les litiges.
+3. **Protéger** le vendeur en fixant des règles claires (paiement, retard, litiges).
+
+## CGV obligatoires : B2B vs B2C
+
+La réglementation diffère selon que vous vendez à des professionnels (B2B) ou à des particuliers (B2C).
+
+### En B2B (entre professionnels)
+
+Les CGV doivent être communiquées **sur demande** de l'acheteur professionnel. Le vendeur est tenu de les fournir sans délai dès qu'un client professionnel en fait la requête. En revanche, il n'est pas obligatoire de les transmettre spontanément.
+
+### En B2C (avec des particuliers)
+
+Les CGV sont **toujours obligatoires** et doivent être mises à disposition du consommateur **avant** la conclusion de la vente. C'est une obligation d'information précontractuelle inscrite dans le Code de la consommation (articles L111-1 et suivants). Pour un site e-commerce, elles doivent être accessibles et acceptées avant la validation de la commande.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Comparatif des obligations CGV en B2B et B2C</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[200px]">Critère</TableHead>
+        <TableHead>CGV B2B</TableHead>
+        <TableHead>CGV B2C</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Obligation</TableCell>
+        <TableCell>Sur demande de l'acheteur</TableCell>
+        <TableCell>Toujours obligatoires</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Quand les communiquer</TableCell>
+        <TableCell>Dès que le client professionnel en fait la demande</TableCell>
+        <TableCell>Avant la conclusion de la vente (information précontractuelle)</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Conditions de vente</TableCell>
+        <TableCell>Obligatoire</TableCell>
+        <TableCell>Obligatoire</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Barème des prix</TableCell>
+        <TableCell>Obligatoire</TableCell>
+        <TableCell>Obligatoire</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Réductions de prix</TableCell>
+        <TableCell>Obligatoire</TableCell>
+        <TableCell>Obligatoire</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Conditions de règlement</TableCell>
+        <TableCell>Obligatoire</TableCell>
+        <TableCell>Obligatoire</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Pénalités de retard</TableCell>
+        <TableCell>Obligatoire (taux BCE + 10 pts minimum)</TableCell>
+        <TableCell>Recommandé</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Indemnité forfaitaire de recouvrement (40 EUR)</TableCell>
+        <TableCell>Obligatoire</TableCell>
+        <TableCell>Non applicable</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Droit de rétractation (14 jours)</TableCell>
+        <TableCell>Non applicable</TableCell>
+        <TableCell>Obligatoire (vente à distance)</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Garantie légale de conformité</TableCell>
+        <TableCell>Non obligatoire dans les CGV</TableCell>
+        <TableCell>Obligatoire</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Clause résolutoire</TableCell>
+        <TableCell>Fortement recommandé</TableCell>
+        <TableCell>Fortement recommandé</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+## Contenu obligatoire des CGV
+
+Vos **conditions générales de vente** doivent contenir un certain nombre de mentions pour être conformes. Voici les clauses essentielles à intégrer.
+
+### 1. Conditions de vente
+
+Décrivez précisément les modalités de la vente : objet du contrat, description des produits ou services, processus de commande et de livraison, délais d'exécution.
+
+### 2. Barème des prix
+
+Indiquez vos prix unitaires hors taxes et TTC, ainsi que la devise utilisée. Précisez si les prix incluent ou non les frais de livraison et toute autre charge supplémentaire.
+
+### 3. Réductions de prix
+
+Mentionnez les éventuelles remises, ristournes ou rabais que vous accordez, ainsi que les conditions pour en bénéficier (volume d'achat, fidélité, etc.).
+
+### 4. Conditions de règlement
+
+Précisez les moyens de paiement acceptés, les [délais de paiement](/blog/quest-ce-que-delai-paiement-facture) accordés, et les conditions d'escompte en cas de paiement anticipé. En B2B, le délai de paiement par défaut est de 30 jours à compter de la réception des marchandises ou de l'exécution de la prestation.
+
+### 5. Pénalités de retard
+
+Indiquez le taux des pénalités de retard applicable en cas de non-paiement à l'échéance. En B2B, ce taux ne peut pas être inférieur à trois fois le taux d'intérêt légal. Mentionnez également l'indemnité forfaitaire de recouvrement de **40 euros** due de plein droit.
+
+### 6. Clause résolutoire
+
+Cette clause permet de prévoir la résiliation automatique du contrat en cas de manquement grave de l'une des parties (non-paiement, non-livraison, etc.).
+
+### 7. Droit de rétractation (B2C)
+
+Pour les ventes à distance aux particuliers, vous devez obligatoirement mentionner le droit de rétractation de **14 jours** dont dispose le consommateur, ainsi que les modalités d'exercice de ce droit et le formulaire de rétractation.
+
+### 8. Garantie légale (B2C)
+
+Informez le consommateur de la garantie légale de conformité (2 ans) et de la garantie des vices cachés. Ces mentions sont obligatoires depuis la loi Hamon de 2014.
+
+<div className="not-prose my-8">
+  <Callout variant="destructive" title="Sanctions de la DGCCRF">
+    L'absence de CGV ou des CGV non conformes expose le professionnel à des sanctions de la DGCCRF (Direction générale de la concurrence, de la consommation et de la répression des fraudes). En B2B, le refus de communication des CGV sur demande est passible d'une amende pouvant atteindre **75 000 euros pour une personne physique** et **375 000 euros pour une personne morale**. En cas de récidive dans les deux ans, ces montants sont doublés. Ne négligez jamais la rédaction de vos CGV.
+  </Callout>
+</div>
+
+## Différence entre CGV, CGU et CGA
+
+Ces trois acronymes sont souvent confondus, mais ils couvrent des réalités bien distinctes.
+
+**CGV (Conditions Générales de Vente)** : elles encadrent la vente de produits ou de prestations de services. Elles régissent la relation commerciale entre le vendeur et l'acheteur (prix, paiement, livraison, garanties).
+
+**CGU (Conditions Générales d'Utilisation)** : elles encadrent l'utilisation d'un site web ou d'une application. Elles définissent les droits et obligations des utilisateurs (propriété intellectuelle, données personnelles, comportements interdits). Un site e-commerce a besoin des deux : CGU pour l'utilisation du site et CGV pour les ventes.
+
+**CGA (Conditions Générales d'Achat)** : rédigées par l'acheteur professionnel, elles définissent les conditions dans lesquelles il souhaite réaliser ses achats. Elles sont utilisées principalement en B2B et peuvent servir de base de négociation face aux CGV du fournisseur.
+
+## Comment rédiger vos CGV
+
+La rédaction des **conditions générales de vente** demande rigueur et attention. Voici les bonnes pratiques.
+
+<div className="not-prose my-8">
+  <div className="space-y-3">
+    <div className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span>Identifiez votre activité et votre clientèle (B2B, B2C ou les deux) pour adapter le contenu</span>
+    </div>
+    <div className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span>Intégrez toutes les mentions obligatoires listées ci-dessus</span>
+    </div>
+    <div className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span>Rédigez dans un langage clair et compréhensible, évitez le jargon juridique excessif</span>
+    </div>
+    <div className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span>Vérifiez la conformité avec le Code de commerce et le Code de la consommation</span>
+    </div>
+    <div className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span>Mettez vos CGV à jour régulièrement (évolution tarifaire, changement de réglementation)</span>
+    </div>
+    <div className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span>Prévoyez une clause attributive de compétence (tribunal compétent en cas de litige)</span>
+    </div>
+    <div className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span>Incluez une clause de réserve de propriété si vous vendez des biens physiques</span>
+    </div>
+    <div className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span>Faites relire vos CGV par un professionnel du droit si votre activité le justifie</span>
+    </div>
+  </div>
+</div>
+
+En cas de doute, il est toujours recommandé de faire valider vos CGV par un avocat ou un juriste spécialisé, surtout si votre chiffre d'affaires est significatif ou si votre activité comporte des spécificités sectorielles.
+
+## Joindre vos CGV à vos devis et factures
+
+La meilleure pratique consiste à joindre systématiquement vos **conditions générales de vente** à vos documents commerciaux : [devis](/blog/comment-faire-devis-professionnel), [bons de commande](/blog/quest-ce-que-bon-commande) et [factures](/blog/mentions-obligatoires-facture). Cela vous permet de prouver que votre client en a pris connaissance et les a acceptées avant la transaction.
+
+<figure>
+  <Image
+    src="/blog/quest-ce-que-conditions-generales-vente/cgv-devis-facture.webp"
+    alt="Joindre les CGV aux devis et factures avec Newbi"
+    width={1200}
+    height={630}
+    className="rounded-xl"
+  />
+  <figcaption className="text-center text-sm text-muted-foreground mt-2">
+    Avec Newbi, joignez automatiquement vos CGV en annexe de chaque devis et facture.
+  </figcaption>
+</figure>
+
+<div className="not-prose my-8">
+  <Callout variant="default" title="Astuce Newbi : joignez vos CGV automatiquement">
+    Avec Newbi, vous pouvez télécharger vos CGV une seule fois dans votre espace et les joindre automatiquement en pièce jointe de chaque devis et facture que vous envoyez. Plus besoin d'y penser : vos documents commerciaux sont toujours conformes et vos CGV systématiquement transmises à vos clients. Gagnez du temps et sécurisez chaque transaction.
+  </Callout>
+</div>
+
+Sur le devis, il est courant d'ajouter une mention du type : *"Le client déclare avoir pris connaissance des conditions générales de vente en annexe et les accepter sans réserve."* La signature du devis vaut alors acceptation des CGV.
+
+Sur la facture, les CGV peuvent figurer au verso du document ou en pièce jointe du PDF. N'oubliez pas d'y inclure les [mentions obligatoires de la facture](/blog/mentions-obligatoires-facture), qui sont distinctes des CGV mais complémentaires.
+
+<div className="not-prose my-8">
+  <Button asChild variant="outline">
+    <Link href="/produits/devis">Joindre mes CGV à mes devis</Link>
+  </Button>
+</div>
+
+## En résumé
+
+Les **conditions générales de vente** sont un pilier de votre relation commerciale. En B2C, elles sont toujours obligatoires. En B2B, elles doivent être fournies sur demande. Elles protègent vos intérêts, informent vos clients et vous mettent en conformité avec la loi. Veillez à les rédiger avec soin, à les mettre à jour régulièrement et surtout, à les joindre systématiquement à vos devis et factures pour leur donner pleine valeur contractuelle.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Créer mes devis et factures avec CGV sur Newbi</Link>
+  </Button>
+</div>
+
+## Questions fréquentes
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Les CGV sont-elles obligatoires pour un auto-entrepreneur ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, si vous vendez à des particuliers (B2C), les CGV sont obligatoires et doivent être communiquées avant la vente. Si vous vendez uniquement à des professionnels (B2B), vous devez les fournir sur demande. Dans tous les cas, il est fortement recommandé de les rédiger dès le début de votre activité pour sécuriser vos relations commerciales.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Quelle est la différence entre les CGV et les CGU ?</AccordionTrigger>
+      <AccordionContent>
+        Les CGV (Conditions Générales de Vente) encadrent la transaction commerciale : prix, livraison, paiement, garanties. Les CGU (Conditions Générales d'Utilisation) encadrent l'utilisation d'un site web ou d'une application : règles d'accès, propriété intellectuelle, données personnelles. Un site e-commerce a besoin des deux documents.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Quelles sont les sanctions en cas d'absence de CGV ?</AccordionTrigger>
+      <AccordionContent>
+        En B2B, le refus de communication des CGV sur demande peut entraîner une amende allant jusqu'à 75 000 euros pour une personne physique et 375 000 euros pour une personne morale. En B2C, l'absence d'information précontractuelle peut également être sanctionnée par la DGCCRF et donner lieu à des poursuites pour pratique commerciale trompeuse.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Comment joindre mes CGV à mes devis et factures ?</AccordionTrigger>
+      <AccordionContent>
+        Vous pouvez imprimer vos CGV au verso de vos documents ou les joindre en annexe PDF. Avec un logiciel de facturation comme Newbi, vous pouvez télécharger vos CGV une seule fois et les attacher automatiquement à chaque devis et facture envoyés. Ajoutez une mention d'acceptation sur le devis pour que la signature vaille acceptation des CGV.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>
+
+<script
+  type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Les CGV sont-elles obligatoires pour un auto-entrepreneur ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Oui, si vous vendez à des particuliers (B2C), les CGV sont obligatoires et doivent être communiquées avant la vente. Si vous vendez uniquement à des professionnels (B2B), vous devez les fournir sur demande. Dans tous les cas, il est fortement recommandé de les rédiger dès le début de votre activité pour sécuriser vos relations commerciales."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Quelle est la différence entre les CGV et les CGU ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Les CGV (Conditions Générales de Vente) encadrent la transaction commerciale : prix, livraison, paiement, garanties. Les CGU (Conditions Générales d'Utilisation) encadrent l'utilisation d'un site web ou d'une application : règles d'accès, propriété intellectuelle, données personnelles. Un site e-commerce a besoin des deux documents."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Quelles sont les sanctions en cas d'absence de CGV ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "En B2B, le refus de communication des CGV sur demande peut entraîner une amende allant jusqu'à 75 000 euros pour une personne physique et 375 000 euros pour une personne morale. En B2C, l'absence d'information précontractuelle peut également être sanctionnée par la DGCCRF et donner lieu à des poursuites pour pratique commerciale trompeuse."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Comment joindre mes CGV à mes devis et factures ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Vous pouvez imprimer vos CGV au verso de vos documents ou les joindre en annexe PDF. Avec un logiciel de facturation comme Newbi, vous pouvez télécharger vos CGV une seule fois et les attacher automatiquement à chaque devis et facture envoyés. Ajoutez une mention d'acceptation sur le devis pour que la signature vaille acceptation des CGV."
+          }
+        }
+      ]
+    })
+  }}
+/>

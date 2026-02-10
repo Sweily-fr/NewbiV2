@@ -1,0 +1,398 @@
+---
+title: 'Gestion d''entreprise pour agents immobiliers : outils et bonnes pratiques'
+description: >-
+  Découvrez les outils et bonnes pratiques de gestion pour agents immobiliers :
+  facturation des honoraires, CRM acquéreurs et suivi de trésorerie.
+date: '2026-02-10'
+category: guide
+sector: Agents immobiliers
+keyword: gestion entreprise agent immobilier
+author: Newbi
+image: /blog/gestion-entreprise-agent-immobilier/hero.webp
+published: false
+publishDate: null
+---
+
+import Image from "next/image"
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-8">
+  <Badge>Guide</Badge>
+  <Badge variant="secondary">Immobilier</Badge>
+  <Badge variant="outline">8 min de lecture</Badge>
+</div>
+
+# Gestion d'entreprise pour agents immobiliers : outils et bonnes pratiques
+
+La **gestion entreprise agent immobilier** est un sujet central pour tout professionnel de l'immobilier souhaitant pérenniser son activité. Entre la facturation des honoraires, le respect des obligations légales imposées par la loi Alur, le suivi des mandats et la gestion d'une trésorerie soumise aux aléas des commissions variables, l'agent immobilier doit jongler avec des problématiques administratives complexes au quotidien.
+
+Dans ce guide complet, nous passons en revue les outils indispensables et les bonnes pratiques qui vous permettront de structurer votre activité, de gagner du temps et de rester en conformité avec la réglementation en vigueur.
+
+<figure>
+  <Image
+    src="/blog/gestion-entreprise-agent-immobilier/hero.webp"
+    alt="Agent immobilier gérant son entreprise avec des outils numériques modernes"
+    width={1200}
+    height={630}
+    className="rounded-lg"
+    priority
+  />
+  <figcaption className="text-center text-sm text-muted-foreground mt-2">
+    Une gestion d'entreprise rigoureuse est la clé de la réussite pour tout agent immobilier.
+  </figcaption>
+</figure>
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Pourquoi la gestion d'entreprise est cruciale pour un agent immobilier
+
+Le métier d'agent immobilier ne se résume pas à organiser des visites et négocier des prix. C'est avant tout une activité entrepreneuriale qui demande une gestion rigoureuse. Voici les principaux enjeux :
+
+- **Revenus irréguliers** : les commissions ne tombent qu'à la signature de l'acte authentique, parfois plusieurs mois après la prise de mandat.
+- **Cadre réglementaire strict** : la loi Alur et la loi Hoguet imposent des obligations précises en matière de transparence tarifaire et de gestion des mandats.
+- **Multiplicité des interlocuteurs** : acquéreurs, vendeurs, notaires, diagnostiqueurs, banquiers... le suivi relationnel est constant.
+- **Charges fixes incompressibles** : loyer du local, assurance RCP, cotisation à la carte professionnelle, abonnements aux portails d'annonces.
+
+Sans des outils adaptés et des processus clairs, le risque de perdre en productivité ou de commettre des erreurs administratives est élevé.
+
+## Facturation des honoraires d'agence : les règles à connaître
+
+La facturation constitue le coeur de l'activité commerciale de l'agent immobilier. Les honoraires d'agence sont libres, mais leur affichage et leur mention dans les documents contractuels sont strictement encadrés.
+
+### Affichage obligatoire des honoraires
+
+Depuis la loi Alur de 2014, tout agent immobilier doit afficher ses barèmes d'honoraires de manière visible, lisible et sans ambiguïté :
+
+- En vitrine de l'agence (si local ouvert au public)
+- Sur le site internet de l'agence
+- Dans chaque annonce immobilière (honoraires TTC et mention de la partie qui les prend en charge)
+
+### Le mandat : document contractuel obligatoire
+
+Aucune commission ne peut être perçue sans un mandat écrit préalable. Le mandat doit mentionner :
+
+- Le montant des honoraires ou leur mode de calcul
+- La partie qui en supportera la charge (vendeur ou acquéreur)
+- La durée du mandat et les conditions de résiliation
+- Le numéro d'inscription au registre des mandats
+
+<div className="not-prose my-8">
+  <Callout variant="warning" title="Obligations loi Alur : attention aux sanctions">
+    Le non-respect des obligations d'affichage des honoraires et de tenue du registre des mandats expose l'agent immobilier à une amende pouvant atteindre **15 000 euros pour une personne physique** et **75 000 euros pour une personne morale**. La DGCCRF effectue des controles réguliers. Assurez-vous que votre facturation et vos mandats sont irréprochables.
+  </Callout>
+</div>
+
+### TVA immobilière : les subtilités à maîtriser
+
+Les honoraires d'agence sont soumis à la TVA au taux normal de 20 %. Cependant, certaines situations méritent attention :
+
+- **Franchise en base de TVA** : les agents immobiliers en micro-entreprise dont le chiffre d'affaires ne dépasse pas le seuil applicable peuvent en bénéficier. La mention "TVA non applicable, article 293 B du CGI" doit alors figurer sur les factures.
+- **TVA sur marge** : dans le cas de la vente d'immeubles par un marchand de biens, la TVA peut s'appliquer sur la marge et non sur le prix total.
+- **Régime réel** : au-delà des seuils, l'agent immobilier doit collecter et reverser la TVA. Chaque facture d'honoraires doit mentionner le montant HT, le taux et le montant de TVA, ainsi que le total TTC.
+
+Pour approfondir le sujet de la facturation, consultez notre guide dédié : [Facture agent immobilier : comment facturer vos honoraires](/blog/facture-agent-immobilier-honoraires).
+
+## CRM pour acquéreurs et vendeurs : le nerf de la guerre
+
+Un agent immobilier performant est avant tout un professionnel qui maîtrise sa relation client. Le CRM (Customer Relationship Management) est l'outil central de cette gestion.
+
+### Pourquoi un CRM est indispensable
+
+- **Centralisation des contacts** : acquéreurs, vendeurs, propriétaires bailleurs, locataires, partenaires... toutes les fiches sont accessibles en un clic.
+- **Suivi des interactions** : chaque appel, email, visite ou relance est tracé. Vous ne laissez plus passer aucune opportunité.
+- **Matching automatique** : certains CRM immobiliers permettent de croiser les critères de recherche des acquéreurs avec les biens en portefeuille.
+- **Pipeline de vente** : visualisez en un coup d'oeil où en est chaque transaction (premier contact, visite, offre, compromis, acte authentique).
+
+Pour aller plus loin sur la gestion de vos contacts clients, découvrez notre article sur le [CRM et la gestion client pour indépendants](/blog/crm-gestion-client-independant).
+
+### Suivi des mandats
+
+Le registre des mandats est une obligation légale, mais c'est aussi un outil de pilotage essentiel. Un bon système de suivi vous permet de :
+
+- Connaître à tout moment le nombre de mandats actifs, expirés ou en cours de renouvellement
+- Anticiper les dates d'échéance pour proposer un renouvellement
+- Identifier les mandats exclusifs et leur performance
+- Suivre le taux de transformation (mandats signés vs. ventes conclues)
+
+## Outils indispensables pour la gestion d'entreprise immobilière
+
+Voici un récapitulatif des catégories d'outils dont chaque agent immobilier a besoin pour structurer son activité.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Les outils essentiels pour un agent immobilier indépendant</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[180px]">Catégorie</TableHead>
+        <TableHead>Fonction principale</TableHead>
+        <TableHead>Exemples</TableHead>
+        <TableHead className="text-right">Priorité</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">CRM</TableCell>
+        <TableCell>Gestion des contacts acquéreurs, vendeurs, suivi des mandats et pipeline de vente</TableCell>
+        <TableCell>Newbi, Hubspot, Pipedrive</TableCell>
+        <TableCell className="text-right">Indispensable</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Facturation</TableCell>
+        <TableCell>Emission de factures d'honoraires conformes, devis, avoirs</TableCell>
+        <TableCell>Newbi, Henrri, Pennylane</TableCell>
+        <TableCell className="text-right">Indispensable</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Comptabilité</TableCell>
+        <TableCell>Suivi des recettes et dépenses, déclarations TVA, bilan annuel</TableCell>
+        <TableCell>Newbi, Indy, Tiime</TableCell>
+        <TableCell className="text-right">Indispensable</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Signature électronique</TableCell>
+        <TableCell>Signature des mandats, compromis, baux à distance</TableCell>
+        <TableCell>Yousign, DocuSign, PandaDoc</TableCell>
+        <TableCell className="text-right">Recommandé</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Transfert de fichiers</TableCell>
+        <TableCell>Envoi sécurisé de dossiers de diagnostics, photos HD, documents notariaux</TableCell>
+        <TableCell>Newbi, WeTransfer, Dropbox</TableCell>
+        <TableCell className="text-right">Recommandé</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+<div className="not-prose my-8">
+  <Callout variant="info" title="Le saviez-vous ? Newbi regroupe plusieurs de ces outils">
+    Plutot que de multiplier les abonnements, **Newbi** vous propose une solution tout-en-un pensée pour les indépendants et TPE : facturation conforme, gestion de clients, suivi de trésorerie, signature mail professionnelle et transfert de fichiers. Un seul outil pour piloter toute votre activité d'agent immobilier.
+  </Callout>
+</div>
+
+## Gestion de trésorerie : maîtriser les commissions variables
+
+La trésorerie est le talon d'Achille de nombreux agents immobiliers. Les commissions sont par nature irrégulières et souvent décalées dans le temps. Voici comment garder le controle.
+
+<figure>
+  <Image
+    src="/blog/gestion-entreprise-agent-immobilier/tresorerie-agent-immobilier.webp"
+    alt="Tableau de bord de suivi de trésorerie pour agent immobilier"
+    width={800}
+    height={450}
+    className="rounded-lg"
+  />
+  <figcaption className="text-center text-sm text-muted-foreground mt-2">
+    Un suivi visuel de votre trésorerie vous aide à anticiper les périodes creuses.
+  </figcaption>
+</figure>
+
+### Les bonnes pratiques de gestion de trésorerie
+
+- **Constituez une réserve de trésorerie** : visez au minimum 3 à 6 mois de charges fixes pour absorber les périodes sans commission.
+- **Séparez vos comptes** : un compte professionnel dédié vous permet de distinguer clairement vos flux personnels et professionnels.
+- **Anticipez la TVA** : mettez de coté 20 % de chaque commission dès sa réception pour ne pas être pris au dépourvu lors de la déclaration.
+- **Provisionnez vos charges sociales** : en tant qu'indépendant, prévoyez environ 22 % à 45 % selon votre statut pour les cotisations URSSAF.
+- **Suivez votre trésorerie en temps réel** : un outil comme Newbi vous offre une vision claire de vos entrées et sorties.
+
+Pour un guide complet sur ce sujet, consultez notre article : [Comment gérer la trésorerie de son entreprise](/blog/comment-gerer-tresorerie-entreprise).
+
+<div className="not-prose my-8">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Facturer mes honoraires</Link>
+  </Button>
+</div>
+
+## Check-list : les étapes clés pour bien gérer votre activité immobilière
+
+<div className="not-prose my-8 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Mettre en place un logiciel de facturation conforme aux obligations légales (loi Alur, mentions obligatoires)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Afficher les barèmes d'honoraires en vitrine, sur le site web et dans chaque annonce</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Tenir un registre des mandats à jour et conforme à la réglementation</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Utiliser un CRM pour centraliser les contacts acquéreurs, vendeurs et partenaires</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Suivre chaque mandat dans un pipeline clair (prospection, visite, offre, compromis, acte)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Constituer une réserve de trésorerie de 3 à 6 mois de charges fixes</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Provisionner la TVA et les charges sociales dès la réception des commissions</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Créer une signature mail professionnelle pour renforcer votre crédibilité</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Automatiser l'envoi de fichiers volumineux (diagnostics, photos, dossiers) via un outil sécurisé</span>
+  </div>
+</div>
+
+N'oubliez pas non plus de soigner votre image professionnelle. Une [signature mail professionnelle](/blog/signature-mail-professionnelle-guide) bien conçue renforce la confiance de vos prospects et partenaires à chaque échange.
+
+## En résumé
+
+La **gestion d'entreprise pour un agent immobilier** repose sur trois piliers fondamentaux :
+
+1. **La conformité réglementaire** : respecter la loi Alur, afficher ses honoraires, tenir un registre des mandats et émettre des factures conformes.
+2. **L'organisation commerciale** : utiliser un CRM pour suivre les acquéreurs, les vendeurs et les mandats, et ne laisser aucune opportunité de coté.
+3. **La maîtrise financière** : anticiper les variations de trésorerie liées aux commissions, provisionner la TVA et les charges, et suivre ses flux en temps réel.
+
+En combinant les bons outils et les bonnes pratiques décrites dans ce guide, vous posez les bases d'une activité immobilière pérenne et rentable. Newbi vous accompagne dans cette démarche en regroupant facturation, gestion client, suivi de trésorerie et outils de productivité au sein d'une seule plateforme.
+
+<div className="not-prose my-8 flex flex-col sm:flex-row gap-4">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Créer mon compte Newbi gratuitement</Link>
+  </Button>
+  <Button asChild variant="outline" size="lg">
+    <Link href="/produits/factures">Découvrir la facturation Newbi</Link>
+  </Button>
+</div>
+
+## Questions fréquentes
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Quels sont les outils de gestion indispensables pour un agent immobilier indépendant ?</AccordionTrigger>
+      <AccordionContent>
+        Un agent immobilier indépendant a besoin au minimum d'un logiciel de facturation conforme pour émettre ses factures d'honoraires, d'un CRM pour suivre ses acquéreurs et vendeurs, d'un outil de suivi de trésorerie pour anticiper les variations de revenus, et d'une solution de signature électronique pour faciliter la contractualisation à distance. Newbi regroupe plusieurs de ces fonctionnalités dans une plateforme unique adaptée aux indépendants.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Quelles sont les obligations de la loi Alur en matière d'affichage des honoraires ?</AccordionTrigger>
+      <AccordionContent>
+        La loi Alur impose aux agents immobiliers d'afficher leurs barèmes d'honoraires de manière visible et lisible en vitrine de l'agence, sur leur site internet, et dans chaque annonce immobilière. Les honoraires doivent être exprimés en pourcentage TTC du prix de vente et indiquer clairement qui du vendeur ou de l'acquéreur en supporte la charge. Le non-respect de ces obligations peut entraîner des amendes allant jusqu'à 15 000 euros pour une personne physique.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Comment gérer une trésorerie avec des commissions irrégulières ?</AccordionTrigger>
+      <AccordionContent>
+        La clé est l'anticipation. Constituez une réserve de trésorerie couvrant 3 à 6 mois de charges fixes. Dès la réception d'une commission, mettez immédiatement de coté 20 % pour la TVA et le montant estimé de vos charges sociales. Utilisez un outil de suivi en temps réel pour visualiser vos flux de trésorerie et anticiper les périodes creuses. Enfin, diversifiez vos sources de revenus si possible (gestion locative, estimation, conseil).
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Un agent immobilier en micro-entreprise doit-il facturer la TVA ?</AccordionTrigger>
+      <AccordionContent>
+        Un agent immobilier en micro-entreprise bénéficie de la franchise en base de TVA tant que son chiffre d'affaires annuel ne dépasse pas le seuil en vigueur (77 700 euros pour les prestations de services en 2026). En dessous de ce seuil, il ne facture pas de TVA et doit mentionner sur ses factures : "TVA non applicable, article 293 B du CGI". Au-delà du seuil, il devra s'immatriculer à la TVA et la facturer au taux de 20 %.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Comment choisir un bon CRM pour son activité immobilière ?</AccordionTrigger>
+      <AccordionContent>
+        Un bon CRM immobilier doit permettre de gérer les fiches contacts (acquéreurs et vendeurs), de suivre les mandats avec leurs échéances, de tracer toutes les interactions (appels, emails, visites), et idéalement de proposer un matching entre les critères de recherche des acquéreurs et les biens en portefeuille. Privilégiez une solution qui s'intègre avec vos autres outils (facturation, email) pour éviter les doubles saisies. Newbi offre une gestion de contacts intégrée à sa suite de facturation et de productivité.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>
+
+<script
+  type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "Gestion d'entreprise pour agents immobiliers : outils et bonnes pratiques",
+      "description": "Découvrez les outils et bonnes pratiques de gestion pour agents immobiliers : facturation des honoraires, CRM acquéreurs et suivi de trésorerie.",
+      "author": {
+        "@type": "Organization",
+        "name": "Newbi",
+        "url": "https://newbi.io"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "Newbi",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://newbi.io/logo.png"
+        }
+      },
+      "datePublished": "2026-02-10",
+      "dateModified": "2026-02-10",
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "https://newbi.io/blog/gestion-entreprise-agent-immobilier"
+      },
+      "image": "https://newbi.io/blog/gestion-entreprise-agent-immobilier/hero.webp",
+      "keywords": "gestion entreprise agent immobilier, facturation honoraires agence immobilière, CRM immobilier, loi Alur obligations, trésorerie agent immobilier"
+    })
+  }}
+/>
+
+<script
+  type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Quels sont les outils de gestion indispensables pour un agent immobilier indépendant ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Un agent immobilier indépendant a besoin au minimum d'un logiciel de facturation conforme pour émettre ses factures d'honoraires, d'un CRM pour suivre ses acquéreurs et vendeurs, d'un outil de suivi de trésorerie pour anticiper les variations de revenus, et d'une solution de signature électronique pour faciliter la contractualisation à distance."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Quelles sont les obligations de la loi Alur en matière d'affichage des honoraires ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "La loi Alur impose aux agents immobiliers d'afficher leurs barèmes d'honoraires de manière visible et lisible en vitrine de l'agence, sur leur site internet, et dans chaque annonce immobilière. Les honoraires doivent être exprimés en pourcentage TTC du prix de vente et indiquer clairement qui du vendeur ou de l'acquéreur en supporte la charge."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Comment gérer une trésorerie avec des commissions irrégulières ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Constituez une réserve de trésorerie couvrant 3 à 6 mois de charges fixes. Dès la réception d'une commission, mettez immédiatement de côté 20 % pour la TVA et le montant estimé de vos charges sociales. Utilisez un outil de suivi en temps réel pour visualiser vos flux de trésorerie et anticiper les périodes creuses."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Un agent immobilier en micro-entreprise doit-il facturer la TVA ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Un agent immobilier en micro-entreprise bénéficie de la franchise en base de TVA tant que son chiffre d'affaires annuel ne dépasse pas le seuil en vigueur. En dessous de ce seuil, il ne facture pas de TVA et doit mentionner sur ses factures : TVA non applicable, article 293 B du CGI."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Comment choisir un bon CRM pour son activité immobilière ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Un bon CRM immobilier doit permettre de gérer les fiches contacts (acquéreurs et vendeurs), de suivre les mandats avec leurs échéances, de tracer toutes les interactions, et idéalement de proposer un matching entre les critères de recherche des acquéreurs et les biens en portefeuille."
+          }
+        }
+      ]
+    })
+  }}
+/>

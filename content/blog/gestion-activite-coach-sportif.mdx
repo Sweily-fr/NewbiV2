@@ -1,0 +1,330 @@
+---
+title: 'Gérer l''activité d''un coach sportif : facturation, planning et clients'
+description: >-
+  Guide complet pour coachs sportifs : facturation des séances, gestion
+  planning, suivi clients, TVA sport et outils de gestion adaptés.
+date: '2026-02-10'
+category: guide
+sector: Coachs / Formateurs
+keyword: gestion activité coach sportif
+author: Newbi
+image: /blog/gestion-activite-coach-sportif/hero.webp
+published: false
+publishDate: null
+---
+
+import Image from "next/image"
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex flex-wrap gap-2 mb-6">
+  <Badge>Guide</Badge>
+  <Badge variant="secondary">Coach</Badge>
+  <Badge variant="outline">8 min de lecture</Badge>
+</div>
+
+# Gérer l'activité d'un coach sportif : facturation, planning et clients
+
+La **gestion activité coach sportif** est un véritable défi au quotidien. Entre les séances à planifier, les factures à émettre, les clients à suivre et les obligations réglementaires à respecter, le coaching sportif ne se résume pas qu'à l'entraînement. Que vous soyez coach personnel à domicile, préparateur physique en salle ou spécialiste du coaching en ligne, structurer votre activité administrative est indispensable pour pérenniser votre entreprise et vous concentrer sur ce que vous faites de mieux : accompagner vos clients vers leurs objectifs.
+
+Ce guide complet vous accompagne pas à pas pour maîtriser chaque aspect de la gestion de votre activité de coach sportif, du choix du statut juridique à la facturation en passant par le suivi client.
+
+<figure>
+  <Image
+    src="/blog/gestion-activite-coach-sportif/hero.webp"
+    alt="Coach sportif gérant son activité de facturation et planning clients"
+    width={1200}
+    height={630}
+    className="rounded-lg"
+    priority
+  />
+  <figcaption className="text-center text-sm text-muted-foreground mt-2">
+    Organisez votre activité de coaching sportif avec les bons outils et les bonnes pratiques.
+  </figcaption>
+</figure>
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Créer mon compte coach gratuit</Link>
+  </Button>
+</div>
+
+## Choisir le bon statut juridique pour son activité de coach sportif
+
+Le choix du statut juridique est la première étape fondamentale pour exercer en toute légalité. Plusieurs options s'offrent à vous selon votre volume d'activité et vos ambitions.
+
+### La micro-entreprise : le choix le plus courant
+
+La micro-entreprise (anciennement auto-entrepreneur) est le statut privilégié par la majorité des coachs sportifs débutants. Elle offre une comptabilité simplifiée, des charges sociales proportionnelles au chiffre d'affaires (environ 21,1 % pour les prestations de services) et un plafond de CA fixé à 77 700 euros annuels. Les formalités de création sont rapides et gratuites. C'est le statut idéal pour tester votre activité et développer votre clientèle sans pression administrative excessive. Pour en savoir plus sur la facturation sous ce régime, consultez notre guide sur [comment créer une facture en auto-entrepreneur](/blog/comment-creer-facture-auto-entrepreneur).
+
+### L'EIRL et l'entreprise individuelle
+
+L'entreprise individuelle (EI) classique ou l'EIRL permettent de séparer votre patrimoine personnel de votre patrimoine professionnel. Vous bénéficiez d'une plus grande souplesse en matière de déduction de charges (location de salle, matériel, déplacements) et n'êtes pas limité par un plafond de chiffre d'affaires. Ce statut convient aux coachs ayant une activité bien établie et des charges professionnelles significatives.
+
+### La SASU : pour structurer et se développer
+
+La SASU (Société par Actions Simplifiée Unipersonnelle) est adaptée si vous envisagez de recruter d'autres coachs, de développer une marque forte ou de lever des fonds. Vous bénéficiez du statut d'assimilé salarié avec une couverture sociale complète. En revanche, la gestion comptable est plus lourde et les coûts de création plus élevés.
+
+<div className="not-prose my-6">
+  <Callout variant="warning" title="Carte professionnelle obligatoire">
+    Pour exercer légalement en tant que coach sportif en France, vous devez obligatoirement détenir une **carte professionnelle d'éducateur sportif** délivrée par la DRAJES (Direction Régionale Académique à la Jeunesse, à l'Engagement et aux Sports). Cette carte atteste que vous possédez les diplômes requis (BPJEPS, DEJEPS, licence STAPS, etc.). Exercer sans cette carte est passible d'un an d'emprisonnement et de 15 000 euros d'amende. Pensez à renouveler votre carte tous les 5 ans et à afficher votre numéro sur vos supports de communication.
+  </Callout>
+</div>
+
+## Facturation des séances de coaching sportif
+
+La facturation est le nerf de la guerre pour tout coach sportif indépendant. Vous devez choisir le mode de facturation le mieux adapté à votre offre et aux attentes de vos clients. Retrouvez aussi notre article dédié à la [facturation pour formateur indépendant](/blog/facture-formateur-independant) pour approfondir le sujet.
+
+### Les trois modes de facturation principaux
+
+<div className="not-prose my-6">
+  <Table>
+    <TableCaption>Comparatif des modes de facturation pour coach sportif</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead>Mode de facturation</TableHead>
+        <TableHead>Description</TableHead>
+        <TableHead>Prix moyen indicatif</TableHead>
+        <TableHead>Avantages</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Séance unique</TableCell>
+        <TableCell>Facturation à l'unité après chaque séance</TableCell>
+        <TableCell>40 - 80 euros / séance</TableCell>
+        <TableCell>Flexibilité, pas d'engagement client</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Pack 10 séances</TableCell>
+        <TableCell>Lot de séances prépayées avec remise</TableCell>
+        <TableCell>350 - 650 euros / pack</TableCell>
+        <TableCell>Fidélisation, trésorerie anticipée</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Abonnement mensuel</TableCell>
+        <TableCell>Forfait mensuel avec nombre de séances définies</TableCell>
+        <TableCell>150 - 400 euros / mois</TableCell>
+        <TableCell>Revenus récurrents et prévisibles</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+La facturation par **pack de séances** est souvent la formule la plus avantageuse pour le coach comme pour le client. Elle fidélise la clientèle tout en vous offrant une visibilité financière sur plusieurs semaines. L'**abonnement mensuel**, quant à lui, est idéal pour les clients réguliers et vous garantit un revenu récurrent stable. Découvrez comment mettre en place ces formules simplement avec notre guide pour [automatiser la facturation récurrente](/blog/automatiser-facturation-recurrente).
+
+### TVA et coaching sportif : ce qu'il faut savoir
+
+Contrairement à une idée reçue, les prestations de coaching sportif personnel ne bénéficient d'**aucune exonération de TVA**. Le taux applicable est le taux normal de **20 %**. Seules les activités sportives proposées par des associations à but non lucratif sous certaines conditions strictes peuvent être exonérées. En tant que coach indépendant, si vous dépassez le seuil de franchise en base de TVA (36 800 euros de CA annuel pour les prestations de services), vous devrez facturer la TVA à vos clients et effectuer les déclarations correspondantes.
+
+### Mentions obligatoires sur vos factures
+
+Chaque facture de coaching doit comporter les mentions légales obligatoires : vos coordonnées complètes, votre numéro SIRET, la date d'émission, un numéro de facture séquentiel, le détail des prestations (type de séance, durée, lieu), le prix unitaire HT, le montant de TVA le cas échéant, et le montant TTC. Pour les particuliers, mentionnez également les conditions de paiement et les pénalités de retard.
+
+<div className="not-prose my-6">
+  <Callout variant="info" title="Astuce : facturation récurrente avec Newbi">
+    Avec Newbi, vous pouvez configurer des **factures récurrentes automatiques** pour vos clients en abonnement mensuel. Créez un modèle de facture une seule fois, définissez la récurrence et laissez le logiciel générer et envoyer les factures à vos clients chaque mois. Vous gagnez un temps précieux et vous ne manquez plus aucune facturation.
+  </Callout>
+</div>
+
+## Gestion du planning et des rendez-vous
+
+Un planning bien organisé est la colonne vertébrale de votre activité de coach sportif. Voici les points clés à maîtriser.
+
+### Gérer la récurrence des séances
+
+La majorité de vos clients auront des créneaux réguliers : tous les mardis à 18 h, chaque samedi matin, etc. Mettez en place un système de **récurrence automatique** pour éviter de replanifier manuellement chaque semaine. Cela vous permet de visualiser votre charge de travail sur le mois et d'optimiser vos déplacements si vous intervenez à domicile.
+
+### Politique d'annulation et de report
+
+Définissez clairement votre politique d'annulation dès le départ et intégrez-la dans vos conditions générales de vente. Une pratique courante consiste à exiger un préavis de **24 à 48 heures** pour toute annulation, sous peine de facturation de la séance. Cette règle protège votre temps et votre revenu. Communiquez-la systématiquement lors de la première prise de contact.
+
+### Optimiser ses créneaux
+
+Regroupez vos séances par zone géographique si vous vous déplacez chez vos clients. Prévoyez des temps de battement suffisants entre deux rendez-vous pour les déplacements, la préparation et la récupération. N'oubliez pas de bloquer des créneaux pour votre propre entraînement, votre prospection commerciale et votre administratif.
+
+<figure>
+  <Image
+    src="/blog/gestion-activite-coach-sportif/planning-coach.webp"
+    alt="Planning de gestion d'activité pour coach sportif avec suivi des séances"
+    width={800}
+    height={450}
+    className="rounded-lg"
+  />
+  <figcaption className="text-center text-sm text-muted-foreground mt-2">
+    Un planning structuré est essentiel pour maximiser votre temps et vos revenus de coach.
+  </figcaption>
+</figure>
+
+## Suivi client : CRM, historique et objectifs
+
+Un bon suivi client fait toute la différence entre un coach qui fidélise et un coach qui perd ses clients. Pour aller plus loin, consultez notre article sur le [CRM et la gestion client pour indépendants](/blog/crm-gestion-client-independant).
+
+### Centraliser les informations clients
+
+Utilisez un outil de type CRM pour centraliser toutes les données de vos clients : coordonnées, objectifs sportifs, antécédents médicaux ou blessures, historique des séances, paiements effectués, notes personnelles. Cette approche vous permet de personnaliser chaque séance et de montrer à vos clients que vous les connaissez vraiment.
+
+### Suivi des objectifs et progression
+
+Documentez la progression de chaque client : mensurations, performances, poids, nombre de répétitions, etc. Partagez régulièrement ces bilans avec eux pour maintenir leur motivation. Un client qui voit ses résultats noir sur blanc est un client qui reste.
+
+### Communication et relance
+
+Programmez des relances automatiques pour les clients inactifs depuis plus de deux semaines. Envoyez des messages de suivi après chaque séance importante. Cette attention maintient le lien et limite le taux d'abandon.
+
+## Modes de paiement acceptés
+
+Proposer plusieurs modes de paiement facilite la vie de vos clients et accélère vos encaissements.
+
+<div className="not-prose my-6">
+  <ul className="space-y-3">
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span><strong>Virement bancaire</strong> : idéal pour les packs et abonnements, traçable et sans frais pour vous.</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span><strong>Carte bancaire</strong> : via un terminal mobile (SumUp, Zettle) ou un lien de paiement en ligne. Pratique pour les séances unitaires.</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span><strong>Espèces</strong> : toujours acceptées, mais pensez à délivrer un reçu et à tout noter dans votre comptabilité.</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span><strong>CESU (Chèque Emploi Service Universel)</strong> : si vous intervenez à domicile auprès de particuliers, le CESU préfinancé est un moyen de paiement très apprécié. Il offre un avantage fiscal à vos clients (crédit d'impôt de 50 %).</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span><strong>Prélèvement automatique</strong> : parfait pour les abonnements mensuels, il sécurise vos revenus récurrents.</span>
+    </li>
+  </ul>
+</div>
+
+<div className="not-prose my-8">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Gérer mon activité coaching</Link>
+  </Button>
+</div>
+
+## Ce qu'il faut retenir
+
+La **gestion activité coach sportif** repose sur trois piliers : une facturation claire et adaptée à vos offres (séance, pack, abonnement), un planning structuré avec des règles d'annulation bien définies, et un suivi client rigoureux qui favorise la fidélisation. N'oubliez pas vos obligations légales, notamment la carte professionnelle délivrée par la DRAJES et le respect de la TVA à 20 %. En vous appuyant sur un outil de gestion tout-en-un comme Newbi, vous automatisez les tâches administratives chronophages et vous vous concentrez sur l'accompagnement de vos clients.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes
+
+<div className="not-prose my-6">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Faut-il obligatoirement une carte professionnelle pour être coach sportif ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, la carte professionnelle d'éducateur sportif est obligatoire en France pour toute personne qui encadre, anime, enseigne ou entraîne une activité physique ou sportive contre rémunération. Elle est délivrée par la DRAJES de votre région sur présentation de vos diplômes (BPJEPS, DEJEPS, licence STAPS, CQP, etc.). Exercer sans cette carte constitue un délit passible d'un an d'emprisonnement et de 15 000 euros d'amende.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Quel est le meilleur statut juridique pour un coach sportif débutant ?</AccordionTrigger>
+      <AccordionContent>
+        La micro-entreprise est généralement le statut le plus adapté pour démarrer. Elle offre une création rapide, une comptabilité simplifiée et des charges sociales proportionnelles à votre chiffre d'affaires. Vous pouvez ensuite évoluer vers une EI classique ou une SASU lorsque votre activité se développe et que vos charges professionnelles justifient un régime réel d'imposition.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Comment facturer un pack de séances de coaching sportif ?</AccordionTrigger>
+      <AccordionContent>
+        Vous pouvez émettre une facture unique lors de l'achat du pack, en détaillant le nombre de séances incluses, le prix unitaire et le montant total (avec remise éventuelle). Indiquez la durée de validité du pack et les conditions d'utilisation. Avec Newbi, vous pouvez créer des modèles de factures pour vos packs et les personnaliser en quelques clics pour chaque client.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Un coach sportif doit-il facturer la TVA ?</AccordionTrigger>
+      <AccordionContent>
+        Si vous êtes en micro-entreprise et que votre chiffre d'affaires reste sous le seuil de franchise en base de TVA (36 800 euros pour les prestations de services), vous êtes exonéré de TVA et devez mentionner "TVA non applicable, article 293 B du CGI" sur vos factures. Au-delà de ce seuil, vous devez facturer la TVA au taux normal de 20 %. Les prestations de coaching sportif ne bénéficient pas d'un taux réduit de TVA.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>
+
+<script
+  type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "Gérer l'activité d'un coach sportif : facturation, planning et clients",
+      "description": "Guide complet pour coachs sportifs : facturation des séances, gestion planning, suivi clients, TVA sport et outils de gestion adaptés.",
+      "author": {
+        "@type": "Organization",
+        "name": "Newbi"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "Newbi",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://newbi.fr/logo.png"
+        }
+      },
+      "datePublished": "2026-02-10",
+      "dateModified": "2026-02-10",
+      "image": "https://newbi.fr/blog/gestion-activite-coach-sportif/hero.webp",
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "https://newbi.fr/blog/gestion-activite-coach-sportif"
+      },
+      "keywords": "gestion activité coach sportif, facturation coach sportif, planning coach sportif, suivi client coaching"
+    })
+  }}
+/>
+
+<script
+  type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Faut-il obligatoirement une carte professionnelle pour être coach sportif ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Oui, la carte professionnelle d'éducateur sportif est obligatoire en France pour toute personne qui encadre, anime, enseigne ou entraîne une activité physique ou sportive contre rémunération. Elle est délivrée par la DRAJES de votre région sur présentation de vos diplômes."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Quel est le meilleur statut juridique pour un coach sportif débutant ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "La micro-entreprise est généralement le statut le plus adapté pour démarrer. Elle offre une création rapide, une comptabilité simplifiée et des charges sociales proportionnelles à votre chiffre d'affaires."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Comment facturer un pack de séances de coaching sportif ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Vous pouvez émettre une facture unique lors de l'achat du pack, en détaillant le nombre de séances incluses, le prix unitaire et le montant total. Indiquez la durée de validité du pack et les conditions d'utilisation."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Un coach sportif doit-il facturer la TVA ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Si vous êtes en micro-entreprise et que votre chiffre d'affaires reste sous le seuil de franchise en base de TVA (36 800 euros pour les prestations de services), vous êtes exonéré de TVA. Au-delà, vous devez facturer la TVA au taux normal de 20 %."
+          }
+        }
+      ]
+    })
+  }}
+/>

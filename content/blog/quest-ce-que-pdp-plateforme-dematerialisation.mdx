@@ -1,0 +1,371 @@
+---
+title: Qu'est-ce qu'une PDP (Plateforme de Dématérialisation Partenaire) ?
+description: >-
+  Comprendre les PDP : rôle, différence avec le PPF, liste des plateformes
+  immatriculées et comment choisir sa PDP pour la e-facturation.
+date: '2026-02-10'
+category: glossaire
+sector: null
+keyword: PDP plateforme dématérialisation partenaire
+author: Newbi
+image: /blog/quest-ce-que-pdp-plateforme-dematerialisation/hero.webp
+published: false
+publishDate: null
+---
+
+import Image from "next/image"
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Glossaire</Badge>
+  <Badge variant="outline">8 min de lecture</Badge>
+</div>
+
+# Qu'est-ce qu'une PDP (Plateforme de Dématérialisation Partenaire) ?
+
+Avec l'entrée en vigueur progressive de la [facturation électronique obligatoire en 2026](/blog/facturation-electronique-obligatoire-2026), un nouvel écosystème d'acteurs se met en place. Au coeur de ce dispositif, la **PDP plateforme dématérialisation** partenaire joue un rôle central. Mais qu'est-ce qu'une PDP exactement ? Quel est son rôle, comment est-elle immatriculée, et en quoi diffère-t-elle du PPF ou d'un simple opérateur de dématérialisation ? Ce guide complet répond à toutes vos questions pour vous aider à préparer sereinement votre transition vers la e-facturation.
+
+<figure className="my-8">
+  <Image
+    src="/blog/quest-ce-que-pdp-plateforme-dematerialisation/hero.webp"
+    alt="Schéma illustrant le rôle d'une PDP plateforme de dématérialisation partenaire dans la chaîne de facturation électronique"
+    width={1200}
+    height={630}
+    className="rounded-lg w-full"
+    priority
+  />
+  <figcaption className="text-center text-sm text-muted-foreground mt-2">
+    La PDP : un intermédiaire clé dans le circuit de la facturation électronique en France.
+  </figcaption>
+</figure>
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Créer mon compte Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Définition : qu'est-ce qu'une PDP ?
+
+Une **Plateforme de Dématérialisation Partenaire (PDP)** est un intermédiaire **immatriculé par l'administration fiscale française** qui assure le rôle de tiers de confiance dans le circuit de la facturation électronique entre entreprises (B2B). Contrairement à un simple prestataire technique, la PDP dispose d'une reconnaissance officielle délivrée par la Direction Générale des Finances Publiques (DGFiP) après un processus d'audit rigoureux.
+
+Concrètement, la PDP est l'acteur qui fait le lien entre les entreprises émettrices et réceptrices de factures, tout en assurant la transmission obligatoire des données de facturation et de e-reporting au **Portail Public de Facturation (PPF)**. C'est un maillon essentiel du nouveau schéma de [facturation électronique obligatoire](/blog/facturation-electronique-obligatoire-2026) mis en place par l'État.
+
+## Le rôle d'une PDP en détail
+
+La PDP remplit plusieurs missions fondamentales dans le cadre de la réforme de la e-facturation :
+
+### 1. Émission des factures électroniques
+
+La PDP permet aux entreprises d'émettre leurs factures dans les formats structurés conformes à la réglementation, notamment le [format Factur-X](/blog/facturx-format-facture-electronique), le UBL ou le CII. Elle s'assure que chaque facture contient l'ensemble des mentions obligatoires et respecte les normes techniques imposées.
+
+### 2. Réception et acheminement des factures
+
+Lorsqu'une entreprise reçoit une facture d'un fournisseur, la PDP joue le rôle de boîte aux lettres sécurisée. Elle réceptionne la facture, vérifie sa conformité et la met à disposition du destinataire dans son espace dédié.
+
+### 3. Transmission des données au PPF
+
+C'est l'une des obligations clés de la PDP : transmettre au [Portail Public de Facturation (PPF)](/blog/quest-ce-que-ppf-portail-public-facturation) les données de transaction (e-invoicing) et les données de paiement (e-reporting). Cette transmission permet à l'administration fiscale de collecter les informations nécessaires au pré-remplissement de la TVA.
+
+### 4. Archivage et traçabilité
+
+La PDP assure la conservation des factures électroniques conformément aux exigences légales d'archivage. Elle garantit l'intégrité, la lisibilité et la pérennité des documents sur toute la durée de conservation requise (10 ans minimum).
+
+### 5. Gestion du cycle de vie des factures
+
+La PDP gère également les statuts de cycle de vie des factures : émise, reçue, approuvée, rejetée, payée. Ces statuts sont partagés entre les parties et remontés au PPF.
+
+<div className="not-prose my-8">
+  <Callout variant="info" title="Liste officielle des PDP immatriculées">
+    La liste des PDP immatriculées par l'administration fiscale est publiée et régulièrement mise à jour sur le site **impots.gouv.fr**. Avant de choisir votre plateforme, consultez cette liste pour vous assurer que votre prestataire dispose bien de l'immatriculation officielle. Seules les plateformes figurant sur cette liste sont habilitées à émettre et recevoir des factures dans le cadre légal de la réforme.
+  </Callout>
+</div>
+
+## L'immatriculation d'une PDP : conditions et processus
+
+Pour obtenir le statut de PDP, une plateforme doit répondre à des exigences strictes définies par l'administration fiscale :
+
+<div className="not-prose my-6">
+  <ul className="space-y-3">
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span>Respecter un cahier des charges technique détaillé (formats, protocoles, interopérabilité)</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span>Passer un audit de conformité réalisé par un organisme tiers accrédité</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span>Garantir la sécurité des données (chiffrement, hébergement conforme, RGPD)</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span>Assurer l'interopérabilité avec le PPF et les autres PDP immatriculées</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span>Maintenir un niveau de disponibilité et de performance élevé (SLA)</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span>Se soumettre à des contrôles réguliers pour le renouvellement de l'immatriculation (tous les 3 ans)</span>
+    </li>
+  </ul>
+</div>
+
+L'immatriculation n'est pas définitive : elle est accordée pour une durée de **3 ans renouvelable**, avec des audits de suivi pour s'assurer que la plateforme continue de respecter l'ensemble des critères. Une PDP peut perdre son immatriculation si elle ne satisfait plus aux exigences.
+
+## PDP vs PPF vs OD : quelles différences ?
+
+Il est essentiel de bien comprendre les distinctions entre les trois types d'acteurs de la e-facturation. Voici un tableau comparatif complet :
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Comparatif des acteurs de la facturation électronique en France</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[180px]">Critère</TableHead>
+        <TableHead>PDP (Plateforme de Dématérialisation Partenaire)</TableHead>
+        <TableHead>PPF (Portail Public de Facturation)</TableHead>
+        <TableHead>OD (Opérateur de Dématérialisation)</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Rôle principal</TableCell>
+        <TableCell>Intermédiaire immatriculé pour émettre, recevoir et transmettre les factures</TableCell>
+        <TableCell>Plateforme publique gratuite gérée par l'État (AIFE)</TableCell>
+        <TableCell>Prestataire technique qui prépare et convertit les factures</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Immatriculation</TableCell>
+        <TableCell>Oui, par la DGFiP (obligatoire)</TableCell>
+        <TableCell>Non applicable (plateforme d'État)</TableCell>
+        <TableCell>Non (aucune immatriculation requise)</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Transmission au PPF</TableCell>
+        <TableCell>Oui, directement</TableCell>
+        <TableCell>N/A (c'est le PPF lui-même)</TableCell>
+        <TableCell>Non, doit passer par une PDP ou le PPF</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Fonctionnalités</TableCell>
+        <TableCell>Émission, réception, conversion, archivage, e-reporting, gestion des statuts</TableCell>
+        <TableCell>Émission, réception (fonctions de base), annuaire centralisé</TableCell>
+        <TableCell>Conversion de formats, préparation des factures, intégration logicielle</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Coût</TableCell>
+        <TableCell>Payant (abonnement ou à la facture)</TableCell>
+        <TableCell>Gratuit (service minimum)</TableCell>
+        <TableCell>Payant (variable selon les services)</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Qui l'utilise ?</TableCell>
+        <TableCell>Entreprises de toute taille souhaitant des services avancés</TableCell>
+        <TableCell>Toutes les entreprises (solution par défaut)</TableCell>
+        <TableCell>Entreprises qui ont besoin d'un intermédiaire technique sans immatriculation</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Services annexes</TableCell>
+        <TableCell>Tableaux de bord, rapprochement bancaire, workflows d'approbation</TableCell>
+        <TableCell>Limités aux fonctions réglementaires</TableCell>
+        <TableCell>Variables selon le prestataire (OCR, intégration ERP, etc.)</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+En résumé : le **PPF** est le socle public minimal et gratuit, la **PDP** est un acteur privé immatriculé offrant des services enrichis, et l'**OD** est un prestataire technique qui facilite la connexion aux PDP ou au PPF sans être lui-même habilité à transmettre directement les données fiscales.
+
+## Comment choisir sa PDP ?
+
+Le choix de votre PDP est une décision stratégique qui impactera votre quotidien de facturation. Voici les critères essentiels à évaluer :
+
+### Formats supportés
+
+Assurez-vous que la PDP prend en charge les trois formats de facture électronique reconnus : **Factur-X** (PDF/A-3 avec XML intégré), **UBL** (Universal Business Language) et **CII** (Cross-Industry Invoice). La compatibilité avec le [format Factur-X](/blog/facturx-format-facture-electronique) est particulièrement importante car c'est le format le plus répandu en France.
+
+### Intégration avec votre logiciel de gestion
+
+La PDP doit pouvoir s'intégrer facilement avec votre outil de facturation ou votre ERP existant. Vérifiez la disponibilité d'API, de connecteurs natifs ou de plugins compatibles avec votre environnement logiciel. Une bonne intégration évite la double saisie et les erreurs.
+
+### Tarification et modèle économique
+
+Les modèles de tarification varient : abonnement mensuel, facturation à l'usage (par facture traitée) ou forfaits. Comparez les offres en fonction de votre volume de facturation. Attention aux coûts cachés (frais de mise en service, surcoût pour l'archivage, etc.).
+
+### Services annexes
+
+Au-delà de la transmission réglementaire, certaines PDP proposent des services à valeur ajoutée : **rapprochement bancaire automatique**, workflows de validation, tableaux de bord analytiques, gestion des litiges, relances automatiques. Évaluez ces services en fonction de vos besoins métier.
+
+### Fiabilité et support
+
+Vérifiez les engagements de disponibilité (SLA), la qualité du support client, les délais de réponse et la présence d'une documentation technique complète. En cas de panne de votre PDP, votre activité de facturation est directement impactée.
+
+<figure className="my-8">
+  <Image
+    src="/blog/quest-ce-que-pdp-plateforme-dematerialisation/comparatif-pdp.webp"
+    alt="Critères de choix d'une PDP plateforme de dématérialisation partenaire pour la facturation électronique"
+    width={1200}
+    height={630}
+    className="rounded-lg w-full"
+  />
+  <figcaption className="text-center text-sm text-muted-foreground mt-2">
+    Les critères essentiels pour bien choisir sa PDP.
+  </figcaption>
+</figure>
+
+<div className="not-prose my-8">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Préparer ma e-facturation</Link>
+  </Button>
+</div>
+
+## Newbi : votre OD connecté aux PDP
+
+**Newbi** est un opérateur de dématérialisation (OD) conçu pour simplifier la transition des [PME vers la facturation électronique](/blog/obligations-facture-electronique-pme). En tant qu'OD, Newbi prépare, convertit et transmet vos factures via les PDP immatriculées, sans que vous ayez à gérer la complexité technique de la réforme.
+
+<div className="not-prose my-6">
+  <ul className="space-y-3">
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span><strong>Connexion aux PDP immatriculées</strong> : Newbi s'interface directement avec les principales PDP pour assurer la transmission conforme de vos factures.</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span><strong>Génération automatique au format Factur-X</strong> : vos factures sont automatiquement converties dans le format réglementaire requis.</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span><strong>Interface intuitive</strong> : créez, envoyez et suivez vos factures depuis un tableau de bord simple et ergonomique.</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span><strong>Conformité garantie</strong> : mentions obligatoires, numérotation, archivage -- tout est pris en charge.</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span><strong>Prix accessible</strong> : une solution pensée pour les indépendants, TPE et PME, sans engagement.</span>
+    </li>
+  </ul>
+</div>
+
+<div className="not-prose my-8">
+  <Callout variant="tip" title="Astuce : simplifiez votre passage à la e-facturation avec Newbi">
+    Vous n'avez pas besoin de choisir vous-même une PDP. En utilisant Newbi comme outil de facturation, la connexion aux PDP immatriculées est gérée automatiquement. Vous créez vos factures, Newbi s'occupe de la transmission conforme. C'est la solution idéale pour les entreprises qui veulent se concentrer sur leur activité sans se soucier des contraintes techniques de la réforme.
+  </Callout>
+</div>
+
+## En résumé
+
+La **PDP (Plateforme de Dématérialisation Partenaire)** est un acteur clé de la réforme de la facturation électronique en France. Immatriculée par l'administration fiscale, elle assure l'émission, la réception, la transmission et l'archivage des factures électroniques entre entreprises. Contrairement au PPF (gratuit mais limité) et à l'OD (non immatriculé), la PDP offre un service complet et certifié.
+
+Pour les TPE et PME, le choix le plus simple reste d'utiliser un **logiciel de facturation comme Newbi**, qui joue le rôle d'OD et gère automatiquement la connexion aux PDP. Vous restez conforme sans effort technique.
+
+**Prêt à anticiper la réforme ?**
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+  <Button asChild variant="outline" size="lg">
+    <Link href="/produits/factures">Découvrir la e-facturation Newbi</Link>
+  </Button>
+</div>
+
+## Questions fréquentes
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Quelle est la différence entre une PDP et le PPF ?</AccordionTrigger>
+      <AccordionContent>
+        Le PPF (Portail Public de Facturation) est la plateforme gratuite mise en place par l'État. Il offre des fonctionnalités de base pour émettre et recevoir des factures électroniques. La PDP est un acteur privé immatriculé qui propose des services enrichis : archivage avancé, intégration logicielle, tableaux de bord, rapprochement bancaire, etc. Les deux permettent de se conformer à la réglementation, mais la PDP offre davantage de valeur ajoutée.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Est-il obligatoire de passer par une PDP ?</AccordionTrigger>
+      <AccordionContent>
+        Non, ce n'est pas obligatoire. Les entreprises peuvent utiliser le PPF gratuitement pour émettre et recevoir leurs factures électroniques. Toutefois, le PPF propose des fonctionnalités limitées. Les entreprises qui souhaitent des services plus complets (intégration ERP, workflows, archivage enrichi) ont intérêt à passer par une PDP ou par un OD connecté à une PDP.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Comment vérifier qu'une PDP est bien immatriculée ?</AccordionTrigger>
+      <AccordionContent>
+        La liste officielle des PDP immatriculées est publiée sur le site impots.gouv.fr et mise à jour régulièrement par la DGFiP. Avant de souscrire à un service, consultez cette liste pour vous assurer que la plateforme dispose bien de l'immatriculation en cours de validité. Méfiez-vous des prestataires qui se présentent comme PDP sans figurer sur la liste officielle.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Qu'est-ce qu'un OD et peut-il remplacer une PDP ?</AccordionTrigger>
+      <AccordionContent>
+        Un OD (Opérateur de Dématérialisation) est un prestataire technique qui aide les entreprises à préparer et convertir leurs factures au bon format. Contrairement à la PDP, l'OD n'est pas immatriculé et ne peut pas transmettre directement les données fiscales au PPF. Il doit obligatoirement passer par une PDP ou par le PPF. L'OD ne remplace donc pas la PDP, mais il simplifie l'accès à celle-ci. C'est exactement le rôle que joue Newbi.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Quand la facturation électronique devient-elle obligatoire ?</AccordionTrigger>
+      <AccordionContent>
+        La réforme entre en vigueur progressivement à partir de septembre 2026. Dès cette date, toutes les entreprises assujetties à la TVA devront être en mesure de recevoir des factures électroniques. L'obligation d'émission sera déployée par vagues selon la taille de l'entreprise. Consultez notre article détaillé sur la <a href="/blog/facturation-electronique-obligatoire-2026">facturation électronique obligatoire en 2026</a> pour connaître le calendrier complet.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>
+
+<script
+  type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Quelle est la différence entre une PDP et le PPF ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Le PPF (Portail Public de Facturation) est la plateforme gratuite mise en place par l'État avec des fonctionnalités de base. La PDP est un acteur privé immatriculé qui propose des services enrichis : archivage avancé, intégration logicielle, tableaux de bord, rapprochement bancaire, etc."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Est-il obligatoire de passer par une PDP ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Non, ce n'est pas obligatoire. Les entreprises peuvent utiliser le PPF gratuitement. Toutefois, les entreprises souhaitant des services plus complets ont intérêt à passer par une PDP ou par un OD connecté à une PDP."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Comment vérifier qu'une PDP est bien immatriculée ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "La liste officielle des PDP immatriculées est publiée sur le site impots.gouv.fr et mise à jour régulièrement par la DGFiP. Consultez cette liste avant de souscrire à un service."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Qu'est-ce qu'un OD et peut-il remplacer une PDP ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Un OD (Opérateur de Dématérialisation) est un prestataire technique qui aide à préparer et convertir les factures. Il n'est pas immatriculé et ne peut pas transmettre directement les données fiscales au PPF. Il doit passer par une PDP ou le PPF."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Quand la facturation électronique devient-elle obligatoire ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "La réforme entre en vigueur progressivement à partir de septembre 2026. Toutes les entreprises assujetties à la TVA devront être en mesure de recevoir des factures électroniques dès cette date."
+          }
+        }
+      ]
+    })
+  }}
+/>

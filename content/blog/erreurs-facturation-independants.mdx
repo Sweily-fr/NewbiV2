@@ -1,0 +1,314 @@
+---
+title: 10 erreurs de facturation à éviter quand on est indépendant
+description: >-
+  Évitez les erreurs de facturation les plus courantes chez les indépendants :
+  oublis, non-conformité, retards. Conseils et solutions concrètes.
+date: '2026-02-10'
+category: conseils
+sector: null
+keyword: erreurs facturation indépendant
+author: Newbi
+image: /blog/erreurs-facturation-independants/hero.webp
+published: false
+publishDate: null
+---
+
+import Image from "next/image"
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex gap-2 my-4">
+  <Badge>Conseils</Badge>
+  <Badge variant="secondary">Facturation</Badge>
+  <Badge variant="outline">9 min de lecture</Badge>
+</div>
+
+Une facture non conforme peut vous coûter cher : amendes, redressements fiscaux, retards de paiement et perte de crédibilité. Pourtant, de nombreux indépendants commettent les mêmes **erreurs de facturation** par méconnaissance ou négligence. Voici les 10 erreurs les plus courantes et comment les éviter pour sécuriser votre activité.
+
+<div className="not-prose my-8 relative aspect-video overflow-hidden rounded-lg">
+  <Image
+    src="/blog/erreurs-facturation-independants/hero.webp"
+    alt="Les 10 erreurs de facturation les plus courantes chez les indépendants avec pictogrammes"
+    fill
+    className="object-cover"
+    priority
+    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 720px"
+  />
+</div>
+
+<div className="not-prose flex justify-center my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Facturer sans erreur avec Newbi</Link>
+  </Button>
+</div>
+
+## Erreur n°1 : Oublier la mention « TVA non applicable »
+
+C'est l'erreur la plus fréquente chez les [auto-entrepreneurs](/blog/comment-creer-facture-auto-entrepreneur) en franchise de base de TVA. Sans la mention **« TVA non applicable, art. 293 B du CGI »**, l'administration fiscale peut considérer que vous devez la TVA sur toutes vos factures.
+
+<figure className="not-prose my-8">
+  <div className="relative aspect-video overflow-hidden rounded-lg border">
+    <Image
+      src="/blog/erreurs-facturation-independants/section-1.webp"
+      alt="Exemple de facture sans la mention TVA non applicable et les conséquences"
+      fill
+      className="object-cover"
+      sizes="(max-width: 768px) 100vw, 720px"
+    />
+  </div>
+  <figcaption className="mt-2 text-center text-sm text-muted-foreground">
+    L'oubli de la mention TVA est l'erreur n°1 des auto-entrepreneurs
+  </figcaption>
+</figure>
+
+**La solution** : utilisez un logiciel de facturation qui ajoute automatiquement cette mention en fonction de votre statut TVA. Newbi détecte votre régime et pré-remplit la bonne mention.
+
+## Erreur n°2 : Numérotation non séquentielle
+
+Les factures doivent être numérotées de manière **chronologique et séquentielle**, sans trou ni doublon. Sauter un numéro (FA-001, FA-003) ou réinitialiser la séquence en cours d'année peut éveiller les soupçons de l'administration fiscale.
+
+**La solution** : un logiciel de facturation gère automatiquement la numérotation. N'essayez jamais de numéroter manuellement. Consultez notre guide sur la [numérotation des factures](/blog/quest-ce-que-numero-facture).
+
+<Callout type="warning">
+  Supprimer ou modifier une facture déjà émise est **interdit**. Si vous avez fait une erreur, émettez un [avoir](/blog/quest-ce-que-avoir-credit) pour annuler la facture, puis créez une nouvelle facture correcte.
+</Callout>
+
+## Erreur n°3 : Ne pas mentionner les pénalités de retard
+
+Depuis 2013, toute facture adressée à un professionnel (B2B) doit obligatoirement mentionner :
+
+- Le **taux des pénalités de retard** applicable
+- L'**indemnité forfaitaire de recouvrement** de **40 €**
+
+L'absence de ces mentions constitue une infraction passible d'une amende de 75 000 €.
+
+**La solution** : configurez vos conditions de paiement une fois dans votre logiciel. Newbi les ajoute automatiquement à chaque facture.
+
+## Erreur n°4 : Facturer en retard
+
+Plus vous attendez pour facturer, plus vous retardez le paiement. Un client qui reçoit une facture 3 semaines après la prestation a tendance à la traiter en dernier.
+
+**La solution** : facturez le jour même de la livraison ou de la fin de prestation. Avec Newbi, convertissez un [devis en facture](/blog/comment-faire-devis-professionnel) en un clic dès que le travail est terminé.
+
+## Erreur n°5 : Des descriptions trop vagues
+
+« Prestation de conseil — 2 000 € » ne suffit pas. Une facture doit détailler précisément :
+
+- La **nature exacte** de la prestation ou du produit
+- La **quantité** (heures, jours, unités)
+- Le **prix unitaire** HT
+
+<div className="not-prose my-8 overflow-x-auto">
+  <Table>
+    <TableCaption>Exemples de descriptions : à éviter vs recommandé</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead>❌ À éviter</TableHead>
+        <TableHead>✅ Recommandé</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell>Prestation web</TableCell>
+        <TableCell>Création site vitrine 5 pages — design responsive, intégration CMS WordPress</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell>Conseil</TableCell>
+        <TableCell>Audit stratégique digital — 2 jours (14h) — analyse concurrentielle, plan d'action</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell>Formation</TableCell>
+        <TableCell>Formation « Gestion des réseaux sociaux » — 7h — groupe de 8 participants</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+**La solution** : créez un catalogue de produits et services dans Newbi pour standardiser vos descriptions.
+
+<figure className="not-prose my-8">
+  <div className="relative aspect-video overflow-hidden rounded-lg border">
+    <Image
+      src="/blog/erreurs-facturation-independants/descriptions.webp"
+      alt="Comparaison entre une facture avec description vague et une facture bien détaillée"
+      fill
+      className="object-cover"
+      sizes="(max-width: 768px) 100vw, 720px"
+    />
+  </div>
+  <figcaption className="mt-2 text-center text-sm text-muted-foreground">
+    Une description précise inspire confiance et réduit les litiges
+  </figcaption>
+</figure>
+
+## Erreur n°6 : Confondre date d'émission et date de prestation
+
+Ce sont deux dates distinctes qui doivent toutes deux figurer sur la facture :
+
+- **Date d'émission** : le jour où vous créez la facture
+- **Date de prestation** : le jour (ou la période) où le service a été rendu ou le bien livré
+
+<Callout type="info">
+  La date de prestation est importante pour la [déclaration de TVA](/blog/erreurs-declaration-tva-eviter). La TVA est exigible à la date de livraison pour les biens, et à la date d'encaissement pour les services (sauf option pour les débits).
+</Callout>
+
+## Erreur n°7 : Ne pas relancer les impayés
+
+Beaucoup d'indépendants hésitent à relancer par peur de froisser le client. Résultat : des milliers d'euros restent en souffrance. Les [factures impayées](/blog/relance-facture-impayee-modele) sont la première cause de problèmes de [trésorerie](/blog/comment-gerer-tresorerie-entreprise).
+
+**La solution** : automatisez vos relances avec Newbi. L'outil envoie des emails de rappel programmés, du simple rappel courtois à la mise en demeure.
+
+## Erreur n°8 : Utiliser Word ou Excel pour facturer
+
+Word et Excel ne garantissent ni la numérotation séquentielle, ni l'intégrité des données, ni la conformité avec la [facturation électronique 2026](/blog/facturation-electronique-obligatoire-2026).
+
+**La solution** : migrez vers un logiciel de facturation conforme. Consultez notre comparatif des [logiciels gratuits](/blog/logiciel-devis-facture-gratuit) ou testez directement [Newbi](/tarifs).
+
+<div className="not-prose flex justify-center my-6">
+  <Button asChild variant="outline">
+    <Link href="/tarifs">Découvrir les offres Newbi</Link>
+  </Button>
+</div>
+
+## Erreur n°9 : Ne pas conserver ses factures assez longtemps
+
+Les factures doivent être conservées **10 ans** (obligation comptable) et sont contrôlables par l'administration fiscale pendant **6 ans**. Beaucoup d'indépendants perdent leurs factures papier ou ne font pas de sauvegardes numériques.
+
+**La solution** : un logiciel cloud comme Newbi archive automatiquement toutes vos factures dans le cloud, accessibles et sécurisées pendant toute la durée légale.
+
+## Erreur n°10 : Oublier le SIREN sur la facture
+
+Le [numéro SIREN](/blog/quest-ce-que-numero-siret-siren) est une mention obligatoire sur toute facture. Son absence peut entraîner une amende. Avec la facturation électronique 2026, le SIREN du client deviendra aussi obligatoire.
+
+**La solution** : renseignez votre SIREN une seule fois dans votre profil Newbi. Il apparaîtra automatiquement sur tous vos documents.
+
+<figure className="not-prose my-8">
+  <div className="relative aspect-video overflow-hidden rounded-lg border">
+    <Image
+      src="/blog/erreurs-facturation-independants/recap.webp"
+      alt="Infographie récapitulative des 10 erreurs de facturation à éviter"
+      fill
+      className="object-cover"
+      sizes="(max-width: 768px) 100vw, 720px"
+    />
+  </div>
+  <figcaption className="mt-2 text-center text-sm text-muted-foreground">
+    Les 10 erreurs de facturation à retenir et comment les corriger
+  </figcaption>
+</figure>
+
+<Callout type="tip">
+  La meilleure façon d'éviter ces 10 erreurs est d'utiliser un logiciel de facturation professionnel. Newbi intègre automatiquement toutes les mentions obligatoires, gère la numérotation et les relances, et archive vos factures dans le cloud.
+</Callout>
+
+## En résumé
+
+Les 10 erreurs de facturation les plus courantes chez les indépendants :
+
+1. Oublier la mention TVA non applicable
+2. Numérotation non séquentielle
+3. Pénalités de retard non mentionnées
+4. Facturer en retard
+5. Descriptions trop vagues
+6. Confondre dates d'émission et de prestation
+7. Ne pas relancer les impayés
+8. Utiliser Word/Excel
+9. Ne pas conserver les factures 10 ans
+10. Oublier le SIREN
+
+Un logiciel de facturation comme Newbi élimine la quasi-totalité de ces erreurs automatiquement. Essayez gratuitement pendant 30 jours.
+
+<div className="not-prose flex justify-center my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement pendant 30 jours</Link>
+  </Button>
+</div>
+
+## Questions fréquentes
+
+<div className="not-prose my-12">
+  <Accordion type="multiple">
+    <AccordionItem value="faq-0">
+      <AccordionTrigger>Quelles sanctions risque-t-on pour une facture non conforme ?</AccordionTrigger>
+      <AccordionContent>
+        L'amende est de 15 € par mention manquante ou inexacte, plafonnée à 25 % du montant de la facture. Pour les infractions graves (facturation fictive), les sanctions peuvent atteindre 75 000 € pour une personne physique et 375 000 € pour une personne morale.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-1">
+      <AccordionTrigger>Peut-on corriger une facture après envoi ?</AccordionTrigger>
+      <AccordionContent>
+        Non, il est interdit de modifier une facture déjà émise. La seule solution est d'émettre un avoir qui annule la facture erronée, puis de créer une nouvelle facture correcte. C'est pourquoi il est important de vérifier avant d'envoyer.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-2">
+      <AccordionTrigger>Est-il obligatoire d'utiliser un logiciel de facturation ?</AccordionTrigger>
+      <AccordionContent>
+        Ce n'est pas techniquement obligatoire aujourd'hui, mais avec la facturation électronique obligatoire en 2026, un logiciel conforme deviendra indispensable. De plus, un logiciel garantit la conformité des mentions, la numérotation séquentielle et la conservation des documents.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-3">
+      <AccordionTrigger>Combien de temps conserver ses factures ?</AccordionTrigger>
+      <AccordionContent>
+        10 ans au titre des obligations comptables (Code de commerce) et 6 ans au titre des obligations fiscales. Conservez donc vos factures pendant au moins 10 ans, que ce soit en version papier ou numérique.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-4">
+      <AccordionTrigger>Un logiciel de facturation évite-t-il toutes les erreurs ?</AccordionTrigger>
+      <AccordionContent>
+        Un logiciel élimine les erreurs techniques (numérotation, mentions obligatoires, calculs). En revanche, vous restez responsable du contenu : description des prestations, montants facturés, coordonnées client. Le logiciel automatise la conformité, pas le contenu métier.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>
+
+<script type="application/ld+json" dangerouslySetInnerHTML={{__html: JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Quelles sanctions pour une facture non conforme ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "15 € par mention manquante, plafonnée à 25 % du montant. Jusqu'à 75 000 € pour facturation fictive."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Peut-on corriger une facture après envoi ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Non. Émettez un avoir puis créez une nouvelle facture correcte."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Un logiciel de facturation est-il obligatoire ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Pas encore, mais avec la e-facturation 2026, il deviendra indispensable."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Combien de temps conserver ses factures ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "10 ans minimum (obligation comptable)."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Un logiciel évite-t-il toutes les erreurs ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Il élimine les erreurs techniques mais vous restez responsable du contenu."
+      }
+    }
+  ]
+})}} />

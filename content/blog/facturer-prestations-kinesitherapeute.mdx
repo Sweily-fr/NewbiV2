@@ -1,0 +1,374 @@
+---
+title: 'Facturation pour kinésithérapeutes : spécificités et obligations'
+description: >-
+  Guide de facturation pour kinés libéraux : cotation AMK/AMC, tiers payant,
+  dépassements, TVA et logiciel de facturation adapté aux kinésithérapeutes.
+date: '2026-02-10'
+category: guide
+sector: Professions médicales
+keyword: facturation kinésithérapeute
+author: Newbi
+image: /blog/facturer-prestations-kinesitherapeute/hero.webp
+published: false
+publishDate: null
+---
+
+import Image from "next/image"
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex flex-wrap gap-2 mb-6">
+  <Badge>Guide</Badge>
+  <Badge variant="secondary">Kiné</Badge>
+  <Badge variant="outline">9 min de lecture</Badge>
+</div>
+
+# Facturation pour kinésithérapeutes : spécificités et obligations
+
+La **facturation kinésithérapeute** obéit à des règles bien particulières qui la distinguent de la plupart des autres professions libérales. Entre la nomenclature NGAP, le tiers payant, les dépassements encadrés et les actes hors convention, le masseur-kinésithérapeute libéral doit maîtriser un cadre réglementaire dense pour exercer en toute conformité. Ce guide complet détaille chaque aspect de la facturation du kiné libéral, des cotations AMK/AMC jusqu'aux obligations fiscales et aux outils de facturation adaptés.
+
+<figure className="my-8">
+  <Image
+    src="/blog/facturer-prestations-kinesitherapeute/hero.webp"
+    alt="Kinésithérapeute libéral réalisant la facturation de ses actes sur un logiciel adapté"
+    width={1200}
+    height={630}
+    className="rounded-xl w-full"
+    priority
+  />
+  <figcaption className="text-center text-sm text-muted-foreground mt-2">
+    La facturation du kinésithérapeute libéral repose sur la nomenclature NGAP et des règles spécifiques de tiers payant.
+  </figcaption>
+</figure>
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Créer mon compte Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## La nomenclature NGAP : comprendre les cotations AMK et AMC
+
+La Nomenclature Générale des Actes Professionnels (NGAP) constitue le socle de la facturation kinésithérapeute conventionnée. Chaque acte réalisé est codifié selon une lettre-clé et un coefficient qui déterminent le tarif opposable remboursé par l'Assurance Maladie.
+
+### Les principales lettres-clés
+
+- **AMK (Acte de Masso-Kinésithérapie)** : il s'agit de l'acte de base du kinésithérapeute. Il correspond aux séances courantes de rééducation prescrites par un médecin. La valeur unitaire de l'AMK est fixée par la convention nationale.
+- **AMC (Acte de Masso-Kinésithérapie Complexe)** : cette cotation s'applique aux actes nécessitant une technicité supérieure, comme la rééducation respiratoire, la rééducation périnéale ou certains actes post-opératoires complexes. Le coefficient AMC est plus élevé que l'AMK.
+- **AMS (Acte de Masso-kinésithérapie Spécifique)** : réservé à des actes très ciblés comme le drainage lymphatique manuel ou la rééducation maxillo-faciale.
+
+### Tarifs conventionnés en vigueur
+
+Les tarifs sont fixés par avenant conventionnel. En 2026, les valeurs des lettres-clés les plus utilisées sont les suivantes :
+
+- **AMK 1** : acte de base de rééducation
+- **AMK 2 à AMK 10** : actes à coefficients multiples selon la complexité et la durée
+- **AMC 1 à AMC 3** : actes complexes avec valorisation supérieure
+- **IFD (Indemnité Forfaitaire de Déplacement)** et **IK (Indemnités Kilométriques)** pour les visites à domicile
+
+Le kinésithérapeute conventionné doit appliquer ces tarifs pour la part remboursable de ses actes. Tout dépassement doit répondre à des conditions strictes.
+
+## Dépassements autorisés : DE et DP
+
+Contrairement aux médecins en secteur 2, les kinésithérapeutes conventionnés ne peuvent pas pratiquer de dépassements libres. Deux types de dépassements sont toutefois autorisés :
+
+- **DE (Dépassement pour Exigence particulière du patient)** : lorsque le patient exige une consultation en dehors des horaires habituels ou dans des conditions particulières sans justification médicale, le kiné peut appliquer un dépassement DE. Ce montant n'est pas remboursé par la CPAM.
+- **DP (Dépassement Plafonné)** : applicable dans certaines situations prévues par la convention, le DP reste encadré et doit être mentionné sur la feuille de soins.
+
+Dans les deux cas, le patient doit être informé au préalable du montant du dépassement, et celui-ci doit figurer explicitement sur la facture ou la feuille de soins électronique.
+
+## Tiers payant : CPAM et mutuelles
+
+Le tiers payant est un mécanisme central de la **facturation kinésithérapeute**. Il dispense le patient de l'avance de frais, en totalité ou en partie.
+
+### Tiers payant obligatoire (part CPAM)
+
+Le kinésithérapeute conventionné est tenu de pratiquer le tiers payant sur la part obligatoire (Sécurité sociale) pour certaines catégories de patients :
+
+- Bénéficiaires de la Complémentaire Santé Solidaire (CSS, ex-CMU-C)
+- Patients en ALD (Affection de Longue Durée) pour les actes liés à leur pathologie
+- Accidents du travail et maladies professionnelles (AT/MP)
+- Maternité à partir du 6e mois de grossesse
+
+### Tiers payant complémentaire (part mutuelle)
+
+Pour la part complémentaire, le tiers payant n'est pas obligatoire mais reste très courant en kinésithérapie. Il nécessite un accord avec chaque organisme complémentaire ou le passage par un réseau de tiers payant. La gestion des rejets et des rapprochements bancaires constitue souvent la partie la plus chronophage de la facturation du kiné libéral.
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Exonération de TVA sur les actes médicaux">
+    Les actes de masso-kinésithérapie à visée thérapeutique sont exonérés de TVA en application de l'article 261-4-1 du Code Général des Impôts. Cette exonération couvre tous les actes de soins réalisés dans le cadre de l'activité médicale et paramédicale réglementée. En revanche, les prestations à visée non thérapeutique (bien-être, coaching sportif, esthétique) sont soumises à la TVA au taux de 20 %.
+  </Callout>
+</div>
+
+## Actes conventionnés vs actes hors convention
+
+De plus en plus de kinésithérapeutes diversifient leur activité en proposant des prestations hors du champ conventionnel. Il est essentiel de bien distinguer les deux catégories, car elles n'obéissent pas aux mêmes règles de facturation.
+
+<div className="not-prose my-8 overflow-x-auto">
+  <Table>
+    <TableCaption>Comparaison des actes conventionnés et non conventionnés du kinésithérapeute</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[200px]">Critère</TableHead>
+        <TableHead>Actes conventionnés</TableHead>
+        <TableHead>Actes hors convention</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Cotation</TableCell>
+        <TableCell>NGAP (AMK, AMC, AMS)</TableCell>
+        <TableCell>Libre (tarif fixé par le praticien)</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">TVA</TableCell>
+        <TableCell>Exonéré (art. 261-4-1 CGI)</TableCell>
+        <TableCell>20 % (prestation de service)</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Remboursement</TableCell>
+        <TableCell>Oui (CPAM + mutuelle)</TableCell>
+        <TableCell>Non remboursé</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Prescription médicale</TableCell>
+        <TableCell>Obligatoire</TableCell>
+        <TableCell>Non requise</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Facturation</TableCell>
+        <TableCell>Feuille de soins (SESAM-Vitale)</TableCell>
+        <TableCell>Facture classique (note d'honoraires)</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Exemples</TableCell>
+        <TableCell>Rééducation post-opératoire, respiratoire, périnéale</TableCell>
+        <TableCell>Coaching sportif, massage bien-être, pilates thérapeutique</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+### Facturation des actes hors convention
+
+Pour les prestations non prises en charge par l'Assurance Maladie (coaching sportif, programmes de prévention, massages bien-être, séances en entreprise), le kinésithérapeute doit émettre une facture classique comportant toutes les [mentions obligatoires](/blog/mentions-obligatoires-facture) prévues par le Code de commerce. Ces actes étant soumis à la TVA, le praticien doit collecter et reverser la TVA à 20 % sauf s'il bénéficie de la franchise en base de TVA (seuil de chiffre d'affaires applicable aux prestations de service).
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="Newbi pour vos factures hors CPAM">
+    Pour facturer vos prestations non conventionnées (coaching, bien-être, interventions en entreprise), Newbi vous permet de créer des factures conformes en quelques clics, avec calcul automatique de la TVA, suivi des paiements et relances. Idéal pour les kinésithérapeutes qui développent une activité mixte.
+  </Callout>
+</div>
+
+## Régime fiscal du kinésithérapeute libéral
+
+### BNC : Bénéfices Non Commerciaux
+
+Le kinésithérapeute libéral relève de la catégorie des Bénéfices Non Commerciaux (BNC). Deux régimes sont possibles :
+
+- **Micro-BNC** : si le chiffre d'affaires annuel ne dépasse pas 77 700 euros. Un abattement forfaitaire de 34 % est appliqué sur les recettes. Ce régime simplifié convient aux débuts d'activité.
+- **Déclaration contrôlée** : obligatoire au-delà du seuil ou sur option. Le praticien déduit ses charges réelles (loyer, matériel, cotisations, assurances, logiciels). Ce régime est généralement plus avantageux pour les kinés installés.
+
+La tenue d'une comptabilité rigoureuse et le suivi de [trésorerie](/blog/comment-gerer-tresorerie-entreprise) sont indispensables quel que soit le régime choisi.
+
+### Rétrocession d'honoraires
+
+La rétrocession est un mécanisme fréquent en kinésithérapie : un kiné remplaçant ou collaborateur reverse une partie de ses honoraires au titulaire du cabinet. Cette rétrocession doit être facturée, déclarée et figure parmi les charges déductibles du titulaire. Le remplaçant déclare l'intégralité de ses recettes brutes et déduit la rétrocession versée.
+
+### SCM : Société Civile de Moyens
+
+De nombreux kinésithérapeutes exercent au sein d'une SCM (Société Civile de Moyens) pour mutualiser les charges du cabinet : loyer, secrétariat, matériel, logiciels. La SCM ne génère pas de bénéfice propre ; elle se contente de répartir les dépenses entre les associés. Chaque associé reçoit un appel de charges qu'il intègre dans sa comptabilité BNC personnelle.
+
+<figure className="my-8">
+  <Image
+    src="/blog/facturer-prestations-kinesitherapeute/kine-cabinet.webp"
+    alt="Cabinet de kinésithérapie avec poste de facturation et logiciel de gestion"
+    width={1200}
+    height={630}
+    className="rounded-xl w-full"
+  />
+  <figcaption className="text-center text-sm text-muted-foreground mt-2">
+    Un logiciel de facturation adapté simplifie la gestion administrative du cabinet de kinésithérapie.
+  </figcaption>
+</figure>
+
+<div className="not-prose my-8">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Facturer mes actes kiné</Link>
+  </Button>
+</div>
+
+## Pourquoi utiliser un logiciel de facturation adapté ?
+
+La gestion administrative du kinésithérapeute libéral est souvent sous-estimée. Entre les feuilles de soins électroniques, le suivi du tiers payant, les rejets CPAM, les factures hors convention et la comptabilité BNC, un outil adapté fait gagner un temps considérable.
+
+<div className="not-prose my-8">
+  <ul className="space-y-3">
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span>Création de factures et notes d'honoraires conformes aux mentions obligatoires</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span>Gestion automatique de la TVA (exonération sur actes médicaux, 20 % sur actes hors convention)</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span>Suivi des paiements et relances automatiques en cas d'impayés</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span>Tableau de bord pour suivre le chiffre d'affaires, la trésorerie et les charges</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span>Export comptable simplifié pour la déclaration BNC (micro-BNC ou contrôlée)</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span>Facturation des rétrocessions et gestion des charges SCM</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span>Personnalisation des modèles avec votre identité visuelle de cabinet</span>
+    </li>
+  </ul>
+</div>
+
+Comme pour les [infirmiers libéraux](/blog/gestion-facturation-infirmier-liberal) et les autres [professions libérales](/blog/facture-profession-liberale-guide), le choix d'un logiciel de facturation adapté à votre activité vous permet de vous concentrer sur vos patients plutôt que sur la paperasse.
+
+## En résumé
+
+La **facturation kinésithérapeute** repose sur un cadre réglementaire précis qui mêle nomenclature NGAP, tiers payant, dépassements encadrés et fiscalité BNC. Les actes conventionnés (AMK, AMC) suivent des tarifs opposables et sont exonérés de TVA, tandis que les prestations hors convention (bien-être, sport, coaching) nécessitent une facturation classique soumise à la TVA. La maîtrise de ces règles et l'utilisation d'un logiciel adapté sont les clés d'une gestion administrative sereine pour le kiné libéral.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Un kinésithérapeute doit-il facturer la TVA sur ses actes de rééducation ?</AccordionTrigger>
+      <AccordionContent>
+        Non. Les actes de masso-kinésithérapie à visée thérapeutique sont exonérés de TVA en vertu de l'article 261-4-1 du Code Général des Impôts. Cette exonération s'applique à tous les actes médicaux et paramédicaux réglementés, qu'ils soient conventionnés ou non, dès lors qu'ils ont une finalité thérapeutique. En revanche, les prestations de bien-être, de coaching sportif ou de massage non thérapeutique sont soumises à la TVA au taux normal de 20 %.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Quelle est la différence entre AMK et AMC en kinésithérapie ?</AccordionTrigger>
+      <AccordionContent>
+        L'AMK (Acte de Masso-Kinésithérapie) correspond aux actes de rééducation courants, comme une séance de rééducation d'un membre ou du rachis. L'AMC (Acte de Masso-Kinésithérapie Complexe) est réservé aux actes nécessitant une technicité supérieure, tels que la rééducation respiratoire, la rééducation périnéale ou certaines prises en charge post-opératoires complexes. Le coefficient de l'AMC est plus élevé, ce qui se traduit par un tarif remboursable supérieur.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Comment facturer des prestations hors convention (coaching, bien-être) ?</AccordionTrigger>
+      <AccordionContent>
+        Les prestations hors convention ne passent pas par la feuille de soins SESAM-Vitale. Le kinésithérapeute doit émettre une facture classique (ou note d'honoraires) comportant toutes les mentions obligatoires : identité du praticien, numéro SIRET, description de la prestation, montant HT, TVA applicable (20 %) et montant TTC. Un logiciel de facturation comme Newbi permet de créer ces factures rapidement tout en assurant leur conformité légale.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Un kiné remplaçant doit-il facturer la rétrocession ?</AccordionTrigger>
+      <AccordionContent>
+        Oui. Le kinésithérapeute remplaçant perçoit l'intégralité des honoraires versés par les patients ou par la CPAM via le tiers payant. Il reverse ensuite au titulaire du cabinet une rétrocession (généralement entre 10 % et 30 % des honoraires encaissés). Cette rétrocession doit faire l'objet d'une facture émise par le titulaire au remplaçant. Le titulaire déclare la rétrocession comme un revenu, et le remplaçant la déduit de ses charges BNC.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Quel régime fiscal choisir quand on débute en tant que kiné libéral ?</AccordionTrigger>
+      <AccordionContent>
+        En début d'activité, le régime micro-BNC est souvent le plus simple : il s'applique automatiquement si vos recettes ne dépassent pas 77 700 euros par an et offre un abattement forfaitaire de 34 % sur vos revenus. Toutefois, si vos charges réelles (loyer, matériel, cotisations, logiciels) dépassent 34 % de vos recettes, le régime de la déclaration contrôlée sera plus avantageux fiscalement. Il est recommandé de faire une simulation avec un expert-comptable dès votre première année d'exercice.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>
+
+<script
+  type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "Facturation pour kinésithérapeutes : spécificités et obligations",
+      "description": "Guide de facturation pour kinés libéraux : cotation AMK/AMC, tiers payant, dépassements, TVA et logiciel de facturation adapté aux kinésithérapeutes.",
+      "author": {
+        "@type": "Organization",
+        "name": "Newbi",
+        "url": "https://newbi.fr"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "Newbi",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://newbi.fr/logo.png"
+        }
+      },
+      "datePublished": "2026-02-10",
+      "dateModified": "2026-02-10",
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "https://newbi.fr/blog/facturer-prestations-kinesitherapeute"
+      },
+      "image": "https://newbi.fr/blog/facturer-prestations-kinesitherapeute/hero.webp",
+      "keywords": ["facturation kinésithérapeute", "cotation AMK", "cotation AMC", "tiers payant kiné", "TVA kinésithérapeute", "BNC kiné libéral"]
+    })
+  }}
+/>
+
+<script
+  type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Un kinésithérapeute doit-il facturer la TVA sur ses actes de rééducation ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Non. Les actes de masso-kinésithérapie à visée thérapeutique sont exonérés de TVA en vertu de l'article 261-4-1 du Code Général des Impôts. Cette exonération s'applique à tous les actes médicaux et paramédicaux réglementés. Les prestations de bien-être ou de coaching sportif sont en revanche soumises à la TVA au taux de 20 %."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Quelle est la différence entre AMK et AMC en kinésithérapie ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "L'AMK correspond aux actes de rééducation courants, tandis que l'AMC est réservé aux actes nécessitant une technicité supérieure comme la rééducation respiratoire ou périnéale. Le coefficient AMC est plus élevé, ce qui entraîne un tarif remboursable supérieur."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Comment facturer des prestations hors convention (coaching, bien-être) ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Les prestations hors convention nécessitent une facture classique avec toutes les mentions obligatoires : identité du praticien, numéro SIRET, description de la prestation, montant HT, TVA à 20 % et montant TTC. Un logiciel de facturation comme Newbi permet de créer ces factures en conformité."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Un kiné remplaçant doit-il facturer la rétrocession ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Oui. Le remplaçant perçoit l'intégralité des honoraires puis reverse une rétrocession au titulaire du cabinet. Cette rétrocession doit faire l'objet d'une facture émise par le titulaire. Le remplaçant la déduit de ses charges BNC."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Quel régime fiscal choisir quand on débute en tant que kiné libéral ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Le micro-BNC est le plus simple en début d'activité (abattement de 34 % si recettes inférieures à 77 700 euros). Si vos charges réelles dépassent 34 % de vos recettes, la déclaration contrôlée sera plus avantageuse. Une simulation avec un expert-comptable est recommandée."
+          }
+        }
+      ]
+    })
+  }}
+/>

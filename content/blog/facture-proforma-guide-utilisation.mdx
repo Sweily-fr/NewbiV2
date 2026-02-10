@@ -1,0 +1,388 @@
+---
+title: 'Facture proforma : quand et comment l''utiliser ?'
+description: >-
+  Comprendre la facture proforma : définition, différences avec le devis et la
+  facture, cas d'utilisation et modèle gratuit à télécharger.
+date: '2026-02-10'
+category: glossaire
+sector: null
+keyword: facture proforma utilisation
+author: Newbi
+image: /blog/facture-proforma-guide-utilisation/hero.webp
+published: false
+publishDate: null
+---
+
+import Image from "next/image"
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Glossaire</Badge>
+  <Badge variant="outline">7 min de lecture</Badge>
+</div>
+
+# Facture proforma : quand et comment l'utiliser ?
+
+La **facture proforma** est un document commercial incontournable dans le monde des affaires, en particulier dans le commerce international. Pourtant, elle reste souvent mal comprise par les entrepreneurs et les indépendants. Contrairement a ce que son nom suggere, la facture proforma n'est pas une facture au sens juridique ou comptable du terme. C'est un document provisoire, informatif, qui sert d'estimation ou de proposition commerciale avant la conclusion d'une transaction.
+
+Dans ce guide complet, nous allons vous expliquer en detail ce qu'est une facture proforma, dans quels cas l'utiliser, comment la distinguer du devis et de la facture definitive, et comment en creer une facilement avec Newbi.
+
+<figure className="my-8">
+  <Image
+    src="/blog/facture-proforma-guide-utilisation/hero.webp"
+    alt="Facture proforma : guide complet d'utilisation pour entrepreneurs et independants"
+    width={1200}
+    height={630}
+    className="rounded-xl"
+    priority
+  />
+  <figcaption className="text-center text-sm text-muted-foreground mt-2">
+    La facture proforma est un document commercial provisoire qui facilite les echanges avant la transaction definitive.
+  </figcaption>
+</figure>
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Creer une facture proforma gratuitement</Link>
+  </Button>
+</div>
+
+## Qu'est-ce qu'une facture proforma ?
+
+La **facture proforma** (du latin *pro forma*, signifiant "pour la forme") est un document commercial provisoire qui decrit les biens ou services proposes, leurs quantites, leurs prix et les conditions de vente. Elle est emise **avant la realisation effective de la transaction**.
+
+Contrairement a une facture classique, la facture proforma **n'a aucune valeur comptable ni fiscale**. Elle ne constitue ni une obligation de paiement pour l'acheteur, ni une creance pour le vendeur. C'est avant tout un outil de communication commerciale qui permet aux deux parties de s'accorder sur les termes d'une future transaction.
+
+### Les caracteristiques cles de la facture proforma
+
+- **Document informatif** : elle sert d'estimation detaillee, pas de demande de paiement
+- **Sans valeur comptable** : elle ne peut pas etre enregistree en comptabilite comme une facture
+- **Sans valeur fiscale** : elle ne permet pas de deduire la TVA ni de justifier une charge
+- **Pas de numerotation sequentielle** : contrairement aux factures, elle n'a pas besoin de suivre une numerotation chronologique obligatoire
+- **Mention "PROFORMA" obligatoire** : elle doit clairement porter la mention "PROFORMA" ou "Facture proforma" pour eviter toute confusion
+
+<div className="not-prose my-8">
+  <Callout variant="info" title="Bon a savoir">
+    La facture proforma n'a aucune valeur fiscale. Elle ne peut pas remplacer une facture definitive pour la declaration de TVA, la comptabilite ou le controle fiscal. Si la transaction se concretise, vous devez imperativement emettre une facture definitive conforme aux <Link href="/blog/mentions-obligatoires-facture" className="underline font-medium">mentions obligatoires</Link>.
+  </Callout>
+</div>
+
+## Quand utiliser une facture proforma ?
+
+La facture proforma intervient dans de nombreuses situations professionnelles. Voici les cas d'utilisation les plus courants :
+
+### 1. Commerce international (export/import)
+
+C'est le cas d'utilisation le plus repandu. Lors d'echanges commerciaux internationaux, la facture proforma est souvent exigee par :
+
+- Les **douanes** pour evaluer la valeur des marchandises a importer ou exporter
+- Les **banques** pour l'ouverture d'un credit documentaire (lettre de credit)
+- Les **transitaires** pour organiser le transport et le dedouanement
+
+Elle permet aux autorites douanieres d'estimer les droits de douane et les taxes applicables avant l'expedition des marchandises. Dans le cadre d'echanges au sein de l'Union europeenne, il est aussi utile de comprendre le fonctionnement de la <Link href="/blog/quest-ce-que-tva-intracommunautaire">TVA intracommunautaire</Link>.
+
+### 2. Demande de financement
+
+Lorsqu'un acheteur a besoin d'obtenir un financement bancaire ou un accord budgetaire interne pour concretiser un achat, la facture proforma sert de document justificatif. Elle permet a la banque ou au decideur d'evaluer le montant necessaire et les conditions de la transaction.
+
+### 3. Negociation commerciale
+
+La facture proforma peut servir de base de negociation entre un vendeur et un acheteur. Elle presente une proposition detaillee qui peut etre ajustee avant l'accord final. C'est un outil flexible, car elle peut etre modifiee autant de fois que necessaire sans impacter la comptabilite.
+
+### 4. Formalites administratives
+
+Certaines administrations ou organismes publics exigent une facture proforma dans le cadre de procedures d'appels d'offres, de demandes de subventions ou d'autorisations d'importation.
+
+### 5. Information prealable du client
+
+Avant de formaliser une commande, la facture proforma permet d'informer le client sur les prix exacts, les conditions de livraison, les delais et les modalites de paiement. Elle joue un role similaire au devis, mais avec des conventions differentes selon les secteurs.
+
+## Facture proforma vs devis vs facture : quelles differences ?
+
+Il est essentiel de bien distinguer ces trois documents pour eviter toute erreur juridique ou comptable. Voici un comparatif detaille :
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Comparatif entre la facture proforma, le devis et la facture definitive</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[200px]">Critere</TableHead>
+        <TableHead>Facture proforma</TableHead>
+        <TableHead>Devis</TableHead>
+        <TableHead>Facture definitive</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Valeur juridique</TableCell>
+        <TableCell>Aucune</TableCell>
+        <TableCell>Engagement une fois signe</TableCell>
+        <TableCell>Obligation de paiement</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Valeur comptable</TableCell>
+        <TableCell>Aucune</TableCell>
+        <TableCell>Aucune</TableCell>
+        <TableCell>Piece comptable obligatoire</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Valeur fiscale</TableCell>
+        <TableCell>Aucune</TableCell>
+        <TableCell>Aucune</TableCell>
+        <TableCell>Justificatif fiscal (TVA, charges)</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Numerotation sequentielle</TableCell>
+        <TableCell>Non obligatoire</TableCell>
+        <TableCell>Recommandee</TableCell>
+        <TableCell>Obligatoire (chronologique)</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Modification possible</TableCell>
+        <TableCell>Oui, librement</TableCell>
+        <TableCell>Avant signature</TableCell>
+        <TableCell>Non (avoir ou rectificative)</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Usage principal</TableCell>
+        <TableCell>Export, douanes, financement</TableCell>
+        <TableCell>Proposition commerciale</TableCell>
+        <TableCell>Demande de paiement</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+Pour approfondir la creation d'un devis conforme, consultez notre guide sur <Link href="/blog/comment-faire-devis-professionnel">comment faire un devis professionnel</Link>.
+
+## Quelles mentions inclure dans une facture proforma ?
+
+Meme si la facture proforma n'a pas de valeur legale stricte, il est recommande d'y inclure les informations suivantes pour garantir sa clarte et son professionnalisme :
+
+<div className="not-prose my-8 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La mention <strong>"PROFORMA"</strong> ou <strong>"Facture proforma"</strong> bien visible en en-tete</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Les coordonnees completes de l'emetteur (nom, adresse, SIRET, numero de TVA)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Les coordonnees completes du destinataire</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La date d'emission et la duree de validite de l'offre</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La description detaillee des biens ou services (designation, quantite, prix unitaire)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le montant total HT et TTC, avec le detail de la TVA applicable</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Les conditions de livraison (Incoterms pour l'international)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Les conditions et modalites de paiement</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La devise utilisee (particulierement important a l'international)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le poids et les dimensions des marchandises (pour les douanes)</span>
+  </div>
+</div>
+
+La mention "PROFORMA" est cruciale : sans elle, le document pourrait etre confondu avec une facture definitive, ce qui poserait des problemes juridiques et comptables.
+
+<figure className="my-8">
+  <Image
+    src="/blog/facture-proforma-guide-utilisation/exemple-facture-proforma.webp"
+    alt="Exemple de facture proforma avec les mentions obligatoires"
+    width={800}
+    height={500}
+    className="rounded-xl border"
+  />
+  <figcaption className="text-center text-sm text-muted-foreground mt-2">
+    Exemple de facture proforma avec toutes les mentions recommandees.
+  </figcaption>
+</figure>
+
+## Comment creer une facture proforma avec Newbi ?
+
+Avec Newbi, creer une facture proforma est simple et rapide. Notre outil de facturation vous permet de generer un document professionnel en quelques clics, puis de le convertir en facture definitive lorsque la transaction se concretise.
+
+<div className="not-prose my-8">
+  <Callout variant="tip" title="Astuce Newbi">
+    Dans Newbi, vous pouvez facilement convertir une facture proforma en facture definitive en un seul clic. Le document conserve toutes les informations saisies et se voit attribuer automatiquement un numero sequentiel conforme. Vous gagnez du temps et evitez les erreurs de ressaisie.
+  </Callout>
+</div>
+
+Voici les etapes pour creer votre facture proforma :
+
+1. **Connectez-vous** a votre espace Newbi ou creez un compte gratuit
+2. **Accedez a la section Factures** depuis votre tableau de bord
+3. **Selectionnez "Facture proforma"** comme type de document
+4. **Renseignez les informations** de votre client (ou selectionnez-le dans votre carnet de contacts)
+5. **Ajoutez les produits ou services** avec leurs descriptions, quantites et prix
+6. **Verifiez les conditions** de vente, de livraison et de paiement
+7. **Generez le PDF** et envoyez-le directement a votre client
+
+Lorsque votre client confirme la commande, vous pouvez transformer la proforma en facture definitive en un clic. Le processus peut etre compare a la transformation d'un <Link href="/blog/quest-ce-que-bon-commande">bon de commande</Link> en facture.
+
+<div className="not-prose my-8">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Creer une facture proforma</Link>
+  </Button>
+</div>
+
+## Les erreurs courantes a eviter
+
+Meme si la facture proforma est un document souple, certaines erreurs peuvent avoir des consequences importantes :
+
+- **Oublier la mention "PROFORMA"** : sans cette mention, le document peut etre requalifie en facture et entrainer des obligations fiscales
+- **Utiliser une numerotation sequentielle** : cela creerait une confusion avec vos factures definitives et pourrait poser probleme lors d'un controle
+- **Enregistrer la proforma en comptabilite** : ce document ne doit jamais apparaitre dans vos ecritures comptables
+- **Ne pas emettre de facture definitive** : une fois la transaction realisee, vous devez imperativement emettre une vraie facture conforme
+- **Confondre proforma et devis** : meme s'ils se ressemblent, ces documents n'ont pas le meme statut juridique, surtout en France
+
+## En resume
+
+La facture proforma est un outil precieux pour les entrepreneurs, en particulier dans le cadre du commerce international. Elle facilite les echanges en amont d'une transaction, sert de support pour les formalites douanieres et bancaires, et permet de negocier sereinement les conditions d'une vente.
+
+Retenez l'essentiel :
+
+- La proforma est un document **informatif et provisoire**
+- Elle **n'a aucune valeur comptable, fiscale ou juridique**
+- Elle doit toujours porter la mention **"PROFORMA"** de maniere visible
+- Elle doit etre **convertie en facture definitive** des que la transaction est conclue
+- Elle ne suit **pas de numerotation sequentielle** obligatoire
+
+Avec un outil comme Newbi, vous pouvez creer, personnaliser et convertir vos factures proforma en quelques instants, tout en restant conforme a la reglementation.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions frequentes
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>La facture proforma a-t-elle une valeur juridique ?</AccordionTrigger>
+      <AccordionContent>
+        Non, la facture proforma n'a aucune valeur juridique, comptable ou fiscale. C'est un document purement informatif qui sert d'estimation ou de proposition commerciale. Elle ne constitue ni une obligation de paiement pour l'acheteur, ni un titre de creance pour le vendeur. Seule la facture definitive a une valeur legale.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Quelle est la difference entre une facture proforma et un devis ?</AccordionTrigger>
+      <AccordionContent>
+        La principale difference reside dans leur valeur juridique. Un devis, une fois signe par le client, constitue un engagement contractuel entre les deux parties. La facture proforma, quant a elle, reste un simple document d'information sans engagement. En pratique, la proforma est davantage utilisee dans le commerce international, tandis que le devis est plus courant dans les echanges nationaux.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Peut-on enregistrer une facture proforma en comptabilite ?</AccordionTrigger>
+      <AccordionContent>
+        Non, en aucun cas. La facture proforma ne doit jamais etre enregistree dans vos ecritures comptables. Seule la facture definitive peut faire l'objet d'un enregistrement comptable. Inscrire une proforma en comptabilite pourrait entrainer des anomalies lors d'un controle fiscal et fausser vos declarations de TVA.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Est-il obligatoire de mentionner "PROFORMA" sur le document ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, il est indispensable de faire figurer la mention "PROFORMA" ou "Facture proforma" de maniere claire et visible sur le document. Cette mention permet de distinguer sans ambiguite le document d'une facture definitive. Sans cette mention, le document pourrait etre requalifie en facture par l'administration fiscale, avec toutes les obligations qui en decoulent.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>
+
+<script
+  type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "Facture proforma : quand et comment l'utiliser ?",
+      "description": "Comprendre la facture proforma : definition, differences avec le devis et la facture, cas d'utilisation et modele gratuit a telecharger.",
+      "author": {
+        "@type": "Organization",
+        "name": "Newbi"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "Newbi",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://www.newbi.co/logo.png"
+        }
+      },
+      "datePublished": "2026-02-10",
+      "dateModified": "2026-02-10",
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "https://www.newbi.co/blog/facture-proforma-guide-utilisation"
+      },
+      "image": "https://www.newbi.co/blog/facture-proforma-guide-utilisation/hero.webp"
+    })
+  }}
+/>
+
+<script
+  type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "La facture proforma a-t-elle une valeur juridique ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Non, la facture proforma n'a aucune valeur juridique, comptable ou fiscale. C'est un document purement informatif qui sert d'estimation ou de proposition commerciale. Elle ne constitue ni une obligation de paiement pour l'acheteur, ni un titre de creance pour le vendeur. Seule la facture definitive a une valeur legale."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Quelle est la difference entre une facture proforma et un devis ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "La principale difference reside dans leur valeur juridique. Un devis, une fois signe par le client, constitue un engagement contractuel entre les deux parties. La facture proforma, quant a elle, reste un simple document d'information sans engagement. En pratique, la proforma est davantage utilisee dans le commerce international, tandis que le devis est plus courant dans les echanges nationaux."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Peut-on enregistrer une facture proforma en comptabilite ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Non, en aucun cas. La facture proforma ne doit jamais etre enregistree dans vos ecritures comptables. Seule la facture definitive peut faire l'objet d'un enregistrement comptable. Inscrire une proforma en comptabilite pourrait entrainer des anomalies lors d'un controle fiscal et fausser vos declarations de TVA."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Est-il obligatoire de mentionner 'PROFORMA' sur le document ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Oui, il est indispensable de faire figurer la mention 'PROFORMA' ou 'Facture proforma' de maniere claire et visible sur le document. Cette mention permet de distinguer sans ambiguite le document d'une facture definitive. Sans cette mention, le document pourrait etre requalifie en facture par l'administration fiscale, avec toutes les obligations qui en decoulent."
+          }
+        }
+      ]
+    })
+  }}
+/>

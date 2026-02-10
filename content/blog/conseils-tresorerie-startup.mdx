@@ -1,0 +1,403 @@
+---
+title: 9 conseils pour gérer la trésorerie de votre startup
+description: >-
+  Gérez la trésorerie de votre startup avec ces 9 conseils : burn rate, runway,
+  prévisions, levée de fonds. Évitez la panne de cash.
+date: '2026-02-10'
+category: conseils
+sector: Startups
+keyword: trésorerie startup conseils
+author: Newbi
+image: /blog/conseils-tresorerie-startup/hero.webp
+published: false
+publishDate: null
+---
+
+import Image from "next/image"
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge>Conseils</Badge>
+  <Badge variant="secondary">Startup</Badge>
+  <Badge variant="outline">9 min de lecture</Badge>
+</div>
+
+# 9 conseils pour gérer la trésorerie de votre startup
+
+La **trésorerie startup** est le nerf de la guerre. Vous pouvez avoir le meilleur produit du marché, une équipe brillante et une croissance prometteuse : si votre cash tombe à zéro, c'est terminé. Pourtant, la gestion de trésorerie reste l'angle mort de nombreux fondateurs qui se concentrent sur le produit et la croissance, en oubliant que chaque euro dépensé doit être piloté avec rigueur.
+
+Dans cet article, nous partageons **9 conseils concrets** pour maîtriser la trésorerie de votre startup, anticiper les creux et sécuriser votre runway. Que vous soyez en phase de pré-seed, en pleine accélération ou en préparation de votre prochaine levée de fonds, ces bonnes pratiques vous aideront à garder le contrôle financier de votre entreprise.
+
+<figure className="my-8">
+  <Image
+    src="/blog/conseils-tresorerie-startup/hero.webp"
+    alt="Tableau de bord de trésorerie pour startup avec indicateurs clés de suivi financier"
+    width={1200}
+    height={630}
+    className="rounded-xl border"
+    priority
+  />
+  <figcaption className="text-center text-sm text-muted-foreground mt-3">
+    Un pilotage précis de la trésorerie est indispensable pour toute startup en croissance.
+  </figcaption>
+</figure>
+
+<div className="not-prose my-8">
+  <Callout variant="danger" title="Le saviez-vous ?">
+    Selon une étude CB Insights, **29 % des startups échouent par manque de trésorerie**. Ce n'est ni un problème de produit ni un problème de marché : c'est un problème de cash. La panne sèche financière reste la deuxième cause de mortalité des jeunes entreprises innovantes, juste après l'absence de product-market fit.
+  </Callout>
+</div>
+
+<div className="not-prose my-6">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Piloter ma trésorerie startup avec Newbi</Link>
+  </Button>
+</div>
+
+## 1. Calculez votre burn rate
+
+Le **burn rate** (taux de combustion) correspond au montant net de cash que votre startup consomme chaque mois. C'est l'indicateur fondamental qui détermine votre vitesse d'épuisement financier.
+
+On distingue deux types de burn rate :
+
+- **Burn rate brut** : la totalité de vos dépenses mensuelles (salaires, loyer, outils SaaS, marketing, etc.)
+- **Burn rate net** : vos dépenses mensuelles moins vos revenus mensuels
+
+**Exemple concret** : si votre startup dépense 40 000 euros par mois et génère 15 000 euros de revenus récurrents, votre burn rate net est de 25 000 euros par mois. C'est ce chiffre que vous devez surveiller comme le lait sur le feu.
+
+Calculez votre burn rate chaque mois et suivez son évolution. Un burn rate qui augmente plus vite que vos revenus est un signal d'alarme majeur. À l'inverse, un burn rate maîtrisé qui diminue progressivement grâce à la croissance des revenus montre que votre startup converge vers la rentabilité.
+
+## 2. Connaissez votre runway
+
+Le **runway** est directement lié au burn rate. Il représente le nombre de mois pendant lesquels votre startup peut fonctionner avec la trésorerie disponible, sans revenus supplémentaires.
+
+La formule est simple : **Runway = Trésorerie disponible / Burn rate net mensuel**
+
+Si vous disposez de 300 000 euros en banque et que votre burn rate net est de 25 000 euros par mois, votre runway est de 12 mois. Cela signifie que vous avez un an devant vous avant la panne sèche.
+
+La règle d'or : ne laissez jamais votre runway descendre en dessous de **6 mois**. En dessous de ce seuil, vous entrez en zone de danger. Les décisions prises sous pression financière sont rarement les meilleures, et vous perdez tout pouvoir de négociation avec vos investisseurs potentiels.
+
+## 3. Facturez vite et bien
+
+L'une des erreurs les plus courantes chez les fondateurs de startup est de négliger la facturation. Vous livrez un service, vous terminez un sprint, vous atteignez un jalon... mais la facture part trois semaines plus tard. Ce retard se répercute directement sur votre trésorerie.
+
+Adoptez ces réflexes :
+
+- Facturez **le jour même** de la livraison ou de l'atteinte du jalon
+- Utilisez des **conditions de paiement courtes** (15 jours, voire paiement immédiat pour les petits montants)
+- Proposez le **prélèvement automatique** ou le paiement par carte pour réduire les délais
+- Envoyez des factures claires et conformes pour éviter les allers-retours
+
+Découvrez nos bonnes pratiques de facturation dans notre guide complet sur la [gestion de la facturation pour les startups en early stage](/blog/gestion-facturation-startup-early-stage).
+
+## 4. Négociez vos délais fournisseurs
+
+Si vous devez payer vos fournisseurs à 30 jours mais que vos clients vous paient à 60 jours, vous créez mécaniquement un décalage de trésorerie de 30 jours. Ce décalage, multiplié par votre volume d'activité, peut représenter des dizaines de milliers d'euros immobilisés.
+
+Négociez systématiquement vos conditions de paiement fournisseurs :
+
+- Demandez des **délais de paiement à 45 ou 60 jours** auprès de vos principaux prestataires
+- Regroupez vos achats pour obtenir de meilleures conditions
+- Privilégiez les abonnements annuels payés mensuellement plutôt que les paiements annuels upfront
+- Évitez de payer en avance sauf en échange d'une remise significative (au moins 5 à 10 %)
+
+L'objectif est d'aligner au maximum vos **encaissements et décaissements** pour limiter le besoin en fonds de roulement. Pour approfondir ce sujet, consultez notre article sur [comment gérer la trésorerie de votre entreprise](/blog/comment-gerer-tresorerie-entreprise).
+
+## 5. Créez un prévisionnel de trésorerie
+
+Piloter sa trésorerie au jour le jour ne suffit pas. Vous devez anticiper les **3 à 12 prochains mois** avec un prévisionnel de trésorerie détaillé semaine par semaine ou mois par mois.
+
+Un bon prévisionnel intègre :
+
+- Les **encaissements prévisionnels** : factures émises en attente de paiement, revenus récurrents attendus, aides et subventions
+- Les **décaissements prévisionnels** : salaires, charges sociales, loyer, abonnements SaaS, remboursements d'emprunts, impôts
+- Les **événements ponctuels** : achat de matériel, recrutement, campagne marketing, remboursement de CIR/CII
+
+La clé est de mettre à jour ce prévisionnel **chaque semaine** et de le confronter à la réalité. Les écarts entre le prévu et le réalisé vous permettent d'affiner vos hypothèses et de détecter les dérives avant qu'elles ne deviennent critiques.
+
+<figure className="my-8">
+  <Image
+    src="/blog/conseils-tresorerie-startup/previsionnel-tresorerie.webp"
+    alt="Exemple de prévisionnel de trésorerie pour startup avec courbe de cash prévisionnelle"
+    width={1200}
+    height={630}
+    className="rounded-xl border"
+  />
+  <figcaption className="text-center text-sm text-muted-foreground mt-3">
+    Un prévisionnel de trésorerie permet d'anticiper les creux et de prendre les bonnes décisions au bon moment.
+  </figcaption>
+</figure>
+
+## 6. Séparez compte pro et compte perso
+
+Cela peut paraître évident, mais de nombreux fondateurs de startup en phase d'amorçage utilisent encore leur compte personnel pour les dépenses de l'entreprise. C'est une erreur grave pour plusieurs raisons :
+
+- Impossibilité de suivre précisément la trésorerie de l'entreprise
+- Risques fiscaux et comptables majeurs
+- Confusion entre patrimoine personnel et professionnel
+- Mauvaise image auprès des investisseurs et partenaires
+
+Ouvrez un **compte bancaire professionnel dédié** dès la création de votre startup. Utilisez une carte professionnelle pour toutes les dépenses liées à l'activité. Cette séparation est non seulement une obligation légale pour les sociétés (SAS, SARL), mais c'est aussi la base d'un pilotage financier sain.
+
+## 7. Automatisez les relances
+
+Les factures impayées sont le fléau de la trésorerie. Selon une étude de la Banque de France, le délai moyen de paiement interentreprises en France dépasse **13 jours de retard** par rapport aux conditions contractuelles. Pour une startup, chaque jour de retard pèse sur le cash disponible.
+
+Automatisez vos relances pour ne plus perdre de temps ni oublier de relancer :
+
+- **J+1 après échéance** : relance automatique par email, ton cordial
+- **J+7** : deuxième relance, rappel ferme des conditions
+- **J+15** : mise en demeure, mention des pénalités de retard
+- **J+30** : transfert au service contentieux ou recours à l'affacturage
+
+Pour aller plus loin, découvrez nos [modèles de relance de facture impayée](/blog/relance-facture-impayee-modele) prêts à l'emploi.
+
+<div className="not-prose my-8">
+  <Callout variant="tip" title="Astuce Newbi">
+    Avec le tableau de bord Newbi, vous visualisez en temps réel l'état de vos factures (en attente, en retard, payées) et vous pouvez **automatiser vos relances** en quelques clics. Fini les relances oubliées et les trous de trésorerie évitables.
+  </Callout>
+</div>
+
+## 8. Préparez la levée de fonds en avance
+
+Si vous envisagez une levée de fonds, commencez à la préparer **6 à 9 mois avant** d'en avoir réellement besoin. Une levée de fonds prend en moyenne 4 à 6 mois entre les premiers contacts avec les investisseurs et le closing effectif.
+
+Préparer votre levée en avance vous permet de :
+
+- Négocier depuis une **position de force** (vous n'êtes pas dos au mur)
+- Présenter des métriques solides et une trajectoire de croissance convaincante
+- Prendre le temps de choisir les bons partenaires financiers
+- Éviter de brader votre valorisation sous la pression du manque de cash
+
+Un investisseur qui sent que vous êtes en urgence financière vous proposera systématiquement des conditions moins favorables. Votre runway confortable est votre meilleur levier de négociation.
+
+## 9. Connectez votre banque
+
+Le suivi manuel de la trésorerie via des tableurs Excel est chronophage, source d'erreurs et rapidement obsolète. La solution : connecter votre compte bancaire professionnel à un outil de gestion financière qui synchronise automatiquement vos transactions.
+
+Les avantages de la connexion bancaire automatique :
+
+- **Solde en temps réel** sans saisie manuelle
+- **Catégorisation automatique** des dépenses et revenus
+- **Rapprochement bancaire** instantané entre factures et paiements
+- **Alertes** en cas de solde bas ou de prélèvement inhabituel
+
+Pour en savoir plus sur cette fonctionnalité, lisez notre article sur la [connexion bancaire et le rapprochement automatique](/blog/connexion-bancaire-rapprochement-automatique).
+
+<div className="not-prose my-6">
+  <Button asChild variant="outline" size="lg">
+    <Link href="/produits/tresorerie">Suivre ma trésorerie startup</Link>
+  </Button>
+</div>
+
+---
+
+## Les indicateurs clés de trésorerie pour une startup
+
+Voici les métriques financières essentielles que tout fondateur de startup doit suivre :
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Indicateurs clés de pilotage financier pour startup</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[180px]">Indicateur</TableHead>
+        <TableHead>Définition</TableHead>
+        <TableHead className="w-[220px]">Objectif recommandé</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Burn rate net</TableCell>
+        <TableCell>Cash consommé chaque mois (dépenses - revenus)</TableCell>
+        <TableCell>En diminution constante</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Runway</TableCell>
+        <TableCell>Nombre de mois restants avant épuisement du cash</TableCell>
+        <TableCell>Minimum 6 mois, idéalement 12+</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">MRR</TableCell>
+        <TableCell>Monthly Recurring Revenue, revenus récurrents mensuels</TableCell>
+        <TableCell>Croissance mois après mois (10-20 %)</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Churn rate</TableCell>
+        <TableCell>Taux de perte de clients ou de revenus par mois</TableCell>
+        <TableCell>Inférieur à 5 % mensuel</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">CAC</TableCell>
+        <TableCell>Customer Acquisition Cost, coût d'acquisition d'un client</TableCell>
+        <TableCell>Inférieur à la LTV divisée par 3</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+---
+
+## Checklist : les bons réflexes de trésorerie startup
+
+<div className="not-prose my-8 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Calculer et suivre le burn rate net chaque mois</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Maintenir un runway supérieur à 6 mois en permanence</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Facturer immédiatement après chaque livraison ou jalon</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Négocier des délais de paiement fournisseurs de 45 à 60 jours</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Mettre à jour le prévisionnel de trésorerie chaque semaine</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Utiliser un compte bancaire professionnel dédié</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Automatiser les relances de factures impayées</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Préparer la levée de fonds 6 à 9 mois en avance</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Connecter son compte bancaire pour un suivi en temps réel</span>
+  </div>
+</div>
+
+---
+
+## En résumé
+
+La **trésorerie startup** n'est pas un sujet secondaire : c'est la colonne vertébrale de votre entreprise. Sans cash, pas de produit, pas d'équipe, pas de croissance. En appliquant ces 9 conseils -- calcul du burn rate, suivi du runway, facturation rapide, négociation fournisseurs, prévisionnel de trésorerie, séparation des comptes, automatisation des relances, préparation de la levée et connexion bancaire -- vous posez les fondations d'une gestion financière solide et pérenne.
+
+L'outil Newbi vous accompagne dans chacune de ces étapes en centralisant votre facturation, vos relances, votre suivi de trésorerie et votre connexion bancaire dans une seule plateforme pensée pour les startups et les indépendants.
+
+<div className="not-prose my-8 flex flex-col sm:flex-row gap-4">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Créer mon compte Newbi gratuitement</Link>
+  </Button>
+  <Button asChild variant="outline" size="lg">
+    <Link href="/produits/tresorerie">Découvrir le suivi de trésorerie</Link>
+  </Button>
+</div>
+
+---
+
+## Questions fréquentes
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Qu'est-ce que le burn rate d'une startup ?</AccordionTrigger>
+      <AccordionContent>
+        Le burn rate est le montant net de trésorerie que votre startup consomme chaque mois. Le burn rate brut correspond à la totalité de vos dépenses mensuelles, tandis que le burn rate net soustrait vos revenus mensuels. C'est l'indicateur principal pour évaluer votre consommation de cash et calculer votre runway. Un burn rate net de 25 000 euros par mois signifie que votre startup a besoin de 25 000 euros de trésorerie chaque mois pour fonctionner, au-delà de ce qu'elle génère.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Combien de mois de runway faut-il conserver pour une startup ?</AccordionTrigger>
+      <AccordionContent>
+        La recommandation standard est de maintenir un runway d'au moins 6 mois en permanence. Idéalement, visez 12 à 18 mois de runway, surtout si vous êtes en phase de pré-seed ou seed. Un runway confortable vous permet de négocier en position de force avec les investisseurs, de prendre des décisions stratégiques sereines et d'absorber les imprévus sans mettre en péril la survie de votre entreprise.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Comment améliorer rapidement la trésorerie de ma startup ?</AccordionTrigger>
+      <AccordionContent>
+        Les leviers les plus rapides pour améliorer votre trésorerie sont : réduire les délais de paiement clients (facturer immédiatement, proposer le prélèvement automatique), allonger les délais fournisseurs (négocier 45 à 60 jours), automatiser les relances pour récupérer les factures impayées plus vite, et couper les dépenses non essentielles. Connecter votre banque à un outil comme Newbi vous permet de visualiser en temps réel votre situation et d'identifier les optimisations possibles.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Faut-il un outil dédié pour gérer la trésorerie d'une startup ?</AccordionTrigger>
+      <AccordionContent>
+        Un tableur Excel peut suffire au tout début, mais il devient rapidement insuffisant à mesure que votre activité se développe. Un outil dédié comme Newbi offre la connexion bancaire automatique, le suivi en temps réel, l'automatisation des relances, le rapprochement bancaire et un prévisionnel de trésorerie intégré. Ces fonctionnalités vous font gagner un temps précieux et réduisent considérablement le risque d'erreur par rapport à un suivi manuel.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>
+
+<script type="application/ld+json" dangerouslySetInnerHTML={{__html: JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "9 conseils pour gérer la trésorerie de votre startup",
+  "description": "Gérez la trésorerie de votre startup avec ces 9 conseils : burn rate, runway, prévisions, levée de fonds. Évitez la panne de cash.",
+  "author": {
+    "@type": "Organization",
+    "name": "Newbi"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Newbi",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://www.newbi.co/logo.png"
+    }
+  },
+  "datePublished": "2026-02-10",
+  "dateModified": "2026-02-10",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://www.newbi.co/blog/conseils-tresorerie-startup"
+  },
+  "image": "https://www.newbi.co/blog/conseils-tresorerie-startup/hero.webp",
+  "keywords": "trésorerie startup conseils, burn rate, runway, gestion trésorerie startup, levée de fonds",
+  "articleSection": "Conseils"
+})}} />
+
+<script type="application/ld+json" dangerouslySetInnerHTML={{__html: JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Qu'est-ce que le burn rate d'une startup ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Le burn rate est le montant net de trésorerie que votre startup consomme chaque mois. Le burn rate brut correspond à la totalité de vos dépenses mensuelles, tandis que le burn rate net soustrait vos revenus mensuels. C'est l'indicateur principal pour évaluer votre consommation de cash et calculer votre runway."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Combien de mois de runway faut-il conserver pour une startup ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "La recommandation standard est de maintenir un runway d'au moins 6 mois en permanence. Idéalement, visez 12 à 18 mois de runway, surtout si vous êtes en phase de pré-seed ou seed."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Comment améliorer rapidement la trésorerie de ma startup ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Les leviers les plus rapides sont : réduire les délais de paiement clients, allonger les délais fournisseurs, automatiser les relances pour récupérer les factures impayées plus vite, et couper les dépenses non essentielles. Connecter votre banque à un outil comme Newbi vous permet de visualiser en temps réel votre situation."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Faut-il un outil dédié pour gérer la trésorerie d'une startup ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Un tableur Excel peut suffire au tout début, mais un outil dédié comme Newbi offre la connexion bancaire automatique, le suivi en temps réel, l'automatisation des relances et un prévisionnel de trésorerie intégré, ce qui fait gagner un temps précieux et réduit le risque d'erreur."
+      }
+    }
+  ]
+})}} />

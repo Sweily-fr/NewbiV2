@@ -1,0 +1,393 @@
+---
+title: 'Facturation e-commerce : obligations pour les boutiques en ligne'
+description: >-
+  Tout savoir sur la facturation e-commerce : obligation de facturer, mentions
+  B2C, TVA, paiement en ligne et automatisation des factures.
+date: '2026-02-10'
+category: guide
+sector: Commerces / Retail
+keyword: facturation e-commerce boutique en ligne
+author: Newbi
+image: /blog/facture-e-commerce-boutique-en-ligne/hero.webp
+published: false
+publishDate: null
+---
+
+import Image from "next/image"
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex flex-wrap gap-2 mb-6">
+  <Badge>Guide</Badge>
+  <Badge variant="secondary">E-commerce</Badge>
+  <Badge variant="outline">8 min de lecture</Badge>
+</div>
+
+# Facturation e-commerce : obligations pour les boutiques en ligne
+
+La **facturation e-commerce** est un sujet incontournable pour tout entrepreneur qui vend en ligne. Que vous gériez une boutique Shopify, un site WooCommerce ou une marketplace, vous devez respecter des règles précises en matiere de facturation. Entre les obligations B2C, les mentions specifiques au commerce en ligne, la TVA intracommunautaire et les nouvelles exigences de facturation electronique, il est facile de s'y perdre. Ce guide complet vous explique tout ce que vous devez savoir pour facturer correctement depuis votre boutique en ligne.
+
+<figure>
+  <Image
+    src="/blog/facture-e-commerce-boutique-en-ligne/hero.webp"
+    alt="Facturation e-commerce pour les boutiques en ligne - obligations et bonnes pratiques"
+    width={1200}
+    height={630}
+    className="rounded-xl w-full"
+    priority
+  />
+  <figcaption className="text-center text-sm text-muted-foreground mt-2">
+    La facturation e-commerce : un pilier de la conformite pour les boutiques en ligne.
+  </figcaption>
+</figure>
+
+## Obligation de facturer en e-commerce : B2C et B2B
+
+### Ventes aux particuliers (B2C)
+
+Contrairement a une idee recue, la facture n'est **pas toujours obligatoire** pour les ventes aux particuliers en e-commerce. Voici les regles a retenir :
+
+- **La facture est obligatoire** si le montant de la transaction depasse **25 euros TTC**.
+- **La facture doit etre emise sur demande** du client, meme pour un montant inferieur a 25 euros.
+- Pour les **ventes a distance intracommunautaires**, la facture est systematiquement obligatoire, quel que soit le montant.
+- Un **ticket de caisse ou une note** peut suffire pour les petites transactions B2C en dessous du seuil, a condition que le client ne demande pas de facture.
+
+En pratique, la plupart des plateformes e-commerce generent automatiquement un document de vente pour chaque commande. Il est donc recommande de toujours emettre une facture, ne serait-ce que pour assurer une tracabilite comptable irreprochable.
+
+### Ventes aux professionnels (B2B)
+
+Pour les ventes B2B, la facture est **toujours obligatoire**, sans exception. Elle doit etre emise des la realisation de la livraison ou de la prestation de service. Toutes les [mentions obligatoires sur facture](/blog/mentions-obligatoires-facture) doivent y figurer.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Comparatif des obligations de facturation e-commerce : B2C vs B2B</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[250px]">Critere</TableHead>
+        <TableHead>B2C (particuliers)</TableHead>
+        <TableHead>B2B (professionnels)</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Facture obligatoire</TableCell>
+        <TableCell>Oui si montant &gt; 25 EUR TTC ou sur demande</TableCell>
+        <TableCell>Oui, systematiquement</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Mentions obligatoires</TableCell>
+        <TableCell>Mentions simplifiees possibles sous 150 EUR</TableCell>
+        <TableCell>Toutes les mentions legales requises</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Droit de retractation</TableCell>
+        <TableCell>14 jours obligatoire (mention sur facture)</TableCell>
+        <TableCell>Non obligatoire (sauf accord contractuel)</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">TVA</TableCell>
+        <TableCell>TVA incluse (prix TTC affiche)</TableCell>
+        <TableCell>TVA detaillee (HT + TVA + TTC)</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Numero de TVA</TableCell>
+        <TableCell>Non requis cote client</TableCell>
+        <TableCell>Obligatoire (vendeur et acheteur)</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Delai de paiement</TableCell>
+        <TableCell>Paiement immediat (en ligne)</TableCell>
+        <TableCell>Jusqu'a 60 jours (mentions penalites obligatoires)</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">E-reporting 2026</TableCell>
+        <TableCell>Obligatoire (transmission des donnees)</TableCell>
+        <TableCell>E-invoicing obligatoire (format structure)</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+## Mentions specifiques aux factures e-commerce
+
+Au-dela des [mentions obligatoires classiques](/blog/mentions-obligatoires-facture), les factures e-commerce doivent comporter des informations supplementaires liees a la vente a distance :
+
+### Droit de retractation (14 jours)
+
+La loi impose d'informer le consommateur de son **droit de retractation de 14 jours** a compter de la reception du produit. Cette mention doit figurer dans les conditions generales de vente (CGV) et il est fortement recommande de la rappeler sur la facture ou le document de vente. En cas d'absence de cette mention, le delai de retractation peut etre etendu jusqu'a **12 mois**.
+
+### Frais de livraison
+
+Les frais de livraison doivent apparaitre **distinctement** sur la facture. Le client doit pouvoir identifier clairement :
+
+- Le montant HT des produits
+- Le montant des frais de livraison (HT et TTC)
+- Le taux de TVA applicable aux frais de livraison
+- Le montant total TTC
+
+### Informations sur le vendeur
+
+La facture e-commerce doit mentionner l'identite complete du vendeur : denomination sociale, adresse du siege, numero SIREN/SIRET, numero de TVA intracommunautaire et, le cas echeant, le numero d'inscription au RCS ou au repertoire des metiers.
+
+## TVA e-commerce : regime OSS et IOSS
+
+La gestion de la TVA est l'un des aspects les plus complexes de la **facturation e-commerce boutique en ligne**, surtout lorsque vous vendez a des clients situes dans d'autres pays de l'Union europeenne. Consultez notre [guide complet sur les taux de TVA en France](/blog/taux-tva-france-guide-complet) pour maitriser les bases.
+
+### Le guichet unique OSS (One Stop Shop)
+
+Depuis juillet 2021, le regime **OSS** simplifie les obligations de TVA pour les ventes a distance intracommunautaires B2C. Au lieu de s'immatriculer dans chaque pays de l'UE ou vous vendez, vous pouvez :
+
+- Declarer et payer la TVA de tous les pays de l'UE via un **guichet unique** dans votre pays d'etablissement.
+- Appliquer le **taux de TVA du pays de destination** (et non celui de la France).
+- Deposer une **declaration trimestrielle** unique aupres de l'administration fiscale francaise.
+
+Ce regime s'applique des que le seuil de **10 000 euros de ventes annuelles** vers d'autres pays de l'UE est depasse. En dessous de ce seuil, vous pouvez continuer a appliquer la TVA francaise.
+
+### Le regime IOSS (Import One Stop Shop)
+
+Pour les ventes de biens importes de pays hors UE d'une valeur inferieure a **150 euros**, le regime **IOSS** permet de collecter et reverser la TVA au moment de la vente, evitant ainsi que le client final ne paie la TVA a l'importation.
+
+<div className="not-prose my-8">
+  <Callout variant="warning" title="E-reporting obligatoire des 2026">
+    A partir de **septembre 2026**, toutes les entreprises assujetties a la TVA en France devront transmettre leurs donnees de facturation B2C a l'administration fiscale via le **e-reporting**. Pour les transactions B2B, c'est la **facturation electronique** (e-invoicing) qui devient obligatoire. Anticipez des maintenant en adoptant un outil de facturation conforme. Decouvrez notre article sur la [facturation electronique obligatoire 2026](/blog/facturation-electronique-obligatoire-2026).
+  </Callout>
+</div>
+
+## Obligations des marketplaces
+
+Si vous vendez via une marketplace (Amazon, Etsy, Cdiscount, etc.), sachez que les regles de facturation presentent des specificites :
+
+- **La marketplace peut etre redevable de la TVA** a votre place pour certaines transactions (regime de "deemed supplier" pour les ventes facilitees par la plateforme).
+- Vous restez responsable de l'emission de vos factures pour les ventes directes, meme si la marketplace fournit un recapitulatif.
+- Les **commissions prelevees** par la marketplace doivent figurer dans votre comptabilite (ce sont des charges deductibles).
+- Vous devez conserver une **tracabilite complete** de toutes les transactions, y compris celles gerees par la plateforme.
+
+Pour les vendeurs multi-canaux, il est essentiel de centraliser la facturation afin d'eviter les doublons et les incoherences comptables. La gestion des devis et factures est egalement importante lorsque vous traitez des commandes personnalisees : consultez notre guide sur la [gestion des devis pour le commerce en ligne](/blog/gestion-devis-commerce-en-ligne).
+
+<figure>
+  <Image
+    src="/blog/facture-e-commerce-boutique-en-ligne/automatisation-facturation.webp"
+    alt="Automatisation de la facturation e-commerce avec Newbi"
+    width={1200}
+    height={630}
+    className="rounded-xl w-full"
+  />
+  <figcaption className="text-center text-sm text-muted-foreground mt-2">
+    Automatisez votre facturation e-commerce pour gagner du temps et rester conforme.
+  </figcaption>
+</figure>
+
+## Automatiser sa facturation e-commerce
+
+### Integration avec les plateformes e-commerce
+
+La facturation manuelle est incompatible avec le volume de commandes d'une boutique en ligne. L'automatisation est indispensable. Les solutions les plus courantes incluent :
+
+- **Shopify** : des applications natives ou tierces permettent de generer automatiquement des factures conformes a chaque commande.
+- **WooCommerce** : de nombreux plugins (WooCommerce PDF Invoices, etc.) automatisent la creation et l'envoi de factures.
+- **PrestaShop** : des modules de facturation integres gerent la numerotation sequentielle et les mentions legales.
+
+### Pourquoi choisir Newbi pour votre facturation e-commerce
+
+Newbi est une solution de facturation pensee pour les entrepreneurs et les TPE/PME qui vendent en ligne. Avec Newbi, vous beneficiez de :
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Generation automatique de factures conformes avec toutes les mentions obligatoires</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Gestion multi-taux de TVA (France, UE, export) et compatibilite OSS</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Numerotation sequentielle automatique et inalterable</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Mentions specifiques e-commerce (droit de retractation, frais de livraison)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Export comptable et preparation au e-reporting 2026</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Envoi automatique des factures par email a vos clients</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Tableau de bord pour suivre votre chiffre d'affaires en temps reel</span>
+  </div>
+</div>
+
+<div className="not-prose my-8">
+  <Callout variant="info" title="Astuce : automatisez avec Newbi">
+    Plutot que de gerer manuellement vos factures ou de multiplier les plugins, utilisez **Newbi** pour centraliser toute votre facturation e-commerce. Creez des factures conformes en quelques clics, suivez vos paiements et preparez-vous sereinement a la facturation electronique obligatoire. C'est simple, rapide et conforme a la legislation francaise.
+  </Callout>
+</div>
+
+<div className="not-prose flex justify-center my-8">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Automatiser ma facturation e-commerce</Link>
+  </Button>
+</div>
+
+## E-reporting 2026 : ce qui change pour le e-commerce
+
+L'entree en vigueur progressive de la **facturation electronique obligatoire** et du **e-reporting** impacte directement les boutiques en ligne :
+
+- **Grandes entreprises** : obligation de reception et d'emission des e-factures des septembre 2026.
+- **ETI et PME** : obligation d'emission echelonnee entre 2026 et 2027.
+- **Micro-entreprises** : obligation de reception des septembre 2026, emission a partir de septembre 2027.
+
+Pour le e-commerce B2C, le **e-reporting** impose de transmettre les donnees de transaction (montant, TVA, date) a l'administration fiscale via une **plateforme de dematerialisation partenaire (PDP)**. Il ne s'agit pas d'envoyer la facture elle-meme, mais les donnees structurees associees.
+
+Preparez-vous des maintenant en choisissant un outil de facturation compatible avec ces nouvelles obligations. Retrouvez tous les details dans notre article dedie a la [facturation electronique obligatoire en 2026](/blog/facturation-electronique-obligatoire-2026).
+
+## En resume
+
+La **facturation e-commerce** obeit a des regles precises qu'il est essentiel de maitriser pour eviter les sanctions et assurer la confiance de vos clients. Voici les points cles a retenir :
+
+- La facture est obligatoire en B2C au-dessus de 25 euros TTC et toujours en B2B.
+- Les mentions specifiques e-commerce (droit de retractation, frais de livraison) doivent figurer sur vos documents.
+- La TVA intracommunautaire se gere via les regimes OSS et IOSS pour simplifier vos obligations.
+- Les vendeurs sur marketplace doivent rester vigilants quant a la repartition des responsabilites fiscales.
+- L'automatisation de la facturation est indispensable pour gerer le volume de commandes.
+- Le e-reporting 2026 impose de nouvelles obligations de transmission des donnees : anticipez des maintenant.
+
+<div className="not-prose flex justify-center my-10">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Creer mon compte Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions frequentes
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="faq-1">
+      <AccordionTrigger>Suis-je oblige d'emettre une facture pour chaque vente en ligne ?</AccordionTrigger>
+      <AccordionContent>
+        En B2C, la facture est obligatoire si le montant depasse 25 euros TTC ou si le client en fait la demande. En B2B, la facture est systematiquement obligatoire. En pratique, il est recommande de generer une facture pour chaque transaction afin de garantir une tracabilite comptable complete.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-2">
+      <AccordionTrigger>Quelles mentions specifiques doivent figurer sur une facture e-commerce ?</AccordionTrigger>
+      <AccordionContent>
+        En plus des mentions obligatoires classiques (identite du vendeur, numero de facture, date, detail des produits, TVA, etc.), une facture e-commerce doit mentionner le droit de retractation de 14 jours et detailler les frais de livraison separement. Le numero de TVA intracommunautaire est egalement requis pour les ventes transfrontalieres.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-3">
+      <AccordionTrigger>Comment gerer la TVA quand je vends dans plusieurs pays de l'UE ?</AccordionTrigger>
+      <AccordionContent>
+        Le regime OSS (One Stop Shop) vous permet de declarer et payer la TVA de tous les pays de l'UE via un guichet unique en France. Vous appliquez le taux de TVA du pays de destination du client. Ce regime s'applique des que vos ventes intracommunautaires depassent 10 000 euros par an.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-4">
+      <AccordionTrigger>Qu'est-ce que le e-reporting et quand entre-t-il en vigueur ?</AccordionTrigger>
+      <AccordionContent>
+        Le e-reporting est l'obligation de transmettre les donnees de vos transactions B2C (montant, TVA, date) a l'administration fiscale via une plateforme de dematerialisation partenaire. Il entre en vigueur a partir de septembre 2026 pour les grandes entreprises, puis progressivement pour les PME et micro-entreprises. Cette obligation concerne directement les boutiques e-commerce.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-5">
+      <AccordionTrigger>Puis-je automatiser la facturation de ma boutique en ligne avec Newbi ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, Newbi vous permet de creer des factures conformes automatiquement, avec toutes les mentions obligatoires, la gestion multi-taux de TVA et la numerotation sequentielle. Vous pouvez centraliser la facturation de tous vos canaux de vente et vous preparer au e-reporting 2026 en toute serenite.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>
+
+<script
+  type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "Facturation e-commerce : obligations pour les boutiques en ligne",
+      "description": "Tout savoir sur la facturation e-commerce : obligation de facturer, mentions B2C, TVA, paiement en ligne et automatisation des factures.",
+      "image": "https://newbi.fr/blog/facture-e-commerce-boutique-en-ligne/hero.webp",
+      "author": {
+        "@type": "Organization",
+        "name": "Newbi",
+        "url": "https://newbi.fr"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "Newbi",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://newbi.fr/logo.png"
+        }
+      },
+      "datePublished": "2026-02-10",
+      "dateModified": "2026-02-10",
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "https://newbi.fr/blog/facture-e-commerce-boutique-en-ligne"
+      },
+      "keywords": "facturation e-commerce boutique en ligne, facture e-commerce, TVA e-commerce, OSS IOSS, e-reporting 2026, facturation electronique",
+      "articleSection": "Guide",
+      "inLanguage": "fr-FR"
+    })
+  }}
+/>
+
+<script
+  type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Suis-je oblige d'emettre une facture pour chaque vente en ligne ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "En B2C, la facture est obligatoire si le montant depasse 25 euros TTC ou si le client en fait la demande. En B2B, la facture est systematiquement obligatoire. En pratique, il est recommande de generer une facture pour chaque transaction afin de garantir une tracabilite comptable complete."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Quelles mentions specifiques doivent figurer sur une facture e-commerce ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "En plus des mentions obligatoires classiques, une facture e-commerce doit mentionner le droit de retractation de 14 jours et detailler les frais de livraison separement. Le numero de TVA intracommunautaire est egalement requis pour les ventes transfrontalieres."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Comment gerer la TVA quand je vends dans plusieurs pays de l'UE ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Le regime OSS (One Stop Shop) vous permet de declarer et payer la TVA de tous les pays de l'UE via un guichet unique en France. Vous appliquez le taux de TVA du pays de destination du client. Ce regime s'applique des que vos ventes intracommunautaires depassent 10 000 euros par an."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Qu'est-ce que le e-reporting et quand entre-t-il en vigueur ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Le e-reporting est l'obligation de transmettre les donnees de vos transactions B2C a l'administration fiscale via une plateforme de dematerialisation partenaire. Il entre en vigueur a partir de septembre 2026 pour les grandes entreprises, puis progressivement pour les PME et micro-entreprises."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Puis-je automatiser la facturation de ma boutique en ligne avec Newbi ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Oui, Newbi vous permet de creer des factures conformes automatiquement, avec toutes les mentions obligatoires, la gestion multi-taux de TVA et la numerotation sequentielle. Vous pouvez centraliser la facturation de tous vos canaux de vente et vous preparer au e-reporting 2026."
+          }
+        }
+      ]
+    })
+  }}
+/>

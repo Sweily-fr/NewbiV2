@@ -1,0 +1,413 @@
+---
+title: 'Comment faire un devis professionnel : guide complet'
+description: >-
+  Apprenez à créer un devis professionnel conforme : mentions obligatoires,
+  modèle, conseils de rédaction et outils en ligne pour le générer.
+date: '2026-02-10'
+category: guide
+sector: null
+keyword: faire un devis professionnel
+author: Newbi
+image: /blog/comment-faire-devis-professionnel/hero.webp
+published: false
+publishDate: null
+---
+
+import Image from "next/image"
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex gap-2 my-4">
+  <Badge>Guide</Badge>
+  <Badge variant="secondary">Devis</Badge>
+  <Badge variant="outline">9 min de lecture</Badge>
+</div>
+
+Un **devis professionnel** bien rédigé est votre meilleur outil de vente. C'est le premier document officiel que votre prospect reçoit : il reflète votre sérieux, votre expertise et votre professionnalisme. Ce guide vous explique comment créer un devis conforme aux exigences légales, tout en maximisant vos chances de le convertir en commande.
+
+<div className="not-prose my-8 relative aspect-video overflow-hidden rounded-lg">
+  <Image
+    src="/blog/comment-faire-devis-professionnel/hero.webp"
+    alt="Interface Newbi de création d'un devis professionnel avec toutes les mentions obligatoires"
+    fill
+    className="object-cover"
+    priority
+    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 720px"
+  />
+</div>
+
+<div className="not-prose flex justify-center my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Créer mes devis avec Newbi</Link>
+  </Button>
+</div>
+
+## Qu'est-ce qu'un devis et quand est-il obligatoire ?
+
+Un devis est un document commercial qui détaille les prestations ou produits proposés, avec leurs prix, avant la conclusion de la vente. Il devient un contrat dès qu'il est signé par le client.
+
+<figure className="not-prose my-8">
+  <div className="relative aspect-video overflow-hidden rounded-lg border">
+    <Image
+      src="/blog/comment-faire-devis-professionnel/section-1.webp"
+      alt="Schéma du cycle de vie d'un devis : création, envoi, signature, conversion en facture"
+      fill
+      className="object-cover"
+      sizes="(max-width: 768px) 100vw, 720px"
+    />
+  </div>
+  <figcaption className="mt-2 text-center text-sm text-muted-foreground">
+    Le cycle de vie d'un devis professionnel
+  </figcaption>
+</figure>
+
+### Quand le devis est-il obligatoire ?
+
+Le devis est obligatoire dans plusieurs situations :
+
+- **Travaux et dépannage à domicile** : obligatoire dès 150 € TTC
+- **Déménagement** : toujours obligatoire
+- **Services à la personne** : obligatoire au-delà d'un montant mensuel de 100 € TTC
+- **Santé** : obligatoire pour les actes supérieurs à 70 € ou non remboursés
+- **BTP** : fortement recommandé, obligatoire dans certains cas (voir notre guide sur le [devis travaux BTP](/blog/devis-travaux-btp-guide))
+- **À la demande du client** : vous devez toujours fournir un devis si le client le demande
+
+<Callout type="info">
+  Même quand le devis n'est pas légalement obligatoire, c'est une bonne pratique commerciale de toujours en proposer un. Il encadre la relation et évite les litiges.
+</Callout>
+
+## Les mentions obligatoires sur un devis
+
+Votre devis doit contenir les informations suivantes pour être juridiquement valide :
+
+### Informations sur votre entreprise
+
+- Nom ou raison sociale
+- Adresse du siège
+- Numéro SIREN ou SIRET
+- Forme juridique et capital social (si société)
+- Numéro de TVA intracommunautaire (si assujetti)
+- Numéro d'assurance professionnelle et zone de couverture (si applicable, notamment dans le [BTP](/blog/obligation-assurance-decennale-artisan))
+
+### Informations sur le client
+
+- Nom ou raison sociale
+- Adresse
+
+### Informations sur le devis
+
+- La mention **"Devis"** (et non "Proposition commerciale" ou "Offre")
+- Date du devis
+- Numéro du devis
+- **Durée de validité** du devis
+- Désignation détaillée de chaque prestation ou produit
+- Quantité et prix unitaire HT
+- Montant total HT et TTC
+- Taux de TVA applicable (ou mention d'exonération)
+- Conditions de paiement
+- Mention du droit de rétractation (si prestation à un consommateur)
+
+<div className="not-prose my-8 overflow-x-auto">
+  <Table>
+    <TableCaption>Checklist des mentions obligatoires sur un devis</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead>Mention</TableHead>
+        <TableHead>Obligatoire</TableHead>
+        <TableHead>Détail</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell>Mot "Devis"</TableCell>
+        <TableCell>✅</TableCell>
+        <TableCell>Doit apparaître clairement</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell>Date et numéro</TableCell>
+        <TableCell>✅</TableCell>
+        <TableCell>Numérotation séquentielle recommandée</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell>Durée de validité</TableCell>
+        <TableCell>✅</TableCell>
+        <TableCell>En général 30, 60 ou 90 jours</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell>Détail des prestations</TableCell>
+        <TableCell>✅</TableCell>
+        <TableCell>Description, quantité, prix unitaire</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell>Montant total HT et TTC</TableCell>
+        <TableCell>✅</TableCell>
+        <TableCell>Avec taux de TVA applicable</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell>Conditions de paiement</TableCell>
+        <TableCell>✅</TableCell>
+        <TableCell>Échéances, acompte éventuel</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell>Signature client</TableCell>
+        <TableCell>✅</TableCell>
+        <TableCell>Avec mention "Bon pour accord"</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+## Comment rédiger un devis qui convertit
+
+Au-delà de la conformité légale, un devis doit **convaincre** votre prospect de signer. Voici les bonnes pratiques :
+
+### 1. Soignez la présentation
+
+Un devis professionnel doit être visuellement soigné :
+
+- Utilisez votre **logo** et vos couleurs
+- Adoptez une mise en page **aérée et lisible**
+- Choisissez une **police professionnelle** (pas de Comic Sans !)
+- Ajoutez un **en-tête** et un **pied de page** cohérents
+
+### 2. Détaillez les prestations
+
+Ne restez pas vague. Un client veut savoir exactement ce qu'il achète :
+
+- ❌ "Création site web — 3 000 €"
+- ✅ "Création site web vitrine 5 pages (Accueil, À propos, Services, Portfolio, Contact) — Design responsive, intégration CMS, optimisation SEO de base — 3 000 €"
+
+### 3. Structurez en lots ou phases
+
+Pour les projets complexes, découpez en lots :
+
+- **Phase 1** : Audit et cahier des charges — 500 €
+- **Phase 2** : Design et maquettes — 1 200 €
+- **Phase 3** : Développement et intégration — 1 800 €
+- **Phase 4** : Recette et mise en ligne — 500 €
+
+Cette approche rassure le client sur le déroulement du projet.
+
+<figure className="not-prose my-8">
+  <div className="relative aspect-video overflow-hidden rounded-lg border">
+    <Image
+      src="/blog/comment-faire-devis-professionnel/structure-devis.webp"
+      alt="Exemple de devis structuré en phases avec détail des prestations"
+      fill
+      className="object-cover"
+      sizes="(max-width: 768px) 100vw, 720px"
+    />
+  </div>
+  <figcaption className="mt-2 text-center text-sm text-muted-foreground">
+    Exemple de devis structuré en phases de projet
+  </figcaption>
+</figure>
+
+### 4. Ajoutez des conditions claires
+
+Précisez :
+
+- Les **délais de réalisation**
+- Les **conditions de paiement** ([acompte](/blog/quest-ce-que-acompte-facture), échelonnement)
+- Ce qui est **inclus et exclu**
+- Les conditions de **révision de prix**
+
+### 5. Fixez une durée de validité stratégique
+
+La durée de validité crée un sentiment d'urgence :
+
+- **30 jours** : pour les prestations standards
+- **15 jours** : pour créer de l'urgence sur les offres promotionnelles
+- **60-90 jours** : pour les projets complexes nécessitant une réflexion
+
+<Callout type="tip">
+  Utilisez un logiciel comme [Newbi](/produits/devis) pour créer des devis professionnels en quelques minutes, avec toutes les mentions pré-remplies et un design soigné automatique.
+</Callout>
+
+<div className="not-prose flex justify-center my-6">
+  <Button asChild variant="outline">
+    <Link href="/produits/devis">Découvrir les devis Newbi</Link>
+  </Button>
+</div>
+
+## Convertir un devis en facture
+
+Une fois le devis signé, vous devez le convertir en facture. Avec un logiciel de facturation comme Newbi, cette opération se fait en **un clic** : toutes les informations du devis sont reprises automatiquement dans la facture.
+
+Pour maximiser votre taux de conversion, consultez nos [7 conseils pour convertir plus de devis en factures](/blog/conseils-convertir-devis-facture).
+
+## La différence entre devis, bon de commande et facture proforma
+
+Ces documents sont souvent confondus :
+
+<div className="not-prose my-8 overflow-x-auto">
+  <Table>
+    <TableCaption>Différences entre devis, bon de commande et facture proforma</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead>Document</TableHead>
+        <TableHead>Rôle</TableHead>
+        <TableHead>Valeur juridique</TableHead>
+        <TableHead>Quand l'utiliser</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-semibold">Devis</TableCell>
+        <TableCell>Proposition commerciale détaillée</TableCell>
+        <TableCell>Contrat une fois signé</TableCell>
+        <TableCell>Avant la vente</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-semibold">Bon de commande</TableCell>
+        <TableCell>Confirmation de commande</TableCell>
+        <TableCell>Engagement d'achat</TableCell>
+        <TableCell>Après acceptation du devis</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-semibold">Facture proforma</TableCell>
+        <TableCell>Estimation avant livraison</TableCell>
+        <TableCell>Aucune (informatif)</TableCell>
+        <TableCell>Import/export, demande de financement</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+Pour en savoir plus, consultez nos articles sur le [bon de commande](/blog/quest-ce-que-bon-commande) et la [facture proforma](/blog/facture-proforma-guide-utilisation).
+
+<figure className="not-prose my-8">
+  <div className="relative aspect-video overflow-hidden rounded-lg border">
+    <Image
+      src="/blog/comment-faire-devis-professionnel/workflow.webp"
+      alt="Workflow commercial : devis, bon de commande, facture proforma et facture finale"
+      fill
+      className="object-cover"
+      sizes="(max-width: 768px) 100vw, 720px"
+    />
+  </div>
+  <figcaption className="mt-2 text-center text-sm text-muted-foreground">
+    Le workflow commercial du devis à la facture
+  </figcaption>
+</figure>
+
+## Les erreurs à éviter sur vos devis
+
+Évitez ces erreurs fréquentes qui font fuir les clients ou vous exposent juridiquement :
+
+1. **Descriptions trop vagues** qui laissent place à l'interprétation
+2. **Oubli de la durée de validité** qui peut engager indéfiniment
+3. **Pas de conditions de paiement** claires
+4. **Présentation bâclée** qui ne reflète pas votre professionnalisme
+5. **Prix sans détail** qui empêche le client de comprendre la valeur
+
+Pour approfondir, lisez notre article sur les [8 erreurs sur vos devis qui font perdre des clients](/blog/erreurs-devis-perdre-clients).
+
+<Callout type="warning">
+  Un devis signé a **valeur de contrat**. Ne proposez jamais dans un devis des conditions que vous ne pouvez pas tenir (délais, prix, périmètre). Toute modification après signature nécessite un avenant.
+</Callout>
+
+## En résumé
+
+Créer un **devis professionnel** qui convertit repose sur trois piliers :
+
+- La **conformité légale** : toutes les mentions obligatoires sont présentes
+- La **clarté** : le client comprend exactement ce qu'il achète et à quel prix
+- Le **professionnalisme** : la présentation reflète la qualité de votre travail
+
+Newbi vous permet de créer des devis professionnels conformes en quelques minutes, de les envoyer en un clic et de les convertir en factures automatiquement. Le tout avec un suivi en temps réel des devis en attente.
+
+<div className="not-prose flex justify-center my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement pendant 30 jours</Link>
+  </Button>
+</div>
+
+## Questions fréquentes
+
+<div className="not-prose my-12">
+  <Accordion type="multiple">
+    <AccordionItem value="faq-0">
+      <AccordionTrigger>Un devis est-il obligatoire pour toutes les prestations ?</AccordionTrigger>
+      <AccordionContent>
+        Non, le devis n'est pas toujours obligatoire mais il est fortement recommandé. Il est obligatoire pour les travaux à domicile de plus de 150 € TTC, les déménagements, certains services à la personne et les actes médicaux supérieurs à 70 €. Dans tous les cas, le client peut en demander un.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-1">
+      <AccordionTrigger>Quelle est la durée de validité idéale d'un devis ?</AccordionTrigger>
+      <AccordionContent>
+        La durée de validité standard est de 30 jours. Pour les prestations urgentes ou promotionnelles, 15 jours créent un sentiment d'urgence. Pour les projets complexes nécessitant une réflexion, 60 à 90 jours sont plus appropriés. L'important est de toujours indiquer une date limite.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-2">
+      <AccordionTrigger>Un devis signé peut-il être annulé ?</AccordionTrigger>
+      <AccordionContent>
+        Un devis signé a valeur de contrat. Le client dispose d'un droit de rétractation de 14 jours pour les ventes à distance ou hors établissement. En dehors de ce cas, l'annulation nécessite l'accord des deux parties. Des pénalités peuvent être prévues dans les conditions du devis.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-3">
+      <AccordionTrigger>Faut-il numéroter ses devis comme ses factures ?</AccordionTrigger>
+      <AccordionContent>
+        La numérotation séquentielle n'est pas une obligation légale pour les devis (contrairement aux factures), mais c'est une bonne pratique recommandée. Elle facilite le suivi et le classement. Utilisez un format distinct de vos factures, par exemple D-2026-001 pour les devis et FA-2026-001 pour les factures.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-4">
+      <AccordionTrigger>Comment convertir automatiquement un devis en facture ?</AccordionTrigger>
+      <AccordionContent>
+        Avec un logiciel de facturation comme Newbi, vous pouvez convertir un devis en facture en un clic. Toutes les informations (client, prestations, montants) sont automatiquement reprises. Cela vous fait gagner du temps et évite les erreurs de ressaisie.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>
+
+<script type="application/ld+json" dangerouslySetInnerHTML={{__html: JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Un devis est-il obligatoire pour toutes les prestations ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Non, le devis n'est pas toujours obligatoire mais il est fortement recommandé. Il est obligatoire pour les travaux à domicile de plus de 150 € TTC, les déménagements, certains services à la personne et les actes médicaux supérieurs à 70 €."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Quelle est la durée de validité idéale d'un devis ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "30 jours est le standard. 15 jours pour créer de l'urgence, 60-90 jours pour les projets complexes."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Un devis signé peut-il être annulé ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Un devis signé a valeur de contrat. Droit de rétractation de 14 jours pour les ventes à distance. Sinon, l'annulation nécessite l'accord des deux parties."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Faut-il numéroter ses devis ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "La numérotation séquentielle n'est pas obligatoire pour les devis mais c'est une bonne pratique recommandée."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Comment convertir un devis en facture automatiquement ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Avec un logiciel comme Newbi, convertissez un devis en facture en un clic avec reprise automatique de toutes les informations."
+      }
+    }
+  ]
+})}} />
