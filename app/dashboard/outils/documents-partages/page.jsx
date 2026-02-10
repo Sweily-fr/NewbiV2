@@ -1044,17 +1044,6 @@ export default function DocumentsPartagesPage() {
         <div className="px-3 py-3 sm:px-6 sm:py-4">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 min-w-0">
-              {/* Mobile sidebar toggle */}
-              {isMobile && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="shrink-0 md:hidden"
-                  onClick={() => setMobileSidebarOpen(true)}
-                >
-                  <PanelLeft className="h-5 w-5" />
-                </Button>
-              )}
               <h1 className="text-lg sm:text-2xl font-medium truncate">Documents partagés</h1>
             </div>
             <div className="flex items-center gap-1.5 sm:gap-2">
@@ -1133,7 +1122,7 @@ export default function DocumentsPartagesPage() {
           <Sheet open={mobileSidebarOpen} onOpenChange={setMobileSidebarOpen}>
             <SheetContent side="left" className="w-[280px] p-0 flex flex-col">
               <SheetTitle className="sr-only">Explorateur de fichiers</SheetTitle>
-              <div className="px-3 h-14 border-b flex items-center justify-between">
+              <div className="px-3 pr-12 h-14 border-b flex items-center justify-between">
                 <span className="text-xs font-medium text-muted-foreground/80 uppercase tracking-wide">
                   Explorateur
                 </span>
@@ -1462,65 +1451,74 @@ export default function DocumentsPartagesPage() {
               </div>
             )}
 
-            <div className="flex items-center justify-between gap-2 sm:gap-4">
-              {/* Breadcrumb / Trash header */}
-              {showTrash ? (
-                <div className="flex items-center gap-2 min-w-0 flex-1">
-                  <Trash2 className="h-4 w-4 text-muted-foreground shrink-0" />
-                  <span className="font-normal text-sm sm:text-base">Corbeille</span>
-                  <span className="text-xs font-normal text-muted-foreground">
-                    ({trashItemsCount})
-                  </span>
-                </div>
-              ) : (
-                <div className="flex items-center gap-1 min-w-0 flex-1 overflow-hidden">
-                  <button
-                    onClick={() => {
-                      setSelectedFolder(null);
-                      setShowTrash(false);
-                    }}
-                    className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors shrink-0"
-                  >
-                    <Home className="h-4 w-4" />
-                  </button>
-                  {breadcrumbPath.map((item, index) => (
-                    <div
-                      key={item.id || "inbox"}
-                      className="flex items-center gap-1 min-w-0"
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 sm:gap-4">
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                {/* Mobile sidebar toggle + separator */}
+                {isMobile && (
+                  <>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="shrink-0 h-8 w-8"
+                      onClick={() => setMobileSidebarOpen(true)}
                     >
-                      <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
-                      <button
-                        onClick={() => {
-                          setSelectedFolder(item.id);
-                          setShowTrash(false);
-                        }}
-                        className={cn(
-                          "truncate max-w-[80px] sm:max-w-[150px] text-xs sm:text-sm transition-colors",
-                          index === breadcrumbPath.length - 1
-                            ? "font-medium text-foreground"
-                            : "text-muted-foreground hover:text-foreground",
-                        )}
-                      >
-                        {item.isInbox ? (
-                          <span className="flex items-center gap-1">
-                            <Inbox className="h-3.5 w-3.5 text-amber-500" />
-                            <span className="hidden sm:inline">{item.name}</span>
-                            <span className="sm:hidden">Inbox</span>
-                          </span>
-                        ) : (
-                          item.name
-                        )}
-                      </button>
-                    </div>
-                  ))}
-                  <span className="text-xs text-muted-foreground ml-1 shrink-0">
-                    ({filteredDocuments.length}
-                    {hasMore ? "+" : ""})
-                  </span>
-                </div>
-              )}
+                      <PanelLeft className="h-5 w-5" />
+                    </Button>
+                    <Separator orientation="vertical" className="h-5" />
+                  </>
+                )}
 
-              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                {/* Breadcrumb / Trash header */}
+                {showTrash ? (
+                  <>
+                    <Trash2 className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <span className="font-normal text-sm sm:text-base">Corbeille</span>
+                    <span className="text-xs font-normal text-muted-foreground">
+                      ({trashItemsCount})
+                    </span>
+                  </>
+                ) : (
+                  <div className="flex items-center gap-1 min-w-0 flex-1 overflow-hidden">
+                    <button
+                      onClick={() => {
+                        setSelectedFolder(null);
+                        setShowTrash(false);
+                      }}
+                      className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors shrink-0"
+                    >
+                      <Home className="h-4 w-4" />
+                    </button>
+                    {breadcrumbPath.map((item, index) => (
+                      <div
+                        key={item.id || "inbox"}
+                        className="flex items-center gap-1 min-w-0"
+                      >
+                        <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+                        <button
+                          onClick={() => {
+                            setSelectedFolder(item.id);
+                            setShowTrash(false);
+                          }}
+                          className={cn(
+                            "truncate max-w-[80px] sm:max-w-[150px] text-xs sm:text-sm transition-colors",
+                            index === breadcrumbPath.length - 1
+                              ? "font-medium text-foreground"
+                              : "text-muted-foreground hover:text-foreground",
+                          )}
+                        >
+                          {item.name}
+                        </button>
+                      </div>
+                    ))}
+                    <span className="text-xs text-muted-foreground ml-1 shrink-0">
+                      ({filteredDocuments.length}
+                      {hasMore ? "+" : ""})
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 ml-auto">
                 {showTrash ? (
                   /* Trash actions */
                   <>

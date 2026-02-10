@@ -4,18 +4,14 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/src/components/ui/sonner';
 import { Button } from '@/src/components/ui/button';
-import { ButtonGroup, ButtonGroupSeparator } from '@/src/components/ui/button-group';
 import { Badge } from '@/src/components/ui/badge';
-import { Input } from '@/src/components/ui/input';
-import { Plus, Edit2, Trash2, Users, Search, CircleXIcon, MoreHorizontal, ChevronFirstIcon, ChevronLastIcon, ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
+import { Edit2, Trash2, Users, MoreHorizontal, ChevronFirstIcon, ChevronLastIcon, ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@/src/components/ui/tooltip';
-import { cn } from '@/src/lib/utils';
-import CreateListDialog from './create-list-dialog';
 import EditListDialog from './edit-list-dialog';
 import DeleteListDialog from './delete-list-dialog';
 import ListClientsView from './list-clients-view';
@@ -58,13 +54,11 @@ import {
   flexRender,
 } from '@tanstack/react-table';
 
-export default function ClientListsView({ workspaceId, lists, onListsUpdated, selectedList: initialSelectedList, onSelectListChange }) {
+export default function ClientListsView({ workspaceId, lists, onListsUpdated, selectedList: initialSelectedList, onSelectListChange, globalFilter = '', onCreateList }) {
   const router = useRouter();
   const [selectedList, setSelectedList] = useState(initialSelectedList || null);
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [editingList, setEditingList] = useState(null);
   const [deletingList, setDeletingList] = useState(null);
-  const [globalFilter, setGlobalFilter] = useState('');
   const { deleteList } = useDeleteClientList();
 
   // Mettre à jour selectedList quand initialSelectedList change
@@ -234,7 +228,6 @@ export default function ClientListsView({ workspaceId, lists, onListsUpdated, se
       rowSelection,
     },
     onRowSelectionChange: setRowSelection,
-    onGlobalFilterChange: setGlobalFilter,
     globalFilterFn: (row, columnId, filterValue) => {
       const name = row.original.name?.toLowerCase() || '';
       const description = row.original.description?.toLowerCase() || '';
@@ -258,39 +251,9 @@ export default function ClientListsView({ workspaceId, lists, onListsUpdated, se
 
   return (
     <div className="flex flex-col h-[calc(100vh-64px)] overflow-hidden">
-      {/* Header */}
-      <div className="flex items-start justify-between px-4 sm:px-6 pt-4 sm:pt-6 flex-shrink-0">
-        <div>
-          <h1 className="text-2xl font-medium mb-2">Mes listes</h1>
-        </div>
-        <ButtonGroup>
-          <Button onClick={() => setShowCreateDialog(true)} className="font-normal bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90">
-            <Plus className="h-4 w-4 mr-2" />
-            Nouvelle liste
-          </Button>
-          <ButtonGroupSeparator />
-          <Button onClick={() => setShowCreateDialog(true)} size="icon" className="bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90">
-            <Plus size={16} aria-hidden="true" />
-          </Button>
-        </ButtonGroup>
-      </div>
-
-      {/* Search Bar */}
-      <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-4 flex-shrink-0">
-        <div className="relative max-w-md">
-          <Input
-            placeholder="Rechercher une liste..."
-            value={globalFilter ?? ""}
-            onChange={(event) => setGlobalFilter(event.target.value)}
-            className="w-full sm:w-[400px] ps-9"
-          />
-          <div className="text-muted-foreground/80 pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3">
-            <Search size={16} aria-hidden="true" />
-          </div>
-        </div>
-
-        {/* Bulk delete */}
-        {selectedRowsData.length > 0 && (
+      {/* Bulk actions */}
+      {selectedRowsData.length > 0 && (
+        <div className="flex items-center justify-end px-4 sm:px-6 py-2 flex-shrink-0">
           <AlertDialog open={isDeleteMultipleOpen} onOpenChange={setIsDeleteMultipleOpen}>
             <AlertDialogTrigger asChild>
               <Button variant="destructive">
@@ -336,8 +299,8 @@ export default function ClientListsView({ workspaceId, lists, onListsUpdated, se
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Table */}
       {lists?.length === 0 && !globalFilter ? (
@@ -352,7 +315,7 @@ export default function ClientListsView({ workspaceId, lists, onListsUpdated, se
               </p>
             </div>
             <Button
-              onClick={() => setShowCreateDialog(true)}
+              onClick={onCreateList}
               className="flex items-center gap-2 font-normal"
             >
               Créer votre première liste
@@ -535,13 +498,6 @@ export default function ClientListsView({ workspaceId, lists, onListsUpdated, se
           </div>
         </div>
       )}
-
-      <CreateListDialog
-        open={showCreateDialog}
-        onOpenChange={setShowCreateDialog}
-        workspaceId={workspaceId}
-        onListCreated={onListsUpdated}
-      />
 
       {editingList && (
         <EditListDialog
