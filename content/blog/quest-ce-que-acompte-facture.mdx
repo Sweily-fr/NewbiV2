@@ -1,0 +1,357 @@
+---
+title: Qu'est-ce qu'un acompte sur facture ? Règles et facturation
+description: >-
+  Tout savoir sur l'acompte : définition, différence avec les arrhes,
+  obligations de facturation, TVA sur acompte et modèle de facture d'acompte.
+date: '2026-02-10'
+category: glossaire
+sector: null
+keyword: acompte facture règles
+author: Newbi
+image: /blog/quest-ce-que-acompte-facture/hero.webp
+published: false
+publishDate: null
+---
+
+import Image from "next/image"
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Glossaire</Badge>
+  <Badge variant="outline">7 min de lecture</Badge>
+</div>
+
+# Qu'est-ce qu'un acompte sur facture ? Règles et facturation
+
+L'**acompte facture** est un outil incontournable pour sécuriser vos transactions commerciales. Que vous soyez freelance, artisan ou dirigeant de PME, demander un acompte avant de commencer une prestation vous protège financièrement et engage fermement votre client. Mais quelles sont les règles exactes qui encadrent la facture d'acompte ? Comment la distinguer des arrhes ? Quelle TVA appliquer et quand ? Ce guide complet répond à toutes vos questions sur l'**acompte sur facture** et vous accompagne pas à pas dans sa mise en place.
+
+<figure>
+  <Image
+    src="/blog/quest-ce-que-acompte-facture/hero.webp"
+    alt="Acompte sur facture : définition, règles et obligations de facturation"
+    width={1200}
+    height={630}
+    className="rounded-lg"
+    priority
+  />
+  <figcaption className="text-center text-sm text-muted-foreground mt-2">
+    L'acompte sur facture sécurise vos transactions et engage les deux parties.
+  </figcaption>
+</figure>
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Créer ma première facture d'acompte gratuitement</Link>
+  </Button>
+</div>
+
+## Définition de l'acompte : un engagement ferme
+
+Un **acompte** est un versement partiel effectué par le client avant la réalisation complète d'une prestation de service ou la livraison d'un bien. Contrairement à ce que beaucoup pensent, l'acompte ne constitue pas une simple avance : il représente un **engagement ferme et définitif** des deux parties.
+
+Concrètement, lorsqu'un client verse un acompte :
+
+- Le **prestataire s'engage** à réaliser la prestation ou livrer le bien convenu.
+- Le **client s'engage** à payer le solde restant à l'issue de la prestation.
+
+L'acompte est par nature **non remboursable**, sauf accord exprès entre les parties. Si le client annule la commande après avoir versé un acompte, le prestataire est en droit de conserver la somme et peut même réclamer des dommages et intérêts pour le préjudice subi. Réciproquement, si le prestataire ne remplit pas ses obligations, le client peut exiger le remboursement de l'acompte et demander réparation.
+
+Cette force juridique fait de l'acompte un outil de sécurisation particulièrement efficace, notamment pour les projets de grande envergure ou les prestations nécessitant un investissement initial important. C'est pourquoi il est courant de le voir mentionné dès l'étape du [devis professionnel](/blog/comment-faire-devis-professionnel).
+
+## Acompte, arrhes et provision : quelles différences ?
+
+La confusion entre acompte, arrhes et provision est fréquente. Pourtant, ces trois notions ont des implications juridiques très différentes. Voici un comparatif clair pour vous aider à choisir la formule adaptée à votre activité.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Comparatif entre acompte, arrhes et provision</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[150px]">Critère</TableHead>
+        <TableHead>Acompte</TableHead>
+        <TableHead>Arrhes</TableHead>
+        <TableHead>Provision</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Définition</TableCell>
+        <TableCell>Versement partiel engageant les deux parties à exécuter le contrat</TableCell>
+        <TableCell>Somme versée permettant à chaque partie de se rétracter</TableCell>
+        <TableCell>Somme versée pour couvrir des frais futurs estimés</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Engagement</TableCell>
+        <TableCell>Ferme et définitif pour les deux parties</TableCell>
+        <TableCell>Facultatif : possibilité de rétractation</TableCell>
+        <TableCell>Variable selon le contrat</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Remboursement</TableCell>
+        <TableCell>Non remboursable (sauf accord ou faute du prestataire)</TableCell>
+        <TableCell>Client : perd les arrhes. Prestataire : rembourse le double</TableCell>
+        <TableCell>Régularisé sur la facture finale (trop-perçu remboursé)</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">TVA</TableCell>
+        <TableCell>Exigible selon la nature de l'opération (encaissement ou livraison)</TableCell>
+        <TableCell>TVA exigible uniquement si le contrat est exécuté</TableCell>
+        <TableCell>TVA régularisée sur la facture finale</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+**En résumé** : si vous souhaitez un engagement fort de votre client, privilégiez l'acompte. Les arrhes conviennent davantage lorsque vous acceptez la possibilité d'une annulation (secteur hôtelier, événementiel). La provision est surtout utilisée dans les professions réglementées (avocats, notaires).
+
+## L'obligation de facturer l'acompte
+
+La réglementation française est formelle : **tout acompte perçu doit faire l'objet d'une facture d'acompte**. Cette obligation découle de l'article 289 du Code général des impôts (CGI). Ne pas émettre de facture d'acompte vous expose à des sanctions fiscales.
+
+La facture d'acompte doit être émise **au moment de l'encaissement** de la somme, même si la prestation n'a pas encore débuté. Elle constitue un document comptable à part entière et doit respecter les [mentions obligatoires d'une facture](/blog/mentions-obligatoires-facture) classique.
+
+### Les mentions obligatoires de la facture d'acompte
+
+Votre facture d'acompte doit impérativement comporter :
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La mention <strong>"Facture d'acompte"</strong> clairement identifiée</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Un <strong>numéro de facture</strong> unique suivant votre séquence de numérotation</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La <strong>date d'émission</strong> de la facture</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Les <strong>coordonnées complètes</strong> du prestataire et du client (nom, adresse, SIRET)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La <strong>référence au devis</strong> ou au bon de commande correspondant</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le <strong>montant HT et TTC</strong> de l'acompte</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le <strong>taux et montant de la TVA</strong> applicable</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La <strong>description</strong> de la prestation ou du bien concerné</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Les <strong>conditions de règlement</strong> et le <a href="/blog/quest-ce-que-delai-paiement-facture">délai de paiement</a> du solde</span>
+  </div>
+</div>
+
+## La TVA sur acompte : attention au fait générateur
+
+La question de la TVA sur les acomptes est l'un des points les plus délicats de la facturation. Les règles diffèrent selon que vous vendez des **biens** ou des **services**.
+
+<div className="not-prose my-8">
+  <Callout type="warning" title="TVA sur acompte : ne vous trompez pas de timing">
+    Pour les **prestations de services**, la TVA sur l'acompte est exigible **dès l'encaissement** de celui-ci. Vous devez donc la déclarer et la reverser au Trésor public au titre de la période durant laquelle vous avez encaissé l'acompte, même si la prestation n'est pas encore réalisée. Pour les **livraisons de biens**, la TVA n'est exigible qu'au moment de la **livraison effective**, sauf si l'acompte est encaissé avant (depuis le 1er janvier 2023, la TVA est aussi exigible à l'encaissement de l'acompte pour les biens).
+  </Callout>
+</div>
+
+### Cas pratique : prestation de service
+
+Vous êtes consultant et vous [facturez une prestation de service](/blog/facturer-prestation-service-consultant) de 5 000 EUR HT. Vous demandez 30 % d'acompte soit 1 500 EUR HT. La TVA (20 %) sur cet acompte est de 300 EUR. Vous encaissez donc 1 800 EUR TTC et devez immédiatement déclarer 300 EUR de TVA collectée.
+
+### Cas pratique : livraison de biens
+
+Vous vendez du mobilier pour 10 000 EUR HT et demandez un acompte de 40 % soit 4 000 EUR HT (4 800 EUR TTC avec 20 % de TVA). Depuis la réforme de 2023, la TVA de 800 EUR est exigible dès l'encaissement de l'acompte.
+
+## Le workflow complet : du devis à la facture de solde
+
+La gestion d'un acompte s'inscrit dans un processus de facturation structuré. Voici les étapes clés :
+
+### 1. Etablir un devis professionnel
+
+Tout commence par un [devis professionnel](/blog/comment-faire-devis-professionnel) détaillé mentionnant le montant total de la prestation, le pourcentage ou montant de l'acompte demandé, et les conditions de paiement. Le devis doit clairement indiquer qu'il s'agit d'un **acompte** (et non d'arrhes) pour éviter toute ambiguité juridique.
+
+### 2. Encaisser l'acompte et émettre la facture d'acompte
+
+Une fois le devis signé par le client, vous encaissez l'acompte et émettez la facture d'acompte correspondante. Cette facture porte un numéro de facture classique dans votre séquence de numérotation. Elle déclenche l'exigibilité de la TVA pour les prestations de services.
+
+### 3. Réaliser la prestation ou livrer le bien
+
+Vous exécutez la prestation conformément aux termes du devis. Pendant cette phase, l'acompte encaissé vous offre une trésorerie immédiate pour couvrir vos premiers frais.
+
+### 4. Emettre la facture de solde (facture finale)
+
+A l'issue de la prestation, vous émettez la **facture de solde**. Cette facture reprend le montant total de la prestation, déduit le ou les acomptes déjà versés, et indique le **solde restant dû**. Elle doit mentionner explicitement les références des factures d'acompte précédemment émises.
+
+**Exemple de calcul :**
+- Montant total HT : 5 000 EUR
+- Acompte versé : 1 500 EUR HT (facture d'acompte n° FA-2026-001)
+- Solde restant : 3 500 EUR HT + TVA = 4 200 EUR TTC
+
+<figure>
+  <Image
+    src="/blog/quest-ce-que-acompte-facture/workflow-acompte.webp"
+    alt="Workflow de facturation avec acompte : du devis à la facture de solde"
+    width={1200}
+    height={630}
+    className="rounded-lg"
+  />
+  <figcaption className="text-center text-sm text-muted-foreground mt-2">
+    Le processus complet de facturation avec acompte en quatre étapes.
+  </figcaption>
+</figure>
+
+## Simplifiez la gestion de vos acomptes avec Newbi
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Automatisez vos factures d'acompte avec Newbi">
+    Avec Newbi, le passage du devis signé à la facture d'acompte se fait en quelques clics. L'outil calcule automatiquement la TVA, génère une numérotation conforme et déduit les acomptes sur votre facture de solde. Vous gagnez du temps et évitez les erreurs de conformité. Testez gratuitement dès maintenant.
+  </Callout>
+</div>
+
+Newbi vous accompagne à chaque étape du processus :
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Création de devis</strong> avec clause d'acompte intégrée</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Génération automatique</strong> de la facture d'acompte depuis le devis accepté</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Calcul automatique de la TVA</strong> selon la nature de l'opération</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Numérotation séquentielle</strong> conforme à la réglementation</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Facture de solde</strong> avec déduction automatique des acomptes</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Suivi des paiements</strong> en temps réel sur votre tableau de bord</span>
+  </div>
+</div>
+
+<div className="not-prose my-8 flex flex-wrap gap-4">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Gérer mes acomptes</Link>
+  </Button>
+</div>
+
+## Bonnes pratiques pour vos factures d'acompte
+
+Pour une gestion irréprochable de vos acomptes, voici quelques recommandations essentielles :
+
+1. **Formalisez toujours par écrit** : mentionnez explicitement le terme "acompte" dans vos devis et contrats pour éviter la requalification en arrhes (qui est le régime par défaut en droit de la consommation).
+
+2. **Respectez la chronologie de numérotation** : la facture d'acompte et la facture de solde doivent s'inscrire dans une séquence de numérotation unique et continue.
+
+3. **Conservez vos documents** : les factures d'acompte doivent être archivées pendant au moins **10 ans** conformément au Code de commerce.
+
+4. **Adaptez le pourcentage d'acompte** : en général, les acomptes représentent entre 20 % et 50 % du montant total. Pour les projets importants, vous pouvez prévoir plusieurs acomptes échelonnés.
+
+5. **Anticipez la TVA** : provisionnez le montant de TVA collectée sur l'acompte pour ne pas être pris au dépourvu lors de votre déclaration.
+
+## En résumé
+
+L'acompte sur facture est un mécanisme juridique et comptable essentiel pour tout professionnel. Il engage fermement les deux parties, sécurise votre trésorerie et s'accompagne d'obligations fiscales strictes, notamment en matière de TVA. La clé d'une bonne gestion réside dans le respect du workflow complet : devis clair mentionnant l'acompte, facture d'acompte conforme émise à l'encaissement, puis facture de solde déduisant les acomptes versés. En vous appuyant sur un outil comme Newbi, vous automatisez ces étapes et garantissez la conformité de vos documents.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur l'acompte
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Quelle est la différence entre un acompte et des arrhes ?</AccordionTrigger>
+      <AccordionContent>
+        L'acompte constitue un engagement ferme et définitif : ni le client ni le prestataire ne peuvent se rétracter sans conséquences. Les arrhes, en revanche, permettent la rétractation : si le client annule, il perd la somme versée ; si le prestataire annule, il doit rembourser le double. En l'absence de mention explicite dans le contrat, le Code de la consommation présume qu'il s'agit d'arrhes.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Est-il obligatoire d'émettre une facture pour un acompte ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, c'est une obligation légale prévue par l'article 289 du Code général des impôts. Toute somme encaissée au titre d'un acompte doit donner lieu à l'émission d'une facture d'acompte comportant l'ensemble des mentions obligatoires. Le non-respect de cette obligation peut entraîner des pénalités fiscales.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Quand la TVA est-elle exigible sur un acompte ?</AccordionTrigger>
+      <AccordionContent>
+        Pour les prestations de services, la TVA est exigible dès l'encaissement de l'acompte. Pour les livraisons de biens, depuis le 1er janvier 2023, la TVA est également exigible à l'encaissement de l'acompte (auparavant, elle n'était exigible qu'à la livraison). Vous devez déclarer cette TVA au titre de la période d'encaissement.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Un acompte est-il remboursable en cas d'annulation ?</AccordionTrigger>
+      <AccordionContent>
+        Par principe, non. L'acompte engage fermement les deux parties. Si le client annule, le prestataire peut conserver l'acompte et réclamer des dommages et intérêts. Toutefois, un remboursement peut être prévu contractuellement ou accordé à l'amiable. Si c'est le prestataire qui n'honore pas ses engagements, il devra rembourser l'acompte et potentiellement indemniser le client.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>
+
+<script type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Quelle est la différence entre un acompte et des arrhes ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "L'acompte constitue un engagement ferme et définitif : ni le client ni le prestataire ne peuvent se rétracter sans conséquences. Les arrhes permettent la rétractation : si le client annule, il perd la somme versée ; si le prestataire annule, il doit rembourser le double."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Est-il obligatoire d'émettre une facture pour un acompte ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Oui, c'est une obligation légale prévue par l'article 289 du Code général des impôts. Toute somme encaissée au titre d'un acompte doit donner lieu à l'émission d'une facture d'acompte comportant l'ensemble des mentions obligatoires."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Quand la TVA est-elle exigible sur un acompte ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Pour les prestations de services, la TVA est exigible dès l'encaissement de l'acompte. Pour les livraisons de biens, depuis le 1er janvier 2023, la TVA est également exigible à l'encaissement de l'acompte."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Un acompte est-il remboursable en cas d'annulation ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Par principe, non. L'acompte engage fermement les deux parties. Si le client annule, le prestataire peut conserver l'acompte et réclamer des dommages et intérêts. Un remboursement peut toutefois être prévu contractuellement ou accordé à l'amiable."
+          }
+        }
+      ]
+    })
+  }}
+/>

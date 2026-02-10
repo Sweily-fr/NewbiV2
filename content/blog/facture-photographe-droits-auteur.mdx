@@ -1,0 +1,418 @@
+---
+title: 'Comment facturer en tant que photographe : droits d''auteur et prestations'
+description: >-
+  Guide de facturation pour photographes : cession de droits d'auteur, TVA
+  réduite, mentions spécifiques et modèle de facture photographe.
+date: '2026-02-10'
+category: guide
+sector: Photographes / Créatifs
+keyword: facturer photographe droits auteur
+author: Newbi
+image: /blog/facture-photographe-droits-auteur/hero.webp
+published: false
+publishDate: null
+---
+
+import Image from "next/image"
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex flex-wrap gap-2 mb-6">
+  <Badge>Guide</Badge>
+  <Badge variant="secondary">Photographe</Badge>
+  <Badge variant="outline">9 min de lecture</Badge>
+</div>
+
+# Comment facturer en tant que photographe : droits d'auteur et prestations
+
+**Facturer photographe** ses prestations et ses droits d'auteur est un exercice qui ne s'improvise pas. Entre la prise de vue facturee comme prestation technique, la cession de droits d'auteur soumise a un taux de TVA reduit, et les mentions legales specifiques a chaque ligne, une erreur peut couter cher -- fiscalement et juridiquement. Ce guide complet vous explique comment etablir une facture conforme, optimiser votre fiscalite et proteger vos oeuvres photographiques.
+
+<figure>
+  <Image
+    src="/blog/facture-photographe-droits-auteur/hero.webp"
+    alt="Photographe preparant une facture avec appareil photo et ordinateur portable"
+    width={1200}
+    height={630}
+    className="rounded-xl w-full"
+    priority
+  />
+  <figcaption className="text-center text-sm text-muted-foreground mt-2">
+    Bien facturer en tant que photographe, c'est distinguer prestation technique et cession de droits d'auteur.
+  </figcaption>
+</figure>
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Creer ma facture photographe gratuitement</Link>
+  </Button>
+</div>
+
+## Pourquoi la facturation photographe est particuliere
+
+Contrairement a la plupart des professions liberales, le photographe cumule deux activites de nature differente sur une meme facture :
+
+- **La prestation technique** : deplacement, prise de vue, retouche, livraison des fichiers. Il s'agit d'un service classique soumis a la TVA a 20 %.
+- **La cession de droits d'auteur** : l'autorisation accordee au client d'exploiter les photographies selon un perimetre defini (duree, territoire, supports). Cette cession beneficie d'un taux de TVA reduit a 10 % en vertu de l'article 279 g du Code general des impots (CGI).
+
+Cette dualite implique que chaque facture doit clairement separer les deux postes, avec leurs taux de TVA respectifs, sous peine de redressement fiscal ou de contestation du client.
+
+<div className="not-prose my-6">
+  <Callout type="warning" title="Attention : ne melangez jamais droits et prestations">
+    L'administration fiscale exige une distinction claire entre la prestation de service (TVA 20 %) et la cession de droits d'auteur (TVA 10 %). Regrouper les deux sur une seule ligne avec un taux unique vous expose a un redressement. Detaillez toujours chaque poste separement sur votre facture.
+  </Callout>
+</div>
+
+## Prestation technique vs cession de droits d'auteur : le tableau comparatif
+
+Pour y voir clair, voici un comparatif des deux composantes que vous retrouverez sur vos factures de photographe.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Comparaison prestation technique et cession de droits d'auteur pour un photographe</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[200px]">Critere</TableHead>
+        <TableHead>Prestation technique</TableHead>
+        <TableHead>Cession de droits d'auteur</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Nature</TableCell>
+        <TableCell>Service (prise de vue, retouche, deplacement)</TableCell>
+        <TableCell>Autorisation d'exploitation des oeuvres</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Taux de TVA</TableCell>
+        <TableCell>20 %</TableCell>
+        <TableCell>10 % (art. 279 g CGI)</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Regime fiscal</TableCell>
+        <TableCell>BNC (Benefices Non Commerciaux)</TableCell>
+        <TableCell>BNC ou regime specifique artiste-auteur</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Mentions obligatoires</TableCell>
+        <TableCell>Mentions classiques de facturation</TableCell>
+        <TableCell>Duree, territoire, supports, exclusivite ou non</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Base de calcul</TableCell>
+        <TableCell>Temps passe, forfait journee ou demi-journee</TableCell>
+        <TableCell>Pourcentage du total ou montant forfaitaire negocie</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Protection sociale</TableCell>
+        <TableCell>URSSAF classique</TableCell>
+        <TableCell>Possibilite d'affiliation a la Securite sociale des artistes-auteurs</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+## Les mentions specifiques a la cession de droits d'auteur
+
+Lorsque vous cédez des droits d'exploitation sur vos photographies, la facture doit imperativement preciser le perimetre de cette cession. Voici les elements a detailler :
+
+### 1. La duree de la cession
+
+Precisez si la cession est limitee dans le temps (par exemple, 2 ans) ou si elle est consentie pour toute la duree de protection legale du droit d'auteur (70 ans apres le deces de l'auteur en France).
+
+### 2. Le territoire
+
+Indiquez la zone geographique d'exploitation : France metropolitaine, Union europeenne, monde entier, etc.
+
+### 3. Les supports autorises
+
+Listez les supports sur lesquels le client peut utiliser vos photos : site internet, reseaux sociaux, print (affiches, flyers, catalogues), packaging, publicite TV, etc.
+
+### 4. L'exclusivite
+
+Precisez si la cession est exclusive (le client est le seul a pouvoir exploiter les images) ou non exclusive (vous conservez le droit de reutiliser ou revendre les photos).
+
+### 5. Le nombre d'exploitations
+
+Le cas echeant, limitez le nombre de tirages, de diffusions ou d'insertions publicitaires.
+
+**Exemple de libelle sur facture** :
+
+> Cession de droits d'exploitation -- 15 photographies -- Usage web et reseaux sociaux -- Territoire France -- Duree 3 ans -- Non exclusif -- TVA 10 %
+
+## Forfait global ou facturation detaillee ?
+
+Deux approches coexistent chez les photographes professionnels :
+
+### Le forfait global
+
+Vous proposez un prix unique qui couvre la prestation et les droits. **Attention** : meme dans ce cas, la facture doit ventiler les deux postes avec leurs taux de TVA respectifs. Le forfait simplifie la negociation commerciale, mais pas la redaction de la facture.
+
+### La facturation detaillee
+
+Chaque poste est facture separement : deplacement, prise de vue (a la journee ou demi-journee), post-production (retouche, selection), livraison, puis cession de droits. Cette methode est plus transparente et facilite la justification des montants aupres du client.
+
+Dans les deux cas, **la separation comptable entre prestation et cession reste obligatoire**.
+
+## Regime fiscal : BNC ou artiste-auteur ?
+
+Le choix de votre regime fiscal impacte directement votre facturation.
+
+### Le regime BNC classique
+
+La majorite des photographes independants declarent leurs revenus en **Benefices Non Commerciaux (BNC)**. Cela inclut a la fois les revenus de prestations et les revenus de cession de droits. Vous facturez avec votre numero SIRET, collectez la TVA et la reversez a l'Etat.
+
+### Le regime artiste-auteur
+
+Si votre activite est principalement artistique (exposition, vente de tirages, commandes editoriales), vous pouvez relever du regime des **artistes-auteurs** (ex-Maison des Artistes / Agessa). Dans ce cas :
+
+- Vos revenus de droits d'auteur sont declares via un systeme specifique.
+- Vous beneficiez d'un abattement forfaitaire sur les cotisations sociales.
+- Votre client peut etre redevable du **precompte** (retenue a la source des cotisations sociales).
+
+### Le cas de l'auto-entrepreneur photographe
+
+En micro-entreprise, vous beneficiez de la **franchise en base de TVA** tant que vous ne depassez pas les seuils (36 800 EUR pour les prestations de services). Dans ce cas, vous ne facturez pas de TVA et devez indiquer la mention "TVA non applicable, article 293 B du CGI". Pour en savoir plus, consultez notre guide sur la [TVA auto-entrepreneur et les seuils de franchise](/blog/tva-auto-entrepreneur-seuils-franchise).
+
+<figure>
+  <Image
+    src="/blog/facture-photographe-droits-auteur/exemple-facture-photographe.webp"
+    alt="Exemple de facture photographe avec ventilation prestation et droits d'auteur"
+    width={800}
+    height={500}
+    className="rounded-xl w-full"
+  />
+  <figcaption className="text-center text-sm text-muted-foreground mt-2">
+    Un modele de facture photographe avec la distinction prestation / cession de droits.
+  </figcaption>
+</figure>
+
+<div className="not-prose my-8">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Creer ma facture photographe</Link>
+  </Button>
+</div>
+
+## Les mentions obligatoires sur une facture photographe
+
+En plus des mentions legales classiques detaillees dans notre article sur les [mentions obligatoires sur une facture](/blog/mentions-obligatoires-facture), une facture de photographe doit comporter :
+
+<div className="not-prose my-6">
+  <ul className="space-y-3">
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span>Numero de facture unique et chronologique</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span>Identite complete du photographe (SIRET, adresse, statut juridique)</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span>Identite complete du client</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span>Description detaillee de la prestation technique (lieu, date, nombre de photos)</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span>Ligne separee pour la cession de droits avec mentions de perimetre</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span>TVA ventilee : 20 % sur la prestation, 10 % sur les droits d'auteur</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span>Montant total HT, total TVA et montant TTC</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span>Conditions de paiement et penalites de retard</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span>Mention du droit de propriete intellectuelle conserve (si cession non exclusive)</span>
+    </li>
+  </ul>
+</div>
+
+## Exemple concret : facturer un reportage photo corporate
+
+Prenons le cas d'un reportage photo pour une entreprise :
+
+**Prestation technique (TVA 20 %)** :
+- Prise de vue sur site -- 1 journee : 800 EUR HT
+- Post-production et retouche -- 30 photos selectionnees : 400 EUR HT
+- **Sous-total prestation** : 1 200 EUR HT + 240 EUR TVA = 1 440 EUR TTC
+
+**Cession de droits d'auteur (TVA 10 %)** :
+- Cession de droits d'exploitation -- 30 photographies -- Usage web, reseaux sociaux et print interne -- Territoire France -- Duree 2 ans -- Non exclusif : 600 EUR HT
+- **Sous-total cession** : 600 EUR HT + 60 EUR TVA = 660 EUR TTC
+
+**Total facture** : 1 800 EUR HT -- TVA 300 EUR -- **2 100 EUR TTC**
+
+<div className="not-prose my-6">
+  <Callout type="info" title="Astuce : utilisez les modeles Newbi">
+    Avec Newbi, vous pouvez creer des modeles de facture photographe avec des lignes pre-configurees pour la prestation et la cession de droits, chacune avec le bon taux de TVA. Vous gagnez du temps et evitez les erreurs a chaque nouvelle facture.
+  </Callout>
+</div>
+
+## Conseils pour bien facturer photographe ses droits d'auteur
+
+1. **Redigez un contrat de cession** en amont de chaque mission. La facture seule ne suffit pas a encadrer juridiquement la cession de droits.
+
+2. **Ne sous-evaluez pas vos droits**. La part de cession represente generalement entre 20 % et 50 % du montant total de la commande, selon l'utilisation prevue.
+
+3. **Adaptez vos tarifs au perimetre d'exploitation**. Une utilisation mondiale et exclusive pendant 5 ans vaut bien plus qu'un usage local et non exclusif pendant 1 an.
+
+4. **Conservez vos fichiers RAW**. Ils constituent la preuve de votre qualite d'auteur en cas de litige.
+
+5. **Facturez les usages supplementaires**. Si le client souhaite etendre l'exploitation (nouveau support, nouvelle duree), etablissez un avenant et une facture complementaire.
+
+Si vous etes egalement graphiste ou designer, notre guide sur la [facturation en tant que graphiste et designer freelance](/blog/facture-graphiste-designer-freelance) vous apportera des precisions complementaires sur la cession de droits dans les metiers creatifs. De meme, si vous facturez des prestations de conseil en parallele, consultez notre article sur [comment facturer une prestation de service en tant que consultant](/blog/facturer-prestation-service-consultant).
+
+## En resume
+
+**Facturer photographe** ses prestations et droits d'auteur demande de la rigueur, mais les regles sont claires :
+
+- **Separez toujours** prestation technique et cession de droits sur votre facture.
+- **Appliquez les bons taux de TVA** : 20 % pour la prestation, 10 % pour les droits (art. 279 g CGI).
+- **Detaillez le perimetre de cession** : duree, territoire, supports, exclusivite.
+- **Choisissez le regime adapte** : BNC classique, artiste-auteur ou micro-entreprise.
+- **Utilisez un outil adapte** pour generer des factures conformes en quelques clics.
+
+<div className="not-prose my-8 flex flex-col sm:flex-row gap-4">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Facturer mes droits d'auteur avec Newbi</Link>
+  </Button>
+  <Button asChild variant="outline" size="lg">
+    <Link href="/produits/factures">Voir le modele de facture photographe</Link>
+  </Button>
+</div>
+
+## Questions frequentes
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Pourquoi dois-je separer prestation et droits d'auteur sur ma facture ?</AccordionTrigger>
+      <AccordionContent>
+        La separation est une obligation legale et fiscale. La prestation technique (prise de vue, retouche) est soumise a la TVA a 20 %, tandis que la cession de droits d'auteur beneficie d'un taux reduit a 10 % (article 279 g du CGI). Melanger les deux sur une seule ligne vous expose a un redressement fiscal et empeche votre client de justifier correctement la deduction de TVA.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Quel taux de TVA appliquer sur les droits d'auteur photographe ?</AccordionTrigger>
+      <AccordionContent>
+        Les droits d'auteur cedes par un photographe sont soumis au taux reduit de TVA a 10 %, conformement a l'article 279 g du Code general des impots. Ce taux s'applique a condition que la cession soit clairement identifiee et separee de la prestation technique sur la facture. Si vous etes en franchise en base de TVA (auto-entrepreneur sous les seuils), aucune TVA n'est facturee.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Un auto-entrepreneur photographe peut-il ceder des droits d'auteur ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, un auto-entrepreneur photographe peut tout a fait ceder des droits d'auteur. Toutefois, en franchise en base de TVA, il ne collecte pas la TVA et ne peut donc pas appliquer le taux reduit de 10 %. Il doit mentionner "TVA non applicable, article 293 B du CGI" sur sa facture. Il est aussi possible de cumuler le statut d'auto-entrepreneur avec une affiliation au regime des artistes-auteurs pour la partie droits d'auteur, mais cela necessite un accompagnement comptable.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Quelles mentions de cession de droits doivent figurer sur la facture ?</AccordionTrigger>
+      <AccordionContent>
+        La facture doit preciser le perimetre complet de la cession : la duree (nombre d'annees ou duree legale), le territoire geographique (France, Europe, monde), les supports autorises (web, print, publicite, etc.), le caractere exclusif ou non exclusif de la cession, et le nombre de photographies concernees. Ces mentions protegent a la fois le photographe et le client en cas de litige.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Quelle est la difference entre le regime BNC et le regime artiste-auteur ?</AccordionTrigger>
+      <AccordionContent>
+        Le regime BNC (Benefices Non Commerciaux) est le regime fiscal classique des photographes independants. Il s'applique a l'ensemble des revenus, prestations et droits confondus. Le regime artiste-auteur (anciennement Maison des Artistes / Agessa) est un regime specifique de protection sociale qui concerne uniquement les revenus tires de la creation artistique et de la cession de droits. Il offre un abattement sur les cotisations sociales et implique parfois un precompte par le client. Un photographe peut relever du BNC pour la fiscalite tout en etant affilie au regime artiste-auteur pour la protection sociale.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>
+
+<script
+  type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Pourquoi dois-je separer prestation et droits d'auteur sur ma facture ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "La separation est une obligation legale et fiscale. La prestation technique (prise de vue, retouche) est soumise a la TVA a 20 %, tandis que la cession de droits d'auteur beneficie d'un taux reduit a 10 % (article 279 g du CGI). Melanger les deux sur une seule ligne vous expose a un redressement fiscal et empeche votre client de justifier correctement la deduction de TVA."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Quel taux de TVA appliquer sur les droits d'auteur photographe ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Les droits d'auteur cedes par un photographe sont soumis au taux reduit de TVA a 10 %, conformement a l'article 279 g du Code general des impots. Ce taux s'applique a condition que la cession soit clairement identifiee et separee de la prestation technique sur la facture."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Un auto-entrepreneur photographe peut-il ceder des droits d'auteur ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Oui, un auto-entrepreneur photographe peut tout a fait ceder des droits d'auteur. Toutefois, en franchise en base de TVA, il ne collecte pas la TVA et ne peut donc pas appliquer le taux reduit de 10 %. Il doit mentionner 'TVA non applicable, article 293 B du CGI' sur sa facture."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Quelles mentions de cession de droits doivent figurer sur la facture ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "La facture doit preciser le perimetre complet de la cession : la duree, le territoire geographique, les supports autorises, le caractere exclusif ou non exclusif, et le nombre de photographies concernees."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Quelle est la difference entre le regime BNC et le regime artiste-auteur ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Le regime BNC (Benefices Non Commerciaux) est le regime fiscal classique des photographes independants. Le regime artiste-auteur est un regime specifique de protection sociale qui concerne uniquement les revenus tires de la creation artistique et de la cession de droits. Un photographe peut relever du BNC pour la fiscalite tout en etant affilie au regime artiste-auteur pour la protection sociale."
+          }
+        }
+      ]
+    })
+  }}
+/>
+
+<script
+  type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "Comment facturer en tant que photographe : droits d'auteur et prestations",
+      "description": "Guide de facturation pour photographes : cession de droits d'auteur, TVA reduite, mentions specifiques et modele de facture photographe.",
+      "author": {
+        "@type": "Organization",
+        "name": "Newbi"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "Newbi",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://newbi.fr/logo.png"
+        }
+      },
+      "datePublished": "2026-02-10",
+      "dateModified": "2026-02-10",
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "https://newbi.fr/blog/facture-photographe-droits-auteur"
+      },
+      "image": "https://newbi.fr/blog/facture-photographe-droits-auteur/hero.webp",
+      "keywords": "facturer photographe droits auteur, facture photographe, cession droits auteur, TVA photographe, droits auteur photographe"
+    })
+  }}
+/>

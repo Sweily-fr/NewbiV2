@@ -1,0 +1,344 @@
+---
+title: Qu'est-ce qu'un avoir ou note de crédit ? Définition et exemples
+description: >-
+  Découvrez ce qu'est un avoir (note de crédit), quand l'émettre, les mentions
+  obligatoires et comment le créer facilement avec un logiciel.
+date: '2026-02-10'
+category: glossaire
+sector: null
+keyword: avoir note de crédit
+author: Newbi
+image: /blog/quest-ce-que-avoir-credit/hero.webp
+published: false
+publishDate: null
+---
+
+import Image from "next/image"
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex gap-2 my-4">
+  <Badge>Glossaire</Badge>
+  <Badge variant="secondary">Comptabilité</Badge>
+  <Badge variant="outline">7 min de lecture</Badge>
+</div>
+
+Un **avoir** (aussi appelé **note de crédit**) est un document comptable qui annule partiellement ou totalement une facture déjà émise. Que ce soit suite à un retour de marchandise, une erreur de facturation ou un geste commercial, l'avoir est le seul moyen légal de corriger une facture. Voici tout ce qu'il faut savoir pour l'émettre correctement.
+
+<div className="not-prose my-8 relative aspect-video overflow-hidden rounded-lg">
+  <Image
+    src="/blog/quest-ce-que-avoir-credit/hero.webp"
+    alt="Illustration d'un avoir ou note de crédit avec les mentions obligatoires"
+    fill
+    className="object-cover"
+    priority
+    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 720px"
+  />
+</div>
+
+<div className="not-prose flex justify-center my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Créer des avoirs avec Newbi</Link>
+  </Button>
+</div>
+
+## Définition de l'avoir (note de crédit)
+
+Un avoir est une **facture rectificative** qui constate une réduction du montant dû par le client. Il porte un montant **négatif** qui vient s'imputer sur la créance initiale. En comptabilité, il est enregistré en sens inverse d'une facture classique.
+
+<figure className="not-prose my-8">
+  <div className="relative aspect-video overflow-hidden rounded-lg border">
+    <Image
+      src="/blog/quest-ce-que-avoir-credit/section-1.webp"
+      alt="Schéma expliquant le fonctionnement d'un avoir : facture initiale, avoir, solde final"
+      fill
+      className="object-cover"
+      sizes="(max-width: 768px) 100vw, 720px"
+    />
+  </div>
+  <figcaption className="mt-2 text-center text-sm text-muted-foreground">
+    Fonctionnement d'un avoir : il vient réduire le montant de la facture initiale
+  </figcaption>
+</figure>
+
+**Termes équivalents** :
+- Avoir
+- Note de crédit
+- Facture d'avoir
+- Facture rectificative (dans certains cas)
+
+<Callout type="info">
+  Il est **interdit de modifier ou supprimer** une facture déjà émise. L'avoir est le seul moyen légal d'annuler ou corriger une facture. Cette règle garantit la traçabilité comptable et fiscale.
+</Callout>
+
+## Quand émettre un avoir ?
+
+Vous devez émettre un avoir dans les situations suivantes :
+
+### 1. Retour de marchandise
+
+Le client vous retourne un produit et vous devez le rembourser ou créditer son compte.
+
+### 2. Erreur sur la facture initiale
+
+Vous avez facturé un montant incorrect, un mauvais taux de TVA, ou une prestation non réalisée. L'avoir annule la facture erronée, et vous réémettez une facture correcte.
+
+### 3. Remise ou geste commercial après facturation
+
+Vous accordez une réduction après l'émission de la facture (rabais, ristourne, remise exceptionnelle).
+
+### 4. Annulation totale de la prestation
+
+Le contrat est annulé ou la prestation n'a pas été réalisée. L'avoir annule l'intégralité de la facture.
+
+### 5. Résiliation anticipée
+
+Dans le cas d'un abonnement ou contrat récurrent, l'avoir couvre la période non consommée.
+
+<div className="not-prose my-8 overflow-x-auto">
+  <Table>
+    <TableCaption>Cas d'utilisation d'un avoir avec exemples</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead>Situation</TableHead>
+        <TableHead>Type d'avoir</TableHead>
+        <TableHead>Exemple</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell>Retour produit</TableCell>
+        <TableCell>Avoir partiel ou total</TableCell>
+        <TableCell>Client retourne 2 articles sur 5</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell>Erreur de facturation</TableCell>
+        <TableCell>Avoir total + nouvelle facture</TableCell>
+        <TableCell>Mauvais taux de TVA appliqué</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell>Remise commerciale</TableCell>
+        <TableCell>Avoir partiel</TableCell>
+        <TableCell>Remise de 10 % accordée après coup</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell>Annulation prestation</TableCell>
+        <TableCell>Avoir total</TableCell>
+        <TableCell>Mission annulée avant démarrage</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell>Résiliation</TableCell>
+        <TableCell>Avoir au prorata</TableCell>
+        <TableCell>Résiliation d'abonnement en cours de mois</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+## Les mentions obligatoires sur un avoir
+
+Un avoir doit contenir les mêmes [mentions obligatoires qu'une facture](/blog/mentions-obligatoires-facture), plus des éléments spécifiques :
+
+### Mentions communes avec la facture
+
+- Identité du vendeur (nom, adresse, SIREN)
+- Identité de l'acheteur
+- Date d'émission
+- Numéro unique et séquentiel
+- Détail des lignes (désignation, quantité, prix)
+- Montants HT, TVA et TTC
+
+### Mentions spécifiques à l'avoir
+
+- La mention **"Avoir"** ou **"Note de crédit"** (clairement identifiable)
+- La **référence à la facture initiale** (numéro et date de la facture corrigée)
+- Le **montant en négatif** ou la mention explicite de la réduction
+- Le motif de l'avoir (retour, erreur, remise)
+
+<Callout type="warning">
+  L'avoir doit **obligatoirement** faire référence à la facture d'origine. Sans cette référence, il n'a aucune valeur comptable et fiscale.
+</Callout>
+
+## Comment créer un avoir avec Newbi
+
+Avec un logiciel de facturation comme Newbi, créer un avoir est simple et rapide :
+
+### Étape 1 : Ouvrez la facture concernée
+
+Retrouvez la facture à corriger dans votre liste de factures.
+
+### Étape 2 : Cliquez sur "Créer un avoir"
+
+Newbi génère automatiquement l'avoir avec :
+- La référence à la facture initiale
+- Les mêmes lignes en négatif
+- Toutes les mentions obligatoires
+
+### Étape 3 : Ajustez si nécessaire
+
+Pour un avoir partiel, modifiez les quantités ou montants. L'avoir ne doit couvrir que les lignes concernées.
+
+### Étape 4 : Validez et envoyez
+
+L'avoir est numéroté automatiquement (séquence distincte des factures) et envoyé au client.
+
+<figure className="not-prose my-8">
+  <div className="relative aspect-video overflow-hidden rounded-lg border">
+    <Image
+      src="/blog/quest-ce-que-avoir-credit/creation-avoir.webp"
+      alt="Interface Newbi de création d'un avoir à partir d'une facture existante"
+      fill
+      className="object-cover"
+      sizes="(max-width: 768px) 100vw, 720px"
+    />
+  </div>
+  <figcaption className="mt-2 text-center text-sm text-muted-foreground">
+    Création d'un avoir en un clic depuis une facture dans Newbi
+  </figcaption>
+</figure>
+
+<div className="not-prose flex justify-center my-6">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Découvrir la facturation Newbi</Link>
+  </Button>
+</div>
+
+## Avoir total vs avoir partiel
+
+### Avoir total
+
+L'avoir total annule l'intégralité de la facture. Le montant de l'avoir est égal au montant de la facture initiale (en négatif). C'est le cas quand :
+
+- La facture contient une erreur majeure (vous devez l'annuler et refacturer)
+- La prestation est totalement annulée
+- Le produit est intégralement retourné
+
+### Avoir partiel
+
+L'avoir partiel ne corrige qu'une partie de la facture. C'est le cas quand :
+
+- Un seul article sur plusieurs est retourné
+- Vous accordez une remise sur une partie de la facture
+- Vous corrigez le montant d'une seule ligne
+
+## Impact comptable et fiscal de l'avoir
+
+### En comptabilité
+
+L'avoir est enregistré en sens inverse de la facture :
+
+- **Débit** du compte client (réduction de la créance)
+- **Crédit** du compte de chiffre d'affaires (réduction du CA)
+- **Crédit** du compte de TVA collectée (réduction de la TVA)
+
+### En fiscalité
+
+L'avoir réduit votre chiffre d'affaires déclaré et la TVA collectée. Il est important de bien le comptabiliser pour vos déclarations de TVA et votre résultat fiscal.
+
+<Callout type="tip">
+  Avec Newbi, les avoirs sont automatiquement pris en compte dans vos tableaux de bord et vos exports comptables. Pas besoin de les saisir manuellement dans votre comptabilité.
+</Callout>
+
+## En résumé
+
+L'avoir (note de crédit) est un document indispensable pour corriger légalement une facture :
+
+- C'est le **seul moyen** d'annuler ou modifier une facture déjà émise
+- Il doit contenir les mêmes **mentions obligatoires** qu'une facture, plus la référence à la facture d'origine
+- Il peut être **total** (annulation complète) ou **partiel** (correction d'une partie)
+- Avec Newbi, créez vos avoirs en **un clic** depuis la facture concernée
+
+<div className="not-prose flex justify-center my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement pendant 30 jours</Link>
+  </Button>
+</div>
+
+## Questions fréquentes
+
+<div className="not-prose my-12">
+  <Accordion type="multiple">
+    <AccordionItem value="faq-0">
+      <AccordionTrigger>Peut-on supprimer une facture au lieu de faire un avoir ?</AccordionTrigger>
+      <AccordionContent>
+        Non, il est strictement interdit de supprimer ou modifier une facture déjà émise et numérotée. La loi impose la traçabilité des documents comptables. Le seul moyen de corriger une facture est d'émettre un avoir qui l'annule, puis de créer une nouvelle facture si nécessaire.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-1">
+      <AccordionTrigger>L'avoir doit-il avoir sa propre numérotation ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, les avoirs doivent avoir une numérotation séquentielle distincte de celle des factures. Par exemple : AV-2026-001, AV-2026-002. Un logiciel comme Newbi gère automatiquement cette numérotation.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-2">
+      <AccordionTrigger>Un avoir donne-t-il toujours lieu à un remboursement ?</AccordionTrigger>
+      <AccordionContent>
+        Pas nécessairement. Un avoir peut donner lieu à un remboursement, mais aussi à un crédit sur le compte client (déduction sur une prochaine facture). Le mode de règlement de l'avoir doit être précisé.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-3">
+      <AccordionTrigger>Quel impact sur la TVA lors de l'émission d'un avoir ?</AccordionTrigger>
+      <AccordionContent>
+        L'avoir réduit la TVA collectée. Si vous avez déjà déclaré et reversé la TVA de la facture initiale, l'avoir vous permet de récupérer la TVA correspondante lors de votre prochaine déclaration. Le montant de TVA doit apparaître explicitement sur l'avoir.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-4">
+      <AccordionTrigger>Combien de temps conserver un avoir ?</AccordionTrigger>
+      <AccordionContent>
+        Comme les factures, les avoirs doivent être conservés pendant 10 ans (obligation comptable) et sont contrôlables par l'administration fiscale pendant 6 ans. Conservez-les avec la facture d'origine pour faciliter les éventuels contrôles.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>
+
+<script type="application/ld+json" dangerouslySetInnerHTML={{__html: JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Peut-on supprimer une facture au lieu de faire un avoir ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Non, il est interdit de supprimer une facture émise. L'avoir est le seul moyen légal de corriger une facture."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "L'avoir doit-il avoir sa propre numérotation ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Oui, les avoirs ont une numérotation séquentielle distincte des factures."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Un avoir donne-t-il toujours lieu à un remboursement ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Non, il peut donner lieu à un remboursement ou à un crédit sur le compte client."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Quel impact sur la TVA ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "L'avoir réduit la TVA collectée, récupérable lors de la prochaine déclaration."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Combien de temps conserver un avoir ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "10 ans, comme les factures. Conservez-les avec la facture d'origine."
+      }
+    }
+  ]
+})}} />

@@ -1,0 +1,352 @@
+---
+title: Comment facturer une prestation de service en tant que consultant
+description: >-
+  Guide complet pour facturer vos prestations de conseil : calcul du TJM,
+  mentions obligatoires, TVA et modèle de facture de prestation.
+date: '2026-02-10'
+category: guide
+sector: Consultants / Freelances IT
+keyword: facturer prestation service consultant
+author: Newbi
+image: /blog/facturer-prestation-service-consultant/hero.webp
+published: false
+publishDate: null
+---
+
+import Image from "next/image"
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex gap-2 my-4">
+  <Badge>Guide</Badge>
+  <Badge variant="secondary">Consultant</Badge>
+  <Badge variant="outline">9 min de lecture</Badge>
+</div>
+
+**Facturer une prestation de service** en tant que consultant soulève de nombreuses questions : comment calculer son TJM, quelles mentions spécifiques inclure, comment gérer la TVA sur les prestations de service, et comment structurer sa facture pour inspirer confiance au client. Ce guide complet répond à toutes ces questions pour vous permettre de facturer vos prestations de conseil de manière professionnelle et conforme.
+
+<div className="not-prose my-8 relative aspect-video overflow-hidden rounded-lg">
+  <Image
+    src="/blog/facturer-prestation-service-consultant/hero.webp"
+    alt="Modèle de facture de prestation de service pour consultant freelance"
+    fill
+    className="object-cover"
+    priority
+    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 720px"
+  />
+</div>
+
+<div className="not-prose flex justify-center my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Facturer mes prestations avec Newbi</Link>
+  </Button>
+</div>
+
+## Comment calculer son tarif de prestation
+
+Avant de facturer, il faut définir votre prix. Les consultants utilisent principalement deux modes de facturation :
+
+<figure className="not-prose my-8">
+  <div className="relative aspect-video overflow-hidden rounded-lg border">
+    <Image
+      src="/blog/facturer-prestation-service-consultant/section-1.webp"
+      alt="Comparaison des modes de facturation consultant : TJM, forfait et au résultat"
+      fill
+      className="object-cover"
+      sizes="(max-width: 768px) 100vw, 720px"
+    />
+  </div>
+  <figcaption className="mt-2 text-center text-sm text-muted-foreground">
+    Les différents modes de facturation pour les consultants
+  </figcaption>
+</figure>
+
+### Le TJM (Tarif Journalier Moyen)
+
+Le TJM est le mode de facturation le plus courant en conseil. Pour le calculer :
+
+**TJM = (Revenus annuels souhaités + charges) / nombre de jours facturables**
+
+Un consultant facture en moyenne **218 jours par an** maximum (hors week-ends, congés, jours non facturables). En pratique, comptez **140 à 170 jours facturables** pour être réaliste.
+
+Pour un guide détaillé du calcul, consultez notre article [Comment fixer son TJM en freelance](/blog/comment-fixer-tarif-journalier-tjm).
+
+### Le forfait projet
+
+Vous proposez un prix global pour une mission définie :
+
+- ✅ Le client connaît le budget total à l'avance
+- ✅ Vous pouvez optimiser votre temps et gagner plus
+- ⚠️ Risque de sous-estimation si le périmètre n'est pas bien cadré
+
+### Le taux horaire
+
+Facturation à l'heure, utilisée pour les missions courtes ou le support ponctuel :
+
+- ✅ Simple et transparent
+- ⚠️ Peut freiner le client qui craint la facture ouverte
+
+<div className="not-prose my-8 overflow-x-auto">
+  <Table>
+    <TableCaption>Comparatif des modes de facturation consultant</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead>Mode</TableHead>
+        <TableHead>Idéal pour</TableHead>
+        <TableHead>TJM équivalent</TableHead>
+        <TableHead>Risque</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-semibold">TJM</TableCell>
+        <TableCell>Missions longues, régie</TableCell>
+        <TableCell>Direct</TableCell>
+        <TableCell>Faible</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-semibold">Forfait</TableCell>
+        <TableCell>Projets bien définis</TableCell>
+        <TableCell>Forfait / jours estimés</TableCell>
+        <TableCell>Moyen (dérapage)</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-semibold">Taux horaire</TableCell>
+        <TableCell>Interventions courtes</TableCell>
+        <TableCell>Taux × 7h</TableCell>
+        <TableCell>Faible</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+## Les mentions obligatoires sur une facture de prestation
+
+Votre facture de prestation de service doit contenir toutes les [mentions obligatoires standard](/blog/mentions-obligatoires-facture), plus des éléments spécifiques aux prestations intellectuelles :
+
+### Description détaillée de la prestation
+
+La description doit être **précise et détaillée** :
+
+- Nature exacte de la prestation (audit, conseil, formation, développement)
+- Période d'exécution (dates de début et fin de mission)
+- Livrables fournis
+- Volume (nombre de jours ou heures travaillés)
+
+### Exemple de libellé pour une facture consultant
+
+> **Prestation de conseil en stratégie digitale**
+> Mission du 15/01/2026 au 31/01/2026
+> Audit de l'existant, benchmark concurrentiel, recommandations stratégiques
+> Livrable : rapport d'audit (45 pages) + plan d'action
+> 8 jours × 650 € HT/jour = 5 200 € HT
+
+<Callout type="tip">
+  Créez un [catalogue de prestations](/blog/comment-creer-catalogue-produits-services) dans votre logiciel Newbi avec des descriptions types. Vous n'aurez plus qu'à sélectionner la prestation et ajuster la quantité.
+</Callout>
+
+## La TVA sur les prestations de service
+
+### Fait générateur et exigibilité
+
+Pour les prestations de service, la TVA est exigible :
+
+- **Sur les encaissements** (régime de droit commun) : la TVA est due au moment où vous recevez le paiement
+- **Sur les débits** (sur option) : la TVA est due dès l'émission de la facture
+
+<Callout type="warning">
+  Si vous êtes en franchise de TVA (auto-entrepreneur sous les seuils), n'oubliez pas la mention **« TVA non applicable, art. 293 B du CGI »**. Consultez notre article sur la [TVA auto-entrepreneur](/blog/tva-auto-entrepreneur-seuils-franchise).
+</Callout>
+
+### Prestations à l'international
+
+Si vous facturez des prestations à des clients dans l'UE :
+
+- **Client professionnel (B2B)** : TVA autoliquidée par le client, vous facturez HT avec mention « Autoliquidation — Art. 283-1 du CGI »
+- **Client particulier (B2C)** : TVA française applicable
+
+Pour les clients hors UE, la prestation est généralement exonérée de TVA.
+
+Consultez notre guide sur la [TVA intracommunautaire](/blog/quest-ce-que-tva-intracommunautaire).
+
+<figure className="not-prose my-8">
+  <div className="relative aspect-video overflow-hidden rounded-lg border">
+    <Image
+      src="/blog/facturer-prestation-service-consultant/tva-prestations.webp"
+      alt="Schéma des règles de TVA pour les prestations de service selon le client"
+      fill
+      className="object-cover"
+      sizes="(max-width: 768px) 100vw, 720px"
+    />
+  </div>
+  <figcaption className="mt-2 text-center text-sm text-muted-foreground">
+    Règles de TVA selon la localisation du client
+  </figcaption>
+</figure>
+
+<div className="not-prose flex justify-center my-6">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Découvrir la facturation Newbi</Link>
+  </Button>
+</div>
+
+## Les bonnes pratiques de facturation pour consultants
+
+### 1. Facturez régulièrement
+
+Pour les missions longues, ne attendez pas la fin de la mission pour facturer. Établissez un rythme de facturation :
+
+- **Mensuel** pour les missions en régie
+- **Par jalon** pour les missions au forfait (30 % au démarrage, 40 % à mi-parcours, 30 % à la livraison)
+
+### 2. Demandez un acompte
+
+Pour les nouvelles missions, demandez un [acompte](/blog/quest-ce-que-acompte-facture) de 30 à 50 % à la signature du devis. Cela :
+
+- Sécurise votre trésorerie
+- Engage le client
+- Réduit le risque d'impayé
+
+### 3. Détaillez les frais refacturables
+
+Si votre contrat prévoit la refacturation de frais (déplacements, hébergement, logiciels), distinguez-les clairement sur la facture :
+
+- Honoraires de conseil : X € HT
+- Frais de déplacement (train Paris-Lyon A/R) : Y € HT
+- **Total : X + Y € HT**
+
+### 4. Utilisez les bons outils
+
+Consultez notre classement des [meilleurs logiciels de facturation pour freelances](/blog/meilleur-logiciel-facturation-freelance) pour trouver l'outil adapté à votre activité de consultant.
+
+<div className="not-prose my-8">
+  <ul className="grid gap-3" role="list">
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span className="text-muted-foreground">Factures conformes avec toutes les mentions obligatoires</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span className="text-muted-foreground">Conversion devis → facture en un clic</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span className="text-muted-foreground">Relances automatiques des impayés</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span className="text-muted-foreground">Suivi de trésorerie en temps réel</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span className="text-muted-foreground">Gestion multi-devises pour les clients internationaux</span>
+    </li>
+  </ul>
+</div>
+
+## En résumé
+
+Facturer ses prestations de service en tant que consultant demande de la rigueur :
+
+- **Définissez votre tarif** (TJM, forfait ou taux horaire) en intégrant toutes vos charges
+- **Détaillez vos prestations** avec précision sur chaque facture
+- **Gérez la TVA** correctement selon votre régime et la localisation du client
+- **Facturez régulièrement** et demandez des acomptes pour sécuriser votre trésorerie
+- Utilisez un **logiciel professionnel** pour garantir la conformité
+
+Newbi simplifie la facturation des consultants avec des modèles adaptés, la gestion multi-devises et le suivi automatique des paiements.
+
+<div className="not-prose flex justify-center my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement pendant 30 jours</Link>
+  </Button>
+</div>
+
+## Questions fréquentes
+
+<div className="not-prose my-12">
+  <Accordion type="multiple">
+    <AccordionItem value="faq-0">
+      <AccordionTrigger>Comment facturer un client étranger en tant que consultant ?</AccordionTrigger>
+      <AccordionContent>
+        Pour un client professionnel dans l'UE, facturez HT avec autoliquidation de TVA. Pour un client hors UE, la prestation est généralement exonérée de TVA. Mentionnez toujours le numéro de TVA intracommunautaire du client UE sur la facture.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-1">
+      <AccordionTrigger>Faut-il facturer au temps passé ou au forfait ?</AccordionTrigger>
+      <AccordionContent>
+        Cela dépend de la mission. Le TJM est idéal pour les missions en régie où le périmètre peut évoluer. Le forfait convient aux projets bien définis avec des livrables clairs. En début de carrière, le TJM est plus sûr car vous maîtrisez encore mal vos temps de production.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-2">
+      <AccordionTrigger>Peut-on refacturer les frais de déplacement à un client ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, si c'est prévu dans votre contrat ou devis. Les frais refacturables (déplacement, hébergement, logiciels) doivent apparaître de manière distincte sur la facture. La TVA s'applique normalement sur ces frais refacturés.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-3">
+      <AccordionTrigger>Quel TJM pour un consultant débutant ?</AccordionTrigger>
+      <AccordionContent>
+        Le TJM varie selon le secteur et l'expertise. En moyenne : 300-450 €/jour pour un consultant junior, 450-700 €/jour pour un confirmé, 700-1 200 €/jour pour un senior/expert. Consultez notre guide détaillé sur le calcul du TJM en freelance pour affiner votre tarif.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-4">
+      <AccordionTrigger>Comment gérer la facturation récurrente d'une mission longue ?</AccordionTrigger>
+      <AccordionContent>
+        Pour les missions longues en régie, facturez mensuellement en détaillant les jours travaillés dans le mois. Newbi permet de créer des factures récurrentes avec un modèle pré-rempli, que vous ajustez chaque mois en fonction du nombre de jours réellement travaillés.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>
+
+<script type="application/ld+json" dangerouslySetInnerHTML={{__html: JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Comment facturer un client étranger ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Client UE professionnel : HT avec autoliquidation. Client hors UE : exonéré de TVA."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Temps passé ou forfait ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "TJM pour les missions en régie, forfait pour les projets bien définis."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Peut-on refacturer les frais de déplacement ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Oui, si prévu au contrat. Les frais apparaissent de manière distincte sur la facture."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Quel TJM pour un consultant débutant ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "300-450 €/jour junior, 450-700 €/jour confirmé, 700-1 200 €/jour senior."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Comment gérer la facturation récurrente ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Facturez mensuellement avec un modèle pré-rempli ajusté chaque mois."
+      }
+    }
+  ]
+})}} />

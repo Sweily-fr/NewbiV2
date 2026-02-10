@@ -1,0 +1,443 @@
+---
+title: Comment créer une facture quand on est auto-entrepreneur
+description: >-
+  Découvrez comment créer une facture conforme en auto-entrepreneur : mentions
+  obligatoires, modèle gratuit et outil de facturation en ligne.
+date: '2026-02-10'
+category: guide
+sector: Particuliers / Micro-entreprise
+keyword: facture auto-entrepreneur
+author: Newbi
+image: /blog/comment-creer-facture-auto-entrepreneur/hero.webp
+published: true
+publishDate: '2026-02-10'
+---
+
+import Image from "next/image"
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Alert, AlertDescription, AlertTitle } from "@/src/components/ui/alert"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check, Lightbulb, AlertTriangle, Info } from "lucide-react"
+
+<div className="not-prose flex gap-2 my-4">
+  <Badge>Guide</Badge>
+  <Badge variant="secondary">Auto-entrepreneur</Badge>
+  <Badge variant="outline">8 min de lecture</Badge>
+</div>
+
+Créer une **facture auto-entrepreneur** conforme est une obligation légale dès votre première prestation ou vente. Pourtant, de nombreux micro-entrepreneurs commettent des erreurs qui peuvent entraîner des sanctions. Ce guide vous accompagne étape par étape pour créer des factures irréprochables, que vous soyez en prestation de service ou en vente de marchandises.
+
+<div className="not-prose my-8 relative aspect-video overflow-hidden rounded-lg">
+  <Image
+    src="/blog/comment-creer-facture-auto-entrepreneur/hero.webp"
+    alt="Interface Newbi de création de facture pour auto-entrepreneur avec mentions obligatoires"
+    fill
+    className="object-cover"
+    priority
+    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 720px"
+  />
+</div>
+
+<div className="not-prose flex justify-center my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Quand un auto-entrepreneur doit-il émettre une facture ?
+
+En tant qu'auto-entrepreneur, vous devez obligatoirement émettre une facture dans les cas suivants :
+
+- **Toute vente ou prestation à un professionnel** (B2B), quel que soit le montant
+- **Toute vente à un particulier** (B2C) d'un montant supérieur à 25 € TTC
+- **À la demande du client**, même en dessous de 25 €
+
+<figure className="not-prose my-8">
+  <div className="relative aspect-video overflow-hidden rounded-lg border">
+    <Image
+      src="/blog/comment-creer-facture-auto-entrepreneur/section-1.webp"
+      alt="Schéma récapitulatif des cas où un auto-entrepreneur doit émettre une facture"
+      fill
+      className="object-cover"
+      sizes="(max-width: 768px) 100vw, 720px"
+    />
+  </div>
+  <figcaption className="mt-2 text-center text-sm text-muted-foreground">
+    Cas d'obligation d'émission de facture pour un auto-entrepreneur
+  </figcaption>
+</figure>
+
+<Callout type="warning">
+  Ne pas émettre de facture lorsqu'elle est obligatoire vous expose à une amende de **15 € par mention manquante**, plafonnée à 25 % du montant de la facture.
+</Callout>
+
+## Les mentions obligatoires sur une facture auto-entrepreneur
+
+Votre facture doit contenir un certain nombre de mentions légales. En voici la liste complète pour 2026 :
+
+### Informations sur vous (le vendeur)
+
+- Nom et prénom (ou raison sociale si vous avez un nom commercial)
+- Adresse du siège de l'auto-entreprise
+- Numéro SIREN (9 chiffres)
+- Numéro de TVA intracommunautaire (si assujetti à la TVA)
+- Mention **"EI"** (Entrepreneur Individuel) obligatoire depuis 2022
+
+### Informations sur le client
+
+- Nom ou raison sociale du client
+- Adresse de facturation
+- Numéro de TVA intracommunautaire (si le client est professionnel et assujetti)
+
+### Informations sur la facture
+
+- **Numéro de facture** : unique et séquentiel (ex: FA-2026-001)
+- **Date d'émission** de la facture
+- **Date de la prestation** ou de la livraison
+- **Désignation** précise des produits ou services
+- **Quantité et prix unitaire** HT
+- **Montant total** HT et TTC
+
+### Mentions spécifiques auto-entrepreneur
+
+Si vous bénéficiez de la franchise en base de TVA (ce qui est le cas de la majorité des auto-entrepreneurs), vous devez ajouter obligatoirement la mention :
+
+> **« TVA non applicable, art. 293 B du CGI »**
+
+<div className="not-prose my-8 overflow-x-auto">
+  <Table>
+    <TableCaption>Récapitulatif des mentions obligatoires sur une facture auto-entrepreneur</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead>Mention</TableHead>
+        <TableHead>Obligatoire ?</TableHead>
+        <TableHead>Exemple</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell>Numéro de facture</TableCell>
+        <TableCell>✅ Oui</TableCell>
+        <TableCell>FA-2026-001</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell>Date d'émission</TableCell>
+        <TableCell>✅ Oui</TableCell>
+        <TableCell>10/02/2026</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell>SIREN</TableCell>
+        <TableCell>✅ Oui</TableCell>
+        <TableCell>123 456 789</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell>Mention EI</TableCell>
+        <TableCell>✅ Oui</TableCell>
+        <TableCell>Jean Dupont EI</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell>Mention TVA non applicable</TableCell>
+        <TableCell>✅ Si franchise TVA</TableCell>
+        <TableCell>TVA non applicable, art. 293 B du CGI</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell>Conditions de paiement</TableCell>
+        <TableCell>✅ Oui</TableCell>
+        <TableCell>Paiement à 30 jours</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell>Pénalités de retard</TableCell>
+        <TableCell>✅ Oui</TableCell>
+        <TableCell>3 fois le taux d'intérêt légal</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell>Indemnité forfaitaire</TableCell>
+        <TableCell>✅ Oui (B2B)</TableCell>
+        <TableCell>40 €</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+## Les étapes pour créer votre facture auto-entrepreneur
+
+Voici le processus complet pour créer une facture conforme en quelques minutes :
+
+### Étape 1 : Choisissez votre outil de facturation
+
+Oubliez Word ou Excel qui ne garantissent pas la conformité de vos factures. Un logiciel de facturation comme [Newbi](/produits/factures) vous assure :
+
+- La numérotation automatique et séquentielle
+- Toutes les mentions légales pré-remplies
+- La génération de PDF professionnels
+- L'archivage conforme pendant 10 ans
+
+<figure className="not-prose my-8">
+  <div className="relative aspect-video overflow-hidden rounded-lg border">
+    <Image
+      src="/blog/comment-creer-facture-auto-entrepreneur/etape-1.webp"
+      alt="Choix du logiciel de facturation Newbi pour auto-entrepreneur"
+      fill
+      className="object-cover"
+      sizes="(max-width: 768px) 100vw, 720px"
+    />
+  </div>
+  <figcaption className="mt-2 text-center text-sm text-muted-foreground">
+    Interface de création de facture dans Newbi
+  </figcaption>
+</figure>
+
+### Étape 2 : Renseignez vos informations
+
+Configurez votre profil une seule fois avec :
+
+- Votre nom, prénom et mention EI
+- Votre adresse professionnelle
+- Votre numéro SIREN
+- Votre logo (facultatif mais recommandé)
+- Vos conditions de paiement par défaut
+
+### Étape 3 : Ajoutez les informations du client
+
+Pour chaque nouvelle facture, renseignez les coordonnées du client. Avec un [CRM intégré](/produits/factures), vos clients sont sauvegardés et auto-complétés à chaque nouvelle facture.
+
+### Étape 4 : Détaillez vos prestations ou produits
+
+Décrivez précisément chaque ligne de facturation :
+
+- **Libellé clair** : "Création de site web vitrine 5 pages" plutôt que "Prestation web"
+- **Quantité** : nombre d'heures, de jours ou d'unités
+- **Prix unitaire HT**
+- **Montant total de la ligne**
+
+<Callout type="tip">
+  Créez un [catalogue de produits et services](/blog/comment-creer-catalogue-produits-services) dans votre logiciel pour gagner du temps sur la saisie de vos lignes de facturation.
+</Callout>
+
+### Étape 5 : Vérifiez et envoyez
+
+Avant d'envoyer votre facture :
+
+<div className="not-prose my-8">
+  <ul className="grid gap-3" role="list">
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span className="text-muted-foreground">Toutes les mentions obligatoires sont présentes</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span className="text-muted-foreground">Le numéro de facture suit la séquence</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span className="text-muted-foreground">Les montants sont corrects</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span className="text-muted-foreground">La mention "TVA non applicable" est bien présente (si franchise)</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span className="text-muted-foreground">Les coordonnées du client sont exactes</span>
+    </li>
+  </ul>
+</div>
+
+<div className="not-prose flex justify-center my-6">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Découvrir la facturation Newbi</Link>
+  </Button>
+</div>
+
+## Les erreurs les plus courantes sur les factures auto-entrepreneur
+
+Voici les erreurs à éviter absolument :
+
+### 1. Oublier la mention "TVA non applicable"
+
+C'est l'erreur numéro un. Si vous êtes en franchise de TVA, cette mention est **obligatoire**. Son absence peut entraîner un redressement fiscal puisque l'administration pourrait considérer que vous devez la TVA.
+
+### 2. Utiliser une numérotation non séquentielle
+
+Les numéros de factures doivent se suivre sans interruption. Pas de FA-001, FA-003 en sautant le 002. Un logiciel de facturation gère cela automatiquement.
+
+### 3. Ne pas mentionner les pénalités de retard
+
+Depuis 2013, les mentions relatives aux pénalités de retard et à l'indemnité forfaitaire de recouvrement (40 €) sont obligatoires sur toute facture adressée à un professionnel.
+
+### 4. Confondre date d'émission et date de prestation
+
+La date d'émission est celle où vous créez la facture. La date de prestation est celle où le service a été rendu ou le bien livré. Les deux doivent figurer sur la facture.
+
+<Callout type="info">
+  Depuis la loi anti-fraude de 2018, si vous utilisez un logiciel de caisse ou de facturation, celui-ci doit être **certifié NF525** ou vous devez disposer d'une **attestation de conformité** éditée par l'éditeur.
+</Callout>
+
+## Facture auto-entrepreneur : avec ou sans TVA ?
+
+La majorité des auto-entrepreneurs bénéficient de la **franchise en base de TVA**. Cela signifie que vous ne facturez pas la TVA à vos clients et que vous ne la récupérez pas sur vos achats.
+
+Les seuils de franchise en 2026 sont :
+
+- **37 500 €** de CA annuel pour les prestations de services
+- **85 000 €** de CA annuel pour la vente de marchandises
+
+Si vous dépassez ces seuils, vous devrez facturer la TVA. Consultez notre article sur [la TVA et l'auto-entrepreneur](/blog/tva-auto-entrepreneur-seuils-franchise) pour en savoir plus.
+
+<figure className="not-prose my-8">
+  <div className="relative aspect-video overflow-hidden rounded-lg border">
+    <Image
+      src="/blog/comment-creer-facture-auto-entrepreneur/seuils-tva.webp"
+      alt="Tableau des seuils de franchise de TVA pour auto-entrepreneurs en 2026"
+      fill
+      className="object-cover"
+      sizes="(max-width: 768px) 100vw, 720px"
+    />
+  </div>
+  <figcaption className="mt-2 text-center text-sm text-muted-foreground">
+    Seuils de franchise de TVA pour les auto-entrepreneurs en 2026
+  </figcaption>
+</figure>
+
+## Facturation électronique 2026 : ce qui change pour les auto-entrepreneurs
+
+À partir de 2026, la [facturation électronique devient obligatoire](/blog/facturation-electronique-obligatoire-2026) pour toutes les entreprises françaises, y compris les auto-entrepreneurs. Concrètement :
+
+- Vous devrez **recevoir** vos factures au format électronique dès septembre 2026
+- Vous devrez **émettre** vos factures électroniquement selon un calendrier progressif
+- Les factures devront transiter par une **plateforme de dématérialisation** (PDP ou PPF)
+
+Un logiciel comme Newbi vous prépare dès maintenant à cette transition en générant des factures au format [Factur-X](/blog/facturx-format-facture-electronique) compatible.
+
+## Combien de temps conserver ses factures ?
+
+En tant qu'auto-entrepreneur, vous devez conserver vos factures pendant :
+
+- **10 ans** au titre des obligations comptables (Code de commerce)
+- **6 ans** au titre des obligations fiscales (Livre des procédures fiscales)
+
+Autrement dit, conservez toutes vos factures pendant au moins **10 ans**. Un logiciel en ligne comme Newbi archive automatiquement vos documents dans le cloud, ce qui vous évite les pertes.
+
+<Callout type="tip">
+  Pensez à [partager vos factures avec votre expert-comptable](/blog/comment-partager-documents-expert-comptable) directement depuis votre logiciel pour simplifier votre comptabilité.
+</Callout>
+
+## En résumé
+
+Créer une facture auto-entrepreneur conforme n'est pas compliqué si vous utilisez les bons outils. Retenez les points essentiels :
+
+- Utilisez un **logiciel de facturation** plutôt qu'Excel ou Word
+- Vérifiez que **toutes les mentions obligatoires** sont présentes
+- N'oubliez pas la mention **"TVA non applicable, art. 293 B du CGI"** si vous êtes en franchise
+- Préparez-vous dès maintenant à la **facturation électronique 2026**
+- Conservez vos factures pendant **10 ans minimum**
+
+Newbi vous permet de créer des factures conformes en quelques clics, avec toutes les mentions pré-remplies et un archivage automatique. Essayez gratuitement pendant 30 jours.
+
+<div className="not-prose flex justify-center my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement pendant 30 jours</Link>
+  </Button>
+</div>
+
+## Questions fréquentes
+
+<div className="not-prose my-12">
+  <Accordion type="multiple">
+    <AccordionItem value="faq-0">
+      <AccordionTrigger>Un auto-entrepreneur doit-il obligatoirement émettre des factures ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, un auto-entrepreneur doit émettre une facture pour toute vente ou prestation à un professionnel (B2B), et pour toute vente à un particulier supérieure à 25 € TTC. Le client peut également demander une facture quel que soit le montant.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-1">
+      <AccordionTrigger>Peut-on faire une facture auto-entrepreneur sur Word ou Excel ?</AccordionTrigger>
+      <AccordionContent>
+        Techniquement oui, mais c'est fortement déconseillé. Word et Excel ne garantissent pas la numérotation séquentielle, ne génèrent pas automatiquement les mentions obligatoires et ne sont pas conformes aux exigences de la facturation électronique 2026. Un logiciel de facturation comme Newbi est plus fiable et plus rapide.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-2">
+      <AccordionTrigger>Quelle mention TVA mettre sur une facture auto-entrepreneur ?</AccordionTrigger>
+      <AccordionContent>
+        Si vous bénéficiez de la franchise en base de TVA (ce qui est le cas de la plupart des auto-entrepreneurs), vous devez inscrire la mention « TVA non applicable, art. 293 B du CGI » sur chaque facture. Si vous avez dépassé les seuils et êtes assujetti à la TVA, vous devez facturer la TVA normalement.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-3">
+      <AccordionTrigger>Comment numéroter ses factures en auto-entreprise ?</AccordionTrigger>
+      <AccordionContent>
+        La numérotation doit être chronologique et séquentielle, sans trou. Vous pouvez utiliser le format de votre choix : FA-001, 2026-001, F20260001, etc. L'important est que chaque numéro soit unique et que la séquence soit ininterrompue. Un logiciel de facturation gère cela automatiquement.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-4">
+      <AccordionTrigger>Combien de temps un auto-entrepreneur doit-il conserver ses factures ?</AccordionTrigger>
+      <AccordionContent>
+        Les factures doivent être conservées pendant 10 ans (obligation comptable du Code de commerce). L'administration fiscale peut contrôler les 6 dernières années. Il est donc recommandé de conserver toutes vos factures pendant au moins 10 ans.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-5">
+      <AccordionTrigger>La facturation électronique sera-t-elle obligatoire pour les auto-entrepreneurs ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, la facturation électronique concernera tous les assujettis à la TVA, y compris les auto-entrepreneurs. L'obligation de réception démarre en septembre 2026, et l'obligation d'émission suivra selon un calendrier progressif. Utilisez dès maintenant un logiciel compatible pour anticiper la transition.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>
+
+<script type="application/ld+json" dangerouslySetInnerHTML={{__html: JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Un auto-entrepreneur doit-il obligatoirement émettre des factures ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Oui, un auto-entrepreneur doit émettre une facture pour toute vente ou prestation à un professionnel (B2B), et pour toute vente à un particulier supérieure à 25 € TTC."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Peut-on faire une facture auto-entrepreneur sur Word ou Excel ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Techniquement oui, mais c'est fortement déconseillé. Un logiciel de facturation garantit la conformité et la numérotation séquentielle."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Quelle mention TVA mettre sur une facture auto-entrepreneur ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Si vous bénéficiez de la franchise en base de TVA, inscrivez « TVA non applicable, art. 293 B du CGI » sur chaque facture."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Comment numéroter ses factures en auto-entreprise ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "La numérotation doit être chronologique et séquentielle, sans trou. Chaque numéro doit être unique."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Combien de temps un auto-entrepreneur doit-il conserver ses factures ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Les factures doivent être conservées pendant 10 ans minimum."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "La facturation électronique sera-t-elle obligatoire pour les auto-entrepreneurs ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Oui, la facturation électronique concernera tous les assujettis à la TVA, y compris les auto-entrepreneurs, à partir de 2026."
+      }
+    }
+  ]
+})}} />

@@ -1,0 +1,324 @@
+---
+title: 'Factur-X : comprendre le format de facture électronique français'
+description: >-
+  Tout savoir sur Factur-X : définition du format hybride PDF/XML, profils,
+  compatibilité et comment générer des factures Factur-X conformes.
+date: '2026-02-10'
+category: glossaire
+sector: null
+keyword: Factur-X format facture électronique
+author: Newbi
+image: /blog/facturx-format-facture-electronique/hero.webp
+published: false
+publishDate: null
+---
+
+import Image from "next/image"
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-8">
+  <Badge variant="secondary">Glossaire</Badge>
+  <Badge variant="outline">8 min de lecture</Badge>
+</div>
+
+# Factur-X : comprendre le format de facture électronique français
+
+**Factur-X** est le format de facture électronique hybride qui s'impose comme la référence en France pour la transition vers la dématérialisation obligatoire. Combinant un fichier PDF lisible par l'humain et des données XML structurées exploitables par les machines, Factur-X représente la solution idéale pour les entreprises qui souhaitent se conformer aux nouvelles obligations légales tout en conservant la simplicité d'usage d'un document PDF classique.
+
+<figure>
+  <Image
+    src="/blog/facturx-format-facture-electronique/hero.webp"
+    alt="Illustration du format Factur-X : facture électronique hybride PDF et XML"
+    width={1200}
+    height={630}
+    className="rounded-xl"
+    priority
+  />
+  <figcaption className="text-center text-sm text-muted-foreground mt-2">
+    Le format Factur-X combine la lisibilité du PDF avec la puissance des données structurées XML.
+  </figcaption>
+</figure>
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Créer mon compte Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Qu'est-ce que le format Factur-X ?
+
+Le format **Factur-X** est un standard de facture électronique dit **hybride**. Concrètement, il s'agit d'un fichier **PDF/A-3** dans lequel est embarqué un fichier **XML** contenant les données structurées de la facture. Ce double format offre un avantage considérable : le document peut être lu visuellement par n'importe quel collaborateur (via le PDF) tout en étant traitable automatiquement par les logiciels comptables et les plateformes de dématérialisation (via le XML).
+
+Le conteneur PDF/A-3 est une norme ISO (ISO 19005-3) qui garantit l'archivage à long terme du document. Le fichier XML embarqué, quant à lui, suit le standard **Cross Industry Invoice (CII)** défini par la norme UN/CEFACT, ce qui assure une interopérabilité maximale avec les systèmes d'information européens.
+
+### Un format né de la coopération franco-allemande
+
+Factur-X est le fruit d'une collaboration entre deux organismes de normalisation :
+
+- **FNFE-MPE** (Forum National de la Facture Électronique et des Marchés Publics Électroniques) côté français
+- **FeRD** (Forum elektronische Rechnung Deutschland) côté allemand
+
+Cette coopération a donné naissance à un format commun. En Allemagne, ce même standard est connu sous le nom de **ZUGFeRD** (dans sa version 2.x). Factur-X et ZUGFeRD 2.x sont donc techniquement identiques : un fichier Factur-X est un fichier ZUGFeRD valide, et inversement. Cette compatibilité bilatérale facilite considérablement les échanges commerciaux transfrontaliers au sein de l'Union européenne.
+
+<div className="not-prose my-8">
+  <Callout type="info" title="Factur-X : le format recommandé pour les TPE et PME">
+    L'administration française recommande le format Factur-X pour les petites et moyennes entreprises. Sa nature hybride permet une adoption progressive : vous pouvez continuer à lire vos factures comme des PDF classiques tout en étant conforme aux exigences de la facturation électronique obligatoire dès 2026.
+  </Callout>
+</div>
+
+## Les 5 profils Factur-X
+
+Le format Factur-X propose **cinq niveaux de détail** dans les données XML embarquées, appelés **profils**. Chaque profil correspond à un degré de richesse des informations structurées incluses dans le fichier XML.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Les cinq profils du format Factur-X et leurs caractéristiques</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[180px]">Profil</TableHead>
+        <TableHead>Données incluses</TableHead>
+        <TableHead className="w-[250px]">Cas d'usage</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Minimum</TableCell>
+        <TableCell>Identifiants de base (numéro de facture, date, montant total TTC, identifiants vendeur/acheteur)</TableCell>
+        <TableCell>Archivage simple, transmission au PPF avec données minimales</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Basic WL</TableCell>
+        <TableCell>Données du profil Minimum + détails de TVA, conditions de paiement, références de commande</TableCell>
+        <TableCell>PME avec besoins de traçabilité fiscale de base</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Basic</TableCell>
+        <TableCell>Données du profil Basic WL + lignes de facture détaillées (descriptions, quantités, prix unitaires)</TableCell>
+        <TableCell>Entreprises souhaitant automatiser la saisie comptable</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">EN 16931 (Comfort)</TableCell>
+        <TableCell>Ensemble complet conforme à la norme européenne EN 16931 : toutes les données obligatoires et optionnelles du standard européen</TableCell>
+        <TableCell>Conformité totale avec la directive européenne 2014/55/UE, marchés publics</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Extended</TableCell>
+        <TableCell>Données du profil EN 16931 + champs supplémentaires (informations logistiques, données sectorielles spécifiques)</TableCell>
+        <TableCell>Grandes entreprises, secteurs réglementés, échanges complexes B2B</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+Le profil **EN 16931 (Comfort)** est celui qui correspond le mieux aux exigences de la [facturation électronique obligatoire en 2026](/blog/facturation-electronique-obligatoire-2026). Il garantit la conformité avec la norme européenne tout en restant gérable pour les entreprises de taille intermédiaire.
+
+## Les avantages du format Factur-X
+
+### Lisible par l'humain ET par la machine
+
+C'est la force principale de Factur-X. Contrairement aux formats purement structurés comme l'UBL ou le CII pur (qui ne produisent que du XML), Factur-X conserve une représentation visuelle en PDF. Vos équipes commerciales, vos clients et vos fournisseurs peuvent ouvrir la facture avec n'importe quel lecteur PDF, sans logiciel spécialisé. En parallèle, votre logiciel comptable extrait automatiquement les données XML pour alimenter vos écritures.
+
+### Conformité avec la réforme 2026
+
+La réforme de la [facturation électronique obligatoire](/blog/obligations-facture-electronique-pme) impose aux entreprises françaises d'émettre et de recevoir des factures dans des formats structurés ou hybrides. Factur-X fait partie des trois formats acceptés par le [Portail Public de Facturation (PPF)](/blog/quest-ce-que-ppf-portail-public-facturation) et les [Plateformes de Dématérialisation Partenaires (PDP)](/blog/quest-ce-que-pdp-plateforme-dematerialisation) :
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Factur-X</strong> (format hybride PDF/A-3 + XML CII embarqué)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>UBL (Universal Business Language)</strong> format XML pur, très utilisé en Europe du Nord</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>CII (Cross Industry Invoice)</strong> format XML pur conforme à la norme UN/CEFACT</span>
+  </div>
+</div>
+
+### Interopérabilité européenne
+
+Grâce à sa compatibilité avec ZUGFeRD 2.x et sa conformité à la norme EN 16931, Factur-X est reconnu dans l'ensemble de l'Union européenne. Si vous travaillez avec des partenaires allemands, autrichiens ou d'autres pays européens, vos factures Factur-X seront directement exploitables par leurs systèmes.
+
+### Archivage pérenne
+
+Le format PDF/A-3 est conçu pour l'archivage à long terme. Vos factures Factur-X respectent les exigences légales de conservation des documents comptables (10 ans en France) sans risque d'obsolescence du format.
+
+## Factur-X vs UBL vs CII : quelles différences ?
+
+Il est important de bien distinguer les trois formats acceptés dans le cadre de la réforme :
+
+**Factur-X** est un format **hybride**. Il contient à la fois un PDF visuel et un XML structuré (au format CII). C'est le format le plus accessible pour les TPE et PME car il ne nécessite aucun changement dans les habitudes de lecture des factures.
+
+**UBL (Universal Business Language)** est un format **purement XML**. Il est très répandu dans les pays scandinaves et aux Pays-Bas. Il offre une grande richesse sémantique mais nécessite un logiciel capable de lire et d'interpréter le XML pour visualiser la facture.
+
+**CII (Cross Industry Invoice)** est également un format **purement XML**, défini par l'UN/CEFACT. C'est le même standard XML que celui embarqué dans Factur-X, mais sans l'enveloppe PDF. Il est utilisé principalement dans les échanges B2B internationaux.
+
+En résumé, si vous cherchez la simplicité et la conformité, **Factur-X au profil EN 16931** est le choix le plus judicieux pour une entreprise française.
+
+<figure>
+  <Image
+    src="/blog/facturx-format-facture-electronique/profils-facturx.webp"
+    alt="Schéma comparatif des profils Factur-X et de leur niveau de détail"
+    width={1200}
+    height={630}
+    className="rounded-xl"
+  />
+  <figcaption className="text-center text-sm text-muted-foreground mt-2">
+    Les profils Factur-X offrent une progressivité dans la richesse des données structurées.
+  </figcaption>
+</figure>
+
+<div className="not-prose my-8">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Générer mes factures Factur-X</Link>
+  </Button>
+</div>
+
+## Comment Newbi génère vos factures au format Factur-X
+
+Avec **Newbi**, la génération de factures Factur-X est entièrement automatique. Vous n'avez aucune manipulation technique à effectuer : il vous suffit de créer votre facture depuis l'interface, et Newbi se charge du reste.
+
+<div className="not-prose my-8">
+  <Callout type="tip" title="Génération automatique avec Newbi">
+    Newbi génère automatiquement vos factures au format Factur-X (profil EN 16931). Vous remplissez votre facture comme d'habitude, et le fichier PDF/A-3 avec XML embarqué est produit en un clic. Aucune compétence technique requise.
+  </Callout>
+</div>
+
+Voici comment le processus fonctionne concrètement :
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Vous créez votre facture en renseignant les informations habituelles (client, lignes de produits/services, TVA, conditions de paiement)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Newbi structure automatiquement les données au format XML CII conforme à la norme EN 16931</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le fichier XML est embarqué dans un conteneur PDF/A-3, produisant un document Factur-X valide</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Vous pouvez envoyer la facture directement à votre client ou la transmettre via une PDP connectée</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>L'archivage conforme est assuré grâce au format PDF/A-3 pérenne</span>
+  </div>
+</div>
+
+## En résumé
+
+**Factur-X** est le format de facture électronique hybride qui combine la lisibilité d'un PDF classique avec la puissance des données structurées XML. Né de la coopération franco-allemande entre la FNFE-MPE et le FeRD, il est compatible avec le standard ZUGFeRD 2.x et conforme à la norme européenne EN 16931. Avec ses cinq profils progressifs (Minimum, Basic WL, Basic, EN 16931/Comfort et Extended), il s'adapte à toutes les tailles d'entreprises et à tous les niveaux de complexité.
+
+Dans le contexte de la [facturation électronique obligatoire en 2026](/blog/facturation-electronique-obligatoire-2026), Factur-X est le format le plus accessible pour les TPE et PME françaises. Il est accepté par le [PPF](/blog/quest-ce-que-ppf-portail-public-facturation) et par l'ensemble des [PDP agréées](/blog/quest-ce-que-pdp-plateforme-dematerialisation).
+
+Avec Newbi, vous générez automatiquement des factures Factur-X conformes, sans aucune compétence technique. Concentrez-vous sur votre activité, Newbi s'occupe de la conformité.
+
+<div className="not-prose my-8 flex flex-col sm:flex-row gap-4">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+  <Button asChild variant="outline" size="lg">
+    <Link href="/produits/factures">Découvrir la facturation Newbi</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur Factur-X
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Qu'est-ce que le format Factur-X exactement ?</AccordionTrigger>
+      <AccordionContent>
+        Factur-X est un format de facture électronique hybride qui combine un fichier PDF/A-3 (lisible visuellement) avec un fichier XML embarqué (exploitable par les logiciels). Le XML suit le standard Cross Industry Invoice (CII) et peut contenir différents niveaux de détail selon le profil choisi (Minimum, Basic WL, Basic, EN 16931 ou Extended).
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Factur-X est-il obligatoire pour la facturation électronique en 2026 ?</AccordionTrigger>
+      <AccordionContent>
+        Factur-X n'est pas le seul format accepté, mais il fait partie des trois formats autorisés (avec UBL et CII pur) pour la facturation électronique obligatoire en France. C'est le format recommandé pour les TPE et PME car il conserve la lisibilité d'un PDF classique tout en intégrant les données structurées requises.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Quelle est la différence entre Factur-X et ZUGFeRD ?</AccordionTrigger>
+      <AccordionContent>
+        Factur-X et ZUGFeRD 2.x sont techniquement identiques. Il s'agit du même format, développé conjointement par la France (FNFE-MPE) et l'Allemagne (FeRD). Le nom "Factur-X" est utilisé en France, tandis que "ZUGFeRD" est le nom utilisé en Allemagne. Un fichier Factur-X est donc automatiquement un fichier ZUGFeRD valide et inversement.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Quel profil Factur-X choisir pour mon entreprise ?</AccordionTrigger>
+      <AccordionContent>
+        Pour la plupart des entreprises françaises, le profil <strong>EN 16931 (Comfort)</strong> est recommandé. Il garantit la conformité avec la norme européenne et contient toutes les données nécessaires pour le traitement automatisé. Les profils Minimum et Basic WL peuvent suffire pour des cas simples, tandis que le profil Extended est destiné aux échanges B2B complexes dans des secteurs réglementés.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Comment générer des factures Factur-X sans compétences techniques ?</AccordionTrigger>
+      <AccordionContent>
+        Avec un logiciel de facturation comme Newbi, la génération de factures Factur-X est entièrement automatisée. Vous créez votre facture normalement en renseignant les informations habituelles (client, produits, TVA), et le logiciel produit automatiquement un fichier PDF/A-3 avec le XML CII embarqué au profil EN 16931. Aucune manipulation technique n'est nécessaire.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>
+
+<script
+  type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Qu'est-ce que le format Factur-X exactement ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Factur-X est un format de facture électronique hybride qui combine un fichier PDF/A-3 (lisible visuellement) avec un fichier XML embarqué (exploitable par les logiciels). Le XML suit le standard Cross Industry Invoice (CII) et peut contenir différents niveaux de détail selon le profil choisi (Minimum, Basic WL, Basic, EN 16931 ou Extended)."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Factur-X est-il obligatoire pour la facturation électronique en 2026 ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Factur-X n'est pas le seul format accepté, mais il fait partie des trois formats autorisés (avec UBL et CII pur) pour la facturation électronique obligatoire en France. C'est le format recommandé pour les TPE et PME car il conserve la lisibilité d'un PDF classique tout en intégrant les données structurées requises."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Quelle est la différence entre Factur-X et ZUGFeRD ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Factur-X et ZUGFeRD 2.x sont techniquement identiques. Il s'agit du même format, développé conjointement par la France (FNFE-MPE) et l'Allemagne (FeRD). Le nom 'Factur-X' est utilisé en France, tandis que 'ZUGFeRD' est le nom utilisé en Allemagne. Un fichier Factur-X est donc automatiquement un fichier ZUGFeRD valide et inversement."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Quel profil Factur-X choisir pour mon entreprise ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Pour la plupart des entreprises françaises, le profil EN 16931 (Comfort) est recommandé. Il garantit la conformité avec la norme européenne et contient toutes les données nécessaires pour le traitement automatisé. Les profils Minimum et Basic WL peuvent suffire pour des cas simples, tandis que le profil Extended est destiné aux échanges B2B complexes dans des secteurs réglementés."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Comment générer des factures Factur-X sans compétences techniques ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Avec un logiciel de facturation comme Newbi, la génération de factures Factur-X est entièrement automatisée. Vous créez votre facture normalement en renseignant les informations habituelles (client, produits, TVA), et le logiciel produit automatiquement un fichier PDF/A-3 avec le XML CII embarqué au profil EN 16931. Aucune manipulation technique n'est nécessaire."
+          }
+        }
+      ]
+    })
+  }}
+/>

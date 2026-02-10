@@ -1,0 +1,451 @@
+---
+title: 'Facture de situation de travaux BTP : modèle et explications'
+description: >-
+  Comment émettre une facture de situation de travaux dans le BTP : avancement,
+  retenue de garantie, modèle et logiciel de facturation adapté.
+date: '2026-02-10'
+category: guide
+sector: BTP / Artisans
+keyword: facture situation travaux BTP
+author: Newbi
+image: /blog/facture-situation-travaux-btp/hero.webp
+published: false
+publishDate: null
+---
+
+import Image from "next/image"
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex gap-2 items-center mb-6">
+  <Badge>Guide</Badge>
+  <Badge variant="secondary">BTP</Badge>
+  <Badge variant="outline">9 min de lecture</Badge>
+</div>
+
+# Facture de situation de travaux BTP : modèle et explications
+
+La **facture de situation de travaux** est un document incontournable dans le secteur du BTP. Contrairement aux factures classiques, elle permet de facturer un chantier de manière progressive, en fonction de l'avancement réel des travaux. Que vous soyez maçon, électricien, plombier ou entreprise générale de construction, comprendre le fonctionnement de ce type de facturation est essentiel pour sécuriser votre trésorerie et respecter vos obligations légales.
+
+Dans ce guide complet, nous décryptons la mécanique de la **facture situation travaux BTP** : sa définition, sa structure, la retenue de garantie, le décompte général définitif (DGD) et les mentions spécifiques à ne pas oublier.
+
+<figure>
+  <Image
+    src="/blog/facture-situation-travaux-btp/hero.webp"
+    alt="Facture de situation de travaux BTP : modèle et guide complet"
+    width={1200}
+    height={630}
+    className="rounded-lg"
+    priority
+  />
+  <figcaption className="text-center text-sm text-muted-foreground mt-2">
+    La facturation par situation : le pilier financier de tout chantier BTP.
+  </figcaption>
+</figure>
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement pour le BTP</Link>
+  </Button>
+</div>
+
+## Qu'est-ce qu'une facture de situation de travaux ?
+
+Une facture de situation de travaux -- aussi appelée **situation de chantier** ou **facture d'avancement** -- est un document de facturation partielle qui reflète l'avancement réel d'un chantier à un instant donné. Elle s'inscrit dans un cycle de facturation échelonné tout au long de la durée du projet.
+
+Contrairement à une facture d'acompte classique (basée sur un pourcentage forfaitaire convenu à la commande), la facture de situation repose sur le **constat d'avancement physique** des travaux, lot par lot. Elle est généralement émise chaque mois et validée par le maître d'oeuvre ou le maître d'ouvrage avant règlement.
+
+Ce mécanisme est encadré par le **Code de la commande publique** pour les marchés publics et par les stipulations contractuelles (CCAG Travaux) pour les marchés privés. En pratique, il est également très courant dans les marchés privés entre professionnels du bâtiment.
+
+## Pourquoi facturer par situation de travaux ?
+
+La facturation par situation présente plusieurs avantages majeurs pour les entreprises du BTP :
+
+- **Préserver la trésorerie** : au lieu d'attendre la fin du chantier (qui peut durer plusieurs mois, voire des années), vous encaissez progressivement au fur et à mesure de l'avancement.
+- **Assurer un suivi financier précis** : chaque situation constitue une photographie financière du chantier, ce qui facilite le pilotage budgétaire.
+- **Réduire les risques d'impayés** : en facturant progressivement, vous limitez l'exposition financière en cas de défaillance du maître d'ouvrage.
+- **Respecter les obligations contractuelles** : la plupart des marchés de travaux (publics comme privés) imposent ce mode de facturation.
+
+## Structure d'une facture de situation de travaux
+
+Une facture de situation de travaux suit une structure bien précise. Voici les éléments clés qu'elle doit contenir :
+
+### 1. Montant du marché
+
+Le montant total HT du marché (ou du lot), tel que défini dans le devis ou le contrat signé. Ce montant sert de référence pour calculer l'avancement.
+
+### 2. Pourcentage d'avancement
+
+Pour chaque lot ou poste de travaux, on indique le **pourcentage d'avancement cumulé** à la date de la situation. Ce pourcentage est généralement constaté contradictoirement sur le chantier.
+
+### 3. Cumul des situations précédentes
+
+Le montant déjà facturé lors des situations précédentes. Ce cumul permet de calculer le montant réellement dû pour la période en cours.
+
+### 4. Montant à facturer ce mois
+
+La formule est simple :
+
+**Montant à facturer = (Montant marché x % avancement) - Cumul déjà facturé**
+
+### 5. Retenue de garantie (5 %)
+
+Une retenue de garantie de **5 % maximum** est prélevée sur chaque situation. Elle est restituée un an après la réception des travaux, sauf réserves non levées.
+
+### Exemple concret
+
+<div className="not-prose my-8 overflow-x-auto">
+  <Table>
+    <TableCaption>Exemple de situation de travaux n°3 -- Chantier rénovation immeuble</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead>Lot</TableHead>
+        <TableHead className="text-right">Montant marché HT</TableHead>
+        <TableHead className="text-right">% avancement</TableHead>
+        <TableHead className="text-right">Cumul HT</TableHead>
+        <TableHead className="text-right">Déjà facturé HT</TableHead>
+        <TableHead className="text-right">A facturer ce mois HT</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Gros oeuvre</TableCell>
+        <TableCell className="text-right">85 000 EUR</TableCell>
+        <TableCell className="text-right">60 %</TableCell>
+        <TableCell className="text-right">51 000 EUR</TableCell>
+        <TableCell className="text-right">34 000 EUR</TableCell>
+        <TableCell className="text-right">17 000 EUR</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Electricité</TableCell>
+        <TableCell className="text-right">22 000 EUR</TableCell>
+        <TableCell className="text-right">40 %</TableCell>
+        <TableCell className="text-right">8 800 EUR</TableCell>
+        <TableCell className="text-right">4 400 EUR</TableCell>
+        <TableCell className="text-right">4 400 EUR</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Plomberie</TableCell>
+        <TableCell className="text-right">18 000 EUR</TableCell>
+        <TableCell className="text-right">30 %</TableCell>
+        <TableCell className="text-right">5 400 EUR</TableCell>
+        <TableCell className="text-right">3 600 EUR</TableCell>
+        <TableCell className="text-right">1 800 EUR</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Peinture</TableCell>
+        <TableCell className="text-right">12 000 EUR</TableCell>
+        <TableCell className="text-right">0 %</TableCell>
+        <TableCell className="text-right">0 EUR</TableCell>
+        <TableCell className="text-right">0 EUR</TableCell>
+        <TableCell className="text-right">0 EUR</TableCell>
+      </TableRow>
+      <TableRow className="font-bold border-t-2">
+        <TableCell>TOTAL</TableCell>
+        <TableCell className="text-right">137 000 EUR</TableCell>
+        <TableCell className="text-right">--</TableCell>
+        <TableCell className="text-right">65 200 EUR</TableCell>
+        <TableCell className="text-right">42 000 EUR</TableCell>
+        <TableCell className="text-right">23 200 EUR</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+Dans cet exemple, la situation n°3 s'élève à **23 200 EUR HT** avant application de la retenue de garantie. Avec une retenue de 5 %, le montant net à payer serait de **22 040 EUR HT** (23 200 - 1 160 EUR de retenue).
+
+## Numérotation des situations de travaux
+
+Les situations de travaux sont numérotées de manière séquentielle : **situation n°1, situation n°2, situation n°3**, etc. Cette numérotation doit être continue et chronologique pour un même marché. Chaque numéro correspond à une période d'avancement (généralement mensuelle).
+
+Il est fortement recommandé d'adopter un format clair et normalisé, par exemple :
+
+- **SIT-2026-001** pour la première situation du chantier
+- **SIT-2026-002** pour la deuxième, etc.
+
+La numérotation des situations est distincte de la numérotation globale de vos factures. Toutefois, chaque situation doit aussi porter un **numéro de facture unique** conforme à votre séquence de facturation habituelle, conformément à l'article 242 nonies A du Code général des impôts.
+
+## La retenue de garantie : ce qu'il faut savoir
+
+<div className="not-prose my-6">
+  <Callout variant="warning" title="Attention : calcul de la retenue de garantie">
+    La retenue de garantie se calcule sur le montant TTC de chaque situation, et non sur le montant HT. Elle ne peut excéder **5 % du montant total du marché TTC**. Son application est encadrée par la **loi n°71-584 du 16 juillet 1971**. Ne pas confondre retenue de garantie et pénalités de retard, qui sont deux mécanismes distincts.
+  </Callout>
+</div>
+
+La retenue de garantie est un mécanisme de protection du maître d'ouvrage. Voici les points essentiels :
+
+- **Base légale** : loi n°71-584 du **16 juillet 1971** relative aux retenues de garantie en matière de marchés de travaux.
+- **Taux maximum** : **5 %** du montant total TTC du marché.
+- **Application** : elle est prélevée sur chaque situation de travaux, proportionnellement.
+- **Libération** : la retenue est restituée **un an après la date de réception des travaux**, sauf si des réserves n'ont pas été levées.
+- **Caution bancaire** : l'entrepreneur peut substituer à la retenue de garantie une **caution personnelle et solidaire** d'un établissement bancaire, ce qui lui permet de percevoir l'intégralité de chaque situation.
+- **Consignation** : si le maître d'ouvrage est un particulier, les sommes retenues doivent être consignées entre les mains d'un consignataire accepté par les deux parties.
+
+En pratique, la retenue de garantie est cumulée au fil des situations et n'est libérée qu'après le délai légal d'un an suivant la réception, sous réserve de la levée de toutes les réserves.
+
+## Le Décompte Général Définitif (DGD)
+
+Le **DGD** (Décompte Général Définitif) est le document final qui clôture financièrement un marché de travaux. Il récapitule l'ensemble des situations émises, les travaux supplémentaires éventuels, les pénalités, les moins-values et la retenue de garantie.
+
+Le DGD intervient après la **réception des travaux** et constitue le solde de tout compte entre l'entreprise et le maître d'ouvrage. C'est un document capital car :
+
+- Il fixe définitivement le montant total dû à l'entreprise.
+- Il déclenche le délai de libération de la retenue de garantie.
+- Il interdit toute réclamation ultérieure (sauf vices cachés).
+
+Dans les marchés publics, le DGD est régi par le **CCAG Travaux (article 13)**. Le titulaire du marché dispose de **30 jours** après la notification du décompte général pour formuler ses observations. En l'absence de contestation, le décompte devient définitif.
+
+## Mentions obligatoires spécifiques au BTP
+
+Au-delà des mentions classiques de toute facture (identité des parties, date, numéro, TVA, etc.), une facture de situation de travaux dans le BTP doit comporter des **mentions spécifiques** :
+
+<div className="not-prose my-8">
+  <ul className="space-y-3">
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span>Référence du marché ou du devis accepté</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span>Numéro de la situation (situation n°1, n°2, etc.)</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span>Période couverte par la situation (du ... au ...)</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span>Détail lot par lot avec pourcentage d'avancement</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span>Cumul des situations précédentes</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span>Montant de la retenue de garantie (si applicable)</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span>Numéro d'assurance décennale et nom de l'assureur</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span>Mention de TVA applicable (taux réduit 10 % pour rénovation, 20 % pour neuf)</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span>Adresse du chantier (si différente de l'adresse du client)</span>
+    </li>
+  </ul>
+</div>
+
+Pour aller plus loin sur les mentions obligatoires dans le BTP, consultez notre guide dédié : [Facture BTP : les mentions spécifiques à connaître](/blog/facture-btp-artisan-mentions-specifiques).
+
+<figure className="my-8">
+  <Image
+    src="/blog/facture-situation-travaux-btp/exemple-situation.webp"
+    alt="Exemple de facture de situation de travaux générée avec Newbi"
+    width={800}
+    height={500}
+    className="rounded-lg border"
+  />
+  <figcaption className="text-center text-sm text-muted-foreground mt-2">
+    Exemple de situation de travaux générée automatiquement avec le module BTP de Newbi.
+  </figcaption>
+</figure>
+
+## Créer vos situations de travaux avec Newbi
+
+<div className="not-prose my-6">
+  <Callout variant="info" title="Le module BTP de Newbi simplifie vos situations de travaux">
+    Avec Newbi, vous pouvez créer vos situations de travaux en quelques clics : définissez vos lots, renseignez l'avancement mensuel, et le logiciel calcule automatiquement le cumul, la retenue de garantie et le montant net à facturer. Vos factures sont conformes et prêtes à envoyer.
+  </Callout>
+</div>
+
+Gérer manuellement les situations de travaux sur Excel ou Word est source d'erreurs : oubli de cumul, mauvais calcul de retenue, numérotation incohérente. Un **logiciel de facturation adapté au BTP** comme Newbi vous permet de :
+
+<div className="not-prose my-8">
+  <ul className="space-y-3">
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span>Créer des situations de travaux conformes en quelques minutes</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span>Gérer la retenue de garantie automatiquement</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span>Suivre l'avancement de chaque lot en temps réel</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span>Générer le DGD en fin de chantier</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span>Inclure automatiquement toutes les mentions obligatoires BTP</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span>Envoyer vos situations par email directement depuis l'application</span>
+    </li>
+  </ul>
+</div>
+
+<div className="not-prose my-8">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Créer mes situations de travaux</Link>
+  </Button>
+</div>
+
+## Articles connexes
+
+Pour approfondir le sujet de la facturation dans le BTP, consultez nos autres guides :
+
+- [Facture BTP et artisans : les mentions spécifiques obligatoires](/blog/facture-btp-artisan-mentions-specifiques)
+- [Devis travaux BTP : le guide complet](/blog/devis-travaux-btp-guide)
+- [Obligation d'assurance décennale pour les artisans](/blog/obligation-assurance-decennale-artisan)
+- [Qu'est-ce qu'un acompte sur facture ?](/blog/quest-ce-que-acompte-facture)
+
+## En résumé
+
+La **facture de situation de travaux** est le pilier de la gestion financière d'un chantier BTP. Elle repose sur un suivi rigoureux de l'avancement, une numérotation séquentielle et le respect de la retenue de garantie de 5 %. Chaque situation doit être documentée avec précision (lots, pourcentages, cumuls) et comporter toutes les mentions obligatoires spécifiques au secteur du bâtiment.
+
+Utiliser un logiciel de facturation spécialisé comme Newbi vous permet de fiabiliser ce processus, de gagner du temps et de vous concentrer sur votre coeur de métier : la réalisation de vos chantiers.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Commencer gratuitement avec Newbi</Link>
+  </Button>
+</div>
+
+## FAQ -- Facture de situation de travaux BTP
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Quelle est la différence entre une facture d'acompte et une facture de situation ?</AccordionTrigger>
+      <AccordionContent>
+        La facture d'acompte est un versement forfaitaire demandé avant ou au début des travaux, basé sur un pourcentage du devis (par exemple 30 %). La facture de situation, en revanche, est calculée sur l'avancement réel et constaté des travaux, lot par lot. La situation reflète donc la réalité physique du chantier, tandis que l'acompte est un montant convenu à l'avance.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>La retenue de garantie est-elle obligatoire dans le BTP ?</AccordionTrigger>
+      <AccordionContent>
+        La retenue de garantie n'est pas systématiquement obligatoire, mais elle est très fréquemment prévue dans les contrats de travaux, notamment dans les marchés publics. Lorsqu'elle est stipulée, elle est encadrée par la loi du 16 juillet 1971 et ne peut dépasser 5 % du montant TTC du marché. L'entrepreneur peut la remplacer par une caution bancaire.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>A quelle fréquence émettre une situation de travaux ?</AccordionTrigger>
+      <AccordionContent>
+        En règle générale, les situations de travaux sont émises mensuellement. C'est la périodicité standard dans les marchés publics (CCAG Travaux) et dans la plupart des marchés privés. Toutefois, la fréquence peut être différente si le contrat le prévoit (bimestrielle, trimestrielle, ou à chaque étape clé du chantier).
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Quand est libérée la retenue de garantie ?</AccordionTrigger>
+      <AccordionContent>
+        La retenue de garantie est libérée un an après la date de réception des travaux, à condition que toutes les réserves émises lors de la réception aient été levées. Si des réserves subsistent, le maître d'ouvrage peut conserver tout ou partie de la retenue correspondant aux travaux non conformes. En cas de caution bancaire, la caution expire automatiquement un an après la réception.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Comment gérer les travaux supplémentaires dans les situations ?</AccordionTrigger>
+      <AccordionContent>
+        Les travaux supplémentaires (ou travaux modificatifs) doivent faire l'objet d'un avenant au marché ou d'un ordre de service. Ils sont ensuite intégrés dans les situations de travaux suivantes avec une ligne distincte, mentionnant la référence de l'avenant. Le montant du marché est alors réajusté en conséquence. Ces travaux sont également soumis à la retenue de garantie.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>
+
+<script
+  type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "Facture de situation de travaux BTP : modèle et explications",
+      "description": "Comment émettre une facture de situation de travaux dans le BTP : avancement, retenue de garantie, modèle et logiciel de facturation adapté.",
+      "author": {
+        "@type": "Organization",
+        "name": "Newbi",
+        "url": "https://newbi.fr"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "Newbi",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://newbi.fr/logo.png"
+        }
+      },
+      "datePublished": "2026-02-10",
+      "dateModified": "2026-02-10",
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "https://newbi.fr/blog/facture-situation-travaux-btp"
+      },
+      "image": "https://newbi.fr/blog/facture-situation-travaux-btp/hero.webp",
+      "keywords": ["facture situation travaux BTP", "situation de chantier", "retenue de garantie BTP", "facturation BTP", "DGD travaux"],
+      "articleSection": "Guide"
+    })
+  }}
+/>
+
+<script
+  type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Quelle est la différence entre une facture d'acompte et une facture de situation ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "La facture d'acompte est un versement forfaitaire demandé avant ou au début des travaux, basé sur un pourcentage du devis. La facture de situation est calculée sur l'avancement réel et constaté des travaux, lot par lot."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "La retenue de garantie est-elle obligatoire dans le BTP ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "La retenue de garantie n'est pas systématiquement obligatoire, mais elle est très fréquemment prévue dans les contrats de travaux. Elle est encadrée par la loi du 16 juillet 1971 et ne peut dépasser 5 % du montant TTC du marché."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "A quelle fréquence émettre une situation de travaux ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "En règle générale, les situations de travaux sont émises mensuellement. C'est la périodicité standard dans les marchés publics et dans la plupart des marchés privés."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Quand est libérée la retenue de garantie ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "La retenue de garantie est libérée un an après la date de réception des travaux, à condition que toutes les réserves émises lors de la réception aient été levées."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Comment gérer les travaux supplémentaires dans les situations ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Les travaux supplémentaires doivent faire l'objet d'un avenant au marché ou d'un ordre de service. Ils sont ensuite intégrés dans les situations de travaux suivantes avec une ligne distincte, mentionnant la référence de l'avenant."
+          }
+        }
+      ]
+    })
+  }}
+/>

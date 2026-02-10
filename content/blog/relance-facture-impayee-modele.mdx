@@ -1,0 +1,447 @@
+---
+title: 'Comment relancer une facture impayée : modèles et conseils'
+description: >-
+  Relancez efficacement vos factures impayées avec nos modèles d'email, nos
+  conseils de timing et les bonnes pratiques pour récupérer vos créances.
+date: '2026-02-10'
+category: guide
+sector: null
+keyword: relance facture impayée
+author: Newbi
+image: /blog/relance-facture-impayee-modele/hero.webp
+published: false
+publishDate: null
+---
+
+import Image from "next/image";
+import Link from "next/link";
+import { Button } from "@/src/components/ui/button";
+import { Callout } from "@/src/components/ui/callout";
+import { Badge } from "@/src/components/ui/badge";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/src/components/ui/accordion";
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/src/components/ui/table";
+import { Check } from "lucide-react";
+
+<div className="not-prose flex gap-2 my-4">
+  <Badge>Guide</Badge>
+  <Badge variant="secondary">Impayés</Badge>
+  <Badge variant="outline">10 min de lecture</Badge>
+</div>
+
+Les **factures impayées** sont le cauchemar de tout indépendant et dirigeant de TPE. En France, les retards de paiement représentent en moyenne 12 jours au-delà de l'échéance, et 56 milliards d'euros de trésorerie manquent chaque année aux entreprises. Une relance efficace et professionnelle est la clé pour récupérer vos créances tout en préservant la relation client. Voici comment relancer vos factures impayées avec les bons modèles et le bon timing.
+
+<div className="not-prose my-8 relative aspect-video overflow-hidden rounded-lg">
+  <Image
+    src="/blog/relance-facture-impayee-modele/hero.webp"
+    alt="Processus de relance de facture impayée : du rappel amiable à la mise en demeure"
+    fill
+    className="object-cover"
+    priority
+    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 720px"
+  />
+</div>
+
+<div className="not-prose flex justify-center my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Automatiser mes relances avec Newbi</Link>
+  </Button>
+</div>
+
+## Le calendrier de relance idéal
+
+Le timing est crucial dans la relance. Trop tôt, vous paraissez impatient. Trop tard, le client « oublie ». Voici le calendrier de relance optimal :
+
+<figure className="not-prose my-8">
+  <div className="relative aspect-video overflow-hidden rounded-lg border">
+    <Image
+      src="/blog/relance-facture-impayee-modele/section-1.webp"
+      alt="Timeline du processus de relance de facture impayée de J-3 à J+60"
+      fill
+      className="object-cover"
+      sizes="(max-width: 768px) 100vw, 720px"
+    />
+  </div>
+  <figcaption className="mt-2 text-center text-sm text-muted-foreground">
+    Le calendrier de relance optimal pour les factures impayées
+  </figcaption>
+</figure>
+
+<div className="not-prose my-8 overflow-x-auto">
+  <Table>
+    <TableCaption>Calendrier de relance recommandé</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead>Étape</TableHead>
+        <TableHead>Timing</TableHead>
+        <TableHead>Canal</TableHead>
+        <TableHead>Ton</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-semibold">Rappel préventif</TableCell>
+        <TableCell>J-3 (3 jours avant l'échéance)</TableCell>
+        <TableCell>Email</TableCell>
+        <TableCell>Courtois, informatif</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-semibold">Relance 1</TableCell>
+        <TableCell>J+1 (1 jour après l'échéance)</TableCell>
+        <TableCell>Email</TableCell>
+        <TableCell>Poli, rappel factuel</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-semibold">Relance 2</TableCell>
+        <TableCell>J+7</TableCell>
+        <TableCell>Email + téléphone</TableCell>
+        <TableCell>Ferme mais courtois</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-semibold">Relance 3</TableCell>
+        <TableCell>J+15</TableCell>
+        <TableCell>Email recommandé</TableCell>
+        <TableCell>Ferme, mention des pénalités</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-semibold">Mise en demeure</TableCell>
+        <TableCell>J+30</TableCell>
+        <TableCell>Lettre recommandée AR</TableCell>
+        <TableCell>Formel, juridique</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-semibold">Recouvrement</TableCell>
+        <TableCell>J+45 à J+60</TableCell>
+        <TableCell>Huissier / société de recouvrement</TableCell>
+        <TableCell>Juridique</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+<Callout type="tip">
+  Newbi automatise les 3 premières relances. Configurez vos scénarios de relance
+  une seule fois, et l'outil envoie les emails aux bons moments, avec le bon
+  ton. Vous n'avez plus à y penser.
+</Callout>
+
+## Modèle de relance n°1 : le rappel préventif (J-3)
+
+**Objet** : Facture FA-2026-042 — Échéance dans 3 jours
+
+Bonjour \[Prénom\],
+
+J'espère que vous allez bien. Je me permets de vous rappeler que la facture **FA-2026-042** d'un montant de **2 400 € TTC** arrive à échéance le **\[date\]**.
+
+Pour votre commodité, vous trouverez la facture en pièce jointe. Le règlement peut être effectué par virement bancaire aux coordonnées indiquées sur la facture.
+
+N'hésitez pas à me contacter si vous avez la moindre question.
+
+Cordialement,
+\[Votre nom\]
+
+## Modèle de relance n°2 : première relance (J+1)
+
+**Objet** : Facture FA-2026-042 — Paiement en attente
+
+Bonjour \[Prénom\],
+
+Sauf erreur de ma part, la facture **FA-2026-042** d'un montant de **2 400 € TTC**, dont l'échéance était fixée au **\[date\]**, n'a pas encore été réglée.
+
+Il s'agit peut-être d'un oubli. Je vous serais reconnaissant(e) de bien vouloir procéder au règlement dans les meilleurs délais.
+
+Je reste à votre disposition si vous rencontrez un problème avec cette facture.
+
+Cordialement,
+\[Votre nom\]
+
+## Modèle de relance n°3 : deuxième relance (J+7)
+
+**Objet** : Relance — Facture FA-2026-042 impayée
+
+Bonjour \[Prénom\],
+
+Malgré mon précédent message, la facture **FA-2026-042** d'un montant de **2 400 € TTC** reste impayée à ce jour, soit **7 jours après l'échéance**.
+
+Je vous rappelle que conformément à nos [conditions générales](/blog/quest-ce-que-conditions-generales-vente), tout retard de paiement entraîne de plein droit des **pénalités de retard** et une **indemnité forfaitaire de recouvrement de 40 €**.
+
+Merci de bien vouloir régulariser cette situation dans les **5 jours ouvrés**.
+
+Cordialement,
+\[Votre nom\]
+
+<figure className="not-prose my-8">
+  <div className="relative aspect-video overflow-hidden rounded-lg border">
+    <Image
+      src="/blog/relance-facture-impayee-modele/relances-automatiques.webp"
+      alt="Interface Newbi montrant l'automatisation des relances de factures impayées"
+      fill
+      className="object-cover"
+      sizes="(max-width: 768px) 100vw, 720px"
+    />
+  </div>
+  <figcaption className="mt-2 text-center text-sm text-muted-foreground">
+    Relances automatiques paramétrables dans Newbi
+  </figcaption>
+</figure>
+
+## Modèle de relance n°4 : mise en demeure (J+30)
+
+**Objet** : Mise en demeure — Facture FA-2026-042
+
+Madame, Monsieur,
+
+Par la présente, je vous mets en demeure de régler la facture **FA-2026-042** d'un montant de **2 400 € TTC**, émise le **\[date d'émission\]** et échue depuis le **\[date d'échéance\]**, soit un retard de **30 jours**.
+
+Conformément aux articles L441-10 et suivants du Code de commerce, ce retard entraîne l'application de :
+
+- **Pénalités de retard** calculées au taux de \[X\] % annuel
+- **Indemnité forfaitaire de recouvrement** de 40 €
+
+À défaut de paiement dans un délai de **8 jours** à compter de la réception de cette lettre, je serai contraint(e) d'engager des poursuites judiciaires pour le recouvrement de cette créance, sans autre avis.
+
+Veuillez agréer, Madame, Monsieur, l'expression de mes salutations distinguées.
+
+\[Votre nom\]
+
+<Callout type="warning">
+  La mise en demeure doit être envoyée par **lettre recommandée avec accusé de
+  réception**. C'est un préalable obligatoire avant toute action en justice.
+  Conservez l'accusé de réception comme preuve.
+</Callout>
+
+<div className="not-prose flex justify-center my-6">
+  <Button asChild variant="outline">
+    <Link href="https://meet.brevo.com/sweily/newbi">
+      Demander une démo des relances automatiques
+    </Link>
+  </Button>
+</div>
+
+## Les bonnes pratiques de relance
+
+### 1. Relancez dès J+1
+
+Ne laissez jamais un retard s'installer. Plus vous attendez, plus il sera difficile de récupérer votre argent. Les statistiques montrent que les chances de recouvrement chutent de **90 % à J+1** à **50 % à J+90**.
+
+### 2. Restez professionnel
+
+Même si la situation est frustrante, gardez un ton professionnel. L'objectif est de récupérer l'argent ET de préserver la relation commerciale.
+
+### 3. Personnalisez vos relances
+
+Un email générique est moins efficace qu'un message personnalisé. Adressez-vous au bon interlocuteur (souvent le service comptabilité, pas votre contact commercial).
+
+### 4. Proposez des solutions
+
+Si le client a des difficultés financières, proposez un **échéancier de paiement**. Mieux vaut récupérer la créance en 3 fois que ne jamais être payé.
+
+### 5. Automatisez le processus
+
+Avec un outil comme Newbi, les relances sont automatiques : vous paramétrez les scénarios une fois, et l'outil gère le reste. Consultez aussi nos [meilleures pratiques de relance client](/blog/meilleures-pratiques-relance-client).
+
+## Les pénalités de retard : vos droits
+
+En cas de retard de paiement entre professionnels, vous avez droit à :
+
+- **Pénalités de retard** : minimum 3 fois le taux d'intérêt légal (soit environ 14,25 % en 2026). Elles courent dès le lendemain de la date d'échéance, sans qu'un rappel soit nécessaire.
+- **Indemnité forfaitaire de recouvrement** : **40 €** par facture en retard. Cette indemnité est due de plein droit.
+- **Frais de recouvrement supplémentaires** : si les frais réels dépassent 40 €, vous pouvez demander une indemnisation complémentaire.
+
+Pour tout savoir sur les [délais de paiement](/blog/quest-ce-que-delai-paiement-facture) et comment les paramétrer sur vos factures.
+
+<Callout type="info">
+  Les pénalités de retard et l'indemnité de 40 € sont dues **de plein droit**,
+  sans qu'il soit nécessaire de les réclamer. Elles s'appliquent automatiquement
+  dès le premier jour de retard. Mais dans la pratique, les mentionner dans vos
+  relances accélère le paiement.
+</Callout>
+
+## Prévenir plutôt que guérir
+
+Les meilleures relances sont celles que vous n'avez pas besoin d'envoyer. Pour réduire les impayés :
+
+<div className="not-prose my-8">
+  <ul className="grid gap-3" role="list">
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span className="text-muted-foreground">
+        Demandez un acompte avant le début de la prestation
+      </span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span className="text-muted-foreground">
+        Facturez immédiatement après la livraison
+      </span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span className="text-muted-foreground">
+        Proposez le paiement en ligne (virement, CB)
+      </span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span className="text-muted-foreground">
+        Fixez des délais de paiement courts (15-30 jours)
+      </span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span className="text-muted-foreground">
+        Activez les relances automatiques dans votre logiciel
+      </span>
+    </li>
+  </ul>
+</div>
+
+Consultez nos [7 conseils pour réduire vos délais de paiement](/blog/conseils-reduire-delais-paiement).
+
+## En résumé
+
+La relance de facture impayée est un exercice délicat mais essentiel pour votre trésorerie :
+
+- Relancez **dès J+1** — chaque jour de retard réduit vos chances de recouvrement
+- Suivez un **calendrier progressif** : rappel, relances amiables, mise en demeure
+- Restez **professionnel** et proposez des **solutions** (échéancier)
+- **Automatisez** vos relances avec un logiciel comme Newbi
+- Mentionnez les **pénalités de retard** et l'**indemnité de 40 €** dans vos relances
+
+Newbi vous permet d'automatiser tout le processus de relance et de suivre en temps réel vos factures impayées. Fini les oublis et les relances tardives.
+
+<div className="not-prose flex justify-center my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement pendant 30 jours</Link>
+  </Button>
+</div>
+
+## Questions fréquentes
+
+<div className="not-prose my-12">
+  <Accordion type="multiple">
+    <AccordionItem value="faq-0">
+      <AccordionTrigger>
+        Combien de relances faut-il envoyer avant une mise en demeure ?
+      </AccordionTrigger>
+      <AccordionContent>
+        Il est recommandé d'envoyer 2 à 3 relances amiables par email avant de
+        passer à la mise en demeure par lettre recommandée. Cela montre votre
+        bonne foi et laisse le temps au client de régulariser. La mise en
+        demeure intervient généralement à J+30.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-1">
+      <AccordionTrigger>
+        Peut-on facturer les pénalités de retard automatiquement ?
+      </AccordionTrigger>
+      <AccordionContent>
+        Les pénalités de retard sont dues de plein droit, mais dans la pratique,
+        elles sont rarement facturées pour préserver la relation commerciale.
+        Vous pouvez les mentionner dans vos relances comme moyen de pression. Si
+        vous décidez de les facturer, vous émettez une facture complémentaire
+        pour le montant des pénalités.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-2">
+      <AccordionTrigger>
+        Que faire si le client ne paie toujours pas après la mise en demeure ?
+      </AccordionTrigger>
+      <AccordionContent>
+        Après la mise en demeure restée sans effet pendant 8 jours, vous pouvez
+        : faire appel à une société de recouvrement, saisir le tribunal
+        (injonction de payer pour les créances inférieures à 5 000 €, procédure
+        simplifiée par commissaire de justice), ou engager un avocat pour les
+        montants plus importants.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-3">
+      <AccordionTrigger>
+        Les relances automatiques sont-elles efficaces ?
+      </AccordionTrigger>
+      <AccordionContent>
+        Oui, les études montrent que les entreprises utilisant des relances
+        automatiques réduisent leurs retards de paiement de 30 à 50 %.
+        L'automatisation garantit qu'aucune facture n'est oubliée et que les
+        relances partent au bon moment. Avec Newbi, vous pouvez personnaliser le
+        contenu et le timing de chaque relance.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-4">
+      <AccordionTrigger>
+        Comment relancer un client important sans abîmer la relation ?
+      </AccordionTrigger>
+      <AccordionContent>
+        Adoptez un ton factuel et courtois. Présentez la relance comme un simple
+        rappel administratif. Proposez de l'aide si le client rencontre un
+        problème. Évitez les menaces dans les premières relances. Si nécessaire,
+        proposez un échéancier de paiement. L'important est de montrer que vous
+        êtes professionnel et compréhensif tout en étant ferme sur le paiement.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>
+
+<script
+  type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      mainEntity: [
+        {
+          "@type": "Question",
+          name: "Combien de relances avant une mise en demeure ?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "2 à 3 relances amiables par email avant la mise en demeure par lettre recommandée à J+30.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "Peut-on facturer les pénalités de retard automatiquement ?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "Elles sont dues de plein droit mais rarement facturées en pratique. Vous pouvez les mentionner dans vos relances.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "Que faire si le client ne paie pas après mise en demeure ?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "Société de recouvrement, injonction de payer, ou avocat selon le montant de la créance.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "Les relances automatiques sont-elles efficaces ?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "Oui, elles réduisent les retards de 30 à 50 %. Aucune facture n'est oubliée.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "Comment relancer un client important sans abîmer la relation ?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "Ton factuel et courtois, rappel administratif, proposer de l'aide et un échéancier si nécessaire.",
+          },
+        },
+      ],
+    }),
+  }}
+/>

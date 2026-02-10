@@ -1,0 +1,319 @@
+---
+title: 'Connexion bancaire et rapprochement automatique : comment ça marche'
+description: >-
+  Automatisez le rapprochement bancaire en connectant votre banque à votre
+  logiciel de gestion. Gain de temps, moins d'erreurs, trésorerie claire.
+date: '2026-02-10'
+category: guide
+sector: null
+keyword: rapprochement bancaire automatique
+author: Newbi
+image: /blog/connexion-bancaire-rapprochement-automatique/hero.webp
+published: false
+publishDate: null
+---
+
+import Image from "next/image"
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex gap-2 my-4">
+  <Badge>Guide</Badge>
+  <Badge variant="secondary">Banque</Badge>
+  <Badge variant="outline">8 min de lecture</Badge>
+</div>
+
+Le **rapprochement bancaire automatique** est l'une des fonctionnalités les plus puissantes d'un logiciel de gestion. En connectant votre compte bancaire à votre outil de facturation, vous réconciliez automatiquement vos factures émises avec les paiements reçus. Fini la saisie manuelle, les oublis et les erreurs de pointage. Voici comment ça fonctionne et pourquoi c'est indispensable pour votre [gestion de trésorerie](/blog/comment-gerer-tresorerie-entreprise).
+
+<div className="not-prose my-8 relative aspect-video overflow-hidden rounded-lg">
+  <Image
+    src="/blog/connexion-bancaire-rapprochement-automatique/hero.webp"
+    alt="Interface de rapprochement bancaire automatique avec matching factures et transactions"
+    fill
+    className="object-cover"
+    priority
+    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 720px"
+  />
+</div>
+
+<div className="not-prose flex justify-center my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Connecter ma banque avec Newbi</Link>
+  </Button>
+</div>
+
+## Qu'est-ce que le rapprochement bancaire ?
+
+Le rapprochement bancaire consiste à **comparer vos écritures comptables** (factures émises et reçues) avec vos **mouvements bancaires réels** pour vérifier que chaque facture a bien été payée et que chaque transaction correspond à une pièce comptable.
+
+<figure className="not-prose my-8">
+  <div className="relative aspect-video overflow-hidden rounded-lg border">
+    <Image
+      src="/blog/connexion-bancaire-rapprochement-automatique/section-1.webp"
+      alt="Schéma du rapprochement bancaire : factures + relevé bancaire = rapprochement"
+      fill
+      className="object-cover"
+      sizes="(max-width: 768px) 100vw, 720px"
+    />
+  </div>
+  <figcaption className="mt-2 text-center text-sm text-muted-foreground">
+    Le rapprochement bancaire réconcilie factures et transactions bancaires
+  </figcaption>
+</figure>
+
+Traditionnellement, ce travail se fait **manuellement** : vous pointez ligne par ligne chaque mouvement de votre relevé bancaire avec les factures correspondantes. C'est fastidieux, sujet aux erreurs et chronophage.
+
+Avec la **connexion bancaire automatique**, votre logiciel récupère vos transactions en temps réel et les rapproche automatiquement de vos factures. Le gain de temps est spectaculaire.
+
+## Comment fonctionne la connexion bancaire dans Newbi
+
+### Étape 1 : Connectez votre banque
+
+Newbi utilise des agrégateurs bancaires certifiés (conformes à la directive DSP2) pour se connecter de manière sécurisée à votre compte bancaire. Plus de 300 banques françaises sont compatibles.
+
+### Étape 2 : Synchronisation automatique
+
+Vos transactions bancaires sont synchronisées automatiquement chaque jour. Vous voyez en temps réel :
+
+- Votre **solde de compte** actuel
+- Les **entrées** (paiements reçus)
+- Les **sorties** (dépenses, charges)
+
+### Étape 3 : Rapprochement intelligent
+
+L'algorithme de Newbi compare automatiquement :
+
+- Le **montant** de la transaction avec le montant de la facture
+- La **date** du mouvement avec la date d'échéance
+- Le **libellé** bancaire avec le nom du client
+
+Quand une correspondance est trouvée, la facture est automatiquement marquée comme payée.
+
+### Étape 4 : Validation
+
+Les rapprochements automatiques sont proposés pour validation. Vous confirmez en un clic ou ajustez manuellement les cas ambigus (paiements partiels, regroupements).
+
+<Callout type="tip">
+  Plus vous utilisez Newbi, plus le rapprochement automatique devient précis. L'algorithme apprend de vos validations et améliore ses suggestions au fil du temps.
+</Callout>
+
+## Les avantages concrets
+
+<div className="not-prose my-8 overflow-x-auto">
+  <Table>
+    <TableCaption>Rapprochement manuel vs automatique</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead>Critère</TableHead>
+        <TableHead>Manuel (Excel)</TableHead>
+        <TableHead className="text-primary font-bold">Automatique (Newbi)</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-semibold">Temps mensuel</TableCell>
+        <TableCell>2-4 heures</TableCell>
+        <TableCell className="text-primary">10-15 minutes</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-semibold">Taux d'erreur</TableCell>
+        <TableCell>5-10 %</TableCell>
+        <TableCell className="text-primary">{"<"} 1 %</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-semibold">Visibilité trésorerie</TableCell>
+        <TableCell>Différée (fin de mois)</TableCell>
+        <TableCell className="text-primary">Temps réel</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-semibold">Détection impayés</TableCell>
+        <TableCell>Tardive</TableCell>
+        <TableCell className="text-primary">Immédiate</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-semibold">Coût</TableCell>
+        <TableCell>Temps du dirigeant</TableCell>
+        <TableCell className="text-primary">Inclus dans l'abonnement</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+### Détection immédiate des impayés
+
+Sans connexion bancaire, vous ne découvrez souvent les [factures impayées](/blog/relance-facture-impayee-modele) qu'en fin de mois lors du rapprochement manuel. Avec la synchronisation en temps réel, vous savez immédiatement quand une facture n'a pas été réglée à l'échéance.
+
+### Catégorisation automatique des dépenses
+
+Au-delà du rapprochement, la connexion bancaire permet de catégoriser automatiquement vos dépenses : loyer, abonnements, fournisseurs, déplacements. Ces données alimentent vos tableaux de bord et facilitent le travail de votre [expert-comptable](/blog/comment-partager-documents-expert-comptable).
+
+<figure className="not-prose my-8">
+  <div className="relative aspect-video overflow-hidden rounded-lg border">
+    <Image
+      src="/blog/connexion-bancaire-rapprochement-automatique/categorisation.webp"
+      alt="Interface de catégorisation automatique des dépenses via la connexion bancaire"
+      fill
+      className="object-cover"
+      sizes="(max-width: 768px) 100vw, 720px"
+    />
+  </div>
+  <figcaption className="mt-2 text-center text-sm text-muted-foreground">
+    Catégorisation automatique des transactions bancaires
+  </figcaption>
+</figure>
+
+<div className="not-prose flex justify-center my-6">
+  <Button asChild variant="outline">
+    <Link href="https://meet.brevo.com/sweily/newbi">Demander une démo</Link>
+  </Button>
+</div>
+
+## La sécurité de la connexion bancaire
+
+La sécurité est naturellement la préoccupation n°1. Voici comment Newbi la garantit :
+
+<div className="not-prose my-8">
+  <ul className="grid gap-3" role="list">
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span className="text-muted-foreground">Agrégateur certifié DSP2 (directive européenne sur les services de paiement)</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span className="text-muted-foreground">Accès en lecture seule : aucune opération bancaire possible depuis Newbi</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span className="text-muted-foreground">Chiffrement des données de bout en bout</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span className="text-muted-foreground">Authentification forte (double validation bancaire)</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span className="text-muted-foreground">Aucun stockage des identifiants bancaires par Newbi</span>
+    </li>
+  </ul>
+</div>
+
+<Callout type="info">
+  La connexion bancaire est en **lecture seule**. Newbi ne peut ni effectuer de virements, ni accéder à vos moyens de paiement. Il ne récupère que vos transactions pour les rapprocher de vos factures.
+</Callout>
+
+## Banques compatibles
+
+Newbi se connecte à plus de **300 banques** françaises, dont :
+
+- BNP Paribas, Société Générale, Crédit Agricole, LCL
+- Banque Populaire, Caisse d'Épargne, Crédit Mutuel
+- Boursorama, Hello Bank, Fortuneo, ING
+- Qonto, Shine, Blank (néobanques)
+- La Banque Postale, CIC, HSBC
+
+## En résumé
+
+La connexion bancaire et le rapprochement automatique transforment votre gestion quotidienne :
+
+- **Gagnez 2-4 heures par mois** de saisie et de pointage
+- **Éliminez les erreurs** de rapprochement manuel
+- Détectez les **impayés immédiatement**
+- Suivez votre **trésorerie en temps réel**
+- **Catégorisez** vos dépenses automatiquement
+
+Avec Newbi, la connexion bancaire est incluse dans tous les abonnements. Connectez votre banque en 2 minutes et profitez d'une vision claire de vos finances.
+
+<div className="not-prose flex justify-center my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement pendant 30 jours</Link>
+  </Button>
+</div>
+
+## Questions fréquentes
+
+<div className="not-prose my-12">
+  <Accordion type="multiple">
+    <AccordionItem value="faq-0">
+      <AccordionTrigger>La connexion bancaire est-elle sécurisée ?</AccordionTrigger>
+      <AccordionContent>
+        Oui. Newbi utilise un agrégateur certifié DSP2 avec chiffrement de bout en bout. L'accès est en lecture seule : aucune opération bancaire n'est possible. Vos identifiants bancaires ne sont jamais stockés par Newbi.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-1">
+      <AccordionTrigger>Combien de banques sont compatibles ?</AccordionTrigger>
+      <AccordionContent>
+        Plus de 300 banques françaises sont compatibles, incluant les grandes banques traditionnelles (BNP, SG, Crédit Agricole) et les néobanques (Qonto, Shine, Boursorama). Si votre banque n'est pas dans la liste, contactez le support pour vérifier la compatibilité.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-2">
+      <AccordionTrigger>Le rapprochement est-il fiable à 100 % ?</AccordionTrigger>
+      <AccordionContent>
+        Le taux de rapprochement automatique correct est supérieur à 95 %. Les cas non rapprochés automatiquement (paiements partiels, regroupements, libellés ambigus) sont proposés pour validation manuelle. Vous gardez toujours le contrôle final.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-3">
+      <AccordionTrigger>Peut-on connecter plusieurs comptes bancaires ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, Newbi supporte la connexion de plusieurs comptes bancaires, même dans des banques différentes. C'est particulièrement utile si vous gérez plusieurs entreprises ou si vous avez un compte pro et un compte d'épargne professionnelle.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-4">
+      <AccordionTrigger>Newbi peut-il effectuer des virements depuis mon compte ?</AccordionTrigger>
+      <AccordionContent>
+        Non, absolument pas. La connexion bancaire est strictement en lecture seule. Newbi récupère uniquement les transactions pour les afficher et les rapprocher de vos factures. Aucun virement, prélèvement ou opération bancaire ne peut être effectué depuis Newbi.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>
+
+<script type="application/ld+json" dangerouslySetInnerHTML={{__html: JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "La connexion bancaire est-elle sécurisée ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Oui, agrégateur certifié DSP2, chiffrement bout en bout, lecture seule uniquement."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Combien de banques compatibles ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Plus de 300 banques françaises, banques traditionnelles et néobanques."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Le rapprochement est-il fiable ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Taux de rapprochement automatique supérieur à 95 %. Validation manuelle pour les cas ambigus."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Peut-on connecter plusieurs comptes ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Oui, plusieurs comptes dans différentes banques."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Newbi peut-il faire des virements ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Non, la connexion est strictement en lecture seule."
+      }
+    }
+  ]
+})}} />

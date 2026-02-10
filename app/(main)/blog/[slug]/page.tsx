@@ -1,51 +1,54 @@
-"use client";
-import { useQuery } from "@apollo/client";
-import { useParams } from "next/navigation";
+import { notFound } from "next/navigation";
 import Link from "next/link";
+import { MDXRemote } from "next-mdx-remote/rsc";
 import { Badge } from "@/src/components/ui/badge";
-import { GET_BLOG_POST_BY_SLUG } from "@/src/graphql/queries/blog";
-import { Calendar, User, ArrowLeft, FileText, LoaderCircle } from "lucide-react";
-import { BlogContent } from "@/src/components/blog/BlogContent";
+import { Calendar, User, ArrowLeft } from "lucide-react";
+import { getPostBySlug, generateStaticParams as getStaticParams } from "@/src/lib/blog";
+import { getMDXComponents } from "@/src/components/blog/mdx-components";
 
-export default function BlogPostPage() {
-  const params = useParams();
-  const slug = params.slug as string;
+export { getStaticParams as generateStaticParams };
 
-  const { data, loading, error } = useQuery(GET_BLOG_POST_BY_SLUG, {
-    variables: { slug },
-    skip: !slug,
-  });
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const post = getPostBySlug(slug);
+  if (!post) return { title: "Article non trouvé" };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white pt-28 flex items-center justify-center">
-        <div className="text-center">
-          <LoaderCircle className="h-6 w-6 text-gray-400 mx-auto mb-3 animate-spin" strokeWidth={2} />
-          <p className="text-sm text-gray-500">Chargement de l'article...</p>
-        </div>
-      </div>
-    );
-  }
+  return {
+    title: `${post.title} | Blog Newbi`,
+    description: post.description,
+    keywords: post.keyword,
+    authors: [{ name: post.author }],
+    alternates: {
+      canonical: `https://newbi.fr/blog/${post.slug}`,
+    },
+    openGraph: {
+      title: post.title,
+      description: post.description,
+      type: "article",
+      publishedTime: post.publishDate || post.date,
+      authors: [post.author],
+      images: post.image ? [{ url: post.image, width: 1200, height: 630 }] : [],
+    },
+  };
+}
 
-  if (error || !data?.getBlogPostBySlug?.success || !data?.getBlogPostBySlug?.post) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white pt-28 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-600 mb-4">Article non trouvé</p>
-          <Link
-            href="/blog"
-            className="inline-flex items-center gap-2 text-sm text-[#5a50ff] hover:underline"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Retour aux articles
-          </Link>
-        </div>
-      </div>
-    );
-  }
+export default async function BlogPostPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const post = getPostBySlug(slug);
 
-  const post = data.getBlogPostBySlug.post;
-  const publishedDate = new Date(parseInt(post.publishedAt)).toLocaleDateString("fr-FR", {
+  if (!post) notFound();
+
+  const publishedDate = new Date(
+    post.publishDate || post.date
+  ).toLocaleDateString("fr-FR", {
     day: "numeric",
     month: "long",
     year: "numeric",
@@ -54,7 +57,7 @@ export default function BlogPostPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white pt-28">
       <article className="container mx-auto px-4 py-16 max-w-4xl">
-        {/* Lien de retour */}
+        {/* Back link */}
         <Link
           href="/blog"
           className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-[#5a50ff] transition-colors mb-8"
@@ -62,12 +65,8 @@ export default function BlogPostPage() {
           <ArrowLeft className="h-4 w-4" />
           Retour aux articles
         </Link>
-        {/* Image placeholder avec icône */}
-        <div className="mb-12 rounded-2xl border-2 border-dashed border-gray-200 bg-gradient-to-br from-gray-50 to-white p-16 flex items-center justify-center">
-          <FileText className="h-24 w-24 text-gray-300" strokeWidth={1} />
-        </div>
 
-        {/* Métadonnées */}
+        {/* Metadata */}
         <div className="flex flex-wrap items-center gap-4 mb-8">
           <Badge
             variant="secondary"
@@ -88,18 +87,20 @@ export default function BlogPostPage() {
           </div>
         </div>
 
-        {/* Titre */}
+        {/* Title */}
         <h1 className="text-3xl md:text-4xl font-medium tracking-tight text-gray-900 mb-8 leading-tight">
           {post.title}
         </h1>
 
-        {/* Séparateur subtil */}
+        {/* Separator */}
         <div className="h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent mb-12" />
 
-        {/* Contenu avec style épuré */}
-        <BlogContent content={post.content} />
+        {/* MDX Content */}
+        <div className="blog-content">
+          <MDXRemote source={post.content} components={getMDXComponents()} />
+        </div>
 
-        {/* Footer avec séparateur */}
+        {/* Footer */}
         <div className="mt-16 pt-8 border-t border-gray-100">
           <Link
             href="/blog"

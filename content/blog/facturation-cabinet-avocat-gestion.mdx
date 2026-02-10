@@ -1,0 +1,394 @@
+---
+title: 'Gérer la facturation d''un cabinet d''avocats : outils et bonnes pratiques'
+description: >-
+  Optimisez la facturation de votre cabinet d'avocats : suivi des heures,
+  honoraires, provisions, facturation au temps passé et logiciels adaptés.
+date: '2026-02-10'
+category: guide
+sector: Avocats / Juristes
+keyword: facturation cabinet avocat gestion
+author: Newbi
+image: /blog/facturation-cabinet-avocat-gestion/hero.webp
+published: false
+publishDate: null
+---
+
+import Image from "next/image"
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex flex-wrap gap-2 mb-6">
+  <Badge>Guide</Badge>
+  <Badge variant="secondary">Avocat</Badge>
+  <Badge variant="outline">9 min de lecture</Badge>
+</div>
+
+# Gérer la facturation d'un cabinet d'avocats : outils et bonnes pratiques
+
+La **facturation cabinet avocat** est un exercice bien plus complexe qu'il n'y paraît. Entre le suivi des heures passées sur chaque dossier, la gestion des provisions sur le compte CARPA, la répartition des honoraires entre associés et le respect des obligations déontologiques, les cabinets d'avocats font face à des défis de facturation uniques dans le monde des professions libérales.
+
+Que vous soyez avocat individuel ou que vous gériez un cabinet multi-associés, maîtriser votre processus de facturation est essentiel pour garantir la rentabilité de votre activité, maintenir la confiance de vos clients et rester en conformité avec les règles de l'Ordre des avocats.
+
+Dans ce guide complet, nous passons en revue les spécificités de la facturation pour les cabinets d'avocats, les bonnes pratiques à adopter et les outils qui vous feront gagner un temps précieux.
+
+<figure className="my-8">
+  <Image
+    src="/blog/facturation-cabinet-avocat-gestion/hero.webp"
+    alt="Facturation cabinet d'avocats : outils et bonnes pratiques pour gérer ses honoraires"
+    width={1200}
+    height={630}
+    className="rounded-xl w-full"
+    priority
+  />
+  <figcaption className="text-center text-sm text-muted-foreground mt-2">
+    Une gestion rigoureuse de la facturation est la clé de la rentabilité d'un cabinet d'avocats.
+  </figcaption>
+</figure>
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement pour mon cabinet</Link>
+  </Button>
+</div>
+
+## Les spécificités de la facturation en cabinet d'avocats
+
+La facturation d'un cabinet d'avocats se distingue nettement de celle d'autres professions. Plusieurs éléments rendent ce processus particulièrement exigeant.
+
+### La convention d'honoraires : point de départ incontournable
+
+Depuis la loi du 6 août 2015, la **convention d'honoraires** est obligatoire pour toute mission confiée à un avocat. Ce document contractuel doit préciser le mode de facturation retenu, le montant ou le taux horaire applicable, les modalités de paiement et les conditions de révision éventuelle. Sans convention signée, la facturation peut être contestée par le client, voire sanctionnée par l'Ordre.
+
+### Le suivi du temps passé par dossier
+
+Contrairement à de nombreuses professions, les avocats facturent majoritairement **au temps passé**. Cela implique un suivi rigoureux de chaque minute consacrée à un dossier : recherches juridiques, rédaction de conclusions, audiences, appels téléphoniques, réunions avec le client. Ce relevé d'heures constitue la base de la facturation et doit pouvoir être justifié en cas de contestation.
+
+### Les provisions et le compte CARPA
+
+Le **compte CARPA** (Caisse des Règlements Pécuniaires des Avocats) est une spécificité majeure de la profession. Toute somme reçue pour le compte d'un client doit transiter par ce compte séquestre. Les provisions versées par les clients avant le début d'une mission y sont déposées et ne peuvent être libérées qu'après émission de la facture correspondante. La gestion comptable de ces flux nécessite une traçabilité parfaite.
+
+<div className="not-prose my-6">
+  <Callout variant="destructive" title="Attention : règles CARPA strictes">
+    Les fonds déposés sur le compte CARPA ne vous appartiennent pas. Ils ne peuvent être transférés sur votre compte professionnel qu'après facturation effective et respect du délai réglementaire. Toute irrégularité peut entraîner des sanctions disciplinaires graves, pouvant aller jusqu'à la radiation.
+  </Callout>
+</div>
+
+### La facturation multi-associés
+
+Dans un cabinet regroupant plusieurs associés ou collaborateurs, il faut pouvoir **ventiler les heures** de chaque intervenant sur un même dossier, appliquer des taux horaires différents selon le niveau d'expérience et répartir le chiffre d'affaires entre les associés. Cette complexité suppose un outil capable de gérer plusieurs intervenants par dossier avec des paramètres distincts.
+
+### Les relevés de diligences détaillés
+
+Les clients, en particulier les entreprises et les directions juridiques, exigent des **relevés de diligences** (ou statements) détaillant chaque prestation réalisée, sa durée et son coût. Ces documents doivent être clairs, transparents et conformes au format attendu par le client.
+
+## Les différents modes de facturation en cabinet
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Comparatif des modes de facturation pour un cabinet d'avocats</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[180px]">Mode de facturation</TableHead>
+        <TableHead>Principe</TableHead>
+        <TableHead>Avantages</TableHead>
+        <TableHead>Limites</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Temps passé (taux horaire)</TableCell>
+        <TableCell>Facturation à l'heure selon un taux défini dans la convention</TableCell>
+        <TableCell>Rémunération juste du travail réel, adapté aux dossiers complexes</TableCell>
+        <TableCell>Nécessite un suivi précis, peut inquiéter le client sur le montant final</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Forfait</TableCell>
+        <TableCell>Prix fixe pour une prestation définie à l'avance</TableCell>
+        <TableCell>Prévisibilité pour le client, simplicité de facturation</TableCell>
+        <TableCell>Risque de sous-estimer le temps nécessaire, marge réduite</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Honoraire de résultat (success fee)</TableCell>
+        <TableCell>Complément d'honoraires conditionné à l'issue favorable du dossier</TableCell>
+        <TableCell>Alignement des intérêts avocat-client, attractif commercialement</TableCell>
+        <TableCell>Interdit seul (doit compléter un honoraire fixe), encadré par la déontologie</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Abonnement mensuel</TableCell>
+        <TableCell>Forfait récurrent pour un volume de consultations ou prestations</TableCell>
+        <TableCell>Revenu récurrent, fidélisation client, gestion simplifiée</TableCell>
+        <TableCell>Difficile à calibrer, risque de dépassement non facturé</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+La plupart des cabinets combinent plusieurs de ces modes selon la nature des dossiers. Un même client peut être facturé au forfait pour la rédaction de statuts et au temps passé pour un contentieux.
+
+## Bonnes pratiques pour le suivi du temps
+
+Le suivi du temps est la pierre angulaire de la rentabilité d'un cabinet. Voici les règles d'or à respecter.
+
+<div className="not-prose my-6">
+  <Callout title="Astuce : la discipline du time tracking">
+    Saisissez vos temps **en temps réel** ou au maximum en fin de journée. Les études montrent qu'un avocat qui enregistre ses heures le lendemain sous-estime son temps de 10 à 30 %. Sur un mois, cela représente plusieurs milliers d'euros de manque à gagner. Adoptez le réflexe du chronomètre dès l'ouverture de chaque dossier.
+  </Callout>
+</div>
+
+### Structurer les entrées de temps
+
+Chaque entrée doit contenir au minimum : la date, le dossier concerné, la nature de la prestation (recherche, rédaction, audience, etc.), la durée et l'intervenant. Un descriptif clair est indispensable pour justifier la facturation auprès du client et constituer un relevé de diligences exploitable.
+
+### Définir des unités de temps cohérentes
+
+La plupart des cabinets facturent par tranches de **6 minutes** (soit un dixième d'heure). Cette granularité permet une facturation précise sans être excessive. Certains cabinets optent pour des tranches de 15 minutes, ce qui simplifie le suivi mais peut engendrer des arrondis significatifs.
+
+### Catégoriser les activités
+
+Distinguez les activités facturables des activités non facturables (gestion interne, formation, prospection). Cette distinction vous permettra de calculer votre **taux d'utilisation** (ratio heures facturables / heures travaillées), indicateur clé de la rentabilité individuelle et collective.
+
+## Facturation par dossier et par client
+
+Organisez votre facturation autour de deux axes : le **dossier** et le **client**. Un même client peut avoir plusieurs dossiers ouverts simultanément, chacun avec un mode de facturation et un budget différents.
+
+Pour chaque dossier, définissez dès l'ouverture un budget prévisionnel, un mode de facturation et une fréquence de facturation (mensuelle, trimestrielle, à l'issue de la mission). Suivez en temps réel l'encours par rapport au budget pour éviter les mauvaises surprises et anticiper les discussions avec le client.
+
+La facturation régulière, plutôt qu'en fin de mission, améliore considérablement votre [trésorerie](/blog/comment-gerer-tresorerie-entreprise) et réduit le risque d'impayés. Pour approfondir la question des délais, consultez notre guide sur les [délais de paiement des factures](/blog/quest-ce-que-delai-paiement-facture).
+
+## Provisions et gestion du compte CARPA
+
+La gestion des provisions suit un cycle précis :
+
+1. **Demande de provision** : envoi d'une demande au client selon les termes de la convention d'honoraires.
+2. **Encaissement sur CARPA** : le client règle la provision, qui est déposée sur le sous-compte CARPA dédié au dossier.
+3. **Émission de la facture** : une fois les diligences réalisées, vous émettez la facture correspondante.
+4. **Virement CARPA vers compte professionnel** : après émission de la facture, vous pouvez demander le transfert des fonds du compte CARPA vers votre compte professionnel.
+
+Ce circuit impose une **comptabilité rigoureuse** et un rapprochement régulier entre les provisions reçues, les factures émises et les virements effectués. Un logiciel adapté vous évitera des heures de réconciliation manuelle.
+
+<figure className="my-8">
+  <Image
+    src="/blog/facturation-cabinet-avocat-gestion/suivi-temps-dossier.webp"
+    alt="Suivi du temps passé par dossier dans un logiciel de facturation pour avocat"
+    width={1200}
+    height={630}
+    className="rounded-xl w-full"
+  />
+  <figcaption className="text-center text-sm text-muted-foreground mt-2">
+    Un tableau de bord clair permet de suivre en temps réel la rentabilité de chaque dossier.
+  </figcaption>
+</figure>
+
+<div className="not-prose my-8">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Gérer ma facturation cabinet</Link>
+  </Button>
+</div>
+
+## Répartition des honoraires entre associés
+
+Dans un cabinet multi-associés, la répartition du chiffre d'affaires peut suivre plusieurs logiques : répartition au prorata des heures facturées, répartition selon l'apporteur du dossier, clé de répartition fixe définie dans le pacte d'associés ou système mixte combinant ces critères.
+
+Quel que soit le modèle retenu, votre outil de facturation doit permettre de **tracer la contribution de chaque intervenant** et de générer des rapports de répartition fiables. Cela évite les conflits internes et permet à chaque associé de piloter sa propre rentabilité.
+
+## Communication client et transparence
+
+La relation de confiance avec le client passe par une **communication proactive** sur les honoraires. Voici les bonnes pratiques à adopter.
+
+<div className="not-prose my-6">
+  <div className="space-y-3">
+    <div className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span>Envoyer un état d'avancement mensuel avec le détail des heures consommées et le solde restant sur le budget</span>
+    </div>
+    <div className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span>Alerter le client avant tout dépassement de budget significatif et obtenir son accord écrit</span>
+    </div>
+    <div className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span>Fournir des relevés de diligences clairs et détaillés accompagnant chaque facture</span>
+    </div>
+    <div className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span>Proposer plusieurs modes de paiement (virement, carte, prélèvement) pour faciliter le règlement</span>
+    </div>
+    <div className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span>Relancer les impayés rapidement et de manière professionnelle grâce à des rappels automatisés</span>
+    </div>
+    <div className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span>Maintenir un historique complet de la facturation accessible au client via un portail dédié</span>
+    </div>
+  </div>
+</div>
+
+Un bon [CRM et outil de gestion client](/blog/crm-gestion-client-independant) intégré à votre facturation facilite considérablement cette communication et renforce la satisfaction client.
+
+## Conformité : TVA et mentions obligatoires
+
+### TVA et avocats
+
+Les avocats sont assujettis à la **TVA au taux normal de 20 %** sur leurs honoraires. L'aide juridictionnelle est exonérée. Attention : si vous bénéficiez de la franchise en base de TVA (micro-BNC), vos factures ne doivent pas mentionner de TVA mais doivent porter la mention "TVA non applicable, article 293 B du CGI".
+
+### Mentions obligatoires sur les factures
+
+Outre les mentions classiques (numéro de facture, date, identité des parties, détail des prestations, montant HT et TTC), les factures d'un avocat doivent comporter :
+
+- Le numéro de **SIRET** du cabinet
+- Le numéro de **TVA intracommunautaire** (si assujetti)
+- La référence à la **convention d'honoraires**
+- Le **barreau d'appartenance**
+- Les conditions de paiement et pénalités de retard
+- La mention de l'assurance responsabilité civile professionnelle
+
+Pour une gestion complète de vos honoraires, consultez notre [guide dédié à la facturation des honoraires d'avocat](/blog/facturation-avocat-honoraires-guide).
+
+## En résumé
+
+La facturation d'un cabinet d'avocats exige rigueur, transparence et des outils adaptés. Les points essentiels à retenir :
+
+- Toujours formaliser la relation par une **convention d'honoraires** signée avant toute prestation
+- Adopter une discipline stricte de **suivi du temps** en temps réel, par dossier et par intervenant
+- Maîtriser le circuit des **provisions et du compte CARPA** pour éviter toute irrégularité
+- Choisir le **mode de facturation** adapté à chaque type de dossier (temps passé, forfait, success fee, abonnement)
+- Communiquer de manière **proactive et transparente** avec vos clients sur l'état de leurs honoraires
+- Respecter scrupuleusement les **obligations légales et déontologiques** en matière de facturation
+
+Un logiciel de facturation conçu pour les professions juridiques vous fera gagner des heures chaque mois et sécurisera l'ensemble de votre processus.
+
+<div className="not-prose my-8 flex flex-col sm:flex-row gap-4">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Créer mon compte Newbi gratuitement</Link>
+  </Button>
+  <Button asChild variant="outline" size="lg">
+    <Link href="/produits/factures">Découvrir la facturation Newbi</Link>
+  </Button>
+</div>
+
+## Questions fréquentes
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Un avocat est-il obligé d'établir une convention d'honoraires ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, depuis la loi Macron du 6 août 2015, la convention d'honoraires est obligatoire pour toute mission, sauf en cas d'urgence ou de commission d'office. Elle doit préciser le mode de facturation, le montant ou le taux horaire, et les modalités de paiement. Son absence peut entraîner des difficultés en cas de contestation des honoraires et des sanctions disciplinaires.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Comment facturer au temps passé de manière fiable ?</AccordionTrigger>
+      <AccordionContent>
+        La clé est la saisie en temps réel. Utilisez un chronomètre intégré à votre logiciel de gestion pour enregistrer chaque prestation au moment où vous la réalisez. Définissez des unités de facturation (généralement 6 minutes), catégorisez vos activités et générez des relevés de diligences détaillés que vous joindrez à chaque facture. Cela garantit la transparence et réduit les contestations.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Quelles sont les règles à respecter pour le compte CARPA ?</AccordionTrigger>
+      <AccordionContent>
+        Le compte CARPA est un compte séquestre obligatoire où transitent toutes les sommes reçues pour le compte des clients. Vous ne pouvez pas mélanger les fonds CARPA avec vos honoraires. Les provisions doivent y être déposées et ne peuvent être transférées sur votre compte professionnel qu'après émission d'une facture correspondante. Des contrôles réguliers sont effectués par l'Ordre, et toute irrégularité peut entraîner des sanctions disciplinaires allant jusqu'à la radiation.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Un avocat peut-il facturer uniquement au résultat (success fee) ?</AccordionTrigger>
+      <AccordionContent>
+        Non. La déontologie de la profession interdit la facturation exclusivement au résultat. L'honoraire de résultat doit obligatoirement compléter un honoraire de base (forfait ou temps passé). La convention d'honoraires doit clairement distinguer la partie fixe et la partie variable liée au résultat. Le pourcentage du success fee doit rester raisonnable et proportionné à la nature de l'affaire.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Comment répartir les honoraires dans un cabinet multi-associés ?</AccordionTrigger>
+      <AccordionContent>
+        Plusieurs modèles existent : répartition au prorata des heures facturées par chaque associé, attribution selon l'apporteur du dossier, clé de répartition fixe définie dans le pacte d'associés, ou système mixte. L'essentiel est de disposer d'un outil qui trace précisément la contribution de chaque intervenant (associés et collaborateurs) sur chaque dossier, avec des taux horaires différenciés, pour générer des rapports de répartition fiables et éviter les conflits.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>
+
+<script type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "Gérer la facturation d'un cabinet d'avocats : outils et bonnes pratiques",
+      "description": "Optimisez la facturation de votre cabinet d'avocats : suivi des heures, honoraires, provisions, facturation au temps passé et logiciels adaptés.",
+      "author": {
+        "@type": "Organization",
+        "name": "Newbi",
+        "url": "https://www.newbi.co"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "Newbi",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://www.newbi.co/logo.png"
+        }
+      },
+      "datePublished": "2026-02-10",
+      "dateModified": "2026-02-10",
+      "image": "https://www.newbi.co/blog/facturation-cabinet-avocat-gestion/hero.webp",
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "https://www.newbi.co/blog/facturation-cabinet-avocat-gestion"
+      },
+      "keywords": "facturation cabinet avocat gestion, facturation avocat, honoraires avocat, convention honoraires, compte CARPA, suivi temps avocat",
+      "articleSection": "Guide"
+    })
+  }}
+/>
+
+<script type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Un avocat est-il obligé d'établir une convention d'honoraires ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Oui, depuis la loi Macron du 6 août 2015, la convention d'honoraires est obligatoire pour toute mission, sauf en cas d'urgence ou de commission d'office. Elle doit préciser le mode de facturation, le montant ou le taux horaire, et les modalités de paiement."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Comment facturer au temps passé de manière fiable ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "La clé est la saisie en temps réel. Utilisez un chronomètre intégré à votre logiciel de gestion pour enregistrer chaque prestation au moment où vous la réalisez. Définissez des unités de facturation (généralement 6 minutes), catégorisez vos activités et générez des relevés de diligences détaillés."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Quelles sont les règles à respecter pour le compte CARPA ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Le compte CARPA est un compte séquestre obligatoire où transitent toutes les sommes reçues pour le compte des clients. Les provisions doivent y être déposées et ne peuvent être transférées sur votre compte professionnel qu'après émission d'une facture correspondante. Toute irrégularité peut entraîner des sanctions disciplinaires."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Un avocat peut-il facturer uniquement au résultat (success fee) ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Non. La déontologie de la profession interdit la facturation exclusivement au résultat. L'honoraire de résultat doit obligatoirement compléter un honoraire de base (forfait ou temps passé). La convention d'honoraires doit clairement distinguer la partie fixe et la partie variable."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Comment répartir les honoraires dans un cabinet multi-associés ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Plusieurs modèles existent : répartition au prorata des heures facturées, attribution selon l'apporteur du dossier, clé de répartition fixe définie dans le pacte d'associés, ou système mixte. L'essentiel est de disposer d'un outil qui trace précisément la contribution de chaque intervenant."
+          }
+        }
+      ]
+    })
+  }}
+/>

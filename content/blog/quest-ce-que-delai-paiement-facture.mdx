@@ -1,0 +1,374 @@
+---
+title: Qu'est-ce qu'un délai de paiement sur facture ? Règles et calcul
+description: >-
+  Comprendre les délais de paiement sur facture : délais légaux, pénalités de
+  retard, indemnité forfaitaire et comment les paramétrer sur vos factures.
+date: '2026-02-10'
+category: glossaire
+sector: null
+keyword: délai paiement facture
+author: Newbi
+image: /blog/quest-ce-que-delai-paiement-facture/hero.webp
+published: false
+publishDate: null
+---
+
+import Image from "next/image"
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Glossaire</Badge>
+  <Badge variant="outline">7 min de lecture</Badge>
+</div>
+
+# Qu'est-ce qu'un délai de paiement sur facture ? Règles et calcul
+
+Le **délai paiement facture** est la période accordée à un client pour régler le montant dû après l'émission d'une facture. Encadré strictement par le Code de commerce (articles L.441-10 et suivants), ce délai constitue un élément central de la relation commerciale entre entreprises. Mal maîtrisé, il peut mettre en péril votre trésorerie ; bien paramétré, il devient un levier de compétitivité. Que vous soyez auto-entrepreneur, dirigeant de TPE ou responsable administratif d'une PME, comprendre les règles qui régissent le **délai de paiement sur facture** est indispensable pour facturer en toute conformité et sécuriser vos encaissements.
+
+<figure className="my-8">
+  <Image
+    src="/blog/quest-ce-que-delai-paiement-facture/hero.webp"
+    alt="Délai de paiement sur facture : règles légales et calcul"
+    width={1200}
+    height={630}
+    className="rounded-xl border"
+    priority
+  />
+  <figcaption className="text-center text-sm text-muted-foreground mt-2">
+    Maîtriser les délais de paiement est essentiel pour protéger votre trésorerie.
+  </figcaption>
+</figure>
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Créer mes factures avec délais conformes</Link>
+  </Button>
+</div>
+
+## Définition : qu'est-ce qu'un délai de paiement ?
+
+Le délai de paiement désigne le nombre de jours dont dispose l'acheteur pour payer une facture à compter de la date d'émission ou de la date de livraison du bien ou de la prestation de service. Ce délai doit obligatoirement figurer sur la facture, au même titre que les autres [mentions obligatoires](/blog/mentions-obligatoires-facture).
+
+En l'absence de mention contractuelle spécifique, le **délai de paiement par défaut** est fixé à **30 jours** à compter de la date de réception des marchandises ou d'exécution de la prestation. C'est ce que prévoit l'article L.441-10 du Code de commerce.
+
+Il ne faut pas confondre le délai de paiement avec la **date d'échéance** qui, elle, correspond à la date précise à laquelle le règlement est attendu. Le délai de paiement sert justement à calculer cette date d'échéance.
+
+## Les délais de paiement légaux en France
+
+La législation française encadre strictement les délais de paiement entre professionnels afin de protéger les entreprises, en particulier les plus petites, contre les retards de règlement qui peuvent fragiliser leur trésorerie.
+
+### Le délai par défaut : 30 jours
+
+Sans accord entre les parties, le délai légal est de **30 jours à compter de la date de réception des marchandises** ou de l'exécution de la prestation. Ce délai s'applique automatiquement lorsque rien n'est précisé dans les conditions générales de vente (CGV) ou dans le contrat.
+
+### Le délai maximal : 60 jours
+
+Les parties peuvent convenir contractuellement d'un délai de paiement plus long, mais celui-ci ne peut en aucun cas dépasser **60 jours à compter de la date d'émission de la facture**. Ce plafond est impératif : aucune clause contractuelle ne peut y déroger, sauf dans certains secteurs bénéficiant de dérogations spécifiques (transports, agroalimentaire, etc.).
+
+### L'alternative : 45 jours fin de mois
+
+En lieu et place du délai de 60 jours date de facture, les parties peuvent opter pour un délai de **45 jours fin de mois** à compter de la date d'émission de la facture. Ce mode de calcul est courant dans la pratique commerciale et permet d'aligner les règlements sur des fins de mois calendaires, ce qui simplifie la gestion comptable.
+
+**Exemple concret** : une facture émise le 15 mars avec un délai de 45 jours fin de mois sera due le 30 avril (15 mars + 45 jours = 29 avril, reporté à fin de mois = 30 avril).
+
+<div className="not-prose my-8">
+  <Callout variant="warning" title="Sanctions de la DGCCRF">
+    Le non-respect des délais de paiement légaux expose l'entreprise contrevenante à une amende administrative pouvant atteindre **2 millions d'euros** pour une personne morale (article L.441-16 du Code de commerce). La DGCCRF effectue des contrôles réguliers et publie les noms des entreprises sanctionnées. En 2024, plus de 270 entreprises ont été sanctionnées pour dépassement des délais légaux de paiement.
+  </Callout>
+</div>
+
+## Tableau comparatif des délais de paiement
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Comparaison des principaux délais de paiement applicables entre professionnels</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[180px]">Type de délai</TableHead>
+        <TableHead>Point de départ</TableHead>
+        <TableHead>Date d'échéance (facture du 15/03)</TableHead>
+        <TableHead>Usage courant</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">À réception</TableCell>
+        <TableCell>Date de réception de la facture</TableCell>
+        <TableCell>15 mars (immédiat)</TableCell>
+        <TableCell>Petites prestations, freelances</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">30 jours (défaut légal)</TableCell>
+        <TableCell>Date de réception des marchandises ou exécution</TableCell>
+        <TableCell>14 avril</TableCell>
+        <TableCell>Délai par défaut en l'absence d'accord</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">45 jours fin de mois</TableCell>
+        <TableCell>Date d'émission de la facture</TableCell>
+        <TableCell>30 avril</TableCell>
+        <TableCell>Grande distribution, industrie</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">60 jours date de facture</TableCell>
+        <TableCell>Date d'émission de la facture</TableCell>
+        <TableCell>14 mai</TableCell>
+        <TableCell>Délai maximum négociable</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+## Pénalités de retard : ce que prévoit la loi
+
+Lorsque le client ne respecte pas le délai de paiement convenu, des **pénalités de retard** sont exigibles de plein droit, sans qu'un rappel soit nécessaire. Ces pénalités courent à compter du jour suivant la date d'échéance figurant sur la facture.
+
+### Le taux des pénalités de retard
+
+Le taux des pénalités de retard doit être mentionné sur la facture et dans les CGV. À défaut de mention, le taux applicable est le **taux directeur de la BCE (taux de refinancement) majoré de 10 points de pourcentage**. En pratique, de nombreuses entreprises appliquent un taux égal à **3 fois le taux d'intérêt légal**.
+
+**Calcul des pénalités** : Montant TTC de la facture x (taux de pénalité / 365) x nombre de jours de retard.
+
+**Exemple** : pour une facture de 5 000 euros TTC avec un taux de pénalité de 12 % et un retard de 15 jours, les pénalités s'élèvent à : 5 000 x (0,12 / 365) x 15 = **24,66 euros**.
+
+### L'indemnité forfaitaire de recouvrement de 40 euros
+
+En plus des pénalités de retard, toute somme non payée à l'échéance entraîne automatiquement l'obligation pour le débiteur de verser une **indemnité forfaitaire de 40 euros** pour frais de recouvrement (article D.441-5 du Code de commerce). Cette indemnité est due pour chaque facture payée en retard, et non pas par ensemble de factures.
+
+Si les frais de recouvrement réellement engagés dépassent ce montant forfaitaire, le créancier peut demander une indemnisation complémentaire sur justificatif.
+
+<figure className="my-8">
+  <Image
+    src="/blog/quest-ce-que-delai-paiement-facture/penalites-retard.webp"
+    alt="Calcul des pénalités de retard et indemnité forfaitaire de recouvrement"
+    width={800}
+    height={450}
+    className="rounded-xl border"
+  />
+  <figcaption className="text-center text-sm text-muted-foreground mt-2">
+    Pénalités de retard et indemnité forfaitaire s'appliquent automatiquement en cas de dépassement du délai de paiement.
+  </figcaption>
+</figure>
+
+## L'escompte pour paiement anticipé
+
+À l'inverse des pénalités de retard, l'**escompte** (ou escompte commercial) est une réduction financière accordée au client qui paie avant la date d'échéance prévue. Il s'agit d'un outil puissant pour accélérer les encaissements et [réduire vos délais de paiement](/blog/conseils-reduire-delais-paiement).
+
+L'escompte n'est pas obligatoire, mais s'il est pratiqué, ses conditions doivent figurer dans les CGV et sur la facture. En cas de non-application d'escompte, la mention **"Pas d'escompte pour paiement anticipé"** doit apparaître sur la facture.
+
+**Exemple** : une facture de 10 000 euros HT avec un escompte de 2 % pour paiement sous 10 jours représente une économie de 200 euros pour le client, tout en vous garantissant un encaissement rapide.
+
+## Ce que doit contenir votre facture en matière de délais
+
+Pour être conforme à la réglementation, votre facture doit impérativement mentionner les éléments suivants relatifs aux délais de paiement :
+
+<div className="not-prose my-8 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La <strong>date d'échéance</strong> du règlement (ou le délai de paiement applicable)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le <strong>taux des pénalités de retard</strong> applicable en cas de non-paiement à la date d'échéance</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le montant de l'<strong>indemnité forfaitaire de recouvrement</strong> (40 euros)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Les <strong>conditions d'escompte</strong> pour paiement anticipé (ou la mention de non-application)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Les <strong>modalités de règlement</strong> acceptées (virement, chèque, carte bancaire, prélèvement)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Vos <strong>coordonnées bancaires</strong> (IBAN/BIC) pour faciliter le règlement par virement</span>
+  </div>
+</div>
+
+L'absence de ces mentions peut entraîner une amende de 75 000 euros pour un dirigeant personne physique. Pour vous assurer de n'oublier aucune mention, consultez notre guide complet sur les [mentions obligatoires sur une facture](/blog/mentions-obligatoires-facture).
+
+## Comment bien gérer vos délais de paiement ?
+
+Une gestion rigoureuse des délais de paiement est essentielle pour maintenir une [trésorerie saine](/blog/comment-gerer-tresorerie-entreprise). Voici les bonnes pratiques à adopter :
+
+### 1. Choisissez le bon délai selon votre activité
+
+Pour les prestations de service ponctuelles ou les petits montants, privilégiez le paiement **à réception** ou sous **15 jours**. Pour les relations commerciales régulières avec des entreprises établies, un délai de 30 jours constitue un bon compromis. Réservez les délais plus longs (45 jours fin de mois, 60 jours) aux clients stratégiques avec lesquels vous avez une relation de confiance.
+
+### 2. Formalisez vos conditions dans vos CGV
+
+Vos conditions générales de vente doivent préciser clairement les délais de paiement applicables, le taux de pénalité de retard, l'indemnité forfaitaire et les conditions d'escompte éventuelles. Ces CGV doivent être communiquées au client avant la première vente.
+
+### 3. Facturez rapidement
+
+Plus vous tardez à émettre votre facture, plus le règlement sera décalé. Facturez dès la livraison du bien ou l'achèvement de la prestation pour déclencher le délai au plus tôt.
+
+### 4. Mettez en place des relances automatiques
+
+N'attendez pas que le retard s'accumule. Un système de [relance de facture impayée](/blog/relance-facture-impayee-modele) structuré (rappel avant échéance, relance à J+1, relance à J+7, mise en demeure) maximise vos chances d'être payé dans les temps.
+
+### 5. Utilisez un outil de facturation adapté
+
+Un logiciel de facturation comme Newbi vous permet de configurer automatiquement vos délais de paiement, de calculer les dates d'échéance, d'appliquer les pénalités de retard et de déclencher des relances automatiques.
+
+<div className="not-prose my-8">
+  <Callout variant="info" title="Astuce : automatisez avec Newbi">
+    Avec Newbi, vous configurez vos délais de paiement une seule fois dans vos paramètres de facturation. Le logiciel calcule automatiquement les dates d'échéance, insère les mentions légales obligatoires (pénalités, indemnité forfaitaire, escompte) et déclenche des relances automatiques à l'approche ou au dépassement de l'échéance. Plus besoin de vérifier manuellement chaque facture.
+  </Callout>
+</div>
+
+<div className="not-prose my-8">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Configurer mes délais de paiement</Link>
+  </Button>
+</div>
+
+## Cas particuliers et dérogations sectorielles
+
+Certains secteurs bénéficient de délais de paiement dérogatoires fixés par la loi ou par des accords interprofessionnels :
+
+- **Transport routier de marchandises** : 30 jours maximum à compter de la date d'émission de la facture.
+- **Produits alimentaires périssables** : 30 jours après la fin de la décade de livraison (soit 40 jours maximum).
+- **Boissons alcooliques** : 30 jours après la fin du mois de livraison.
+- **Bétail et viandes fraîches** : 20 jours après le jour de livraison.
+- **Secteur public** : le délai de paiement des administrations est de 30 jours (État) ou 50 jours (établissements publics de santé).
+
+Ces dérogations sont strictement encadrées et ne peuvent pas être étendues par accord entre les parties.
+
+## En résumé
+
+Le **délai de paiement sur facture** est un élément réglementé qui impacte directement votre trésorerie et votre relation commerciale. Retenez les points essentiels :
+
+- Le délai par défaut est de **30 jours**, le maximum légal est de **60 jours** (ou 45 jours fin de mois).
+- Les **pénalités de retard** et l'**indemnité forfaitaire de 40 euros** s'appliquent automatiquement en cas de dépassement.
+- L'**escompte pour paiement anticipé** est un levier efficace pour accélérer vos encaissements.
+- Toutes les conditions de paiement doivent figurer sur la facture et dans les CGV.
+- Les sanctions en cas de non-respect peuvent atteindre **2 millions d'euros**.
+
+Utiliser un logiciel de facturation conforme comme Newbi vous permet de paramétrer ces éléments une fois pour toutes et de vous concentrer sur votre activité en toute sérénité.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur les délais de paiement
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Quel est le délai de paiement par défaut d'une facture ?</AccordionTrigger>
+      <AccordionContent>
+        En l'absence d'accord contractuel, le délai de paiement par défaut est de 30 jours à compter de la date de réception des marchandises ou de l'exécution de la prestation de service, conformément à l'article L.441-10 du Code de commerce.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Peut-on dépasser 60 jours de délai de paiement ?</AccordionTrigger>
+      <AccordionContent>
+        Non. Le délai maximum légal entre professionnels est de 60 jours à compter de la date d'émission de la facture (ou 45 jours fin de mois). Toute clause prévoyant un délai supérieur est réputée non écrite. Des dérogations sectorielles existent mais elles sont strictement encadrées par la loi.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Les pénalités de retard sont-elles obligatoires sur la facture ?</AccordionTrigger>
+      <AccordionContent>
+        Oui. La mention du taux des pénalités de retard exigibles le jour suivant la date de règlement ainsi que le montant de l'indemnité forfaitaire de recouvrement (40 euros) sont des mentions obligatoires sur toute facture émise entre professionnels. Leur absence peut être sanctionnée par une amende de 75 000 euros pour une personne physique et 375 000 euros pour une personne morale.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Comment calculer la date d'échéance en « 45 jours fin de mois » ?</AccordionTrigger>
+      <AccordionContent>
+        Il existe deux méthodes courantes. La plus répandue consiste à ajouter 45 jours à la date d'émission de la facture, puis à reporter au dernier jour du mois en cours. Par exemple, pour une facture émise le 10 janvier : 10 janvier + 45 jours = 24 février, reporté à fin février = 28 février. L'autre méthode consiste à aller d'abord en fin de mois, puis à ajouter 45 jours. La méthode retenue doit être précisée dans les CGV.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Que faire si un client ne respecte pas le délai de paiement ?</AccordionTrigger>
+      <AccordionContent>
+        En cas de retard de paiement, vous pouvez appliquer automatiquement les pénalités de retard et l'indemnité forfaitaire de 40 euros. Il est recommandé de mettre en place un processus de relance structuré : rappel amiable, relance écrite, puis mise en demeure par lettre recommandée. Si le client persiste, vous pouvez engager une procédure de recouvrement judiciaire. Consultez notre guide sur la <a href="/blog/relance-facture-impayee-modele">relance de facture impayée</a> pour des modèles prêts à l'emploi.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>
+
+<script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Qu'est-ce qu'un délai de paiement sur facture ? Règles et calcul",
+  "description": "Comprendre les délais de paiement sur facture : délais légaux, pénalités de retard, indemnité forfaitaire et comment les paramétrer sur vos factures.",
+  "author": {
+    "@type": "Organization",
+    "name": "Newbi",
+    "url": "https://newbi.co"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Newbi",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://newbi.co/logo.png"
+    }
+  },
+  "datePublished": "2026-02-10",
+  "dateModified": "2026-02-10",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://newbi.co/blog/quest-ce-que-delai-paiement-facture"
+  },
+  "image": "https://newbi.co/blog/quest-ce-que-delai-paiement-facture/hero.webp",
+  "keywords": ["délai paiement facture", "délai de paiement", "pénalités de retard", "indemnité forfaitaire", "escompte", "facturation"],
+  "FAQPage": {
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Quel est le délai de paiement par défaut d'une facture ?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "En l'absence d'accord contractuel, le délai de paiement par défaut est de 30 jours à compter de la date de réception des marchandises ou de l'exécution de la prestation de service, conformément à l'article L.441-10 du Code de commerce."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Peut-on dépasser 60 jours de délai de paiement ?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Non. Le délai maximum légal entre professionnels est de 60 jours à compter de la date d'émission de la facture (ou 45 jours fin de mois). Toute clause prévoyant un délai supérieur est réputée non écrite."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Les pénalités de retard sont-elles obligatoires sur la facture ?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Oui. La mention du taux des pénalités de retard et le montant de l'indemnité forfaitaire de recouvrement (40 euros) sont des mentions obligatoires sur toute facture entre professionnels."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Comment calculer la date d'échéance en 45 jours fin de mois ?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "La méthode la plus courante consiste à ajouter 45 jours à la date d'émission de la facture, puis à reporter au dernier jour du mois en cours. Par exemple, pour une facture émise le 10 janvier : 10 janvier + 45 jours = 24 février, reporté à fin février = 28 février."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Que faire si un client ne respecte pas le délai de paiement ?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Vous pouvez appliquer automatiquement les pénalités de retard et l'indemnité forfaitaire de 40 euros, puis mettre en place un processus de relance structuré : rappel amiable, relance écrite, mise en demeure, et si nécessaire, procédure de recouvrement judiciaire."
+        }
+      }
+    ]
+  }
+}) }} />

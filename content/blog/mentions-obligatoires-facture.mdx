@@ -1,0 +1,403 @@
+---
+title: 'Mentions obligatoires sur une facture en 2026 : la liste complète'
+description: >-
+  Toutes les mentions obligatoires sur une facture en 2026 : numérotation, TVA,
+  SIREN, pénalités de retard. Évitez les erreurs avec notre checklist.
+date: '2026-02-10'
+category: reglementaire
+sector: null
+keyword: mentions obligatoires facture
+author: Newbi
+image: /blog/mentions-obligatoires-facture/hero.webp
+published: true
+publishDate: '2026-02-10'
+---
+
+import Image from "next/image"
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex gap-2 my-4">
+  <Badge>Réglementaire</Badge>
+  <Badge variant="secondary">Facturation</Badge>
+  <Badge variant="outline">10 min de lecture</Badge>
+</div>
+
+Les **mentions obligatoires sur une facture** sont définies par le Code de commerce et le Code général des impôts. En 2026, avec l'arrivée de la [facturation électronique obligatoire](/blog/facturation-electronique-obligatoire-2026), de nouvelles exigences s'ajoutent. Une facture non conforme vous expose à des sanctions pouvant atteindre 75 000 € pour une personne physique. Voici la liste exhaustive des mentions à vérifier sur chacune de vos factures.
+
+<div className="not-prose my-8 relative aspect-video overflow-hidden rounded-lg">
+  <Image
+    src="/blog/mentions-obligatoires-facture/hero.webp"
+    alt="Checklist des mentions obligatoires sur une facture en France en 2026"
+    fill
+    className="object-cover"
+    priority
+    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 720px"
+  />
+</div>
+
+<div className="not-prose flex justify-center my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Créer des factures conformes avec Newbi</Link>
+  </Button>
+</div>
+
+## Les mentions obligatoires communes à toutes les factures
+
+Quelle que soit la taille de votre entreprise ou votre statut juridique, votre facture doit comporter les éléments suivants :
+
+<figure className="not-prose my-8">
+  <div className="relative aspect-video overflow-hidden rounded-lg border">
+    <Image
+      src="/blog/mentions-obligatoires-facture/section-1.webp"
+      alt="Exemple de facture annotée avec toutes les mentions obligatoires identifiées"
+      fill
+      className="object-cover"
+      sizes="(max-width: 768px) 100vw, 720px"
+    />
+  </div>
+  <figcaption className="mt-2 text-center text-sm text-muted-foreground">
+    Facture annotée avec l'emplacement de chaque mention obligatoire
+  </figcaption>
+</figure>
+
+### 1. Identité du vendeur (émetteur)
+
+- **Nom ou raison sociale** complète
+- **Adresse du siège social**
+- **Numéro SIREN** (9 chiffres) ou **SIRET** (14 chiffres)
+- **Forme juridique** : SAS, SARL, EI, EURL, etc.
+- **Capital social** (pour les sociétés)
+- **Numéro RCS** et ville du greffe d'immatriculation
+- **Numéro de TVA intracommunautaire** (si assujetti)
+- Mention **"EI"** pour les entrepreneurs individuels (depuis 2022)
+
+### 2. Identité de l'acheteur (client)
+
+- **Nom ou raison sociale** du client
+- **Adresse de facturation**
+- **Adresse de livraison** (si différente de l'adresse de facturation)
+- **Numéro de TVA intracommunautaire** du client (obligatoire pour les factures B2B intra-UE)
+
+### 3. Informations sur la facture
+
+- Le mot **"Facture"** clairement indiqué
+- **Numéro unique et séquentiel** (ex: FA-2026-001)
+- **Date d'émission** de la facture
+- **Date de livraison** ou d'exécution de la prestation (si différente)
+- **Numéro du bon de commande** (si applicable)
+
+### 4. Détail des produits ou prestations
+
+- **Désignation précise** de chaque produit ou service
+- **Quantité** fournie
+- **Prix unitaire hors taxes** (HT)
+- **Taux de TVA** applicable par ligne
+- **Montant total HT** par ligne
+- **Remises, rabais ou ristournes** éventuels (montant et conditions)
+
+### 5. Montants totaux
+
+- **Total HT** (hors taxes)
+- **Montant de la TVA** (détaillé par taux si plusieurs taux applicables)
+- **Total TTC** (toutes taxes comprises)
+
+### 6. Conditions de règlement
+
+- **Date ou délai de paiement** (ex: "à 30 jours fin de mois")
+- **Taux de pénalités de retard** (minimum : taux BCE + 10 points, soit environ 14,25 % en 2026)
+- **Indemnité forfaitaire de recouvrement** de **40 €** (obligatoire pour les factures B2B)
+- **Conditions d'escompte** pour paiement anticipé (ou mention "Pas d'escompte pour paiement anticipé")
+- **Moyens de paiement** acceptés
+
+<div className="not-prose my-8 overflow-x-auto">
+  <Table>
+    <TableCaption>Récapitulatif de toutes les mentions obligatoires sur une facture en 2026</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead>Catégorie</TableHead>
+        <TableHead>Mention</TableHead>
+        <TableHead>Base légale</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell>Vendeur</TableCell>
+        <TableCell>Nom, adresse, SIREN, forme juridique</TableCell>
+        <TableCell>Art. L441-9 C. com.</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell>Acheteur</TableCell>
+        <TableCell>Nom, adresse, TVA intracom (B2B UE)</TableCell>
+        <TableCell>Art. L441-9 C. com.</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell>Facture</TableCell>
+        <TableCell>Numéro, date, date prestation</TableCell>
+        <TableCell>Art. 242 nonies A CGI</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell>Lignes</TableCell>
+        <TableCell>Désignation, quantité, prix unitaire HT</TableCell>
+        <TableCell>Art. L441-9 C. com.</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell>TVA</TableCell>
+        <TableCell>Taux, montant, n° TVA intracom</TableCell>
+        <TableCell>Art. 242 nonies A CGI</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell>Paiement</TableCell>
+        <TableCell>Délai, pénalités, indemnité 40 €</TableCell>
+        <TableCell>Art. L441-10 C. com.</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+## Les mentions spécifiques selon votre situation
+
+### Auto-entrepreneur en franchise de TVA
+
+Si vous bénéficiez de la franchise en base de TVA, vous devez ajouter :
+
+> **« TVA non applicable, art. 293 B du CGI »**
+
+Pour en savoir plus, consultez notre guide sur la [facture auto-entrepreneur](/blog/comment-creer-facture-auto-entrepreneur).
+
+### Membre d'un centre de gestion agréé (CGA)
+
+> **« Membre d'une association agréée, le règlement par chèque et carte bancaire est accepté »**
+
+### Artisan du BTP
+
+Mentions supplémentaires obligatoires :
+
+- Numéro et nom de l'**assurance décennale**
+- **Zone de couverture géographique** de l'assurance
+- Mention de la **retenue de garantie** (5 %) si applicable
+
+Consultez notre guide spécifique sur la [facturation BTP](/blog/facture-btp-artisan-mentions-specifiques).
+
+### Professions réglementées
+
+Certaines professions (avocats, médecins, architectes) ont des mentions supplémentaires liées à leur ordre ou chambre professionnelle.
+
+<Callout type="warning">
+  Les sanctions pour facture non conforme sont sévères : **15 € par mention manquante ou inexacte** (plafonnée à 25 % du montant), et jusqu'à **75 000 € d'amende** pour une personne physique ou **375 000 €** pour une personne morale en cas de facturation fictive.
+</Callout>
+
+## Les nouvelles mentions liées à la facturation électronique 2026
+
+Avec la réforme de la [facturation électronique](/blog/facturation-electronique-obligatoire-2026), de nouvelles mentions deviennent obligatoires :
+
+- **Numéro SIREN du client** (obligatoire sur les factures B2B)
+- **Adresse de livraison** (si différente de l'adresse de facturation)
+- **Catégorie de l'opération** : livraison de biens, prestation de services, ou opération mixte
+- **Mention de l'option pour le paiement de la TVA d'après les débits** (si applicable)
+
+<figure className="not-prose my-8">
+  <div className="relative aspect-video overflow-hidden rounded-lg border">
+    <Image
+      src="/blog/mentions-obligatoires-facture/nouvelles-mentions.webp"
+      alt="Les nouvelles mentions obligatoires ajoutées par la réforme de la facturation électronique 2026"
+      fill
+      className="object-cover"
+      sizes="(max-width: 768px) 100vw, 720px"
+    />
+  </div>
+  <figcaption className="mt-2 text-center text-sm text-muted-foreground">
+    Nouvelles mentions obligatoires introduites par la réforme e-invoicing
+  </figcaption>
+</figure>
+
+<div className="not-prose flex justify-center my-6">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Découvrir la facturation Newbi</Link>
+  </Button>
+</div>
+
+## Comment vérifier la conformité de vos factures
+
+### Utilisez un logiciel de facturation conforme
+
+La manière la plus fiable de garantir la conformité est d'utiliser un logiciel de facturation qui intègre automatiquement toutes les mentions obligatoires. Newbi pré-remplit :
+
+<div className="not-prose my-8">
+  <ul className="grid gap-3" role="list">
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span className="text-muted-foreground">Vos informations d'entreprise (SIREN, adresse, TVA)</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span className="text-muted-foreground">La numérotation séquentielle automatique</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span className="text-muted-foreground">Les conditions de paiement et pénalités de retard</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span className="text-muted-foreground">La mention d'exonération de TVA si applicable</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span className="text-muted-foreground">Le calcul automatique de la TVA par taux</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span className="text-muted-foreground">Le format Factur-X pour la facturation électronique</span>
+    </li>
+  </ul>
+</div>
+
+### Checklist de vérification rapide
+
+Avant d'envoyer chaque facture, passez en revue cette checklist :
+
+1. Le mot "Facture" apparaît clairement
+2. Le numéro est unique et suit la séquence
+3. Les dates d'émission et de prestation sont renseignées
+4. Vos informations d'entreprise sont complètes
+5. Les informations du client sont correctes
+6. Les lignes sont détaillées (désignation, quantité, prix unitaire)
+7. La TVA est correctement calculée et mentionnée
+8. Les conditions de paiement sont précisées
+9. Les pénalités de retard et l'indemnité de 40 € sont mentionnées
+10. La mention d'exonération de TVA est présente (si applicable)
+
+<Callout type="tip">
+  Avec un logiciel de facturation, vous n'avez plus besoin de vérifier manuellement : toutes les mentions sont automatiquement intégrées et mises à jour en fonction de la réglementation.
+</Callout>
+
+## Les erreurs les plus fréquentes
+
+Voici les [erreurs de facturation](/blog/erreurs-facturation-independants) les plus courantes liées aux mentions obligatoires :
+
+1. **Oubli de la mention TVA** : ne pas indiquer "TVA non applicable" quand on est en franchise
+2. **Numérotation erronée** : sauter des numéros ou utiliser des doublons
+3. **Pénalités de retard manquantes** : oubli de mentionner le taux et l'indemnité de 40 €
+4. **SIREN absent** : ne pas indiquer son numéro SIREN sur la facture
+5. **Désignation vague** : "Prestation" au lieu d'une description détaillée
+6. **Date de prestation manquante** : ne pas différencier la date d'émission et la date de prestation
+
+## En résumé
+
+Les mentions obligatoires sur une facture en 2026 sont plus nombreuses que jamais, avec les nouvelles exigences de la facturation électronique. Pour être serein :
+
+- Utilisez un **logiciel de facturation conforme** qui intègre automatiquement toutes les mentions
+- **Vérifiez** que vos informations d'entreprise sont à jour
+- Anticipez les **nouvelles mentions** liées à la e-facturation (SIREN client, catégorie d'opération)
+- **Conservez** vos factures pendant au moins 10 ans
+
+Newbi intègre automatiquement toutes les mentions obligatoires et vous garantit des factures 100 % conformes, prêtes pour la facturation électronique.
+
+<div className="not-prose flex justify-center my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement pendant 30 jours</Link>
+  </Button>
+</div>
+
+## Questions fréquentes
+
+<div className="not-prose my-12">
+  <Accordion type="multiple">
+    <AccordionItem value="faq-0">
+      <AccordionTrigger>Quelles sont les sanctions pour une facture non conforme ?</AccordionTrigger>
+      <AccordionContent>
+        L'amende est de 15 € par mention manquante ou inexacte, plafonnée à 25 % du montant de la facture. Pour les infractions graves (facturation fictive, fausse facture), les sanctions peuvent aller jusqu'à 75 000 € pour une personne physique et 375 000 € pour une personne morale.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-1">
+      <AccordionTrigger>La mention des pénalités de retard est-elle vraiment obligatoire ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, pour toute facture adressée à un professionnel (B2B), vous devez mentionner le taux des pénalités de retard et l'indemnité forfaitaire de recouvrement de 40 €. L'absence de ces mentions constitue une infraction passible d'amende.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-2">
+      <AccordionTrigger>Faut-il mettre le SIREN ou le SIRET sur une facture ?</AccordionTrigger>
+      <AccordionContent>
+        Le SIREN (9 chiffres) est le minimum obligatoire. Le SIRET (14 chiffres, qui inclut le SIREN + le NIC de l'établissement) est recommandé car il est plus précis. Avec la facturation électronique 2026, le SIREN du client deviendra également obligatoire.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-3">
+      <AccordionTrigger>Quelles mentions changent avec la facturation électronique ?</AccordionTrigger>
+      <AccordionContent>
+        La facturation électronique 2026 ajoute de nouvelles mentions : le numéro SIREN du client, l'adresse de livraison (si différente), la catégorie de l'opération (bien, service ou mixte), et la mention d'option pour le paiement de la TVA sur les débits le cas échéant.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-4">
+      <AccordionTrigger>La mention "EI" est-elle obligatoire pour les entrepreneurs individuels ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, depuis la loi du 14 février 2022, tous les entrepreneurs individuels doivent faire figurer la mention "EI" (ou "Entrepreneur Individuel") sur tous leurs documents professionnels, y compris les factures. Cette obligation vise à informer les tiers du statut de l'entreprise.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-5">
+      <AccordionTrigger>Comment corriger une facture erronée déjà envoyée ?</AccordionTrigger>
+      <AccordionContent>
+        Vous ne pouvez pas modifier une facture déjà émise. Vous devez émettre une facture rectificative ou un avoir (note de crédit) qui annule la facture initiale, puis créer une nouvelle facture corrigée. Le logiciel Newbi simplifie ce processus en quelques clics.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>
+
+<script type="application/ld+json" dangerouslySetInnerHTML={{__html: JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Quelles sont les sanctions pour une facture non conforme ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "15 € par mention manquante, plafonnée à 25 % du montant. Jusqu'à 75 000 € pour facturation fictive."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "La mention des pénalités de retard est-elle obligatoire ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Oui, pour toute facture B2B : taux des pénalités de retard et indemnité forfaitaire de 40 €."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Faut-il mettre le SIREN ou le SIRET ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Le SIREN est le minimum obligatoire. Le SIRET est recommandé. Avec la e-facturation, le SIREN du client sera aussi obligatoire."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Quelles mentions changent avec la facturation électronique ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Nouvelles mentions : SIREN du client, adresse de livraison, catégorie de l'opération, mention TVA sur les débits."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "La mention EI est-elle obligatoire ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Oui, depuis février 2022, tous les entrepreneurs individuels doivent mentionner EI sur leurs documents professionnels."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Comment corriger une facture erronée ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Émettez un avoir qui annule la facture initiale, puis créez une nouvelle facture corrigée."
+      }
+    }
+  ]
+})}} />
