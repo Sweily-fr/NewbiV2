@@ -20,7 +20,9 @@ import sys
 import re
 import io
 import time
+import signal
 import argparse
+import threading
 
 try:
     from google import genai
@@ -34,6 +36,13 @@ try:
 except ImportError:
     print("Error: Pillow package not installed. Run: pip install Pillow")
     sys.exit(1)
+
+# ----- Timeouts -----
+
+IMAGE_TIMEOUT = 60       # seconds per image API call
+MAX_RETRIES = 2          # max retries per image
+GLOBAL_TIMEOUT = 600     # 10 minutes total for all image generation
+_global_start = None
 
 # ----- Config -----
 
@@ -230,14 +239,25 @@ def _extract_section_context(body, section_index):
     return ""
 
 
-def generate_image(client, prompt, output_path, aspect_ratio, max_retries=3):
-    """Generate an image using Gemini API and save as WebP with retry."""
-    basename = os.path.basename(output_path)
-    print(f"  Generating: {basename} ...")
+def _check_global_timeout():
+    """Return True if global timeout has been exceeded."""
+    if _global_start is None:
+        return False
+    elapsed = time.time() - _global_start
+    if elapsed >= GLOBAL_TIMEOUT:
+        print(f"  GLOBAL TIMEOUT: {int(elapsed)}s elapsed (limit: {GLOBAL_TIMEOUT}s). Stopping image generation.")
+        return True
+    return False
 
-    for attempt in range(max_retries):
+
+def _call_gemini_with_timeout(client, prompt, aspect_ratio, timeout=IMAGE_TIMEOUT):
+    """Call Gemini API with a thread-based timeout. Returns response or raises TimeoutError."""
+    result = [None]
+    error = [None]
+
+    def _call():
         try:
-            response = client.models.generate_content(
+            result[0] = client.models.generate_content(
                 model=MODEL,
                 contents=[prompt],
                 config=types.GenerateContentConfig(
@@ -247,32 +267,75 @@ def generate_image(client, prompt, output_path, aspect_ratio, max_retries=3):
                     ),
                 ),
             )
+        except Exception as e:
+            error[0] = e
+
+    thread = threading.Thread(target=_call)
+    thread.start()
+    thread.join(timeout=timeout)
+
+    if thread.is_alive():
+        raise TimeoutError(f"Gemini API call timed out after {timeout}s")
+
+    if error[0]:
+        raise error[0]
+
+    return result[0]
+
+
+def generate_image(client, prompt, output_path, aspect_ratio):
+    """Generate an image using Gemini API and save as WebP with retry."""
+    basename = os.path.basename(output_path)
+
+    for attempt in range(MAX_RETRIES):
+        if _check_global_timeout():
+            print(f"  SKIP (global timeout): {basename}")
+            return False
+
+        print(f"  [{basename}] attempt {attempt + 1}/{MAX_RETRIES} — calling Gemini (timeout {IMAGE_TIMEOUT}s)...")
+        t0 = time.time()
+
+        try:
+            response = _call_gemini_with_timeout(client, prompt, aspect_ratio, IMAGE_TIMEOUT)
+            elapsed = time.time() - t0
+            print(f"  [{basename}] response received in {elapsed:.1f}s")
+
+            if not response.candidates or not response.candidates[0].content.parts:
+                print(f"  [{basename}] WARNING: empty response (no candidates/parts)")
+                return False
 
             for part in response.candidates[0].content.parts:
                 if part.inline_data:
                     img = Image.open(io.BytesIO(part.inline_data.data))
                     os.makedirs(os.path.dirname(output_path), exist_ok=True)
                     img.save(output_path, "WEBP", quality=85)
-                    print(f"  Saved: {output_path}")
+                    print(f"  [{basename}] SAVED ({os.path.getsize(output_path)} bytes)")
                     return True
 
-            print(f"  Warning: No image data in response for {basename}")
+            print(f"  [{basename}] WARNING: response had parts but no inline_data")
             return False
+
+        except TimeoutError:
+            print(f"  [{basename}] TIMEOUT after {IMAGE_TIMEOUT}s — skipping")
+            return False
+
         except Exception as e:
+            elapsed = time.time() - t0
             error_str = str(e)
+            print(f"  [{basename}] ERROR after {elapsed:.1f}s: {error_str[:200]}")
+
             if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str:
-                wait = 30 * (attempt + 1)
-                print(f"  Rate limited, retrying in {wait}s (attempt {attempt + 1}/{max_retries})...")
+                wait = min(30 * (attempt + 1), 60)
+                print(f"  [{basename}] Rate limited, retrying in {wait}s...")
                 time.sleep(wait)
                 continue
             if "not available in your country" in error_str.lower():
-                print(f"  Error: Image generation is not available in your region.")
-                print(f"  This script must be run from a supported region (e.g., US via GitHub Actions).")
-                return False
-            print(f"  Error generating {basename}: {e}")
+                print(f"  FATAL: Image generation not available in this region. Aborting all.")
+                sys.exit(0)
+            # Other error — skip this image
             return False
 
-    print(f"  Failed after {max_retries} retries: {basename}")
+    print(f"  [{basename}] FAILED after {MAX_RETRIES} retries — skipping")
     return False
 
 
@@ -308,14 +371,19 @@ def process_article(slug, api_key, force=False):
     os.makedirs(output_dir, exist_ok=True)
 
     generated = 0
+    skipped = 0
     for img_name in image_refs:
+        if _check_global_timeout():
+            skipped += len(image_refs) - generated - skipped
+            break
+
         # Normalize extension to .webp
         base = os.path.splitext(img_name)[0]
         webp_name = f"{base}.webp"
         output_path = os.path.join(output_dir, webp_name)
 
         if os.path.exists(output_path) and not force:
-            print(f"  Skipping (exists): {webp_name}")
+            print(f"  [{webp_name}] EXISTS — skipping")
             generated += 1
             continue
 
@@ -326,12 +394,14 @@ def process_article(slug, api_key, force=False):
         success = generate_image(client, prompt, output_path, aspect_ratio)
         if success:
             generated += 1
+        else:
+            skipped += 1
 
         # Rate limiting — avoid hitting API quotas
-        time.sleep(3)
+        time.sleep(2)
 
-    print(f"  Result: {generated}/{len(image_refs)} images ready")
-    return generated == len(image_refs)
+    print(f"  Result: {generated}/{len(image_refs)} generated, {skipped} skipped")
+    return True  # Always continue — don't block publishing because of image failures
 
 
 def main():
@@ -354,23 +424,29 @@ def main():
         print("  Use --api-key KEY or set GOOGLE_API_KEY environment variable.")
         sys.exit(1)
 
+    global _global_start
+    _global_start = time.time()
+
     print("=" * 60)
     print("Newbi Blog Image Generator")
     print(f"  Model: {MODEL}")
     print(f"  Articles: {len(args.slugs)}")
+    print(f"  Timeout per image: {IMAGE_TIMEOUT}s")
+    print(f"  Max retries: {MAX_RETRIES}")
+    print(f"  Global timeout: {GLOBAL_TIMEOUT}s ({GLOBAL_TIMEOUT // 60}min)")
     print("=" * 60)
+    sys.stdout.flush()
 
-    all_success = True
     for slug in args.slugs:
-        success = process_article(slug, api_key, force=args.force)
-        if not success:
-            all_success = False
+        if _check_global_timeout():
+            print(f"\nSkipping remaining articles due to global timeout.")
+            break
+        process_article(slug, api_key, force=args.force)
 
-    if all_success:
-        print("\nAll images generated successfully.")
-    else:
-        print("\nSome images failed to generate. Check the output above.")
-        sys.exit(1)
+    elapsed = time.time() - _global_start
+    print(f"\nDone in {int(elapsed)}s.")
+    # Always exit 0 — image failures should not block article publishing
+    sys.exit(0)
 
 
 if __name__ == "__main__":
