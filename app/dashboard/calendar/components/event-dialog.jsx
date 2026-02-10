@@ -357,7 +357,7 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
 
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent className="w-[420px] sm:w-[460px] sm:max-w-[460px] flex flex-col p-0">
+      <SheetContent className="w-full sm:w-[460px] sm:max-w-[460px] flex flex-col p-0">
         {/* Header */}
         <SheetHeader className="px-6 pt-6 pb-0">
           <div className="flex items-center gap-3">

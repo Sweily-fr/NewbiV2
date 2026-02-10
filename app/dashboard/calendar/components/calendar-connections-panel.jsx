@@ -134,7 +134,7 @@ export function CalendarConnectionsPanel() {
             )}
           </Button>
         </SheetTrigger>
-        <SheetContent className="w-[420px] sm:w-[460px] sm:max-w-[460px] flex flex-col">
+        <SheetContent className="w-full sm:w-[460px] sm:max-w-[460px] flex flex-col">
           <SheetHeader>
             <SheetTitle className="text-base">Calendriers externes</SheetTitle>
             <SheetDescription className="text-xs">
