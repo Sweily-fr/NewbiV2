@@ -82,7 +82,7 @@ function escapeForGmail(text, type) {
  * @param {Object} signatureData - The signature data
  * @param {string} parentLayout - The parent container's layout ('vertical' or 'horizontal')
  */
-function generateElementHTML(element, signatureData, parentLayout = 'vertical') {
+function generateElementHTML(element, signatureData, parentLayout = 'vertical', containerAlignment = 'left') {
   const props = element.props || {};
   const type = element.type;
 
@@ -238,10 +238,9 @@ function generateElementHTML(element, signatureData, parentLayout = 'vertical') 
       const logoUrl = signatureData.logo || signatureData.companyLogo;
       if (!logoUrl) return '';
 
-      const maxWidth = props.maxWidth || 100;
-      const height = signatureData.logoSize || props.maxHeight || 32;
+      const logoWidth = signatureData.logoSize || props.maxWidth || 100;
 
-      return `<img src="${logoUrl}" alt="Logo" style="max-width: ${maxWidth}px; height: ${height}px; object-fit: contain; display: block;" />`;
+      return `<img src="${logoUrl}" alt="Logo" style="width: ${logoWidth}px; height: auto; object-fit: contain; display: block;" />`;
     }
 
     case ELEMENT_TYPES.SEPARATOR_LINE: {
@@ -272,38 +271,43 @@ function generateElementHTML(element, signatureData, parentLayout = 'vertical') 
       const globalColor = signatureData.socialGlobalColor || props.color || 'black';
       const size = props.size || 20;
       const gap = props.gap || 8;
-      const alignment = props.alignment || 'left';
 
-      const alignStyle = alignment === 'center' ? 'center' : alignment === 'right' ? 'right' : 'left';
+      // Utiliser l'alignement du conteneur parent, avec fallback sur les props de l'élément
+      const effectiveAlignment = containerAlignment || props.alignment || 'left';
 
       // Même logique que BlockElement.jsx: afficher tous les réseaux présents
       const hasNetworks = Object.keys(networksData).length > 0;
       const defaultNetworks = ['facebook', 'linkedin', 'x'];
       const networksToShow = hasNetworks ? Object.keys(networksData) : defaultNetworks;
 
-      const iconsHTML = networksToShow
-        .map((networkName) => {
+      // Utiliser des cellules de table pour une compatibilité email maximale
+      const iconCells = networksToShow
+        .map((networkName, index) => {
           const networkData = networksData[networkName] || {};
-          // Couleur par réseau ou couleur globale
           const color = socialColors[networkName] || globalColor || 'black';
           const colorName = getColorName(color);
           const iconUrl = getSocialIconUrl(networkName.toLowerCase(), colorName);
+          const isLast = index === networksToShow.length - 1;
+          const cellPadding = isLast ? '0' : `0 ${gap}px 0 0`;
 
-          // Si URL valide (pas # et pas vide), créer un lien
           const hasValidUrl = networkData.url && networkData.url !== '#' && networkData.url.trim() !== '';
 
-          if (hasValidUrl) {
-            return `<a href="${networkData.url}" target="_blank" style="display: inline-block; margin-right: ${gap}px; text-decoration: none;"><img src="${iconUrl}" alt="${networkName}" width="${size}" height="${size}" style="width: ${size}px; height: ${size}px; display: block; border: 0;" /></a>`;
-          } else {
-            // Sans lien, juste l'image
-            return `<img src="${iconUrl}" alt="${networkName}" width="${size}" height="${size}" style="width: ${size}px; height: ${size}px; display: inline-block; margin-right: ${gap}px; border: 0;" />`;
-          }
+          const imgTag = `<img src="${iconUrl}" alt="${networkName}" width="${size}" height="${size}" style="width: ${size}px; height: ${size}px; display: block; border: 0;" />`;
+
+          const content = hasValidUrl
+            ? `<a href="${networkData.url}" target="_blank" style="text-decoration: none; display: inline-block;">${imgTag}</a>`
+            : imgTag;
+
+          return `<td style="padding: ${cellPadding};">${content}</td>`;
         })
         .join('');
 
-      if (!iconsHTML) return '';
+      if (!iconCells) return '';
 
-      return `<div style="text-align: ${alignStyle};">${iconsHTML}</div>`;
+      // Contrôler l'alignement via margin sur la table (fiable dans les clients mail)
+      const tableMargin = effectiveAlignment === 'center' ? '0 auto' : effectiveAlignment === 'right' ? '0 0 0 auto' : '0';
+
+      return `<table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; margin: ${tableMargin};"><tbody><tr>${iconCells}</tr></tbody></table>`;
     }
 
     default:
@@ -353,7 +357,7 @@ function generateContainerHTML(container, signatureData, depth = 0, grandparentL
       type: 'element',
       element,
       isSeparator,
-      html: generateElementHTML(element, signatureData, effectiveLayout),
+      html: generateElementHTML(element, signatureData, effectiveLayout, textAlign),
     };
   }).filter(item => item.html);
 

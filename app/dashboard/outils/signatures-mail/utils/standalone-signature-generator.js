@@ -164,7 +164,7 @@ export function generateSignatureHTML(signatureData) {
         const logoSize = signatureData.logoSize || 60;
         // Utiliser directement l'URL Cloudflare (comme dans la preview) au lieu de wsrv.nl
         // pour éviter les espacements supplémentaires que Gmail ajoute
-        return `<img src="${signatureData.logo}" alt="Logo entreprise" style="width: ${logoSize}px; height: auto; max-height: ${logoSize}px; object-fit: contain; display: block; margin: 0; padding: 0; font-size: 0; line-height: 0;" />`;
+        return `<img src="${signatureData.logo}" alt="Logo entreprise" style="width: ${logoSize}px; height: auto; object-fit: contain; display: block; margin: 0; padding: 0; font-size: 0; line-height: 0;" />`;
       })()
     : "";
 
@@ -226,7 +226,7 @@ export function generateSignatureHTML(signatureData) {
   };
 
   // Générer les icônes sociales depuis Cloudflare
-  const generateSocialIconsHTML = () => {
+  const generateSocialIconsHTML = (alignment = "left") => {
     // Fonction pour obtenir l'URL de l'icône depuis Cloudflare
     const getSocialIconUrl = (platform) => {
       // Utiliser l'icône personnalisée si disponible
@@ -282,7 +282,8 @@ export function generateSignatureHTML(signatureData) {
 
     if (activeNetworks.length === 0) return "";
 
-    const iconsHTML = activeNetworks
+    // Utiliser une structure table pour une compatibilité email maximale
+    const iconCells = activeNetworks
       .map((social, index) => {
         const iconUrl = getSocialIconUrl(social.key);
         const url = signatureData.socialNetworks[social.key] || "#";
@@ -291,19 +292,25 @@ export function generateSignatureHTML(signatureData) {
           signatureData.socialSizes?.[social.key] ||
           signatureData.socialSize ||
           24;
-        // 🔥 OPTIMISATION: Utiliser wsrv.nl pour les icônes
+        // Optimisation: Utiliser wsrv.nl pour les icônes
         const optimizedIconUrl = `https://wsrv.nl/?url=${encodeURIComponent(iconUrl)}&w=${iconSize * 2}&h=${iconSize * 2}&fit=cover&sharp=2&q=90`;
-        return `
-        <a href="${url}" style="text-decoration: none; margin-right: ${index < activeNetworks.length - 1 ? "8px" : "0"}; display: inline-block;">
-          <img src="${optimizedIconUrl}" alt="${social.label}" style="width: ${iconSize}px; height: ${iconSize}px; display: block;" />
-        </a>`;
+        return `<td style="padding-right: ${index < activeNetworks.length - 1 ? "8" : "0"}px;">
+<a href="${url}" style="text-decoration: none; display: inline-block;">
+<img src="${optimizedIconUrl}" alt="${social.label}" width="${iconSize}" height="${iconSize}" style="width: ${iconSize}px; height: ${iconSize}px; display: block; border: 0;" />
+</a>
+</td>`;
       })
       .join("");
 
-    return `<div style="margin-top: ${getSpacing(signatureData.spacings?.logoToSocial, 12)}px;">${iconsHTML}</div>`;
+    const tableMargin = alignment === "center" ? "0 auto" : "0";
+    return `<table cellpadding="0" cellspacing="0" border="0" style="border-collapse: collapse; margin: ${tableMargin};">
+<tbody>
+<tr>
+${iconCells}
+</tr>
+</tbody>
+</table>`;
   };
-
-  const socialIconsHTML = generateSocialIconsHTML();
 
   // Vérifier l'orientation
   const isVertical = signatureData.orientation === "vertical";
@@ -486,10 +493,11 @@ ${logoHTML}
 
   // Générer l'élément réseaux sociaux
   const generateSocialElement = (isFullWidth = false) => {
-    if (!socialIconsHTML) return "";
+    const socialHTML = generateSocialIconsHTML("left");
+    if (!socialHTML) return "";
     return `<tr>
 <td colspan="${isFullWidth ? colSpan : 2}" style="padding-top: ${getSpacing(signatureData.spacings?.logoToSocial, 15)}px; text-align: left;">
-${socialIconsHTML}
+${socialHTML}
 </td>
 </tr>`;
   };
@@ -720,15 +728,18 @@ ${logoHTML}
     : ""
 }
 ${
-  socialIconsHTML
-    ? `
+  (() => {
+    const verticalSocialHTML = generateSocialIconsHTML("center");
+    return verticalSocialHTML
+      ? `
 <!-- Réseaux sociaux (centrés) -->
 <tr>
 <td style="padding-top: ${getSpacing(signatureData.spacings?.logoToSocial, 16)}px; text-align: center;">
-${socialIconsHTML}
+${verticalSocialHTML}
 </td>
 </tr>`
-    : ""
+      : "";
+  })()
 }
 </tbody>
 </table>

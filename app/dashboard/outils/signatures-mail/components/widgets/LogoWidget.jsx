@@ -39,11 +39,10 @@ export default function LogoWidget({
     }
   };
 
+  const logoWidth = props.width || props.maxWidth || 150;
   const logoStyle = {
-    width: props.width ? `${props.width}px` : 'auto',
-    height: props.height === 'auto' ? 'auto' : `${props.height || 40}px`,
-    maxWidth: props.maxWidth ? `${props.maxWidth}px` : '150px',
-    maxHeight: props.maxHeight ? `${props.maxHeight}px` : '50px',
+    width: `${logoWidth}px`,
+    height: 'auto',
     objectFit: props.objectFit || 'contain',
     display: 'block',
   };

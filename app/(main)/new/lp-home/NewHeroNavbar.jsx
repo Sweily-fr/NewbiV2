@@ -24,6 +24,7 @@ import {
 import { Button } from "@/src/components/ui/button";
 import React from "react";
 import { cn } from "@/src/lib/utils";
+import { useSession } from "@/src/lib/auth-client";
 
 const menuItems = [
   {
@@ -168,6 +169,9 @@ const menuItems = [
 ];
 
 export function NewHeroNavbar({ hasBanner = false }) {
+  const { data: session } = useSession();
+  const isLoggedIn = !!session?.user;
+
   const [menuState, setMenuState] = React.useState(false);
   const [isScrolled, setIsScrolled] = React.useState(false);
   const [openDropdown, setOpenDropdown] = React.useState(null);
@@ -220,17 +224,24 @@ export function NewHeroNavbar({ hasBanner = false }) {
                 />
               </Link>
 
-              <button
-                onClick={() => {
-                  setMenuState(!menuState);
-                  if (menuState) setMobileDropdownOpen(null);
-                }}
-                aria-label={menuState == true ? "Close Menu" : "Open Menu"}
-                className="relative z-20 -m-2.5 -mr-4 block cursor-pointer p-2.5 lg:hidden"
-              >
-                <Equal className="in-data-[state=active]:rotate-180 in-data-[state=active]:scale-0 in-data-[state=active]:opacity-0 m-auto size-6 duration-200" />
-                <X className="in-data-[state=active]:rotate-0 in-data-[state=active]:scale-100 in-data-[state=active]:opacity-100 absolute inset-0 m-auto size-6 -rotate-180 scale-0 opacity-0 duration-200" />
-              </button>
+              <div className="flex items-center gap-2 lg:hidden">
+                <Button asChild variant="outline" size="sm">
+                  <Link href={isLoggedIn ? "/dashboard" : "/auth/login"}>
+                    <span>{isLoggedIn ? "Tableau de bord" : "Connexion"}</span>
+                  </Link>
+                </Button>
+                <button
+                  onClick={() => {
+                    setMenuState(!menuState);
+                    if (menuState) setMobileDropdownOpen(null);
+                  }}
+                  aria-label={menuState == true ? "Close Menu" : "Open Menu"}
+                  className="relative z-20 -m-2.5 -mr-4 block cursor-pointer p-2.5"
+                >
+                  <Equal className="in-data-[state=active]:rotate-180 in-data-[state=active]:scale-0 in-data-[state=active]:opacity-0 m-auto size-6 duration-200" />
+                  <X className="in-data-[state=active]:rotate-0 in-data-[state=active]:scale-100 in-data-[state=active]:opacity-100 absolute inset-0 m-auto size-6 -rotate-180 scale-0 opacity-0 duration-200" />
+                </button>
+              </div>
             </div>
 
             <div className="absolute inset-0 m-auto hidden size-fit lg:block">
@@ -354,16 +365,26 @@ export function NewHeroNavbar({ hasBanner = false }) {
 
             {/* Desktop buttons */}
             <div className="hidden lg:flex lg:items-center lg:gap-2">
-              <Button asChild variant="outline" size="md">
-                <Link href="/auth/login">
-                  <span>Connexion</span>
-                </Link>
-              </Button>
-              <Button asChild size="md">
-                <Link href="/auth/signup">
-                  <span>Inscription</span>
-                </Link>
-              </Button>
+              {isLoggedIn ? (
+                <Button asChild size="md">
+                  <Link href="/dashboard">
+                    <span>Tableau de bord</span>
+                  </Link>
+                </Button>
+              ) : (
+                <>
+                  <Button asChild variant="outline" size="md">
+                    <Link href="/auth/login">
+                      <span>Connexion</span>
+                    </Link>
+                  </Button>
+                  <Button asChild size="md">
+                    <Link href="/auth/signup">
+                      <span>Inscription</span>
+                    </Link>
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -480,33 +501,51 @@ export function NewHeroNavbar({ hasBanner = false }) {
               {/* Buttons at bottom - Fixed */}
               <div className="px-6 pb-8 pt-6 bg-gray-50 border-t border-gray-100">
                 <div className="flex flex-col space-y-3">
-                  <Button
-                    asChild
-                    size="lg"
-                    className="w-full rounded-xl py-6 text-base bg-[#202020]"
-                  >
-                    <Link
-                      href="/auth/signup"
-                      className="flex items-center justify-center"
-                      onClick={() => setMenuState(false)}
+                  {isLoggedIn ? (
+                    <Button
+                      asChild
+                      size="lg"
+                      className="w-full rounded-xl py-6 text-base bg-[#202020]"
                     >
-                      <span>Inscription</span>
-                    </Link>
-                  </Button>
-                  <Button
-                    asChild
-                    variant="outline"
-                    size="lg"
-                    className="w-full rounded-xl py-6 text-base border-gray-300"
-                  >
-                    <Link
-                      href="/auth/login"
-                      className="flex items-center justify-center"
-                      onClick={() => setMenuState(false)}
-                    >
-                      <span>Se connecter</span>
-                    </Link>
-                  </Button>
+                      <Link
+                        href="/dashboard"
+                        className="flex items-center justify-center"
+                        onClick={() => setMenuState(false)}
+                      >
+                        <span>Tableau de bord</span>
+                      </Link>
+                    </Button>
+                  ) : (
+                    <>
+                      <Button
+                        asChild
+                        size="lg"
+                        className="w-full rounded-xl py-6 text-base bg-[#202020]"
+                      >
+                        <Link
+                          href="/auth/signup"
+                          className="flex items-center justify-center"
+                          onClick={() => setMenuState(false)}
+                        >
+                          <span>Inscription</span>
+                        </Link>
+                      </Button>
+                      <Button
+                        asChild
+                        variant="outline"
+                        size="lg"
+                        className="w-full rounded-xl py-6 text-base border-gray-300"
+                      >
+                        <Link
+                          href="/auth/login"
+                          className="flex items-center justify-center"
+                          onClick={() => setMenuState(false)}
+                        >
+                          <span>Se connecter</span>
+                        </Link>
+                      </Button>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
