@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { LoaderCircle, Trash2, X, CalendarIcon, Clock, User, FileText, MessageSquare, ChevronDown, Flag, Users, UserPlus, Columns, Tag, Send, Edit2, ImagePlus } from 'lucide-react';
+import { LoaderCircle, Trash2, X, CalendarIcon, Clock, User, FileText, MessageSquare, ChevronDown, Flag, Users, UserPlus, Columns, Tag, Send, Edit2, Paperclip } from 'lucide-react';
 import { Button } from '@/src/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/src/components/ui/dialog';
 import { Input } from '@/src/components/ui/input';
@@ -257,13 +257,10 @@ export function TaskModal({
     handleDrop: handleImageDrop
   } = useTaskImageUpload(taskId, workspaceId, boardId);
 
-  // Handler pour l'upload d'images dans la description
+  // Handler pour l'upload de fichiers dans la description (mode édition)
   const handleDescriptionImageUpload = useCallback(async (files) => {
-    if (!taskId) {
-      // En mode création, on ne peut pas encore uploader d'images
-      return;
-    }
-    
+    if (!taskId) return;
+
     const uploadedImages = [];
     for (const file of files) {
       const result = await uploadImage(file, 'description');
@@ -271,7 +268,7 @@ export function TaskModal({
         uploadedImages.push(result);
       }
     }
-    
+
     // Mettre à jour le formulaire avec les nouvelles images
     if (uploadedImages.length > 0) {
       setTaskForm(prev => ({
@@ -280,6 +277,21 @@ export function TaskModal({
       }));
     }
   }, [taskId, uploadImage, setTaskForm]);
+
+  // Handlers pour le mode local (création de tâche - fichiers en attente)
+  const handleAddPendingFiles = useCallback((files) => {
+    setTaskForm(prev => ({
+      ...prev,
+      pendingFiles: [...(prev.pendingFiles || []), ...files]
+    }));
+  }, [setTaskForm]);
+
+  const handleRemovePendingFile = useCallback((index) => {
+    setTaskForm(prev => ({
+      ...prev,
+      pendingFiles: (prev.pendingFiles || []).filter((_, i) => i !== index)
+    }));
+  }, [setTaskForm]);
 
   // Handler pour supprimer une image
   const handleDeleteImage = useCallback(async (imageId) => {
@@ -958,13 +970,13 @@ export function TaskModal({
               />
             </div>
 
-            {/* Images de la tâche (uniquement en mode édition) */}
-            {isEditing && taskId && (
-              <div className="space-y-2 mt-6">
-                <Label className="text-sm font-normal flex items-center gap-2">
-                  <ImagePlus className="h-4 w-4 text-muted-foreground" />
-                  Images
-                </Label>
+            {/* Pièces jointes */}
+            <div className="space-y-2 mt-6">
+              <Label className="text-sm font-normal flex items-center gap-2">
+                <Paperclip className="h-4 w-4 text-muted-foreground" />
+                Pièces jointes
+              </Label>
+              {isEditing && taskId ? (
                 <TaskImageUpload
                   images={taskForm.images || []}
                   onUpload={handleDescriptionImageUpload}
@@ -972,10 +984,19 @@ export function TaskModal({
                   isUploading={isUploadingImage}
                   uploadProgress={uploadProgress}
                   maxImages={10}
-                  placeholder="Glissez des images ici ou cliquez pour ajouter"
+                  placeholder="Glissez des fichiers ici ou cliquez pour sélectionner"
                 />
-              </div>
-            )}
+              ) : (
+                <TaskImageUpload
+                  localMode
+                  pendingFiles={taskForm.pendingFiles || []}
+                  onAddFiles={handleAddPendingFiles}
+                  onRemoveFile={handleRemovePendingFile}
+                  maxImages={10}
+                  placeholder="Glissez des fichiers ici ou cliquez pour sélectionner"
+                />
+              )}
+            </div>
             </div>
             
             {/* Footer fixe */}
@@ -1580,13 +1601,13 @@ export function TaskModal({
                   />
                 </div>
 
-                {/* Images de la tâche (uniquement en mode édition) */}
-                {isEditing && (taskForm.id || taskForm._id) && (
-                  <div className="space-y-2 mt-6">
-                    <Label className="text-sm font-normal flex items-center gap-2">
-                      <ImagePlus className="h-4 w-4 text-muted-foreground" />
-                      Images
-                    </Label>
+                {/* Pièces jointes */}
+                <div className="space-y-2 mt-6">
+                  <Label className="text-sm font-normal flex items-center gap-2">
+                    <Paperclip className="h-4 w-4 text-muted-foreground" />
+                    Pièces jointes
+                  </Label>
+                  {isEditing && (taskForm.id || taskForm._id) ? (
                     <TaskImageUpload
                       images={taskForm.images || []}
                       onUpload={handleDescriptionImageUpload}
@@ -1594,10 +1615,19 @@ export function TaskModal({
                       isUploading={isUploadingImage}
                       uploadProgress={uploadProgress}
                       maxImages={10}
-                      placeholder="Glissez des images ici ou cliquez pour ajouter"
+                      placeholder="Glissez des fichiers ici ou cliquez pour sélectionner"
                     />
-                  </div>
-                )}
+                  ) : (
+                    <TaskImageUpload
+                      localMode
+                      pendingFiles={taskForm.pendingFiles || []}
+                      onAddFiles={handleAddPendingFiles}
+                      onRemoveFile={handleRemovePendingFile}
+                      maxImages={10}
+                      placeholder="Glissez des fichiers ici ou cliquez pour sélectionner"
+                    />
+                  )}
+                </div>
               </div>
 
               {/* Footer fixe mobile */}

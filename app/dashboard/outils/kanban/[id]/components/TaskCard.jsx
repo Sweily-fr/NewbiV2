@@ -7,6 +7,7 @@ import {
   Flag,
   CheckCircle,
   AlignLeft,
+  Paperclip,
 } from "lucide-react";
 import { TimerDisplay } from "./TimerDisplay";
 import { Button } from "@/src/components/ui/button";
@@ -95,10 +96,24 @@ const TaskCard = memo(function TaskCard({ task, onEdit, onDelete, index, isDragg
     <>
       <div
         onClick={handleClick}
-        className={`bg-card text-card-foreground rounded-lg border border-border p-3 sm:p-4 shadow-xs hover:shadow-sm hover:bg-accent/10 flex flex-col cursor-grab active:cursor-grabbing transition-opacity ${
+        className={`bg-card text-card-foreground rounded-lg border border-border shadow-xs hover:shadow-sm hover:bg-accent/10 flex flex-col cursor-grab active:cursor-grabbing transition-opacity overflow-hidden ${
           isDragging ? "opacity-50" : "opacity-100"
         }`}
       >
+        {/* Image de couverture - première image épinglée */}
+        {task.images && task.images.length > 0 && (
+          <div className="w-full h-32 overflow-hidden">
+            <img
+              src={task.images[0].url}
+              alt={task.images[0].fileName || "Image de la tâche"}
+              className="w-full h-full object-cover"
+              loading="lazy"
+            />
+          </div>
+        )}
+
+        {/* Contenu avec padding */}
+        <div className="p-3 sm:p-4 flex flex-col flex-1">
         {/* En-tête avec titre et menu 3 points */}
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
@@ -193,6 +208,21 @@ const TaskCard = memo(function TaskCard({ task, onEdit, onDelete, index, isDragg
               </Popover>
             )}
 
+            {/* Pièces jointes */}
+            {task.images && task.images.length > 0 && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-0.5">
+                    <Paperclip className="h-3.5 w-3.5" />
+                    <span>{task.images.length}</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="top">
+                  {task.images.length} pièce{task.images.length > 1 ? "s" : ""} jointe{task.images.length > 1 ? "s" : ""}
+                </TooltipContent>
+              </Tooltip>
+            )}
+
             {/* Checklist */}
             {checklistProgress.total > 0 && (
               <Tooltip>
@@ -265,6 +295,7 @@ const TaskCard = memo(function TaskCard({ task, onEdit, onDelete, index, isDragg
             )}
           </div>
         </div>
+        </div>
       </div>
 
       {/* Dialog de confirmation */}
@@ -307,7 +338,8 @@ const TaskCard = memo(function TaskCard({ task, onEdit, onDelete, index, isDragg
     prevProps.isDragging === nextProps.isDragging &&
     JSON.stringify(prevProps.task.tags) === JSON.stringify(nextProps.task.tags) &&
     JSON.stringify(prevProps.task.checklist) === JSON.stringify(nextProps.task.checklist) &&
-    JSON.stringify(prevProps.task.assignedMembers) === JSON.stringify(nextProps.task.assignedMembers)
+    JSON.stringify(prevProps.task.assignedMembers) === JSON.stringify(nextProps.task.assignedMembers) &&
+    JSON.stringify(prevProps.task.images) === JSON.stringify(nextProps.task.images)
   );
 });
 
