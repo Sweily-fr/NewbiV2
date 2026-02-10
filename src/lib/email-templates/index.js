@@ -15,10 +15,15 @@ import { subscriptionChanged } from "./subscription/changed.js";
 import { subscriptionCreated } from "./subscription/created.js";
 import { subscriptionCancelled } from "./subscription/cancelled.js";
 import { renewalReminder } from "./subscription/renewal-reminder.js";
+import { trialStarted } from "./subscription/trial-started.js";
+import { trialEnding } from "./subscription/trial-ending.js";
 
 // Payment templates
 import { paymentSucceeded } from "./payment/succeeded.js";
 import { paymentFailed } from "./payment/failed.js";
+
+// Invoice templates
+import { invoicePaymentReceived } from "./invoice/payment-received.js";
 
 // Seats templates
 import { seatLimitWarning } from "./seats/limit-warning.js";
@@ -43,10 +48,15 @@ export const emailTemplates = {
   subscriptionCreated,
   subscriptionCancelled,
   renewalReminder,
+  trialStarted,
+  trialEnding,
 
   // Payment
   paymentSucceeded,
   paymentFailed,
+
+  // Invoice
+  invoicePaymentReceived,
 
   // Seats
   seatLimitWarning,

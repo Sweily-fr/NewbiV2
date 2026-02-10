@@ -1,0 +1,370 @@
+---
+title: Comment gérer ses notes de frais et justificatifs de déplacement
+description: >-
+  Simplifiez la gestion de vos notes de frais : scan des reçus, catégorisation
+  automatique et partage avec votre expert-comptable en un clic.
+date: '2026-02-10'
+category: guide
+sector: null
+keyword: gestion notes de frais
+author: Newbi
+image: /blog/gestion-notes-frais-deplacement/hero.webp
+published: false
+publishDate: null
+---
+
+import Image from "next/image"
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-6">
+  <Badge variant="secondary">Guide</Badge>
+  <Badge variant="outline">8 min de lecture</Badge>
+</div>
+
+# Comment gérer ses notes de frais et justificatifs de déplacement
+
+La **gestion notes de frais** est une tache incontournable pour tout entrepreneur, freelance ou dirigeant de TPE/PME. Entre les tickets de restaurant, les billets de train, les factures d'hotel et les pleins d'essence, les justificatifs s'accumulent rapidement et deviennent un veritable casse-tete administratif. Pourtant, une gestion rigoureuse de ces depenses est indispensable pour maitriser sa tresorerie, respecter ses obligations fiscales et faciliter le travail de son expert-comptable. Dans ce guide complet, nous vous expliquons comment passer d'une gestion manuelle chronophage a un processus automatise, fiable et sans stress.
+
+<Image
+  src="/blog/gestion-notes-frais-deplacement/hero.webp"
+  alt="Gestion des notes de frais et justificatifs de deplacement avec Newbi"
+  width={1200}
+  height={630}
+  className="rounded-lg my-8"
+  priority
+/>
+
+## Qu'est-ce qu'une note de frais ?
+
+Une note de frais est un document qui recense les depenses professionnelles engagees par un salarie ou un dirigeant dans le cadre de son activite. Ces frais sont ensuite rembourses par l'entreprise ou deduits fiscalement. Les notes de frais couvrent generalement :
+
+- **Les frais de deplacement** : billets de train, avion, peages, carburant, location de vehicule
+- **Les frais de repas** : dejeuners d'affaires, repas lors de deplacements professionnels
+- **Les frais d'hebergement** : nuits d'hotel lors de missions ou salons professionnels
+- **Les frais de representation** : invitations clients, cadeaux d'affaires
+- **Les frais divers** : fournitures de bureau, abonnements professionnels, frais postaux
+
+Chaque depense doit etre accompagnee d'un **justificatif** (ticket de caisse, facture, recu) pour etre valide aux yeux de l'administration fiscale. C'est precisement la conservation et l'organisation de ces justificatifs qui pose le plus de problemes au quotidien.
+
+## Gestion manuelle vs. gestion automatisee : le comparatif
+
+Beaucoup d'entrepreneurs gerent encore leurs notes de frais a l'ancienne : enveloppes de tickets, tableurs Excel, saisie manuelle... Cette approche, en plus d'etre fastidieuse, multiplie les risques d'erreurs et de pertes de justificatifs. Voyons concretement ce qui distingue les deux approches.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Comparatif entre gestion manuelle et gestion automatisee des notes de frais</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[200px]">Critere</TableHead>
+        <TableHead>Gestion manuelle</TableHead>
+        <TableHead>Gestion automatisee (Newbi)</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Saisie des depenses</TableCell>
+        <TableCell>Manuelle, ligne par ligne dans un tableur</TableCell>
+        <TableCell>Automatique via scan OCR du justificatif</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Conservation des justificatifs</TableCell>
+        <TableCell>Papier, enveloppes, risque de perte</TableCell>
+        <TableCell>Numerique, stockage cloud securise</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Categorisation</TableCell>
+        <TableCell>A faire soi-meme, sources d'erreurs</TableCell>
+        <TableCell>Automatique avec suggestions intelligentes</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Temps moyen par mois</TableCell>
+        <TableCell>2 a 4 heures</TableCell>
+        <TableCell>15 a 30 minutes</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Partage comptable</TableCell>
+        <TableCell>Envoi par e-mail, classeurs physiques</TableCell>
+        <TableCell>Export en un clic, acces partage</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Risque d'erreur</TableCell>
+        <TableCell>Eleve (saisie manuelle, oublis)</TableCell>
+        <TableCell>Tres faible (extraction automatique)</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Conformite fiscale</TableCell>
+        <TableCell>Difficile a garantir</TableCell>
+        <TableCell>Assuree (archivage conforme)</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+<div className="not-prose my-6">
+  <Callout type="tip" title="Bon a savoir">
+    L'administration fiscale exige la conservation des justificatifs de frais professionnels pendant **6 ans** minimum. Avec un archivage numerique conforme, vous eliminez le risque de perte de documents papier tout en respectant vos obligations legales.
+  </Callout>
+</div>
+
+## Le scan OCR : la revolution de la gestion notes de frais
+
+La technologie **OCR** (Optical Character Recognition) a transforme la maniere dont les professionnels gerent leurs depenses. Plus besoin de recopier manuellement les informations de chaque ticket : il suffit de photographier le justificatif avec son smartphone pour que le systeme extraie automatiquement les donnees essentielles.
+
+### Comment fonctionne le scan OCR ?
+
+1. **Capture** : Vous prenez en photo votre ticket, facture ou recu depuis l'application
+2. **Extraction** : L'algorithme OCR identifie et extrait les informations cles (montant, date, fournisseur, TVA)
+3. **Verification** : Les donnees extraites sont affichees pour que vous puissiez les valider ou les corriger si necessaire
+4. **Enregistrement** : La depense est automatiquement ajoutee a votre liste avec le justificatif numerise rattache
+
+Cette approche reduit considerablement le temps de saisie et minimise les erreurs de transcription. Pour en savoir plus sur le fonctionnement de l'OCR applique a la comptabilite, consultez notre article dedie sur l'[OCR pour les justificatifs comptables](/blog/ocr-justificatifs-comptables).
+
+<div className="not-prose my-6">
+  <Callout type="warning" title="Attention aux justificatifs thermiques">
+    Les tickets imprimes sur papier thermique (tickets de caisse, recus de carte bancaire) s'effacent avec le temps. Il est **indispensable** de les numeriser rapidement apres reception. Un ticket illisible ne sera pas accepte en cas de controle fiscal.
+  </Callout>
+</div>
+
+## La categorisation automatique des depenses
+
+Une fois les donnees extraites par l'OCR, l'etape suivante consiste a **categoriser** chaque depense. Cette classification est essentielle pour :
+
+- **Le suivi budgetaire** : savoir ou va votre argent par poste de depense
+- **La declaration fiscale** : distinguer les charges deductibles des frais non deductibles
+- **Le reporting** : generer des rapports clairs par categorie, par periode ou par projet
+- **Le rapprochement bancaire** : faire correspondre les depenses avec les mouvements sur votre compte
+
+Avec Newbi, la categorisation est largement automatisee. Le systeme analyse le fournisseur, le montant et le contexte pour proposer la bonne categorie comptable. Vous gardez bien sur la main pour ajuster si necessaire. Combine a la [connexion bancaire et au rapprochement automatique](/blog/connexion-bancaire-rapprochement-automatique), ce processus devient quasi transparent.
+
+<Image
+  src="/blog/gestion-notes-frais-deplacement/categorisation.webp"
+  alt="Categorisation automatique des notes de frais dans Newbi"
+  width={1200}
+  height={630}
+  className="rounded-lg my-8"
+/>
+
+## Partager ses notes de frais avec son expert-comptable
+
+L'un des aspects les plus penibles de la gestion des notes de frais reste le **partage des documents avec votre expert-comptable**. Traditionnellement, cela implique de scanner des piles de tickets, de les classer dans des dossiers et de les envoyer par e-mail ou de les deposer physiquement au cabinet.
+
+Avec un outil comme Newbi, ce processus est simplifie a l'extreme :
+
+- **Export en un clic** : generez un export complet de vos depenses avec tous les justificatifs rattaches
+- **Acces partage** : donnez un acces direct a votre expert-comptable pour qu'il consulte vos notes de frais en temps reel
+- **Formats compatibles** : exportez vos donnees dans les formats acceptes par les principaux logiciels comptables
+- **Historique complet** : votre comptable retrouve l'ensemble des justificatifs classes et organises par date et categorie
+
+Pour decouvrir toutes les options de collaboration avec votre cabinet comptable, lisez notre guide sur [comment partager ses documents avec son expert-comptable](/blog/comment-partager-documents-expert-comptable).
+
+<div className="not-prose my-8 text-center">
+  <Button asChild variant="outline">
+    <Link href="/produits/depenses">Gerer mes notes de frais</Link>
+  </Button>
+</div>
+
+## Pourquoi choisir Newbi pour la gestion de vos notes de frais ?
+
+Newbi a ete concu pour simplifier la vie administrative des independants, freelances et dirigeants de petites entreprises. Voici ce que notre solution vous apporte concretement pour la gestion de vos notes de frais :
+
+<div className="not-prose my-8 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Scan OCR intelligent</strong> : photographiez vos justificatifs et laissez Newbi extraire automatiquement les informations (montant, date, TVA, fournisseur)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Categorisation automatique</strong> : chaque depense est classee dans la bonne categorie comptable sans effort de votre part</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Archivage numerique conforme</strong> : vos justificatifs sont stockes de maniere securisee et conformes aux exigences fiscales</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Rapprochement bancaire</strong> : connectez votre compte bancaire pour rapprocher automatiquement vos depenses et vos mouvements</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Partage simplifie</strong> : exportez vos notes de frais ou donnez un acces direct a votre expert-comptable en quelques clics</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Tableau de bord clair</strong> : visualisez vos depenses par categorie, par periode et suivez l'evolution de votre tresorerie</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span><strong>Multi-devises</strong> : gerez vos frais de deplacement a l'etranger avec prise en charge de plusieurs devises</span>
+  </div>
+</div>
+
+Pour aller plus loin dans l'optimisation de votre gestion financiere, decouvrez egalement notre article sur [comment gerer la tresorerie de votre entreprise](/blog/comment-gerer-tresorerie-entreprise).
+
+## Les bonnes pratiques pour une gestion optimale
+
+Au-dela de l'outil, voici les regles d'or a respecter pour une **gestion notes de frais** irreprochable :
+
+### 1. Numerisez immediatement
+
+Ne laissez jamais un justificatif trainer dans votre portefeuille ou au fond d'un sac. Des que vous recevez un ticket ou une facture, prenez-le en photo. Cela prend quelques secondes et vous evite les oublis et les pertes.
+
+### 2. Verifiez les informations obligatoires
+
+Un justificatif valide doit comporter : le nom du fournisseur, la date, le detail des prestations ou produits, le montant HT et TTC, et le taux de TVA. Sans ces elements, le justificatif peut etre rejete lors d'un controle.
+
+### 3. Classez au fil de l'eau
+
+N'attendez pas la fin du mois pour traiter vos notes de frais. Une saisie reguliere (idealement quotidienne ou hebdomadaire) vous garantit des donnees a jour et evite les sessions de rattrapage fastidieuses.
+
+### 4. Separez frais personnels et professionnels
+
+C'est une source frequente de confusion, en particulier pour les micro-entrepreneurs et les freelances. Utilisez si possible une carte bancaire dediee a votre activite professionnelle pour eviter les melanges.
+
+### 5. Conservez les originaux en complement
+
+Meme si l'archivage numerique est desormais reconnu, il est recommande de conserver les originaux papier pendant au moins un an, le temps de s'assurer que la numerisation est conforme.
+
+<div className="not-prose my-6">
+  <Callout type="tip" title="Astuce Newbi">
+    Activez les notifications de rappel dans Newbi pour ne jamais oublier de scanner vos justificatifs. Vous pouvez configurer un rappel quotidien ou hebdomadaire selon votre rythme de depenses.
+  </Callout>
+</div>
+
+## En resume
+
+La **gestion notes de frais** ne devrait plus etre une corvee. Grace aux technologies modernes comme l'OCR, la categorisation automatique et le partage numerique, vous pouvez transformer un processus chronophage en une tache simple et rapide. Newbi reunit toutes ces fonctionnalites dans une interface intuitive, pensee pour les entrepreneurs qui veulent se concentrer sur leur coeur de metier plutot que sur la paperasse.
+
+En adoptant une solution automatisee, vous gagnez du temps, vous reduisez les erreurs, vous securisez vos justificatifs et vous facilitez la vie de votre expert-comptable. C'est un investissement qui se rentabilise des le premier mois d'utilisation.
+
+<div className="not-prose my-8 text-center">
+  <Button asChild>
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions frequentes
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Quels types de justificatifs puis-je scanner avec Newbi ?</AccordionTrigger>
+      <AccordionContent>
+        Newbi prend en charge tous les types de justificatifs courants : tickets de caisse, factures, recus de carte bancaire, notes de restaurant, billets de transport, factures d'hotel, et tout autre document de depense professionnelle. Le scan OCR fonctionne aussi bien avec des photos prises depuis votre smartphone qu'avec des documents PDF numeriques.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Combien de temps dois-je conserver mes justificatifs de frais ?</AccordionTrigger>
+      <AccordionContent>
+        L'administration fiscale francaise impose une conservation minimale de 6 ans pour les justificatifs de depenses professionnelles. Avec Newbi, vos documents sont archives numeriquement de facon securisee et conforme, ce qui vous garantit de respecter cette obligation sans effort.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Mon expert-comptable peut-il acceder directement a mes notes de frais ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, Newbi permet de donner un acces partage a votre expert-comptable. Il pourra consulter vos depenses, telecharger les justificatifs et exporter les donnees dans le format compatible avec son logiciel comptable. Cela simplifie considerablement la collaboration et reduit les allers-retours.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>La categorisation automatique est-elle fiable ?</AccordionTrigger>
+      <AccordionContent>
+        Le systeme de categorisation de Newbi s'appuie sur l'analyse du fournisseur, du montant et du contexte de la depense. Il atteint un taux de precision eleve, mais vous conservez toujours la possibilite de modifier la categorie proposee. Plus vous utilisez l'outil, plus les suggestions deviennent pertinentes grace a l'apprentissage de vos habitudes.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Puis-je gerer mes notes de frais en deplacement a l'etranger ?</AccordionTrigger>
+      <AccordionContent>
+        Absolument. Newbi prend en charge plusieurs devises, ce qui vous permet de saisir vos depenses dans la monnaie locale. Le taux de change est applique automatiquement pour convertir le montant en euros. Vos justificatifs en langue etrangere sont egalement pris en charge par le moteur OCR.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>
+
+<script
+  type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "Comment gérer ses notes de frais et justificatifs de déplacement",
+      "description": "Simplifiez la gestion de vos notes de frais : scan des reçus, catégorisation automatique et partage avec votre expert-comptable en un clic.",
+      "author": {
+        "@type": "Organization",
+        "name": "Newbi"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "Newbi",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://www.newbi.tools/logo.png"
+        }
+      },
+      "datePublished": "2026-02-10",
+      "dateModified": "2026-02-10",
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "https://www.newbi.tools/blog/gestion-notes-frais-deplacement"
+      },
+      "image": "https://www.newbi.tools/blog/gestion-notes-frais-deplacement/hero.webp",
+      "keywords": "gestion notes de frais, justificatifs de déplacement, notes de frais automatisées, OCR comptabilité, scan justificatifs"
+    })
+  }}
+/>
+
+<script
+  type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Quels types de justificatifs puis-je scanner avec Newbi ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Newbi prend en charge tous les types de justificatifs courants : tickets de caisse, factures, reçus de carte bancaire, notes de restaurant, billets de transport, factures d'hôtel, et tout autre document de dépense professionnelle."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Combien de temps dois-je conserver mes justificatifs de frais ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "L'administration fiscale française impose une conservation minimale de 6 ans pour les justificatifs de dépenses professionnelles."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Mon expert-comptable peut-il accéder directement à mes notes de frais ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Oui, Newbi permet de donner un accès partagé à votre expert-comptable. Il pourra consulter vos dépenses, télécharger les justificatifs et exporter les données dans le format compatible avec son logiciel comptable."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "La catégorisation automatique est-elle fiable ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Le système de catégorisation de Newbi s'appuie sur l'analyse du fournisseur, du montant et du contexte de la dépense. Il atteint un taux de précision élevé, mais vous conservez toujours la possibilité de modifier la catégorie proposée."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Puis-je gérer mes notes de frais en déplacement à l'étranger ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Absolument. Newbi prend en charge plusieurs devises, ce qui vous permet de saisir vos dépenses dans la monnaie locale. Le taux de change est appliqué automatiquement pour convertir le montant en euros."
+          }
+        }
+      ]
+    })
+  }}
+/>

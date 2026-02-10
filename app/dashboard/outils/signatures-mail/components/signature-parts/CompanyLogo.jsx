@@ -9,9 +9,8 @@ const CompanyLogo = ({ logoSrc, size = 60, spacing = 8, alignment = "left", sign
   if (!logoSrc) return null;
 
   const imageStyle = {
-    maxWidth: `${size}px`,
+    width: `${size}px`,
     height: "auto",
-    maxHeight: `${size}px`,
     objectFit: "contain",
     display: "block",
     margin:

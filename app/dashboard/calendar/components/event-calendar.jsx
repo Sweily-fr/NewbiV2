@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { CalendarCheck2 } from "lucide-react";
 import {
   addDays,
   addMonths,
@@ -35,6 +34,8 @@ import {
   WeekCellsHeight,
   WeekView,
 } from "./index";
+import { CalendarConnectionsPanel } from "./calendar-connections-panel";
+import { CalendarSyncButton } from "./calendar-sync-button";
 import { cn } from "@/src/lib/utils";
 import { Button } from "@/src/components/ui/button";
 import {
@@ -162,20 +163,11 @@ export function EventCalendar({
     if (event.id) {
       onEventUpdate?.(event);
       // Show toast notification when an event is updated
-      toast(`Événement "${event.title}" modifié`, {
-        description: format(new Date(event.start), "d MMM yyyy", { locale: fr }),
-        position: "bottom-left",
-      });
+      toast.success(`Événement "${event.title}" modifié — ${format(new Date(event.start), "d MMM yyyy", { locale: fr })}`);
     } else {
-      onEventAdd?.({
-        ...event,
-        id: Math.random().toString(36).substring(2, 11),
-      });
+      onEventAdd?.(event);
       // Show toast notification when an event is added
-      toast(`Événement "${event.title}" ajouté`, {
-        description: format(new Date(event.start), "d MMM yyyy", { locale: fr }),
-        position: "bottom-left",
-      });
+      toast.success(`Événement "${event.title}" ajouté — ${format(new Date(event.start), "d MMM yyyy", { locale: fr })}`);
     }
     setIsEventDialogOpen(false);
     setSelectedEvent(null);
@@ -189,27 +181,27 @@ export function EventCalendar({
 
     // Show toast notification when an event is deleted
     if (deletedEvent) {
-      toast(`Événement "${deletedEvent.title}" supprimé`, {
-        description: format(new Date(deletedEvent.start), "d MMM yyyy", { locale: fr }),
-        position: "bottom-left",
-      });
+      toast.success(`Événement "${deletedEvent.title}" supprimé — ${format(new Date(deletedEvent.start), "d MMM yyyy", { locale: fr })}`);
     }
   };
 
   const handleEventUpdate = (updatedEvent) => {
+    // Block drag-and-drop for read-only events
+    if (updatedEvent.isReadOnly) {
+      toast.info("Les événements externes ne peuvent pas être déplacés");
+      return;
+    }
+
     onEventUpdate?.(updatedEvent);
 
     // Show toast notification when an event is updated via drag and drop
-    toast(`Événement "${updatedEvent.title}" déplacé`, {
-      description: format(new Date(updatedEvent.start), "d MMM yyyy", { locale: fr }),
-      position: "bottom-left",
-    });
+    toast.success(`Événement "${updatedEvent.title}" déplacé — ${format(new Date(updatedEvent.start), "d MMM yyyy", { locale: fr })}`);
   };
 
   const viewTitle = useMemo(() => {
-    if (view === "month") {
+    if (view === "mois") {
       return format(currentDate, "MMMM yyyy", { locale: fr });
-    } else if (view === "week") {
+    } else if (view === "semaine") {
       const start = startOfWeek(currentDate, { weekStartsOn: 0 });
       const end = endOfWeek(currentDate, { weekStartsOn: 0 });
       if (isSameMonth(start, end)) {
@@ -217,7 +209,7 @@ export function EventCalendar({
       } else {
         return `${format(start, "MMM", { locale: fr })} - ${format(end, "MMM yyyy", { locale: fr })}`;
       }
-    } else if (view === "day") {
+    } else if (view === "jour") {
       return (
         <>
           <span className="min-[480px]:hidden" aria-hidden="true">
@@ -258,22 +250,17 @@ export function EventCalendar({
       <CalendarDndProvider onEventUpdate={handleEventUpdate}>
         <div
           className={cn(
-            "flex items-center justify-between p-2 sm:p-4",
+            "flex flex-wrap items-center justify-between gap-2 p-2 sm:flex-nowrap sm:p-4",
             className
           )}
         >
           <div className="flex items-center gap-1 sm:gap-4">
             <Button
               variant="outline"
-              className="max-[479px]:aspect-square max-[479px]:p-0! font-normal"
+              className="font-normal"
               onClick={handleToday}
             >
-              <CalendarCheck2
-                className="min-[480px]:hidden"
-                size={16}
-                aria-hidden="true"
-              />
-              <span className="max-[479px]:sr-only">Aujourd'hui</span>
+              Aujourd'hui
             </Button>
             <div className="flex items-center sm:gap-2">
               <Button
@@ -298,19 +285,16 @@ export function EventCalendar({
             </h2>
           </div>
           <div className="flex items-center gap-2">
+            <CalendarSyncButton />
+            <CalendarConnectionsPanel />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="outline"
-                  className="gap-1.5 max-[479px]:h-8 font-normal"
+                  className="gap-1.5 font-normal"
                 >
                   <span>
-                    <span className="min-[480px]:hidden" aria-hidden="true">
-                      {view.charAt(0).toUpperCase()}
-                    </span>
-                    <span className="max-[479px]:sr-only">
-                      {view.charAt(0).toUpperCase() + view.slice(1)}
-                    </span>
+                    {view.charAt(0).toUpperCase() + view.slice(1)}
                   </span>
                   <ChevronDownIcon
                     className="-me-1 opacity-60"

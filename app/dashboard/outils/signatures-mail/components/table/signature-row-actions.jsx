@@ -42,23 +42,28 @@ export default function SignatureRowActions({
   const [showDeleteAlert, setShowDeleteAlert] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
 
-  const handleEdit = () => {
+  const handleEdit = (e) => {
+    e?.stopPropagation();
     onEdit?.(signature);
   };
 
-  const handleView = () => {
+  const handleView = (e) => {
+    e?.stopPropagation();
     setShowPreviewModal(true);
   };
 
-  const handleDuplicate = () => {
+  const handleDuplicate = (e) => {
+    e?.stopPropagation();
     onDuplicate?.(signature);
   };
 
-  const handleSetDefault = () => {
+  const handleSetDefault = (e) => {
+    e?.stopPropagation();
     onToggleFavorite?.(signature);
   };
 
-  const handleDelete = () => {
+  const handleDelete = (e) => {
+    e?.stopPropagation(); // Empêcher la propagation vers la ligne du tableau
     onDelete?.(signature);
     setShowDeleteAlert(false);
   };
@@ -87,7 +92,10 @@ export default function SignatureRowActions({
           </DropdownMenuItem> */}
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            onClick={() => setShowDeleteAlert(true)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowDeleteAlert(true);
+            }}
             className="text-red-600"
           >
             <TrashIcon className="mr-2 h-4 w-4 text-red-600" />
@@ -101,8 +109,7 @@ export default function SignatureRowActions({
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
             <AlertDialogDescription>
-              Êtes-vous sûr de vouloir <span className="text-white">supprimer</span> la signature "
-              {signature.signatureName}" ? Cette action est irréversible.
+              Êtes-vous sûr de vouloir <span className="font-semibold text-destructive">supprimer</span> la signature "{signature.signatureName}" ? Cette action est irréversible.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

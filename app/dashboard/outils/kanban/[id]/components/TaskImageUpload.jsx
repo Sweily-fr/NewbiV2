@@ -1,7 +1,6 @@
-import React, { useState, useCallback, useRef } from 'react';
-import { ImagePlus, X, Loader2, Upload, ZoomIn } from 'lucide-react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { Paperclip, X, Loader2, Upload, ZoomIn, FileText, FileSpreadsheet } from 'lucide-react';
 import { Button } from '@/src/components/ui/button';
-import { Progress } from '@/src/components/ui/progress';
 import { cn } from '@/src/lib/utils';
 import {
   Dialog,
@@ -11,10 +10,43 @@ import {
 } from '@/src/components/ui/dialog';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 
-/**
- * Composant pour afficher une image avec possibilité de suppression et zoom
- */
-function ImagePreview({ image, onDelete, isDeleting }) {
+const VALID_TYPES = [
+  'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'text/plain', 'text/csv'
+];
+
+const ACCEPT_STRING = "image/jpeg,image/png,image/gif,image/webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/plain,text/csv,.doc,.docx,.xls,.xlsx,.pdf,.txt,.csv";
+
+function isImageType(contentType) {
+  return contentType?.startsWith('image/');
+}
+
+function formatFileSize(bytes) {
+  if (!bytes) return '';
+  if (bytes < 1024) return `${bytes} o`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} Ko`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`;
+}
+
+function getFileExtension(fileName) {
+  return fileName?.split('.').pop()?.toLowerCase() || '';
+}
+
+function getFileIcon(file) {
+  const contentType = file.contentType || file.type || '';
+  const ext = getFileExtension(file.fileName || file.name);
+  if (contentType.includes('excel') || contentType.includes('spreadsheet') || ['xls', 'xlsx', 'csv'].includes(ext)) {
+    return FileSpreadsheet;
+  }
+  return FileText;
+}
+
+function ImagePreview({ file, onDelete, isDeleting }) {
   const [isZoomed, setIsZoomed] = useState(false);
 
   return (
@@ -23,35 +55,35 @@ function ImagePreview({ image, onDelete, isDeleting }) {
         <DialogTrigger asChild>
           <div className="relative cursor-pointer overflow-hidden rounded-lg border border-border hover:border-primary/50 transition-colors">
             <img
-              src={image.url}
-              alt={image.fileName}
+              src={file.url || file._localUrl}
+              alt={file.fileName || file.name}
               className="w-full h-24 object-cover"
             />
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-              <ZoomIn className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+              <ZoomIn className="h-5 w-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
           </div>
         </DialogTrigger>
         <DialogContent className="max-w-4xl p-0 overflow-hidden">
           <VisuallyHidden>
-            <DialogTitle>Aperçu de l'image</DialogTitle>
+            <DialogTitle>Aperçu de l&apos;image</DialogTitle>
           </VisuallyHidden>
           <img
-            src={image.url}
-            alt={image.fileName}
+            src={file.url || file._localUrl}
+            alt={file.fileName || file.name}
             className="w-full h-auto max-h-[80vh] object-contain"
           />
         </DialogContent>
       </Dialog>
-      
+
       {onDelete && (
         <button
           onClick={(e) => {
             e.stopPropagation();
-            onDelete(image.id);
+            onDelete(file.id ?? file._localIndex);
           }}
           disabled={isDeleting}
-          className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-white text-black border border-gray-200 shadow-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-100 disabled:opacity-50"
+          className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-white dark:bg-gray-800 text-muted-foreground border border-border shadow-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-500 disabled:opacity-50"
         >
           {isDeleting ? (
             <Loader2 className="h-3 w-3 animate-spin" />
@@ -60,18 +92,51 @@ function ImagePreview({ image, onDelete, isDeleting }) {
           )}
         </button>
       )}
-      
+
       <p className="text-xs text-muted-foreground mt-1 truncate max-w-[120px]">
-        {image.fileName}
+        {file.fileName || file.name}
       </p>
     </div>
   );
 }
 
-/**
- * Composant d'upload d'images avec drag-and-drop
- * Utilisable dans la description des tâches et les commentaires
- */
+function DocumentPreview({ file, onDelete, isDeleting }) {
+  const Icon = getFileIcon(file);
+  const ext = getFileExtension(file.fileName || file.name);
+
+  return (
+    <div className="group flex items-center gap-2.5 rounded-lg border border-border hover:bg-accent/50 transition-colors px-3 py-2">
+      <Icon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+      <div className="flex-1 min-w-0 flex items-baseline gap-2">
+        <p className="text-sm text-foreground truncate">
+          {file.fileName || file.name}
+        </p>
+        {(file.fileSize || file.size) && (
+          <span className="text-xs text-muted-foreground flex-shrink-0">
+            {formatFileSize(file.fileSize || file.size)}
+          </span>
+        )}
+      </div>
+      {onDelete && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete(file.id ?? file._localIndex);
+          }}
+          disabled={isDeleting}
+          className="flex-shrink-0 p-1 rounded text-muted-foreground/40 opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-500 disabled:opacity-50"
+        >
+          {isDeleting ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <X className="h-3.5 w-3.5" />
+          )}
+        </button>
+      )}
+    </div>
+  );
+}
+
 export function TaskImageUpload({
   images = [],
   onUpload,
@@ -82,15 +147,73 @@ export function TaskImageUpload({
   maxImages = 10,
   className,
   compact = false,
-  placeholder = "Glissez des images ici ou cliquez pour sélectionner"
+  placeholder = "Glissez des fichiers ici ou cliquez pour sélectionner",
+  localMode = false,
+  pendingFiles = [],
+  onAddFiles,
+  onRemoveFile
 }) {
   const [isDragging, setIsDragging] = useState(false);
   const [deletingImageId, setDeletingImageId] = useState(null);
+  const [localPreviews, setLocalPreviews] = useState([]);
   const fileInputRef = useRef(null);
+  const prevPendingFilesRef = useRef(pendingFiles);
+  const dragCounterRef = useRef(0);
+
+  const totalFiles = localMode ? pendingFiles.length : images.length;
+  const canAddMore = totalFiles < maxImages;
+
+  useEffect(() => {
+    if (!localMode) {
+      if (localPreviews.length > 0) setLocalPreviews([]);
+      return;
+    }
+
+    if (pendingFiles === prevPendingFilesRef.current && localPreviews.length === pendingFiles.length) {
+      return;
+    }
+    prevPendingFilesRef.current = pendingFiles;
+
+    if (pendingFiles.length === 0) {
+      if (localPreviews.length > 0) setLocalPreviews([]);
+      return;
+    }
+
+    const previews = pendingFiles.map((file, index) => {
+      const preview = {
+        _localIndex: index,
+        name: file.name,
+        fileName: file.name,
+        type: file.type,
+        contentType: file.type,
+        size: file.size,
+        fileSize: file.size,
+      };
+
+      if (isImageType(file.type)) {
+        preview._localUrl = URL.createObjectURL(file);
+      }
+
+      return preview;
+    });
+
+    setLocalPreviews(previews);
+
+    return () => {
+      previews.forEach(p => {
+        if (p._localUrl) URL.revokeObjectURL(p._localUrl);
+      });
+    };
+  }, [localMode, pendingFiles]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const filterValidFiles = useCallback((files) => {
+    return Array.from(files).filter(file => VALID_TYPES.includes(file.type));
+  }, []);
 
   const handleDragEnter = useCallback((e) => {
     e.preventDefault();
     e.stopPropagation();
+    dragCounterRef.current++;
     if (!disabled && !isUploading) {
       setIsDragging(true);
     }
@@ -99,7 +222,10 @@ export function TaskImageUpload({
   const handleDragLeave = useCallback((e) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsDragging(false);
+    dragCounterRef.current--;
+    if (dragCounterRef.current === 0) {
+      setIsDragging(false);
+    }
   }, []);
 
   const handleDragOver = useCallback((e) => {
@@ -110,55 +236,67 @@ export function TaskImageUpload({
   const handleDrop = useCallback(async (e) => {
     e.preventDefault();
     e.stopPropagation();
+    dragCounterRef.current = 0;
     setIsDragging(false);
 
     if (disabled || isUploading) return;
 
-    const files = Array.from(e.dataTransfer.files).filter(
-      file => file.type.startsWith('image/')
-    );
-
+    const files = filterValidFiles(e.dataTransfer.files);
     if (files.length === 0) return;
 
-    // Limiter le nombre d'images
-    const remainingSlots = maxImages - images.length;
-    const filesToUpload = files.slice(0, remainingSlots);
+    const remainingSlots = maxImages - totalFiles;
+    const filesToProcess = files.slice(0, remainingSlots);
 
-    if (onUpload && filesToUpload.length > 0) {
-      await onUpload(filesToUpload);
+    if (localMode) {
+      if (onAddFiles && filesToProcess.length > 0) {
+        onAddFiles(filesToProcess);
+      }
+    } else {
+      if (onUpload && filesToProcess.length > 0) {
+        await onUpload(filesToProcess);
+      }
     }
-  }, [disabled, isUploading, images.length, maxImages, onUpload]);
+  }, [disabled, isUploading, totalFiles, maxImages, onUpload, localMode, onAddFiles, filterValidFiles]);
 
   const handleFileSelect = useCallback(async (e) => {
-    const files = Array.from(e.target.files || []).filter(
-      file => file.type.startsWith('image/')
-    );
-
+    const files = filterValidFiles(e.target.files || []);
     if (files.length === 0) return;
 
-    const remainingSlots = maxImages - images.length;
-    const filesToUpload = files.slice(0, remainingSlots);
+    const remainingSlots = maxImages - totalFiles;
+    const filesToProcess = files.slice(0, remainingSlots);
 
-    if (onUpload && filesToUpload.length > 0) {
-      await onUpload(filesToUpload);
+    if (localMode) {
+      if (onAddFiles && filesToProcess.length > 0) {
+        onAddFiles(filesToProcess);
+      }
+    } else {
+      if (onUpload && filesToProcess.length > 0) {
+        await onUpload(filesToProcess);
+      }
     }
 
-    // Reset input
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
-  }, [images.length, maxImages, onUpload]);
+  }, [totalFiles, maxImages, onUpload, localMode, onAddFiles, filterValidFiles]);
 
-  const handleDelete = useCallback(async (imageId) => {
+  const handleDelete = useCallback(async (idOrIndex) => {
+    if (localMode) {
+      if (onRemoveFile) {
+        onRemoveFile(idOrIndex);
+      }
+      return;
+    }
+
     if (!onDelete) return;
-    
-    setDeletingImageId(imageId);
+
+    setDeletingImageId(idOrIndex);
     try {
-      await onDelete(imageId);
+      await onDelete(idOrIndex);
     } finally {
       setDeletingImageId(null);
     }
-  }, [onDelete]);
+  }, [onDelete, localMode, onRemoveFile]);
 
   const handleClick = useCallback(() => {
     if (!disabled && !isUploading && fileInputRef.current) {
@@ -166,10 +304,12 @@ export function TaskImageUpload({
     }
   }, [disabled, isUploading]);
 
-  const canAddMore = images.length < maxImages;
+  const displayFiles = localMode ? localPreviews : images;
+  const imageFiles = displayFiles.filter(f => isImageType(f.contentType || f.type));
+  const documentFiles = displayFiles.filter(f => !isImageType(f.contentType || f.type));
 
   return (
-    <div className={cn("space-y-3", className)}>
+    <div className={cn("space-y-2", className)}>
       {/* Zone de drop */}
       {canAddMore && (
         <div
@@ -179,88 +319,100 @@ export function TaskImageUpload({
           onDrop={handleDrop}
           onClick={handleClick}
           className={cn(
-            "relative border-2 border-dashed rounded-lg transition-all cursor-pointer",
-            compact ? "p-3" : "p-6",
-            isDragging 
-              ? "border-primary bg-primary/5" 
-              : "border-border hover:border-primary/50 hover:bg-accent/5",
+            "relative border-2 border-dashed rounded-lg transition-colors cursor-pointer",
+            compact ? "p-3" : "p-4",
+            isDragging
+              ? "border-primary bg-primary/5"
+              : "border-border hover:border-muted-foreground/30",
             (disabled || isUploading) && "opacity-50 cursor-not-allowed",
           )}
         >
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/jpeg,image/png,image/gif,image/webp"
+            accept={ACCEPT_STRING}
             multiple
             onChange={handleFileSelect}
             className="hidden"
             disabled={disabled || isUploading}
           />
 
-          <div className={cn(
-            "flex items-center justify-center gap-3",
-            compact ? "flex-row" : "flex-col"
-          )}>
-            {isUploading ? (
-              <>
-                <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                <div className="flex-1 max-w-xs">
-                  <Progress value={uploadProgress} className="h-2" />
-                  <p className="text-xs text-muted-foreground mt-1 text-center">
-                    Upload en cours... {uploadProgress}%
-                  </p>
+          {isUploading ? (
+            <div className="flex items-center gap-3">
+              <Loader2 className="h-4 w-4 animate-spin text-primary flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-primary rounded-full transition-[width] duration-200"
+                    style={{ width: `${uploadProgress}%` }}
+                  />
                 </div>
-              </>
-            ) : (
-              <>
-                {isDragging ? (
-                  <Upload className="h-8 w-8 text-primary" />
-                ) : (
-                  <ImagePlus className={cn(
-                    "text-muted-foreground",
-                    compact ? "h-5 w-5" : "h-8 w-8"
-                  )} />
-                )}
-                <p className={cn(
-                  "text-muted-foreground text-center",
-                  compact ? "text-xs" : "text-sm"
-                )}>
-                  {isDragging ? "Déposez les images ici" : placeholder}
+              </div>
+              <span className="text-xs text-muted-foreground tabular-nums flex-shrink-0">{uploadProgress}%</span>
+            </div>
+          ) : (
+            <div className={cn(
+              "flex items-center justify-center gap-2",
+              compact ? "flex-row" : "flex-col gap-1.5"
+            )}>
+              {isDragging ? (
+                <Upload className="h-5 w-5 text-primary" />
+              ) : (
+                <Paperclip className={cn("text-muted-foreground/60", compact ? "h-4 w-4" : "h-5 w-5")} />
+              )}
+              <p className={cn(
+                "text-muted-foreground",
+                compact ? "text-xs" : "text-sm"
+              )}>
+                {isDragging ? "Déposez les fichiers ici" : placeholder}
+              </p>
+              {!compact && totalFiles > 0 && (
+                <p className="text-[11px] text-muted-foreground/50">
+                  {totalFiles}/{maxImages}
                 </p>
-              </>
-            )}
-          </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
-      {/* Grille d'images */}
-      {images.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-          {images.map((image) => (
+      {/* Images en grille */}
+      {imageFiles.length > 0 && (
+        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+          {imageFiles.map((file, index) => (
             <ImagePreview
-              key={image.id}
-              image={image}
-              onDelete={onDelete ? handleDelete : null}
-              isDeleting={deletingImageId === image.id}
+              key={file.id ?? file._localIndex ?? `img-${index}`}
+              file={file}
+              onDelete={localMode ? handleDelete : (onDelete ? handleDelete : null)}
+              isDeleting={deletingImageId === (file.id ?? file._localIndex)}
             />
           ))}
         </div>
       )}
 
-      {/* Message si limite atteinte */}
+      {/* Documents en liste */}
+      {documentFiles.length > 0 && (
+        <div className="space-y-1">
+          {documentFiles.map((file, index) => (
+            <DocumentPreview
+              key={file.id ?? file._localIndex ?? `doc-${index}`}
+              file={file}
+              onDelete={localMode ? handleDelete : (onDelete ? handleDelete : null)}
+              isDeleting={deletingImageId === (file.id ?? file._localIndex)}
+            />
+          ))}
+        </div>
+      )}
+
       {!canAddMore && (
         <p className="text-xs text-muted-foreground text-center">
-          Limite de {maxImages} images atteinte
+          Limite de {maxImages} fichiers atteinte
         </p>
       )}
     </div>
   );
 }
 
-/**
- * Version inline pour les champs de texte (description, commentaires)
- * Permet le paste d'images et affiche un bouton d'ajout
- */
 export function TaskImageUploadInline({
   onUpload,
   isUploading = false,
@@ -271,7 +423,7 @@ export function TaskImageUploadInline({
 
   const handleFileSelect = useCallback(async (e) => {
     const files = Array.from(e.target.files || []).filter(
-      file => file.type.startsWith('image/')
+      file => VALID_TYPES.includes(file.type)
     );
 
     if (files.length > 0 && onUpload) {
@@ -288,7 +440,7 @@ export function TaskImageUploadInline({
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/jpeg,image/png,image/gif,image/webp"
+        accept={ACCEPT_STRING}
         multiple
         onChange={handleFileSelect}
         className="hidden"
@@ -305,7 +457,7 @@ export function TaskImageUploadInline({
         {isUploading ? (
           <Loader2 className="h-4 w-4 animate-spin" />
         ) : (
-          <ImagePlus className="h-4 w-4" />
+          <Paperclip className="h-4 w-4" />
         )}
       </Button>
     </div>

@@ -289,6 +289,8 @@ export default function EnhancedInvoiceForm({
   const [activeField, setActiveField] = useState(null);
   const [internalCurrentStep, setInternalCurrentStep] = useState(1);
   const scrollContainerRef = useRef(null);
+  // Ref pour éviter la re-copie des articles quand on revient à l'étape 1
+  const itemsInitializedForRef = useRef(null);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [isLinkedToQuote, setIsLinkedToQuote] = useState(false);
   const canEdit = !readOnly && !loading;
@@ -330,11 +332,21 @@ export default function EnhancedInvoiceForm({
   // Watch les données du formulaire
   const data = watch();
 
-  // Calculer les totaux
+  // Calculer les totaux (en tenant compte de l'avancement pour les factures de situation)
+  const isSituationInvoice = data.invoiceType === "situation";
   const subtotalHT =
     data.items?.reduce((sum, item) => {
-      const itemTotal =
-        (parseFloat(item.quantity) || 0) * (parseFloat(item.unitPrice) || 0);
+      const quantity = parseFloat(item.quantity) || 0;
+      const unitPrice = parseFloat(item.unitPrice) || 0;
+      let itemTotal = quantity * unitPrice;
+
+      // Appliquer le pourcentage d'avancement
+      const progressPercentage =
+        item.progressPercentage !== undefined && item.progressPercentage !== null
+          ? parseFloat(item.progressPercentage)
+          : isSituationInvoice ? 0 : 100;
+      itemTotal = itemTotal * (progressPercentage / 100);
+
       const itemDiscount =
         item.discountType === "FIXED"
           ? parseFloat(item.discount) || 0
@@ -350,15 +362,24 @@ export default function EnhancedInvoiceForm({
   const totalHT = subtotalHT - globalDiscount;
   const totalTVA =
     data.items?.reduce((sum, item) => {
-      const itemTotal =
-        (parseFloat(item.quantity) || 0) * (parseFloat(item.unitPrice) || 0);
+      const quantity = parseFloat(item.quantity) || 0;
+      const unitPrice = parseFloat(item.unitPrice) || 0;
+      let itemTotal = quantity * unitPrice;
+
+      // Appliquer le pourcentage d'avancement
+      const progressPercentage =
+        item.progressPercentage !== undefined && item.progressPercentage !== null
+          ? parseFloat(item.progressPercentage)
+          : isSituationInvoice ? 0 : 100;
+      itemTotal = itemTotal * (progressPercentage / 100);
+
       const itemDiscount =
         item.discountType === "FIXED"
           ? parseFloat(item.discount) || 0
           : itemTotal * ((parseFloat(item.discount) || 0) / 100);
       const itemTotalAfterDiscount = itemTotal - itemDiscount;
       return (
-        sum + itemTotalAfterDiscount * ((parseFloat(item.taxRate) || 0) / 100)
+        sum + itemTotalAfterDiscount * ((parseFloat(item.vatRate) || 0) / 100)
       );
     }, 0) || 0;
 
@@ -595,6 +616,7 @@ export default function EnhancedInvoiceForm({
                 setValidationErrors={setValidationErrors}
                 onLinkedToQuoteChange={setIsLinkedToQuote}
                 onResetItems={resetItems}
+                itemsInitializedForRef={itemsInitializedForRef}
               />
             </>
           )}

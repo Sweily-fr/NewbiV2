@@ -21,6 +21,43 @@ import {
   accountant,
 } from "./permissions";
 
+// ✅ Fonction de déduplication atomique avec MongoDB
+async function isEventAlreadyProcessed(eventId, eventType) {
+  const { mongoDb } = await import("./mongodb.js");
+
+  try {
+    // Insertion atomique avec upsert
+    const result = await mongoDb.collection("stripeWebhookEvents").updateOne(
+      { eventId },
+      {
+        $setOnInsert: {
+          eventId,
+          eventType,
+          processedAt: new Date(),
+          createdAt: new Date(),
+        },
+      },
+      { upsert: true }
+    );
+
+    // Si upsertedCount = 0, l'événement existait déjà
+    if (result.upsertedCount === 0) {
+      console.log(`⏭️ [STRIPE] Événement ${eventId} déjà traité, skip`);
+      return true;
+    }
+
+    console.log(`✅ [STRIPE] Nouvel événement ${eventId} enregistré`);
+    return false;
+  } catch (error) {
+    // En cas d'erreur duplicate key (race condition extrême)
+    if (error.code === 11000) {
+      console.log(`⏭️ [STRIPE] Événement ${eventId} déjà traité (race), skip`);
+      return true;
+    }
+    throw error;
+  }
+}
+
 // Configuration du plugin Admin avec permissions personnalisées
 export const adminPlugin = admin({
   adminUserIds: ["685ff0250e083b9a2987a0b9"],
@@ -283,7 +320,11 @@ export const stripePlugin = stripe({
   },
   // Webhooks Stripe pour mettre à jour automatiquement le statut
   onEvent: async (event, adapter) => {
-    console.log(`🔔 [STRIPE WEBHOOK] Événement reçu: ${event.type}`);
+    console.log(`🔔 [STRIPE WEBHOOK] ==================`);
+    console.log(`🔔 [STRIPE WEBHOOK] Event ID: ${event.id}`);
+    console.log(`🔔 [STRIPE WEBHOOK] Type: ${event.type}`);
+    console.log(`🔔 [STRIPE WEBHOOK] Created: ${new Date(event.created * 1000).toISOString()}`);
+    console.log(`🔔 [STRIPE WEBHOOK] Livemode: ${event.livemode}`);
 
     try {
       switch (event.type) {
@@ -1069,27 +1110,10 @@ export const stripePlugin = stripe({
         case "invoice.payment_failed":
           const failedInvoice = event.data.object;
 
-          // Déduplication pour éviter les emails multiples
-          if (!global._processedStripeEvents) {
-            global._processedStripeEvents = new Set();
-          }
-
-          const failedKey = `failed_${failedInvoice.id}`;
-          if (global._processedStripeEvents.has(failedKey)) {
-            console.log(
-              `⏭️ [STRIPE WEBHOOK] Email de paiement échoué déjà envoyé pour ${failedKey}, skip`
-            );
+          // ✅ Déduplication atomique avec MongoDB
+          if (await isEventAlreadyProcessed(event.id, event.type)) {
             break;
           }
-
-          // Marquer comme traité (expire après 1h)
-          global._processedStripeEvents.add(failedKey);
-          setTimeout(
-            () => {
-              global._processedStripeEvents?.delete(failedKey);
-            },
-            60 * 60 * 1000
-          ); // 1 heure
 
           try {
             // Import MongoDB directement
@@ -1154,27 +1178,10 @@ export const stripePlugin = stripe({
         case "customer.subscription.deleted":
           const deletedSub = event.data.object;
 
-          // Déduplication pour éviter les emails multiples
-          if (!global._processedStripeEvents) {
-            global._processedStripeEvents = new Set();
-          }
-
-          const cancelKey = `cancel_${deletedSub.id}`;
-          if (global._processedStripeEvents.has(cancelKey)) {
-            console.log(
-              `⏭️ [STRIPE WEBHOOK] Email d'annulation déjà envoyé pour ${cancelKey}, skip`
-            );
+          // ✅ Déduplication atomique avec MongoDB
+          if (await isEventAlreadyProcessed(event.id, event.type)) {
             break;
           }
-
-          // Marquer comme traité (expire après 1h)
-          global._processedStripeEvents.add(cancelKey);
-          setTimeout(
-            () => {
-              global._processedStripeEvents?.delete(cancelKey);
-            },
-            60 * 60 * 1000
-          ); // 1 heure
 
           try {
             // ✅ Utiliser MongoDB directement au lieu de l'adapter
@@ -1237,6 +1244,77 @@ export const stripePlugin = stripe({
           }
           break;
 
+        case "customer.subscription.trial_will_end":
+          // ⏰ Fin d'essai imminente (3 jours avant)
+          const trialEndingSub = event.data.object;
+
+          // ✅ Déduplication atomique avec MongoDB
+          if (await isEventAlreadyProcessed(event.id, event.type)) {
+            break;
+          }
+
+          console.log(
+            `⏰ [STRIPE WEBHOOK] Fin d'essai imminente pour abonnement: ${trialEndingSub.id}`
+          );
+
+          try {
+            const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+
+            // Récupérer les infos du client
+            const trialCustomer = await stripe.customers.retrieve(
+              trialEndingSub.customer
+            );
+
+            // Récupérer le plan et le prix
+            const trialPlanName =
+              trialEndingSub.metadata?.planName?.toUpperCase() || "FREELANCE";
+
+            // Formater la date de fin d'essai
+            let trialEndDateFormatted = "Date non disponible";
+            if (trialEndingSub.trial_end) {
+              const trialEndTimestamp = trialEndingSub.trial_end * 1000;
+              if (!isNaN(trialEndTimestamp) && trialEndTimestamp > 0) {
+                trialEndDateFormatted = new Date(
+                  trialEndTimestamp
+                ).toLocaleDateString("fr-FR", {
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                });
+              }
+            }
+
+            // Calculer le montant qui sera prélevé
+            let trialAmount = "Montant non disponible";
+            if (trialEndingSub.items?.data?.[0]?.price?.unit_amount) {
+              const unitAmount =
+                trialEndingSub.items.data[0].price.unit_amount / 100;
+              trialAmount = `${unitAmount.toFixed(2)}€`;
+            }
+
+            // Envoyer l'email de fin d'essai imminente
+            const { sendTrialEndingEmail } = await import("./auth-utils.js");
+
+            await sendTrialEndingEmail({
+              to: trialCustomer.email,
+              customerName: trialCustomer.name || trialCustomer.email,
+              plan: trialPlanName,
+              trialEndDate: trialEndDateFormatted,
+              amount: trialAmount,
+            });
+
+            console.log(
+              `✅ [STRIPE WEBHOOK] Email de fin d'essai imminente envoyé à ${trialCustomer.email} (plan: ${trialPlanName}, fin: ${trialEndDateFormatted}, montant: ${trialAmount})`
+            );
+          } catch (trialEmailError) {
+            console.error(
+              `⚠️ [STRIPE WEBHOOK] Erreur envoi email fin d'essai:`,
+              trialEmailError
+            );
+            // Ne pas bloquer le webhook si l'email échoue
+          }
+          break;
+
         case "invoice.upcoming":
           // Facture à venir (7 jours avant le renouvellement)
           // ℹ️ Email de rappel de renouvellement DÉSACTIVÉ
@@ -1251,31 +1329,10 @@ export const stripePlugin = stripe({
           // car Stripe envoie les deux événements pour le même paiement, ce qui causait des emails en double
           const paidInvoice = event.data.object;
 
-          // Vérifier si on a déjà traité cet événement (déduplication)
-          const eventId = event.id;
-          const invoiceId = paidInvoice.id;
-
-          // Utiliser un cache simple pour éviter les doublons (en mémoire)
-          if (!global._processedStripeEvents) {
-            global._processedStripeEvents = new Set();
-          }
-
-          const eventKey = `payment_email_${invoiceId}`;
-          if (global._processedStripeEvents.has(eventKey)) {
-            console.log(
-              `⏭️ [STRIPE WEBHOOK] Email déjà envoyé pour facture ${invoiceId}, skip`
-            );
+          // ✅ Déduplication atomique avec MongoDB
+          if (await isEventAlreadyProcessed(event.id, event.type)) {
             break;
           }
-
-          // Marquer comme traité (expire après 1h pour éviter les fuites mémoire)
-          global._processedStripeEvents.add(eventKey);
-          setTimeout(
-            () => {
-              global._processedStripeEvents?.delete(eventKey);
-            },
-            60 * 60 * 1000
-          ); // 1 heure
 
           console.log(
             `💰 [STRIPE WEBHOOK] Paiement facture réussi: ${paidInvoice.id}, billing_reason: ${paidInvoice.billing_reason}`
@@ -1292,9 +1349,10 @@ export const stripePlugin = stripe({
             // Récupérer l'abonnement pour avoir le nom du plan
             let planName = "FREELANCE";
             let nextRenewalDate = "Date non disponible";
+            let subscription = null;
 
             if (paidInvoice.subscription) {
-              const subscription = await stripe.subscriptions.retrieve(
+              subscription = await stripe.subscriptions.retrieve(
                 paidInvoice.subscription
               );
               planName =
@@ -1313,6 +1371,46 @@ export const stripePlugin = stripe({
                   });
                 }
               }
+            }
+
+            // ✅ DÉTECTION DÉBUT D'ESSAI
+            // Si c'est une création d'abonnement ET que l'abonnement est en période d'essai,
+            // on envoie l'email de bienvenue essai au lieu de la confirmation de paiement
+            const isTrialStart =
+              paidInvoice.billing_reason === "subscription_create" &&
+              subscription?.status === "trialing";
+
+            if (isTrialStart) {
+              // Formater la date de fin d'essai
+              let trialEndDate = "Date non disponible";
+              if (subscription.trial_end) {
+                const trialEndTimestamp = subscription.trial_end * 1000;
+                if (!isNaN(trialEndTimestamp) && trialEndTimestamp > 0) {
+                  trialEndDate = new Date(trialEndTimestamp).toLocaleDateString(
+                    "fr-FR",
+                    {
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    }
+                  );
+                }
+              }
+
+              // Envoyer l'email de début d'essai
+              const { sendTrialStartedEmail } = await import("./auth-utils.js");
+
+              await sendTrialStartedEmail({
+                to: customer.email,
+                customerName: customer.name || customer.email,
+                plan: planName,
+                trialEndDate,
+              });
+
+              console.log(
+                `🎉 [STRIPE WEBHOOK] Email de début d'essai envoyé à ${customer.email} (plan: ${planName}, fin: ${trialEndDate})`
+              );
+              break; // Sortir, ne pas envoyer l'email de paiement
             }
 
             // Formater les données

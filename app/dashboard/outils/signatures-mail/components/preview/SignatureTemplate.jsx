@@ -127,7 +127,7 @@ const Template1 = ({
                             src={logoSrc || "/newbiLetter.png"}
                             alt="Logo"
                             style={{
-                              height: `${signatureData.logoSize || 32}px`,
+                              width: `${signatureData.logoSize || 32}px`, height: "auto",
                               objectFit: "contain",
                             }}
                           />
@@ -277,7 +277,7 @@ const Template2 = ({
                   src={logoSrc || "/newbiLetter.png"}
                   alt="Logo"
                   style={{
-                    height: `${signatureData.logoSize || 32}px`,
+                    width: `${signatureData.logoSize || 32}px`, height: "auto",
                     objectFit: "contain",
                   }}
                 />
@@ -389,7 +389,7 @@ const Template3 = ({
                           src={logoSrc || "/newbiLetter.png"}
                           alt="Logo"
                           style={{
-                            height: `${signatureData.logoSize || 32}px`,
+                            width: `${signatureData.logoSize || 32}px`, height: "auto",
                             objectFit: "contain",
                           }}
                         />
@@ -817,7 +817,7 @@ const Template6 = ({ signatureData, handleFieldChange, logoSrc, spacings }) => {
                   src={logoSrc}
                   alt="Logo"
                   style={{
-                    height: `${signatureData.logoSize || 32}px`,
+                    width: `${signatureData.logoSize || 32}px`, height: "auto",
                     objectFit: "contain",
                   }}
                 />
@@ -1129,7 +1129,7 @@ const Template8 = ({
                   src={logoSrc}
                   alt="Logo"
                   style={{
-                    height: `${signatureData.logoSize || 32}px`,
+                    width: `${signatureData.logoSize || 32}px`, height: "auto",
                     objectFit: "contain",
                   }}
                 />

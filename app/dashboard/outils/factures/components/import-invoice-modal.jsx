@@ -14,10 +14,9 @@ import { ScrollArea } from "@/src/components/ui/scroll-area";
 import { Upload, FileText, X, Check, AlertCircle, Loader2 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
-import { useMutation } from "@apollo/client";
-import { UPLOAD_DOCUMENT } from "@/src/graphql/mutations/documentUpload";
+import { useMutation, useApolloClient } from "@apollo/client";
 import {
-  IMPORT_INVOICE,
+  IMPORT_INVOICE_DIRECT,
   GET_IMPORTED_INVOICES,
 } from "@/src/graphql/importedInvoiceQueries";
 import { toast } from "sonner";
@@ -42,8 +41,8 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
   const isImporting = phase === PHASE.UPLOADING;
 
   const { workspaceId } = useRequiredWorkspace();
-  const [uploadDocument] = useMutation(UPLOAD_DOCUMENT);
-  const [importInvoice] = useMutation(IMPORT_INVOICE);
+  const client = useApolloClient();
+  const [importInvoiceDirect] = useMutation(IMPORT_INVOICE_DIRECT);
 
   const handleClose = () => {
     if (!isImporting) {
@@ -126,6 +125,8 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
     // Compteurs de progression
     let processedCount = 0;
     let successCount = 0;
+    let quotaExceeded = false;
+    let quotaErrorMessage = "";
 
     // Configuration parallélisation - RÉDUIT pour éviter rate limiting Mistral
     const PARALLEL_STREAMS = 3; // 3 streams max pour respecter les limites API Mistral
@@ -183,36 +184,32 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
       );
     };
 
-    // Fonction pour traiter un fichier (upload + OCR)
+    // Fonction pour traiter un fichier — un seul appel (OCR direct + upload Cloudflare côté serveur)
     const processFile = async (file) => {
+      if (quotaExceeded) return;
+
       try {
-        // Étape 1: Upload vers Cloudflare
-        const { data: uploadData } = await uploadDocument({
-          variables: { file, folderType: "importedInvoice" },
-        });
-
-        if (!uploadData?.uploadDocument?.success) {
-          throw new Error("Upload échoué");
-        }
-
-        // Étape 2: Lancer immédiatement le traitement OCR
-        const { data: importData } = await importInvoice({
+        const { data: importData, errors } = await importInvoiceDirect({
           variables: {
+            file,
             workspaceId,
-            cloudflareUrl: uploadData.uploadDocument.url,
-            cloudflareKey: uploadData.uploadDocument.key,
-            fileName: file.name,
-            mimeType: file.type,
-            fileSize: file.size,
           },
         });
 
-        if (importData?.importInvoice?.success) {
+        if (errors?.length) {
+          console.error(`❌ Erreur GraphQL pour ${file.name}:`, errors[0].message);
+        }
+
+        if (importData?.importInvoiceDirect?.success) {
           successCount++;
+        } else if (importData?.importInvoiceDirect?.error?.includes("Quota OCR")) {
+          quotaExceeded = true;
+          quotaErrorMessage = importData.importInvoiceDirect.error;
+        } else if (importData?.importInvoiceDirect?.error) {
+          console.error(`❌ Import échoué pour ${file.name}:`, importData.importInvoiceDirect.error);
         }
       } catch (error) {
-        // Silencieux - le retry automatique backend gère les erreurs
-        console.warn(`Retry en cours pour ${file.name}...`);
+        console.error(`❌ Erreur réseau pour ${file.name}:`, error.message);
       } finally {
         processedCount++;
         updateToast();
@@ -228,9 +225,9 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
       const activePromises = new Set();
       let lastStartTime = 0;
 
-      while (queue.length > 0 || activePromises.size > 0) {
+      while ((queue.length > 0 && !quotaExceeded) || activePromises.size > 0) {
         // Lancer de nouveaux streams tant qu'on n'a pas atteint la limite
-        while (queue.length > 0 && activePromises.size < PARALLEL_STREAMS) {
+        while (queue.length > 0 && activePromises.size < PARALLEL_STREAMS && !quotaExceeded) {
           // Respecter le délai minimum entre les démarrages
           const now = Date.now();
           const timeSinceLastStart = now - lastStartTime;
@@ -260,25 +257,40 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
       // Toast final
       toast.dismiss(toastId);
 
-      const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
-      const elapsedMinutes = Math.floor(elapsedSeconds / 60);
-      const elapsedSecondsRemainder = elapsedSeconds % 60;
-      const timeDisplay =
-        elapsedMinutes > 0
-          ? `${elapsedMinutes}min ${elapsedSecondsRemainder}s`
-          : `${elapsedSeconds}s`;
+      if (quotaExceeded) {
+        toast.error(quotaErrorMessage, { duration: 8000 });
+        if (successCount > 0) {
+          toast.success(
+            `${successCount} facture(s) importée(s) avant l'atteinte du quota.`,
+            { duration: 5000 }
+          );
+        }
+      } else {
+        const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
+        const elapsedMinutes = Math.floor(elapsedSeconds / 60);
+        const elapsedSecondsRemainder = elapsedSeconds % 60;
+        const timeDisplay =
+          elapsedMinutes > 0
+            ? `${elapsedMinutes}min ${elapsedSecondsRemainder}s`
+            : `${elapsedSeconds}s`;
 
-      toast.success(
-        `${successCount} facture(s) importée(s) en ${timeDisplay} !`,
-        { duration: 5000 }
-      );
-
-      // Rafraîchir la liste des factures
-      onImportSuccess?.();
+        toast.success(
+          `${successCount} facture(s) importée(s) en ${timeDisplay} !`,
+          { duration: 5000 }
+        );
+      }
     } catch (error) {
       console.error("Import error:", error);
       toast.dismiss(toastId);
       toast.error("Erreur lors de l'import des factures");
+    } finally {
+      // Toujours rafraîchir la liste, même en cas d'erreur
+      try {
+        await client.refetchQueries({ include: [GET_IMPORTED_INVOICES] });
+      } catch (e) {
+        console.warn("⚠️ refetchQueries échoué:", e.message);
+      }
+      onImportSuccess?.();
     }
   };
 

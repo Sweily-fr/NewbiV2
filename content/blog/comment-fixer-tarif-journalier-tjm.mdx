@@ -1,0 +1,494 @@
+---
+title: Comment fixer son TJM (Tarif Journalier Moyen) en freelance
+description: >-
+  Calculez votre TJM en freelance : méthode de calcul, charges à intégrer,
+  grille par métier et conseils pour négocier votre tarif journalier.
+date: '2026-02-10'
+category: guide
+sector: Consultants / Freelances IT
+keyword: fixer TJM tarif journalier freelance
+author: Newbi
+image: /blog/comment-fixer-tarif-journalier-tjm/hero.webp
+published: false
+publishDate: null
+---
+
+import Image from "next/image"
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex flex-wrap gap-2 mb-6">
+  <Badge>Guide</Badge>
+  <Badge variant="secondary">Freelance</Badge>
+  <Badge variant="outline">9 min de lecture</Badge>
+</div>
+
+# Comment fixer son TJM (Tarif Journalier Moyen) en freelance
+
+Fixer son **TJM tarif journalier freelance** est l'une des decisions les plus structurantes de votre activite independante. Trop bas, vous vous epuisez sans degager de revenu decent. Trop haut sans justification, vous perdez des missions. Entre les deux, il existe un calcul rationnel qui tient compte de vos charges reelles, de vos jours facturables et de la valeur que vous apportez a vos clients.
+
+Dans ce guide complet, nous detaillons la methode de calcul pas a pas, les charges a ne surtout pas oublier, une grille de TJM par metier et seniorite, ainsi que les meilleures strategies pour negocier et revaloriser votre tarif chaque annee.
+
+<figure>
+  <Image
+    src="/blog/comment-fixer-tarif-journalier-tjm/hero.webp"
+    alt="Freelance calculant son TJM tarif journalier sur un tableau avec formules et charges"
+    width={1200}
+    height={630}
+    className="rounded-xl"
+    priority
+  />
+  <figcaption className="text-center text-sm text-muted-foreground mt-2">
+    Un TJM bien calcule est le socle d'une activite freelance rentable et perenne.
+  </figcaption>
+</figure>
+
+## Pourquoi le TJM est-il si important pour un freelance ?
+
+Le TJM n'est pas un simple chiffre sur un devis. C'est le levier central qui determine :
+
+- **Votre remuneration nette** apres paiement de toutes les charges.
+- **Votre capacite d'investissement** dans la formation, les outils et votre qualite de vie.
+- **Votre positionnement sur le marche** : un tarif trop bas envoie un signal de faible expertise.
+- **La perennite de votre activite** : sans marge suffisante, le moindre impaye ou creux d'activite devient critique.
+
+Avant meme de chercher des missions, vous devez connaitre votre plancher tarifaire, c'est-a-dire le TJM minimum en dessous duquel vous travaillez a perte.
+
+## La formule de calcul du TJM
+
+La formule fondamentale est simple :
+
+> **TJM = (Salaire net annuel souhaite + Charges annuelles) / Nombre de jours facturables par an**
+
+Chaque variable merite une analyse detaillee.
+
+### 1. Le salaire net annuel souhaite
+
+Partez du revenu mensuel net que vous souhaitez vous verser. Multipliez par 12 (ou 13 si vous voulez l'equivalent d'un 13e mois). Ce montant doit couvrir votre train de vie : loyer, alimentation, loisirs, epargne personnelle.
+
+**Exemple** : vous visez 3 500 EUR net par mois, soit 42 000 EUR net par an.
+
+### 2. Les charges annuelles a integrer
+
+C'est la ou beaucoup de freelances debutants se trompent. Voici la liste exhaustive des charges a prendre en compte :
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Charges annuelles types d'un freelance en France</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[300px]">Poste de charge</TableHead>
+        <TableHead>Micro-entreprise</TableHead>
+        <TableHead>EURL / SASU</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Cotisations sociales (URSSAF)</TableCell>
+        <TableCell>~22 % du CA</TableCell>
+        <TableCell>~45 % de la remuneration</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Mutuelle sante</TableCell>
+        <TableCell>600 - 1 200 EUR/an</TableCell>
+        <TableCell>600 - 1 200 EUR/an</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Prevoyance</TableCell>
+        <TableCell>300 - 800 EUR/an</TableCell>
+        <TableCell>300 - 800 EUR/an</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">RC Professionnelle</TableCell>
+        <TableCell>200 - 600 EUR/an</TableCell>
+        <TableCell>200 - 600 EUR/an</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Logiciels et outils</TableCell>
+        <TableCell>1 000 - 3 000 EUR/an</TableCell>
+        <TableCell>1 000 - 3 000 EUR/an</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Coworking / bureau</TableCell>
+        <TableCell>0 - 3 600 EUR/an</TableCell>
+        <TableCell>0 - 3 600 EUR/an</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Formation continue</TableCell>
+        <TableCell>500 - 2 000 EUR/an</TableCell>
+        <TableCell>500 - 2 000 EUR/an</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Comptabilite</TableCell>
+        <TableCell>0 EUR (non obligatoire)</TableCell>
+        <TableCell>1 200 - 3 000 EUR/an</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Conges et jours non factures</TableCell>
+        <TableCell colSpan={2}>Integres dans le nombre de jours facturables</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+### 3. Le nombre de jours facturables par an
+
+C'est le denominateur de votre formule, et il est souvent surestime. Voici le calcul realiste :
+
+- 365 jours dans l'annee
+- Moins 104 jours de week-end
+- Moins 25 jours de conges payes (oui, meme en freelance)
+- Moins 8 jours feries
+- Moins 15 a 30 jours de prospection, administratif, formation
+
+**Resultat realiste : 140 a 170 jours facturables par an.**
+
+Un freelance debutant qui se lance facturera plutot 120 a 140 jours la premiere annee. Un freelance tres etabli avec un reseau solide peut atteindre 180 jours, mais c'est un rythme soutenu.
+
+<div className="not-prose my-6">
+  <Callout variant="warning" title="Attention au sous-tarif">
+    Fixer un TJM trop bas pour "decrocher plus de missions" est un piege classique. Vous attirerez des clients qui recherchent le prix le plus bas, vous serez surcharge de travail pour un revenu mediocre, et il sera extremement difficile de remonter vos tarifs par la suite. Mieux vaut facturer 10 jours a 500 EUR que 20 jours a 250 EUR : meme chiffre d'affaires, deux fois moins de fatigue, et un positionnement bien superieur.
+  </Callout>
+</div>
+
+### Exemple concret de calcul
+
+Prenons un developpeur web confirme en EURL :
+
+- Salaire net souhaite : 42 000 EUR/an
+- Charges sociales (~45 %) : 18 900 EUR
+- Mutuelle + prevoyance : 1 800 EUR
+- RC Pro : 400 EUR
+- Logiciels : 2 000 EUR
+- Coworking : 2 400 EUR
+- Formation : 1 000 EUR
+- Comptable : 2 000 EUR
+- **Total charges : 28 500 EUR**
+
+**TJM = (42 000 + 28 500) / 155 jours = 455 EUR HT/jour**
+
+En arrondissant et en ajoutant une marge de securite de 10 %, on arrive a un TJM affiche de **500 EUR HT/jour**, ce qui est coherent avec le marche pour un profil confirme.
+
+## Grille de TJM par metier et seniorite
+
+Les fourchettes ci-dessous sont indicatives et correspondent au marche francais en 2025-2026. Elles varient selon la region, la specialisation et le type de client (startup, PME, grand groupe).
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Grille indicative de TJM par metier et niveau de seniorite (EUR HT/jour, marche francais)</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[200px]">Metier</TableHead>
+        <TableHead>Junior (0-2 ans)</TableHead>
+        <TableHead>Confirme (3-6 ans)</TableHead>
+        <TableHead>Senior (7+ ans)</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Developpeur web</TableCell>
+        <TableCell>300 - 400 EUR</TableCell>
+        <TableCell>450 - 600 EUR</TableCell>
+        <TableCell>650 - 900 EUR</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Designer UX/UI</TableCell>
+        <TableCell>280 - 380 EUR</TableCell>
+        <TableCell>400 - 550 EUR</TableCell>
+        <TableCell>600 - 850 EUR</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Consultant marketing</TableCell>
+        <TableCell>250 - 350 EUR</TableCell>
+        <TableCell>400 - 550 EUR</TableCell>
+        <TableCell>600 - 900 EUR</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Consultant strategie / management</TableCell>
+        <TableCell>350 - 450 EUR</TableCell>
+        <TableCell>500 - 700 EUR</TableCell>
+        <TableCell>750 - 1 200 EUR</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Data analyst / Data scientist</TableCell>
+        <TableCell>350 - 450 EUR</TableCell>
+        <TableCell>500 - 650 EUR</TableCell>
+        <TableCell>700 - 1 000 EUR</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Chef de projet IT</TableCell>
+        <TableCell>300 - 400 EUR</TableCell>
+        <TableCell>450 - 600 EUR</TableCell>
+        <TableCell>650 - 850 EUR</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+<div className="not-prose my-6">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Calculer et suivre mon TJM avec Newbi</Link>
+  </Button>
+</div>
+
+## Negocier son TJM : la valeur plutot que le temps
+
+La pire erreur est de justifier votre TJM par le temps passe. Un client n'achete pas votre temps : il achete le **resultat** que vous produisez. Voici les principes cles de negociation :
+
+### Vendez la valeur, pas les heures
+
+Si votre intervention permet a un client d'augmenter son chiffre d'affaires de 50 000 EUR, un TJM de 700 EUR pour 10 jours de mission (7 000 EUR) represente un retour sur investissement de 7x. Presentez systematiquement vos tarifs sous l'angle du ROI.
+
+### Ne descendez jamais en dessous de votre plancher
+
+Vous avez calcule votre TJM minimum. C'est une ligne rouge. Si un client propose en dessous, negociez sur le perimetre de la mission ou declinez poliment.
+
+### Proposez des packages plutot que des jours isoles
+
+Un forfait "audit + recommandations + suivi sur 3 mois" se negocie mieux qu'un tarif a la journee. Le client percoit un livrable global plutot qu'un compteur de jours.
+
+### Les leviers de negociation acceptables
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Reduire le perimetre de la mission pour baisser le montant global (mais pas le TJM).</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Proposer un tarif degressif pour les missions longues (6+ mois), avec une reduction de 5 a 10 % maximum.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Negocier un paiement anticipe en echange d'un geste commercial.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Inclure une clause de revalorisation annuelle dans le contrat cadre.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Offrir un bonus (livrable supplementaire) plutot que baisser votre tarif.</span>
+  </div>
+</div>
+
+<figure>
+  <Image
+    src="/blog/comment-fixer-tarif-journalier-tjm/negociation-tjm.webp"
+    alt="Negociation de TJM entre un freelance et un client autour d'une table"
+    width={800}
+    height={450}
+    className="rounded-xl"
+  />
+  <figcaption className="text-center text-sm text-muted-foreground mt-2">
+    La negociation du TJM repose sur la demonstration de valeur, pas sur la justification du temps passe.
+  </figcaption>
+</figure>
+
+## Reviser son TJM chaque annee
+
+Votre TJM n'est pas fige. Il doit evoluer pour refleter :
+
+- **L'inflation** : les charges augmentent chaque annee (cotisations, loyer, outils).
+- **Votre montee en competences** : certifications, nouvelles technologies maitrisees, references clients prestigieuses.
+- **La demande du marche** : si votre specialite est en tension, le marche accepte des tarifs plus eleves.
+- **Votre taux d'occupation** : si vous etes regulierement complet 3 mois a l'avance, c'est un signal fort pour augmenter.
+
+**Regle pratique** : prevoyez une augmentation de 5 a 10 % par an minimum. Informez vos clients recurrents au moins un mois a l'avance, par ecrit, en expliquant les raisons.
+
+<div className="not-prose my-6">
+  <Callout variant="info" title="Suivez votre CA en temps reel avec Newbi">
+    Pour savoir si votre TJM actuel vous permet d'atteindre vos objectifs financiers, il est essentiel de suivre votre chiffre d'affaires, vos charges et votre tresorerie en temps reel. Newbi vous offre un tableau de bord complet pour piloter votre activite freelance et ajuster votre TJM en toute connaissance de cause.
+  </Callout>
+</div>
+
+<div className="not-prose my-6">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Facturer au bon TJM</Link>
+  </Button>
+</div>
+
+## Les erreurs les plus frequentes sur le TJM
+
+Pour eviter les pieges classiques, gardez en tete cette checklist :
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Ne pas oublier les charges sociales dans le calcul (erreur n-1 des debutants).</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Ne pas surestimer le nombre de jours facturables (220 jours est irrealiste).</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Ne pas comparer son TJM au salaire brut d'un CDI sans ajuster les charges employeur.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Ne pas accepter un TJM bas "pour se faire un portfolio" au-dela des 3 premiers mois.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Ne pas negliger la prevoyance et la mutuelle dans le budget annuel.</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Ne pas oublier de provisionner pour les conges et les periodes creuses.</span>
+  </div>
+</div>
+
+## Articles complementaires
+
+Pour approfondir votre gestion financiere en freelance, consultez egalement :
+
+- <Link href="/blog/facturer-prestation-service-consultant">Comment facturer une prestation de service en tant que consultant</Link>
+- <Link href="/blog/meilleur-logiciel-facturation-freelance">Le meilleur logiciel de facturation pour freelance</Link>
+- <Link href="/blog/comment-gerer-tresorerie-entreprise">Comment gerer la tresorerie de son entreprise</Link>
+- <Link href="/blog/erreurs-facturation-independants">Les erreurs de facturation les plus courantes chez les independants</Link>
+
+## En resume
+
+Fixer votre TJM en freelance n'a rien d'arbitraire. La methode repose sur trois piliers :
+
+1. **Calculer votre plancher** a partir de votre salaire net souhaite et de vos charges reelles.
+2. **Estimer vos jours facturables** de maniere realiste (140 a 170 par an).
+3. **Positionner votre tarif** en fonction de la valeur que vous apportez et des references du marche pour votre metier et votre seniorite.
+
+Ne sous-estimez jamais votre valeur. Un freelance qui facture correctement est un freelance qui dure, qui investit dans sa montee en competences et qui delivre un travail de qualite a ses clients.
+
+<div className="not-prose my-8 text-center">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Creer mon compte Newbi gratuitement</Link>
+  </Button>
+</div>
+
+---
+
+## FAQ : Fixer son TJM en freelance
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="faq-1">
+      <AccordionTrigger>Comment calculer son TJM quand on debute en freelance ?</AccordionTrigger>
+      <AccordionContent>
+        Appliquez la formule standard : (salaire net souhaite + charges) / jours facturables. En tant que debutant, soyez conservateur sur les jours facturables (120 a 140 la premiere annee) et n'oubliez aucune charge. Mieux vaut partir d'un TJM legerement superieur a votre plancher et ajuster ensuite plutot que de demarrer trop bas et galérer a remonter.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-2">
+      <AccordionTrigger>Quelle difference entre TJM et taux horaire ?</AccordionTrigger>
+      <AccordionContent>
+        Le TJM correspond a une journee de travail standard (generalement 7 a 8 heures). Le taux horaire est simplement le TJM divise par le nombre d'heures de la journee. En pratique, les missions freelance IT et conseil se negocient quasi exclusivement au TJM. Le taux horaire est plus courant pour les missions courtes ou les interventions ponctuelles de quelques heures.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-3">
+      <AccordionTrigger>Faut-il afficher son TJM sur son site ou ses profils ?</AccordionTrigger>
+      <AccordionContent>
+        C'est un choix strategique. Afficher une fourchette (ex : "TJM entre 500 et 650 EUR HT") permet de filtrer les prospects non qualifies et d'attirer ceux qui ont le budget adequat. En revanche, certains freelances preferent ne pas afficher de tarif pour negocier au cas par cas, notamment sur les missions a forte valeur ajoutee ou le TJM peut etre significativement superieur a la moyenne.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-4">
+      <AccordionTrigger>Comment justifier une augmentation de TJM aupres d'un client existant ?</AccordionTrigger>
+      <AccordionContent>
+        Preparez votre argumentation en amont : listez les resultats concrets que vous avez obtenus pour ce client, mentionnez vos nouvelles competences ou certifications, et expliquez l'evolution de vos charges. Prevenez au minimum un mois a l'avance et proposez une augmentation progressive (5 a 10 %). Un client satisfait preferera payer un peu plus plutot que de chercher un nouveau prestataire et recommencer de zero.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-5">
+      <AccordionTrigger>Mon TJM doit-il etre le meme pour tous mes clients ?</AccordionTrigger>
+      <AccordionContent>
+        Pas necessairement. Il est courant d'adapter son TJM selon le contexte : type de mission (conseil strategique vs execution), taille du client (grand groupe vs startup), duree de l'engagement (mission longue avec tarif degressif), ou complexite technique. L'essentiel est de ne jamais descendre en dessous de votre plancher tarifaire et de rester coherent dans votre grille pour eviter les mauvaises surprises si deux clients comparent leurs tarifs.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>
+
+<script
+  type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "Comment fixer son TJM (Tarif Journalier Moyen) en freelance",
+      "description": "Calculez votre TJM en freelance : methode de calcul, charges a integrer, grille par metier et conseils pour negocier votre tarif journalier.",
+      "author": {
+        "@type": "Organization",
+        "name": "Newbi",
+        "url": "https://www.newbi.co"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "Newbi",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://www.newbi.co/logo.png"
+        }
+      },
+      "datePublished": "2026-02-10",
+      "dateModified": "2026-02-10",
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "https://www.newbi.co/blog/comment-fixer-tarif-journalier-tjm"
+      },
+      "image": "https://www.newbi.co/blog/comment-fixer-tarif-journalier-tjm/hero.webp",
+      "keywords": "fixer TJM tarif journalier freelance, TJM freelance, tarif journalier moyen, calcul TJM, negocier TJM"
+    })
+  }}
+/>
+
+<script
+  type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Comment calculer son TJM quand on debute en freelance ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Appliquez la formule standard : (salaire net souhaite + charges) / jours facturables. En tant que debutant, soyez conservateur sur les jours facturables (120 a 140 la premiere annee) et n'oubliez aucune charge."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Quelle difference entre TJM et taux horaire ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Le TJM correspond a une journee de travail standard (7 a 8 heures). Le taux horaire est le TJM divise par le nombre d'heures. Les missions freelance IT et conseil se negocient quasi exclusivement au TJM."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Faut-il afficher son TJM sur son site ou ses profils ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Afficher une fourchette permet de filtrer les prospects non qualifies. Certains freelances preferent ne pas afficher de tarif pour negocier au cas par cas sur les missions a forte valeur ajoutee."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Comment justifier une augmentation de TJM aupres d'un client existant ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Listez les resultats concrets obtenus, mentionnez vos nouvelles competences, expliquez l'evolution de vos charges. Prevenez au minimum un mois a l'avance et proposez une augmentation progressive de 5 a 10 %."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Mon TJM doit-il etre le meme pour tous mes clients ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Pas necessairement. Adaptez votre TJM selon le type de mission, la taille du client, la duree de l'engagement et la complexite technique. L'essentiel est de ne jamais descendre en dessous de votre plancher tarifaire."
+          }
+        }
+      ]
+    })
+  }}
+/>

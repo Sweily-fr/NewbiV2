@@ -45,7 +45,7 @@ export function getBorderRadiusClasses(isFirstDay, isLastDay) {
 export function isMultiDayEvent(event) {
   const eventStart = new Date(event.start)
   const eventEnd = new Date(event.end)
-  return event.allDay || eventStart.getDate() !== eventEnd.getDate()
+  return event.allDay || !isSameDay(eventStart, eventEnd)
 }
 
 /**
@@ -109,19 +109,10 @@ export function getAllEventsForDay(events, day) {
 }
 
 /**
- * Get all events for a day (for agenda view)
+ * Get all events for a day (for agenda view), sorted by start time
  */
 export function getAgendaEventsForDay(events, day) {
-  return events
-    .filter((event) => {
-      const eventStart = new Date(event.start)
-      const eventEnd = new Date(event.end)
-      return (
-        isSameDay(day, eventStart) ||
-        isSameDay(day, eventEnd) ||
-        (day > eventStart && day < eventEnd)
-      )
-    })
+  return getAllEventsForDay(events, day)
     .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime())
 }
 

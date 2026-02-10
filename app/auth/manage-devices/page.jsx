@@ -196,11 +196,50 @@ function ManageDevicesContent() {
     }
   };
 
-  // Fonction pour continuer avec la nouvelle session (révoquer l'ancienne)
+  // Fonction pour continuer avec la nouvelle session (révoquer toutes les autres)
   const handleContinueWithNewSession = async () => {
-    if (devices.length > 0) {
-      // Révoquer la première session (la plus ancienne)
-      await handleRevokeSession(devices[0].sessionToken);
+    try {
+      setRevoking("all");
+
+      const response = await fetch("/api/revoke-all-other-sessions", {
+        method: "POST",
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        toast.error("Erreur lors de la déconnexion des autres appareils");
+        return;
+      }
+
+      const result = await response.json();
+      toast.success(`${result.revokedCount} session(s) déconnectée(s)`);
+
+      // Récupérer et activer l'organisation avant de rediriger
+      try {
+        const orgsResponse = await fetch("/api/auth/organization/list");
+        if (orgsResponse.ok) {
+          const organizations = await orgsResponse.json();
+          if (organizations && organizations.length > 0) {
+            const activeOrg = organizations.find(org => org.isActive) || organizations[0];
+            await fetch("/api/auth/organization/set-active", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ organizationId: activeOrg.id }),
+            });
+          }
+        }
+      } catch (orgError) {
+        console.error("❌ [MANAGE-DEVICES] Erreur activation organisation:", orgError);
+      }
+
+      setTimeout(() => {
+        router.push("/dashboard");
+      }, 1000);
+    } catch (error) {
+      console.error("❌ [MANAGE-DEVICES] Erreur:", error);
+      toast.error("Erreur lors de la déconnexion");
+    } finally {
+      setRevoking(null);
     }
   };
 
@@ -348,7 +387,9 @@ function ManageDevicesContent() {
                 className="w-full font-normal bg-[#5b4fff] hover:bg-[#5b4fff]/90 text-white cursor-pointer text-xs sm:text-sm"
                 disabled={revoking !== null}
               >
-                Déconnecter l'autre appareil et continuer
+                {revoking === "all"
+                  ? "Déconnexion en cours..."
+                  : `Déconnecter ${devices.length > 2 ? "les autres appareils" : "l'autre appareil"} et continuer`}
               </Button>
             </div>
           </>

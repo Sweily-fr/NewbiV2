@@ -1,0 +1,383 @@
+---
+title: Comment gérer la trésorerie de son entreprise efficacement
+description: >-
+  Guide pratique pour gérer votre trésorerie d'entreprise : outils, bonnes
+  pratiques, tableau de suivi et erreurs à éviter pour rester serein.
+date: '2026-02-10'
+category: guide
+sector: null
+keyword: gérer trésorerie entreprise
+author: Newbi
+image: /blog/comment-gerer-tresorerie-entreprise/hero.webp
+published: false
+publishDate: null
+---
+
+import Image from "next/image"
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex gap-2 my-4">
+  <Badge>Guide</Badge>
+  <Badge variant="secondary">Trésorerie</Badge>
+  <Badge variant="outline">9 min de lecture</Badge>
+</div>
+
+**Gérer la trésorerie de son entreprise** est la compétence n°1 du dirigeant. 25 % des faillites d'entreprise en France sont liées à des problèmes de trésorerie, et non à un manque de chiffre d'affaires. Retards de paiement, charges imprévues, décalages de trésorerie : ce guide vous donne les clés pour anticiper, suivre et optimiser vos flux financiers au quotidien.
+
+<div className="not-prose my-8 relative aspect-video overflow-hidden rounded-lg">
+  <Image
+    src="/blog/comment-gerer-tresorerie-entreprise/hero.webp"
+    alt="Tableau de bord de suivi de trésorerie d'entreprise avec graphiques et indicateurs"
+    fill
+    className="object-cover"
+    priority
+    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 720px"
+  />
+</div>
+
+<div className="not-prose flex justify-center my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Suivre ma trésorerie avec Newbi</Link>
+  </Button>
+</div>
+
+## Qu'est-ce que la trésorerie d'entreprise ?
+
+La trésorerie représente l'ensemble des **liquidités disponibles** de votre entreprise à un instant T. C'est la différence entre vos encaissements (entrées d'argent) et vos décaissements (sorties d'argent).
+
+<figure className="not-prose my-8">
+  <div className="relative aspect-video overflow-hidden rounded-lg border">
+    <Image
+      src="/blog/comment-gerer-tresorerie-entreprise/section-1.webp"
+      alt="Schéma des flux de trésorerie : encaissements et décaissements d'une entreprise"
+      fill
+      className="object-cover"
+      sizes="(max-width: 768px) 100vw, 720px"
+    />
+  </div>
+  <figcaption className="mt-2 text-center text-sm text-muted-foreground">
+    Les flux de trésorerie : encaissements vs décaissements
+  </figcaption>
+</figure>
+
+**Trésorerie nette = Encaissements – Décaissements**
+
+Une trésorerie positive signifie que vous avez plus d'argent qui rentre que ce qui sort. Une trésorerie négative est un signal d'alerte : vous dépensez plus que vous ne gagnez sur la période.
+
+<Callout type="warning">
+  Une entreprise peut être rentable (bénéficiaire en comptabilité) tout en ayant des problèmes de trésorerie. C'est le cas typique quand vos clients paient à 60 jours mais que vous devez régler vos fournisseurs à 30 jours.
+</Callout>
+
+## Les fondamentaux de la gestion de trésorerie
+
+### 1. Connaître ses flux
+
+La première étape est d'avoir une **visibilité claire** sur vos entrées et sorties d'argent. Cela inclut :
+
+**Encaissements** (entrées) :
+- Paiements clients (factures)
+- Subventions et aides
+- Apports en capital
+- Emprunts
+
+**Décaissements** (sorties) :
+- Fournisseurs et sous-traitants
+- Salaires et charges sociales
+- Loyer et charges fixes
+- Impôts et taxes (TVA, IS, CFE)
+- Remboursements d'emprunt
+
+### 2. Construire un tableau de trésorerie prévisionnel
+
+Le tableau de trésorerie prévisionnel est votre boussole financière. Il projette vos flux sur 3 à 12 mois pour anticiper les creux.
+
+<div className="not-prose my-8 overflow-x-auto">
+  <Table>
+    <TableCaption>Exemple de tableau de trésorerie prévisionnel simplifié</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead>Poste</TableHead>
+        <TableHead>Janvier</TableHead>
+        <TableHead>Février</TableHead>
+        <TableHead>Mars</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-semibold">Solde initial</TableCell>
+        <TableCell>10 000 €</TableCell>
+        <TableCell>8 500 €</TableCell>
+        <TableCell>12 200 €</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell>Encaissements clients</TableCell>
+        <TableCell>15 000 €</TableCell>
+        <TableCell>18 000 €</TableCell>
+        <TableCell>16 000 €</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell>Fournisseurs</TableCell>
+        <TableCell>-5 000 €</TableCell>
+        <TableCell>-4 000 €</TableCell>
+        <TableCell>-5 500 €</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell>Charges fixes</TableCell>
+        <TableCell>-8 000 €</TableCell>
+        <TableCell>-8 000 €</TableCell>
+        <TableCell>-8 000 €</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell>Impôts et taxes</TableCell>
+        <TableCell>-3 500 €</TableCell>
+        <TableCell>-2 300 €</TableCell>
+        <TableCell>-1 500 €</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-semibold">Solde final</TableCell>
+        <TableCell className="font-semibold">8 500 €</TableCell>
+        <TableCell className="font-semibold">12 200 €</TableCell>
+        <TableCell className="font-semibold">13 200 €</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+### 3. Connecter sa banque à son logiciel de gestion
+
+La [connexion bancaire automatique](/blog/connexion-bancaire-rapprochement-automatique) est un game-changer pour la gestion de trésorerie. Elle vous permet de :
+
+- Voir votre solde en temps réel
+- Catégoriser automatiquement vos transactions
+- Rapprocher factures et paiements sans saisie manuelle
+- Détecter immédiatement les écarts
+
+Newbi intègre la connexion bancaire avec rapprochement automatique, ce qui vous donne une vision claire de votre trésorerie à tout moment.
+
+<figure className="not-prose my-8">
+  <div className="relative aspect-video overflow-hidden rounded-lg border">
+    <Image
+      src="/blog/comment-gerer-tresorerie-entreprise/connexion-bancaire.webp"
+      alt="Interface Newbi de connexion bancaire avec rapprochement automatique des transactions"
+      fill
+      className="object-cover"
+      sizes="(max-width: 768px) 100vw, 720px"
+    />
+  </div>
+  <figcaption className="mt-2 text-center text-sm text-muted-foreground">
+    Connexion bancaire et rapprochement automatique dans Newbi
+  </figcaption>
+</figure>
+
+<Callout type="tip">
+  Connectez votre banque dès le premier jour. Plus vous attendez, plus vous accumulez de transactions à catégoriser manuellement. Newbi synchronise vos comptes en quelques clics.
+</Callout>
+
+<div className="not-prose flex justify-center my-6">
+  <Button asChild variant="outline">
+    <Link href="https://meet.brevo.com/sweily/newbi">Demander une démo</Link>
+  </Button>
+</div>
+
+## Les leviers pour améliorer votre trésorerie
+
+### Réduire les délais de paiement client
+
+Les retards de paiement sont le premier ennemi de la trésorerie. Pour les réduire :
+
+- **Facturez immédiatement** : n'attendez pas la fin du mois pour envoyer vos factures
+- **Proposez des conditions de paiement courtes** : 15 jours plutôt que 60
+- **Automatisez les relances** : avec un outil comme Newbi, les [relances de factures impayées](/blog/relance-facture-impayee-modele) partent automatiquement
+- **Proposez le paiement en ligne** : virement instantané, carte bancaire
+
+Consultez nos [7 conseils pour réduire vos délais de paiement](/blog/conseils-reduire-delais-paiement).
+
+### Demander des acomptes
+
+Pour les projets importants, demandez un [acompte](/blog/quest-ce-que-acompte-facture) de 30 à 50 % à la commande. Cela :
+
+- Sécurise votre trésorerie
+- Engage le client
+- Finance le démarrage du projet
+
+### Négocier les délais fournisseurs
+
+Si possible, négociez des délais de paiement plus longs avec vos fournisseurs (45 ou 60 jours). L'objectif est que vos clients vous paient **avant** que vous deviez payer vos fournisseurs.
+
+### Anticiper les charges fiscales
+
+Les impôts et charges sociales sont souvent la cause de creux de trésorerie car ils arrivent par gros montants. Anticipez-les :
+
+- Provisionnez chaque mois un pourcentage de votre CA pour les charges
+- Consultez le [calendrier fiscal](/blog/calendrier-fiscal-independant-2026) pour connaître les échéances
+- Optez pour le paiement mensuel plutôt que trimestriel quand c'est possible
+
+<figure className="not-prose my-8">
+  <div className="relative aspect-video overflow-hidden rounded-lg border">
+    <Image
+      src="/blog/comment-gerer-tresorerie-entreprise/previsions.webp"
+      alt="Graphique de prévisions de trésorerie avec anticipation des charges fiscales"
+      fill
+      className="object-cover"
+      sizes="(max-width: 768px) 100vw, 720px"
+    />
+  </div>
+  <figcaption className="mt-2 text-center text-sm text-muted-foreground">
+    Anticiper les charges fiscales dans vos prévisions de trésorerie
+  </figcaption>
+</figure>
+
+## Les erreurs fatales en gestion de trésorerie
+
+Évitez ces [5 erreurs qui mettent votre entreprise en danger](/blog/erreurs-gestion-tresorerie-eviter) :
+
+1. **Ne pas suivre sa trésorerie** : vérifiez vos comptes au minimum une fois par semaine
+2. **Mélanger comptes pro et perso** : ouvrez un compte bancaire dédié à votre activité
+3. **Ne pas anticiper les charges** : provisionnez dès que vous encaissez
+4. **Ignorer les retards de paiement** : relancez dès J+1 après l'échéance
+5. **Pas de prévisionnel** : sans vision à 3 mois, vous naviguez à l'aveugle
+
+<Callout type="danger">
+  25 % des défaillances d'entreprise en France sont causées par des problèmes de trésorerie. La plupart auraient pu être évitées avec un suivi régulier et des prévisions.
+</Callout>
+
+## Les outils pour gérer votre trésorerie
+
+### Un logiciel de gestion tout-en-un
+
+Un outil comme Newbi centralise :
+
+<div className="not-prose my-8">
+  <ul className="grid gap-3" role="list">
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span className="text-muted-foreground">La facturation (entrées d'argent prévues)</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span className="text-muted-foreground">Les dépenses et justificatifs (sorties d'argent)</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span className="text-muted-foreground">La connexion bancaire (solde réel en temps réel)</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span className="text-muted-foreground">Le rapprochement automatique (factures ↔ paiements)</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span className="text-muted-foreground">Les relances automatiques (accélérer les encaissements)</span>
+    </li>
+  </ul>
+</div>
+
+### Votre expert-comptable
+
+[Partagez vos documents](/blog/comment-partager-documents-expert-comptable) avec votre expert-comptable en temps réel. Il peut vous alerter sur les risques et vous conseiller sur les leviers d'optimisation.
+
+## En résumé
+
+Gérer efficacement la trésorerie de votre entreprise repose sur trois piliers :
+
+- **Visibilité** : connectez votre banque, suivez vos flux en temps réel
+- **Anticipation** : construisez un prévisionnel, provisionnez vos charges
+- **Action** : facturez vite, relancez automatiquement, négociez vos délais
+
+Newbi vous donne tous les outils pour maîtriser votre trésorerie : connexion bancaire, rapprochement automatique, suivi des factures impayées et prévisions financières.
+
+<div className="not-prose flex justify-center my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement pendant 30 jours</Link>
+  </Button>
+</div>
+
+## Questions fréquentes
+
+<div className="not-prose my-12">
+  <Accordion type="multiple">
+    <AccordionItem value="faq-0">
+      <AccordionTrigger>À quelle fréquence faut-il vérifier sa trésorerie ?</AccordionTrigger>
+      <AccordionContent>
+        Au minimum une fois par semaine pour les TPE et indépendants, quotidiennement pour les entreprises avec un volume de transactions élevé. Avec un logiciel connecté à votre banque comme Newbi, le suivi est automatique et en temps réel.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-1">
+      <AccordionTrigger>Comment anticiper un creux de trésorerie ?</AccordionTrigger>
+      <AccordionContent>
+        Construisez un tableau de trésorerie prévisionnel sur 3 à 12 mois. Identifiez les mois où les décaissements dépassent les encaissements et préparez des solutions : demande d'acomptes, négociation de délais fournisseurs, ligne de crédit bancaire.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-2">
+      <AccordionTrigger>Quelle est la différence entre trésorerie et bénéfice ?</AccordionTrigger>
+      <AccordionContent>
+        Le bénéfice est la différence entre les revenus et les charges sur une période comptable. La trésorerie est l'argent réellement disponible sur vos comptes. Une entreprise peut être bénéficiaire mais en difficulté de trésorerie si les clients paient en retard.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-3">
+      <AccordionTrigger>Quel outil utiliser pour suivre sa trésorerie ?</AccordionTrigger>
+      <AccordionContent>
+        Un logiciel de gestion tout-en-un comme Newbi, qui combine la facturation, la connexion bancaire et le suivi des dépenses. Cela donne une vision complète de votre trésorerie sans double saisie. Évitez les tableurs Excel qui sont source d'erreurs et ne se mettent pas à jour automatiquement.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-4">
+      <AccordionTrigger>Comment réduire les impayés qui plombent la trésorerie ?</AccordionTrigger>
+      <AccordionContent>
+        Trois leviers principaux : facturez immédiatement après la prestation, automatisez les relances (Newbi envoie des relances automatiques), et demandez des acomptes pour les projets importants. Consultez notre guide sur les relances de factures impayées pour des modèles et conseils.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>
+
+<script type="application/ld+json" dangerouslySetInnerHTML={{__html: JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "À quelle fréquence faut-il vérifier sa trésorerie ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Au minimum une fois par semaine. Avec un logiciel connecté à votre banque, le suivi est automatique et en temps réel."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Comment anticiper un creux de trésorerie ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Construisez un tableau prévisionnel sur 3 à 12 mois et identifiez les périodes critiques."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Quelle est la différence entre trésorerie et bénéfice ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Le bénéfice est comptable, la trésorerie est l'argent réellement disponible. Une entreprise peut être bénéficiaire mais en difficulté de trésorerie."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Quel outil pour suivre sa trésorerie ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Un logiciel tout-en-un comme Newbi qui combine facturation, connexion bancaire et suivi des dépenses."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Comment réduire les impayés ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Facturez immédiatement, automatisez les relances et demandez des acomptes pour les projets importants."
+      }
+    }
+  ]
+})}} />

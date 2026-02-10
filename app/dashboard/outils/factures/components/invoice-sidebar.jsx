@@ -328,7 +328,7 @@ export default function InvoiceSidebar({
     items.forEach((item) => {
       const quantity = parseFloat(item.quantity) || 0;
       const unitPrice = parseFloat(item.unitPrice) || 0;
-      const progressPercentage = parseFloat(item.progressPercentage) || 100;
+      const progressPercentage = item.progressPercentage != null ? parseFloat(item.progressPercentage) : 100;
 
       let itemTotal = quantity * unitPrice;
 
@@ -374,7 +374,7 @@ export default function InvoiceSidebar({
     items.forEach((item) => {
       const quantity = parseFloat(item.quantity) || 0;
       const unitPrice = parseFloat(item.unitPrice) || 0;
-      const progressPercentage = parseFloat(item.progressPercentage) || 100;
+      const progressPercentage = item.progressPercentage != null ? parseFloat(item.progressPercentage) : 100;
       const vatRate =
         item.vatRate !== undefined ? parseFloat(item.vatRate) : 20;
 
@@ -756,7 +756,7 @@ export default function InvoiceSidebar({
               {invoice.items && invoice.items.length > 0 ? (
                 invoice.items.map((item, index) => {
                   const progressPercentage =
-                    parseFloat(item.progressPercentage) || 100;
+                    item.progressPercentage != null ? parseFloat(item.progressPercentage) : 100;
                   return (
                     <div key={index} className="text-sm">
                       <p className="font-normal">

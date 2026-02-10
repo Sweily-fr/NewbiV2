@@ -102,6 +102,7 @@ export default function InvoiceInfoSection({
   validateInvoiceNumber: validateInvoiceNumberExists,
   onSituationNumberChange,
   onPreviousSituationInvoicesChange,
+  itemsInitializedForRef,
 }) {
   const {
     watch,
@@ -279,13 +280,17 @@ export default function InvoiceInfoSection({
         quote.items &&
         quote.items.length > 0
       ) {
+        // Ne pas re-copier si les articles ont déjà été initialisés pour cette référence
+        const currentRef = data.situationReference || data.purchaseOrderNumber;
+        if (itemsInitializedForRef?.current === currentRef) return;
+
         console.log("📋 [QUOTE COPY] Copie des articles:", quote.items);
 
         const copiedItems = quote.items.map((item) => ({
           description: item.description || "",
           quantity: item.quantity || 1,
           unitPrice: item.unitPrice || 0,
-          vatRate: item.vatRate || 20,
+          vatRate: item.vatRate ?? 20,
           unit: item.unit || "unité",
           discount: item.discount || 0,
           discountType: item.discountType || "PERCENTAGE",
@@ -293,6 +298,9 @@ export default function InvoiceInfoSection({
         }));
 
         setValue("items", copiedItems, { shouldDirty: true });
+
+        // Synchroniser globalProgressPercentage avec les items (0% pour la première situation)
+        setValue("globalProgressPercentage", 0, { shouldDirty: true });
 
         // Copier aussi le client si disponible
         if (quote.client) {
@@ -317,6 +325,9 @@ export default function InvoiceInfoSection({
             { shouldDirty: true }
           );
         }
+
+        // Marquer comme initialisé pour cette référence
+        if (itemsInitializedForRef) itemsInitializedForRef.current = currentRef;
       }
     }
   }, [
@@ -351,6 +362,31 @@ export default function InvoiceInfoSection({
       // Copier les articles de la dernière facture de situation
       // (priorité sur le devis car les factures de situation peuvent avoir des modifications)
       if (otherInvoices.length > 0) {
+        // Ne pas re-copier si les articles ont déjà été initialisés pour cette référence
+        const currentRef = data.situationReference || data.purchaseOrderNumber;
+        if (itemsInitializedForRef?.current === currentRef) return;
+
+        // Calculer l'avancement cumulé des factures précédentes
+        let cumulativeProgress = 0;
+        otherInvoices.forEach((invoice) => {
+          if (invoice.items && invoice.items.length > 0) {
+            const avgProgress =
+              invoice.items.reduce((sum, item) => {
+                return sum + (item.progressPercentage || 0);
+              }, 0) / invoice.items.length;
+            cumulativeProgress += avgProgress;
+          }
+        });
+        cumulativeProgress = Math.min(cumulativeProgress, 100);
+        const remaining = Math.max(0, 100 - cumulativeProgress);
+
+        // Pré-remplir le pourcentage restant pour la nouvelle situation (seulement en création)
+        if (!data.id && cumulativeProgress > 0) {
+          setValue("globalProgressPercentage", remaining, { shouldDirty: true });
+        } else if (!data.id) {
+          setValue("globalProgressPercentage", 0, { shouldDirty: true });
+        }
+
         // Prendre la dernière facture de situation (triée par date croissante, donc la dernière est à la fin)
         const lastSituationInvoice = otherInvoices[otherInvoices.length - 1];
 
@@ -364,16 +400,19 @@ export default function InvoiceInfoSection({
             "articles"
           );
 
-          // Copier les articles avec progressPercentage remis à 0 pour la nouvelle situation
+          // Pré-remplir avec le pourcentage restant (ou 0 si pas de cumul)
+          const itemProgress = !data.id && cumulativeProgress > 0 ? remaining : 0;
+
+          // Copier les articles avec progressPercentage pré-rempli
           const copiedItems = lastSituationInvoice.items.map((item) => ({
             description: item.description || "",
             quantity: item.quantity || 1,
             unitPrice: item.unitPrice || 0,
-            vatRate: item.vatRate || 20,
+            vatRate: item.vatRate ?? 20,
             unit: item.unit || "unité",
             discount: item.discount || 0,
             discountType: item.discountType || "PERCENTAGE",
-            progressPercentage: 0, // Remettre à 0 pour la nouvelle situation
+            progressPercentage: itemProgress,
           }));
 
           setValue("items", copiedItems, { shouldDirty: true });
@@ -474,6 +513,9 @@ export default function InvoiceInfoSection({
             clientPositionRight: lastSituationInvoice.clientPositionRight,
           });
         }
+
+        // Marquer comme initialisé pour cette référence
+        if (itemsInitializedForRef) itemsInitializedForRef.current = currentRef;
       }
       // Note: Si pas de factures de situation existantes, les articles seront copiés depuis le devis
       // par l'autre useEffect (QUOTE COPY)

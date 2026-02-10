@@ -8,6 +8,8 @@ export const GET_EVENTS = gql`
     $limit: Int
     $offset: Int
     $workspaceId: ID
+    $includeExternalCalendars: Boolean
+    $sources: [EventSource]
   ) {
     getEvents(
       startDate: $startDate
@@ -16,6 +18,8 @@ export const GET_EVENTS = gql`
       limit: $limit
       offset: $offset
       workspaceId: $workspaceId
+      includeExternalCalendars: $includeExternalCalendars
+      sources: $sources
     ) {
       success
       message
@@ -40,6 +44,15 @@ export const GET_EVENTS = gql`
           }
           finalTotalTTC
           status
+        }
+        source
+        visibility
+        isReadOnly
+        externalEventId
+        externalCalendarLinks {
+          provider
+          externalEventId
+          calendarConnectionId
         }
         createdAt
         updatedAt

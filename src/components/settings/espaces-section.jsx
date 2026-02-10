@@ -294,7 +294,7 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
       case "accountant":
         return "bg-purple-100 border-purple-300 text-purple-800 font-normal";
       case "owner":
-        return "bg-green-100 border-green-300 text-green-800 font-normal";
+        return "bg-green-50 border-green-200 text-green-600 font-normal";
       default:
         return "bg-gray-100 border-gray-300 text-gray-800 font-normal";
     }

@@ -96,13 +96,21 @@ export function useTaskImageUpload(taskId, workspaceId, boardId) {
    * Valide un fichier avant l'upload
    */
   const validateFile = useCallback((file) => {
-    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    const validTypes = [
+      'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'text/plain', 'text/csv'
+    ];
     const maxSize = 10 * 1024 * 1024; // 10MB
 
     if (!validTypes.includes(file.type)) {
       return {
         valid: false,
-        error: 'Type de fichier non supporté. Utilisez JPEG, PNG, GIF ou WebP.'
+        error: 'Type de fichier non supporté. Formats acceptés : images (JPEG, PNG, GIF, WebP), documents (PDF, Word, Excel, TXT, CSV).'
       };
     }
 

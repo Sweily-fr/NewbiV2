@@ -1,0 +1,394 @@
+---
+title: Qu'est-ce que le FEC (Fichier des Écritures Comptables) ?
+description: >-
+  Tout savoir sur le FEC : définition, contenu obligatoire, format, contrôle
+  fiscal et comment le générer automatiquement depuis votre logiciel.
+date: '2026-02-10'
+category: glossaire
+sector: null
+keyword: FEC fichier écritures comptables
+author: Newbi
+image: /blog/quest-ce-que-fec-fichier-ecritures-comptables/hero.webp
+published: false
+publishDate: null
+---
+
+import Image from "next/image"
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-8">
+  <Badge variant="secondary">Glossaire</Badge>
+  <Badge variant="outline">7 min de lecture</Badge>
+</div>
+
+# Qu'est-ce que le FEC (Fichier des Écritures Comptables) ?
+
+Le **FEC fichier écritures comptables** est un document numérique normalisé que toute entreprise tenant une comptabilité informatisée doit pouvoir produire en cas de contrôle fiscal. Instauré par l'article L47 A-I du Livre des Procédures Fiscales (LPF), il constitue aujourd'hui une pièce maîtresse de la relation entre les entreprises et l'administration fiscale française.
+
+Que vous soyez entrepreneur, dirigeant de PME ou comptable, comprendre le FEC est indispensable pour rester en conformité et éviter de lourdes sanctions. Dans cet article, nous vous expliquons en détail sa définition, son contenu obligatoire, son format, les sanctions encourues et comment le générer facilement.
+
+<figure>
+  <Image
+    src="/blog/quest-ce-que-fec-fichier-ecritures-comptables/hero.webp"
+    alt="Fichier des Écritures Comptables (FEC) : définition et obligations"
+    width={1200}
+    height={630}
+    className="rounded-xl"
+    priority
+  />
+  <figcaption className="text-center text-sm text-muted-foreground mt-2">
+    Le FEC : un fichier obligatoire pour toute comptabilité informatisée en France.
+  </figcaption>
+</figure>
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Définition du FEC : cadre légal et historique
+
+Le Fichier des Écritures Comptables, communément appelé **FEC**, est un fichier dématérialisé qui regroupe l'ensemble des écritures comptables d'un exercice fiscal. Il a été rendu **obligatoire depuis le 1er janvier 2014** pour tous les contribuables soumis à une obligation de tenue de comptabilité et qui utilisent un système informatisé.
+
+Son fondement juridique repose sur l'**article L47 A-I du Livre des Procédures Fiscales** (LPF), qui dispose que l'administration fiscale peut demander la remise d'une copie des fichiers des écritures comptables lors d'un contrôle fiscal. L'article A47 A-1 du même code précise le format et les normes techniques que ce fichier doit respecter.
+
+Le FEC a été conçu dans un objectif de **modernisation des contrôles fiscaux**. Avant son instauration, les vérificateurs devaient examiner manuellement les documents comptables, un processus long et fastidieux. Désormais, grâce au FEC, l'administration peut effectuer des analyses automatisées et ciblées via des outils informatiques spécialisés.
+
+### Qui doit produire un FEC ?
+
+Le FEC concerne toutes les entreprises et entités qui :
+
+- Tiennent une **comptabilité informatisée** (logiciel comptable, tableur structuré, ERP, etc.)
+- Sont soumises à une **obligation légale de tenue de comptabilité** (BIC, BNC au régime de la déclaration contrôlée, IS, etc.)
+- Font l'objet d'un **contrôle fiscal** (vérification de comptabilité ou examen de comptabilité)
+
+Cela inclut les sociétés commerciales (SARL, SAS, SA), les entreprises individuelles au régime réel, les professions libérales au régime de la déclaration contrôlée et les associations soumises aux impôts commerciaux.
+
+### Micro-entreprises : une exemption notable
+
+Les **micro-entrepreneurs** (anciennement auto-entrepreneurs) bénéficient d'une exemption. En effet, le régime micro (micro-BIC et micro-BNC) ne soumet pas les contribuables à une obligation de tenue d'une comptabilité en partie double. Ils sont donc **dispensés de produire un FEC**. Toutefois, ils doivent tout de même tenir un livre des recettes et, le cas échéant, un registre des achats. Pour en savoir plus sur les obligations allégées des micro-entreprises, consultez notre article sur les [obligations comptables en micro-entreprise](/blog/obligations-comptables-micro-entreprise).
+
+<div className="not-prose my-8">
+  <Callout variant="warning" title="Attention aux sanctions">
+    L'absence de remise du FEC lors d'un contrôle fiscal est passible d'une amende de **5 000 euros** par exercice vérifié, ou de **10 % des droits rappelés** si ce montant est supérieur. Ne prenez pas ce risque : assurez-vous que votre logiciel comptable est capable de générer un FEC conforme.
+  </Callout>
+</div>
+
+## Les 18 champs obligatoires du FEC
+
+Le FEC doit impérativement contenir **18 colonnes** (champs) pour chaque écriture comptable. Ces champs sont définis par l'article A47 A-1 du LPF et doivent être présents dans un ordre précis. Voici le détail complet :
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Les 18 champs obligatoires du Fichier des Écritures Comptables (FEC)</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[50px]">N°</TableHead>
+        <TableHead>Nom du champ</TableHead>
+        <TableHead>Description</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell>1</TableCell>
+        <TableCell className="font-mono text-sm">JournalCode</TableCell>
+        <TableCell>Code du journal comptable (ex. : VE pour ventes, AC pour achats)</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell>2</TableCell>
+        <TableCell className="font-mono text-sm">JournalLib</TableCell>
+        <TableCell>Libellé du journal comptable (ex. : Journal des ventes)</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell>3</TableCell>
+        <TableCell className="font-mono text-sm">EcritureNum</TableCell>
+        <TableCell>Numéro de l'écriture comptable (séquence chronologique continue)</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell>4</TableCell>
+        <TableCell className="font-mono text-sm">EcritureDate</TableCell>
+        <TableCell>Date de l'écriture comptable (format AAAAMMJJ)</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell>5</TableCell>
+        <TableCell className="font-mono text-sm">CompteNum</TableCell>
+        <TableCell>Numéro du compte du Plan Comptable Général (PCG)</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell>6</TableCell>
+        <TableCell className="font-mono text-sm">CompteLib</TableCell>
+        <TableCell>Libellé du compte (ex. : Clients, Fournisseurs, TVA collectée)</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell>7</TableCell>
+        <TableCell className="font-mono text-sm">CompAuxNum</TableCell>
+        <TableCell>Numéro du compte auxiliaire (sous-compte client ou fournisseur)</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell>8</TableCell>
+        <TableCell className="font-mono text-sm">CompAuxLib</TableCell>
+        <TableCell>Libellé du compte auxiliaire (nom du tiers)</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell>9</TableCell>
+        <TableCell className="font-mono text-sm">PieceRef</TableCell>
+        <TableCell>Référence de la pièce justificative (numéro de facture, etc.)</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell>10</TableCell>
+        <TableCell className="font-mono text-sm">PieceDate</TableCell>
+        <TableCell>Date de la pièce justificative (format AAAAMMJJ)</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell>11</TableCell>
+        <TableCell className="font-mono text-sm">EcritureLib</TableCell>
+        <TableCell>Libellé de l'écriture (description de l'opération)</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell>12</TableCell>
+        <TableCell className="font-mono text-sm">Debit</TableCell>
+        <TableCell>Montant au débit (en euros, séparateur décimal : virgule)</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell>13</TableCell>
+        <TableCell className="font-mono text-sm">Credit</TableCell>
+        <TableCell>Montant au crédit (en euros, séparateur décimal : virgule)</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell>14</TableCell>
+        <TableCell className="font-mono text-sm">EcritureLet</TableCell>
+        <TableCell>Lettrage de l'écriture (rapprochement entre écritures liées)</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell>15</TableCell>
+        <TableCell className="font-mono text-sm">DateLet</TableCell>
+        <TableCell>Date du lettrage (format AAAAMMJJ)</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell>16</TableCell>
+        <TableCell className="font-mono text-sm">ValidDate</TableCell>
+        <TableCell>Date de validation de l'écriture (format AAAAMMJJ)</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell>17</TableCell>
+        <TableCell className="font-mono text-sm">Montantdevise</TableCell>
+        <TableCell>Montant en devise (si l'opération est en devise étrangère)</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell>18</TableCell>
+        <TableCell className="font-mono text-sm">Idevise</TableCell>
+        <TableCell>Identifiant de la devise (code ISO, ex. : USD, GBP)</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+Chaque ligne du FEC représente une ligne d'écriture comptable. Une écriture comportant plusieurs lignes (débit/crédit) sera donc représentée par autant de lignes dans le fichier. Les champs facultatifs (comme CompAuxNum lorsqu'il n'y a pas de compte auxiliaire) peuvent rester vides, mais la colonne doit toujours être présente.
+
+## Format du FEC : TXT ou XML
+
+Le FEC peut être produit dans **deux formats acceptés** par l'administration fiscale :
+
+### Format TXT (tabulé)
+
+C'est le format le plus couramment utilisé. Il s'agit d'un fichier texte dans lequel les champs sont séparés par des **tabulations** (caractère `TAB`). Les règles suivantes s'appliquent :
+
+- **Encodage** : UTF-8 ou ISO 8859-15 (Latin-9)
+- **Séparateur de champs** : tabulation (pipe `|` parfois toléré mais non recommandé)
+- **Séparateur décimal** : virgule (et non point)
+- **Format des dates** : AAAAMMJJ (ex. : 20260131 pour le 31 janvier 2026)
+- **Nom du fichier** : `SirenFEC + date de clôture` (ex. : `123456789FEC20261231.txt`)
+
+### Format XML
+
+Le format XML est une alternative structurée qui respecte un schéma XSD défini par l'administration. Il est moins fréquent en pratique mais reste parfaitement valide.
+
+Quel que soit le format choisi, le fichier doit être **remis sur un support physique** (clé USB, CD-ROM) ou transmis par voie électronique lors du contrôle fiscal.
+
+## Le contrôle fiscal informatisé (CFCI)
+
+Lors d'une vérification de comptabilité, l'administration fiscale procède à un **Contrôle Fiscal des Comptabilités Informatisées** (CFCI). Ce contrôle s'appuie directement sur le FEC et comprend plusieurs étapes :
+
+1. **Vérification de la conformité formelle** : l'administration vérifie que le FEC respecte le format réglementaire (18 champs, ordre, encodage).
+2. **Tests de cohérence** : vérification de l'équilibre débit/crédit, continuité de la numérotation, dates cohérentes.
+3. **Analyses croisées** : rapprochement avec les déclarations fiscales (CA3 pour la TVA, liasse fiscale, etc.).
+4. **Recherches ciblées** : requêtes spécifiques sur des comptes, des périodes ou des montants.
+
+L'administration utilise des logiciels dédiés (comme **ALTO2** ou **ACL**) pour analyser automatiquement les données du FEC. Un fichier non conforme ou incohérent peut déclencher des investigations approfondies.
+
+<figure>
+  <Image
+    src="/blog/quest-ce-que-fec-fichier-ecritures-comptables/controle-fiscal-fec.webp"
+    alt="Contrôle fiscal et analyse du FEC par l'administration"
+    width={800}
+    height={450}
+    className="rounded-xl"
+  />
+  <figcaption className="text-center text-sm text-muted-foreground mt-2">
+    L'administration fiscale utilise des outils spécialisés pour analyser votre FEC.
+  </figcaption>
+</figure>
+
+## Sanctions en cas de non-conformité
+
+Le non-respect des obligations liées au FEC expose l'entreprise à des sanctions financières significatives :
+
+- **Amende de 5 000 euros** par exercice vérifié en cas d'absence de remise du FEC ou de remise d'un fichier non conforme (article 1729 D du CGI).
+- **Majoration de 10 % des droits rappelés** si ce montant est supérieur à 5 000 euros, en cas d'opposition au contrôle informatisé.
+- **Rejet de comptabilité** : l'administration peut considérer la comptabilité comme irrégulière et procéder à une reconstitution de chiffre d'affaires, souvent défavorable au contribuable.
+
+Ces sanctions sont cumulables et peuvent s'appliquer pour chaque exercice concerné par le contrôle. Il est donc crucial de disposer d'un outil capable de générer un FEC conforme en permanence.
+
+## Comment générer un FEC conforme ?
+
+La génération du FEC ne doit pas être une corvée. Voici les bonnes pratiques :
+
+<div className="not-prose my-8">
+  <ul className="space-y-3">
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span>Utiliser un <strong>logiciel comptable certifié</strong> ou conforme aux normes FEC</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span>Vérifier que <strong>les 18 champs obligatoires</strong> sont correctement renseignés</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span>S'assurer de la <strong>numérotation chronologique continue</strong> des écritures</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span>Contrôler l'<strong>équilibre débit/crédit</strong> de chaque écriture</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span>Générer un <strong>FEC test</strong> en amont pour détecter d'éventuelles anomalies</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span>Archiver les FEC de chaque exercice pendant la <strong>durée légale de conservation</strong> (6 ans minimum)</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span>Partager le fichier avec votre <Link href="/blog/comment-partager-documents-expert-comptable" className="underline">expert-comptable pour validation</Link></span>
+    </li>
+  </ul>
+</div>
+
+<div className="not-prose my-8">
+  <Callout variant="info" title="Astuce : générez votre FEC automatiquement avec Newbi">
+    Avec Newbi, votre FEC est généré **automatiquement** à partir de vos écritures comptables. Le fichier respecte scrupuleusement les 18 champs obligatoires, le format tabulé et les normes de l'administration fiscale. Plus besoin de manipulations manuelles ni de risque d'erreur. C'est la solution idéale pour les entrepreneurs et les TPE/PME qui veulent rester conformes sans effort.
+  </Callout>
+</div>
+
+<div className="not-prose my-8">
+  <Button asChild variant="outline">
+    <Link href="/produits/comptabilite">Générer mon FEC</Link>
+  </Button>
+</div>
+
+## FEC et collaboration avec votre expert-comptable
+
+Le FEC est également un outil précieux pour la **collaboration avec votre expert-comptable**. En lui transmettant votre fichier, il peut :
+
+- Vérifier la cohérence globale de votre comptabilité
+- Préparer les déclarations fiscales (TVA, IS, IR)
+- Anticiper les éventuels redressements lors d'un contrôle
+- Vous conseiller sur les optimisations fiscales possibles
+
+Un logiciel comme Newbi facilite ce partage grâce à des fonctionnalités d'export et de collaboration intégrées. Découvrez comment [partager vos documents avec votre expert-comptable](/blog/comment-partager-documents-expert-comptable) ou comment [choisir un logiciel de comptabilité adapté à votre expert-comptable](/blog/logiciel-comptabilite-expert-comptable).
+
+Le FEC s'inscrit plus largement dans vos obligations comptables globales, notamment l'établissement du [bilan comptable](/blog/quest-ce-que-bilan-comptable) en fin d'exercice.
+
+## En résumé
+
+Le **FEC fichier écritures comptables** est un fichier numérique normalisé, obligatoire depuis 2014 pour toute entreprise tenant une comptabilité informatisée. Il contient 18 champs précis couvrant l'ensemble des écritures d'un exercice et doit être produit en format TXT tabulé ou XML. En cas de contrôle fiscal, sa non-remise ou sa non-conformité expose l'entreprise à une amende de 5 000 euros ou 10 % des droits rappelés. Les micro-entrepreneurs en sont exemptés. Pour rester conforme sans effort, utilisez un logiciel capable de le générer automatiquement.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Commencer avec Newbi -- Gratuit</Link>
+  </Button>
+</div>
+
+## Questions fréquentes sur le FEC
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Qu'est-ce que le FEC exactement ?</AccordionTrigger>
+      <AccordionContent>
+        Le FEC (Fichier des Écritures Comptables) est un fichier numérique normalisé contenant l'ensemble des écritures comptables d'un exercice fiscal. Défini par l'article L47 A-I du Livre des Procédures Fiscales, il doit être remis à l'administration fiscale en cas de contrôle. Il comporte 18 champs obligatoires et peut être au format TXT (tabulé) ou XML.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Les micro-entreprises doivent-elles produire un FEC ?</AccordionTrigger>
+      <AccordionContent>
+        Non. Les micro-entrepreneurs (micro-BIC et micro-BNC) sont dispensés de l'obligation de produire un FEC car ils ne sont pas soumis à une comptabilité en partie double. Ils doivent néanmoins tenir un livre des recettes et, pour les activités d'achat-revente, un registre des achats.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Quelles sont les sanctions si je ne fournis pas mon FEC ?</AccordionTrigger>
+      <AccordionContent>
+        L'absence de remise du FEC ou la remise d'un fichier non conforme entraîne une amende de 5 000 euros par exercice vérifié (article 1729 D du CGI). Si 10 % des droits rappelés dépasse ce montant, c'est cette majoration qui s'applique. L'administration peut également rejeter votre comptabilité et procéder à une reconstitution de chiffre d'affaires.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Comment générer un FEC conforme facilement ?</AccordionTrigger>
+      <AccordionContent>
+        Le moyen le plus simple est d'utiliser un logiciel comptable capable de générer automatiquement un FEC conforme, comme Newbi. Le logiciel structure vos écritures selon les 18 champs obligatoires, respecte le format tabulé et assure la cohérence des données. Vous n'avez qu'à exporter le fichier en un clic lorsque nécessaire.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>
+
+<script
+  type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Qu'est-ce que le FEC exactement ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Le FEC (Fichier des Écritures Comptables) est un fichier numérique normalisé contenant l'ensemble des écritures comptables d'un exercice fiscal. Défini par l'article L47 A-I du Livre des Procédures Fiscales, il doit être remis à l'administration fiscale en cas de contrôle. Il comporte 18 champs obligatoires et peut être au format TXT (tabulé) ou XML."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Les micro-entreprises doivent-elles produire un FEC ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Non. Les micro-entrepreneurs (micro-BIC et micro-BNC) sont dispensés de l'obligation de produire un FEC car ils ne sont pas soumis à une comptabilité en partie double. Ils doivent néanmoins tenir un livre des recettes et, pour les activités d'achat-revente, un registre des achats."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Quelles sont les sanctions si je ne fournis pas mon FEC ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "L'absence de remise du FEC ou la remise d'un fichier non conforme entraîne une amende de 5 000 euros par exercice vérifié (article 1729 D du CGI). Si 10 % des droits rappelés dépasse ce montant, c'est cette majoration qui s'applique. L'administration peut également rejeter votre comptabilité et procéder à une reconstitution de chiffre d'affaires."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Comment générer un FEC conforme facilement ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Le moyen le plus simple est d'utiliser un logiciel comptable capable de générer automatiquement un FEC conforme, comme Newbi. Le logiciel structure vos écritures selon les 18 champs obligatoires, respecte le format tabulé et assure la cohérence des données. Vous n'avez qu'à exporter le fichier en un clic lorsque nécessaire."
+          }
+        }
+      ]
+    })
+  }}
+/>

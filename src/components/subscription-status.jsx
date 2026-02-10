@@ -23,7 +23,7 @@ export function SubscriptionStatus({ variant = "badge", className = "" }) {
     return (
       <Badge
         variant="outline"
-        className={`bg-green-50 text-green-700 border-green-200 ${className}`}
+        className={`bg-green-50 text-green-600 border-green-200 ${className}`}
       >
         <CheckCircleIcon className="w-3 h-3 mr-1" />
         Pro
@@ -37,7 +37,7 @@ export function SubscriptionStatus({ variant = "badge", className = "" }) {
       <div className={`flex items-center gap-3 ${className}`}>
         <Badge
           variant="outline"
-          className="bg-green-50 text-green-700 border-green-200"
+          className="bg-green-50 text-green-600 border-green-200"
         >
           <CheckCircleIcon className="w-3 h-3 mr-1" />
           Plan Pro

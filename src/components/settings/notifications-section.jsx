@@ -391,7 +391,7 @@ export function NotificationsSection() {
         return {
           label: "Acceptée",
           showDot: false,
-          badge: <CheckCheck className="w-3 h-3 mr-1 text-green-700" />,
+          badge: <CheckCheck className="w-3 h-3 mr-1 text-green-600" />,
         };
       case "rejected":
         return {

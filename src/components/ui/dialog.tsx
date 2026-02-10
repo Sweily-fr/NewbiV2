@@ -5,6 +5,7 @@ import { XIcon } from "lucide-react"
 import { Dialog as DialogPrimitive } from "radix-ui"
 
 import { cn } from "@/src/lib/utils"
+import { VisuallyHidden } from "./visually-hidden"
 
 function Dialog({
   ...props
@@ -140,4 +141,5 @@ export {
   DialogPortal,
   DialogTitle,
   DialogTrigger,
+  VisuallyHidden,
 }

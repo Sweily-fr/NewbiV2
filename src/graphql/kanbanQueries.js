@@ -28,6 +28,7 @@ export const GET_BOARDS = gql`
       id
       title
       description
+      totalBillableAmount
       createdAt
       updatedAt
     }
@@ -179,6 +180,7 @@ export const CREATE_BOARD = gql`
       id
       title
       description
+      totalBillableAmount
       createdAt
       updatedAt
     }
@@ -191,6 +193,7 @@ export const UPDATE_BOARD = gql`
       id
       title
       description
+      totalBillableAmount
       createdAt
       updatedAt
     }
@@ -463,6 +466,7 @@ export const BOARD_FRAGMENT = gql`
     id
     title
     description
+    totalBillableAmount
     createdAt
     updatedAt
   }
@@ -535,6 +539,15 @@ export const START_TIMER = gql`
 export const STOP_TIMER = gql`
   mutation StopTimer($taskId: ID!, $workspaceId: ID) {
     stopTimer(taskId: $taskId, workspaceId: $workspaceId) {
+      ...TaskFields
+    }
+  }
+  ${TASK_FRAGMENT}
+`;
+
+export const RESET_TIMER = gql`
+  mutation ResetTimer($taskId: ID!, $workspaceId: ID) {
+    resetTimer(taskId: $taskId, workspaceId: $workspaceId) {
       ...TaskFields
     }
   }

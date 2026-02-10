@@ -337,7 +337,7 @@ function EmailAutomationRow({ automation, onDelete, onToggle }) {
     if (timingType === 'ON_DATE') {
       return timing?.label || '';
     }
-    return `${timing?.label || ''} ${automation.timing?.daysOffset || 0}j`;
+    return `${automation.timing?.daysOffset || 0}j ${timing?.label?.toLowerCase() || ''}`;
   };
 
   return (
@@ -448,12 +448,26 @@ function NewEmailAutomationRow({ dateFields, onCreate, onCancel, isCreating }) {
           </SelectContent>
         </Select>
 
-        <div className="flex gap-2">
+        <div className="flex items-center justify-end gap-1.5">
+          {formData.timing !== 'ON_DATE' && (
+            <div className="flex items-center gap-1 flex-shrink-0 border rounded-md px-2 h-9">
+              <input
+                type="number"
+                min="1"
+                max="365"
+                value={formData.daysOffset}
+                onChange={(e) => setFormData({ ...formData, daysOffset: parseInt(e.target.value) || 1 })}
+                className="w-8 text-center text-sm bg-transparent outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              />
+              <span className="text-xs text-muted-foreground whitespace-nowrap">jour{formData.daysOffset > 1 ? 's' : ''}</span>
+            </div>
+          )}
+
           <Select
             value={formData.timing}
             onValueChange={(value) => setFormData({ ...formData, timing: value })}
           >
-            <SelectTrigger className="flex-1">
+            <SelectTrigger className="w-auto flex-shrink-0">
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="z-[9999]">
@@ -465,23 +479,11 @@ function NewEmailAutomationRow({ dateFields, onCreate, onCancel, isCreating }) {
             </SelectContent>
           </Select>
 
-          {formData.timing !== 'ON_DATE' && (
-            <Input
-              type="number"
-              min="1"
-              max="365"
-              value={formData.daysOffset}
-              onChange={(e) => setFormData({ ...formData, daysOffset: parseInt(e.target.value) || 1 })}
-              className="w-16"
-              placeholder="Jours"
-            />
-          )}
-
           <Select
             value={formData.sendHour.toString()}
             onValueChange={(value) => setFormData({ ...formData, sendHour: parseInt(value) })}
           >
-            <SelectTrigger className="w-20">
+            <SelectTrigger className="w-auto flex-shrink-0">
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="z-[9999] max-h-48">
@@ -624,13 +626,13 @@ export default function AutomationsPopover({ trigger }) {
           {trigger || (
             <Button
               variant={activeCount > 0 ? "default" : "outline"}
-              className="font-normal"
+              size="icon"
+              className="relative"
               style={activeCount > 0 ? { backgroundColor: '#5b50ff' } : {}}
             >
-              <Zap className="mr-2 h-4 w-4" />
-              Automatisations
+              <Zap className="h-4 w-4" />
               {activeCount > 0 && (
-                <span className="ml-2 rounded-full bg-white/20 px-2 py-0.5 text-xs">
+                <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-white text-[#5b50ff] text-[10px] font-semibold shadow-sm border">
                   {activeCount}
                 </span>
               )}

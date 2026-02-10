@@ -16,7 +16,7 @@ const calculateItemTotal = (
   let subtotal = (quantity || 1) * (unitPrice || 0);
 
   // Appliquer le pourcentage d'avancement
-  const progress = Math.min(Math.max(progressPercentage || 100, 0), 100);
+  const progress = Math.min(Math.max(progressPercentage ?? 100, 0), 100);
   subtotal = subtotal * (progress / 100);
 
   // Appliquer la remise si elle existe
@@ -942,7 +942,7 @@ const UniversalPreviewPDF = ({
                 isSituationInvoice ||
                 (data.items &&
                   data.items.some((item) => {
-                    const progress = item.progressPercentage || 100;
+                    const progress = item.progressPercentage ?? 100;
                     return progress > 0 && progress < 100;
                   }));
 
@@ -1143,7 +1143,7 @@ const UniversalPreviewPDF = ({
                               whiteSpace: "nowrap",
                             }}
                           >
-                            {item.quantity}
+                            {parseFloat(Number(item.quantity).toFixed(4))}
                             {item.unit ? ` ${item.unit}` : ""}
                           </td>
                           <td
@@ -2150,7 +2150,7 @@ const UniversalPreviewPDF = ({
                             const quantity = parseFloat(item.quantity) || 0;
                             const unitPrice = parseFloat(item.unitPrice) || 0;
                             const progress =
-                              parseFloat(item.progressPercentage) || 100;
+                              item.progressPercentage != null ? parseFloat(item.progressPercentage) : 100;
                             const vatRate = parseFloat(item.vatRate) || 0;
                             const discount = parseFloat(item.discount) || 0;
 

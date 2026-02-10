@@ -1,0 +1,1002 @@
+[
+  {
+    "id": 1,
+    "slug": "comment-creer-facture-auto-entrepreneur",
+    "title": "Comment créer une facture quand on est auto-entrepreneur",
+    "metaDescription": "Découvrez comment créer une facture conforme en auto-entrepreneur : mentions obligatoires, modèle gratuit et outil de facturation en ligne.",
+    "keyword": "facture auto-entrepreneur",
+    "category": "guide",
+    "sector": "Particuliers / Micro-entreprise",
+    "priority": "high"
+  },
+  {
+    "id": 2,
+    "slug": "facturation-electronique-obligatoire-2026",
+    "title": "Facturation électronique obligatoire en 2026 : tout ce qui change",
+    "metaDescription": "La facturation électronique devient obligatoire en 2026. Calendrier, obligations, sanctions et comment se préparer avec un logiciel conforme.",
+    "keyword": "facturation électronique obligatoire 2026",
+    "category": "reglementaire",
+    "sector": null,
+    "priority": "high"
+  },
+  {
+    "id": 3,
+    "slug": "meilleur-logiciel-facturation-freelance",
+    "title": "Les 10 meilleurs logiciels de facturation pour freelances en 2026",
+    "metaDescription": "Comparatif des meilleurs logiciels de facturation pour freelances : fonctionnalités, tarifs, avantages. Trouvez l'outil idéal pour votre activité.",
+    "keyword": "logiciel facturation freelance",
+    "category": "liste",
+    "sector": "Consultants / Freelances IT",
+    "priority": "high"
+  },
+  {
+    "id": 4,
+    "slug": "comment-faire-devis-professionnel",
+    "title": "Comment faire un devis professionnel : guide complet",
+    "metaDescription": "Apprenez à créer un devis professionnel conforme : mentions obligatoires, modèle, conseils de rédaction et outils en ligne pour le générer.",
+    "keyword": "faire un devis professionnel",
+    "category": "guide",
+    "sector": null,
+    "priority": "high"
+  },
+  {
+    "id": 5,
+    "slug": "mentions-obligatoires-facture",
+    "title": "Mentions obligatoires sur une facture en 2026 : la liste complète",
+    "metaDescription": "Toutes les mentions obligatoires sur une facture en 2026 : numérotation, TVA, SIREN, pénalités de retard. Évitez les erreurs avec notre checklist.",
+    "keyword": "mentions obligatoires facture",
+    "category": "reglementaire",
+    "sector": null,
+    "priority": "high"
+  },
+  {
+    "id": 6,
+    "slug": "logiciel-devis-facture-gratuit",
+    "title": "Top 8 des logiciels de devis et factures gratuits en 2026",
+    "metaDescription": "Découvrez les meilleurs logiciels gratuits pour créer vos devis et factures. Comparatif, limites et alternatives professionnelles pour indépendants.",
+    "keyword": "logiciel devis facture gratuit",
+    "category": "liste",
+    "sector": null,
+    "priority": "high"
+  },
+  {
+    "id": 7,
+    "slug": "comment-gerer-tresorerie-entreprise",
+    "title": "Comment gérer la trésorerie de son entreprise efficacement",
+    "metaDescription": "Guide pratique pour gérer votre trésorerie d'entreprise : outils, bonnes pratiques, tableau de suivi et erreurs à éviter pour rester serein.",
+    "keyword": "gérer trésorerie entreprise",
+    "category": "guide",
+    "sector": null,
+    "priority": "high"
+  },
+  {
+    "id": 8,
+    "slug": "pennylane-vs-newbi-comparatif",
+    "title": "Pennylane vs Newbi : quel logiciel choisir pour votre gestion ?",
+    "metaDescription": "Comparatif détaillé Pennylane vs Newbi : fonctionnalités, tarifs, facilité d'utilisation. Quel outil de gestion choisir pour votre entreprise ?",
+    "keyword": "Pennylane vs Newbi",
+    "category": "comparaison",
+    "sector": null,
+    "priority": "high"
+  },
+  {
+    "id": 9,
+    "slug": "quest-ce-que-avoir-credit",
+    "title": "Qu'est-ce qu'un avoir ou note de crédit ? Définition et exemples",
+    "metaDescription": "Découvrez ce qu'est un avoir (note de crédit), quand l'émettre, les mentions obligatoires et comment le créer facilement avec un logiciel.",
+    "keyword": "avoir note de crédit",
+    "category": "glossaire",
+    "sector": null,
+    "priority": "medium"
+  },
+  {
+    "id": 10,
+    "slug": "relance-facture-impayee-modele",
+    "title": "Comment relancer une facture impayée : modèles et conseils",
+    "metaDescription": "Relancez efficacement vos factures impayées avec nos modèles d'email, nos conseils de timing et les bonnes pratiques pour récupérer vos créances.",
+    "keyword": "relance facture impayée",
+    "category": "guide",
+    "sector": null,
+    "priority": "high"
+  },
+  {
+    "id": 11,
+    "slug": "ocr-justificatifs-comptables",
+    "title": "OCR pour justificatifs comptables : automatiser la saisie des reçus",
+    "metaDescription": "L'OCR permet de scanner et extraire automatiquement les données de vos reçus et justificatifs. Gagnez du temps sur votre comptabilité avec Newbi.",
+    "keyword": "OCR justificatifs comptables",
+    "category": "guide",
+    "sector": "Comptables / Experts-comptables",
+    "priority": "medium"
+  },
+  {
+    "id": 12,
+    "slug": "henrri-vs-newbi-comparatif",
+    "title": "Henrri vs Newbi : comparatif des logiciels de facturation",
+    "metaDescription": "Henrri vs Newbi : fonctionnalités, tarifs, avantages et limites. Quel logiciel de facturation choisir pour votre activité ? Comparatif complet.",
+    "keyword": "Henrri vs Newbi",
+    "category": "comparaison",
+    "sector": null,
+    "priority": "medium"
+  },
+  {
+    "id": 13,
+    "slug": "facture-btp-artisan-mentions-specifiques",
+    "title": "Facture BTP : mentions spécifiques et obligations pour artisans",
+    "metaDescription": "Tout savoir sur la facturation dans le BTP : mentions obligatoires, garantie décennale, retenue de garantie et modèle de facture pour artisans.",
+    "keyword": "facture BTP artisan",
+    "category": "guide",
+    "sector": "BTP / Artisans",
+    "priority": "high"
+  },
+  {
+    "id": 14,
+    "slug": "quest-ce-que-numero-siret-siren",
+    "title": "Qu'est-ce que le numéro SIRET et SIREN ? Différences et utilisation",
+    "metaDescription": "Comprendre la différence entre SIRET et SIREN : définition, comment les obtenir, où les trouver et leur utilisation sur vos factures et devis.",
+    "keyword": "numéro SIRET SIREN",
+    "category": "glossaire",
+    "sector": null,
+    "priority": "medium"
+  },
+  {
+    "id": 15,
+    "slug": "erreurs-facturation-independants",
+    "title": "10 erreurs de facturation à éviter quand on est indépendant",
+    "metaDescription": "Évitez les erreurs de facturation les plus courantes chez les indépendants : oublis, non-conformité, retards. Conseils et solutions concrètes.",
+    "keyword": "erreurs facturation indépendant",
+    "category": "conseils",
+    "sector": null,
+    "priority": "high"
+  },
+  {
+    "id": 16,
+    "slug": "connexion-bancaire-rapprochement-automatique",
+    "title": "Connexion bancaire et rapprochement automatique : comment ça marche",
+    "metaDescription": "Automatisez le rapprochement bancaire en connectant votre banque à votre logiciel de gestion. Gain de temps, moins d'erreurs, trésorerie claire.",
+    "keyword": "rapprochement bancaire automatique",
+    "category": "guide",
+    "sector": null,
+    "priority": "medium"
+  },
+  {
+    "id": 17,
+    "slug": "facturer-prestation-service-consultant",
+    "title": "Comment facturer une prestation de service en tant que consultant",
+    "metaDescription": "Guide complet pour facturer vos prestations de conseil : calcul du TJM, mentions obligatoires, TVA et modèle de facture de prestation.",
+    "keyword": "facturer prestation service consultant",
+    "category": "guide",
+    "sector": "Consultants / Freelances IT",
+    "priority": "high"
+  },
+  {
+    "id": 18,
+    "slug": "alternatives-excel-gestion-entreprise",
+    "title": "5 alternatives à Excel pour la gestion de votre entreprise",
+    "metaDescription": "Vous utilisez encore Excel pour gérer votre entreprise ? Découvrez 5 alternatives plus efficaces pour la facturation, les devis et la trésorerie.",
+    "keyword": "alternative Excel gestion entreprise",
+    "category": "liste",
+    "sector": null,
+    "priority": "medium"
+  },
+  {
+    "id": 19,
+    "slug": "devis-travaux-btp-guide",
+    "title": "Comment rédiger un devis de travaux BTP conforme et détaillé",
+    "metaDescription": "Rédigez un devis de travaux BTP conforme : mentions obligatoires, postes de dépenses, modèle téléchargeable et astuces pour convaincre vos clients.",
+    "keyword": "devis travaux BTP",
+    "category": "guide",
+    "sector": "BTP / Artisans",
+    "priority": "high"
+  },
+  {
+    "id": 20,
+    "slug": "quest-ce-que-tva-intracommunautaire",
+    "title": "Qu'est-ce que la TVA intracommunautaire ? Guide pour entrepreneurs",
+    "metaDescription": "Comprendre la TVA intracommunautaire : numéro, obligations, déclaration et cas d'exonération. Guide pratique pour les entreprises françaises.",
+    "keyword": "TVA intracommunautaire",
+    "category": "glossaire",
+    "sector": null,
+    "priority": "medium"
+  },
+  {
+    "id": 21,
+    "slug": "logiciel-gestion-tout-en-un-tpe",
+    "title": "Logiciel de gestion tout-en-un pour TPE : lequel choisir ?",
+    "metaDescription": "Comparatif des logiciels de gestion tout-en-un pour TPE : facturation, devis, CRM, trésorerie. Trouvez la solution adaptée à votre petite entreprise.",
+    "keyword": "logiciel gestion tout-en-un TPE",
+    "category": "comparaison",
+    "sector": null,
+    "priority": "high"
+  },
+  {
+    "id": 22,
+    "slug": "gestion-notes-frais-deplacement",
+    "title": "Comment gérer ses notes de frais et justificatifs de déplacement",
+    "metaDescription": "Simplifiez la gestion de vos notes de frais : scan des reçus, catégorisation automatique et partage avec votre expert-comptable en un clic.",
+    "keyword": "gestion notes de frais",
+    "category": "guide",
+    "sector": null,
+    "priority": "medium"
+  },
+  {
+    "id": 23,
+    "slug": "facture-profession-liberale-guide",
+    "title": "Facturation en profession libérale : guide des obligations et bonnes pratiques",
+    "metaDescription": "Tout savoir sur la facturation en profession libérale : obligations légales, TVA, exonérations, mentions spécifiques et outils de facturation.",
+    "keyword": "facture profession libérale",
+    "category": "guide",
+    "sector": "Professions médicales",
+    "priority": "high"
+  },
+  {
+    "id": 24,
+    "slug": "freebe-vs-newbi-comparatif",
+    "title": "Freebe vs Newbi : quel logiciel pour les freelances ?",
+    "metaDescription": "Freebe vs Newbi : comparaison détaillée des fonctionnalités, tarifs et avantages pour les freelances. Quel outil de gestion choisir ?",
+    "keyword": "Freebe vs Newbi",
+    "category": "comparaison",
+    "sector": "Consultants / Freelances IT",
+    "priority": "medium"
+  },
+  {
+    "id": 25,
+    "slug": "quest-ce-que-delai-paiement-facture",
+    "title": "Qu'est-ce qu'un délai de paiement sur facture ? Règles et calcul",
+    "metaDescription": "Comprendre les délais de paiement sur facture : délais légaux, pénalités de retard, indemnité forfaitaire et comment les paramétrer sur vos factures.",
+    "keyword": "délai paiement facture",
+    "category": "glossaire",
+    "sector": null,
+    "priority": "medium"
+  },
+  {
+    "id": 26,
+    "slug": "crm-gestion-client-independant",
+    "title": "CRM pour indépendants : comment gérer vos clients efficacement",
+    "metaDescription": "Découvrez comment un CRM simplifie la gestion de vos clients en tant qu'indépendant : suivi, relances, historique et fidélisation. Guide pratique.",
+    "keyword": "CRM indépendant gestion client",
+    "category": "guide",
+    "sector": null,
+    "priority": "medium"
+  },
+  {
+    "id": 27,
+    "slug": "top-outils-gestion-projet-freelance",
+    "title": "Top 7 des outils de gestion de projet pour freelances",
+    "metaDescription": "Les meilleurs outils de gestion de projet pour freelances : Kanban, planning, suivi des tâches. Comparatif pour organiser votre activité.",
+    "keyword": "outil gestion projet freelance",
+    "category": "liste",
+    "sector": "Consultants / Freelances IT",
+    "priority": "medium"
+  },
+  {
+    "id": 28,
+    "slug": "obligations-comptables-micro-entreprise",
+    "title": "Obligations comptables en micro-entreprise : ce qu'il faut savoir",
+    "metaDescription": "Quelles sont les obligations comptables d'un micro-entrepreneur ? Livre des recettes, registre des achats, conservation des justificatifs.",
+    "keyword": "obligations comptables micro-entreprise",
+    "category": "reglementaire",
+    "sector": "Particuliers / Micro-entreprise",
+    "priority": "high"
+  },
+  {
+    "id": 29,
+    "slug": "signature-mail-professionnelle-guide",
+    "title": "Comment créer une signature de mail professionnelle qui marque",
+    "metaDescription": "Créez une signature d'email professionnelle impactante : éléments essentiels, design, erreurs à éviter et générateur gratuit en ligne.",
+    "keyword": "signature mail professionnelle",
+    "category": "guide",
+    "sector": null,
+    "priority": "medium"
+  },
+  {
+    "id": 30,
+    "slug": "facture-restaurant-cafe-hotel",
+    "title": "Facturation en restauration (CHR) : obligations et spécificités",
+    "metaDescription": "Tout sur la facturation en restauration, café et hôtellerie : ticket de caisse, facture client, TVA restauration et logiciel de caisse conforme.",
+    "keyword": "facturation restauration CHR",
+    "category": "guide",
+    "sector": "Restaurants / CHR",
+    "priority": "high"
+  },
+  {
+    "id": 31,
+    "slug": "quest-ce-que-bilan-comptable",
+    "title": "Qu'est-ce qu'un bilan comptable ? Définition et composition",
+    "metaDescription": "Comprendre le bilan comptable : actif, passif, capitaux propres. Définition simple, exemples concrets et utilité pour votre entreprise.",
+    "keyword": "bilan comptable définition",
+    "category": "glossaire",
+    "sector": null,
+    "priority": "medium"
+  },
+  {
+    "id": 32,
+    "slug": "conseils-reduire-delais-paiement",
+    "title": "7 conseils pour réduire vos délais de paiement client",
+    "metaDescription": "Réduisez vos délais de paiement avec ces 7 conseils pratiques : conditions claires, relances automatiques, paiement en ligne et pénalités.",
+    "keyword": "réduire délais paiement client",
+    "category": "conseils",
+    "sector": null,
+    "priority": "medium"
+  },
+  {
+    "id": 33,
+    "slug": "facture-photographe-droits-auteur",
+    "title": "Comment facturer en tant que photographe : droits d'auteur et prestations",
+    "metaDescription": "Guide de facturation pour photographes : cession de droits d'auteur, TVA réduite, mentions spécifiques et modèle de facture photographe.",
+    "keyword": "facturer photographe droits auteur",
+    "category": "guide",
+    "sector": "Photographes / Créatifs",
+    "priority": "high"
+  },
+  {
+    "id": 34,
+    "slug": "axonaut-vs-newbi-comparatif",
+    "title": "Axonaut vs Newbi : comparatif pour TPE et indépendants",
+    "metaDescription": "Axonaut vs Newbi : fonctionnalités, tarifs, ergonomie. Quel logiciel de gestion choisir pour votre TPE ou activité indépendante ? Comparatif.",
+    "keyword": "Axonaut vs Newbi",
+    "category": "comparaison",
+    "sector": null,
+    "priority": "medium"
+  },
+  {
+    "id": 35,
+    "slug": "gestion-entreprise-agent-immobilier",
+    "title": "Gestion d'entreprise pour agents immobiliers : outils et bonnes pratiques",
+    "metaDescription": "Découvrez les outils et bonnes pratiques de gestion pour agents immobiliers : facturation des honoraires, CRM acquéreurs et suivi de trésorerie.",
+    "keyword": "gestion entreprise agent immobilier",
+    "category": "guide",
+    "sector": "Agents immobiliers",
+    "priority": "medium"
+  },
+  {
+    "id": 36,
+    "slug": "tva-auto-entrepreneur-seuils-franchise",
+    "title": "TVA et auto-entrepreneur : seuils de franchise et obligations en 2026",
+    "metaDescription": "Tout savoir sur la TVA pour auto-entrepreneurs en 2026 : seuils de franchise, passage à la TVA, déclaration et facturation avec ou sans TVA.",
+    "keyword": "TVA auto-entrepreneur seuils",
+    "category": "reglementaire",
+    "sector": "Particuliers / Micro-entreprise",
+    "priority": "high"
+  },
+  {
+    "id": 37,
+    "slug": "logiciel-comptabilite-expert-comptable",
+    "title": "Top 6 logiciels de comptabilité recommandés par les experts-comptables",
+    "metaDescription": "Les logiciels de comptabilité préférés des experts-comptables : fonctionnalités collaboratives, échanges de documents et compatibilité FEC.",
+    "keyword": "logiciel comptabilité expert-comptable",
+    "category": "liste",
+    "sector": "Comptables / Experts-comptables",
+    "priority": "medium"
+  },
+  {
+    "id": 38,
+    "slug": "comment-partager-documents-expert-comptable",
+    "title": "Comment partager vos documents avec votre expert-comptable en ligne",
+    "metaDescription": "Simplifiez le partage de documents avec votre expert-comptable : transfert sécurisé, classement automatique et gain de temps sur la saisie.",
+    "keyword": "partager documents expert-comptable",
+    "category": "guide",
+    "sector": "Comptables / Experts-comptables",
+    "priority": "medium"
+  },
+  {
+    "id": 39,
+    "slug": "erreurs-devis-perdre-clients",
+    "title": "8 erreurs sur vos devis qui vous font perdre des clients",
+    "metaDescription": "Vos devis ne convertissent pas ? Voici 8 erreurs fréquentes sur les devis qui font fuir les clients et comment les corriger pour signer plus.",
+    "keyword": "erreurs devis perdre clients",
+    "category": "conseils",
+    "sector": null,
+    "priority": "medium"
+  },
+  {
+    "id": 40,
+    "slug": "quest-ce-que-bon-commande",
+    "title": "Qu'est-ce qu'un bon de commande ? Définition, utilité et modèle",
+    "metaDescription": "Tout savoir sur le bon de commande : définition, différence avec le devis, mentions obligatoires, valeur juridique et modèle téléchargeable.",
+    "keyword": "bon de commande définition",
+    "category": "glossaire",
+    "sector": null,
+    "priority": "medium"
+  },
+  {
+    "id": 41,
+    "slug": "facturation-avocat-honoraires-guide",
+    "title": "Facturation des honoraires d'avocat : obligations et modèles",
+    "metaDescription": "Guide complet de facturation pour avocats : convention d'honoraires, TVA, mentions obligatoires et modèle de facture d'honoraires conforme.",
+    "keyword": "facturation honoraires avocat",
+    "category": "guide",
+    "sector": "Avocats / Juristes",
+    "priority": "high"
+  },
+  {
+    "id": 42,
+    "slug": "facture-proforma-guide-utilisation",
+    "title": "Facture proforma : quand et comment l'utiliser ?",
+    "metaDescription": "Comprendre la facture proforma : définition, différences avec le devis et la facture, cas d'utilisation et modèle gratuit à télécharger.",
+    "keyword": "facture proforma utilisation",
+    "category": "glossaire",
+    "sector": null,
+    "priority": "medium"
+  },
+  {
+    "id": 43,
+    "slug": "gestion-tresorerie-commerce-detail",
+    "title": "Gestion de trésorerie pour commerces de détail : guide pratique",
+    "metaDescription": "Gérez efficacement la trésorerie de votre commerce : suivi de caisse, prévisions, gestion des stocks et outils adaptés au retail.",
+    "keyword": "gestion trésorerie commerce détail",
+    "category": "guide",
+    "sector": "Commerces / Retail",
+    "priority": "medium"
+  },
+  {
+    "id": 44,
+    "slug": "quickbooks-vs-newbi-comparatif",
+    "title": "QuickBooks vs Newbi : quel logiciel de gestion choisir ?",
+    "metaDescription": "QuickBooks vs Newbi : comparatif complet des fonctionnalités, tarifs et conformité française. Quel outil pour gérer votre entreprise en France ?",
+    "keyword": "QuickBooks vs Newbi",
+    "category": "comparaison",
+    "sector": null,
+    "priority": "medium"
+  },
+  {
+    "id": 45,
+    "slug": "calendrier-fiscal-independant-2026",
+    "title": "Calendrier fiscal 2026 pour indépendants : toutes les échéances",
+    "metaDescription": "Ne manquez aucune échéance fiscale en 2026 : TVA, CFE, impôt sur le revenu, URSSAF. Calendrier complet pour indépendants et auto-entrepreneurs.",
+    "keyword": "calendrier fiscal indépendant 2026",
+    "category": "reglementaire",
+    "sector": null,
+    "priority": "high"
+  },
+  {
+    "id": 46,
+    "slug": "conseils-ameliorer-signature-email",
+    "title": "6 conseils pour améliorer votre signature email professionnelle",
+    "metaDescription": "Optimisez votre signature email : design, informations essentielles, CTA, bannière promotionnelle. 6 conseils concrets pour une signature qui convertit.",
+    "keyword": "améliorer signature email",
+    "category": "conseils",
+    "sector": null,
+    "priority": "low"
+  },
+  {
+    "id": 47,
+    "slug": "gestion-facturation-infirmier-liberal",
+    "title": "Facturation pour infirmiers libéraux : guide des spécificités",
+    "metaDescription": "Guide de facturation pour infirmiers libéraux : cotation NGAP, tiers payant, facturation CPAM, TVA et logiciel adapté aux IDEL.",
+    "keyword": "facturation infirmier libéral",
+    "category": "guide",
+    "sector": "Professions médicales",
+    "priority": "medium"
+  },
+  {
+    "id": 48,
+    "slug": "transfert-fichiers-securise-professionnel",
+    "title": "Comment transférer des fichiers volumineux de manière sécurisée",
+    "metaDescription": "Envoyez des fichiers lourds en toute sécurité : solutions professionnelles de transfert, chiffrement, traçabilité et alternatives à WeTransfer.",
+    "keyword": "transfert fichiers sécurisé professionnel",
+    "category": "guide",
+    "sector": null,
+    "priority": "medium"
+  },
+  {
+    "id": 49,
+    "slug": "top-logiciels-gestion-association",
+    "title": "Top 5 logiciels de gestion pour associations en 2026",
+    "metaDescription": "Les meilleurs logiciels pour gérer votre association : comptabilité, adhérents, reçus fiscaux et trésorerie. Comparatif et recommandations.",
+    "keyword": "logiciel gestion association",
+    "category": "liste",
+    "sector": "Associations",
+    "priority": "medium"
+  },
+  {
+    "id": 50,
+    "slug": "facture-en-ligne-vs-excel",
+    "title": "Facture en ligne vs Excel : pourquoi migrer vers un logiciel dédié",
+    "metaDescription": "Découvrez pourquoi un logiciel de facturation en ligne est plus fiable qu'Excel : conformité, gain de temps, relances automatiques et moins d'erreurs.",
+    "keyword": "facture en ligne vs Excel",
+    "category": "comparaison",
+    "sector": null,
+    "priority": "medium"
+  },
+  {
+    "id": 51,
+    "slug": "quest-ce-que-numero-facture",
+    "title": "Qu'est-ce que la numérotation des factures ? Règles et exemples",
+    "metaDescription": "Tout savoir sur la numérotation des factures : règles légales, formats autorisés, erreurs à éviter et exemples concrets de séquences conformes.",
+    "keyword": "numérotation factures règles",
+    "category": "glossaire",
+    "sector": null,
+    "priority": "medium"
+  },
+  {
+    "id": 52,
+    "slug": "gestion-devis-commerce-en-ligne",
+    "title": "Gestion des devis pour e-commerçants et commerces en ligne",
+    "metaDescription": "Comment gérer vos devis quand vous vendez en ligne : devis B2B, personnalisation, automatisation et suivi des conversions pour e-commerçants.",
+    "keyword": "gestion devis commerce en ligne",
+    "category": "guide",
+    "sector": "Commerces / Retail",
+    "priority": "low"
+  },
+  {
+    "id": 53,
+    "slug": "conseils-tresorerie-startup",
+    "title": "9 conseils pour gérer la trésorerie de votre startup",
+    "metaDescription": "Gérez la trésorerie de votre startup avec ces 9 conseils : burn rate, runway, prévisions, levée de fonds. Évitez la panne de cash.",
+    "keyword": "trésorerie startup conseils",
+    "category": "conseils",
+    "sector": "Startups",
+    "priority": "medium"
+  },
+  {
+    "id": 54,
+    "slug": "facture-formateur-independant",
+    "title": "Facturation pour formateurs indépendants : guide complet",
+    "metaDescription": "Guide de facturation pour formateurs : TVA formation, exonération Qualiopi, convention de formation, mentions obligatoires et modèle de facture.",
+    "keyword": "facturation formateur indépendant",
+    "category": "guide",
+    "sector": "Coachs / Formateurs",
+    "priority": "high"
+  },
+  {
+    "id": 55,
+    "slug": "tiime-vs-newbi-comparatif",
+    "title": "Tiime vs Newbi : comparatif pour auto-entrepreneurs et TPE",
+    "metaDescription": "Tiime vs Newbi : fonctionnalités, tarifs, intégrations comptables. Quel logiciel de gestion choisir pour votre auto-entreprise ou TPE ?",
+    "keyword": "Tiime vs Newbi",
+    "category": "comparaison",
+    "sector": null,
+    "priority": "medium"
+  },
+  {
+    "id": 56,
+    "slug": "multi-entreprises-gestion-facturation",
+    "title": "Gérer plusieurs entreprises avec un seul logiciel de facturation",
+    "metaDescription": "Comment gérer la facturation de plusieurs entreprises depuis un seul outil : multi-comptes, séparation comptable et gain de temps avec Newbi.",
+    "keyword": "multi-entreprises gestion facturation",
+    "category": "guide",
+    "sector": null,
+    "priority": "medium"
+  },
+  {
+    "id": 57,
+    "slug": "obligations-facture-electronique-pme",
+    "title": "Facture électronique pour PME : obligations et mise en conformité",
+    "metaDescription": "PME : préparez-vous à la facturation électronique obligatoire. Obligations, plateformes PDP, format Factur-X et étapes de mise en conformité.",
+    "keyword": "facture électronique PME obligations",
+    "category": "reglementaire",
+    "sector": null,
+    "priority": "high"
+  },
+  {
+    "id": 58,
+    "slug": "devis-coach-formateur-modele",
+    "title": "Comment rédiger un devis de coaching ou formation : modèle et astuces",
+    "metaDescription": "Créez un devis de coaching ou formation professionnel : structure, mentions, programme détaillé et astuces pour convaincre vos clients.",
+    "keyword": "devis coaching formation modèle",
+    "category": "guide",
+    "sector": "Coachs / Formateurs",
+    "priority": "medium"
+  },
+  {
+    "id": 59,
+    "slug": "quest-ce-que-fec-fichier-ecritures-comptables",
+    "title": "Qu'est-ce que le FEC (Fichier des Écritures Comptables) ?",
+    "metaDescription": "Tout savoir sur le FEC : définition, contenu obligatoire, format, contrôle fiscal et comment le générer automatiquement depuis votre logiciel.",
+    "keyword": "FEC fichier écritures comptables",
+    "category": "glossaire",
+    "sector": null,
+    "priority": "medium"
+  },
+  {
+    "id": 60,
+    "slug": "facturation-association-loi-1901",
+    "title": "Comment facturer en association loi 1901 : guide des règles",
+    "metaDescription": "Une association peut-elle facturer ? Règles fiscales, TVA, obligations comptables et modèle de facture pour les associations loi 1901.",
+    "keyword": "facturation association loi 1901",
+    "category": "guide",
+    "sector": "Associations",
+    "priority": "medium"
+  },
+  {
+    "id": 61,
+    "slug": "meilleurs-logiciels-office-manager",
+    "title": "Les 8 meilleurs logiciels pour office managers en 2026",
+    "metaDescription": "Outils indispensables pour office managers : gestion administrative, facturation, notes de frais, projets. Sélection des 8 meilleurs logiciels.",
+    "keyword": "logiciel office manager",
+    "category": "liste",
+    "sector": "Office managers",
+    "priority": "medium"
+  },
+  {
+    "id": 62,
+    "slug": "facturer-prestations-kinesitherapeute",
+    "title": "Facturation pour kinésithérapeutes : spécificités et obligations",
+    "metaDescription": "Guide de facturation pour kinés libéraux : cotation AMK/AMC, tiers payant, dépassements, TVA et logiciel de facturation adapté aux kinésithérapeutes.",
+    "keyword": "facturation kinésithérapeute",
+    "category": "guide",
+    "sector": "Professions médicales",
+    "priority": "medium"
+  },
+  {
+    "id": 63,
+    "slug": "erreurs-gestion-tresorerie-eviter",
+    "title": "5 erreurs de gestion de trésorerie qui mettent votre entreprise en danger",
+    "metaDescription": "Évitez ces 5 erreurs de trésorerie courantes : absence de prévisions, mélange perso/pro, retards de facturation. Solutions concrètes pour PME et TPE.",
+    "keyword": "erreurs gestion trésorerie",
+    "category": "conseils",
+    "sector": null,
+    "priority": "medium"
+  },
+  {
+    "id": 64,
+    "slug": "facturx-format-facture-electronique",
+    "title": "Factur-X : comprendre le format de facture électronique français",
+    "metaDescription": "Tout savoir sur Factur-X : définition du format hybride PDF/XML, profils, compatibilité et comment générer des factures Factur-X conformes.",
+    "keyword": "Factur-X format facture électronique",
+    "category": "glossaire",
+    "sector": null,
+    "priority": "medium"
+  },
+  {
+    "id": 65,
+    "slug": "gestion-projet-kanban-independant",
+    "title": "Gérer ses projets avec un tableau Kanban quand on est indépendant",
+    "metaDescription": "Organisez vos projets d'indépendant avec la méthode Kanban : principes, outils, mise en place et exemples concrets pour gagner en productivité.",
+    "keyword": "Kanban indépendant gestion projet",
+    "category": "guide",
+    "sector": null,
+    "priority": "low"
+  },
+  {
+    "id": 66,
+    "slug": "obligation-assurance-decennale-artisan",
+    "title": "Assurance décennale artisan : obligation, coût et mention sur facture",
+    "metaDescription": "Tout savoir sur l'assurance décennale pour artisans : obligation légale, coût moyen, mention obligatoire sur devis et factures, sanctions.",
+    "keyword": "assurance décennale artisan obligation",
+    "category": "reglementaire",
+    "sector": "BTP / Artisans",
+    "priority": "medium"
+  },
+  {
+    "id": 67,
+    "slug": "evoliz-vs-newbi-comparatif",
+    "title": "Evoliz vs Newbi : comparatif des solutions de gestion",
+    "metaDescription": "Evoliz vs Newbi : fonctionnalités, tarifs, conformité et expérience utilisateur. Quel logiciel de facturation et gestion pour votre entreprise ?",
+    "keyword": "Evoliz vs Newbi",
+    "category": "comparaison",
+    "sector": null,
+    "priority": "medium"
+  },
+  {
+    "id": 68,
+    "slug": "facture-agent-immobilier-honoraires",
+    "title": "Comment facturer ses honoraires en tant qu'agent immobilier",
+    "metaDescription": "Guide de facturation pour agents immobiliers : honoraires d'agence, TVA immobilière, mentions Alur et modèle de facture d'honoraires.",
+    "keyword": "facture honoraires agent immobilier",
+    "category": "guide",
+    "sector": "Agents immobiliers",
+    "priority": "medium"
+  },
+  {
+    "id": 69,
+    "slug": "top-outils-scan-tickets-caisse-notes-frais",
+    "title": "Top 5 outils pour scanner vos tickets de caisse et notes de frais",
+    "metaDescription": "Les meilleurs outils OCR pour scanner tickets de caisse et reçus : comparatif, fonctionnalités, prix et intégrations comptables.",
+    "keyword": "scanner tickets caisse notes frais",
+    "category": "liste",
+    "sector": null,
+    "priority": "low"
+  },
+  {
+    "id": 70,
+    "slug": "comment-fixer-tarif-journalier-tjm",
+    "title": "Comment fixer son TJM (Tarif Journalier Moyen) en freelance",
+    "metaDescription": "Calculez votre TJM en freelance : méthode de calcul, charges à intégrer, grille par métier et conseils pour négocier votre tarif journalier.",
+    "keyword": "fixer TJM tarif journalier freelance",
+    "category": "guide",
+    "sector": "Consultants / Freelances IT",
+    "priority": "high"
+  },
+  {
+    "id": 71,
+    "slug": "quest-ce-que-pdp-plateforme-dematerialisation",
+    "title": "Qu'est-ce qu'une PDP (Plateforme de Dématérialisation Partenaire) ?",
+    "metaDescription": "Comprendre les PDP : rôle, différence avec le PPF, liste des plateformes immatriculées et comment choisir sa PDP pour la e-facturation.",
+    "keyword": "PDP plateforme dématérialisation partenaire",
+    "category": "glossaire",
+    "sector": null,
+    "priority": "medium"
+  },
+  {
+    "id": 72,
+    "slug": "gestion-administrative-office-manager-guide",
+    "title": "Guide de gestion administrative pour office managers",
+    "metaDescription": "Simplifiez votre gestion administrative en tant qu'office manager : facturation, notes de frais, classement, outils et bonnes pratiques.",
+    "keyword": "gestion administrative office manager",
+    "category": "guide",
+    "sector": "Office managers",
+    "priority": "medium"
+  },
+  {
+    "id": 73,
+    "slug": "conseils-convertir-devis-facture",
+    "title": "7 conseils pour convertir plus de devis en factures",
+    "metaDescription": "Augmentez votre taux de conversion devis-facture : suivi, relances, personnalisation, présentation et automatisation. 7 conseils concrets.",
+    "keyword": "convertir devis en facture",
+    "category": "conseils",
+    "sector": null,
+    "priority": "medium"
+  },
+  {
+    "id": 74,
+    "slug": "taux-tva-france-guide-complet",
+    "title": "Les taux de TVA en France en 2026 : guide complet par activité",
+    "metaDescription": "Tous les taux de TVA en France en 2026 : 20%, 10%, 5,5%, 2,1%. Quel taux appliquer selon votre activité ? Guide détaillé avec exemples.",
+    "keyword": "taux TVA France 2026",
+    "category": "reglementaire",
+    "sector": null,
+    "priority": "high"
+  },
+  {
+    "id": 75,
+    "slug": "facture-e-commerce-boutique-en-ligne",
+    "title": "Facturation e-commerce : obligations pour les boutiques en ligne",
+    "metaDescription": "Tout savoir sur la facturation e-commerce : obligation de facturer, mentions B2C, TVA, paiement en ligne et automatisation des factures.",
+    "keyword": "facturation e-commerce boutique en ligne",
+    "category": "guide",
+    "sector": "Commerces / Retail",
+    "priority": "medium"
+  },
+  {
+    "id": 76,
+    "slug": "meilleures-pratiques-relance-client",
+    "title": "Les meilleures pratiques pour relancer vos clients sans les brusquer",
+    "metaDescription": "Relancez vos clients avec tact : fréquence idéale, ton adapté, canaux de relance et automatisation. Bonnes pratiques pour maintenir la relation.",
+    "keyword": "meilleures pratiques relance client",
+    "category": "conseils",
+    "sector": null,
+    "priority": "medium"
+  },
+  {
+    "id": 77,
+    "slug": "sellsy-vs-newbi-comparatif",
+    "title": "Sellsy vs Newbi : quel CRM et outil de facturation choisir ?",
+    "metaDescription": "Sellsy vs Newbi : comparatif CRM, facturation, tarifs et fonctionnalités. Quel logiciel choisir pour la gestion commerciale de votre entreprise ?",
+    "keyword": "Sellsy vs Newbi",
+    "category": "comparaison",
+    "sector": null,
+    "priority": "medium"
+  },
+  {
+    "id": 78,
+    "slug": "comment-creer-catalogue-produits-services",
+    "title": "Comment créer un catalogue de produits et services pour votre entreprise",
+    "metaDescription": "Créez un catalogue produits/services professionnel : structure, prix, descriptions et comment l'intégrer à votre facturation pour gagner du temps.",
+    "keyword": "créer catalogue produits services",
+    "category": "guide",
+    "sector": null,
+    "priority": "low"
+  },
+  {
+    "id": 79,
+    "slug": "quest-ce-que-conditions-generales-vente",
+    "title": "Qu'est-ce que les CGV (Conditions Générales de Vente) ? Guide complet",
+    "metaDescription": "Tout savoir sur les CGV : définition, mentions obligatoires, différence CGV/CGU, modèle et comment les intégrer à vos devis et factures.",
+    "keyword": "conditions générales de vente CGV",
+    "category": "glossaire",
+    "sector": null,
+    "priority": "medium"
+  },
+  {
+    "id": 80,
+    "slug": "gestion-facturation-startup-early-stage",
+    "title": "Gestion et facturation pour startups early-stage : outils et process",
+    "metaDescription": "Les outils et process de facturation essentiels pour les startups en démarrage : facturation, suivi clients, trésorerie et conformité.",
+    "keyword": "facturation startup early-stage",
+    "category": "guide",
+    "sector": "Startups",
+    "priority": "medium"
+  },
+  {
+    "id": 81,
+    "slug": "top-7-outils-gratuits-auto-entrepreneur",
+    "title": "Top 7 outils gratuits indispensables pour auto-entrepreneurs",
+    "metaDescription": "Les meilleurs outils gratuits pour auto-entrepreneurs : facturation, comptabilité, gestion de projet, signature email et transfert de fichiers.",
+    "keyword": "outils gratuits auto-entrepreneur",
+    "category": "liste",
+    "sector": "Particuliers / Micro-entreprise",
+    "priority": "medium"
+  },
+  {
+    "id": 82,
+    "slug": "facturation-cabinet-avocat-gestion",
+    "title": "Gérer la facturation d'un cabinet d'avocats : outils et bonnes pratiques",
+    "metaDescription": "Optimisez la facturation de votre cabinet d'avocats : suivi des heures, honoraires, provisions, facturation au temps passé et logiciels adaptés.",
+    "keyword": "facturation cabinet avocat gestion",
+    "category": "guide",
+    "sector": "Avocats / Juristes",
+    "priority": "medium"
+  },
+  {
+    "id": 83,
+    "slug": "automatiser-facturation-recurrente",
+    "title": "Comment automatiser votre facturation récurrente et gagner du temps",
+    "metaDescription": "Automatisez vos factures récurrentes : abonnements, contrats mensuels, maintenance. Configuration, outils et bonnes pratiques pour ne rien oublier.",
+    "keyword": "automatiser facturation récurrente",
+    "category": "guide",
+    "sector": null,
+    "priority": "medium"
+  },
+  {
+    "id": 84,
+    "slug": "erreurs-creation-micro-entreprise",
+    "title": "6 erreurs à éviter lors de la création de votre micro-entreprise",
+    "metaDescription": "Évitez les pièges de la création de micro-entreprise : choix du statut, CFE, assurance, domiciliation. 6 erreurs courantes et comment les corriger.",
+    "keyword": "erreurs création micro-entreprise",
+    "category": "conseils",
+    "sector": "Particuliers / Micro-entreprise",
+    "priority": "medium"
+  },
+  {
+    "id": 85,
+    "slug": "facture-createur-contenu-influenceur",
+    "title": "Comment facturer en tant que créateur de contenu ou influenceur",
+    "metaDescription": "Guide de facturation pour créateurs de contenu : partenariats, affiliation, droits à l'image, TVA et statut juridique. Modèle de facture inclus.",
+    "keyword": "facturer créateur contenu influenceur",
+    "category": "guide",
+    "sector": "Photographes / Créatifs",
+    "priority": "medium"
+  },
+  {
+    "id": 86,
+    "slug": "comptabilite-simplifiee-tpe-obligations",
+    "title": "Comptabilité simplifiée pour TPE : obligations et régimes",
+    "metaDescription": "Quelles obligations comptables pour les TPE ? Régime simplifié, super-simplifié, seuils et comment tenir une comptabilité conforme facilement.",
+    "keyword": "comptabilité simplifiée TPE",
+    "category": "reglementaire",
+    "sector": null,
+    "priority": "medium"
+  },
+  {
+    "id": 87,
+    "slug": "dolibarr-vs-newbi-comparatif",
+    "title": "Dolibarr vs Newbi : ERP open-source vs SaaS tout-en-un",
+    "metaDescription": "Dolibarr vs Newbi : comparatif entre l'ERP open-source et le SaaS de gestion. Fonctionnalités, coûts cachés, facilité d'utilisation et conformité.",
+    "keyword": "Dolibarr vs Newbi",
+    "category": "comparaison",
+    "sector": null,
+    "priority": "medium"
+  },
+  {
+    "id": 88,
+    "slug": "facture-restauration-rapide-obligations",
+    "title": "Obligations de facturation en restauration rapide : ce qu'il faut savoir",
+    "metaDescription": "Facturation en restauration rapide : obligation de ticket, seuil des 25€, TVA vente à emporter, logiciel de caisse NF525 et bonnes pratiques.",
+    "keyword": "facturation restauration rapide obligations",
+    "category": "reglementaire",
+    "sector": "Restaurants / CHR",
+    "priority": "medium"
+  },
+  {
+    "id": 89,
+    "slug": "top-6-logiciels-facturation-artisan",
+    "title": "Top 6 logiciels de facturation pour artisans du bâtiment",
+    "metaDescription": "Comparatif des meilleurs logiciels de facturation pour artisans BTP : devis détaillés, mentions décennale, situations de travaux et conformité.",
+    "keyword": "logiciel facturation artisan bâtiment",
+    "category": "liste",
+    "sector": "BTP / Artisans",
+    "priority": "medium"
+  },
+  {
+    "id": 90,
+    "slug": "conseils-organiser-comptabilite-debut-activite",
+    "title": "8 conseils pour organiser votre comptabilité dès le début de votre activité",
+    "metaDescription": "Organisez votre comptabilité dès le lancement : classement, outils, compte pro, expert-comptable. 8 conseils pour partir sur de bonnes bases.",
+    "keyword": "organiser comptabilité début activité",
+    "category": "conseils",
+    "sector": null,
+    "priority": "medium"
+  },
+  {
+    "id": 91,
+    "slug": "quest-ce-que-acompte-facture",
+    "title": "Qu'est-ce qu'un acompte sur facture ? Règles et facturation",
+    "metaDescription": "Tout savoir sur l'acompte : définition, différence avec les arrhes, obligations de facturation, TVA sur acompte et modèle de facture d'acompte.",
+    "keyword": "acompte facture règles",
+    "category": "glossaire",
+    "sector": null,
+    "priority": "medium"
+  },
+  {
+    "id": 92,
+    "slug": "facture-situation-travaux-btp",
+    "title": "Facture de situation de travaux BTP : modèle et explications",
+    "metaDescription": "Comment émettre une facture de situation de travaux dans le BTP : avancement, retenue de garantie, modèle et logiciel de facturation adapté.",
+    "keyword": "facture situation travaux BTP",
+    "category": "guide",
+    "sector": "BTP / Artisans",
+    "priority": "medium"
+  },
+  {
+    "id": 93,
+    "slug": "zoho-invoice-vs-newbi-comparatif",
+    "title": "Zoho Invoice vs Newbi : quel logiciel de facturation choisir ?",
+    "metaDescription": "Zoho Invoice vs Newbi : comparatif fonctionnalités, tarifs, conformité française et expérience utilisateur. Quel outil pour facturer en France ?",
+    "keyword": "Zoho Invoice vs Newbi",
+    "category": "comparaison",
+    "sector": null,
+    "priority": "low"
+  },
+  {
+    "id": 94,
+    "slug": "facture-graphiste-designer-freelance",
+    "title": "Comment facturer en tant que graphiste ou designer freelance",
+    "metaDescription": "Guide de facturation pour graphistes et designers : tarification au projet/heure, cession de droits, TVA et modèle de facture créatif.",
+    "keyword": "facturer graphiste designer freelance",
+    "category": "guide",
+    "sector": "Photographes / Créatifs",
+    "priority": "medium"
+  },
+  {
+    "id": 95,
+    "slug": "erreurs-declaration-tva-eviter",
+    "title": "5 erreurs de déclaration de TVA à éviter en tant qu'entrepreneur",
+    "metaDescription": "Évitez ces erreurs courantes de déclaration de TVA : oubli de déclaration, erreur de taux, TVA déductible, régime inadapté. Solutions pratiques.",
+    "keyword": "erreurs déclaration TVA entrepreneur",
+    "category": "conseils",
+    "sector": null,
+    "priority": "medium"
+  },
+  {
+    "id": 96,
+    "slug": "top-logiciels-facturation-profession-liberale",
+    "title": "Top 5 logiciels de facturation pour professions libérales",
+    "metaDescription": "Les meilleurs logiciels de facturation pour professions libérales : fonctionnalités spécifiques, conformité, tarifs et compatibilité comptable.",
+    "keyword": "logiciel facturation profession libérale",
+    "category": "liste",
+    "sector": "Professions médicales",
+    "priority": "medium"
+  },
+  {
+    "id": 97,
+    "slug": "quest-ce-que-ppf-portail-public-facturation",
+    "title": "Qu'est-ce que le PPF (Portail Public de Facturation) ?",
+    "metaDescription": "Comprendre le PPF : rôle du portail public de facturation, fonctionnalités, différence avec les PDP et comment il s'intègre à votre logiciel.",
+    "keyword": "PPF portail public facturation",
+    "category": "glossaire",
+    "sector": null,
+    "priority": "medium"
+  },
+  {
+    "id": 98,
+    "slug": "gestion-activite-coach-sportif",
+    "title": "Gérer l'activité d'un coach sportif : facturation, planning et clients",
+    "metaDescription": "Guide complet pour coachs sportifs : facturation des séances, gestion planning, suivi clients, TVA sport et outils de gestion adaptés.",
+    "keyword": "gestion activité coach sportif",
+    "category": "guide",
+    "sector": "Coachs / Formateurs",
+    "priority": "low"
+  },
+  {
+    "id": 99,
+    "slug": "obligations-legales-devis-consommateur",
+    "title": "Obligations légales du devis pour les prestations aux consommateurs",
+    "metaDescription": "Quand un devis est-il obligatoire ? Montant, mentions légales, délai de rétractation et sanctions. Tout sur les obligations de devis en B2C.",
+    "keyword": "obligations légales devis consommateur",
+    "category": "reglementaire",
+    "sector": null,
+    "priority": "medium"
+  },
+  {
+    "id": 100,
+    "slug": "abby-vs-newbi-comparatif",
+    "title": "Abby vs Newbi : comparatif des logiciels pour freelances",
+    "metaDescription": "Abby vs Newbi : comparaison complète des fonctionnalités, tarifs et avantages pour freelances et auto-entrepreneurs. Quel outil choisir ?",
+    "keyword": "Abby vs Newbi",
+    "category": "comparaison",
+    "sector": null,
+    "priority": "medium"
+  }
+]

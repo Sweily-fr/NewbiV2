@@ -168,7 +168,7 @@ export function EInvoicingSection({ canManageOrgSettings }) {
                   <span className="text-muted-foreground ml-1">envoyées</span>
                 </div>
                 <div>
-                  <span className="text-emerald-600 font-semibold">
+                  <span className="text-green-600 font-semibold">
                     {stats.ACCEPTED + stats.PAID}
                   </span>
                   <span className="text-muted-foreground ml-1">acceptées</span>
@@ -222,8 +222,8 @@ export function EInvoicingSection({ canManageOrgSettings }) {
           </div>
 
           <div className="flex items-start gap-3">
-            <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center flex-shrink-0">
-              <Send className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+            <div className="w-8 h-8 rounded-lg bg-green-50 dark:bg-green-900/20 flex items-center justify-center flex-shrink-0">
+              <Send className="h-4 w-4 text-green-600 dark:text-green-400" />
             </div>
             <div>
               <p className="text-sm font-normal">Transmission sécurisée</p>

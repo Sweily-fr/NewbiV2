@@ -1,0 +1,437 @@
+---
+title: 'Obligations de facturation en restauration rapide : ce qu''il faut savoir'
+description: >-
+  Facturation en restauration rapide : obligation de ticket, seuil des 25€, TVA
+  vente à emporter, logiciel de caisse NF525 et bonnes pratiques.
+date: '2026-02-10'
+category: reglementaire
+sector: Restaurants / CHR
+keyword: facturation restauration rapide obligations
+author: Newbi
+image: /blog/facture-restauration-rapide-obligations/hero.webp
+published: false
+publishDate: null
+---
+
+import Image from "next/image"
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex flex-wrap gap-2 mb-6">
+  <Badge>Réglementaire</Badge>
+  <Badge variant="secondary">CHR</Badge>
+  <Badge variant="outline">8 min de lecture</Badge>
+</div>
+
+# Obligations de facturation en restauration rapide : ce qu'il faut savoir
+
+La **facturation restauration rapide** est soumise a des regles strictes qui evoluent regulierement. Que vous exploitiez un fast-food, un food-truck, une sandwicherie ou une chaine de burgers, vous devez respecter des obligations fiscales et comptables precises. Entre la reforme du ticket de caisse, les taux de TVA specifiques a la vente a emporter, l'obligation du logiciel certifie NF525 et l'arrivee de la facturation electronique en 2026, il est essentiel de maitriser le cadre reglementaire pour eviter les sanctions.
+
+Ce guide complet vous explique toutes les obligations de **facturation en restauration rapide**, les regles de TVA applicables, les outils obligatoires et les bonnes pratiques pour rester en conformite.
+
+<figure className="my-8">
+  <Image
+    src="/blog/facture-restauration-rapide-obligations/hero.webp"
+    alt="Ticket de caisse et terminal de paiement dans un restaurant rapide"
+    width={1200}
+    height={630}
+    className="rounded-lg"
+    priority
+  />
+  <figcaption className="text-center text-sm text-muted-foreground mt-2">
+    Les obligations de facturation en restauration rapide sont de plus en plus encadrees par la legislation francaise.
+  </figcaption>
+</figure>
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Creer mon compte Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## 1. Ticket de caisse : ce qui a change depuis aout 2023
+
+Depuis le **1er aout 2023**, la loi anti-gaspillage (loi AGEC) a mis fin a l'impression systematique du ticket de caisse en restauration rapide comme dans tous les commerces. Concretement, cela signifie que :
+
+- Le ticket de caisse **n'est plus imprime automatiquement** apres chaque transaction.
+- Le client peut **demander son ticket** a tout moment, et le commercant est alors **oblige de le lui remettre**.
+- Le ticket peut etre transmis sous forme **papier ou dematerialisee** (email, SMS, QR code).
+
+Cette reforme ne supprime pas l'obligation de facturation : elle modifie uniquement le mode de remise du justificatif au client. Le commercant doit toujours enregistrer chaque transaction dans son systeme de caisse.
+
+<div className="not-prose my-6">
+  <Callout variant="info" title="Reforme du ticket de caisse papier">
+    Depuis aout 2023, le ticket de caisse n'est plus imprime automatiquement. Toutefois, le client conserve le droit de le demander et le commercant doit pouvoir le fournir immediatement, sous format papier ou electronique. Votre systeme de caisse doit donc toujours etre capable de generer et stocker chaque ticket.
+  </Callout>
+</div>
+
+### Cas ou le ticket reste obligatoire automatiquement
+
+Certaines situations imposent toujours la remise automatique d'un justificatif :
+
+- Les transactions par carte bancaire (le ticket CB reste obligatoire sauf refus du client).
+- Les operations annulees ou creditees.
+- Les services avec garantie legale (achat de materiel par exemple, mais rare en restauration rapide).
+
+## 2. Le seuil des 25 euros TTC : quand la facture devient obligatoire
+
+En restauration rapide, la majorite des ventes se font a des particuliers pour de petits montants. La regle est claire :
+
+- Pour les ventes **inferieures a 25 euros TTC** a un particulier, le ticket de caisse suffit comme justificatif. La facture n'est pas obligatoire (sauf si le client la demande).
+- Pour les ventes **egales ou superieures a 25 euros TTC**, une **note** doit etre remise obligatoirement au client, meme s'il ne la demande pas (arrete du 8 juin 1967).
+- Pour les ventes **entre professionnels** (B2B), la facture est **toujours obligatoire**, quel que soit le montant (article L441-9 du Code de commerce).
+
+La note doit comporter au minimum : la date, le nom et l'adresse de l'etablissement, le detail des prestations, les quantites, les prix unitaires HT, le taux de TVA applique et le montant TTC.
+
+Pour en savoir plus sur les elements requis, consultez notre guide complet sur les [mentions obligatoires d'une facture](/blog/mentions-obligatoires-facture).
+
+## 3. TVA en restauration rapide : les taux applicables
+
+La TVA en restauration rapide est un sujet complexe car **plusieurs taux coexistent** selon le mode de consommation et la nature des produits vendus. C'est l'une des particularites du secteur CHR.
+
+<div className="not-prose my-8 overflow-x-auto">
+  <Table>
+    <TableCaption>Taux de TVA applicables en restauration rapide en France (2026)</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[300px]">Type de vente</TableHead>
+        <TableHead>Taux de TVA</TableHead>
+        <TableHead>Exemples</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Vente a emporter (produits alimentaires)</TableCell>
+        <TableCell>5,5 %</TableCell>
+        <TableCell>Sandwich, salade, plat emballe a emporter</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Consommation sur place</TableCell>
+        <TableCell>10 %</TableCell>
+        <TableCell>Repas servi sur place, menu consomme en salle</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Boissons non alcoolisees (a emporter)</TableCell>
+        <TableCell>5,5 %</TableCell>
+        <TableCell>Eau, jus de fruit, soda a emporter</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Boissons non alcoolisees (sur place)</TableCell>
+        <TableCell>10 %</TableCell>
+        <TableCell>Eau, jus de fruit, soda servi en salle</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Boissons alcoolisees (sur place ou a emporter)</TableCell>
+        <TableCell>20 %</TableCell>
+        <TableCell>Biere, vin, cocktail</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Produits alimentaires pouvant se conserver (vente annexe)</TableCell>
+        <TableCell>5,5 %</TableCell>
+        <TableCell>Confiseries, biscuits emballes</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+Le point cle a retenir : **la distinction entre consommation sur place et vente a emporter determine le taux de TVA applicable**. En restauration rapide, cette distinction repose sur la possibilite pour le client de consommer immediatement sur place (tables, comptoir, terrasse) ou d'emporter son repas.
+
+Pour approfondir le sujet des taux de TVA, consultez notre [guide complet sur les taux de TVA en France](/blog/taux-tva-france-guide-complet).
+
+### Comment ventiler la TVA sur un ticket de caisse ?
+
+Votre logiciel de caisse doit etre parametre pour appliquer automatiquement le bon taux de TVA en fonction du mode de consommation. Lors de la prise de commande, l'operateur doit indiquer si la vente est "sur place" ou "a emporter". Le ticket doit afficher clairement :
+
+- Le montant HT par taux de TVA.
+- Le montant de TVA par taux.
+- Le montant TTC total.
+
+## 4. Logiciel de caisse certifie NF525 : une obligation legale
+
+Depuis le **1er janvier 2018**, tout commercant assujetti a la TVA qui enregistre les reglements de ses clients au moyen d'un logiciel ou d'un systeme de caisse doit utiliser un logiciel **certifie conforme** (article 286, I-3° bis du CGI).
+
+Cette certification garantit quatre conditions fondamentales :
+
+<div className="not-prose my-6">
+  <ul className="space-y-3">
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span><strong>Inalterable :</strong> les donnees enregistrees ne peuvent etre modifiees ou supprimees sans laisser de trace.</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span><strong>Securisation :</strong> les donnees sont protegees contre toute manipulation frauduleuse.</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span><strong>Conservation :</strong> les donnees sont archivees pendant la duree legale requise (6 ans minimum).</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span><strong>Archivage :</strong> les donnees sont accessibles et restituables en cas de controle fiscal.</span>
+    </li>
+  </ul>
+</div>
+
+La conformite est attestee soit par un **certificat delivre par un organisme accredite** (comme INFOCERT ou le LNE pour la norme NF525), soit par une **attestation individuelle de l'editeur** du logiciel.
+
+<div className="not-prose my-6">
+  <Callout variant="warning" title="Amende de 7 500 euros en cas de non-conformite">
+    L'utilisation d'un logiciel de caisse non certifie expose le commercant a une amende de **7 500 euros** par logiciel ou systeme non conforme (article 1770 duodecies du CGI). En cas de controle fiscal, l'administration peut exiger la presentation du certificat de conformite NF525 ou de l'attestation de l'editeur. A defaut, la sanction est immediate.
+  </Callout>
+</div>
+
+## 5. Le Z de caisse quotidien : une obligation comptable essentielle
+
+Le **Z de caisse** (ou ticket Z) est le releve recapitulatif de toutes les transactions enregistrees sur la caisse au cours d'une journee. Il doit etre edite **chaque jour de fonctionnement** a la fermeture et conserve pendant 6 ans.
+
+Le Z de caisse doit contenir :
+
+- Le chiffre d'affaires total de la journee (TTC et HT).
+- La ventilation par taux de TVA.
+- Le nombre de tickets emis.
+- Le detail des moyens de paiement (especes, carte, cheque, ticket restaurant).
+- Les remises, annulations et retours eventuels.
+- Le numero sequentiel du Z (numerotation continue et ininterrompue).
+
+Ce document est indispensable en cas de controle fiscal. L'absence de Z de caisse ou une numerotation discontinue constitue un indice de fraude pour l'administration fiscale.
+
+<figure className="my-8">
+  <Image
+    src="/blog/facture-restauration-rapide-obligations/z-caisse-restauration.webp"
+    alt="Exemple de Z de caisse quotidien pour un restaurant rapide"
+    width={800}
+    height={500}
+    className="rounded-lg"
+  />
+  <figcaption className="text-center text-sm text-muted-foreground mt-2">
+    Le Z de caisse doit etre edite quotidiennement et conserve pendant 6 ans minimum.
+  </figcaption>
+</figure>
+
+<div className="not-prose my-8">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Conformer ma facturation CHR</Link>
+  </Button>
+</div>
+
+## 6. Facturation electronique obligatoire en 2026
+
+La reforme de la **facturation electronique** (e-invoicing) concerne aussi la restauration rapide, en particulier pour les transactions B2B. Le calendrier de deploiement prevoit :
+
+- **1er septembre 2026** : obligation de reception des factures electroniques pour toutes les entreprises.
+- **1er septembre 2026** : obligation d'emission pour les grandes entreprises et les ETI.
+- **1er septembre 2027** : obligation d'emission pour les PME et micro-entreprises.
+
+Pour les restaurants rapides qui fournissent des prestations a d'autres professionnels (traiteur pour entreprises, livraison en gros, etc.), il faudra emettre des factures au format structure via une **Plateforme de Dematerialisation Partenaire (PDP)** agreee.
+
+Retrouvez toutes les echeances dans notre article dedie a la [facturation electronique obligatoire en 2026](/blog/facturation-electronique-obligatoire-2026).
+
+## 7. Controle fiscal de la caisse : comment s'y preparer
+
+L'administration fiscale peut effectuer un controle inopine de votre systeme de caisse a tout moment pendant les heures d'ouverture. Lors de ce controle, les agents verifient :
+
+- La presence du **certificat de conformite NF525** ou de l'attestation de l'editeur.
+- La coherence entre les Z de caisse, le grand livre comptable et les declarations de TVA.
+- L'absence de logiciel de caisse frauduleux ("logiciel permissif" permettant de supprimer des lignes de vente).
+- La bonne ventilation des taux de TVA (sur place / a emporter).
+
+En cas d'anomalie, les sanctions vont de l'amende de 7 500 euros a un redressement fiscal complet avec penalites de 40 % a 80 % des droits eludees.
+
+## 8. Checklist de conformite pour la restauration rapide
+
+Voici les points essentiels a verifier pour etre en regle :
+
+<div className="not-prose my-6">
+  <ul className="space-y-3">
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span>Utiliser un logiciel de caisse certifie NF525 avec attestation ou certificat a jour.</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span>Parametrer correctement les taux de TVA (5,5 % emporter, 10 % sur place, 20 % alcool).</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span>Editer et conserver le Z de caisse chaque jour d'ouverture.</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span>Remettre un ticket au client sur demande (papier ou electronique).</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span>Emettre une note obligatoire pour toute vente superieure ou egale a 25 euros TTC.</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span>Emettre une facture pour toutes les ventes B2B, quel que soit le montant.</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span>Conserver l'ensemble des justificatifs pendant 6 ans minimum.</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+      <span>Anticiper la reforme de la facturation electronique 2026-2027.</span>
+    </li>
+  </ul>
+</div>
+
+## 9. Bonnes pratiques pour une facturation sans faille
+
+Au-dela des obligations legales, voici les bonnes pratiques recommandees pour les etablissements de restauration rapide :
+
+- **Former vos equipes** a la distinction sur place / a emporter lors de la prise de commande pour appliquer le bon taux de TVA.
+- **Automatiser la ventilation TVA** via votre logiciel de caisse pour eviter les erreurs manuelles.
+- **Numeriser vos Z de caisse** en complement de l'archivage papier pour securiser vos donnees.
+- **Rapprocher vos Z de caisse** avec votre comptabilite chaque mois pour detecter les ecarts.
+- **Mettre a jour votre logiciel** regulierement pour beneficier des dernieres evolutions reglementaires.
+
+Pour une vision globale des obligations dans le secteur, consultez egalement notre article sur la [facturation en restaurant, cafe et hotel](/blog/facture-restaurant-cafe-hotel).
+
+---
+
+## En resume
+
+La **facturation en restauration rapide** obeit a un cadre reglementaire precis qui s'articule autour de plusieurs axes : la remise du ticket de caisse sur demande du client, le seuil de 25 euros TTC pour la note obligatoire, la ventilation correcte de la TVA selon le mode de consommation, l'utilisation d'un logiciel de caisse certifie NF525 et l'edition quotidienne du Z de caisse. Avec l'arrivee de la facturation electronique obligatoire des 2026, il est crucial de s'equiper des bons outils des maintenant.
+
+<div className="not-prose my-8 flex flex-col sm:flex-row gap-4">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+  <Button asChild variant="outline" size="lg">
+    <Link href="/produits/factures">Decouvrir la facturation Newbi</Link>
+  </Button>
+</div>
+
+---
+
+## Questions frequentes
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Est-il toujours obligatoire d'imprimer un ticket de caisse en restauration rapide ?</AccordionTrigger>
+      <AccordionContent>
+        Non, depuis le 1er aout 2023, l'impression systematique du ticket de caisse n'est plus obligatoire. En revanche, le commercant doit fournir un ticket (papier ou electronique) si le client en fait la demande. Le systeme de caisse doit toujours enregistrer chaque transaction.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Quel est le taux de TVA pour la vente a emporter en restauration rapide ?</AccordionTrigger>
+      <AccordionContent>
+        La vente a emporter de produits alimentaires et de boissons non alcoolisees est soumise au taux reduit de 5,5 %. La consommation sur place est taxee a 10 %. Les boissons alcoolisees restent toujours au taux normal de 20 %, qu'elles soient consommees sur place ou a emporter.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Qu'est-ce que la certification NF525 et est-elle obligatoire ?</AccordionTrigger>
+      <AccordionContent>
+        La certification NF525 atteste qu'un logiciel de caisse respecte les conditions d'inalterabilite, de securisation, de conservation et d'archivage des donnees de transaction. Depuis le 1er janvier 2018, tout commercant assujetti a la TVA utilisant un logiciel de caisse doit disposer d'un logiciel certifie. Le non-respect de cette obligation expose a une amende de 7 500 euros.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>A partir de quel montant la remise d'une note est-elle obligatoire ?</AccordionTrigger>
+      <AccordionContent>
+        Pour les ventes a des particuliers, la remise d'une note (equivalent d'une facture simplifiee) est obligatoire des que le montant atteint 25 euros TTC. En dessous de ce seuil, le ticket de caisse suffit, sauf si le client demande une note. Pour les ventes entre professionnels, la facture est obligatoire quel que soit le montant.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>La facturation electronique concerne-t-elle les restaurants rapides ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, la facturation electronique concernera a terme tous les professionnels assujettis a la TVA. Des septembre 2026, toutes les entreprises devront pouvoir recevoir des factures electroniques. L'obligation d'emission interviendra en septembre 2026 pour les grandes entreprises et ETI, puis en septembre 2027 pour les PME et micro-entreprises. Les ventes B2C (aux particuliers) ne sont pas concernees par l'e-invoicing mais par le e-reporting.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>
+
+<script
+  type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "Obligations de facturation en restauration rapide : ce qu'il faut savoir",
+      "description": "Facturation en restauration rapide : obligation de ticket, seuil des 25 euros, TVA vente a emporter, logiciel de caisse NF525 et bonnes pratiques.",
+      "author": {
+        "@type": "Organization",
+        "name": "Newbi",
+        "url": "https://newbi.fr"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "Newbi",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://newbi.fr/logo.png"
+        }
+      },
+      "datePublished": "2026-02-10",
+      "dateModified": "2026-02-10",
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "https://newbi.fr/blog/facture-restauration-rapide-obligations"
+      },
+      "image": "https://newbi.fr/blog/facture-restauration-rapide-obligations/hero.webp",
+      "keywords": "facturation restauration rapide obligations, TVA restauration rapide, ticket de caisse obligatoire, NF525, Z de caisse",
+      "articleSection": "Reglementaire"
+    })
+  }}
+/>
+
+<script
+  type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Est-il toujours obligatoire d'imprimer un ticket de caisse en restauration rapide ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Non, depuis le 1er aout 2023, l'impression systematique du ticket de caisse n'est plus obligatoire. En revanche, le commercant doit fournir un ticket (papier ou electronique) si le client en fait la demande."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Quel est le taux de TVA pour la vente a emporter en restauration rapide ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "La vente a emporter de produits alimentaires et de boissons non alcoolisees est soumise au taux reduit de 5,5 %. La consommation sur place est taxee a 10 %. Les boissons alcoolisees sont toujours au taux normal de 20 %."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Qu'est-ce que la certification NF525 et est-elle obligatoire ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "La certification NF525 atteste qu'un logiciel de caisse respecte les conditions d'inalterabilite, de securisation, de conservation et d'archivage. Depuis le 1er janvier 2018, elle est obligatoire pour tout commercant assujetti a la TVA. L'amende en cas de non-conformite est de 7 500 euros."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "A partir de quel montant la remise d'une note est-elle obligatoire ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Pour les ventes a des particuliers en restauration, la remise d'une note est obligatoire des que le montant atteint 25 euros TTC. Pour les ventes entre professionnels, la facture est obligatoire quel que soit le montant."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "La facturation electronique concerne-t-elle les restaurants rapides ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Oui. Des septembre 2026, toutes les entreprises devront recevoir des factures electroniques. L'obligation d'emission sera progressive : septembre 2026 pour les grandes entreprises et ETI, septembre 2027 pour les PME et micro-entreprises. Les ventes B2C relevent du e-reporting."
+          }
+        }
+      ]
+    })
+  }}
+/>

@@ -1,0 +1,51 @@
+name: Publish Blog Articles
+
+on:
+  schedule:
+    - cron: '0 7 * * 1' # Monday 07:00 UTC = 09:00 CEST
+  workflow_dispatch:
+    inputs:
+      count:
+        description: 'Number of articles to publish'
+        required: false
+        default: '3'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Python dependencies
+        run: pip install google-genai Pillow
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Publish articles and generate images
+        env:
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+        run: node scripts/publish-articles.js ${{ github.event.inputs.count || '3' }}
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add content/blog/ public/blog/
+          git diff --staged --quiet && echo "No changes to commit" && exit 0
+          git commit -m "blog: publish weekly articles $(date +%Y-%m-%d)"
+          git push
+
+      - name: Ping Google Sitemap
+        run: curl -s "https://www.google.com/ping?sitemap=https://newbi.fr/sitemap.xml" || true

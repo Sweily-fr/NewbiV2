@@ -13,13 +13,14 @@ import { useClients } from "@/src/hooks/useClients";
 import ClientsTable from "./clients-table";
 import ClientListsView from "./client-lists-view";
 import ListClientsView from "./list-clients-view";
+import CreateListDialog from "./create-list-dialog";
 import ClientFilters from "./client-filters";
 import CustomFieldsPopover from "./custom-fields-popover";
 import { Loader2, Search, CircleXIcon } from "lucide-react";
 import { Input } from "@/src/components/ui/input";
 import { cn } from "@/src/lib/utils";
 
-export default function ClientsTabs() {
+export default function ClientsTabs({ activeTab, onTabChange, createListDialogOpen, onCreateListDialogChange }) {
   const { workspaceId } = useWorkspace();
   const {
     lists,
@@ -27,7 +28,6 @@ export default function ClientsTabs() {
     refetch: refetchLists,
   } = useClientLists(workspaceId);
   const { clients, loading: clientsLoading } = useClients(1, 1000);
-  const [activeTab, setActiveTab] = useState("all");
   const [selectedList, setSelectedList] = useState(null);
   const [globalFilter, setGlobalFilter] = useState("");
   const [selectedTypes, setSelectedTypes] = useState([]);
@@ -51,7 +51,7 @@ export default function ClientsTabs() {
   const handleSelectList = (list) => {
     setSelectedList(list);
     // Rester sur l'onglet "lists" pour afficher la vue de détail de la liste
-    setActiveTab("lists");
+    onTabChange("lists");
   };
 
   // Réinitialiser selectedList quand on clique sur "Mes listes"
@@ -59,7 +59,8 @@ export default function ClientsTabs() {
     if (value === "lists") {
       setSelectedList(null);
     }
-    setActiveTab(value);
+    setGlobalFilter("");
+    onTabChange(value);
   };
 
   return (
@@ -75,12 +76,12 @@ export default function ClientsTabs() {
           <Input
             ref={inputRef}
             className={cn(
-              "w-full sm:w-[490px] lg:w-[490px] ps-9",
+              "w-full sm:w-[300px] ps-9",
               Boolean(globalFilter) && "pe-9"
             )}
             value={globalFilter}
             onChange={(e) => setGlobalFilter(e.target.value)}
-            placeholder="Recherchez par nom, email ou SIRET..."
+            placeholder={activeTab === "lists" ? "Rechercher une liste..." : "Recherchez par nom, email ou SIRET..."}
             type="text"
             aria-label="Filter by name or email"
           />
@@ -104,13 +105,15 @@ export default function ClientsTabs() {
         </div>
 
         {/* Actions à droite */}
-        <div className="flex items-center gap-2">
-          <CustomFieldsPopover />
-          <ClientFilters
-            selectedTypes={selectedTypes}
-            setSelectedTypes={setSelectedTypes}
-          />
-        </div>
+        {activeTab === "all" && (
+          <div className="flex items-center gap-2">
+            <CustomFieldsPopover />
+            <ClientFilters
+              selectedTypes={selectedTypes}
+              setSelectedTypes={setSelectedTypes}
+            />
+          </div>
+        )}
       </div>
 
       {/* Tabs de filtre rapide - Style factures */}
@@ -174,9 +177,18 @@ export default function ClientsTabs() {
             onListsUpdated={refetchLists}
             selectedList={selectedList}
             onSelectListChange={handleSelectList}
+            globalFilter={globalFilter}
+            onCreateList={() => onCreateListDialogChange(true)}
           />
         )}
       </TabsContent>
+
+      <CreateListDialog
+        open={createListDialogOpen}
+        onOpenChange={onCreateListDialogChange}
+        workspaceId={workspaceId}
+        onListCreated={refetchLists}
+      />
     </Tabs>
   );
 }

@@ -8,6 +8,7 @@ import {
   FileCheck,
   Building,
   Building2,
+  ArrowRightFromLine,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import {
@@ -132,11 +133,11 @@ export default function InvoiceExportButton({
         <DropdownMenuTrigger asChild>
           {iconOnly ? (
             <Button variant="secondary" size="icon">
-              <Download className="h-4 w-4" strokeWidth={1.5} />
+              <ArrowRightFromLine className="h-4 w-4" strokeWidth={1.5} />
             </Button>
           ) : (
             <Button variant="outline" className="font-normal cursor-pointer">
-              <Download className="mr-2 h-4 w-4" />
+              <ArrowRightFromLine className="mr-2 h-4 w-4" />
               Exporter
               {hasSelection && (
                 <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-xs text-white dark:text-black">

@@ -68,8 +68,8 @@ const STATUS_CONFIG = {
     label: "Acceptée",
     icon: CheckCircle2,
     variant: "default",
-    color: "text-emerald-600",
-    bgColor: "bg-emerald-50 dark:bg-emerald-950/30",
+    color: "text-green-600",
+    bgColor: "bg-green-50 dark:bg-green-900/20",
     description: "La facture a été acceptée par le destinataire",
   },
   REJECTED: {
@@ -84,8 +84,8 @@ const STATUS_CONFIG = {
     label: "Payée",
     icon: CheckCircle2,
     variant: "default",
-    color: "text-emerald-600",
-    bgColor: "bg-emerald-50 dark:bg-emerald-950/30",
+    color: "text-green-600",
+    bgColor: "bg-green-50 dark:bg-green-900/20",
     description: "La facture a été marquée comme payée",
   },
   ERROR: {

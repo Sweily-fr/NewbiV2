@@ -28,7 +28,7 @@ const onboardingSteps = [
     title: "Paramètres entreprise",
     description: "Configurez les informations de votre entreprise : nom, adresse, SIRET, coordonnées bancaires. Ces données seront utilisées automatiquement dans vos documents.",
     icon: Building2,
-    color: "text-green-500",
+    color: "text-green-600",
     bgColor: "bg-green-50",
   },
   {

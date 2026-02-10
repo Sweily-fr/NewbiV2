@@ -1,0 +1,407 @@
+---
+title: Obligations légales du devis pour les prestations aux consommateurs
+description: >-
+  Quand un devis est-il obligatoire ? Montant, mentions légales, délai de
+  rétractation et sanctions. Tout sur les obligations de devis en B2C.
+date: '2026-02-10'
+category: reglementaire
+sector: null
+keyword: obligations légales devis consommateur
+author: Newbi
+image: /blog/obligations-legales-devis-consommateur/hero.webp
+published: false
+publishDate: null
+---
+
+import Image from "next/image"
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-8">
+  <Badge variant="secondary">Réglementaire</Badge>
+  <Badge variant="outline">8 min de lecture</Badge>
+</div>
+
+# Obligations légales du devis pour les prestations aux consommateurs
+
+Les **obligations légales devis consommateur** constituent un socle réglementaire que tout professionnel intervenant auprès de particuliers doit maîtriser. Que vous soyez artisan du bâtiment, déménageur, opticien ou prestataire de services, le devis n'est pas qu'un simple document commercial : c'est une exigence légale encadrée par le Code de la consommation et par des arrêtés sectoriels précis. Le non-respect de ces obligations expose à des sanctions financières lourdes et à des litiges avec vos clients.
+
+Dans cet article, nous détaillons quand le devis est obligatoire en B2C, quelles mentions il doit contenir, la distinction entre devis gratuit et payant, les conséquences juridiques de la signature, et les sanctions encourues en cas de manquement.
+
+<figure className="my-8">
+  <Image
+    src="/blog/obligations-legales-devis-consommateur/hero.webp"
+    alt="Obligations légales du devis pour les prestations aux consommateurs en France"
+    width={1200}
+    height={630}
+    className="rounded-xl"
+    priority
+  />
+  <figcaption className="text-center text-sm text-muted-foreground mt-2">
+    Le devis est un document réglementé qui protège le consommateur et engage le professionnel.
+  </figcaption>
+</figure>
+
+## Quand le devis est-il obligatoire en B2C ?
+
+Le devis est obligatoire dès que la prestation de services dépasse un certain seuil ou relève d'un secteur réglementé. La règle générale, posée par l'article L.111-1 du Code de la consommation, impose au professionnel une obligation d'information précontractuelle. Mais dans de nombreux cas, cette obligation se traduit concrètement par la remise d'un devis écrit et détaillé.
+
+### La règle générale : le seuil de 150 euros dans le BTP
+
+Pour les travaux du bâtiment et les prestations de services à domicile, l'arrêté du 2 mars 1990 rend le devis obligatoire dès que le montant estimé dépasse **150 euros TTC**. En dessous de ce seuil, le devis reste facultatif mais fortement recommandé pour éviter tout litige.
+
+### Les secteurs où le devis est systématiquement obligatoire
+
+Certains secteurs imposent le devis **quel que soit le montant**, en raison de la nature des prestations et de la protection renforcée du consommateur.
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Secteurs où le devis est obligatoire avec seuils et références légales</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead className="w-[200px]">Secteur</TableHead>
+        <TableHead>Seuil</TableHead>
+        <TableHead>Référence légale</TableHead>
+        <TableHead>Particularités</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Travaux / BTP</TableCell>
+        <TableCell>{">"} 150 € TTC</TableCell>
+        <TableCell>Arrêté du 2 mars 1990</TableCell>
+        <TableCell>Inclut réparations, installations, entretien</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Déménagement</TableCell>
+        <TableCell>Aucun seuil</TableCell>
+        <TableCell>Arrêté du 20 janvier 2016</TableCell>
+        <TableCell>Lettre de voiture obligatoire en complément</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Dépannage / Remorquage</TableCell>
+        <TableCell>Aucun seuil</TableCell>
+        <TableCell>Arrêté du 27 mars 1987</TableCell>
+        <TableCell>Devis avant toute intervention sur le véhicule</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Optique-lunetterie</TableCell>
+        <TableCell>Aucun seuil</TableCell>
+        <TableCell>Arrêté du 23 juillet 1996</TableCell>
+        <TableCell>Détail verres, monture, traitements</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Prothèses dentaires</TableCell>
+        <TableCell>Aucun seuil</TableCell>
+        <TableCell>Art. R.4127-233 CSP</TableCell>
+        <TableCell>Devis normalisé obligatoire</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Prestations funéraires</TableCell>
+        <TableCell>Aucun seuil</TableCell>
+        <TableCell>Art. L.2223-21-1 CGCT</TableCell>
+        <TableCell>Modèle de devis réglementé</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Réparation automobile</TableCell>
+        <TableCell>Aucun seuil</TableCell>
+        <TableCell>Arrêté du 27 mars 1987</TableCell>
+        <TableCell>Ordre de réparation + devis détaillé</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Services à la personne</TableCell>
+        <TableCell>{">"} 100 € / mois</TableCell>
+        <TableCell>Art. D.7231-1 Code du travail</TableCell>
+        <TableCell>Devis ou contrat écrit obligatoire</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+<div className="not-prose my-6">
+  <Callout variant="warning" title="Secteurs réglementés : aucune exception">
+    Dans les secteurs listés ci-dessus, l'absence de devis est une infraction pénale. Le consommateur n'a pas à le demander : c'est au professionnel de le fournir spontanément, avant le début de toute prestation. Les contrôles de la DGCCRF sont réguliers et les sanctions immédiates.
+  </Callout>
+</div>
+
+Pour approfondir les spécificités du BTP, consultez notre guide complet sur le <Link href="/blog/devis-travaux-btp-guide">devis travaux BTP</Link>.
+
+## Les mentions obligatoires du devis en B2C
+
+Un devis conforme doit comporter un ensemble de mentions obligatoires qui garantissent la transparence et la protection du consommateur. Voici la liste exhaustive des informations requises :
+
+<div className="not-prose my-8 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La mention <strong>"Devis"</strong> en en-tête du document</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La <strong>date du devis</strong> et sa <strong>durée de validité</strong></span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Les <strong>coordonnées complètes du professionnel</strong> (raison sociale, adresse, SIRET, RCS)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Les <strong>coordonnées du client</strong> (nom, prénom, adresse)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le <strong>détail précis des prestations</strong> (nature, quantité, unité, prix unitaire)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Le <strong>prix total TTC</strong> avec le détail de la TVA applicable</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Les <strong>frais de déplacement</strong> éventuels (montant ou mode de calcul)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La <strong>durée estimée</strong> des travaux ou de la prestation</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>Les <strong>conditions de paiement</strong> (acompte, échéancier, modalités)</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La mention du <strong>droit de rétractation de 14 jours</strong> pour les contrats conclus à distance ou hors établissement</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>La mention <strong>"Devis reçu avant l'exécution des travaux"</strong> avec espace pour la signature du client</span>
+  </div>
+</div>
+
+### Le droit de rétractation de 14 jours
+
+Lorsqu'un devis est conclu **à distance** (par internet, téléphone, courrier) ou **hors établissement** (à domicile, sur un salon, en foire), le consommateur bénéficie d'un délai de rétractation de **14 jours calendaires** à compter de la signature, conformément aux articles L.221-18 et suivants du Code de la consommation.
+
+Le devis doit impérativement mentionner ce droit et inclure un formulaire de rétractation type. L'absence de cette mention prolonge le délai de rétractation jusqu'à **12 mois** après la fin du délai initial.
+
+Pensez aussi à intégrer vos <Link href="/blog/quest-ce-que-conditions-generales-vente">conditions générales de vente</Link> au devis pour sécuriser davantage la relation contractuelle.
+
+## Devis gratuit ou payant : quelle est la règle ?
+
+Par principe, le devis est **gratuit** dans la plupart des cas. C'est notamment la règle dans le BTP (arrêté du 2 mars 1990), pour les déménagements et pour les prestations funéraires.
+
+Toutefois, le professionnel peut facturer l'établissement du devis dans certaines situations :
+
+- **Si le devis nécessite un déplacement et un diagnostic technique** (plomberie, électricité, expertise)
+- **Si le client en est informé préalablement** du caractère payant et du montant
+- **Si le montant du devis est déduit de la facture finale** en cas d'acceptation
+
+Dans tous les cas, le caractère payant du devis doit être annoncé **avant** toute intervention. Un professionnel qui facture un devis sans en avoir informé le client au préalable commet une pratique commerciale trompeuse.
+
+<figure className="my-8">
+  <Image
+    src="/blog/obligations-legales-devis-consommateur/devis-mentions-obligatoires.webp"
+    alt="Exemple de devis avec toutes les mentions obligatoires pour les consommateurs"
+    width={800}
+    height={500}
+    className="rounded-xl"
+  />
+  <figcaption className="text-center text-sm text-muted-foreground mt-2">
+    Un devis conforme inclut les coordonnées complètes, le détail des prestations, le prix TTC et les conditions de rétractation.
+  </figcaption>
+</figure>
+
+## Signature du devis : un engagement contractuel
+
+La **signature du devis** par le consommateur transforme ce document en un véritable **contrat**. Dès lors, les deux parties sont engagées :
+
+- **Le professionnel** s'engage à réaliser les prestations décrites, au prix indiqué et dans les délais convenus.
+- **Le consommateur** s'engage à payer le prix convenu une fois la prestation réalisée.
+
+La mention manuscrite **"Bon pour accord"** ou **"Devis accepté"** suivie de la date et de la signature renforce la valeur juridique du document. En cas de litige, le devis signé constitue la preuve principale devant les tribunaux.
+
+Il est essentiel de ne pas négliger les détails du devis car les <Link href="/blog/erreurs-devis-perdre-clients">erreurs courantes sur un devis</Link> peuvent vous faire perdre des clients ou fragiliser votre position en cas de contentieux.
+
+<div className="not-prose my-6">
+  <Callout variant="info" title="Astuce : utilisez des modèles de devis conformes">
+    Avec Newbi, vous accédez à des modèles de devis pré-remplis avec toutes les mentions légales obligatoires en B2C. Plus besoin de vérifier manuellement chaque ligne : le logiciel intègre automatiquement les informations réglementaires, la TVA applicable et le droit de rétractation. Gagnez du temps et sécurisez chaque devis envoyé à vos clients.
+  </Callout>
+</div>
+
+<div className="not-prose flex justify-center my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Créer mon compte Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Sanctions en cas de non-respect des obligations
+
+Le non-respect des obligations légales relatives au devis est passible de sanctions pénales et administratives. La DGCCRF (Direction générale de la concurrence, de la consommation et de la répression des fraudes) effectue des contrôles réguliers auprès des professionnels.
+
+### Les amendes encourues
+
+- **Personne physique** : amende de **3 000 euros** par infraction constatée (article L.131-1 du Code de la consommation)
+- **Personne morale** : amende de **15 000 euros** par infraction constatée (article L.131-1 du Code de la consommation)
+
+### Les risques supplémentaires
+
+Au-delà des amendes, le professionnel s'expose à :
+
+- L'**annulation du contrat** à la demande du consommateur pour défaut d'information précontractuelle
+- Des **dommages et intérêts** en cas de préjudice subi par le consommateur
+- Une **atteinte à la réputation** en cas de signalement sur les plateformes de la DGCCRF (SignalConso)
+- La **perte du droit au paiement** dans certains cas si aucun devis n'a été établi avant la prestation
+
+Ces sanctions sont cumulables. Un professionnel qui omet systématiquement d'établir des devis peut faire l'objet de poursuites multiples lors d'un même contrôle.
+
+## Comment rédiger un devis conforme en B2C
+
+Pour vous assurer que vos devis respectent toutes les obligations légales, suivez ces bonnes pratiques :
+
+1. **Utilisez un logiciel de devis professionnel** qui intègre automatiquement les mentions obligatoires
+2. **Personnalisez chaque devis** avec le détail précis des prestations et des matériaux
+3. **Indiquez toujours le prix TTC** et détaillez la TVA applicable
+4. **Précisez la durée de validité** du devis (généralement 1 à 3 mois)
+5. **Incluez le droit de rétractation** pour les ventes à distance ou hors établissement
+6. **Faites signer le devis** en deux exemplaires avant de commencer la prestation
+7. **Conservez les devis pendant 5 ans** minimum (obligation de conservation)
+
+Pour aller plus loin dans la rédaction de vos devis, consultez notre article sur <Link href="/blog/comment-faire-devis-professionnel">comment faire un devis professionnel</Link>.
+
+<div className="not-prose flex justify-center my-8">
+  <Button asChild variant="outline">
+    <Link href="/produits/devis">Créer mes devis conformes</Link>
+  </Button>
+</div>
+
+## En résumé
+
+Les obligations légales du devis pour les prestations aux consommateurs sont strictement encadrées par le Code de la consommation et par des arrêtés sectoriels. Retenez les points essentiels :
+
+- Le devis est **obligatoire au-delà de 150 euros TTC** dans le BTP et **systématiquement requis** dans les secteurs réglementés (déménagement, dépannage, optique, dentaire, funéraire).
+- Il doit comporter des **mentions précises** : identité des parties, détail des prestations, prix TTC, durée de validité, conditions de paiement et droit de rétractation le cas échéant.
+- Le devis est en principe **gratuit**, sauf information préalable du client.
+- La signature du devis vaut **engagement contractuel** pour les deux parties.
+- Les sanctions vont de **3 000 euros** (personne physique) à **15 000 euros** (personne morale) par infraction.
+
+Un logiciel comme Newbi vous permet de générer des devis conformes en quelques clics, avec toutes les mentions obligatoires intégrées automatiquement. Protégez votre activité et inspirez confiance à vos clients.
+
+<div className="not-prose flex justify-center my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Un devis est-il obligatoire pour tous les professionnels en B2C ?</AccordionTrigger>
+      <AccordionContent>
+        Non, le devis n'est pas obligatoire dans tous les cas. La règle générale dans le BTP impose un devis au-delà de 150 euros TTC. Cependant, certains secteurs (déménagement, dépannage, optique, dentaire, funéraire) exigent un devis quel que soit le montant. Pour les autres prestations de services, le devis n'est pas légalement obligatoire mais reste fortement recommandé pour éviter tout litige.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Le consommateur bénéficie-t-il toujours d'un droit de rétractation de 14 jours ?</AccordionTrigger>
+      <AccordionContent>
+        Le droit de rétractation de 14 jours s'applique uniquement aux contrats conclus à distance (internet, téléphone) ou hors établissement (à domicile, en foire). Si le consommateur se rend directement dans les locaux du professionnel pour signer le devis, le droit de rétractation ne s'applique pas, sauf disposition sectorielle contraire.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Un professionnel peut-il facturer l'établissement d'un devis ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, dans certains cas. Le professionnel peut facturer le devis si celui-ci nécessite un déplacement ou un diagnostic technique, à condition d'en informer le client au préalable et de lui indiquer le montant. Dans le BTP, les devis sont en principe gratuits conformément à l'arrêté du 2 mars 1990. Le montant du devis payant est souvent déduit de la facture finale si le client accepte la prestation.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Que risque un professionnel qui ne fournit pas de devis obligatoire ?</AccordionTrigger>
+      <AccordionContent>
+        Les sanctions sont financières : une amende pouvant atteindre 3 000 euros pour une personne physique et 15 000 euros pour une personne morale, par infraction constatée. Au-delà de l'amende, le professionnel risque l'annulation du contrat, des dommages et intérêts et une atteinte à sa réputation via les signalements DGCCRF.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Combien de temps faut-il conserver les devis ?</AccordionTrigger>
+      <AccordionContent>
+        Les devis doivent être conservés pendant au moins 5 ans, conformément aux obligations comptables et commerciales. En matière de travaux immobiliers, la garantie décennale impose une conservation pendant 10 ans. Il est recommandé de numériser et d'archiver systématiquement tous vos devis pour faciliter leur consultation en cas de contrôle ou de litige.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>
+
+<script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Obligations légales du devis pour les prestations aux consommateurs",
+  "description": "Quand un devis est-il obligatoire ? Montant, mentions légales, délai de rétractation et sanctions. Tout sur les obligations de devis en B2C.",
+  "author": {
+    "@type": "Organization",
+    "name": "Newbi"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Newbi",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://newbi.fr/logo.png"
+    }
+  },
+  "datePublished": "2026-02-10",
+  "dateModified": "2026-02-10",
+  "image": "https://newbi.fr/blog/obligations-legales-devis-consommateur/hero.webp",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://newbi.fr/blog/obligations-legales-devis-consommateur"
+  }
+}) }} />
+
+<script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "Un devis est-il obligatoire pour tous les professionnels en B2C ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Non, le devis n'est pas obligatoire dans tous les cas. La règle générale dans le BTP impose un devis au-delà de 150 euros TTC. Cependant, certains secteurs (déménagement, dépannage, optique, dentaire, funéraire) exigent un devis quel que soit le montant. Pour les autres prestations de services, le devis n'est pas légalement obligatoire mais reste fortement recommandé pour éviter tout litige."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Le consommateur bénéficie-t-il toujours d'un droit de rétractation de 14 jours ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Le droit de rétractation de 14 jours s'applique uniquement aux contrats conclus à distance (internet, téléphone) ou hors établissement (à domicile, en foire). Si le consommateur se rend directement dans les locaux du professionnel pour signer le devis, le droit de rétractation ne s'applique pas, sauf disposition sectorielle contraire."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Un professionnel peut-il facturer l'établissement d'un devis ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Oui, dans certains cas. Le professionnel peut facturer le devis si celui-ci nécessite un déplacement ou un diagnostic technique, à condition d'en informer le client au préalable et de lui indiquer le montant. Dans le BTP, les devis sont en principe gratuits conformément à l'arrêté du 2 mars 1990."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Que risque un professionnel qui ne fournit pas de devis obligatoire ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Les sanctions sont financières : une amende pouvant atteindre 3 000 euros pour une personne physique et 15 000 euros pour une personne morale, par infraction constatée. Au-delà de l'amende, le professionnel risque l'annulation du contrat, des dommages et intérêts et une atteinte à sa réputation."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Combien de temps faut-il conserver les devis ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Les devis doivent être conservés pendant au moins 5 ans, conformément aux obligations comptables et commerciales. En matière de travaux immobiliers, la garantie décennale impose une conservation pendant 10 ans."
+      }
+    }
+  ]
+}) }} />

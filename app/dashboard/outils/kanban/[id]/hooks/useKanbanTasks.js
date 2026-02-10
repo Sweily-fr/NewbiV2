@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { toast } from "@/src/utils/debouncedToast";
-import { useMutation } from "@apollo/client";
+import { useMutation, gql } from "@apollo/client";
 import {
   CREATE_TASK,
   UPDATE_TASK,
@@ -9,6 +9,25 @@ import {
   ADD_COMMENT,
 } from "@/src/graphql/kanbanQueries";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
+
+const UPLOAD_TASK_IMAGE = gql`
+  mutation UploadTaskImage($taskId: ID!, $file: Upload!, $imageType: String, $workspaceId: ID) {
+    uploadTaskImage(taskId: $taskId, file: $file, imageType: $imageType, workspaceId: $workspaceId) {
+      success
+      image {
+        id
+        key
+        url
+        fileName
+        fileSize
+        contentType
+        uploadedBy
+        uploadedAt
+      }
+      message
+    }
+  }
+`;
 
 export const useKanbanTasks = (boardId, board) => {
   const { workspaceId } = useWorkspace();
@@ -26,6 +45,7 @@ export const useKanbanTasks = (boardId, board) => {
     newTag: "",
     newChecklistItem: "",
     pendingComments: [], // Commentaires en attente de création
+    pendingFiles: [], // Fichiers en attente d'upload (mode création)
     timeTracking: null, // Données du timer
   };
 
@@ -76,6 +96,7 @@ export const useKanbanTasks = (boardId, board) => {
 
   // Task mutations
   const [addComment] = useMutation(ADD_COMMENT);
+  const [uploadTaskImageMutation] = useMutation(UPLOAD_TASK_IMAGE);
 
   const [createTask, { loading: createTaskLoading }] = useMutation(
     CREATE_TASK,
@@ -98,7 +119,26 @@ export const useKanbanTasks = (boardId, board) => {
             toast.error("Tâche créée mais erreur lors de l'ajout des commentaires");
           }
         }
-        
+
+        // Upload des fichiers en attente
+        if (taskForm.pendingFiles?.length > 0 && data?.createTask?.id) {
+          try {
+            for (const file of taskForm.pendingFiles) {
+              await uploadTaskImageMutation({
+                variables: {
+                  taskId: data.createTask.id,
+                  file,
+                  imageType: 'description',
+                  workspaceId
+                }
+              });
+            }
+          } catch (error) {
+            console.error("Erreur upload fichiers:", error);
+            toast.error("Tâche créée mais erreur lors de l'upload des fichiers");
+          }
+        }
+
         // Plus de toast ici - la subscription temps réel s'en charge
         setTaskForm(initialTaskForm);
         setSelectedColumnId(null);

@@ -1,10 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Clock, Euro, ChevronDown } from "lucide-react";
+import { Clock, Euro, RotateCcw } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
-import { Label } from "@/src/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/src/components/ui/avatar";
 import {
   Select,
@@ -14,12 +13,18 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/src/components/ui/collapsible";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/src/components/ui/alert-dialog";
 import { useMutation } from "@apollo/client";
-import { START_TIMER, STOP_TIMER, UPDATE_TIMER_SETTINGS } from "@/src/graphql/kanbanQueries";
+import { START_TIMER, STOP_TIMER, RESET_TIMER, UPDATE_TIMER_SETTINGS } from "@/src/graphql/kanbanQueries";
 import { toast } from "@/src/utils/debouncedToast";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 
@@ -34,14 +39,12 @@ export function TimerControls({ taskId, timeTracking, onTimerUpdate }) {
   const [currentTime, setCurrentTime] = useState(0);
   const [hourlyRate, setHourlyRate] = useState("");
   const [roundingOption, setRoundingOption] = useState("none");
-  const [showSettings, setShowSettings] = useState(false);
 
 
   // Fonction pour mettre à jour le cache Apollo
   const updateCache = (cache, taskData) => {
     if (!taskData) return;
-    
-    // Mettre à jour le cache Apollo avec les nouvelles données de la tâche
+
     cache.modify({
       id: cache.identify({ __typename: 'Task', id: taskData.id }),
       fields: {
@@ -87,6 +90,23 @@ export function TimerControls({ taskId, timeTracking, onTimerUpdate }) {
     },
   });
 
+  const [resetTimer, { loading: resetting }] = useMutation(RESET_TIMER, {
+    update: (cache, { data }) => {
+      if (data?.resetTimer) {
+        updateCache(cache, data.resetTimer);
+      }
+    },
+    onCompleted: (data) => {
+      toast.success("Timer réinitialisé");
+      if (onTimerUpdate && data?.resetTimer?.timeTracking) {
+        onTimerUpdate(data.resetTimer.timeTracking);
+      }
+    },
+    onError: (error) => {
+      toast.error(error.message || "Erreur lors de la réinitialisation du timer");
+    },
+  });
+
   const [updateSettings, { loading: updating }] = useMutation(UPDATE_TIMER_SETTINGS, {
     update: (cache, { data }) => {
       if (data?.updateTimerSettings) {
@@ -95,7 +115,6 @@ export function TimerControls({ taskId, timeTracking, onTimerUpdate }) {
     },
     onCompleted: (data) => {
       toast.success("Paramètres mis à jour");
-      setShowSettings(false);
       if (onTimerUpdate && data?.updateTimerSettings?.timeTracking) {
         onTimerUpdate(data.updateTimerSettings.timeTracking);
       }
@@ -122,18 +141,16 @@ export function TimerControls({ taskId, timeTracking, onTimerUpdate }) {
 
     const updateTime = () => {
       let total = timeTracking.totalSeconds || 0;
-      
+
       if (timeTracking.isRunning && timeTracking.currentStartTime) {
         const startTime = new Date(timeTracking.currentStartTime);
         const now = new Date();
         const elapsedSeconds = Math.floor((now - startTime) / 1000);
-        // Protection contre les valeurs négatives (problème de fuseau horaire)
         if (elapsedSeconds > 0) {
           total += elapsedSeconds;
         }
       }
-      
-      // S'assurer que le total n'est jamais négatif
+
       setCurrentTime(Math.max(0, total));
     };
 
@@ -145,9 +162,8 @@ export function TimerControls({ taskId, timeTracking, onTimerUpdate }) {
     }
   }, [timeTracking, timeTracking?.isRunning, timeTracking?.currentStartTime, timeTracking?.totalSeconds]);
 
-  // Formater le temps en heures:minutes:secondes (format ClickUp)
+  // Formater le temps en heures:minutes:secondes
   const formatTime = (seconds) => {
-    // Protection contre les valeurs négatives
     const safeSeconds = Math.max(0, seconds);
     const hours = Math.floor(safeSeconds / 3600);
     const minutes = Math.floor((safeSeconds % 3600) / 60);
@@ -161,13 +177,13 @@ export function TimerControls({ taskId, timeTracking, onTimerUpdate }) {
 
     const hours = Math.max(0, currentTime) / 3600;
     let billableHours = hours;
-    
+
     if (roundingOption === 'up') {
       billableHours = Math.ceil(hours);
     } else if (roundingOption === 'down') {
       billableHours = Math.floor(hours);
     }
-    
+
     const price = billableHours * parseFloat(hourlyRate);
     return price.toFixed(2);
   };
@@ -181,6 +197,14 @@ export function TimerControls({ taskId, timeTracking, onTimerUpdate }) {
       }
     } catch (error) {
       console.error("Erreur timer:", error);
+    }
+  };
+
+  const handleReset = async () => {
+    try {
+      await resetTimer({ variables: { taskId, workspaceId } });
+    } catch (error) {
+      console.error("Erreur reset timer:", error);
     }
   };
 
@@ -198,39 +222,69 @@ export function TimerControls({ taskId, timeTracking, onTimerUpdate }) {
 
   const isRunning = timeTracking?.isRunning;
   const price = calculatePrice();
+  const hasTime = currentTime > 0;
 
   return (
-    <div className="space-y-3">
-      {/* Gestion du temps - Style ClickUp */}
-      <div className="flex items-center gap-3">
+    <div className="space-y-2">
+      {/* Ligne principale : timer + contrôles */}
+      <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
         {/* Label avec icône */}
         <div className="flex items-center gap-2 flex-shrink-0">
           <Clock className="h-4 w-4 text-muted-foreground" />
           <span className="text-sm font-normal">Gestion du temps</span>
         </div>
 
-        {/* Bouton rouge circulaire quand actif */}
+        {/* Bouton rouge circulaire */}
         <button
           onClick={handleStartStop}
           disabled={starting || stopping}
           className={`w-5 h-5 rounded-full flex items-center justify-center transition-all flex-shrink-0 ${
-            isRunning 
-              ? 'bg-red-500 hover:bg-red-600 animate-pulse' 
+            isRunning
+              ? 'bg-red-500 hover:bg-red-600 animate-pulse'
               : 'bg-gray-300 hover:bg-gray-400'
           }`}
           title={isRunning ? "Arrêter le timer" : "Démarrer le timer"}
         >
           <div className={`w-2 h-2 rounded-full ${isRunning ? 'bg-white' : 'bg-gray-600'}`} />
         </button>
-        
+
         {/* Affichage du temps */}
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/50 rounded-md border border-border flex-shrink-0">
+        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-muted/50 rounded-md border border-border flex-shrink-0">
           <span className="text-sm font-mono tabular-nums">
             {formatTime(currentTime)}
           </span>
         </div>
 
-        {/* Prix à l'heure - Input inline */}
+        {/* Bouton réinitialiser */}
+        {hasTime && !isRunning && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <button
+                disabled={resetting}
+                className="w-7 h-7 rounded-md flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-colors flex-shrink-0"
+                title="Réinitialiser le timer"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+              </button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Réinitialiser le timer ?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Le temps enregistré ({formatTime(currentTime)}) sera remis à zéro. Cette action est irréversible.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Annuler</AlertDialogCancel>
+                <AlertDialogAction onClick={handleReset} className="bg-red-600 hover:bg-red-700">
+                  Réinitialiser
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
+
+        {/* Prix à l'heure */}
         <Input
           type="number"
           min="0"
@@ -244,14 +298,13 @@ export function TimerControls({ taskId, timeTracking, onTimerUpdate }) {
             }
           }}
           placeholder="Prix/h"
-          className="w-28 h-9 flex-shrink-0"
+          className="w-24 sm:w-28 h-9 flex-shrink-0"
           title="Prix à l'heure"
         />
 
-        {/* Arrondi - Select inline */}
+        {/* Arrondi */}
         <Select value={roundingOption} onValueChange={(value) => {
           setRoundingOption(value);
-          // Sauvegarder automatiquement
           setTimeout(() => {
             updateSettings({
               variables: {
@@ -263,7 +316,7 @@ export function TimerControls({ taskId, timeTracking, onTimerUpdate }) {
             });
           }, 0);
         }}>
-          <SelectTrigger className="w-40 h-9 flex-shrink-0">
+          <SelectTrigger className="w-32 sm:w-40 h-9 flex-shrink-0">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -273,21 +326,7 @@ export function TimerControls({ taskId, timeTracking, onTimerUpdate }) {
           </SelectContent>
         </Select>
 
-        {/* Lancé par - Affiché quand le timer est actif */}
-        {isRunning && timeTracking?.startedBy && (
-          <div className="flex items-center gap-2 px-2 py-1 text-xs text-muted-foreground flex-shrink-0">
-            <span>Lancé par</span>
-            <Avatar className="h-5 w-5">
-              <AvatarImage src={timeTracking.startedBy.userImage} alt={timeTracking.startedBy.userName} />
-              <AvatarFallback className="text-[9px]">
-                {timeTracking.startedBy.userName?.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2) || "?"}
-              </AvatarFallback>
-            </Avatar>
-            <span className="font-medium text-foreground">{timeTracking.startedBy.userName}</span>
-          </div>
-        )}
-
-        {/* Prix estimé - Affiché directement */}
+        {/* Prix estimé */}
         {price && (
           <div className="px-3 py-1.5 bg-muted/50 rounded-md border border-border inline-flex items-center gap-1.5 flex-shrink-0 ml-auto">
             <Euro className="h-4 w-4 text-muted-foreground" />
@@ -295,6 +334,20 @@ export function TimerControls({ taskId, timeTracking, onTimerUpdate }) {
           </div>
         )}
       </div>
+
+      {/* Ligne secondaire : Lancé par (en dessous) */}
+      {isRunning && timeTracking?.startedBy && (
+        <div className="flex items-center gap-2 pl-6 text-xs text-muted-foreground">
+          <span>Lancé par</span>
+          <Avatar className="h-5 w-5">
+            <AvatarImage src={timeTracking.startedBy.userImage} alt={timeTracking.startedBy.userName} />
+            <AvatarFallback className="text-[9px]">
+              {timeTracking.startedBy.userName?.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2) || "?"}
+            </AvatarFallback>
+          </Avatar>
+          <span className="font-medium text-foreground">{timeTracking.startedBy.userName}</span>
+        </div>
+      )}
     </div>
   );
 }

@@ -71,6 +71,11 @@ const forceSessionExpiredRedirect = (reason = "inactivity") => {
   // Nettoyer le token
   localStorage.removeItem("bearer_token");
 
+  // Réinitialiser la garde après 3 secondes au cas où la redirection échoue
+  setTimeout(() => {
+    isRedirecting = false;
+  }, 3000);
+
   // Redirection immédiate et synchrone
   console.log(`🔒 [Apollo] Redirection forcée vers /auth/session-expired (${reason})`);
   window.location.href = `/auth/session-expired?reason=${reason}`;
@@ -321,7 +326,9 @@ const errorLink = onError(({ graphQLErrors, networkError, operation }) => {
 
     graphQLErrors.forEach((error) => {
       const { message, extensions } = error;
-      const errorWithCode = { message, code: extensions?.code };
+      // Fallback: lire error.code si extensions.code n'existe pas
+      // (ancien format de formatError de l'API retournait code au niveau racine)
+      const errorWithCode = { message, code: extensions?.code || error.code };
 
       // Éviter de traiter le même message plusieurs fois
       if (processedMessages.has(message)) {

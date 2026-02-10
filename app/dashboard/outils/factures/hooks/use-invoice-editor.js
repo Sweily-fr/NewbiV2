@@ -936,6 +936,22 @@ export function useInvoiceEditor({
     }
   }, [organization, setValue, getValues]);
 
+  // Pre-fill items from Kanban conversion (via sessionStorage)
+  useEffect(() => {
+    if (mode === 'create' && isFormInitialized) {
+      const kanbanItems = sessionStorage.getItem('kanbanInvoiceItems');
+      if (kanbanItems) {
+        try {
+          const items = JSON.parse(kanbanItems);
+          setValue('items', items);
+          sessionStorage.removeItem('kanbanInvoiceItems');
+        } catch (e) {
+          sessionStorage.removeItem('kanbanInvoiceItems');
+        }
+      }
+    }
+  }, [mode, isFormInitialized, setValue]);
+
   // Auto-save handler - DISABLED
   // const handleAutoSave = useCallback(async () => {
   //   if (mode !== "edit" || !invoiceId || formData.status !== "DRAFT") {
@@ -2270,7 +2286,9 @@ function transformFormDataToInput(formData, previousStatus = null) {
           discountType: (item.discountType || "PERCENTAGE").toUpperCase(),
           details: item.details || "",
           vatExemptionText: vatExemptionText,
-          progressPercentage: parseFloat(item.progressPercentage) || 100,
+          progressPercentage: item.progressPercentage !== undefined && item.progressPercentage !== null && item.progressPercentage !== ''
+            ? parseFloat(item.progressPercentage)
+            : 100,
         };
       }) || [],
     discount: parseFloat(formData.discount) || 0,

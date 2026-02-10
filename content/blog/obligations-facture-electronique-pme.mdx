@@ -1,0 +1,374 @@
+---
+title: 'Facture électronique pour PME : obligations et mise en conformité'
+description: >-
+  PME : préparez-vous à la facturation électronique obligatoire. Obligations,
+  plateformes PDP, format Factur-X et étapes de mise en conformité.
+date: '2026-02-10'
+category: reglementaire
+sector: null
+keyword: facture électronique PME obligations
+author: Newbi
+image: /blog/obligations-facture-electronique-pme/hero.webp
+published: false
+publishDate: null
+---
+
+import Image from "next/image"
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex items-center gap-2 mb-8">
+  <Badge variant="secondary">Réglementaire</Badge>
+  <Badge variant="outline">9 min de lecture</Badge>
+</div>
+
+# Facture électronique pour PME : obligations et mise en conformité
+
+La **facture électronique PME** devient une réalité incontournable. Avec la réforme de la facturation électronique obligatoire en France, toutes les petites et moyennes entreprises doivent se préparer dès maintenant pour éviter les sanctions et rester en conformité. Que vous soyez dirigeant de PME, comptable ou DAF, ce guide complet vous explique tout ce que vous devez savoir : calendrier, formats acceptés, plateformes agréées, sanctions encourues et étapes concrètes de mise en conformité.
+
+<Image
+  src="/blog/obligations-facture-electronique-pme/hero.webp"
+  alt="Facture électronique obligatoire pour les PME en France : calendrier et mise en conformité"
+  width={1200}
+  height={630}
+  className="rounded-xl my-8"
+  priority
+/>
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Passer à la facture électronique avec Newbi</Link>
+  </Button>
+</div>
+
+## Pourquoi la facture électronique devient obligatoire pour les PME
+
+La réforme de la facturation électronique s'inscrit dans un vaste plan de modernisation des échanges entre entreprises et avec l'administration fiscale. Les objectifs sont clairs :
+
+- **Lutter contre la fraude à la TVA** : en automatisant la transmission des données de facturation à l'administration, l'État espère réduire significativement l'écart de TVA estimé à plusieurs milliards d'euros par an.
+- **Simplifier les obligations déclaratives** : à terme, les déclarations de TVA pourront être préremplies grâce aux données collectées automatiquement.
+- **Améliorer la compétitivité des entreprises** : la dématérialisation réduit les coûts de traitement, accélère les paiements et diminue les erreurs de saisie.
+- **Renforcer la traçabilité** : chaque facture disposera d'un parcours auditable de bout en bout.
+
+Pour les PME, cette réforme représente à la fois un défi organisationnel et une opportunité de moderniser leurs processus de gestion. La **facture électronique PME** n'est plus une option mais un impératif légal à anticiper.
+
+## Le calendrier de la réforme : les dates à retenir
+
+Le déploiement de la facturation électronique obligatoire se fait de manière progressive, en fonction de la taille de l'entreprise. Voici le calendrier officiel mis à jour :
+
+<div className="not-prose my-8">
+  <Table>
+    <TableCaption>Calendrier de déploiement de la facture électronique obligatoire en France</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead>Taille d'entreprise</TableHead>
+        <TableHead>Réception obligatoire</TableHead>
+        <TableHead>Émission obligatoire</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-medium">Grandes Entreprises (GE)</TableCell>
+        <TableCell>1er septembre 2026</TableCell>
+        <TableCell>1er septembre 2026</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Entreprises de Taille Intermédiaire (ETI)</TableCell>
+        <TableCell>1er septembre 2026</TableCell>
+        <TableCell>1er septembre 2026</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Petites et Moyennes Entreprises (PME)</TableCell>
+        <TableCell>1er septembre 2026</TableCell>
+        <TableCell>1er septembre 2027</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-medium">Très Petites Entreprises (TPE)</TableCell>
+        <TableCell>1er septembre 2026</TableCell>
+        <TableCell>1er septembre 2027</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+<div className="not-prose my-6">
+  <Callout variant="warning" title="Attention aux échéances">
+    Toutes les entreprises, y compris les PME et TPE, devront être en mesure de **recevoir** des factures électroniques dès le **1er septembre 2026**. Ne repoussez pas votre mise en conformité au dernier moment : les délais d'intégration technique et de formation des équipes nécessitent plusieurs mois de préparation.
+  </Callout>
+</div>
+
+Concrètement, même si votre PME n'est tenue d'émettre des factures électroniques qu'à partir de septembre 2027, vous devrez pouvoir en recevoir et les traiter dès septembre 2026. C'est pourquoi il est essentiel de démarrer votre transition dès maintenant. Pour un panorama complet de la réforme, consultez notre article dédié sur la [facturation électronique obligatoire en 2026](/blog/facturation-electronique-obligatoire-2026).
+
+## Les formats de facture électronique acceptés
+
+La réforme impose l'utilisation de formats structurés ou mixtes permettant le traitement automatisé des données. Trois formats principaux sont reconnus :
+
+### Factur-X
+
+Le format **Factur-X** est un format hybride franco-allemand qui combine un fichier PDF lisible par l'humain et un fichier XML structuré intégré. C'est le format le plus accessible pour les PME car il permet de conserver l'aspect visuel classique d'une facture tout en intégrant les données structurées nécessaires à l'automatisation. Pour en savoir plus, consultez notre guide sur le [format Factur-X](/blog/facturx-format-facture-electronique).
+
+### UBL (Universal Business Language)
+
+Le format **UBL** est un standard international largement utilisé en Europe. Il repose entièrement sur du XML structuré et est particulièrement adapté aux échanges internationaux et aux systèmes d'information complexes.
+
+### CII (Cross Industry Invoice)
+
+Le format **CII** est la base technique du format Factur-X. Il s'agit d'un standard UN/CEFACT utilisé dans les échanges commerciaux internationaux. Il est moins répandu en France mais reste pleinement conforme à la réforme.
+
+Le choix du format dépend de votre écosystème technique et de vos partenaires commerciaux. Pour la majorité des PME, le **Factur-X** représente le meilleur compromis entre simplicité et conformité.
+
+## PDP vs PPF : comprendre les plateformes
+
+La transmission des factures électroniques passe obligatoirement par des plateformes intermédiaires. Deux types de plateformes coexistent :
+
+### Le Portail Public de Facturation (PPF)
+
+Le **PPF** est la plateforme gratuite mise en place par l'État, opérée par l'AIFE (Agence pour l'Informatique Financière de l'État). Il assure un service de base : réception, transmission et archivage des factures. Cependant, ses fonctionnalités restent limitées et il ne propose pas de services à valeur ajoutée. Découvrez tous les détails sur le [Portail Public de Facturation (PPF)](/blog/quest-ce-que-ppf-portail-public-facturation).
+
+### Les Plateformes de Dématérialisation Partenaires (PDP)
+
+Les **PDP** sont des opérateurs privés immatriculés par l'administration fiscale. Elles offrent des services enrichis : conversion de formats, contrôle de conformité, gestion des statuts de cycle de vie, archivage légal, intégration comptable et bien plus. Pour les PME qui souhaitent automatiser au maximum leur facturation, passer par une PDP est souvent le choix le plus pertinent. Notre article sur les [Plateformes de Dématérialisation Partenaires (PDP)](/blog/quest-ce-que-pdp-plateforme-dematerialisation) vous aidera à faire le bon choix.
+
+## L'e-reporting : les transactions B2C aussi concernées
+
+La réforme ne se limite pas aux échanges entre entreprises (B2B). Les transactions réalisées avec des particuliers (B2C) ou des opérateurs étrangers sont soumises à une obligation d'**e-reporting**. Cela signifie que les données de ces transactions doivent être transmises à l'administration fiscale, même si aucune facture électronique au format structuré n'est envoyée au client final.
+
+L'e-reporting concerne notamment :
+
+- Les ventes aux particuliers (B2C domestique)
+- Les prestations de services à des clients étrangers
+- Les livraisons intracommunautaires et les exportations
+
+Les données transmises incluent le montant HT, la TVA applicable et l'identification des parties. Ce volet est souvent méconnu des PME mais il est tout aussi obligatoire.
+
+## Les sanctions en cas de non-conformité
+
+Le législateur a prévu des sanctions financières pour les entreprises qui ne respectent pas les obligations de facturation électronique et d'e-reporting :
+
+- **15 euros par facture** non émise au format électronique requis
+- Un **plafond de 15 000 euros par année civile** par entreprise
+- Ces sanctions s'appliquent de manière distincte pour le défaut de facturation électronique et pour le défaut d'e-reporting
+
+Au-delà des amendes, le non-respect de ces obligations expose l'entreprise à des redressements fiscaux en cas de contrôle et à une détérioration de la relation avec ses partenaires commerciaux qui, eux, seront conformes.
+
+<div className="not-prose my-6">
+  <Callout variant="info" title="Newbi est déjà prêt pour Factur-X">
+    Bonne nouvelle : **Newbi génère nativement des factures au format Factur-X**. En utilisant Newbi pour votre facturation, vous êtes automatiquement conforme aux exigences de la réforme. Pas de migration complexe, pas de conversion de format : vos factures sont prêtes dès aujourd'hui.
+  </Callout>
+</div>
+
+## Les étapes de mise en conformité pour votre PME
+
+Voici un plan d'action concret pour préparer votre entreprise à la facturation électronique :
+
+### 1. Réaliser un audit de vos flux de facturation
+
+Commencez par cartographier l'ensemble de vos flux : combien de factures émettez-vous et recevez-vous par mois ? Quels sont vos formats actuels ? Quels logiciels utilisez-vous ? Cette analyse permet d'identifier les écarts avec les futures exigences.
+
+### 2. Choisir votre plateforme (PDP ou PPF)
+
+Évaluez les plateformes disponibles en fonction de vos besoins : volume de factures, niveau d'automatisation souhaité, intégration avec votre système comptable, accompagnement proposé. Pour la plupart des PME, une PDP offrant des services à valeur ajoutée sera plus adaptée que le PPF seul.
+
+### 3. Adapter votre logiciel de facturation
+
+Assurez-vous que votre logiciel de facturation est capable de produire et de recevoir des factures aux formats conformes (Factur-X, UBL ou CII). Vérifiez également qu'il gère les statuts de cycle de vie des factures (déposée, rejetée, refusée, encaissée).
+
+### 4. Former vos équipes
+
+La transition vers la facturation électronique impacte les équipes comptables, commerciales et administratives. Organisez des sessions de formation pour que chacun comprenne les nouveaux processus et les outils à utiliser.
+
+### 5. Effectuer des tests en conditions réelles
+
+Avant la date butoir, réalisez des tests de bout en bout : émission, transmission, réception et intégration comptable. Identifiez et corrigez les problèmes avant le basculement effectif.
+
+### 6. Mettre à jour vos mentions légales et CGV
+
+Vos conditions générales de vente et vos mentions légales doivent refléter votre nouvelle organisation : adresse de réception des factures électroniques, plateforme utilisée, format accepté.
+
+<Image
+  src="/blog/obligations-facture-electronique-pme/conformite.webp"
+  alt="Étapes de mise en conformité facture électronique pour les PME"
+  width={1200}
+  height={630}
+  className="rounded-xl my-8"
+/>
+
+<div className="not-prose my-8">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Préparer mon entreprise</Link>
+  </Button>
+</div>
+
+## Comment choisir le bon logiciel de facturation électronique
+
+Le choix du logiciel est déterminant pour une transition réussie. Voici les critères essentiels à évaluer :
+
+<div className="not-prose my-6 space-y-3">
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>**Conformité native** : le logiciel doit générer des factures au format Factur-X, UBL ou CII sans manipulation supplémentaire</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>**Connexion PDP/PPF** : vérifiez que le logiciel est connecté ou connectable à une plateforme de dématérialisation agréée</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>**Gestion du cycle de vie** : suivi des statuts (déposée, reçue, acceptée, refusée, encaissée) conforme au cadre réglementaire</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>**E-reporting intégré** : capacité à transmettre les données des transactions B2C et internationales à l'administration</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>**Archivage légal** : conservation sécurisée des factures pendant la durée légale de 10 ans</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>**Simplicité d'utilisation** : interface intuitive adaptée aux PME, sans nécessiter d'expertise technique avancée</span>
+  </div>
+  <div className="flex items-start gap-3">
+    <Check className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+    <span>**Accompagnement et support** : présence d'un support réactif en français pour vous guider dans la transition</span>
+  </div>
+</div>
+
+## En résumé
+
+La facturation électronique obligatoire est un virage majeur pour toutes les PME françaises. Voici les points essentiels à retenir :
+
+- **Septembre 2026** : toutes les entreprises doivent pouvoir recevoir des factures électroniques
+- **Septembre 2027** : les PME et TPE devront également émettre leurs factures au format électronique
+- Trois formats sont acceptés : **Factur-X**, **UBL** et **CII**
+- Le passage se fait via une **PDP** ou le **PPF**
+- L'**e-reporting** concerne aussi les transactions B2C
+- Les sanctions peuvent atteindre **15 000 euros par an**
+- Anticiper la transition est la meilleure stratégie pour éviter les difficultés de dernière minute
+
+Ne laissez pas les échéances vous rattraper. Avec un outil comme Newbi, déjà conforme au format Factur-X, la transition se fait en toute sérénité.
+
+<div className="not-prose my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Créer mon compte Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Questions fréquentes
+
+<div className="not-prose my-8">
+  <Accordion type="single" collapsible className="w-full">
+    <AccordionItem value="item-1">
+      <AccordionTrigger>Quand la facture électronique sera-t-elle obligatoire pour les PME ?</AccordionTrigger>
+      <AccordionContent>
+        Les PME devront être en mesure de **recevoir** des factures électroniques dès le **1er septembre 2026**. L'obligation d'**émettre** des factures électroniques s'appliquera aux PME à partir du **1er septembre 2027**. Il est donc crucial de commencer votre préparation dès maintenant pour être prêt à réceptionner les factures de vos fournisseurs dès la première échéance.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-2">
+      <AccordionTrigger>Quel format de facture électronique choisir pour une PME ?</AccordionTrigger>
+      <AccordionContent>
+        Pour la majorité des PME, le format **Factur-X** est le plus adapté. Il combine un PDF lisible classique avec des données XML structurées intégrées, ce qui le rend facile à utiliser tout en étant pleinement conforme. Les formats UBL et CII sont également acceptés mais sont davantage utilisés dans des contextes internationaux ou pour des systèmes d'information complexes.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-3">
+      <AccordionTrigger>Quelle est la différence entre une PDP et le PPF ?</AccordionTrigger>
+      <AccordionContent>
+        Le **PPF** (Portail Public de Facturation) est la plateforme gratuite de l'État qui assure les fonctions de base (réception et transmission). Les **PDP** (Plateformes de Dématérialisation Partenaires) sont des opérateurs privés agréés qui proposent des services enrichis : conversion de formats, intégration comptable, archivage, reporting automatisé, etc. Pour les PME recherchant l'automatisation, une PDP est généralement recommandée.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-4">
+      <AccordionTrigger>Quelles sanctions en cas de non-conformité à la facturation électronique ?</AccordionTrigger>
+      <AccordionContent>
+        Les entreprises qui ne respectent pas l'obligation de facturation électronique s'exposent à une amende de **15 euros par facture** non conforme, avec un **plafond de 15 000 euros par année civile**. Ces sanctions s'appliquent indépendamment pour le défaut de facturation électronique et pour le défaut d'e-reporting. Sans compter les risques de redressement fiscal en cas de contrôle.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="item-5">
+      <AccordionTrigger>Newbi est-il conforme à la réforme de la facturation électronique ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, **Newbi génère nativement des factures au format Factur-X**, l'un des trois formats officiellement reconnus par la réforme. En utilisant Newbi, vos factures intègrent automatiquement les données structurées nécessaires. Vous n'avez aucune conversion ou manipulation technique à effectuer. Newbi travaille également à l'intégration avec les PDP agréées pour assurer une transmission fluide de vos factures.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>
+
+<script
+  type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": "Facture électronique pour PME : obligations et mise en conformité",
+      "description": "PME : préparez-vous à la facturation électronique obligatoire. Obligations, plateformes PDP, format Factur-X et étapes de mise en conformité.",
+      "author": {
+        "@type": "Organization",
+        "name": "Newbi"
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "Newbi",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://newbi.fr/logo.png"
+        }
+      },
+      "datePublished": "2026-02-10",
+      "dateModified": "2026-02-10",
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "https://newbi.fr/blog/obligations-facture-electronique-pme"
+      },
+      "image": "https://newbi.fr/blog/obligations-facture-electronique-pme/hero.webp",
+      "keywords": "facture électronique PME obligations, facturation électronique obligatoire, Factur-X, PDP, PPF, e-reporting",
+      "mainEntity": {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Quand la facture électronique sera-t-elle obligatoire pour les PME ?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Les PME devront être en mesure de recevoir des factures électroniques dès le 1er septembre 2026. L'obligation d'émettre des factures électroniques s'appliquera aux PME à partir du 1er septembre 2027."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Quel format de facture électronique choisir pour une PME ?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Pour la majorité des PME, le format Factur-X est le plus adapté. Il combine un PDF lisible classique avec des données XML structurées intégrées. Les formats UBL et CII sont également acceptés."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Quelle est la différence entre une PDP et le PPF ?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Le PPF (Portail Public de Facturation) est la plateforme gratuite de l'État pour les fonctions de base. Les PDP (Plateformes de Dématérialisation Partenaires) sont des opérateurs privés agréés proposant des services enrichis comme la conversion de formats, l'intégration comptable et l'archivage."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Quelles sanctions en cas de non-conformité à la facturation électronique ?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Les entreprises s'exposent à une amende de 15 euros par facture non conforme, avec un plafond de 15 000 euros par année civile. Ces sanctions s'appliquent indépendamment pour le défaut de facturation électronique et pour le défaut d'e-reporting."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Newbi est-il conforme à la réforme de la facturation électronique ?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Oui, Newbi génère nativement des factures au format Factur-X, l'un des trois formats officiellement reconnus par la réforme. Aucune conversion ou manipulation technique n'est nécessaire."
+            }
+          }
+        ]
+      }
+    })
+  }}
+/>

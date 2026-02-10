@@ -1,0 +1,359 @@
+---
+title: 'OCR pour justificatifs comptables : automatiser la saisie des reçus'
+description: >-
+  L'OCR permet de scanner et extraire automatiquement les données de vos reçus
+  et justificatifs. Gagnez du temps sur votre comptabilité avec Newbi.
+date: '2026-02-10'
+category: guide
+sector: Comptables / Experts-comptables
+keyword: OCR justificatifs comptables
+author: Newbi
+image: /blog/ocr-justificatifs-comptables/hero.webp
+published: false
+publishDate: null
+---
+
+import Image from "next/image"
+import Link from "next/link"
+import { Button } from "@/src/components/ui/button"
+import { Callout } from "@/src/components/ui/callout"
+import { Badge } from "@/src/components/ui/badge"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/src/components/ui/accordion"
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/src/components/ui/table"
+import { Check } from "lucide-react"
+
+<div className="not-prose flex gap-2 my-4">
+  <Badge>Guide</Badge>
+  <Badge variant="secondary">Comptabilité</Badge>
+  <Badge variant="outline">8 min de lecture</Badge>
+</div>
+
+Scanner un ticket de caisse, prendre en photo un reçu de restaurant et voir les données s'enregistrer automatiquement dans votre comptabilité : c'est la promesse de l'**OCR pour justificatifs comptables**. Cette technologie de reconnaissance optique de caractères révolutionne la gestion des notes de frais et des dépenses. Voici comment l'exploiter pour gagner des heures chaque mois.
+
+<div className="not-prose my-8 relative aspect-video overflow-hidden rounded-lg">
+  <Image
+    src="/blog/ocr-justificatifs-comptables/hero.webp"
+    alt="Scan OCR d'un justificatif comptable avec extraction automatique des données"
+    fill
+    className="object-cover"
+    priority
+    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 720px"
+  />
+</div>
+
+<div className="not-prose flex justify-center my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Tester l'OCR Newbi gratuitement</Link>
+  </Button>
+</div>
+
+## Qu'est-ce que l'OCR et comment ça fonctionne ?
+
+L'OCR (Optical Character Recognition ou reconnaissance optique de caractères) est une technologie qui convertit une image de texte en données numériques exploitables. Appliquée à la comptabilité, elle permet d'extraire automatiquement les informations clés de vos justificatifs :
+
+<figure className="not-prose my-8">
+  <div className="relative aspect-video overflow-hidden rounded-lg border">
+    <Image
+      src="/blog/ocr-justificatifs-comptables/section-1.webp"
+      alt="Processus OCR : photo du reçu, analyse IA, extraction des données, enregistrement comptable"
+      fill
+      className="object-cover"
+      sizes="(max-width: 768px) 100vw, 720px"
+    />
+  </div>
+  <figcaption className="mt-2 text-center text-sm text-muted-foreground">
+    Le processus OCR en 4 étapes : capture, analyse, extraction, enregistrement
+  </figcaption>
+</figure>
+
+- **Date** de la dépense
+- **Montant HT et TTC**
+- **Taux et montant de TVA**
+- **Nom du fournisseur**
+- **Catégorie de dépense** (restaurant, transport, fournitures, etc.)
+
+Les moteurs OCR modernes utilisent l'intelligence artificielle pour atteindre des taux de reconnaissance supérieurs à 95 %, même sur des tickets de caisse froissés ou des reçus partiellement lisibles.
+
+<Callout type="info">
+  Newbi utilise plusieurs moteurs OCR en parallèle (dont Google Document AI et Mindee) pour maximiser la précision d'extraction. Le système choisit automatiquement le meilleur résultat.
+</Callout>
+
+## Pourquoi utiliser l'OCR pour vos justificatifs ?
+
+### Gain de temps considérable
+
+La saisie manuelle d'un justificatif prend en moyenne 2 à 3 minutes. Si vous gérez 50 justificatifs par mois, c'est **2h30 de saisie** économisées. Sur un an, vous récupérez **30 heures** de travail administratif.
+
+### Réduction des erreurs
+
+La saisie manuelle est sujette aux erreurs : inversion de chiffres, oubli d'un montant, mauvaise catégorisation. L'OCR élimine ces erreurs humaines et garantit des données fiables.
+
+### Conservation numérique
+
+Les justificatifs papier s'effacent (encre thermique des tickets de caisse), se perdent ou s'abîment. L'OCR permet de numériser et archiver tous vos documents dans le cloud, accessibles à tout moment.
+
+### Conformité comptable
+
+L'administration fiscale accepte les justificatifs numérisés à condition qu'ils soient fidèles à l'original et horodatés. Un logiciel d'OCR conforme garantit cette validité.
+
+## Comment utiliser l'OCR dans Newbi
+
+### Étape 1 : Prenez en photo votre justificatif
+
+Utilisez l'application mobile Newbi ou importez un fichier depuis votre ordinateur. Formats acceptés : photo (JPG, PNG), PDF, scan.
+
+### Étape 2 : L'OCR analyse le document
+
+En quelques secondes, le moteur OCR extrait automatiquement :
+- Le fournisseur
+- La date
+- Le montant HT, TVA et TTC
+- La catégorie de dépense suggérée
+
+### Étape 3 : Vérifiez et validez
+
+Les données extraites sont pré-remplies dans le formulaire de dépense. Vous n'avez qu'à vérifier et corriger si nécessaire, puis valider.
+
+### Étape 4 : Archivage et partage
+
+Le justificatif numérisé est automatiquement archivé et peut être [partagé avec votre expert-comptable](/blog/comment-partager-documents-expert-comptable) en un clic.
+
+<figure className="not-prose my-8">
+  <div className="relative aspect-video overflow-hidden rounded-lg border">
+    <Image
+      src="/blog/ocr-justificatifs-comptables/demo-ocr.webp"
+      alt="Démonstration de l'OCR Newbi : scan d'un reçu avec données extraites automatiquement"
+      fill
+      className="object-cover"
+      sizes="(max-width: 768px) 100vw, 720px"
+    />
+  </div>
+  <figcaption className="mt-2 text-center text-sm text-muted-foreground">
+    L'OCR Newbi extrait les données en quelques secondes
+  </figcaption>
+</figure>
+
+<Callout type="tip">
+  Prenez l'habitude de scanner vos reçus immédiatement après un achat. L'encre thermique des tickets de caisse s'efface en quelques semaines. Plus le document est net, meilleure est la reconnaissance OCR.
+</Callout>
+
+<div className="not-prose flex justify-center my-6">
+  <Button asChild variant="outline">
+    <Link href="/produits/factures">Découvrir les fonctionnalités Newbi</Link>
+  </Button>
+</div>
+
+## Comparatif des technologies OCR
+
+Tous les moteurs OCR ne se valent pas. Voici un comparatif des technologies disponibles :
+
+<div className="not-prose my-8 overflow-x-auto">
+  <Table>
+    <TableCaption>Comparatif des technologies OCR pour justificatifs comptables</TableCaption>
+    <TableHeader>
+      <TableRow>
+        <TableHead>Technologie</TableHead>
+        <TableHead>Précision</TableHead>
+        <TableHead>Vitesse</TableHead>
+        <TableHead>Spécialisation</TableHead>
+      </TableRow>
+    </TableHeader>
+    <TableBody>
+      <TableRow>
+        <TableCell className="font-semibold">Google Document AI</TableCell>
+        <TableCell>95-98 %</TableCell>
+        <TableCell>2-3 secondes</TableCell>
+        <TableCell>Documents structurés</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-semibold">Mindee</TableCell>
+        <TableCell>93-97 %</TableCell>
+        <TableCell>1-2 secondes</TableCell>
+        <TableCell>Reçus et factures</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-semibold">Tesseract (open-source)</TableCell>
+        <TableCell>85-92 %</TableCell>
+        <TableCell>3-5 secondes</TableCell>
+        <TableCell>Texte générique</TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="font-semibold">Newbi (multi-moteurs)</TableCell>
+        <TableCell>96-99 %</TableCell>
+        <TableCell>2-4 secondes</TableCell>
+        <TableCell>Justificatifs français</TableCell>
+      </TableRow>
+    </TableBody>
+  </Table>
+</div>
+
+Newbi combine plusieurs moteurs OCR et compare les résultats pour obtenir la meilleure précision possible, particulièrement sur les documents français (formats de TVA, mentions légales françaises).
+
+## Les types de justificatifs compatibles
+
+L'OCR de Newbi fonctionne avec tous les types de justificatifs courants :
+
+<div className="not-prose my-8">
+  <ul className="grid gap-3" role="list">
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span className="text-muted-foreground">Tickets de caisse (restaurants, commerces, parkings)</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span className="text-muted-foreground">Factures fournisseurs (PDF ou papier)</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span className="text-muted-foreground">Notes de frais de déplacement (train, avion, taxi)</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span className="text-muted-foreground">Reçus de paiement par carte bancaire</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span className="text-muted-foreground">Factures d'abonnement (téléphone, internet, logiciels)</span>
+    </li>
+    <li className="flex items-start gap-3">
+      <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
+      <span className="text-muted-foreground">Relevés de péage et de carburant</span>
+    </li>
+  </ul>
+</div>
+
+Pour en savoir plus sur les meilleurs outils de scan, consultez notre [Top 5 des outils pour scanner tickets et notes de frais](/blog/top-outils-scan-tickets-caisse-notes-frais).
+
+## L'OCR pour les experts-comptables
+
+Si vous êtes expert-comptable, l'OCR transforme votre relation avec vos clients :
+
+- **Fini les boîtes à chaussures** remplies de tickets en fin de trimestre
+- **Réception en temps réel** des justificatifs numérisés par vos clients
+- **Pré-saisie automatique** qui réduit votre temps de traitement
+- **Rapprochement bancaire** facilité grâce aux données structurées
+
+Avec Newbi, vos clients scannent leurs justificatifs au fil de l'eau et vous les partagent automatiquement. Plus besoin d'attendre la clôture pour collecter les documents.
+
+Découvrez notre sélection des [logiciels de comptabilité recommandés par les experts-comptables](/blog/logiciel-comptabilite-expert-comptable).
+
+<figure className="not-prose my-8">
+  <div className="relative aspect-video overflow-hidden rounded-lg border">
+    <Image
+      src="/blog/ocr-justificatifs-comptables/partage-comptable.webp"
+      alt="Partage de justificatifs OCR entre le client et son expert-comptable via Newbi"
+      fill
+      className="object-cover"
+      sizes="(max-width: 768px) 100vw, 720px"
+    />
+  </div>
+  <figcaption className="mt-2 text-center text-sm text-muted-foreground">
+    Flux de partage des justificatifs entre le client et son expert-comptable
+  </figcaption>
+</figure>
+
+<Callout type="warning">
+  Conservez vos justificatifs originaux (papier ou numérique) pendant au moins **6 ans** pour les obligations fiscales. La numérisation OCR ne dispense pas de la conservation de l'original, sauf si vous respectez les conditions de l'archivage à valeur probante (norme NF Z42-026).
+</Callout>
+
+## En résumé
+
+L'OCR pour justificatifs comptables est un gain de productivité majeur :
+
+- **Scannez** vos reçus en un clic depuis votre téléphone
+- **Extraction automatique** des données (montant, TVA, fournisseur, date)
+- **Archivage cloud** sécurisé et partageable avec votre comptable
+- **Réduction de 90 %** du temps de saisie manuelle
+- **Précision de 96 à 99 %** grâce à la technologie multi-moteurs de Newbi
+
+Arrêtez de perdre du temps à saisir vos justificatifs manuellement. Newbi automatise tout le processus, de la capture au partage avec votre expert-comptable.
+
+<div className="not-prose flex justify-center my-8">
+  <Button asChild size="lg">
+    <Link href="/auth/signup">Essayer Newbi gratuitement pendant 30 jours</Link>
+  </Button>
+</div>
+
+## Questions fréquentes
+
+<div className="not-prose my-12">
+  <Accordion type="multiple">
+    <AccordionItem value="faq-0">
+      <AccordionTrigger>L'OCR fonctionne-t-il avec des tickets de caisse effacés ?</AccordionTrigger>
+      <AccordionContent>
+        Partiellement. Si le ticket est encore lisible à l'œil nu, l'OCR pourra extraire la plupart des données. En revanche, si l'encre thermique est totalement effacée, la reconnaissance sera impossible. C'est pourquoi il est recommandé de scanner vos tickets dès réception.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-1">
+      <AccordionTrigger>Les justificatifs numérisés par OCR ont-ils une valeur légale ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, l'administration fiscale accepte les justificatifs numérisés à condition qu'ils soient une copie fidèle et durable de l'original. Pour une valeur probante complète, le processus de numérisation doit respecter la norme NF Z42-026 (horodatage, intégrité, traçabilité).
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-2">
+      <AccordionTrigger>Quel est le taux de précision de l'OCR de Newbi ?</AccordionTrigger>
+      <AccordionContent>
+        Newbi atteint un taux de précision de 96 à 99 % grâce à l'utilisation de plusieurs moteurs OCR en parallèle (Google Document AI, Mindee). Le système compare les résultats et sélectionne les données les plus fiables. Une vérification humaine rapide reste recommandée.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-3">
+      <AccordionTrigger>Peut-on scanner des justificatifs en plusieurs langues ?</AccordionTrigger>
+      <AccordionContent>
+        Oui, les moteurs OCR de Newbi reconnaissent les documents en français, anglais, allemand, espagnol et italien. C'est particulièrement utile pour les frais de déplacement à l'étranger. Les montants et taux de TVA étrangers sont correctement extraits.
+      </AccordionContent>
+    </AccordionItem>
+    <AccordionItem value="faq-4">
+      <AccordionTrigger>Combien de justificatifs peut-on scanner par mois avec Newbi ?</AccordionTrigger>
+      <AccordionContent>
+        Le nombre de scans OCR dépend de votre offre. L'offre Freelance inclut un quota généreux adapté aux indépendants, et les offres TPE et Entreprise offrent un volume plus important. Contactez-nous pour connaître les détails de chaque plan.
+      </AccordionContent>
+    </AccordionItem>
+  </Accordion>
+</div>
+
+<script type="application/ld+json" dangerouslySetInnerHTML={{__html: JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "L'OCR fonctionne-t-il avec des tickets effacés ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Partiellement. Si le ticket est lisible, l'OCR extraira les données. Scannez vos tickets dès réception."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Les justificatifs numérisés ont-ils une valeur légale ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Oui, à condition qu'ils soient une copie fidèle de l'original. La norme NF Z42-026 garantit la valeur probante."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Quel est le taux de précision de l'OCR Newbi ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "96 à 99 % grâce à l'utilisation de plusieurs moteurs OCR en parallèle."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Peut-on scanner des justificatifs en plusieurs langues ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Oui : français, anglais, allemand, espagnol et italien sont supportés."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Combien de justificatifs peut-on scanner par mois ?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Le quota dépend de votre offre. Les offres TPE et Entreprise offrent un volume plus important."
+      }
+    }
+  ]
+})}} />

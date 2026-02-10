@@ -35,8 +35,8 @@ const calloutStyles = {
   },
   success: {
     container:
-      "border-emerald-500/20 bg-emerald-50/50 text-emerald-900 dark:border-emerald-500/30 dark:bg-emerald-500/5 dark:text-emerald-200",
-    icon: "fill-emerald-500 stroke-white dark:fill-emerald-200/20 dark:stroke-emerald-200",
+      "border-green-500/20 bg-green-50/50 text-green-900 dark:border-green-500/30 dark:bg-green-500/5 dark:text-green-200",
+    icon: "fill-green-500 stroke-white dark:fill-green-200/20 dark:stroke-green-200",
     Icon: CheckCircle,
   },
   tip: {

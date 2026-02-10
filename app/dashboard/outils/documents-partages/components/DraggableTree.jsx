@@ -23,6 +23,7 @@ import {
   FileSpreadsheet,
   File,
   GripVertical,
+  Check,
 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import {
@@ -50,7 +51,7 @@ const getFileIcon = (mimeType, extension, className = "size-3.5 text-muted-foreg
 };
 
 // Composant d'item draggable
-function DraggableItem({ id, item, level, isExpanded, onToggle, onClick, onContextMenu, children }) {
+function DraggableItem({ id, item, level, isExpanded, onToggle, onClick, onContextMenu, isChecked, onCheckChange, children }) {
   const isFolder = item.isFolder;
   const isInbox = item.isInbox;
   const canDrag = !isInbox;
@@ -130,6 +131,24 @@ function DraggableItem({ id, item, level, isExpanded, onToggle, onClick, onConte
 
         {!isFolder && <div className="w-4" />}
 
+        {/* Folder selection checkbox */}
+        {isFolder && !isInbox && onCheckChange && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onCheckChange?.();
+            }}
+            className={cn(
+              "size-4 rounded border flex items-center justify-center shrink-0 transition-colors",
+              isChecked
+                ? "bg-primary border-primary text-primary-foreground"
+                : "border-muted-foreground/40 hover:border-primary/60"
+            )}
+          >
+            {isChecked && <Check className="size-3" strokeWidth={2.5} />}
+          </button>
+        )}
+
         {isFolder ? (
           isInbox ? (
             <Inbox className="size-3.5 text-amber-500/80 shrink-0" />
@@ -197,8 +216,10 @@ export function DraggableTree({
   onSelectDocument,
   selectedFolder,
   onContextMenu,
+  selectedFolders = [],
+  onToggleFolderSelection,
 }) {
-  const [expandedFolders, setExpandedFolders] = useState(new Set(["inbox"]));
+  const [expandedFolders, setExpandedFolders] = useState(new Set(["inbox", "my-folders"]));
   const [activeItem, setActiveItem] = useState(null);
   const hoverTimerRef = useRef(null);
   const lastHoveredFolderRef = useRef(null);
@@ -399,6 +420,7 @@ export function DraggableTree({
 
       const isExpanded = expandedFolders.has(itemId);
       const isSelected = item.isFolder && !item.isInbox && itemId === selectedFolder;
+      const isFolderChecked = item.isFolder && !item.isInbox && selectedFolders.includes(itemId);
 
       return (
         <DraggableItem
@@ -407,6 +429,12 @@ export function DraggableTree({
           item={item}
           level={level}
           isExpanded={isExpanded}
+          isChecked={isFolderChecked}
+          onCheckChange={
+            item.isFolder && !item.isInbox && onToggleFolderSelection
+              ? () => onToggleFolderSelection(itemId)
+              : undefined
+          }
           onToggle={() => toggleFolder(itemId)}
           onClick={() => {
             if (item.isFolder) {
@@ -441,7 +469,7 @@ export function DraggableTree({
         </DraggableItem>
       );
     },
-    [treeData, expandedFolders, selectedFolder, toggleFolder, onSelectFolder, onSelectDocument, onContextMenu]
+    [treeData, expandedFolders, selectedFolder, selectedFolders, toggleFolder, onSelectFolder, onSelectDocument, onContextMenu, onToggleFolderSelection]
   );
 
   // Custom collision detection that prefers folders
@@ -478,7 +506,48 @@ export function DraggableTree({
       >
         <div className="py-1 overflow-hidden">
           <AnimatePresence initial={false}>
-            {treeData.rootItems.map((itemId) => renderItem(itemId, 0))}
+            {/* Inbox */}
+            {renderItem("inbox", 0)}
+
+            {/* Mes dossiers section */}
+            {treeData.rootItems.filter((id) => id !== "inbox").length > 0 && (
+              <motion.div
+                layout="position"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="w-full"
+              >
+                <button
+                  onClick={() => toggleFolder("my-folders")}
+                  className="flex items-center gap-2 w-full px-2 pt-4 pb-1"
+                >
+                  <ChevronRight
+                    className={cn(
+                      "size-3 text-muted-foreground/60 transition-transform duration-150",
+                      expandedFolders.has("my-folders") && "rotate-90"
+                    )}
+                  />
+                  <span className="text-xs font-medium text-muted-foreground/80 uppercase tracking-wide">
+                    Mes dossiers
+                  </span>
+                </button>
+                <AnimatePresence initial={false}>
+                  {expandedFolders.has("my-folders") && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.15, ease: "easeOut" }}
+                      style={{ overflow: "hidden" }}
+                    >
+                      {treeData.rootItems
+                        .filter((id) => id !== "inbox")
+                        .map((itemId) => renderItem(itemId, 0))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            )}
           </AnimatePresence>
         </div>
 
