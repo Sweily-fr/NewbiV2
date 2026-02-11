@@ -36,8 +36,8 @@ if (imagesOnly) {
   }
 
   console.log(`Found ${publishedSlugs.length} published article(s). Generating images...`);
-  if (!process.env.GOOGLE_API_KEY) {
-    console.log("Error: GOOGLE_API_KEY not set.");
+  if (!process.env.OPENAI_API_KEY) {
+    console.log("Error: OPENAI_API_KEY not set.");
     process.exit(1);
   }
 
@@ -92,7 +92,7 @@ fs.writeFileSync(LOG_PATH, JSON.stringify(log, null, 2), "utf-8");
 console.log(`\nPublished ${published.length} article(s) on ${today}.`);
 
 // Generate images for newly published articles
-if (!skipImages && process.env.GOOGLE_API_KEY) {
+if (!skipImages && process.env.OPENAI_API_KEY) {
   console.log("\n--- Generating images ---");
   const slugArgs = published.join(" ");
   try {
@@ -105,8 +105,8 @@ if (!skipImages && process.env.GOOGLE_API_KEY) {
     console.error("Warning: Image generation failed. Articles are published but some images may be missing.");
     console.error(err.message);
   }
-} else if (!process.env.GOOGLE_API_KEY) {
-  console.log("\nSkipping image generation: GOOGLE_API_KEY not set.");
+} else if (!process.env.OPENAI_API_KEY) {
+  console.log("\nSkipping image generation: OPENAI_API_KEY not set.");
 } else {
   console.log("\nSkipping image generation: --skip-images flag used.");
 }
