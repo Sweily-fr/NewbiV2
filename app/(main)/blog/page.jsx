@@ -1,4 +1,6 @@
-import { BlogGrid } from "@/src/components/blog-grid";
+import { NewHeroNavbar } from "@/app/(main)/new/lp-home/NewHeroNavbar";
+import { BlogHeroSlider } from "@/src/components/blog/blog-hero-slider";
+import { BlogRecentArticles } from "@/src/components/blog/blog-recent-articles";
 import { getAllPosts } from "@/src/lib/blog";
 
 export const metadata = {
@@ -13,27 +15,36 @@ export const metadata = {
 export default function BlogPage() {
   const posts = getAllPosts();
 
-  const postsForGrid = posts.map((post) => ({
-    id: post.slug,
+  const allPosts = posts.map((post) => ({
+    slug: post.slug,
     title: post.title,
-    summary: post.description,
-    label: post.category,
+    description: post.description,
+    category: post.category,
+    readTime: post.readTime,
     author: post.author,
-    published: new Date(post.publishDate || post.date).toLocaleDateString(
-      "fr-FR",
-      {
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-      }
-    ),
-    url: `/blog/${post.slug}`,
     image: post.image,
+    url: `/blog/${post.slug}`,
+    publishDate: new Date(post.publishDate || post.date).toLocaleDateString(
+      "fr-FR",
+      { day: "numeric", month: "long", year: "numeric" }
+    ),
   }));
 
+  const heroSliderPosts = allPosts.slice(0, 2);
+  const recentPosts = allPosts.slice(2);
+  const lastUpdate = allPosts.length > 0 ? allPosts[0].publishDate : "";
+
   return (
-    <div className="min-h-screen pt-32 pb-20">
-      <BlogGrid posts={postsForGrid} />
+    <div className="min-h-screen pt-32">
+      <NewHeroNavbar />
+      <BlogHeroSlider posts={heroSliderPosts} />
+      {recentPosts.length > 0 && (
+        <BlogRecentArticles
+          posts={recentPosts}
+          lastUpdate={lastUpdate}
+          hasMore={posts.length > 4}
+        />
+      )}
     </div>
   );
 }
