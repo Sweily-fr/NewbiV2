@@ -52,16 +52,20 @@ PUBLIC_BLOG_DIR = os.path.join(PROJECT_DIR, "public", "blog")
 MODEL = "dall-e-3"
 
 BASE_STYLE = (
-    "Isometric minimalist illustration, extremely simple, very few elements, "
-    "geometric shapes only, no detailed characters, no faces, no text, "
-    "no watermarks, no complex scenes. "
-    "Style like Qonto brand illustrations: clean, professional, corporate, "
-    "sparse composition with lots of white space. "
-    "Maximum 2-3 simple objects per image. "
-    "Soft pastel purple palette: primary #5a50ff, light purple #8b7fff, "
-    "very light lavender background #f8f7ff. "
-    "Subtle shadows, no gradients, no dark backgrounds. "
-    "Think: one simple concept, one simple visual."
+    "Single flat 2D icon centered on a pure white #FFFFFF background. "
+    "ONE object only. No perspective, no isometric, no 3D, no shadows, no depth. "
+    "Completely flat vector style. No people, no characters, no faces, no silhouettes. "
+    "No text, no letters, no numbers, no words. "
+    "No complex scenes, no multiple objects, no busy compositions. "
+    "Just ONE simple geometric icon made of basic shapes (circles, rectangles, rounded squares). "
+    "Colors: only #5a50ff purple and #8b7fff light purple on white. "
+    "Style reference: a single app icon, like a simple Notion or Linear icon. "
+    "Ultra minimal. Negative space is key."
+)
+
+CRITICAL_SUFFIX = (
+    " CRITICAL: only ONE simple flat object, everything else is white empty space. "
+    "No 3D, no isometric, no perspective, no shadows."
 )
 
 
@@ -188,6 +192,7 @@ def build_prompt(slug, frontmatter, image_name, article_body):
             f"{BASE_STYLE} "
             f"Wide hero image for a business article. {context}. "
             f"One single iconic object representing the topic, centered, lots of empty space around it."
+            f"{CRITICAL_SUFFIX}"
         )
     elif "section" in name_lower:
         excerpt = _extract_section_context(article_body, 1)
@@ -196,61 +201,71 @@ def build_prompt(slug, frontmatter, image_name, article_body):
             f"Small illustration for an article section. {context}. "
             f"Context: {excerpt}. "
             f"One simple object or icon representing this section concept."
+            f"{CRITICAL_SUFFIX}"
         )
     elif "comparatif" in name_lower or "comparaison" in name_lower:
         prompt = (
             f"{BASE_STYLE} "
             f"Illustration of a comparison. {context}. "
-            f"Two simple geometric objects side by side, like two cards or two boxes."
+            f"Two simple geometric shapes side by side."
+            f"{CRITICAL_SUFFIX}"
         )
     elif "dashboard" in name_lower:
         prompt = (
             f"{BASE_STYLE} "
-            f"Simple dashboard mockup. {context}. "
-            f"One minimal screen shape with 2-3 abstract chart elements inside."
+            f"Simple dashboard icon. {context}. "
+            f"One minimal screen shape, flat and geometric."
+            f"{CRITICAL_SUFFIX}"
         )
     elif "workflow" in name_lower or "etape" in name_lower:
         prompt = (
             f"{BASE_STYLE} "
-            f"Simple workflow illustration. {context}. "
-            f"2-3 connected geometric shapes with arrows between them."
+            f"Simple workflow icon. {context}. "
+            f"One arrow shape or flow icon, flat and geometric."
+            f"{CRITICAL_SUFFIX}"
         )
     elif "checklist" in name_lower:
         prompt = (
             f"{BASE_STYLE} "
-            f"Simple checklist illustration. {context}. "
-            f"One clipboard shape with 2-3 checkmark lines."
+            f"Simple checklist icon. {context}. "
+            f"One clipboard shape with checkmarks."
+            f"{CRITICAL_SUFFIX}"
         )
     elif "exemple" in name_lower or "modele" in name_lower:
         prompt = (
             f"{BASE_STYLE} "
-            f"Simple document illustration. {context}. "
-            f"One paper/document shape with a few abstract lines on it."
+            f"Simple document icon. {context}. "
+            f"One paper shape, flat and geometric."
+            f"{CRITICAL_SUFFIX}"
         )
     elif "seuil" in name_lower or "tva" in name_lower or "fiscal" in name_lower:
         prompt = (
             f"{BASE_STYLE} "
-            f"Tax/threshold illustration. {context}. "
-            f"One simple calculator or scale icon, minimal and geometric."
+            f"Tax icon. {context}. "
+            f"One simple calculator icon, flat and geometric."
+            f"{CRITICAL_SUFFIX}"
         )
     elif "transaction" in name_lower or "bancaire" in name_lower or "tresorerie" in name_lower:
         prompt = (
             f"{BASE_STYLE} "
-            f"Financial illustration. {context}. "
-            f"One simple coin or wallet icon, minimal and geometric."
+            f"Financial icon. {context}. "
+            f"One simple coin icon, flat and geometric."
+            f"{CRITICAL_SUFFIX}"
         )
     elif "preparation" in name_lower or "migration" in name_lower:
         prompt = (
             f"{BASE_STYLE} "
-            f"Preparation/migration illustration. {context}. "
-            f"One simple arrow pointing from old to new, two geometric shapes."
+            f"Preparation icon. {context}. "
+            f"One simple arrow icon, flat and geometric."
+            f"{CRITICAL_SUFFIX}"
         )
     else:
         readable_name = name_lower.replace("-", " ").replace("_", " ")
         prompt = (
             f"{BASE_STYLE} "
-            f"Simple illustration for: {readable_name}. {context}. "
-            f"One minimal iconic object representing this concept."
+            f"Simple icon for: {readable_name}. {context}. "
+            f"One minimal iconic shape representing this concept."
+            f"{CRITICAL_SUFFIX}"
         )
 
     return prompt
