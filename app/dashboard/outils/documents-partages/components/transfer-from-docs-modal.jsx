@@ -64,7 +64,6 @@ export default function TransferFromDocsModal({
     notifyOnDownload: false,
     passwordProtected: false,
     password: "",
-    allowPreview: true,
   });
   const [showPassword, setShowPassword] = useState(false);
 
@@ -148,7 +147,6 @@ export default function TransferFromDocsModal({
             password: options.passwordProtected
               ? options.password
               : undefined,
-            allowPreview: options.allowPreview,
           },
         },
       });
@@ -168,7 +166,6 @@ export default function TransferFromDocsModal({
         notifyOnDownload: false,
         passwordProtected: false,
         password: "",
-        allowPreview: true,
       });
 
       onTransferCreated?.(result.shareLink, result.accessKey);
@@ -332,25 +329,6 @@ export default function TransferFromDocsModal({
               checked={options.notifyOnDownload}
               onCheckedChange={(checked) =>
                 handleOptionChange("notifyOnDownload", checked)
-              }
-              className="data-[state=checked]:bg-[#5a50ff] scale-75 cursor-pointer"
-            />
-          </div>
-
-          {/* Aperçu */}
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label className="text-sm font-normal">
-                Autoriser l&apos;aperçu
-              </Label>
-              <p className="text-xs text-muted-foreground">
-                Permettre la prévisualisation des fichiers
-              </p>
-            </div>
-            <Switch
-              checked={options.allowPreview}
-              onCheckedChange={(checked) =>
-                handleOptionChange("allowPreview", checked)
               }
               className="data-[state=checked]:bg-[#5a50ff] scale-75 cursor-pointer"
             />
