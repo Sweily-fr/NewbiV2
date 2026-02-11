@@ -3,32 +3,31 @@
 Blog Image Generator for Newbi
 
 Generates hero and section illustrations for blog articles using
-the Gemini Image API. Images are saved as WebP in public/blog/[slug]/.
+DALL-E 3 (OpenAI) for illustrations and Unsplash for sector-specific
+hero photos. Images are saved as WebP in public/blog/[slug]/.
 
 Usage:
-    python generate-blog-images.py <slug> [--api-key KEY]
-
-Reads the MDX file at content/blog/<slug>.mdx, extracts frontmatter
-and inline image references, then generates each missing image.
+    python generate-blog-images.py <slug> [--force]
 
 Environment:
-    GOOGLE_API_KEY  — Google API key (or pass --api-key)
+    OPENAI_API_KEY       — OpenAI API key for DALL-E 3
+    UNSPLASH_ACCESS_KEY  — Unsplash API key for hero photos (optional)
 """
 
 import os
 import sys
 import re
 import io
+import json
 import time
-import signal
 import argparse
-import threading
+import urllib.request
+import urllib.parse
 
 try:
-    from google import genai
-    from google.genai import types
+    from openai import OpenAI
 except ImportError:
-    print("Error: google-genai package not installed. Run: pip install google-genai")
+    print("Error: openai package not installed. Run: pip install openai")
     sys.exit(1)
 
 try:
@@ -39,9 +38,8 @@ except ImportError:
 
 # ----- Timeouts -----
 
-IMAGE_TIMEOUT = 60       # seconds per image API call
-MAX_RETRIES = 2          # max retries per image
-GLOBAL_TIMEOUT = 600     # 10 minutes total for all image generation
+MAX_RETRIES = 2
+GLOBAL_TIMEOUT = 600     # 10 minutes total
 _global_start = None
 
 # ----- Config -----
@@ -51,19 +49,23 @@ PROJECT_DIR = os.path.dirname(SCRIPT_DIR)
 BLOG_CONTENT_DIR = os.path.join(PROJECT_DIR, "content", "blog")
 PUBLIC_BLOG_DIR = os.path.join(PROJECT_DIR, "public", "blog")
 
-MODEL = "gemini-2.5-flash-image"
-
-# Newbi brand palette
-PALETTE_DESCRIPTION = (
-    "Color palette: primary purple #5a50ff, secondary lighter purple #8b7fff, "
-    "white backgrounds, light gray #f8f7ff accents, soft purple gradients. "
-    "No dark backgrounds."
-)
+MODEL = "dall-e-3"
 
 BASE_STYLE = (
-    "Flat illustration style, minimal, professional, clean lines, geometric shapes, "
-    "modern SaaS aesthetic, no text in image, no watermarks, no logos, "
-    "soft shadows, rounded corners feel. " + PALETTE_DESCRIPTION
+    "Single flat 2D icon centered on a pure white #FFFFFF background. "
+    "ONE object only. No perspective, no isometric, no 3D, no shadows, no depth. "
+    "Completely flat vector style. No people, no characters, no faces, no silhouettes. "
+    "No text, no letters, no numbers, no words. "
+    "No complex scenes, no multiple objects, no busy compositions. "
+    "Just ONE simple geometric icon made of basic shapes (circles, rectangles, rounded squares). "
+    "Colors: only #5a50ff purple and #8b7fff light purple on white. "
+    "Style reference: a single app icon, like a simple Notion or Linear icon. "
+    "Ultra minimal. Negative space is key."
+)
+
+CRITICAL_SUFFIX = (
+    " CRITICAL: only ONE simple flat object, everything else is white empty space. "
+    "No 3D, no isometric, no perspective, no shadows."
 )
 
 
@@ -88,14 +90,12 @@ def find_image_refs(content, slug):
     """Find all image paths referenced in the MDX for this slug."""
     pattern = rf'src="/blog/{re.escape(slug)}/([^"]+)"'
     matches = re.findall(pattern, content)
-    # Also check frontmatter image field
     fm = parse_frontmatter(content)
     if fm.get("image"):
         img_path = fm["image"]
         basename = img_path.split("/")[-1]
         if basename not in matches:
             matches.insert(0, basename)
-    # De-duplicate while preserving order
     seen = set()
     unique = []
     for m in matches:
@@ -105,119 +105,167 @@ def find_image_refs(content, slug):
     return unique
 
 
+# ----- Unsplash -----
+
+def fetch_unsplash_hero(sector, keyword, output_path):
+    """Download a professional photo from Unsplash based on sector/keyword."""
+    access_key = os.environ.get("UNSPLASH_ACCESS_KEY")
+    if not access_key:
+        print("  [hero.webp] UNSPLASH_ACCESS_KEY not set — falling back to DALL-E", flush=True)
+        return False
+
+    query = f"{sector} business professional"
+    if keyword:
+        query = f"{sector} {keyword}"
+
+    params = urllib.parse.urlencode({
+        "query": query,
+        "orientation": "landscape",
+        "per_page": 1,
+        "content_filter": "high",
+    })
+    url = f"https://api.unsplash.com/search/photos?{params}"
+
+    print(f"  [hero.webp] Unsplash search: \"{query}\"", flush=True)
+
+    try:
+        req = urllib.request.Request(url, headers={
+            "Authorization": f"Client-ID {access_key}",
+            "Accept-Version": "v1",
+        })
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            data = json.loads(resp.read().decode())
+
+        if not data.get("results"):
+            print("  [hero.webp] No Unsplash results — falling back to DALL-E", flush=True)
+            return False
+
+        photo = data["results"][0]
+        # Use regular size (1080px wide) — good balance of quality/size
+        image_url = photo["urls"]["regular"]
+        photographer = photo["user"]["name"]
+        print(f"  [hero.webp] Found photo by {photographer} — downloading...", flush=True)
+
+        img_req = urllib.request.Request(image_url, headers={"User-Agent": "NewbiBlogImageGen/1.0"})
+        with urllib.request.urlopen(img_req, timeout=30) as img_resp:
+            img_data = img_resp.read()
+
+        img = Image.open(io.BytesIO(img_data))
+        # Crop to 16:9 if needed
+        w, h = img.size
+        target_ratio = 16 / 9
+        current_ratio = w / h
+        if current_ratio > target_ratio:
+            new_w = int(h * target_ratio)
+            left = (w - new_w) // 2
+            img = img.crop((left, 0, left + new_w, h))
+        elif current_ratio < target_ratio:
+            new_h = int(w / target_ratio)
+            top = (h - new_h) // 2
+            img = img.crop((0, top, w, top + new_h))
+
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+        img.save(output_path, "WEBP", quality=85)
+        print(f"  [hero.webp] SAVED from Unsplash ({os.path.getsize(output_path)} bytes) — photo by {photographer}", flush=True)
+        return True
+
+    except Exception as e:
+        print(f"  [hero.webp] Unsplash error: {str(e)[:150]} — falling back to DALL-E", flush=True)
+        return False
+
+
+# ----- DALL-E -----
+
 def build_prompt(slug, frontmatter, image_name, article_body):
-    """Build a Gemini prompt for a specific image in the article."""
+    """Build a DALL-E prompt for a specific image in the article."""
     title = frontmatter.get("title", slug.replace("-", " "))
     keyword = frontmatter.get("keyword", "")
-    category = frontmatter.get("category", "")
-    sector = frontmatter.get("sector", "")
 
-    context_parts = [f"Article: \"{title}\""]
+    context = f'Topic: "{title}"'
     if keyword:
-        context_parts.append(f"Keyword: {keyword}")
-    if sector:
-        context_parts.append(f"Industry: {sector}")
-    if category:
-        context_parts.append(f"Category: {category}")
+        context += f". Keyword: {keyword}"
 
-    context = ". ".join(context_parts)
-
-    # Determine image type from filename
     name_lower = image_name.lower().replace(".webp", "").replace(".svg", "")
 
     if name_lower == "hero":
         prompt = (
             f"{BASE_STYLE} "
-            f"Create a wide hero illustration for a French business blog article. "
-            f"{context}. "
-            f"Show an abstract, professional scene that represents the topic. "
-            f"Wide composition suitable for 16:9 banner. "
-            f"Evoke trust, simplicity, and modern business tools."
+            f"Wide hero image for a business article. {context}. "
+            f"One single iconic object representing the topic, centered, lots of empty space around it."
+            f"{CRITICAL_SUFFIX}"
         )
     elif "section" in name_lower:
-        # Extract surrounding context from article body
         excerpt = _extract_section_context(article_body, 1)
         prompt = (
             f"{BASE_STYLE} "
-            f"Create an illustration for a section of a French business article. "
-            f"{context}. "
-            f"Section context: {excerpt}. "
-            f"Show a clear, focused diagram or scene related to this section. "
-            f"4:3 aspect ratio, informative yet visually appealing."
+            f"Small illustration for an article section. {context}. "
+            f"Context: {excerpt}. "
+            f"One simple object or icon representing this section concept."
+            f"{CRITICAL_SUFFIX}"
         )
     elif "comparatif" in name_lower or "comparaison" in name_lower:
         prompt = (
             f"{BASE_STYLE} "
-            f"Create an illustration showing a comparison or side-by-side analysis. "
-            f"{context}. "
-            f"Show abstract representations of comparing two options, with balance scales, "
-            f"side-by-side cards, or comparison charts. 4:3 aspect ratio."
+            f"Illustration of a comparison. {context}. "
+            f"Two simple geometric shapes side by side."
+            f"{CRITICAL_SUFFIX}"
         )
     elif "dashboard" in name_lower:
         prompt = (
             f"{BASE_STYLE} "
-            f"Create an illustration of a modern SaaS dashboard interface mockup. "
-            f"{context}. "
-            f"Show a clean, minimal dashboard with charts, metrics cards, and navigation. "
-            f"Purple accent color (#5a50ff). 4:3 aspect ratio."
+            f"Simple dashboard icon. {context}. "
+            f"One minimal screen shape, flat and geometric."
+            f"{CRITICAL_SUFFIX}"
         )
     elif "workflow" in name_lower or "etape" in name_lower:
         prompt = (
             f"{BASE_STYLE} "
-            f"Create an illustration of a step-by-step workflow or process. "
-            f"{context}. "
-            f"Show connected steps with arrows, numbered stages, or a flowchart. "
-            f"4:3 aspect ratio."
+            f"Simple workflow icon. {context}. "
+            f"One arrow shape or flow icon, flat and geometric."
+            f"{CRITICAL_SUFFIX}"
         )
     elif "checklist" in name_lower:
         prompt = (
             f"{BASE_STYLE} "
-            f"Create an illustration of a checklist or verification process. "
-            f"{context}. "
-            f"Show a stylized checklist with checkmarks, completed items, and a clean layout. "
-            f"4:3 aspect ratio."
+            f"Simple checklist icon. {context}. "
+            f"One clipboard shape with checkmarks."
+            f"{CRITICAL_SUFFIX}"
         )
     elif "exemple" in name_lower or "modele" in name_lower:
         prompt = (
             f"{BASE_STYLE} "
-            f"Create an illustration of a document template or example. "
-            f"{context}. "
-            f"Show a stylized document with fields, lines, and professional formatting. "
-            f"4:3 aspect ratio."
+            f"Simple document icon. {context}. "
+            f"One paper shape, flat and geometric."
+            f"{CRITICAL_SUFFIX}"
         )
     elif "seuil" in name_lower or "tva" in name_lower or "fiscal" in name_lower:
         prompt = (
             f"{BASE_STYLE} "
-            f"Create an illustration about tax thresholds or fiscal regulations. "
-            f"{context}. "
-            f"Show abstract representations of financial thresholds, scales, or regulatory elements. "
-            f"4:3 aspect ratio."
+            f"Tax icon. {context}. "
+            f"One simple calculator icon, flat and geometric."
+            f"{CRITICAL_SUFFIX}"
         )
     elif "transaction" in name_lower or "bancaire" in name_lower or "tresorerie" in name_lower:
         prompt = (
             f"{BASE_STYLE} "
-            f"Create an illustration about financial transactions or banking. "
-            f"{context}. "
-            f"Show abstract bank connections, money flows, or financial overview. "
-            f"4:3 aspect ratio."
+            f"Financial icon. {context}. "
+            f"One simple coin icon, flat and geometric."
+            f"{CRITICAL_SUFFIX}"
         )
     elif "preparation" in name_lower or "migration" in name_lower:
         prompt = (
             f"{BASE_STYLE} "
-            f"Create an illustration about preparing or migrating to a new system. "
-            f"{context}. "
-            f"Show a transition, upgrade, or preparation process with arrows and stages. "
-            f"4:3 aspect ratio."
+            f"Preparation icon. {context}. "
+            f"One simple arrow icon, flat and geometric."
+            f"{CRITICAL_SUFFIX}"
         )
     else:
-        # Generic fallback based on filename
         readable_name = name_lower.replace("-", " ").replace("_", " ")
         prompt = (
             f"{BASE_STYLE} "
-            f"Create a professional illustration for a French business article section. "
-            f"{context}. "
-            f"Image topic: {readable_name}. "
-            f"4:3 aspect ratio."
+            f"Simple icon for: {readable_name}. {context}. "
+            f"One minimal iconic shape representing this concept."
+            f"{CRITICAL_SUFFIX}"
         )
 
     return prompt
@@ -225,13 +273,10 @@ def build_prompt(slug, frontmatter, image_name, article_body):
 
 def _extract_section_context(body, section_index):
     """Extract a text excerpt around the Nth section heading."""
-    # Find ## headings
     headings = list(re.finditer(r"^## .+$", body, re.MULTILINE))
     if section_index < len(headings):
         start = headings[section_index].start()
-        # Get up to 300 chars after heading
         excerpt = body[start : start + 300].strip()
-        # Clean MDX syntax
         excerpt = re.sub(r"<[^>]+>", "", excerpt)
         excerpt = re.sub(r"\*\*([^*]+)\*\*", r"\1", excerpt)
         excerpt = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", excerpt)
@@ -245,101 +290,63 @@ def _check_global_timeout():
         return False
     elapsed = time.time() - _global_start
     if elapsed >= GLOBAL_TIMEOUT:
-        print(f"  GLOBAL TIMEOUT: {int(elapsed)}s elapsed (limit: {GLOBAL_TIMEOUT}s). Stopping image generation.")
+        print(f"  GLOBAL TIMEOUT: {int(elapsed)}s elapsed (limit: {GLOBAL_TIMEOUT}s). Stopping.", flush=True)
         return True
     return False
 
 
-def _call_gemini_with_timeout(client, prompt, aspect_ratio, timeout=IMAGE_TIMEOUT):
-    """Call Gemini API with a thread-based timeout. Returns response or raises TimeoutError."""
-    result = [None]
-    error = [None]
-
-    def _call():
-        try:
-            result[0] = client.models.generate_content(
-                model=MODEL,
-                contents=[prompt],
-                config=types.GenerateContentConfig(
-                    response_modalities=["IMAGE"],
-                    image_config=types.ImageConfig(
-                        aspect_ratio=aspect_ratio,
-                    ),
-                ),
-            )
-        except Exception as e:
-            error[0] = e
-
-    thread = threading.Thread(target=_call, daemon=True)
-    thread.start()
-    thread.join(timeout=timeout)
-
-    if thread.is_alive():
-        raise TimeoutError(f"Gemini API call timed out after {timeout}s")
-
-    if error[0]:
-        raise error[0]
-
-    return result[0]
-
-
-def generate_image(client, prompt, output_path, aspect_ratio):
-    """Generate an image using Gemini API and save as WebP with retry."""
+def generate_image(client, prompt, output_path, size):
+    """Generate an image using DALL-E 3 and save as WebP."""
     basename = os.path.basename(output_path)
 
     for attempt in range(MAX_RETRIES):
         if _check_global_timeout():
-            print(f"  SKIP (global timeout): {basename}")
+            print(f"  SKIP (global timeout): {basename}", flush=True)
             return False
 
-        print(f"  [{basename}] attempt {attempt + 1}/{MAX_RETRIES} — calling Gemini (timeout {IMAGE_TIMEOUT}s)...")
+        print(f"  [{basename}] attempt {attempt + 1}/{MAX_RETRIES} — calling DALL-E 3...", flush=True)
         t0 = time.time()
 
         try:
-            response = _call_gemini_with_timeout(client, prompt, aspect_ratio, IMAGE_TIMEOUT)
+            response = client.images.generate(
+                model=MODEL,
+                prompt=prompt,
+                size=size,
+                quality="standard",
+                n=1,
+            )
+
+            image_url = response.data[0].url
             elapsed = time.time() - t0
-            print(f"  [{basename}] response received in {elapsed:.1f}s")
+            print(f"  [{basename}] response received in {elapsed:.1f}s — downloading...", flush=True)
 
-            if not response.candidates or not response.candidates[0].content.parts:
-                print(f"  [{basename}] WARNING: empty response (no candidates/parts)")
-                return False
+            req = urllib.request.Request(image_url, headers={"User-Agent": "NewbiBlogImageGen/1.0"})
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                img_data = resp.read()
 
-            for part in response.candidates[0].content.parts:
-                if part.inline_data:
-                    img = Image.open(io.BytesIO(part.inline_data.data))
-                    os.makedirs(os.path.dirname(output_path), exist_ok=True)
-                    img.save(output_path, "WEBP", quality=85)
-                    print(f"  [{basename}] SAVED ({os.path.getsize(output_path)} bytes)")
-                    return True
-
-            print(f"  [{basename}] WARNING: response had parts but no inline_data")
-            return False
-
-        except TimeoutError:
-            print(f"  [{basename}] TIMEOUT after {IMAGE_TIMEOUT}s — skipping")
-            return False
+            img = Image.open(io.BytesIO(img_data))
+            os.makedirs(os.path.dirname(output_path), exist_ok=True)
+            img.save(output_path, "WEBP", quality=85)
+            print(f"  [{basename}] SAVED ({os.path.getsize(output_path)} bytes)", flush=True)
+            return True
 
         except Exception as e:
             elapsed = time.time() - t0
             error_str = str(e)
-            print(f"  [{basename}] ERROR after {elapsed:.1f}s: {error_str[:200]}")
+            print(f"  [{basename}] ERROR after {elapsed:.1f}s: {error_str[:200]}", flush=True)
 
-            if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str:
+            if "rate_limit" in error_str.lower() or "429" in error_str:
                 wait = min(30 * (attempt + 1), 60)
-                print(f"  [{basename}] Rate limited, retrying in {wait}s...")
+                print(f"  [{basename}] Rate limited, retrying in {wait}s...", flush=True)
                 time.sleep(wait)
                 continue
-            if "not available in your country" in error_str.lower():
-                print(f"  FATAL: Image generation not available in this region. Aborting all.")
-                sys.exit(0)
-            # Other error — skip this image
             return False
 
-    print(f"  [{basename}] FAILED after {MAX_RETRIES} retries — skipping")
+    print(f"  [{basename}] FAILED after {MAX_RETRIES} retries — skipping", flush=True)
     return False
 
 
-def process_article(slug, api_key, force=False):
+def process_article(slug, client, force=False):
     """Generate all images for a single article."""
     mdx_path = os.path.join(BLOG_CONTENT_DIR, f"{slug}.mdx")
     if not os.path.exists(mdx_path):
@@ -350,9 +357,7 @@ def process_article(slug, api_key, force=False):
         content = f.read()
 
     frontmatter = parse_frontmatter(content)
-    # Strip frontmatter for body
     body = re.sub(r"^---\s*\n.*?\n---\s*\n", "", content, flags=re.DOTALL)
-    # Strip import lines
     body = "\n".join(
         line for line in body.split("\n") if not line.strip().startswith("import ")
     )
@@ -362,11 +367,14 @@ def process_article(slug, api_key, force=False):
         print(f"No image references found in {slug}.mdx")
         return True
 
+    sector = frontmatter.get("sector")
+    keyword = frontmatter.get("keyword", "")
+
     print(f"\nProcessing: {slug}")
     print(f"  Title: {frontmatter.get('title', 'N/A')}")
-    print(f"  Images to generate: {len(image_refs)}")
+    print(f"  Sector: {sector or 'none'}")
+    print(f"  Images to generate: {len(image_refs)}", flush=True)
 
-    client = genai.Client(api_key=api_key)
     output_dir = os.path.join(PUBLIC_BLOG_DIR, slug)
     os.makedirs(output_dir, exist_ok=True)
 
@@ -377,75 +385,81 @@ def process_article(slug, api_key, force=False):
             skipped += len(image_refs) - generated - skipped
             break
 
-        # Normalize extension to .webp
         base = os.path.splitext(img_name)[0]
         webp_name = f"{base}.webp"
         output_path = os.path.join(output_dir, webp_name)
 
         if os.path.exists(output_path) and not force:
-            print(f"  [{webp_name}] EXISTS — skipping")
+            print(f"  [{webp_name}] EXISTS — skipping", flush=True)
             generated += 1
             continue
 
         is_hero = "hero" in base.lower()
-        aspect_ratio = "16:9" if is_hero else "4:3"
 
+        # Hero + sector → try Unsplash photo first
+        if is_hero and sector:
+            success = fetch_unsplash_hero(sector, keyword, output_path)
+            if success:
+                generated += 1
+                time.sleep(1)
+                continue
+
+        # DALL-E 3 illustration
+        size = "1792x1024" if is_hero else "1024x1024"
         prompt = build_prompt(slug, frontmatter, img_name, body)
-        success = generate_image(client, prompt, output_path, aspect_ratio)
+        success = generate_image(client, prompt, output_path, size)
         if success:
             generated += 1
         else:
             skipped += 1
 
-        # Rate limiting — avoid hitting API quotas
-        time.sleep(2)
+        time.sleep(1)
 
-    print(f"  Result: {generated}/{len(image_refs)} generated, {skipped} skipped")
-    return True  # Always continue — don't block publishing because of image failures
+    print(f"  Result: {generated}/{len(image_refs)} generated, {skipped} skipped", flush=True)
+    return True
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Generate blog illustrations using Gemini Image API"
+        description="Generate blog illustrations using DALL-E 3 + Unsplash"
     )
     parser.add_argument("slugs", nargs="+", help="Article slug(s) to generate images for")
-    parser.add_argument(
-        "--api-key", help="Google API key (or set GOOGLE_API_KEY env var)"
-    )
-    parser.add_argument(
-        "--force", action="store_true", help="Regenerate even if images exist"
-    )
+    parser.add_argument("--api-key", help="OpenAI API key (or set OPENAI_API_KEY env var)")
+    parser.add_argument("--force", action="store_true", help="Regenerate even if images exist")
 
     args = parser.parse_args()
 
-    api_key = args.api_key or os.environ.get("GOOGLE_API_KEY")
+    api_key = args.api_key or os.environ.get("OPENAI_API_KEY")
     if not api_key:
         print("Error: No API key provided.")
-        print("  Use --api-key KEY or set GOOGLE_API_KEY environment variable.")
+        print("  Use --api-key KEY or set OPENAI_API_KEY environment variable.")
         sys.exit(1)
+
+    unsplash_key = os.environ.get("UNSPLASH_ACCESS_KEY")
 
     global _global_start
     _global_start = time.time()
 
     print("=" * 60)
     print("Newbi Blog Image Generator")
-    print(f"  Model: {MODEL}")
+    print(f"  DALL-E model: {MODEL}")
+    print(f"  Unsplash: {'enabled' if unsplash_key else 'disabled (no key)'}")
     print(f"  Articles: {len(args.slugs)}")
-    print(f"  Timeout per image: {IMAGE_TIMEOUT}s")
+    print(f"  Force: {args.force}")
     print(f"  Max retries: {MAX_RETRIES}")
     print(f"  Global timeout: {GLOBAL_TIMEOUT}s ({GLOBAL_TIMEOUT // 60}min)")
     print("=" * 60, flush=True)
+
+    client = OpenAI(api_key=api_key)
 
     for slug in args.slugs:
         if _check_global_timeout():
             print(f"\nSkipping remaining articles due to global timeout.")
             break
-        process_article(slug, api_key, force=args.force)
+        process_article(slug, client, force=args.force)
 
     elapsed = time.time() - _global_start
-    print(f"\nDone in {int(elapsed)}s.")
-    sys.stdout.flush()
-    # Force-exit to kill any lingering daemon threads (hanging API calls)
+    print(f"\nDone in {int(elapsed)}s.", flush=True)
     os._exit(0)
 
 

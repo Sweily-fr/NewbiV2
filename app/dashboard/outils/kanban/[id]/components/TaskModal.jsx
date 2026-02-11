@@ -383,6 +383,13 @@ export function TaskModal({
   const [showDescription, setShowDescription] = useState(!!taskForm.description);
   const [tagsInputFocused, setTagsInputFocused] = useState(false);
 
+  // Synchroniser showDescription quand la description change (ex: chargement async)
+  useEffect(() => {
+    if (taskForm.description) {
+      setShowDescription(true);
+    }
+  }, [taskForm.description]);
+
   // Récupérer les infos des membres assignés
   const { members: membersInfo } = useAssignedMembersInfo(taskForm.assignedMembers || []);
   

@@ -74,6 +74,9 @@ export const GET_SHARED_FOLDERS = gql`
         isSharedWithAccountant
         order
         isSystem
+        visibility
+        allowedUserIds
+        canManageVisibility
         documentsCount
         createdAt
         updatedAt
@@ -276,6 +279,8 @@ export const CREATE_SHARED_FOLDER = gql`
         color
         icon
         order
+        visibility
+        allowedUserIds
         documentsCount
       }
     }
@@ -309,6 +314,30 @@ export const DELETE_SHARED_FOLDER = gql`
     deleteSharedFolder(id: $id, workspaceId: $workspaceId) {
       success
       message
+    }
+  }
+`;
+
+export const UPDATE_FOLDER_VISIBILITY = gql`
+  mutation UpdateFolderVisibility(
+    $id: ID!
+    $workspaceId: ID!
+    $visibility: FolderVisibility!
+    $allowedUserIds: [ID]
+  ) {
+    updateFolderVisibility(
+      id: $id
+      workspaceId: $workspaceId
+      visibility: $visibility
+      allowedUserIds: $allowedUserIds
+    ) {
+      success
+      message
+      folder {
+        id
+        visibility
+        allowedUserIds
+      }
     }
   }
 `;
@@ -798,6 +827,46 @@ export function useDeleteSharedFolder() {
   };
 
   return { deleteFolder, loading };
+}
+
+// Hook pour mettre à jour la visibilité d'un dossier
+export function useUpdateFolderVisibility() {
+  const { workspaceId } = useWorkspace();
+  const [updateMutation, { loading }] = useMutation(UPDATE_FOLDER_VISIBILITY);
+
+  const updateVisibility = async (id, visibility, allowedUserIds = []) => {
+    try {
+      const result = await updateMutation({
+        variables: {
+          id,
+          workspaceId,
+          visibility,
+          allowedUserIds,
+        },
+        refetchQueries: [
+          { query: GET_SHARED_FOLDERS, variables: { workspaceId } },
+          {
+            query: GET_SHARED_DOCUMENTS,
+            variables: { workspaceId, filter: {}, limit: 50, offset: 0 },
+          },
+        ],
+      });
+
+      if (result.data?.updateFolderVisibility?.success) {
+        toast.success("Visibilité mise à jour");
+        return result.data.updateFolderVisibility.folder;
+      } else {
+        throw new Error(
+          result.data?.updateFolderVisibility?.message || "Erreur mise à jour visibilité"
+        );
+      }
+    } catch (error) {
+      toast.error(error.message || "Erreur lors de la mise à jour de la visibilité");
+      throw error;
+    }
+  };
+
+  return { updateVisibility, loading };
 }
 
 // Hook pour renommer un document

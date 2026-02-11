@@ -144,8 +144,8 @@ export function MemberSelector({ workspaceId, selectedMembers = [], onMembersCha
             </h4>
           </div>
           
-          <div 
-            className="h-[240px] overflow-y-scroll overflow-x-hidden scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
+          <div
+            className="max-h-[240px] overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
             onWheel={handleWheel}
             style={{
               scrollBehavior: 'smooth',

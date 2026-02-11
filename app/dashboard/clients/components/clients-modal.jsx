@@ -8,6 +8,7 @@ import {
   ExternalLink,
   Globe,
   Copy,
+  Bell,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/src/lib/utils";
@@ -141,6 +142,7 @@ export default function ClientsModal({
   const [pendingNotes, setPendingNotes] = useState([]);
   const [customFieldValues, setCustomFieldValues] = useState({});
   const [clientContacts, setClientContacts] = useState([]);
+  const [isReminderDialogOpen, setIsReminderDialogOpen] = useState(false);
   const clientType = watch("type");
   const isInternational = watch("isInternational");
 
@@ -1362,8 +1364,20 @@ export default function ClientsModal({
 
             {/* Colonne droite : Timeline d'activité - 50% */}
             <div className="w-1/2 flex flex-col bg-muted/30">
-              <div className="flex-shrink-0 px-6 py-4 border-b bg-background">
+              <div className="flex-shrink-0 px-6 py-4 border-b bg-background flex items-center justify-between">
                 <h3 className="font-semibold text-sm">Activité</h3>
+                {isEditing && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs gap-1.5 mr-4"
+                    onClick={() => setIsReminderDialogOpen(true)}
+                  >
+                    <Bell className="h-3.5 w-3.5" />
+                    Rappel
+                  </Button>
+                )}
               </div>
               <div className="flex-1 overflow-hidden">
                 <ClientActivity
@@ -1375,6 +1389,8 @@ export default function ClientsModal({
                   onUpdatePendingNote={updatePendingNote}
                   onRemovePendingNote={removePendingNote}
                   isCreating={!isEditing}
+                  isReminderDialogOpen={isReminderDialogOpen}
+                  onReminderDialogClose={() => setIsReminderDialogOpen(false)}
                 />
               </div>
             </div>
@@ -2154,18 +2170,36 @@ export default function ClientsModal({
 
             <TabsContent
               value="activity"
-              className="flex-1 overflow-hidden m-0"
+              className="flex-1 overflow-hidden m-0 flex flex-col"
             >
-              <ClientActivity
-                client={currentClient}
-                workspaceId={workspaceId}
-                onClientUpdate={setCurrentClient}
-                pendingNotes={pendingNotes}
-                onAddPendingNote={addPendingNote}
-                onUpdatePendingNote={updatePendingNote}
-                onRemovePendingNote={removePendingNote}
-                isCreating={!isEditing}
-              />
+              {isEditing && (
+                <div className="flex-shrink-0 px-4 py-2 border-b flex justify-end">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs gap-1.5"
+                    onClick={() => setIsReminderDialogOpen(true)}
+                  >
+                    <Bell className="h-3.5 w-3.5" />
+                    Rappel
+                  </Button>
+                </div>
+              )}
+              <div className="flex-1 overflow-hidden">
+                <ClientActivity
+                  client={currentClient}
+                  workspaceId={workspaceId}
+                  onClientUpdate={setCurrentClient}
+                  pendingNotes={pendingNotes}
+                  onAddPendingNote={addPendingNote}
+                  onUpdatePendingNote={updatePendingNote}
+                  onRemovePendingNote={removePendingNote}
+                  isCreating={!isEditing}
+                  isReminderDialogOpen={isReminderDialogOpen}
+                  onReminderDialogClose={() => setIsReminderDialogOpen(false)}
+                />
+              </div>
             </TabsContent>
           </Tabs>
         )}

@@ -113,6 +113,10 @@ export const GET_CLIENT = gql`
           documentId
           documentNumber
           status
+          originalInvoiceNumber
+          eventId
+          eventTitle
+          eventDate
         }
       }
       createdAt

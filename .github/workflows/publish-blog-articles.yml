@@ -9,6 +9,16 @@ on:
         description: 'Number of articles to publish'
         required: false
         default: '3'
+      images_only:
+        description: 'Only generate images for published articles (no new publishing)'
+        required: false
+        type: boolean
+        default: false
+      force_images:
+        description: 'Force regenerate images even if they already exist'
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -31,16 +41,26 @@ jobs:
           python-version: '3.12'
 
       - name: Install Python dependencies
-        run: pip install google-genai Pillow
+        run: pip install openai Pillow
 
       - name: Install Node dependencies
         run: npm ci
 
       - name: Publish articles and generate images
         env:
-          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          UNSPLASH_ACCESS_KEY: ${{ secrets.NEWBI_ACCESS_KEY }}
           PYTHONUNBUFFERED: '1'
-        run: node scripts/publish-articles.js ${{ github.event.inputs.count || '3' }}
+        run: |
+          FORCE_FLAG=""
+          if [ "${{ github.event.inputs.force_images }}" = "true" ]; then
+            FORCE_FLAG="--force-images"
+          fi
+          if [ "${{ github.event.inputs.images_only }}" = "true" ]; then
+            node scripts/publish-articles.js --images-only $FORCE_FLAG
+          else
+            node scripts/publish-articles.js ${{ github.event.inputs.count || '3' }} $FORCE_FLAG
+          fi
 
       - name: Commit and push changes
         run: |
