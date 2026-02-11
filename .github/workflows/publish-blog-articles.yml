@@ -49,7 +49,7 @@ jobs:
       - name: Publish articles and generate images
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY }}
+          UNSPLASH_ACCESS_KEY: ${{ secrets.NEWBI_ACCESS_KEY }}
           PYTHONUNBUFFERED: '1'
         run: |
           FORCE_FLAG=""
