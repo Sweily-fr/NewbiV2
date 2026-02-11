@@ -171,7 +171,7 @@ export function NavMain({
   };
 
   // Fonction spéciale pour le menu Ventes avec actions rapides
-  const renderVentesMenu = () => {
+  const renderVentesMenu = (ventesItems = navVentes) => {
     // Sur mobile, toujours utiliser le pattern Collapsible pour rester dans le viewport
     if (isCollapsed && !isMobile) {
       return (
@@ -196,30 +196,34 @@ export function NavMain({
               align="start"
               className="min-w-[180px]"
             >
-              {/* Actions rapides */}
-              <DropdownMenuItem asChild>
-                <Link
-                  href="/dashboard/outils/factures/new"
-                  onClick={handleLinkClick}
-                  className="cursor-pointer flex justify-between w-full"
-                >
-                  <span>Nouvelle facture</span>
-                  <Plus className="h-4 w-4" />
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link
-                  href="/dashboard/outils/devis/new"
-                  onClick={handleLinkClick}
-                  className="cursor-pointer flex justify-between w-full"
-                >
-                  <span>Nouveau devis</span>
-                  <Plus className="h-4 w-4" />
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
+              {/* Actions rapides (masquées pour le comptable) */}
+              {userRole !== "accountant" && (
+                <>
+                  <DropdownMenuItem asChild>
+                    <Link
+                      href="/dashboard/outils/factures/new"
+                      onClick={handleLinkClick}
+                      className="cursor-pointer flex justify-between w-full"
+                    >
+                      <span>Nouvelle facture</span>
+                      <Plus className="h-4 w-4" />
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link
+                      href="/dashboard/outils/devis/new"
+                      onClick={handleLinkClick}
+                      className="cursor-pointer flex justify-between w-full"
+                    >
+                      <span>Nouveau devis</span>
+                      <Plus className="h-4 w-4" />
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                </>
+              )}
               {/* Sous-menus */}
-              {navVentes.map((subItem) => {
+              {ventesItems.map((subItem) => {
                 const isSubItemActive =
                   pathname === subItem.url ||
                   pathname?.startsWith(subItem.url + "/");
@@ -300,7 +304,7 @@ export function NavMain({
           </div>
           <CollapsibleContent>
             <SidebarMenuSub>
-              {navVentes.map((subItem) => {
+              {ventesItems.map((subItem) => {
                 const isSubItemActive =
                   pathname === subItem.url ||
                   pathname?.startsWith(subItem.url + "/");
@@ -917,9 +921,14 @@ export function NavMain({
           {items.map((item) => renderSimpleItem(item))}
 
           {/* Menu Ventes avec sous-menus et actions rapides */}
-          {userRole !== "accountant" &&
-            navVentes.length > 0 &&
-            renderVentesMenu()}
+          {navVentes.length > 0 && (() => {
+            // Filtrer les items pour le comptable (pas de Catalogues)
+            const accountantAllowedVentes = ["Factures clients", "Devis", "Liste client (CRM)"];
+            const filteredNavVentes = userRole === "accountant"
+              ? navVentes.filter(item => accountantAllowedVentes.includes(item.title))
+              : navVentes;
+            return filteredNavVentes.length > 0 && renderVentesMenu(filteredNavVentes);
+          })()}
 
           {/* Catalogue, Boîte de réception, Calendrier */}
           {navAfterVentes.map((item) => renderSimpleItem(item))}
@@ -933,18 +942,24 @@ export function NavMain({
           {userRole !== "accountant" && renderProjetsMenu()}
 
           {/* Menu Documents avec sous-menus */}
-          {userRole !== "accountant" && navDocuments.length > 0 && (
-            <div data-tutorial="nav-documents">
-              {renderCollapsibleMenu(
-                "Documents",
-                FileText,
-                navDocuments,
-                isDocumentsOpen,
-                setIsDocumentsOpen,
-                isDocumentsSubActive
-              )}
-            </div>
-          )}
+          {navDocuments.length > 0 && (() => {
+            // Filtrer les items pour le comptable (uniquement Documents partagés)
+            const filteredNavDocuments = userRole === "accountant"
+              ? navDocuments.filter(item => item.title === "Documents partagés")
+              : navDocuments;
+            return filteredNavDocuments.length > 0 && (
+              <div data-tutorial="nav-documents">
+                {renderCollapsibleMenu(
+                  "Documents",
+                  FileText,
+                  filteredNavDocuments,
+                  isDocumentsOpen,
+                  setIsDocumentsOpen,
+                  isDocumentsSubActive
+                )}
+              </div>
+            );
+          })()}
 
           {/* Menu Communication avec sous-menus */}
           {userRole !== "accountant" &&
