@@ -380,7 +380,7 @@ function DashboardContent() {
                             )}
                           />
                           <div className="flex items-center gap-2">
-                            <Building2 className="h-6 w-6 text-muted-foreground" />
+                            <Building2 className="h-4 w-4 text-muted-foreground" />
                             <span>Tous les comptes</span>
                           </div>
                         </CommandItem>
@@ -408,10 +408,10 @@ function DashboardContent() {
                                   <img
                                     src={account.institutionLogo}
                                     alt=""
-                                    className="h-6 w-6 rounded-sm object-contain flex-shrink-0"
+                                    className="h-7 w-7 rounded-sm object-contain flex-shrink-0"
                                   />
                                 ) : (
-                                  <Building2 className="h-6 w-6 text-muted-foreground flex-shrink-0" />
+                                  <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                                 )}
                                 <div className="flex flex-col min-w-0">
                                   <span className="truncate text-sm">{accountName}{lastIban}</span>
