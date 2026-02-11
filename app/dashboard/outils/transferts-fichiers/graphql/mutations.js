@@ -363,6 +363,49 @@ export const GET_TRANSFER_BY_LINK = gql`
   }
 `;
 
+// Créer un transfert à partir de documents partagés
+export const CREATE_FILE_TRANSFER_FROM_SHARED_DOCS = gql`
+  mutation CreateFileTransferFromSharedDocuments(
+    $documentIds: [ID!]
+    $folderIds: [ID!]
+    $workspaceId: ID!
+    $input: FileTransferInput
+  ) {
+    createFileTransferFromSharedDocuments(
+      documentIds: $documentIds
+      folderIds: $folderIds
+      workspaceId: $workspaceId
+      input: $input
+    ) {
+      fileTransfer {
+        id
+        files {
+          originalName
+          displayName
+          fileName
+          filePath
+          r2Key
+          mimeType
+          size
+          storageType
+          fileId
+        }
+        totalSize
+        shareLink
+        accessKey
+        expiryDate
+        isPaymentRequired
+        paymentAmount
+        paymentCurrency
+        status
+        createdAt
+      }
+      shareLink
+      accessKey
+    }
+  }
+`;
+
 // Pour supprimer un transfert
 export const DELETE_FILE_TRANSFER = gql`
   mutation DeleteFileTransfer($id: ID!) {
