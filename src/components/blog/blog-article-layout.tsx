@@ -142,7 +142,7 @@ export function BlogArticleLayout({
               <aside className="hidden lg:block w-[200px] shrink-0">
                 <div
                   className="sticky"
-                  style={{ top: `${navHeight + 16}px` }}
+                  style={{ top: `${navHeight + 40}px` }}
                 >
                   <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-4">
                     Sommaire
