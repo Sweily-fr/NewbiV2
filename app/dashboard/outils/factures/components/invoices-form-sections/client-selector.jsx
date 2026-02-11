@@ -714,7 +714,7 @@ export default function ClientSelector({
                     <PopoverContent
                       className="border-input p-0"
                       align="start"
-                      side="top"
+                      side="bottom"
                       sideOffset={4}
                       avoidCollisions={false}
                       sticky="always"
