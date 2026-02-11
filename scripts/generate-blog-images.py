@@ -3,25 +3,26 @@
 Blog Image Generator for Newbi
 
 Generates hero and section illustrations for blog articles using
-DALL-E 3 (OpenAI). Images are saved as WebP in public/blog/[slug]/.
+DALL-E 3 (OpenAI) for illustrations and Unsplash for sector-specific
+hero photos. Images are saved as WebP in public/blog/[slug]/.
 
 Usage:
-    python generate-blog-images.py <slug> [--api-key KEY] [--force]
-
-Reads the MDX file at content/blog/<slug>.mdx, extracts frontmatter
-and inline image references, then generates each missing image.
+    python generate-blog-images.py <slug> [--force]
 
 Environment:
-    OPENAI_API_KEY  — OpenAI API key (or pass --api-key)
+    OPENAI_API_KEY       — OpenAI API key for DALL-E 3
+    UNSPLASH_ACCESS_KEY  — Unsplash API key for hero photos (optional)
 """
 
 import os
 import sys
 import re
 import io
+import json
 import time
 import argparse
 import urllib.request
+import urllib.parse
 
 try:
     from openai import OpenAI
@@ -50,17 +51,17 @@ PUBLIC_BLOG_DIR = os.path.join(PROJECT_DIR, "public", "blog")
 
 MODEL = "dall-e-3"
 
-# Newbi brand palette
-PALETTE_DESCRIPTION = (
-    "Color palette: primary purple #5a50ff, secondary lighter purple #8b7fff, "
-    "white backgrounds, light gray #f8f7ff accents, soft purple gradients. "
-    "No dark backgrounds."
-)
-
 BASE_STYLE = (
-    "Flat illustration style, minimal, professional, clean lines, geometric shapes, "
-    "modern SaaS aesthetic, no text in image, no watermarks, no logos, "
-    "soft shadows, rounded corners feel. " + PALETTE_DESCRIPTION
+    "Isometric minimalist illustration, extremely simple, very few elements, "
+    "geometric shapes only, no detailed characters, no faces, no text, "
+    "no watermarks, no complex scenes. "
+    "Style like Qonto brand illustrations: clean, professional, corporate, "
+    "sparse composition with lots of white space. "
+    "Maximum 2-3 simple objects per image. "
+    "Soft pastel purple palette: primary #5a50ff, light purple #8b7fff, "
+    "very light lavender background #f8f7ff. "
+    "Subtle shadows, no gradients, no dark backgrounds. "
+    "Think: one simple concept, one simple visual."
 )
 
 
@@ -100,107 +101,156 @@ def find_image_refs(content, slug):
     return unique
 
 
+# ----- Unsplash -----
+
+def fetch_unsplash_hero(sector, keyword, output_path):
+    """Download a professional photo from Unsplash based on sector/keyword."""
+    access_key = os.environ.get("UNSPLASH_ACCESS_KEY")
+    if not access_key:
+        print("  [hero.webp] UNSPLASH_ACCESS_KEY not set — falling back to DALL-E", flush=True)
+        return False
+
+    query = f"{sector} business professional"
+    if keyword:
+        query = f"{sector} {keyword}"
+
+    params = urllib.parse.urlencode({
+        "query": query,
+        "orientation": "landscape",
+        "per_page": 1,
+        "content_filter": "high",
+    })
+    url = f"https://api.unsplash.com/search/photos?{params}"
+
+    print(f"  [hero.webp] Unsplash search: \"{query}\"", flush=True)
+
+    try:
+        req = urllib.request.Request(url, headers={
+            "Authorization": f"Client-ID {access_key}",
+            "Accept-Version": "v1",
+        })
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            data = json.loads(resp.read().decode())
+
+        if not data.get("results"):
+            print("  [hero.webp] No Unsplash results — falling back to DALL-E", flush=True)
+            return False
+
+        photo = data["results"][0]
+        # Use regular size (1080px wide) — good balance of quality/size
+        image_url = photo["urls"]["regular"]
+        photographer = photo["user"]["name"]
+        print(f"  [hero.webp] Found photo by {photographer} — downloading...", flush=True)
+
+        img_req = urllib.request.Request(image_url, headers={"User-Agent": "NewbiBlogImageGen/1.0"})
+        with urllib.request.urlopen(img_req, timeout=30) as img_resp:
+            img_data = img_resp.read()
+
+        img = Image.open(io.BytesIO(img_data))
+        # Crop to 16:9 if needed
+        w, h = img.size
+        target_ratio = 16 / 9
+        current_ratio = w / h
+        if current_ratio > target_ratio:
+            new_w = int(h * target_ratio)
+            left = (w - new_w) // 2
+            img = img.crop((left, 0, left + new_w, h))
+        elif current_ratio < target_ratio:
+            new_h = int(w / target_ratio)
+            top = (h - new_h) // 2
+            img = img.crop((0, top, w, top + new_h))
+
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+        img.save(output_path, "WEBP", quality=85)
+        print(f"  [hero.webp] SAVED from Unsplash ({os.path.getsize(output_path)} bytes) — photo by {photographer}", flush=True)
+        return True
+
+    except Exception as e:
+        print(f"  [hero.webp] Unsplash error: {str(e)[:150]} — falling back to DALL-E", flush=True)
+        return False
+
+
+# ----- DALL-E -----
+
 def build_prompt(slug, frontmatter, image_name, article_body):
     """Build a DALL-E prompt for a specific image in the article."""
     title = frontmatter.get("title", slug.replace("-", " "))
     keyword = frontmatter.get("keyword", "")
-    category = frontmatter.get("category", "")
-    sector = frontmatter.get("sector", "")
 
-    context_parts = [f'Article: "{title}"']
+    context = f'Topic: "{title}"'
     if keyword:
-        context_parts.append(f"Keyword: {keyword}")
-    if sector:
-        context_parts.append(f"Industry: {sector}")
-    if category:
-        context_parts.append(f"Category: {category}")
-
-    context = ". ".join(context_parts)
+        context += f". Keyword: {keyword}"
 
     name_lower = image_name.lower().replace(".webp", "").replace(".svg", "")
 
     if name_lower == "hero":
         prompt = (
             f"{BASE_STYLE} "
-            f"Create a wide hero illustration for a French business blog article. "
-            f"{context}. "
-            f"Show an abstract, professional scene that represents the topic. "
-            f"Wide composition. Evoke trust, simplicity, and modern business tools."
+            f"Wide hero image for a business article. {context}. "
+            f"One single iconic object representing the topic, centered, lots of empty space around it."
         )
     elif "section" in name_lower:
         excerpt = _extract_section_context(article_body, 1)
         prompt = (
             f"{BASE_STYLE} "
-            f"Create an illustration for a section of a French business article. "
-            f"{context}. "
-            f"Section context: {excerpt}. "
-            f"Show a clear, focused diagram or scene related to this section."
+            f"Small illustration for an article section. {context}. "
+            f"Context: {excerpt}. "
+            f"One simple object or icon representing this section concept."
         )
     elif "comparatif" in name_lower or "comparaison" in name_lower:
         prompt = (
             f"{BASE_STYLE} "
-            f"Create an illustration showing a comparison or side-by-side analysis. "
-            f"{context}. "
-            f"Show abstract representations of comparing two options, with balance scales, "
-            f"side-by-side cards, or comparison charts."
+            f"Illustration of a comparison. {context}. "
+            f"Two simple geometric objects side by side, like two cards or two boxes."
         )
     elif "dashboard" in name_lower:
         prompt = (
             f"{BASE_STYLE} "
-            f"Create an illustration of a modern SaaS dashboard interface mockup. "
-            f"{context}. "
-            f"Show a clean, minimal dashboard with charts, metrics cards, and navigation. "
-            f"Purple accent color (#5a50ff)."
+            f"Simple dashboard mockup. {context}. "
+            f"One minimal screen shape with 2-3 abstract chart elements inside."
         )
     elif "workflow" in name_lower or "etape" in name_lower:
         prompt = (
             f"{BASE_STYLE} "
-            f"Create an illustration of a step-by-step workflow or process. "
-            f"{context}. "
-            f"Show connected steps with arrows, numbered stages, or a flowchart."
+            f"Simple workflow illustration. {context}. "
+            f"2-3 connected geometric shapes with arrows between them."
         )
     elif "checklist" in name_lower:
         prompt = (
             f"{BASE_STYLE} "
-            f"Create an illustration of a checklist or verification process. "
-            f"{context}. "
-            f"Show a stylized checklist with checkmarks, completed items, and a clean layout."
+            f"Simple checklist illustration. {context}. "
+            f"One clipboard shape with 2-3 checkmark lines."
         )
     elif "exemple" in name_lower or "modele" in name_lower:
         prompt = (
             f"{BASE_STYLE} "
-            f"Create an illustration of a document template or example. "
-            f"{context}. "
-            f"Show a stylized document with fields, lines, and professional formatting."
+            f"Simple document illustration. {context}. "
+            f"One paper/document shape with a few abstract lines on it."
         )
     elif "seuil" in name_lower or "tva" in name_lower or "fiscal" in name_lower:
         prompt = (
             f"{BASE_STYLE} "
-            f"Create an illustration about tax thresholds or fiscal regulations. "
-            f"{context}. "
-            f"Show abstract representations of financial thresholds, scales, or regulatory elements."
+            f"Tax/threshold illustration. {context}. "
+            f"One simple calculator or scale icon, minimal and geometric."
         )
     elif "transaction" in name_lower or "bancaire" in name_lower or "tresorerie" in name_lower:
         prompt = (
             f"{BASE_STYLE} "
-            f"Create an illustration about financial transactions or banking. "
-            f"{context}. "
-            f"Show abstract bank connections, money flows, or financial overview."
+            f"Financial illustration. {context}. "
+            f"One simple coin or wallet icon, minimal and geometric."
         )
     elif "preparation" in name_lower or "migration" in name_lower:
         prompt = (
             f"{BASE_STYLE} "
-            f"Create an illustration about preparing or migrating to a new system. "
-            f"{context}. "
-            f"Show a transition, upgrade, or preparation process with arrows and stages."
+            f"Preparation/migration illustration. {context}. "
+            f"One simple arrow pointing from old to new, two geometric shapes."
         )
     else:
         readable_name = name_lower.replace("-", " ").replace("_", " ")
         prompt = (
             f"{BASE_STYLE} "
-            f"Create a professional illustration for a French business article section. "
-            f"{context}. "
-            f"Image topic: {readable_name}."
+            f"Simple illustration for: {readable_name}. {context}. "
+            f"One minimal iconic object representing this concept."
         )
 
     return prompt
@@ -255,7 +305,6 @@ def generate_image(client, prompt, output_path, size):
             elapsed = time.time() - t0
             print(f"  [{basename}] response received in {elapsed:.1f}s — downloading...", flush=True)
 
-            # Download the image
             req = urllib.request.Request(image_url, headers={"User-Agent": "NewbiBlogImageGen/1.0"})
             with urllib.request.urlopen(req, timeout=30) as resp:
                 img_data = resp.read()
@@ -303,8 +352,12 @@ def process_article(slug, client, force=False):
         print(f"No image references found in {slug}.mdx")
         return True
 
+    sector = frontmatter.get("sector")
+    keyword = frontmatter.get("keyword", "")
+
     print(f"\nProcessing: {slug}")
     print(f"  Title: {frontmatter.get('title', 'N/A')}")
+    print(f"  Sector: {sector or 'none'}")
     print(f"  Images to generate: {len(image_refs)}", flush=True)
 
     output_dir = os.path.join(PUBLIC_BLOG_DIR, slug)
@@ -327,9 +380,17 @@ def process_article(slug, client, force=False):
             continue
 
         is_hero = "hero" in base.lower()
-        # DALL-E 3 sizes: 1792x1024 (landscape), 1024x1024 (square)
-        size = "1792x1024" if is_hero else "1024x1024"
 
+        # Hero + sector → try Unsplash photo first
+        if is_hero and sector:
+            success = fetch_unsplash_hero(sector, keyword, output_path)
+            if success:
+                generated += 1
+                time.sleep(1)
+                continue
+
+        # DALL-E 3 illustration
+        size = "1792x1024" if is_hero else "1024x1024"
         prompt = build_prompt(slug, frontmatter, img_name, body)
         success = generate_image(client, prompt, output_path, size)
         if success:
@@ -337,7 +398,6 @@ def process_article(slug, client, force=False):
         else:
             skipped += 1
 
-        # Brief pause between requests
         time.sleep(1)
 
     print(f"  Result: {generated}/{len(image_refs)} generated, {skipped} skipped", flush=True)
@@ -346,15 +406,11 @@ def process_article(slug, client, force=False):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Generate blog illustrations using DALL-E 3"
+        description="Generate blog illustrations using DALL-E 3 + Unsplash"
     )
     parser.add_argument("slugs", nargs="+", help="Article slug(s) to generate images for")
-    parser.add_argument(
-        "--api-key", help="OpenAI API key (or set OPENAI_API_KEY env var)"
-    )
-    parser.add_argument(
-        "--force", action="store_true", help="Regenerate even if images exist"
-    )
+    parser.add_argument("--api-key", help="OpenAI API key (or set OPENAI_API_KEY env var)")
+    parser.add_argument("--force", action="store_true", help="Regenerate even if images exist")
 
     args = parser.parse_args()
 
@@ -364,13 +420,17 @@ def main():
         print("  Use --api-key KEY or set OPENAI_API_KEY environment variable.")
         sys.exit(1)
 
+    unsplash_key = os.environ.get("UNSPLASH_ACCESS_KEY")
+
     global _global_start
     _global_start = time.time()
 
     print("=" * 60)
     print("Newbi Blog Image Generator")
-    print(f"  Model: {MODEL}")
+    print(f"  DALL-E model: {MODEL}")
+    print(f"  Unsplash: {'enabled' if unsplash_key else 'disabled (no key)'}")
     print(f"  Articles: {len(args.slugs)}")
+    print(f"  Force: {args.force}")
     print(f"  Max retries: {MAX_RETRIES}")
     print(f"  Global timeout: {GLOBAL_TIMEOUT}s ({GLOBAL_TIMEOUT // 60}min)")
     print("=" * 60, flush=True)
