@@ -27,6 +27,7 @@ import { useState, useEffect, useMemo } from "react";
 import { toast } from "@/src/components/ui/sonner";
 import { findBank } from "@/lib/banks-config";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
+import { usePermissions } from "@/src/hooks/usePermissions";
 
 /**
  * Récupère le token JWT depuis localStorage (même pattern qu'Apollo Client)
@@ -48,6 +49,8 @@ export default function BankBalanceCard({
 }) {
   const { workspaceId } = useWorkspace();
   const { subscription } = useSubscription();
+  const { getUserRole } = usePermissions();
+  const userRole = getUserRole();
 
   // Utiliser les props si disponibles, sinon état local
   const [localAccounts, setLocalAccounts] = useState([]);
@@ -362,22 +365,23 @@ export default function BankBalanceCard({
           {/* Spacer pour pousser le bouton vers le bas */}
           <div className="flex-1"></div>
 
-          {/* Bouton de connexion bancaire via Bridge */}
-          <Button
-            // variant="outline"
-            className="w-full font-normal mt-auto"
-            onClick={handleOpenModal}
-            disabled={isConnecting}
-          >
-            {isConnecting ? (
-              <LoaderCircle className="h-4 w-4 animate-spin mr-2" />
-            ) : (
-              <Landmark className="h-4 w-4 mr-2" />
-            )}
-            {isConnecting
-              ? "Connexion en cours..."
-              : "Connecter un compte bancaire"}
-          </Button>
+          {/* Bouton de connexion bancaire via Bridge (masqué pour le comptable) */}
+          {userRole !== "accountant" && (
+            <Button
+              className="w-full font-normal mt-auto"
+              onClick={handleOpenModal}
+              disabled={isConnecting}
+            >
+              {isConnecting ? (
+                <LoaderCircle className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <Landmark className="h-4 w-4 mr-2" />
+              )}
+              {isConnecting
+                ? "Connexion en cours..."
+                : "Connecter un compte bancaire"}
+            </Button>
+          )}
         </CardContent>
 
         {/* Modal de sélection de banque */}
@@ -540,8 +544,8 @@ export default function BankBalanceCard({
           ))}
         </div>
 
-        {/* Bouton ajouter un compte bancaire */}
-        {canAddBankAccount && (
+        {/* Bouton ajouter un compte bancaire (masqué pour le comptable) */}
+        {canAddBankAccount && userRole !== "accountant" && (
           <Button
             variant="outline"
             size="sm"

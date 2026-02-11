@@ -408,7 +408,7 @@ function DashboardContent() {
                                   <img
                                     src={account.institutionLogo}
                                     alt=""
-                                    className="h-7 w-7 rounded-sm object-contain flex-shrink-0"
+                                    className="h-[42px] w-[42px] rounded-sm object-contain flex-shrink-0"
                                   />
                                 ) : (
                                   <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />

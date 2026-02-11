@@ -112,7 +112,7 @@ export function usePermissions() {
     const rolePermissions = {
       member: {
         quotes: ["view", "create", "send", "export"],
-        invoices: ["view", "create", "send", "export"],
+        invoices: ["view", "create", "send", "export", "import"],
         creditNotes: ["view", "create", "export"],
         expenses: ["view", "create", "ocr", "export"],
         payments: ["view", "create", "export"],
@@ -120,6 +120,7 @@ export function usePermissions() {
         products: ["view", "create", "export"],
         suppliers: ["view", "create"],
         fileTransfers: ["view", "create", "download"],
+        sharedDocuments: ["view", "create", "edit", "download"],
         kanban: ["view", "create", "edit", "assign"],
         signatures: ["view", "create", "edit", "set-default"],
         calendar: ["view", "create", "edit"],
@@ -129,13 +130,14 @@ export function usePermissions() {
       },
       accountant: {
         quotes: ["view", "export"],
-        invoices: ["view", "export", "mark-paid"],
+        invoices: ["view", "export", "mark-paid", "import"],
         creditNotes: ["view", "export"],
         expenses: ["view", "approve", "export"],
         payments: ["view", "export"],
         clients: ["view", "export"],
         products: ["view", "export"],
         suppliers: ["view"],
+        sharedDocuments: ["view", "create", "edit", "delete", "download"],
         reports: ["view", "export"],
         analytics: ["view", "export"],
         team: ["view"],
