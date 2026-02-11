@@ -709,6 +709,11 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
                           <RiCheckLine size={14} />
                           Synchronisé
                         </span>
+                      ) : connection.autoSync ? (
+                        <span className="inline-flex items-center gap-1 text-xs text-muted-foreground shrink-0">
+                          <RiCheckLine size={14} />
+                          Sync. auto
+                        </span>
                       ) : (
                         <Button
                           variant="outline"

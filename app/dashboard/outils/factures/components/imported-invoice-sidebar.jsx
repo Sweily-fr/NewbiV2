@@ -67,8 +67,8 @@ export function ImportedInvoiceSidebar({ invoice, open, onOpenChange, onUpdate }
   const handleEdit = () => {
     setEditData({
       originalInvoiceNumber: invoice.originalInvoiceNumber || "",
-      vendorName: invoice.vendor?.name || "",
-      vendorSiret: invoice.vendor?.siret || "",
+      clientName: invoice.client?.name || invoice.vendor?.name || "",
+      clientSiret: invoice.client?.siret || invoice.vendor?.siret || "",
       invoiceDate: invoice.invoiceDate?.split("T")[0] || "",
       totalHT: invoice.totalHT || 0,
       totalVAT: invoice.totalVAT || 0,
@@ -160,17 +160,17 @@ export function ImportedInvoiceSidebar({ invoice, open, onOpenChange, onUpdate }
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Fournisseur</Label>
+                  <Label>Client</Label>
                   <Input
-                    value={editData.vendorName}
-                    onChange={(e) => setEditData({ ...editData, vendorName: e.target.value })}
+                    value={editData.clientName}
+                    onChange={(e) => setEditData({ ...editData, clientName: e.target.value })}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>SIRET</Label>
+                  <Label>SIRET Client</Label>
                   <Input
-                    value={editData.vendorSiret}
-                    onChange={(e) => setEditData({ ...editData, vendorSiret: e.target.value })}
+                    value={editData.clientSiret}
+                    onChange={(e) => setEditData({ ...editData, clientSiret: e.target.value })}
                   />
                 </div>
                 <div className="space-y-2">
@@ -245,17 +245,17 @@ export function ImportedInvoiceSidebar({ invoice, open, onOpenChange, onUpdate }
               </div>
             ) : (
               <>
-                {/* Fournisseur */}
+                {/* Client */}
                 <div className="space-y-3">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Fournisseur</p>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Client</p>
                   <div className="flex items-center gap-3">
                     <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
                       <Building2 className="h-5 w-5 text-muted-foreground" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium">{invoice.vendor?.name || "Non spécifié"}</p>
-                      {invoice.vendor?.siret && (
-                        <p className="text-xs text-muted-foreground">SIRET: {invoice.vendor.siret}</p>
+                      <p className="text-sm font-medium">{invoice.client?.name || invoice.vendor?.name || "Non spécifié"}</p>
+                      {(invoice.client?.siret || invoice.vendor?.siret) && (
+                        <p className="text-xs text-muted-foreground">SIRET: {invoice.client?.siret || invoice.vendor?.siret}</p>
                       )}
                     </div>
                   </div>

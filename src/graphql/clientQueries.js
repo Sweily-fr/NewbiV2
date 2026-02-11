@@ -40,6 +40,9 @@ export const CLIENT_ACTIVITY_FRAGMENT = gql`
       documentNumber
       status
       originalInvoiceNumber
+      eventId
+      eventTitle
+      eventDate
     }
     createdAt
   }
@@ -206,6 +209,23 @@ export const DELETE_CLIENT_NOTE = gql`
       workspaceId: $workspaceId
       clientId: $clientId
       noteId: $noteId
+    ) {
+      ...ClientFragment
+    }
+  }
+  ${CLIENT_FRAGMENT}
+`;
+
+export const ADD_CLIENT_ACTIVITY = gql`
+  mutation AddClientActivity(
+    $workspaceId: String!
+    $clientId: ID!
+    $input: ClientActivityInput!
+  ) {
+    addClientActivity(
+      workspaceId: $workspaceId
+      clientId: $clientId
+      input: $input
     ) {
       ...ClientFragment
     }
@@ -677,6 +697,31 @@ export const useDeleteClientNote = (providedWorkspaceId) => {
   };
 
   return { deleteNote, loading };
+};
+
+// Hook pour ajouter une activité à un client
+export const useAddClientActivity = (providedWorkspaceId) => {
+  const { workspaceId: contextWorkspaceId } = useWorkspace();
+  const workspaceId = providedWorkspaceId || contextWorkspaceId;
+
+  const [addActivityMutation, { loading }] = useMutation(ADD_CLIENT_ACTIVITY, {
+    onError: (error) => {
+      console.error("Erreur lors de l'ajout de l'activité:", error);
+    },
+  });
+
+  const addActivity = async (clientId, input) => {
+    try {
+      const result = await addActivityMutation({
+        variables: { workspaceId, clientId, input },
+      });
+      return result.data.addClientActivity;
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  return { addActivity, loading };
 };
 
 // ==================== CONSTANTES ====================
