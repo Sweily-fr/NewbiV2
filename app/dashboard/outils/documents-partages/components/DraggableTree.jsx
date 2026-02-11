@@ -24,6 +24,7 @@ import {
   File,
   GripVertical,
   Check,
+  Lock,
 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import {
@@ -160,6 +161,10 @@ function DraggableItem({ id, item, level, isExpanded, onToggle, onClick, onConte
           )
         ) : (
           getFileIcon(item.mimeType, item.fileExtension)
+        )}
+
+        {isFolder && !isInbox && item.data?.visibility === "private" && (
+          <Lock className="size-3 text-muted-foreground/60 shrink-0" />
         )}
 
         <Tooltip delayDuration={500}>

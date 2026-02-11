@@ -31,8 +31,10 @@ import {
   usePermanentlyDeleteDocuments,
   usePermanentlyDeleteFolders,
   useBulkUpdateTags,
+  useUpdateFolderVisibility,
 } from "@/src/hooks/useSharedDocuments";
 import { DraggableTree } from "./components/DraggableTree";
+import { MemberSelector } from "../kanban/[id]/components/MemberSelector";
 import DocumentAutomationsModal from "./components/document-automations-modal";
 import { useDocumentAutomations } from "@/src/hooks/useDocumentAutomations";
 import { Button } from "@/src/components/ui/button";
@@ -131,6 +133,8 @@ import {
   Package,
   Check,
   Zap,
+  Globe,
+  Lock,
 } from "lucide-react";
 import {
   Popover,
@@ -334,6 +338,14 @@ export default function DocumentsPartagesPage() {
   const [showDeleteFolderModal, setShowDeleteFolderModal] = useState(false);
   const [folderToDelete, setFolderToDelete] = useState(null);
   const [newFolderName, setNewFolderName] = useState("");
+  const [newFolderVisibility, setNewFolderVisibility] = useState("public");
+  const [newFolderAllowedUserIds, setNewFolderAllowedUserIds] = useState([]);
+
+  // Visibilité (édition)
+  const [showVisibilityModal, setShowVisibilityModal] = useState(false);
+  const [folderToEditVisibility, setFolderToEditVisibility] = useState(null);
+  const [editVisibility, setEditVisibility] = useState("public");
+  const [editAllowedUserIds, setEditAllowedUserIds] = useState([]);
 
   // Renommage
   const [showRenameModal, setShowRenameModal] = useState(false);
@@ -422,6 +434,8 @@ export default function DocumentsPartagesPage() {
     useCreateSharedFolder();
   const { deleteFolder, loading: deleteFolderLoading } =
     useDeleteSharedFolder();
+  const { updateVisibility, loading: updateVisibilityLoading } =
+    useUpdateFolderVisibility();
   const { rename: renameDocument, loading: renameDocLoading } =
     useRenameSharedDocument();
   const { rename: renameFolder, loading: renameFolderLoading } =
@@ -752,12 +766,19 @@ export default function DocumentsPartagesPage() {
   const handleCreateFolder = async () => {
     if (!newFolderName.trim()) return;
     try {
-      await createFolder({
+      const input = {
         name: newFolderName.trim(),
         parentId: newFolderParentId || null,
-      });
+      };
+      if (newFolderVisibility === "private") {
+        input.visibility = "private";
+        input.allowedUserIds = newFolderAllowedUserIds;
+      }
+      await createFolder(input);
       setNewFolderName("");
       setNewFolderParentId(null);
+      setNewFolderVisibility("public");
+      setNewFolderAllowedUserIds([]);
       setShowNewFolderModal(false);
       refetchFolders();
       refetchDocs();
@@ -1556,6 +1577,26 @@ export default function DocumentsPartagesPage() {
                                   {downloadSelectionLoading
                                     ? "Préparation..."
                                     : `Télécharger la sélection (${selectedFolders.length})`}
+                                </DropdownMenuItem>
+                              )}
+                              {/* Gérer la visibilité */}
+                              {treeContextMenu.item.data?.canManageVisibility && (
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    const folder = treeContextMenu.item.data;
+                                    setFolderToEditVisibility(folder);
+                                    setEditVisibility(folder.visibility || "public");
+                                    setEditAllowedUserIds(folder.allowedUserIds || []);
+                                    setShowVisibilityModal(true);
+                                    setTreeContextMenu(null);
+                                  }}
+                                >
+                                  {treeContextMenu.item.data?.visibility === "private" ? (
+                                    <Lock className="size-4 mr-2" />
+                                  ) : (
+                                    <Globe className="size-4 mr-2" />
+                                  )}
+                                  Gérer la visibilité
                                 </DropdownMenuItem>
                               )}
                               {/* Separator seulement si Renommer ou Supprimer sera affiché */}
@@ -2976,6 +3017,8 @@ export default function DocumentsPartagesPage() {
           if (!open) {
             setNewFolderName("");
             setNewFolderParentId(null);
+            setNewFolderVisibility("public");
+            setNewFolderAllowedUserIds([]);
           }
         }}
       >
@@ -3020,6 +3063,48 @@ export default function DocumentsPartagesPage() {
               onKeyDown={(e) => e.key === "Enter" && handleCreateFolder()}
               autoFocus
             />
+
+            {/* Visibilité */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Visibilité</Label>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant={newFolderVisibility === "public" ? "default" : "outline"}
+                  size="sm"
+                  className={newFolderVisibility === "public" ? "bg-[#5b4eff] hover:bg-[#4a3ecc]" : ""}
+                  onClick={() => {
+                    setNewFolderVisibility("public");
+                    setNewFolderAllowedUserIds([]);
+                  }}
+                >
+                  <Globe className="size-4 mr-1.5" />
+                  Public
+                </Button>
+                <Button
+                  type="button"
+                  variant={newFolderVisibility === "private" ? "default" : "outline"}
+                  size="sm"
+                  className={newFolderVisibility === "private" ? "bg-[#5b4eff] hover:bg-[#4a3ecc]" : ""}
+                  onClick={() => setNewFolderVisibility("private")}
+                >
+                  <Lock className="size-4 mr-1.5" />
+                  Privé
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {newFolderVisibility === "public"
+                  ? "Visible par tous les membres du workspace."
+                  : "Visible uniquement par vous et les membres sélectionnés."}
+              </p>
+            </div>
+
+            {newFolderVisibility === "private" && (
+              <MemberSelector
+                selectedMembers={newFolderAllowedUserIds}
+                onMembersChange={setNewFolderAllowedUserIds}
+              />
+            )}
           </div>
           <DialogFooter>
             <Button
@@ -3037,6 +3122,110 @@ export default function DocumentsPartagesPage() {
                 <LoaderCircle className="h-4 w-4 animate-spin" />
               ) : (
                 "Créer"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal visibilité */}
+      <Dialog
+        open={showVisibilityModal}
+        onOpenChange={(open) => {
+          setShowVisibilityModal(open);
+          if (!open) {
+            setFolderToEditVisibility(null);
+            setEditVisibility("public");
+            setEditAllowedUserIds([]);
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Gérer la visibilité</DialogTitle>
+            <DialogDescription>
+              {folderToEditVisibility && (
+                <>
+                  Modifier la visibilité du dossier{" "}
+                  <span className="font-medium text-foreground">
+                    {folderToEditVisibility.name}
+                  </span>
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-3">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Visibilité</Label>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant={editVisibility === "public" ? "default" : "outline"}
+                  size="sm"
+                  className={editVisibility === "public" ? "bg-[#5b4eff] hover:bg-[#4a3ecc]" : ""}
+                  onClick={() => {
+                    setEditVisibility("public");
+                    setEditAllowedUserIds([]);
+                  }}
+                >
+                  <Globe className="size-4 mr-1.5" />
+                  Public
+                </Button>
+                <Button
+                  type="button"
+                  variant={editVisibility === "private" ? "default" : "outline"}
+                  size="sm"
+                  className={editVisibility === "private" ? "bg-[#5b4eff] hover:bg-[#4a3ecc]" : ""}
+                  onClick={() => setEditVisibility("private")}
+                >
+                  <Lock className="size-4 mr-1.5" />
+                  Privé
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {editVisibility === "public"
+                  ? "Visible par tous les membres du workspace."
+                  : "Visible uniquement par vous et les membres sélectionnés."}
+              </p>
+            </div>
+
+            {editVisibility === "private" && (
+              <MemberSelector
+                selectedMembers={editAllowedUserIds}
+                onMembersChange={setEditAllowedUserIds}
+              />
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowVisibilityModal(false)}
+            >
+              Annuler
+            </Button>
+            <Button
+              onClick={async () => {
+                if (!folderToEditVisibility) return;
+                try {
+                  await updateVisibility(
+                    folderToEditVisibility.id,
+                    editVisibility,
+                    editVisibility === "private" ? editAllowedUserIds : [],
+                  );
+                  setShowVisibilityModal(false);
+                  setFolderToEditVisibility(null);
+                  refetchFolders();
+                } catch (error) {
+                  console.error("Erreur mise à jour visibilité:", error);
+                }
+              }}
+              disabled={updateVisibilityLoading}
+              className="bg-[#5b4eff] hover:bg-[#4a3ecc]"
+            >
+              {updateVisibilityLoading ? (
+                <LoaderCircle className="h-4 w-4 animate-spin" />
+              ) : (
+                "Enregistrer"
               )}
             </Button>
           </DialogFooter>

@@ -481,7 +481,7 @@ export default function BankBalanceCard({
             {uniqueBanks.slice(0, 4).map((bank, index) => (
               <Avatar
                 key={bank.id || `bank-${index}`}
-                className="h-7 w-7 ring-2 ring-background bg-white"
+                className="h-9 w-9 ring-2 ring-background bg-white"
               >
                 {bank.logo ? (
                   <AvatarImage
@@ -490,14 +490,14 @@ export default function BankBalanceCard({
                     className="object-contain p-0.5"
                   />
                 ) : null}
-                <AvatarFallback className="text-xs bg-gray-100">
+                <AvatarFallback className="text-sm bg-gray-100">
                   {bank.name.substring(0, 2).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
             ))}
             {uniqueBanks.length > 4 && (
-              <Avatar className="h-7 w-7 ring-2 ring-background">
-                <AvatarFallback className="text-xs bg-gray-200">
+              <Avatar className="h-9 w-9 ring-2 ring-background">
+                <AvatarFallback className="text-sm bg-gray-200">
                   +{uniqueBanks.length - 4}
                 </AvatarFallback>
               </Avatar>

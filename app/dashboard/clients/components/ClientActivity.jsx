@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from "react";
 import * as React from "react";
 import { Button } from "@/src/components/ui/button";
 import { Textarea } from "@/src/components/ui/textarea";
-import { Send, Edit2, Trash2, ChevronDown, ChevronUp, FileText, ExternalLink } from "lucide-react";
+import { Send, Edit2, Trash2, ChevronDown, ChevronUp, FileText, ExternalLink, Bell } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
 import { UserAvatar } from "@/src/components/ui/user-avatar";
 import {
@@ -19,21 +19,28 @@ import {
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useSession } from "@/src/lib/auth-client";
-import { useAddClientNote, useUpdateClientNote, useDeleteClientNote } from "@/src/graphql/clientQueries";
+import { useAddClientNote, useUpdateClientNote, useDeleteClientNote, useAddClientActivity } from "@/src/graphql/clientQueries";
+import { useCreateEvent } from "@/src/hooks/useEvents";
+import { EventDialog } from "@/app/dashboard/calendar/components/event-dialog";
+import { toast } from "@/src/components/ui/sonner";
+import { useLazyQuery } from "@apollo/client";
+import { GET_EVENT } from "@/src/graphql/queries/event";
 import InvoiceSidebar from "@/app/dashboard/outils/factures/components/invoice-sidebar";
 import InvoiceMobileFullscreen from "@/app/dashboard/outils/factures/components/invoice-mobile-fullscreen";
 import QuoteSidebar from "@/app/dashboard/outils/devis/components/quote-sidebar";
 import QuoteMobileFullscreen from "@/app/dashboard/outils/devis/components/quote-mobile-fullscreen";
 
-const ClientActivity = ({ 
-  client, 
-  workspaceId, 
+const ClientActivity = ({
+  client,
+  workspaceId,
   onClientUpdate,
   pendingNotes = [],
   onAddPendingNote,
   onUpdatePendingNote,
   onRemovePendingNote,
-  isCreating = false
+  isCreating = false,
+  isReminderDialogOpen = false,
+  onReminderDialogClose,
 }) => {
   const [newNote, setNewNote] = useState("");
   const [editingNoteId, setEditingNoteId] = useState(null);
@@ -80,6 +87,33 @@ const ClientActivity = ({
   const { addNote, loading: addingNote } = useAddClientNote(workspaceId);
   const { updateNote, loading: updatingNote } = useUpdateClientNote(workspaceId);
   const { deleteNote, loading: deletingNote } = useDeleteClientNote(workspaceId);
+  const { createEvent } = useCreateEvent();
+  const { addActivity } = useAddClientActivity(workspaceId);
+  const [selectedReminderEvent, setSelectedReminderEvent] = useState(null);
+  const [isViewReminderOpen, setIsViewReminderOpen] = useState(false);
+  const [fetchEvent] = useLazyQuery(GET_EVENT);
+
+  const handleViewReminder = async (eventId) => {
+    try {
+      const { data } = await fetchEvent({ variables: { id: eventId, workspaceId } });
+      if (data?.getEvent?.event) {
+        const evt = data.getEvent.event;
+        setSelectedReminderEvent({
+          id: evt.id,
+          title: evt.title,
+          description: evt.description || "",
+          start: new Date(evt.start),
+          end: new Date(evt.end),
+          allDay: evt.allDay || false,
+          color: evt.color || "sky",
+          location: evt.location || "",
+        });
+        setIsViewReminderOpen(true);
+      }
+    } catch (error) {
+      console.error("Error fetching event:", error);
+    }
+  };
 
   const handleAddNote = async () => {
     if (!newNote.trim()) return;
@@ -157,6 +191,48 @@ const ClientActivity = ({
     }
   };
 
+  const handleCreateReminder = async (eventData) => {
+    if (!client?.id) return;
+
+    try {
+      const input = {
+        title: eventData.title,
+        description: eventData.description,
+        start: eventData.start.toISOString(),
+        end: eventData.end.toISOString(),
+        allDay: eventData.allDay || false,
+        color: eventData.color || "sky",
+        location: eventData.location,
+        type: "REMINDER",
+        emailReminder: eventData.emailReminder?.enabled ? eventData.emailReminder : undefined,
+      };
+
+      const createdEvent = await createEvent(input);
+      if (!createdEvent) return;
+
+      const activityInput = {
+        type: "reminder_created",
+        description: `a créé un rappel : ${eventData.title}`,
+        metadata: {
+          eventId: createdEvent.id,
+          eventTitle: eventData.title,
+          eventDate: eventData.start.toISOString(),
+        },
+      };
+
+      const updatedClient = await addActivity(client.id, activityInput);
+      if (onClientUpdate && updatedClient) {
+        onClientUpdate(updatedClient);
+      }
+
+      toast.success("Rappel créé avec succès");
+      onReminderDialogClose?.();
+    } catch (error) {
+      console.error("Error creating reminder:", error);
+      toast.error("Erreur lors de la création du rappel");
+    }
+  };
+
   const formatDate = (dateString) => {
     if (!dateString) {
       return "";
@@ -194,6 +270,7 @@ const ClientActivity = ({
       note_deleted: "🗑️",
       document_email_sent: "📧",
       invoice_reminder_sent: "🔔",
+      reminder_created: "🔔",
     };
 
     let text = activity.description || "a effectué une action";
@@ -427,6 +504,29 @@ const ClientActivity = ({
                                       {formatDate(item.createdAt)}
                                     </span>
                                   </div>
+                                  {display.metadata && display.metadata.eventId && (
+                                    <div
+                                      className="mt-2 p-2 bg-muted/50 rounded-md border border-border max-w-md cursor-pointer hover:bg-muted/80 transition-colors"
+                                      onClick={() => handleViewReminder(display.metadata.eventId)}
+                                    >
+                                      <div className="flex items-center justify-between gap-2">
+                                        <div className="flex items-center gap-2">
+                                          <Bell className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                                          <div className="flex flex-col">
+                                            <span className="text-xs font-medium">
+                                              {display.metadata.eventTitle}
+                                            </span>
+                                            {display.metadata.eventDate && (
+                                              <span className="text-xs text-muted-foreground">
+                                                {format(new Date(display.metadata.eventDate), "d MMM yyyy 'à' HH:mm", { locale: fr })}
+                                              </span>
+                                            )}
+                                          </div>
+                                        </div>
+                                        <ExternalLink className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                                      </div>
+                                    </div>
+                                  )}
                                   {display.metadata && (display.metadata.documentType === 'invoice' || display.metadata.documentType === 'quote' || display.metadata.documentType === 'creditNote') && (
                                     <div className="mt-2 p-2 bg-muted/50 rounded-md border border-border max-w-md">
                                       <div className="flex items-center justify-between gap-2">
@@ -770,6 +870,27 @@ const ClientActivity = ({
           }}
         />
       )}
+
+      {/* Dialog de création de rappel */}
+      <EventDialog
+        event={null}
+        isOpen={isReminderDialogOpen}
+        onClose={() => onReminderDialogClose?.()}
+        onSave={handleCreateReminder}
+        onDelete={() => {}}
+      />
+
+      {/* Dialog de visualisation d'un rappel existant */}
+      <EventDialog
+        event={selectedReminderEvent}
+        isOpen={isViewReminderOpen}
+        onClose={() => {
+          setIsViewReminderOpen(false);
+          setSelectedReminderEvent(null);
+        }}
+        onSave={() => {}}
+        onDelete={() => {}}
+      />
     </div>
   );
 };
