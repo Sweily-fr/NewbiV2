@@ -78,6 +78,7 @@ export function NavDocuments({ items }) {
     Mail: Mail,
     Upload: Upload,
     CreditCard: CreditCard,
+    Share2: Share2,
   };
 
   // Available tools that can be pinned
@@ -124,13 +125,20 @@ export function NavDocuments({ items }) {
       iconName: "CreditCard",
       isPro: true,
     },
+    {
+      name: "Documents partagés",
+      url: "/dashboard/outils/documents-partages",
+      icon: Share2,
+      iconName: "Share2",
+      isPro: false,
+    },
   ];
 
   // Filtrer les outils selon le rôle
   const availableTools =
     userRole === "accountant"
       ? allAvailableTools.filter((tool) =>
-          ["Factures", "Devis", "Transactions"].includes(tool.name)
+          ["Factures", "Devis", "Transactions", "Documents partagés"].includes(tool.name)
         )
       : allAvailableTools;
 
@@ -152,7 +160,7 @@ export function NavDocuments({ items }) {
           // Filtrer selon le rôle accountant
           if (userRole === "accountant") {
             validApps = validApps.filter((app) =>
-              ["Factures", "Devis", "Transactions"].includes(app.name)
+              ["Factures", "Devis", "Transactions", "Documents partagés"].includes(app.name)
             );
           }
 

@@ -30,6 +30,7 @@ export const statement = {
     "send",
     "export",
     "mark-paid",
+    "import",
   ],
   creditNotes: ["view", "create", "edit", "delete", "approve", "send"],
 
@@ -50,6 +51,7 @@ export const statement = {
   // OUTILS
   // ========================================
   fileTransfers: ["view", "create", "delete", "download"],
+  sharedDocuments: ["view", "create", "edit", "delete", "download"],
   kanban: ["view", "create", "edit", "delete", "assign"],
   signatures: ["view", "create", "edit", "delete", "set-default"],
   calendar: ["view", "create", "edit", "delete"],
@@ -102,6 +104,7 @@ export const owner = ac.newRole({
     "send",
     "export",
     "mark-paid",
+    "import",
   ],
   creditNotes: ["view", "create", "edit", "delete", "approve", "send"],
 
@@ -116,6 +119,7 @@ export const owner = ac.newRole({
 
   // Outils - Accès complet
   fileTransfers: ["view", "create", "delete", "download"],
+  sharedDocuments: ["view", "create", "edit", "delete", "download"],
   kanban: ["view", "create", "edit", "delete", "assign"],
   signatures: ["view", "create", "edit", "delete", "set-default"],
   calendar: ["view", "create", "edit", "delete"],
@@ -161,6 +165,7 @@ export const admin = ac.newRole({
     "send",
     "export",
     "mark-paid",
+    "import",
   ],
   creditNotes: ["view", "create", "edit", "delete", "approve", "send"],
 
@@ -175,6 +180,7 @@ export const admin = ac.newRole({
 
   // Outils - Accès complet
   fileTransfers: ["view", "create", "delete", "download"],
+  sharedDocuments: ["view", "create", "edit", "delete", "download"],
   kanban: ["view", "create", "edit", "delete", "assign"],
   signatures: ["view", "create", "edit", "delete", "set-default"],
   calendar: ["view", "create", "edit", "delete"],
@@ -201,7 +207,7 @@ export const admin = ac.newRole({
 export const member = ac.newRole({
   // Documents commerciaux - Création + envoi + export
   quotes: ["view", "create", "send", "export"],
-  invoices: ["view", "create", "send", "export"],
+  invoices: ["view", "create", "send", "export", "import"],
   creditNotes: ["view", "create", "export"],
 
   // Finances - Création + export
@@ -215,6 +221,7 @@ export const member = ac.newRole({
 
   // Outils - Utilisation standard
   fileTransfers: ["view", "create", "download"],
+  sharedDocuments: ["view", "create", "edit", "download"],
   kanban: ["view", "create", "edit", "assign"],
   signatures: ["view", "create", "edit", "set-default"],
   calendar: ["view", "create", "edit"],
@@ -275,7 +282,7 @@ export const viewer = ac.newRole({
 export const accountant = ac.newRole({
   // Documents commerciaux - Lecture + export
   quotes: ["view", "export"],
-  invoices: ["view", "export", "mark-paid"], // Peut marquer comme payé
+  invoices: ["view", "export", "mark-paid", "import"], // Peut marquer comme payé + import
   creditNotes: ["view", "export"],
 
   // Finances - Lecture + validation + export
@@ -286,6 +293,9 @@ export const accountant = ac.newRole({
   clients: ["view", "export"],
   products: ["view", "export"],
   suppliers: ["view"],
+
+  // Outils - Documents partagés uniquement
+  sharedDocuments: ["view", "create", "edit", "delete", "download"],
 
   // Rapports - Lecture + export
   reports: ["view", "export"],

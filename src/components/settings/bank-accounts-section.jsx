@@ -37,12 +37,14 @@ import {
   Crown,
   Eye,
   EyeOff,
+  MailWarning,
 } from "lucide-react";
 import { toast } from "@/src/components/ui/sonner";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { findBank, getBankLogo } from "@/lib/banks-config";
 import { Callout } from "@/src/components/ui/callout";
+import { authClient } from "@/src/lib/auth-client";
 
 /**
  * Récupère le token JWT depuis localStorage
@@ -98,6 +100,9 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
 
   // État pour la déconnexion (stocke l'ID du compte en cours de déconnexion)
   const [disconnectingAccountId, setDisconnectingAccountId] = useState(null);
+
+  // État pour la vérification email
+  const [isEmailVerified, setIsEmailVerified] = useState(true);
 
   // Limites de connexions bancaires selon l'abonnement
   const bankConnectionLimit = useMemo(() => {
@@ -227,6 +232,19 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
     fetchAccounts();
   }, [workspaceId]);
 
+  // Vérifier le statut de vérification email
+  useEffect(() => {
+    const checkEmailVerification = async () => {
+      try {
+        const { data: session } = await authClient.getSession();
+        setIsEmailVerified(session?.user?.emailVerified ?? true);
+      } catch (error) {
+        console.warn("Erreur vérification email:", error);
+      }
+    };
+    checkEmailVerification();
+  }, []);
+
   // Charger les institutions quand le modal s'ouvre
   useEffect(() => {
     if (isModalOpen && institutions.length === 0) {
@@ -249,6 +267,10 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
   const handleOpenModal = () => {
     if (!canManageOrgSettings) {
       toast.error("Vous n'avez pas la permission d'ajouter un compte bancaire");
+      return;
+    }
+    if (!isEmailVerified) {
+      toast.error("Veuillez vérifier votre adresse email avant de connecter un compte bancaire");
       return;
     }
     setIsModalOpen(true);
@@ -435,6 +457,19 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
             </Callout>
           </div>
         )}
+        {!isEmailVerified && (
+          <div className="mt-4">
+            <Callout type="warning" noMargin>
+              <div className="flex items-center gap-2">
+                <MailWarning className="h-4 w-4 flex-shrink-0" />
+                <p>
+                  Veuillez vérifier votre adresse email avant de pouvoir connecter un compte bancaire.
+                  Consultez votre boîte de réception pour le lien de vérification.
+                </p>
+              </div>
+            </Callout>
+          </div>
+        )}
       </div>
 
       {/* En-tête avec compteur et actions */}
@@ -473,7 +508,7 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
             <Button
               size="sm"
               onClick={handleOpenModal}
-              disabled={!canManageOrgSettings || isConnecting}
+              disabled={!canManageOrgSettings || isConnecting || !isEmailVerified}
               className="font-normal"
             >
               {isConnecting ? (
@@ -518,7 +553,7 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
           </p>
           <Button
             onClick={handleOpenModal}
-            disabled={!canManageOrgSettings}
+            disabled={!canManageOrgSettings || !isEmailVerified}
             className="font-normal bg-[#5b4eff] hover:bg-[#4a3ecc]"
           >
             <Landmark className="h-4 w-4 mr-2" />

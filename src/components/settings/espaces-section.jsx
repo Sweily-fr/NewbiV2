@@ -472,6 +472,7 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
                                   <AvatarImage
                                     src={member.avatar}
                                     alt={member.name || member.email}
+                                    className="object-cover"
                                   />
                                   <AvatarFallback className="bg-muted text-muted-foreground text-[10px]">
                                     {(member.name || member.email || "?")
