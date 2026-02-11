@@ -79,6 +79,7 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
     getAllCollaborators,
     removeMember,
     cancelInvitation,
+    resendInvitation,
     updateMemberRole,
   } = useOrganizationInvitations();
 
@@ -340,15 +341,24 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
         email: member.email,
         currentRole: member.role,
         newRole,
+        type: member.type,
         orgId: selectedOrg?.id,
       });
 
-      // Appeler la fonction updateMemberRole du hook avec l'ID du membre
-      const result = await updateMemberRole(
-        member.id, // Better Auth utilise l'ID du membre
-        newRole,
-        selectedOrg?.id
-      );
+      let result;
+
+      if (member.type === "invitation") {
+        // Pour les invitations, annuler et re-inviter avec le nouveau rôle
+        result = await resendInvitation(member.email, newRole, member.id);
+      } else {
+        // Pour les membres actifs, utiliser updateMemberRole de Better Auth
+        result = await updateMemberRole(
+          member.id,
+          newRole,
+          selectedOrg?.id,
+          member.role
+        );
+      }
 
       if (result.success) {
         // Rafraîchir la liste des membres
