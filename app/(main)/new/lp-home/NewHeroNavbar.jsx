@@ -168,7 +168,7 @@ const menuItems = [
   },
 ];
 
-export function NewHeroNavbar({ hasBanner = false }) {
+export function NewHeroNavbar({ hasBanner = false, solidBackground = false }) {
   const { data: session } = useSession();
   const isLoggedIn = !!session?.user;
 
@@ -204,7 +204,7 @@ export function NewHeroNavbar({ hasBanner = false }) {
         <div
           className={cn(
             "w-full px-6 lg:px-12 transition-all duration-300",
-            isScrolled &&
+            (isScrolled || solidBackground) &&
               "bg-[#FDFDFD] dark:bg-background border-b border-gray-200 dark:border-neutral-800"
           )}
         >

@@ -85,14 +85,24 @@ export function getMDXComponents(): MDXComponents {
     Check,
 
     // HTML element overrides
-    h2: ({ children, ...props }: any) => (
-      <h2
-        className="text-xl font-medium tracking-tight text-gray-900 mt-10 mb-5"
-        {...props}
-      >
-        {children}
-      </h2>
-    ),
+    h2: ({ children, ...props }: any) => {
+      const text = typeof children === "string" ? children : "";
+      const id = text
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)/g, "");
+      return (
+        <h2
+          id={id}
+          className="text-xl font-medium tracking-tight text-gray-900 mt-10 mb-5"
+          {...props}
+        >
+          {children}
+        </h2>
+      );
+    },
     h3: ({ children, ...props }: any) => (
       <h3
         className="text-lg font-medium text-gray-800 mt-7 mb-3"
