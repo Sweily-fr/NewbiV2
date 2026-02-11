@@ -9,6 +9,11 @@ on:
         description: 'Number of articles to publish'
         required: false
         default: '3'
+      images_only:
+        description: 'Only generate images for published articles (no new publishing)'
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -40,7 +45,12 @@ jobs:
         env:
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           PYTHONUNBUFFERED: '1'
-        run: node scripts/publish-articles.js ${{ github.event.inputs.count || '3' }}
+        run: |
+          if [ "${{ github.event.inputs.images_only }}" = "true" ]; then
+            node scripts/publish-articles.js --images-only
+          else
+            node scripts/publish-articles.js ${{ github.event.inputs.count || '3' }}
+          fi
 
       - name: Commit and push changes
         run: |
