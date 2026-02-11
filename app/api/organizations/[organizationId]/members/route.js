@@ -31,7 +31,6 @@ export async function GET(request, { params }) {
         {
           $match: {
             organizationId: new ObjectId(organizationId),
-            status: "active",
           },
         },
         {
