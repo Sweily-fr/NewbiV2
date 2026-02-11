@@ -19,6 +19,14 @@ const IMPORTED_INVOICE_FRAGMENT = gql`
       email
       phone
     }
+    client {
+      name
+      address
+      city
+      postalCode
+      siret
+      clientNumber
+    }
     invoiceDate
     dueDate
     paymentDate

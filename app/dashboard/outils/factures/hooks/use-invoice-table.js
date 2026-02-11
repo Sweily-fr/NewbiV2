@@ -276,7 +276,7 @@ export function useInvoiceTable({
           const invoice = row.original;
           const isImported = invoice._type === "imported";
           const clientName =
-            client?.name || (isImported ? "Fournisseur inconnu" : "Non défini");
+            client?.name || (isImported ? "Client inconnu" : "Non défini");
           return (
             <div className="min-h-[40px] flex flex-col justify-center">
               <div
@@ -285,7 +285,7 @@ export function useInvoiceTable({
               >
                 {client?.name || (
                   <span className="text-muted-foreground italic">
-                    {isImported ? "Fournisseur inconnu" : "Non défini"}
+                    {isImported ? "Client inconnu" : "Non défini"}
                   </span>
                 )}
               </div>

@@ -166,7 +166,7 @@ export default function InvoiceTable({
       ...inv,
       _type: "imported",
       // Mapper les champs pour compatibilité avec le tableau
-      client: { name: inv.vendor?.name || "Fournisseur inconnu" },
+      client: { name: inv.client?.name || inv.vendor?.name || "Client inconnu" },
       issueDate: inv.invoiceDate,
       dueDate: null,
       total: inv.totalTTC,
