@@ -36,6 +36,8 @@ import {
 import { DraggableTree } from "./components/DraggableTree";
 import { MemberSelector } from "../kanban/[id]/components/MemberSelector";
 import DocumentAutomationsModal from "./components/document-automations-modal";
+import TransferFromDocsModal from "./components/transfer-from-docs-modal";
+import { QrCode } from "@ark-ui/react/qr-code";
 import { useDocumentAutomations } from "@/src/hooks/useDocumentAutomations";
 import { Button } from "@/src/components/ui/button";
 import {
@@ -135,6 +137,8 @@ import {
   Zap,
   Globe,
   Lock,
+  Send,
+  Link2,
 } from "lucide-react";
 import {
   Popover,
@@ -356,6 +360,11 @@ export default function DocumentsPartagesPage() {
   const [showDetailsPanel, setShowDetailsPanel] = useState(false);
   const [selectedDocumentDetails, setSelectedDocumentDetails] = useState(null);
   const [newTag, setNewTag] = useState("");
+
+  // Transfert depuis documents partagés
+  const [showTransferModal, setShowTransferModal] = useState(false);
+  const [showTransferSuccessDialog, setShowTransferSuccessDialog] = useState(false);
+  const [transferLink, setTransferLink] = useState("");
 
   // Debounced search
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -917,6 +926,23 @@ export default function DocumentsPartagesPage() {
     },
     [folders]
   );
+
+  // Callback quand un transfert est créé depuis les documents partagés
+  const handleTransferCreated = useCallback((shareLink, accessKey) => {
+    const fullLink = `${window.location.origin}/transfer/${shareLink}?key=${accessKey}`;
+    setTransferLink(fullLink);
+    setShowTransferModal(false);
+    setShowTransferSuccessDialog(true);
+  }, []);
+
+  const copyTransferLink = useCallback(() => {
+    navigator.clipboard.writeText(transferLink);
+    toast.success("Lien copié dans le presse-papier");
+  }, [transferLink]);
+
+  const openTransferLink = useCallback(() => {
+    window.open(transferLink, "_blank");
+  }, [transferLink]);
 
   // Open ZIP configuration dialog or download directly
   const handleZipDownload = useCallback(async () => {
@@ -1564,6 +1590,17 @@ export default function DocumentsPartagesPage() {
                                   ? "Téléchargement..."
                                   : "Télécharger en ZIP"}
                               </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  setSelectedFolders([treeContextMenu.itemId]);
+                                  setSelectedDocuments([]);
+                                  setShowTransferModal(true);
+                                  setTreeContextMenu(null);
+                                }}
+                              >
+                                <Send className="size-4 mr-2" />
+                                Transférer
+                              </DropdownMenuItem>
                               {/* Download selection as ZIP when multiple folders are selected */}
                               {selectedFolders.length > 1 && (
                                 <DropdownMenuItem
@@ -1629,20 +1666,34 @@ export default function DocumentsPartagesPage() {
                           </DropdownMenuItem>
                         )}
                         {!treeContextMenu.item.isFolder && (
-                          <DropdownMenuItem
-                            onClick={() => {
-                              if (treeContextMenu.item.data?.fileUrl) {
-                                window.open(
-                                  treeContextMenu.item.data.fileUrl,
-                                  "_blank",
-                                );
-                              }
-                              setTreeContextMenu(null);
-                            }}
-                          >
-                            <Download className="size-4 mr-2" />
-                            Télécharger
-                          </DropdownMenuItem>
+                          <>
+                            <DropdownMenuItem
+                              onClick={() => {
+                                if (treeContextMenu.item.data?.fileUrl) {
+                                  window.open(
+                                    treeContextMenu.item.data.fileUrl,
+                                    "_blank",
+                                  );
+                                }
+                                setTreeContextMenu(null);
+                              }}
+                            >
+                              <Download className="size-4 mr-2" />
+                              Télécharger
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => {
+                                const docId = treeContextMenu.itemId.replace("doc-", "");
+                                setSelectedDocuments([docId]);
+                                setSelectedFolders([]);
+                                setShowTransferModal(true);
+                                setTreeContextMenu(null);
+                              }}
+                            >
+                              <Send className="size-4 mr-2" />
+                              Transférer
+                            </DropdownMenuItem>
+                          </>
                         )}
                         {/* Supprimer - pas pour inbox ni dossiers système */}
                         {!treeContextMenu.item.isInbox &&
@@ -2816,6 +2867,16 @@ export default function DocumentsPartagesPage() {
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() => {
+                                  setSelectedDocuments([doc.id]);
+                                  setSelectedFolders([]);
+                                  setShowTransferModal(true);
+                                }}
+                              >
+                                <Send className="h-4 w-4 mr-2" />
+                                Transférer
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => {
                                   if (canPreview(doc)) {
                                     setPreviewDocument(doc);
                                   } else {
@@ -2931,6 +2992,17 @@ export default function DocumentsPartagesPage() {
                                   <Download className="h-4 w-4 mr-2" />
                                   Télécharger
                                 </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setSelectedDocuments([doc.id]);
+                                    setSelectedFolders([]);
+                                    setShowTransferModal(true);
+                                  }}
+                                >
+                                  <Send className="h-4 w-4 mr-2" />
+                                  Transférer
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
                                 <DropdownMenuItem
                                   onClick={() => {
                                     setSelectedDocuments([doc.id]);
@@ -3896,6 +3968,15 @@ export default function DocumentsPartagesPage() {
                 ? "Préparation..."
                 : `Télécharger en ZIP (${totalSelectionCount})`}
             </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                setContentContextMenu(null);
+                setShowTransferModal(true);
+              }}
+            >
+              <Send className="size-4 mr-2" />
+              {`Transférer (${totalSelectionCount})`}
+            </DropdownMenuItem>
             {selectedDocuments.length > 0 && (
               <>
                 <DropdownMenuItem
@@ -4066,6 +4147,13 @@ export default function DocumentsPartagesPage() {
                 <Download className="h-4 w-4" />
               )}
             </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setShowTransferModal(true)}
+            >
+              <Send className="h-4 w-4" />
+            </Button>
             {selectedDocuments.length > 0 && (
               <>
                 <Button
@@ -4103,6 +4191,74 @@ export default function DocumentsPartagesPage() {
       open={showAutomationsModal}
       onOpenChange={setShowAutomationsModal}
     />
+
+    {/* Modal de transfert depuis documents partagés */}
+    <TransferFromDocsModal
+      open={showTransferModal}
+      onOpenChange={setShowTransferModal}
+      selectedDocumentIds={selectedDocuments}
+      selectedFolderIds={selectedFolders}
+      documents={documents}
+      folders={folders}
+      allDocuments={allDocuments}
+      workspaceId={workspaceId}
+      onTransferCreated={handleTransferCreated}
+    />
+
+    {/* Dialog succès transfert avec QR code */}
+    <Dialog open={showTransferSuccessDialog} onOpenChange={setShowTransferSuccessDialog}>
+      <DialogContent className="max-w-xs p-6 gap-0">
+        <div className="flex flex-col items-center space-y-6">
+          <div className="text-center space-y-2">
+            <DialogTitle className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+              Transfert créé
+            </DialogTitle>
+            <DialogDescription className="text-sm text-gray-500 dark:text-gray-400">
+              Scannez pour accéder aux fichiers
+            </DialogDescription>
+          </div>
+
+          <QrCode.Root value={transferLink} encoding={{ ecc: "M" }}>
+            <QrCode.Frame className="w-48 h-48 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl p-4 shadow-lg">
+              <QrCode.Pattern className="fill-gray-900 dark:fill-white" />
+            </QrCode.Frame>
+          </QrCode.Root>
+
+          <div className="text-center space-y-2">
+            <div className="flex items-center justify-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+              <ExternalLink className="w-4 h-4 flex-shrink-0" />
+              <span className="font-mono text-xs break-all">
+                {transferLink.replace(/^https?:\/\//, "")}
+              </span>
+            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Pointez votre caméra sur le QR code
+            </p>
+          </div>
+
+          <div className="flex gap-2 w-full">
+            <Button
+              variant="outline"
+              onClick={copyTransferLink}
+              className="flex-1 font-normal h-9 text-sm"
+            >
+              <Link2 className="w-4 h-4 mr-1.5" />
+              Copier
+            </Button>
+            <Button
+              onClick={() => {
+                openTransferLink();
+                setShowTransferSuccessDialog(false);
+              }}
+              className="flex-1 font-normal h-9 text-sm bg-[#5a50ff] hover:bg-[#5a50ff]/90"
+            >
+              <ExternalLink className="w-4 h-4 mr-1.5" />
+              Ouvrir
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
     </>
   );
 }
