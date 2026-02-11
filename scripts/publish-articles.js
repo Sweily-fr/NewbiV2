@@ -10,6 +10,8 @@ const IMAGE_SCRIPT = path.join(__dirname, "generate-blog-images.py");
 
 const imagesOnly = process.argv.includes("--images-only");
 const skipImages = process.argv.includes("--skip-images");
+const forceImages = process.argv.includes("--force-images");
+const forceFlag = forceImages ? " --force" : "";
 const count = imagesOnly ? 0 : (parseInt(process.argv[2], 10) || 3);
 
 const queue = JSON.parse(fs.readFileSync(QUEUE_PATH, "utf-8"));
@@ -42,7 +44,7 @@ if (imagesOnly) {
   }
 
   try {
-    execSync(`python3 ${IMAGE_SCRIPT} ${publishedSlugs.join(" ")}`, {
+    execSync(`python3 ${IMAGE_SCRIPT} ${publishedSlugs.join(" ")}${forceFlag}`, {
       stdio: "inherit",
       env: { ...process.env },
       timeout: 660000,
@@ -96,7 +98,7 @@ if (!skipImages && process.env.OPENAI_API_KEY) {
   console.log("\n--- Generating images ---");
   const slugArgs = published.join(" ");
   try {
-    execSync(`python3 ${IMAGE_SCRIPT} ${slugArgs}`, {
+    execSync(`python3 ${IMAGE_SCRIPT} ${slugArgs}${forceFlag}`, {
       stdio: "inherit",
       env: { ...process.env },
       timeout: 660000,

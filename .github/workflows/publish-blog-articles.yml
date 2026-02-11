@@ -14,6 +14,11 @@ on:
         required: false
         type: boolean
         default: false
+      force_images:
+        description: 'Force regenerate images even if they already exist'
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -46,10 +51,14 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           PYTHONUNBUFFERED: '1'
         run: |
+          FORCE_FLAG=""
+          if [ "${{ github.event.inputs.force_images }}" = "true" ]; then
+            FORCE_FLAG="--force-images"
+          fi
           if [ "${{ github.event.inputs.images_only }}" = "true" ]; then
-            node scripts/publish-articles.js --images-only
+            node scripts/publish-articles.js --images-only $FORCE_FLAG
           else
-            node scripts/publish-articles.js ${{ github.event.inputs.count || '3' }}
+            node scripts/publish-articles.js ${{ github.event.inputs.count || '3' }} $FORCE_FLAG
           fi
 
       - name: Commit and push changes
