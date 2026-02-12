@@ -341,106 +341,101 @@ function DashboardContent() {
       <BankSyncOverlay isVisible={isBankSyncing} />
 
       <div className="flex flex-col gap-4 py-8 sm:p-6 md:gap-6 md:py-6 p-4 md:p-6">
-        <div className="flex items-center justify-between w-full mb-2">
-          <div className="flex flex-col">
-            <h1 className="text-2xl font-semibold">
-              Bonjour {session?.user?.name},
-            </h1>
-            {/* Filtre de compte bancaire */}
-            {(bankAccounts || []).length > 0 && (
-              <Popover open={accountPopoverOpen} onOpenChange={setAccountPopoverOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    role="combobox"
-                    aria-expanded={accountPopoverOpen}
-                    className="h-7 px-2 text-sm font-normal text-muted-foreground hover:text-foreground gap-1 w-fit mt-1"
-                  >
-                    <Building2 className="h-3.5 w-3.5" />
-                    {selectedAccountLabel}
-                    <ChevronsUpDown className="h-3 w-3 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[280px] p-0" align="start">
-                  <Command>
-                    <CommandList>
-                      <CommandEmpty>Aucun compte trouvé.</CommandEmpty>
-                      <CommandGroup>
-                        <CommandItem
-                          value="all"
-                          onSelect={() => {
-                            setSelectedAccountId("all");
-                            setAccountPopoverOpen(false);
-                          }}
-                        >
-                          <Check
-                            className={cn(
-                              "mr-2 h-4 w-4",
-                              selectedAccountId === "all" ? "opacity-100" : "opacity-0"
-                            )}
-                          />
-                          <div className="flex items-center gap-2">
-                            <Building2 className="h-4 w-4 text-muted-foreground" />
-                            <span>Tous les comptes</span>
-                          </div>
-                        </CommandItem>
-                        {(bankAccounts || []).map((account) => {
-                          const accountName = account.name || account.institutionName || account.bankName || "Compte";
-                          const lastIban = account.iban ? ` ···${account.iban.slice(-4)}` : "";
-                          const isSelected = selectedAccountId === account.id || selectedAccountId === account.externalId;
-                          return (
-                            <CommandItem
-                              key={account.id}
-                              value={account.id}
-                              onSelect={() => {
-                                setSelectedAccountId(account.id);
-                                setAccountPopoverOpen(false);
-                              }}
-                            >
-                              <Check
-                                className={cn(
-                                  "mr-2 h-4 w-4",
-                                  isSelected ? "opacity-100" : "opacity-0"
-                                )}
-                              />
-                              <div className="flex items-center gap-2 min-w-0">
-                                {account.institutionLogo ? (
-                                  <img
-                                    src={account.institutionLogo}
-                                    alt=""
-                                    className="h-[42px] w-[42px] rounded-sm object-contain flex-shrink-0"
-                                  />
-                                ) : (
-                                  <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                                )}
-                                <div className="flex flex-col min-w-0">
-                                  <span className="truncate text-sm">{accountName}{lastIban}</span>
-                                  {account.balance?.current != null && (
-                                    <span className="text-xs text-muted-foreground">
-                                      {formatCurrency(account.balance.current)}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            </CommandItem>
-                          );
-                        })}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between w-full mb-2 gap-1 md:gap-0">
+          <h1 className="text-2xl font-semibold">
+            Bonjour {session?.user?.name},
+          </h1>
+          {process.env.NODE_ENV === "development" &&
+            cacheInfo?.lastUpdate && (
+              <p className="text-xs text-gray-500 mt-1">
+                Données mises à jour :{" "}
+                {cacheInfo.lastUpdate.toLocaleTimeString()}
+                {cacheInfo.isFromCache && " (cache)"}
+              </p>
             )}
-            {process.env.NODE_ENV === "development" &&
-              cacheInfo?.lastUpdate && (
-                <p className="text-xs text-gray-500 mt-1">
-                  Données mises à jour :{" "}
-                  {cacheInfo.lastUpdate.toLocaleTimeString()}
-                  {cacheInfo.isFromCache && " (cache)"}
-                </p>
-              )}
-          </div>
-          {/* <BankingConnectButton /> */}
+          {/* Filtre de compte bancaire */}
+          {(bankAccounts || []).length > 0 && (
+            <Popover open={accountPopoverOpen} onOpenChange={setAccountPopoverOpen}>
+              <PopoverTrigger asChild>
+                <div className="flex items-center gap-2 cursor-pointer">
+                  <Landmark className="size-3.5 text-[#707070]" />
+                  <span className="text-[13px] font-normal truncate max-w-[150px]">
+                    {selectedAccountLabel}
+                  </span>
+                  <button className="p-1 rounded-md hover:bg-accent transition-colors cursor-pointer outline-none">
+                    <ChevronsUpDown className="h-3.5 w-3.5 text-muted-foreground" />
+                  </button>
+                </div>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 rounded-lg p-0" align="start" sideOffset={8}>
+                <Command>
+                  <CommandList>
+                    <CommandEmpty>Aucun compte trouvé.</CommandEmpty>
+                    <CommandGroup>
+                      <CommandItem
+                        value="all"
+                        onSelect={() => {
+                          setSelectedAccountId("all");
+                          setAccountPopoverOpen(false);
+                        }}
+                        className="flex items-center gap-2 px-2 py-2 cursor-pointer"
+                      >
+                        <span className="flex-1 text-xs truncate">Tous les comptes</span>
+                        <Check
+                          className={cn(
+                            "h-4 w-4 text-[#5b4fff]",
+                            selectedAccountId === "all" ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                      </CommandItem>
+                      {(bankAccounts || []).map((account) => {
+                        const accountName = account.name || account.institutionName || account.bankName || "Compte";
+                        const lastIban = account.iban ? ` ···${account.iban.slice(-4)}` : "";
+                        const isSelected = selectedAccountId === account.id || selectedAccountId === account.externalId;
+                        return (
+                          <CommandItem
+                            key={account.id}
+                            value={account.id}
+                            onSelect={() => {
+                              setSelectedAccountId(account.id);
+                              setAccountPopoverOpen(false);
+                            }}
+                            className="flex items-center gap-2 px-2 py-2 cursor-pointer"
+                          >
+                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                              {account.institutionLogo ? (
+                                <img
+                                  src={account.institutionLogo}
+                                  alt=""
+                                  className="h-5 w-5 rounded-sm object-contain flex-shrink-0"
+                                />
+                              ) : (
+                                <Landmark className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                              )}
+                              <div className="flex flex-col min-w-0">
+                                <span className="truncate text-xs">{accountName}{lastIban}</span>
+                                {account.balance?.current != null && (
+                                  <span className="text-[10px] text-muted-foreground">
+                                    {formatCurrency(account.balance.current)}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <Check
+                              className={cn(
+                                "h-4 w-4 text-[#5b4fff]",
+                                isSelected ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                          </CommandItem>
+                        );
+                      })}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+          )}
         </div>
         {/* Barre de recherche et actions rapides temporairement désactivées */}
         {/* <div className="flex flex-col gap-3 w-full">
