@@ -45,7 +45,7 @@ export const auth = betterAuth({
     updateAge: 60 * 30, // 30 minutes - Renouvellement automatique à mi-vie si utilisateur actif
     cookieCache: {
       enabled: true,
-      maxAge: 60, // 1 minute - Cache réduit pour détection rapide d'expiration
+      maxAge: 300, // 5 minutes - Évite les lookups MongoDB fréquents en Edge Runtime
     },
     // Ajouter activeOrganizationId aux champs de session
     additionalFields: {
