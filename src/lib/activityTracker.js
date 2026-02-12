@@ -238,7 +238,6 @@ export function initializeActivityTracker() {
   // Configurer les événements DOM
   const domEvents = [
     "mousedown",
-    "mousemove",
     "keypress",
     "keydown",
     "scroll",
