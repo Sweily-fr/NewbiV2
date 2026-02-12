@@ -38,6 +38,7 @@ import { TutorialProvider } from "@/src/contexts/tutorial-context";
 import { TutorialOverlay } from "@/src/components/tutorial/tutorial-overlay";
 import { SignatureSidebarRight } from "@/src/components/signature-sidebar-right";
 import { BottomNavBar } from "@/src/components/bottom-nav-bar";
+import { PwaInstallBanner } from "@/src/components/pwa-install-banner";
 
 // Composant interne qui utilise le contexte
 function DashboardContent({ children }) {
@@ -180,7 +181,7 @@ function DashboardContent({ children }) {
       <SidebarInset>
         <SiteHeader />
         <div className="flex flex-1 flex-col overflow-y-auto">
-          <div className="@container/main flex flex-1 flex-col gap-2 pb-20 md:pb-0">
+          <div className="@container/main flex flex-1 flex-col gap-2 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] md:pb-0">
             {children}
           </div>
         </div>
@@ -252,6 +253,9 @@ function DashboardContent({ children }) {
 
       {/* Tutoriel interactif */}
       <TutorialOverlay />
+
+      {/* PWA install banner — mobile uniquement */}
+      <PwaInstallBanner />
 
       {/* Bottom Navigation Bar — mobile uniquement */}
       <BottomNavBar

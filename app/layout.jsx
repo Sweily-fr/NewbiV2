@@ -8,6 +8,14 @@ import { Toaster } from "@/src/components/ui/sonner";
 // import CookieManager from "@/src/components/cookies/CookieManager";
 import "@/src/utils/clearApolloCache"; // Nettoyage du cache Apollo
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
+};
+
 export const metadata = {
   title: {
     default: "Newbi - Solution complète pour freelances et petites entreprises",
@@ -28,13 +36,6 @@ export const metadata = {
   authors: [{ name: "Newbi" }],
   creator: "Newbi",
   publisher: "Newbi",
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-    viewportFit: "cover",
-  },
   formatDetection: {
     email: false,
     address: false,
@@ -103,9 +104,10 @@ export default function RootLayout({ children }) {
       <head>
         <link rel="manifest" href="/manifest.json" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="Newbi" />
         <meta name="theme-color" content="#5b4fff" />
+        <link rel="apple-touch-icon" href="/icon.png" />
         <script
           dangerouslySetInnerHTML={{
             __html: `
