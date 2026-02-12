@@ -142,6 +142,8 @@ export default function TransactionTable({
     useState(false);
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+  const [mobileTab, setMobileTab] = useState("all");
+  const [isMobileScrolled, setIsMobileScrolled] = useState(false);
   const [advancedFilters, setAdvancedFilters] = useState([]);
 
   // Options de filtres disponibles
@@ -462,6 +464,40 @@ export default function TransactionTable({
       return dateB.localeCompare(dateA);
     });
   }, [expenses, expenseTypeFilter, assignedMemberFilter]);
+
+  // Tab counts (computed from base transactions, before tab filter)
+  const mobileTabCounts = useMemo(() => {
+    const now = new Date();
+    const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+    return {
+      all: transactions.length,
+      last_month: transactions.filter((tx) => {
+        const txDate = new Date(tx.date);
+        return txDate >= oneMonthAgo && tx.amount < 0;
+      }).length,
+      missing_receipt: transactions.filter(
+        (tx) => tx.amount < 0 && !tx.hasReceipt
+      ).length,
+    };
+  }, [transactions]);
+
+  // Apply mobile tab filter
+  const tabFilteredTransactions = useMemo(() => {
+    if (mobileTab === "last_month") {
+      const now = new Date();
+      const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+      return transactions.filter((tx) => {
+        const txDate = new Date(tx.date);
+        return txDate >= oneMonthAgo && tx.amount < 0;
+      });
+    }
+    if (mobileTab === "missing_receipt") {
+      return transactions.filter(
+        (tx) => tx.amount < 0 && !tx.hasReceipt
+      );
+    }
+    return transactions;
+  }, [transactions, mobileTab]);
 
   const totalItems = totalCount;
 
@@ -851,7 +887,7 @@ export default function TransactionTable({
 
   // Filtrer les transactions selon le tab actif et les filtres avancés
   const filteredTransactions = useMemo(() => {
-    let result = transactions;
+    let result = tabFilteredTransactions;
     const now = new Date();
     const oneMonthAgo = new Date(
       now.getFullYear(),
@@ -910,7 +946,7 @@ export default function TransactionTable({
     }
 
     return result;
-  }, [transactions, activeTab, advancedFilters]);
+  }, [tabFilteredTransactions, activeTab, advancedFilters]);
 
   // Mettre à jour la table avec les transactions filtrées
   const tableWithFilteredData = useReactTable({
@@ -1314,8 +1350,12 @@ export default function TransactionTable({
         inputRef={inputRef}
         globalFilter={globalFilter}
         setGlobalFilter={setGlobalFilter}
-        setIsReceiptUploadDrawerOpen={setIsReceiptUploadDrawerOpen}
-        setIsAddTransactionDrawerOpen={setIsAddTransactionDrawerOpen}
+        onFilterPress={() => setIsFiltersOpen(!isFiltersOpen)}
+        activeFilterCount={(expenseTypeFilter ? 1 : 0) + (assignedMemberFilter ? 1 : 0)}
+        activeTab={mobileTab}
+        onTabChange={setMobileTab}
+        isScrolled={isMobileScrolled}
+        tabCounts={mobileTabCounts}
       />
 
       {/* Mobile Table */}
@@ -1325,6 +1365,8 @@ export default function TransactionTable({
         error={error}
         loading={loading}
         onRowClick={handleViewTransaction}
+        onScrollChange={setIsMobileScrolled}
+        activeTab={mobileTab}
       />
 
       {/* Pagination - Fixe en bas sur desktop */}

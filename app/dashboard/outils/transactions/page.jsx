@@ -22,6 +22,7 @@ import {
   Edit3,
   Upload,
   Building2,
+  Landmark,
   ChevronsUpDown,
   Check,
 } from "lucide-react";
@@ -325,18 +326,17 @@ function GestionDepensesContent() {
             <div className="flex items-center gap-2 mt-2">
               <Popover open={accountPopoverOpen} onOpenChange={setAccountPopoverOpen}>
                 <PopoverTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    role="combobox"
-                    aria-expanded={accountPopoverOpen}
-                    className="h-7 px-2 text-sm font-normal text-muted-foreground hover:text-foreground gap-1"
-                  >
-                    <Building2 className="h-3.5 w-3.5" />
-                    {selectedAccountLabel}
-                    <ChevronsUpDown className="h-3 w-3 opacity-50" />
-                  </Button>
+                  <div className="flex items-center gap-2 cursor-pointer">
+                    <Landmark className="size-3.5 text-[#707070]" />
+                    <span className="text-[13px] font-normal truncate max-w-[150px]">
+                      {selectedAccountLabel}
+                    </span>
+                    <button className="p-1 rounded-md hover:bg-accent transition-colors cursor-pointer outline-none">
+                      <ChevronsUpDown className="h-3.5 w-3.5 text-muted-foreground" />
+                    </button>
+                  </div>
                 </PopoverTrigger>
-                <PopoverContent className="w-[280px] p-0" align="start">
+                <PopoverContent className="w-80 rounded-lg p-0" align="start" sideOffset={8}>
                   <Command>
                     <CommandList>
                       <CommandEmpty>Aucun compte trouvé.</CommandEmpty>
@@ -347,17 +347,15 @@ function GestionDepensesContent() {
                             setSelectedAccountId("all");
                             setAccountPopoverOpen(false);
                           }}
+                          className="flex items-center gap-2 px-2 py-2 cursor-pointer"
                         >
+                          <span className="flex-1 text-xs truncate">Tous les comptes</span>
                           <Check
                             className={cn(
-                              "mr-2 h-4 w-4",
+                              "h-4 w-4 text-[#5b4fff]",
                               selectedAccountId === "all" ? "opacity-100" : "opacity-0"
                             )}
                           />
-                          <div className="flex items-center gap-2">
-                            <Building2 className="h-4 w-4 text-muted-foreground" />
-                            <span>Tous les comptes</span>
-                          </div>
                         </CommandItem>
                         {(bankAccounts || []).map((account) => {
                           const accountName = account.name || account.institutionName || account.bankName || "Compte";
@@ -371,32 +369,33 @@ function GestionDepensesContent() {
                                 setSelectedAccountId(account.id);
                                 setAccountPopoverOpen(false);
                               }}
+                              className="flex items-center gap-2 px-2 py-2 cursor-pointer"
                             >
-                              <Check
-                                className={cn(
-                                  "mr-2 h-4 w-4",
-                                  isSelected ? "opacity-100" : "opacity-0"
-                                )}
-                              />
-                              <div className="flex items-center gap-2 min-w-0">
+                              <div className="flex items-center gap-2 flex-1 min-w-0">
                                 {account.institutionLogo ? (
                                   <img
                                     src={account.institutionLogo}
                                     alt=""
-                                    className="h-9 w-9 rounded-sm object-contain flex-shrink-0"
+                                    className="h-5 w-5 rounded-sm object-contain flex-shrink-0"
                                   />
                                 ) : (
-                                  <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                                  <Landmark className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
                                 )}
                                 <div className="flex flex-col min-w-0">
-                                  <span className="truncate text-sm">{accountName}{lastIban}</span>
+                                  <span className="truncate text-xs">{accountName}{lastIban}</span>
                                   {account.balance?.current != null && (
-                                    <span className="text-xs text-muted-foreground">
+                                    <span className="text-[10px] text-muted-foreground">
                                       {formatAmount(account.balance.current)} €
                                     </span>
                                   )}
                                 </div>
                               </div>
+                              <Check
+                                className={cn(
+                                  "h-4 w-4 text-[#5b4fff]",
+                                  isSelected ? "opacity-100" : "opacity-0"
+                                )}
+                              />
                             </CommandItem>
                           );
                         })}
@@ -495,17 +494,17 @@ function GestionDepensesContent() {
       </div>
 
       {/* Mobile Layout - Style Notion */}
-      <div className="md:hidden">
+      <div className="md:hidden flex flex-col h-[calc(100vh-64px)] overflow-hidden">
         {/* Header - Style Notion sur mobile */}
-        <div className="px-4 py-6">
+        <div className="px-4 py-6 flex-shrink-0">
           <div className="flex items-start justify-between">
             <div>
               <div className="flex items-center gap-2">
                 <h1
-                  className={`text-2xl font-semibold tracking-tight transition-all duration-200 ${isBalanceHidden ? "blur-md select-none" : ""}`}
+                  className={`text-3xl font-semibold tracking-tight transition-all duration-200 ${isBalanceHidden ? "blur-md select-none" : ""}`}
                 >
                   {loading ? (
-                    <Skeleton className="h-8 w-32" />
+                    <Skeleton className="h-9 w-40" />
                   ) : (
                     `${formatAmount(displayedBalance)} €`
                   )}
@@ -526,13 +525,17 @@ function GestionDepensesContent() {
               </div>
               <Popover>
                 <PopoverTrigger asChild>
-                  <button className="flex items-center gap-1 text-muted-foreground text-sm mt-1 hover:text-foreground transition-colors">
-                    <Building2 className="h-3.5 w-3.5" />
-                    {selectedAccountLabel}
-                    <ChevronsUpDown className="h-3 w-3 opacity-50" />
-                  </button>
+                  <div className="flex items-center gap-2 mt-1 cursor-pointer">
+                    <Landmark className="size-3.5 text-[#707070]" />
+                    <span className="text-[13px] font-normal truncate max-w-[150px]">
+                      {selectedAccountLabel}
+                    </span>
+                    <button className="p-1 rounded-md hover:bg-accent transition-colors cursor-pointer outline-none">
+                      <ChevronsUpDown className="h-3.5 w-3.5 text-muted-foreground" />
+                    </button>
+                  </div>
                 </PopoverTrigger>
-                <PopoverContent className="w-[260px] p-0" align="start">
+                <PopoverContent className="w-80 rounded-lg p-0" align="start" sideOffset={8}>
                   <Command>
                     <CommandList>
                       <CommandEmpty>Aucun compte trouvé.</CommandEmpty>
@@ -540,14 +543,15 @@ function GestionDepensesContent() {
                         <CommandItem
                           value="all"
                           onSelect={() => setSelectedAccountId("all")}
+                          className="flex items-center gap-2 px-2 py-2 cursor-pointer"
                         >
+                          <span className="flex-1 text-xs truncate">Tous les comptes</span>
                           <Check
                             className={cn(
-                              "mr-2 h-4 w-4",
+                              "h-4 w-4 text-[#5b4fff]",
                               selectedAccountId === "all" ? "opacity-100" : "opacity-0"
                             )}
                           />
-                          Tous les comptes
                         </CommandItem>
                         {(bankAccounts || []).map((account) => {
                           const accountName = account.name || account.institutionName || account.bankName || "Compte";
@@ -558,14 +562,33 @@ function GestionDepensesContent() {
                               key={account.id}
                               value={account.id}
                               onSelect={() => setSelectedAccountId(account.id)}
+                              className="flex items-center gap-2 px-2 py-2 cursor-pointer"
                             >
+                              <div className="flex items-center gap-2 flex-1 min-w-0">
+                                {account.institutionLogo ? (
+                                  <img
+                                    src={account.institutionLogo}
+                                    alt=""
+                                    className="h-5 w-5 rounded-sm object-contain flex-shrink-0"
+                                  />
+                                ) : (
+                                  <Landmark className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                                )}
+                                <div className="flex flex-col min-w-0">
+                                  <span className="truncate text-xs">{accountName}{lastIban}</span>
+                                  {account.balance?.current != null && (
+                                    <span className="text-[10px] text-muted-foreground">
+                                      {formatAmount(account.balance.current)} €
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
                               <Check
                                 className={cn(
-                                  "mr-2 h-4 w-4",
+                                  "h-4 w-4 text-[#5b4fff]",
                                   isSelected ? "opacity-100" : "opacity-0"
                                 )}
                               />
-                              <span className="truncate">{accountName}{lastIban}</span>
                             </CommandItem>
                           );
                         })}
@@ -576,14 +599,31 @@ function GestionDepensesContent() {
               </Popover>
             </div>
             <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {}}
-                className="gap-2"
-              >
-                <Settings className="h-4 w-4" />
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    size="icon"
+                    className="cursor-pointer rounded-full bg-[#0A0A0A] text-white hover:bg-[#0A0A0A]/90"
+                  >
+                    <Plus className="h-5 w-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="[--radius:1rem]">
+                  <DropdownMenuGroup>
+                    <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+                      Créer une transaction
+                    </DropdownMenuLabel>
+                    <DropdownMenuItem onClick={() => setTriggerAddManual(true)}>
+                      <Edit3 size={16} />
+                      Saisie manuelle
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setTriggerAddOcr(true)}>
+                      <Upload size={16} />
+                      Scanner un reçu (OCR)
+                    </DropdownMenuItem>
+                  </DropdownMenuGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </div>
@@ -598,15 +638,6 @@ function GestionDepensesContent() {
             openOcr={searchParams.get("openOcr") === "true"}
           />
         </Suspense>
-
-        {/* Bouton flottant mobile */}
-        <Button
-          onClick={() => {}}
-          className="fixed bottom-6 bg-[#5a50ff] right-6 h-14 w-14 rounded-full shadow-lg z-50 md:hidden"
-          size="icon"
-        >
-          <Plus className="h-6 w-6" />
-        </Button>
 
         {/* Dialog d'export */}
         <ExportDialog
