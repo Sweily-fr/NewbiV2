@@ -14,7 +14,7 @@ import {
  * Hook pour gérer les notifications d'activité (assignation de tâches, etc.)
  */
 export const useActivityNotifications = (options = {}) => {
-  const { limit = 50, offset = 0, unreadOnly = false, pollingInterval = 10000 } = options;
+  const { limit = 50, offset = 0, unreadOnly = false } = options;
   const { workspaceId } = useWorkspace();
   const lastUnreadCountRef = useRef(0);
 
@@ -28,17 +28,15 @@ export const useActivityNotifications = (options = {}) => {
     variables: { workspaceId, limit, offset, unreadOnly },
     skip: !workspaceId,
     fetchPolicy: "cache-and-network",
-    pollInterval: pollingInterval, // Polling toutes les 10 secondes par défaut
   });
 
-  // Récupérer le nombre de notifications non lues avec polling
+  // Récupérer le nombre de notifications non lues
   const { data: unreadCountData, refetch: refetchUnreadCount } = useQuery(
     GET_UNREAD_NOTIFICATIONS_COUNT,
     {
       variables: { workspaceId },
       skip: !workspaceId,
       fetchPolicy: "cache-and-network",
-      pollInterval: pollingInterval, // Polling toutes les 10 secondes
     }
   );
 
