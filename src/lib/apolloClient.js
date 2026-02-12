@@ -469,14 +469,12 @@ const createApolloClient = () => {
     cache,
     defaultOptions: {
       watchQuery: {
-        // Désactivation du cache : toujours aller chercher les données fraîches
-        fetchPolicy: "network-only",
+        fetchPolicy: "cache-and-network",
         errorPolicy: "all",
         notifyOnNetworkStatusChange: true,
       },
       query: {
-        // Désactivation du cache : toujours requête réseau
-        fetchPolicy: "network-only",
+        fetchPolicy: "cache-and-network",
         errorPolicy: "all",
       },
       mutate: {

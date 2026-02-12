@@ -33,10 +33,11 @@ function SiteHeaderContent() {
       className={`flex h-10 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear sticky top-0 z-30 w-full ${!isEmailVerified ? "bg-amber-500/10 dark:bg-amber-500/10" : "bg-background"}`}
     >
       <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
-        <SidebarTrigger className="-ml-1" />
+        {/* SidebarTrigger masqué sur mobile — remplacé par BottomNavBar */}
+        <SidebarTrigger className="-ml-1 hidden md:inline-flex" />
         <Separator
           orientation="vertical"
-          className="mx-2 data-[orientation=vertical]:h-4"
+          className="mx-2 data-[orientation=vertical]:h-4 hidden md:block"
         />
         {/* Sélecteur d'organisation style Supabase */}
         <OrganizationSwitcherHeader />
@@ -55,10 +56,10 @@ function SiteHeaderFallback() {
   return (
     <header className="flex h-10 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear sticky top-0 z-30 bg-background w-full">
       <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
-        <SidebarTrigger className="-ml-1" />
+        <SidebarTrigger className="-ml-1 hidden md:inline-flex" />
         <Separator
           orientation="vertical"
-          className="mx-2 data-[orientation=vertical]:h-4"
+          className="mx-2 data-[orientation=vertical]:h-4 hidden md:block"
         />
         <div className="flex items-center gap-2">
           <div className="h-6 w-6 rounded-sm bg-muted animate-pulse" />
