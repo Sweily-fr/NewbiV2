@@ -271,14 +271,14 @@ export function BottomNavBar({ onOpenSettings, onOpenNotifications }) {
                 className="p-1.5 rounded-full hover:bg-accent transition-colors"
                 aria-label="Fermer le menu"
               >
-                <X className="w-5 h-5 text-muted-foreground" />
+                <X className="w-5 h-5 text-[#3D3E42]" />
               </button>
             </div>
 
             {/* Sections */}
             {moreMenuSections.map((section) => (
               <div key={section.title} className="px-3 pb-3">
-                <p className="px-2 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                <p className="px-2 py-2 text-xs font-semibold text-[#3D3E42] uppercase tracking-wider">
                   {section.title}
                 </p>
                 <div className="space-y-0.5">
@@ -304,7 +304,7 @@ export function BottomNavBar({ onOpenSettings, onOpenNotifications }) {
                             "w-5 h-5",
                             isActive && "text-[#5b4fff]",
                             item.destructive && "text-destructive",
-                            !isActive && !item.destructive && "text-muted-foreground"
+                            !isActive && !item.destructive && "text-[#3D3E42]"
                           )}
                         />
                         <span
@@ -374,7 +374,7 @@ export function BottomNavBar({ onOpenSettings, onOpenNotifications }) {
         {/* FAB button - rendered behind the bar so its bottom shadow is hidden */}
         <button
           onClick={() => handleTabClick(mainTabs.find((t) => t.key === "fab"))}
-          className="absolute left-1/2 -translate-x-1/2 -top-[22px] z-[3] focus:outline-none"
+          className="absolute left-1/2 -translate-x-1/2 -top-[14px] z-[3] focus:outline-none"
           aria-label="Actions rapides"
           aria-expanded={fabOpen}
         >
@@ -384,7 +384,7 @@ export function BottomNavBar({ onOpenSettings, onOpenNotifications }) {
               "ring-[5px] ring-white dark:ring-zinc-950",
               fabOpen
                 ? "bg-[#5b4fff]/90 rotate-45 scale-95"
-                : "bg-[#5b4fff] hover:bg-[#4a3fee] scale-100 hover:scale-105"
+                : "bg-[#0A0A0A] hover:bg-[#1a1a1a] scale-100 hover:scale-105"
             )}
           >
             <Plus className="w-7 h-7 text-white" strokeWidth={2.5} />
@@ -393,7 +393,6 @@ export function BottomNavBar({ onOpenSettings, onOpenNotifications }) {
 
         <div
           className="relative z-[2] bg-white dark:bg-zinc-950 border-t border-border/50 shadow-[0_-2px_10px_rgba(0,0,0,0.06)]"
-          style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
         >
           <div className="flex items-center justify-around h-14 px-2">
             {mainTabs.map((tab) => {
@@ -429,7 +428,7 @@ export function BottomNavBar({ onOpenSettings, onOpenNotifications }) {
                       "w-[22px] h-[22px] transition-all duration-200",
                       active || isMoreBtnOpen
                         ? "text-[#5b4fff]"
-                        : "text-muted-foreground"
+                        : "text-[#3D3E42]"
                     )}
                     strokeWidth={active || isMoreBtnOpen ? 2.2 : 1.8}
                   />
@@ -437,6 +436,11 @@ export function BottomNavBar({ onOpenSettings, onOpenNotifications }) {
               );
             })}
           </div>
+          {/* Safe area fill — extends white background to absolute bottom edge */}
+          <div
+            className="bg-white dark:bg-zinc-950"
+            style={{ height: "env(safe-area-inset-bottom, 0px)" }}
+          />
         </div>
       </nav>
     </>
