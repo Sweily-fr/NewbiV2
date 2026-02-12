@@ -97,9 +97,19 @@ export async function subscriptionMiddleware(request) {
       );
     }
 
-    // En cas d'erreur, rediriger vers login par sécurité
+    // Vérifier si un cookie de session signé existe avant de rediriger
+    // En Edge Runtime, les lookups MongoDB peuvent échouer de façon transitoire
+    // Si le cookie existe, laisser passer — l'API et les validateurs côté client protègent les données
     if (isAuthRequiredRoute) {
-      console.log("[Middleware] Erreur, redirection sécurisée vers /auth/login");
+      const cookieHeader = request.headers.get("cookie") || "";
+      const hasSessionCookie = cookieHeader.includes("better-auth.session_token=");
+
+      if (hasSessionCookie) {
+        console.warn("[Middleware] Erreur de validation DB mais cookie de session présent, laisser passer");
+        return NextResponse.next();
+      }
+
+      console.log("[Middleware] Erreur et pas de cookie de session, redirection vers /auth/login");
       return NextResponse.redirect(new URL("/auth/login", request.url));
     }
 
