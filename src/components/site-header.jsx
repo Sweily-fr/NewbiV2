@@ -30,9 +30,10 @@ function SiteHeaderContent() {
 
   return (
     <header
-      className={`flex h-10 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear sticky top-0 z-30 w-full ${!isEmailVerified ? "bg-amber-500/10 dark:bg-amber-500/10" : "bg-background"}`}
+      className={`shrink-0 border-b transition-[width,height] ease-linear sticky top-0 z-30 w-full ${!isEmailVerified ? "bg-amber-500/10 dark:bg-amber-500/10" : "bg-background"}`}
+      style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
     >
-      <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
+      <div className="flex h-10 items-center gap-1 px-4 lg:gap-2 lg:px-6">
         {/* SidebarTrigger masqué sur mobile — remplacé par BottomNavBar */}
         <SidebarTrigger className="-ml-1 hidden md:inline-flex" />
         <Separator
@@ -54,8 +55,11 @@ function SiteHeaderContent() {
 // Composant de fallback pour le loading
 function SiteHeaderFallback() {
   return (
-    <header className="flex h-10 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear sticky top-0 z-30 bg-background w-full">
-      <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
+    <header
+      className="shrink-0 border-b transition-[width,height] ease-linear sticky top-0 z-30 bg-background w-full"
+      style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
+    >
+      <div className="flex h-10 items-center gap-1 px-4 lg:gap-2 lg:px-6">
         <SidebarTrigger className="-ml-1 hidden md:inline-flex" />
         <Separator
           orientation="vertical"

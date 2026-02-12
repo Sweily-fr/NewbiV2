@@ -307,23 +307,10 @@
   fill: #202020 !important;
 }
 
-/* Support pour Safari iOS et safe-area-inset */
-@supports (padding: max(0px)) {
-  body {
-    padding-bottom: env(safe-area-inset-bottom);
-  }
-}
-
 /* Styles spécifiques pour les footers fixes sur mobile Safari */
 @media (max-width: 640px) {
-  /* Force le support de safe-area pour Safari */
   .modal-footer-fixed {
     padding-bottom: max(1rem, env(safe-area-inset-bottom)) !important;
-  }
-
-  /* Alternative avec min() pour plus de compatibilité */
-  [class*="fixed"][class*="bottom-0"] {
-    padding-bottom: max(1rem, env(safe-area-inset-bottom));
   }
 }
 
