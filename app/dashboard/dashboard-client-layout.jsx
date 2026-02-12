@@ -37,6 +37,7 @@ import { OAuthCallbackHandler } from "@/src/components/oauth-callback-handler";
 import { TutorialProvider } from "@/src/contexts/tutorial-context";
 import { TutorialOverlay } from "@/src/components/tutorial/tutorial-overlay";
 import { SignatureSidebarRight } from "@/src/components/signature-sidebar-right";
+import { BottomNavBar } from "@/src/components/bottom-nav-bar";
 
 // Composant interne qui utilise le contexte
 function DashboardContent({ children }) {
@@ -179,7 +180,7 @@ function DashboardContent({ children }) {
       <SidebarInset>
         <SiteHeader />
         <div className="flex flex-1 flex-col overflow-y-auto">
-          <div className="@container/main flex flex-1 flex-col gap-2">
+          <div className="@container/main flex flex-1 flex-col gap-2 pb-20 md:pb-0">
             {children}
           </div>
         </div>
@@ -251,6 +252,18 @@ function DashboardContent({ children }) {
 
       {/* Tutoriel interactif */}
       <TutorialOverlay />
+
+      {/* Bottom Navigation Bar — mobile uniquement */}
+      <BottomNavBar
+        onOpenSettings={() => {
+          setSettingsInitialTab("preferences");
+          setSettingsModalOpen(true);
+        }}
+        onOpenNotifications={() => {
+          setSettingsInitialTab("notifications");
+          setSettingsModalOpen(true);
+        }}
+      />
 
       {/* Bouton de test pour le modal (à retirer en production) */}
       {/* {process.env.NODE_ENV === "development" && (
