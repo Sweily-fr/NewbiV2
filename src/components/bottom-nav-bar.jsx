@@ -4,16 +4,13 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/src/lib/utils";
+import { Button } from "@/src/components/ui/button";
 import {
-  Home,
+  CircleGauge,
   Landmark,
-  Plus,
-  ShoppingCart,
-  MoreHorizontal,
-  X,
+  BriefcaseBusiness,
   FileText,
-  FilePlus,
-  ArrowLeftRight,
+  MoreHorizontal,
   Inbox,
   Calendar,
   FolderKanban,
@@ -24,17 +21,19 @@ import {
   MessageCircleQuestion,
   LogOut,
   Search,
-  Tag,
+  ChevronRight,
+  Users,
 } from "lucide-react";
-import { authClient } from "@/src/lib/auth-client";
+import { authClient, useSession } from "@/src/lib/auth-client";
+import { useActivityNotifications } from "@/src/hooks/useActivityNotifications";
 
-// ─── Navigation items ────────────────────────────────────────────
-const mainTabs = [
+// ─── Tab definitions ─────────────────────────────────────────────
+const tabs = [
   {
-    key: "dashboard",
+    key: "home",
     label: "Dashboard",
     href: "/dashboard",
-    icon: Home,
+    icon: CircleGauge,
     exact: true,
   },
   {
@@ -43,12 +42,10 @@ const mainTabs = [
     href: "/dashboard/outils/transactions",
     icon: Landmark,
   },
-  { key: "fab", label: "Créer", icon: Plus },
   {
-    key: "ventes",
+    key: "billing",
     label: "Ventes",
-    href: "/dashboard/outils/factures",
-    icon: ShoppingCart,
+    icon: BriefcaseBusiness,
     matchPaths: [
       "/dashboard/outils/factures",
       "/dashboard/outils/devis",
@@ -56,119 +53,219 @@ const mainTabs = [
       "/dashboard/catalogues",
     ],
   },
-  { key: "more", label: "Plus", icon: MoreHorizontal },
-];
-
-const fabActions = [
   {
-    label: "Nouvelle facture",
-    href: "/dashboard/outils/factures/new",
-    icon: FileText,
-  },
-  {
-    label: "Nouveau devis",
-    href: "/dashboard/outils/devis/new",
-    icon: FilePlus,
-  },
-  {
-    label: "Nouvelle transaction",
-    href: "/dashboard/outils/transactions?new=true",
-    icon: ArrowLeftRight,
+    key: "more",
+    label: "Plus",
+    icon: MoreHorizontal,
   },
 ];
 
+// ─── Ventes bottom sheet items ───────────────────────────────────
+const ventesQuickCreate = [
+  { label: "Nouvelle facture", href: "/dashboard/outils/factures/new" },
+  { label: "Nouveau devis", href: "/dashboard/outils/devis/new" },
+];
+
+const ventesNavigation = [
+  { label: "Factures clients", href: "/dashboard/outils/factures" },
+  { label: "Devis", href: "/dashboard/outils/devis" },
+  { label: "Liste clients (CRM)", href: "/dashboard/clients" },
+  { label: "Catalogues", href: "/dashboard/catalogues" },
+];
+
+// ─── More menu sections ─────────────────────────────────────────
 const moreMenuSections = [
   {
     title: "Gestion",
     items: [
-      {
-        label: "Recherche",
-        icon: Search,
-        action: "search",
-      },
-      {
-        label: "Calendrier",
-        href: "/dashboard/calendar",
-        icon: Calendar,
-      },
-      {
-        label: "Tâches",
-        href: "/dashboard/outils/kanban",
-        icon: FolderKanban,
-      },
-      {
-        label: "Transfert de fichiers",
-        href: "/dashboard/outils/transferts-fichiers",
-        icon: FileUp,
-      },
-      {
-        label: "Documents partagés",
-        href: "/dashboard/outils/documents-partages",
-        icon: FolderOpen,
-      },
-      {
-        label: "Signature de mail",
-        href: "/dashboard/outils/signatures-mail",
-        icon: MessageSquare,
-      },
-      {
-        label: "Catalogues",
-        href: "/dashboard/catalogues",
-        icon: Tag,
-      },
+      { label: "Notifications", icon: Inbox, action: "notifications", badge: true },
+      { label: "Calendrier", href: "/dashboard/calendar", icon: Calendar },
+      { label: "Tâches", href: "/dashboard/outils/kanban", icon: FolderKanban },
+      { label: "Transfert de fichiers", href: "/dashboard/outils/transferts-fichiers", icon: FileUp },
+      { label: "Documents partagés", href: "/dashboard/outils/documents-partages", icon: FolderOpen },
+      { label: "Signature de mail", href: "/dashboard/outils/signatures-mail", icon: MessageSquare },
     ],
   },
   {
     title: "Paramètres",
     items: [
-      {
-        label: "Paramètres",
-        action: "settings",
-        icon: Settings,
-      },
+      { label: "Paramètres", action: "settings", icon: Settings },
       {
         label: "Aide & support",
         href: "https://chat.whatsapp.com/FGLms8EYhpv1o5rkrnIldL",
         icon: MessageCircleQuestion,
         external: true,
       },
-      {
-        label: "Déconnexion",
-        action: "logout",
-        icon: LogOut,
-        destructive: true,
-      },
+      { label: "Recherche", action: "search", icon: Search },
     ],
   },
 ];
 
-// All "more" paths for detecting active state on the "Plus" tab
+// Paths covered by the "Plus" menu
 const moreMenuPaths = moreMenuSections.flatMap((s) =>
   s.items.filter((i) => i.href && !i.external).map((i) => i.href)
 );
 
+// ─── Body scroll lock (iOS Safari compatible) ───────────────────
+function useBodyScrollLock(locked) {
+  const scrollYRef = useRef(0);
+
+  useEffect(() => {
+    if (!locked) return;
+
+    scrollYRef.current = window.scrollY;
+    const scrollY = scrollYRef.current;
+
+    const html = document.documentElement;
+    const body = document.body;
+
+    // Save original styles
+    const originalHtmlOverflow = html.style.overflow;
+    const originalBodyOverflow = body.style.overflow;
+    const originalBodyPosition = body.style.position;
+    const originalBodyTop = body.style.top;
+    const originalBodyLeft = body.style.left;
+    const originalBodyRight = body.style.right;
+    const originalBodyWidth = body.style.width;
+
+    // Lock body — position:fixed trick for iOS Safari
+    html.style.overflow = "hidden";
+    body.style.overflow = "hidden";
+    body.style.position = "fixed";
+    body.style.top = `-${scrollY}px`;
+    body.style.left = "0";
+    body.style.right = "0";
+    body.style.width = "100%";
+
+    return () => {
+      html.style.overflow = originalHtmlOverflow;
+      body.style.overflow = originalBodyOverflow;
+      body.style.position = originalBodyPosition;
+      body.style.top = originalBodyTop;
+      body.style.left = originalBodyLeft;
+      body.style.right = originalBodyRight;
+      body.style.width = originalBodyWidth;
+
+      // Restore scroll position
+      window.scrollTo(0, scrollY);
+    };
+  }, [locked]);
+}
+
+// ─── Swipe-down gesture hook ─────────────────────────────────────
+function useSwipeDown(sheetRef, scrollRef, onClose, isOpen) {
+  const dragState = useRef({ startY: 0, dragging: false });
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const sheet = sheetRef.current;
+    if (!sheet) return;
+
+    const handleTouchStart = (e) => {
+      const scrollEl = scrollRef?.current;
+      const scrollTop = scrollEl ? scrollEl.scrollTop : 0;
+      const target = e.target;
+
+      // Always allow drag from the handle area
+      const handleArea = sheet.querySelector("[data-drag-handle]");
+      const isOnHandle = handleArea && handleArea.contains(target);
+
+      if (isOnHandle || scrollTop <= 0) {
+        dragState.current = { startY: e.touches[0].clientY, dragging: true };
+      } else {
+        dragState.current = { startY: 0, dragging: false };
+      }
+    };
+
+    const handleTouchMove = (e) => {
+      if (!dragState.current.dragging) return;
+
+      const deltaY = e.touches[0].clientY - dragState.current.startY;
+      if (deltaY > 0) {
+        e.preventDefault();
+        sheet.style.transform = `translateY(${deltaY}px)`;
+        sheet.style.transition = "none";
+      }
+    };
+
+    const handleTouchEnd = (e) => {
+      if (!dragState.current.dragging) return;
+
+      const deltaY = e.changedTouches[0].clientY - dragState.current.startY;
+      sheet.style.transition = "";
+
+      if (deltaY > 80) {
+        sheet.style.transform = "translateY(100%)";
+        sheet.style.transition = "transform 200ms ease-out";
+        setTimeout(() => onClose(), 200);
+      } else {
+        sheet.style.transform = "";
+      }
+
+      dragState.current = { startY: 0, dragging: false };
+    };
+
+    sheet.addEventListener("touchstart", handleTouchStart, { passive: true });
+    sheet.addEventListener("touchmove", handleTouchMove, { passive: false });
+    sheet.addEventListener("touchend", handleTouchEnd, { passive: true });
+
+    return () => {
+      sheet.removeEventListener("touchstart", handleTouchStart);
+      sheet.removeEventListener("touchmove", handleTouchMove);
+      sheet.removeEventListener("touchend", handleTouchEnd);
+    };
+  }, [sheetRef, scrollRef, onClose, isOpen]);
+}
+
 // ─── Component ───────────────────────────────────────────────────
 export function BottomNavBar({ onOpenSettings, onOpenNotifications }) {
   const pathname = usePathname();
-  const [fabOpen, setFabOpen] = useState(false);
+  const [billingOpen, setBillingOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
-  const overlayRef = useRef(null);
+  const { data: session } = useSession();
+  const { unreadCount } = useActivityNotifications();
+
+  // Refs for swipe gesture
+  const ventesSheetRef = useRef(null);
+  const moreSheetRef = useRef(null);
+  const moreScrollRef = useRef(null);
+
+  // Lock body scroll when any sheet is open
+  const anySheetOpen = billingOpen || moreOpen;
+  useBodyScrollLock(anySheetOpen);
+
+  // Swipe-down gestures
+  const closeBilling = useCallback(() => setBillingOpen(false), []);
+  const closeMore = useCallback(() => setMoreOpen(false), []);
+  useSwipeDown(ventesSheetRef, { current: null }, closeBilling, billingOpen);
+  useSwipeDown(moreSheetRef, moreScrollRef, closeMore, moreOpen);
 
   // Close menus on route change
   useEffect(() => {
-    setFabOpen(false);
+    setBillingOpen(false);
     setMoreOpen(false);
   }, [pathname]);
 
-  // Close on outside click
+  // Close on Escape
+  useEffect(() => {
+    const handleKey = (e) => {
+      if (e.key === "Escape") {
+        setBillingOpen(false);
+        setMoreOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, []);
+
   const handleOverlayClick = useCallback(() => {
-    setFabOpen(false);
+    setBillingOpen(false);
     setMoreOpen(false);
   }, []);
 
-  // Check if a tab is active
+  // Active state detection
   const isTabActive = (tab) => {
-    if (tab.key === "fab" || tab.key === "more") return false;
+    if (tab.key === "billing" || tab.key === "more") return false;
     if (tab.exact) return pathname === tab.href;
     if (tab.matchPaths) {
       return tab.matchPaths.some(
@@ -178,22 +275,33 @@ export function BottomNavBar({ onOpenSettings, onOpenNotifications }) {
     return pathname === tab.href || pathname?.startsWith(tab.href + "/");
   };
 
-  const isMoreActive = moreMenuPaths.some(
-    (p) => pathname === p || pathname?.startsWith(p + "/")
-  );
+  const isBillingActive =
+    billingOpen ||
+    [
+      "/dashboard/outils/factures",
+      "/dashboard/outils/devis",
+      "/dashboard/clients",
+      "/dashboard/catalogues",
+    ].some((p) => pathname === p || pathname?.startsWith(p + "/"));
+
+  const isMoreActive =
+    moreOpen ||
+    moreMenuPaths.some(
+      (p) => pathname === p || pathname?.startsWith(p + "/")
+    );
 
   const handleTabClick = (tab) => {
-    if (tab.key === "fab") {
+    if (tab.key === "billing") {
       setMoreOpen(false);
-      setFabOpen((prev) => !prev);
+      setBillingOpen((prev) => !prev);
       return;
     }
     if (tab.key === "more") {
-      setFabOpen(false);
+      setBillingOpen(false);
       setMoreOpen((prev) => !prev);
       return;
     }
-    setFabOpen(false);
+    setBillingOpen(false);
     setMoreOpen(false);
   };
 
@@ -208,206 +316,279 @@ export function BottomNavBar({ onOpenSettings, onOpenNotifications }) {
       setMoreOpen(false);
       return;
     }
+    if (item.action === "notifications") {
+      if (onOpenNotifications) onOpenNotifications();
+      setMoreOpen(false);
+      return;
+    }
     if (item.action === "logout") {
       authClient.signOut().then(() => {
-        window.location.href = "/auth/login";
+        window.location.href = "/";
       });
       return;
     }
     setMoreOpen(false);
   };
 
-  const showOverlay = fabOpen || moreOpen;
+  const showOverlay = billingOpen || moreOpen;
+  const user = session?.user;
 
   return (
     <>
-      {/* Backdrop overlay */}
+      {/* Backdrop overlay — blocks all interaction with page behind */}
       {showOverlay && (
         <div
-          ref={overlayRef}
-          className="fixed inset-0 bg-black/30 z-[90] md:hidden animate-in fade-in duration-200"
+          className="fixed inset-0 bg-black/40 z-[90] md:hidden animate-in fade-in duration-200"
           onClick={handleOverlayClick}
+          onTouchMove={(e) => e.preventDefault()}
           aria-hidden="true"
+          style={{ touchAction: "none" }}
         />
       )}
 
-      {/* FAB Action Menu */}
-      {fabOpen && (
-        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[95] md:hidden animate-in slide-in-from-bottom-4 fade-in duration-200">
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-xl border border-border/50 p-2 min-w-[220px]">
-            {fabActions.map((action) => (
-              <Link
-                key={action.label}
-                href={action.href}
-                className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-accent transition-colors"
-                onClick={() => setFabOpen(false)}
-              >
-                <div className="flex items-center justify-center w-9 h-9 rounded-full bg-[#5b4fff]/10">
-                  <action.icon className="w-4.5 h-4.5 text-[#5b4fff]" />
-                </div>
-                <span className="text-sm font-medium text-foreground">
-                  {action.label}
-                </span>
-              </Link>
-            ))}
+      {/* ─── Ventes Bottom Sheet ─────────────────────────────── */}
+      {billingOpen && (
+        <div
+          ref={ventesSheetRef}
+          className="fixed bottom-0 left-0 right-0 z-[95] md:hidden animate-in slide-in-from-bottom duration-300"
+          style={{ touchAction: "none" }}
+        >
+          <div className="bg-white dark:bg-zinc-900 rounded-t-[28px] shadow-2xl">
+            {/* Handle bar */}
+            <div data-drag-handle className="flex justify-center pt-3 pb-2 cursor-grab">
+              <div className="w-10 h-1 rounded-full bg-[#3D3E42]/20" />
+            </div>
+
+            {/* Navigation */}
+            <div className="px-4 pt-1 pb-1">
+              {ventesNavigation.map((item) => {
+                const isActive =
+                  pathname === item.href ||
+                  pathname?.startsWith(item.href + "/");
+                return (
+                  <Link
+                    key={item.label}
+                    href={item.href}
+                    className={cn(
+                      "flex items-center justify-between px-2 py-3.5 rounded-lg transition-colors",
+                      isActive
+                        ? "bg-accent"
+                        : "hover:bg-accent"
+                    )}
+                    onClick={() => setBillingOpen(false)}
+                  >
+                    <span className="text-sm font-medium text-foreground">
+                      {item.label}
+                    </span>
+                    <ChevronRight className="w-4 h-4 shrink-0 text-[#3D3E42]/40" />
+                  </Link>
+                );
+              })}
+            </div>
+
+            {/* Separator */}
+            <div className="mx-6 h-px bg-border/40" />
+
+            {/* Action buttons */}
+            <div className="px-4 pt-3 pb-2 flex flex-col gap-2">
+              <Button asChild size="lg" className="w-full rounded-xl h-11">
+                <Link href="/dashboard/outils/factures/new" onClick={() => setBillingOpen(false)}>
+                  Nouvelle facture
+                </Link>
+              </Button>
+              <Button asChild variant="outline" size="lg" className="w-full rounded-xl h-11">
+                <Link href="/dashboard/outils/devis/new" onClick={() => setBillingOpen(false)}>
+                  Nouveau devis
+                </Link>
+              </Button>
+            </div>
+
+            {/* Safe area padding */}
+            <div style={{ height: "env(safe-area-inset-bottom, 0px)" }} />
           </div>
         </div>
       )}
 
-      {/* More Menu (Bottom Sheet) */}
+      {/* ─── More Bottom Sheet ─────────────────────────────────── */}
       {moreOpen && (
-        <div className="fixed bottom-0 left-0 right-0 z-[95] md:hidden animate-in slide-in-from-bottom duration-300">
-          <div className="bg-white dark:bg-zinc-900 rounded-t-2xl shadow-2xl border-t border-border/50 max-h-[70vh] overflow-y-auto">
+        <div
+          ref={moreSheetRef}
+          className="fixed bottom-0 left-0 right-0 z-[95] md:hidden animate-in slide-in-from-bottom duration-300"
+        >
+          <div className="bg-white dark:bg-zinc-900 rounded-t-[28px] shadow-2xl">
             {/* Handle bar */}
-            <div className="flex justify-center pt-3 pb-1">
-              <div className="w-10 h-1 rounded-full bg-muted-foreground/20" />
+            <div data-drag-handle className="flex justify-center pt-3 pb-2 cursor-grab">
+              <div className="w-10 h-1 rounded-full bg-[#3D3E42]/20" />
             </div>
 
-            {/* Close button */}
-            <div className="flex items-center justify-between px-5 pb-2">
-              <h3 className="text-base font-semibold text-foreground">Menu</h3>
-              <button
-                onClick={() => setMoreOpen(false)}
-                className="p-1.5 rounded-full hover:bg-accent transition-colors"
-                aria-label="Fermer le menu"
-              >
-                <X className="w-5 h-5 text-[#3D3E42]" />
-              </button>
-            </div>
-
-            {/* Sections */}
-            {moreMenuSections.map((section) => (
-              <div key={section.title} className="px-3 pb-3">
-                <p className="px-2 py-2 text-xs font-semibold text-[#3D3E42] uppercase tracking-wider">
-                  {section.title}
-                </p>
-                <div className="space-y-0.5">
-                  {section.items.map((item) => {
-                    const isActive =
-                      item.href &&
-                      !item.external &&
-                      (pathname === item.href ||
-                        pathname?.startsWith(item.href + "/"));
-
-                    const content = (
-                      <div
-                        className={cn(
-                          "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors",
-                          isActive
-                            ? "bg-[#5b4fff]/10 text-[#5b4fff]"
-                            : "hover:bg-accent",
-                          item.destructive && "text-destructive hover:bg-destructive/10"
-                        )}
-                      >
-                        <item.icon
-                          className={cn(
-                            "w-5 h-5",
-                            isActive && "text-[#5b4fff]",
-                            item.destructive && "text-destructive",
-                            !isActive && !item.destructive && "text-[#3D3E42]"
-                          )}
+            {/* Scrollable content */}
+            <div
+              ref={moreScrollRef}
+              className="max-h-[calc(85vh-40px)] overflow-y-auto"
+              style={{ overscrollBehavior: "contain", WebkitOverflowScrolling: "touch" }}
+            >
+              {/* User profile card */}
+              {user && (
+                <div className="mx-4 mb-3 flex items-center gap-3 px-1">
+                  <div className="relative shrink-0">
+                    <div className="h-10 w-10 rounded-lg overflow-hidden">
+                      {user.image ? (
+                        <img
+                          src={user.image}
+                          alt={user.name}
+                          className="h-full w-full object-cover"
                         />
-                        <span
+                      ) : (
+                        <div className="h-full w-full flex items-center justify-center bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 font-medium text-sm">
+                          {user.name
+                            ? user.name
+                                .split(" ")
+                                .map((w) => w.charAt(0))
+                                .join("")
+                                .toUpperCase()
+                                .slice(0, 2)
+                            : "U"}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="grid flex-1 text-left text-sm leading-tight min-w-0">
+                    <span className="truncate font-medium">{user.name || "Utilisateur"}</span>
+                    <span className="text-muted-foreground truncate text-xs">{user.email}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Sections */}
+              {moreMenuSections.map((section) => (
+                <div key={section.title} className="px-3 pb-2">
+                  <p className="px-3 py-2 text-[11px] font-semibold text-[#3D3E42]/60 uppercase tracking-wider">
+                    {section.title}
+                  </p>
+                  <div className="space-y-0.5">
+                    {section.items.map((item) => {
+                      const isActive =
+                        item.href &&
+                        !item.external &&
+                        (pathname === item.href ||
+                          pathname?.startsWith(item.href + "/"));
+
+                      const content = (
+                        <div
                           className={cn(
-                            "text-sm font-medium",
-                            isActive && "text-[#5b4fff]",
-                            item.destructive && "text-destructive"
+                            "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors",
+                            isActive
+                              ? "bg-accent"
+                              : "hover:bg-accent",
+                            item.destructive && "text-destructive hover:bg-destructive/10"
                           )}
                         >
-                          {item.label}
-                        </span>
-                      </div>
-                    );
+                          <item.icon
+                            className={cn(
+                              "w-5 h-5 shrink-0",
+                              item.destructive && "text-destructive",
+                              !item.destructive && "text-[#3D3E42]"
+                            )}
+                            strokeWidth={1.8}
+                          />
+                          <span
+                            className={cn(
+                              "text-sm font-normal flex-1",
+                              item.destructive && "text-destructive"
+                            )}
+                          >
+                            {item.label}
+                          </span>
+                          {/* Notification badge */}
+                          {item.badge && unreadCount > 0 && (
+                            <span className="px-1.5 py-0.5 text-[10px] font-bold text-white bg-red-500 rounded-full min-w-[18px] text-center">
+                              {unreadCount > 99 ? "99+" : unreadCount}
+                            </span>
+                          )}
+                          {!item.destructive && !item.badge && (
+                            <ChevronRight className="w-4 h-4 text-[#3D3E42]/40 shrink-0" />
+                          )}
+                        </div>
+                      );
 
-                    if (item.external) {
+                      if (item.external) {
+                        return (
+                          <a
+                            key={item.label}
+                            href={item.href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={() => setMoreOpen(false)}
+                          >
+                            {content}
+                          </a>
+                        );
+                      }
+
+                      if (item.action) {
+                        return (
+                          <button
+                            key={item.label}
+                            className="w-full text-left"
+                            onClick={() => handleMoreItemClick(item)}
+                          >
+                            {content}
+                          </button>
+                        );
+                      }
+
                       return (
-                        <a
+                        <Link
                           key={item.label}
                           href={item.href}
-                          target="_blank"
-                          rel="noopener noreferrer"
                           onClick={() => setMoreOpen(false)}
                         >
                           {content}
-                        </a>
+                        </Link>
                       );
-                    }
-
-                    if (item.action) {
-                      return (
-                        <button
-                          key={item.label}
-                          className="w-full text-left"
-                          onClick={() => handleMoreItemClick(item)}
-                        >
-                          {content}
-                        </button>
-                      );
-                    }
-
-                    return (
-                      <Link
-                        key={item.label}
-                        href={item.href}
-                        onClick={() => setMoreOpen(false)}
-                      >
-                        {content}
-                      </Link>
-                    );
-                  })}
+                    })}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
 
-            {/* Safe area padding */}
-            <div className="pb-[env(safe-area-inset-bottom)]" />
+              {/* Logout button */}
+              <div className="px-3 pb-3 pt-1">
+                <button
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-destructive/10 transition-colors"
+                  onClick={() =>
+                    authClient.signOut().then(() => {
+                      window.location.href = "/";
+                    })
+                  }
+                >
+                  <LogOut className="w-5 h-5 text-destructive shrink-0" strokeWidth={1.8} />
+                  <span className="text-sm font-medium text-destructive">Déconnexion</span>
+                </button>
+              </div>
+
+              {/* Safe area padding */}
+              <div style={{ height: "env(safe-area-inset-bottom, 0px)" }} />
+            </div>
           </div>
         </div>
       )}
 
-      {/* Bottom Navigation Bar */}
+      {/* ─── Bottom Navigation Bar ─────────────────────────────── */}
       <nav
         className="fixed bottom-0 left-0 right-0 z-[80] md:hidden"
         role="navigation"
         aria-label="Navigation principale mobile"
       >
-        {/* FAB button - rendered behind the bar so its bottom shadow is hidden */}
-        <button
-          onClick={() => handleTabClick(mainTabs.find((t) => t.key === "fab"))}
-          className="absolute left-1/2 -translate-x-1/2 -top-[14px] z-[3] focus:outline-none"
-          aria-label="Actions rapides"
-          aria-expanded={fabOpen}
-        >
-          <div
-            className={cn(
-              "flex items-center justify-center w-[58px] h-[58px] rounded-full shadow-[0_-4px_12px_rgba(0,0,0,0.1)] transition-all duration-200",
-              "ring-[5px] ring-white dark:ring-zinc-950",
-              fabOpen
-                ? "bg-[#5b4fff]/90 rotate-45 scale-95"
-                : "bg-[#0A0A0A] hover:bg-[#1a1a1a] scale-100 hover:scale-105"
-            )}
-          >
-            <Plus className="w-7 h-7 text-white" strokeWidth={2.5} />
-          </div>
-        </button>
-
-        <div
-          className="relative z-[2] bg-white dark:bg-zinc-950 border-t border-border/50 shadow-[0_-2px_10px_rgba(0,0,0,0.06)]"
-        >
-          <div className="flex items-center justify-around h-14 px-2">
-            {mainTabs.map((tab) => {
+        <div className="bg-white dark:bg-zinc-900 shadow-[0_-1px_3px_rgba(0,0,0,0.06)]">
+          <div className="flex items-center justify-around h-16 px-1">
+            {tabs.map((tab) => {
               const active =
-                tab.key === "more" ? isMoreActive : isTabActive(tab);
-              const isFab = tab.key === "fab";
-              const isMoreBtn = tab.key === "more";
-              const isMoreBtnOpen = isMoreBtn && moreOpen;
+                tab.key === "billing"
+                  ? isBillingActive
+                  : tab.key === "more"
+                    ? isMoreActive
+                    : isTabActive(tab);
 
-              // FAB spacer to keep layout balanced
-              if (isFab) {
-                return <div key={tab.key} className="min-w-[64px]" />;
-              }
-
-              // Regular tab or More tab
               const TabWrapper = tab.href ? Link : "button";
               const tabProps = tab.href
                 ? { href: tab.href, onClick: () => handleTabClick(tab) }
@@ -417,28 +598,39 @@ export function BottomNavBar({ onOpenSettings, onOpenNotifications }) {
                 <TabWrapper
                   key={tab.key}
                   {...tabProps}
-                  className={cn(
-                    "flex items-center justify-center min-w-[64px] py-2 transition-all duration-200 focus:outline-none"
-                  )}
+                  className="flex flex-col items-center justify-center gap-2 min-w-0 flex-1 pt-1.5 pb-1 transition-all duration-200 focus:outline-none relative"
                   aria-label={tab.label}
-                  aria-current={active ? "page" : undefined}
+                  aria-current={active && tab.href ? "page" : undefined}
+                  aria-expanded={
+                    tab.key === "billing"
+                      ? billingOpen
+                      : tab.key === "more"
+                        ? moreOpen
+                        : undefined
+                  }
                 >
                   <tab.icon
                     className={cn(
-                      "w-[22px] h-[22px] transition-all duration-200",
-                      active || isMoreBtnOpen
-                        ? "text-[#5b4fff]"
-                        : "text-[#3D3E42]"
+                      "w-6 h-6 transition-all duration-200",
+                      active ? "text-[#5b4fff]" : "text-[#3D3E42] dark:text-white"
                     )}
-                    strokeWidth={active || isMoreBtnOpen ? 2.2 : 1.8}
+                    strokeWidth={active ? 1.6 : 1.3}
                   />
+                  <span
+                    className={cn(
+                      "text-[10px] font-normal leading-tight transition-colors duration-200",
+                      active ? "text-[#5b4fff]" : "text-[#3D3E42] dark:text-white"
+                    )}
+                  >
+                    {tab.label}
+                  </span>
                 </TabWrapper>
               );
             })}
           </div>
-          {/* Safe area fill — extends white background to absolute bottom edge */}
+          {/* Safe area fill */}
           <div
-            className="bg-white dark:bg-zinc-950"
+            className="bg-white dark:bg-zinc-900"
             style={{ height: "env(safe-area-inset-bottom, 0px)" }}
           />
         </div>
