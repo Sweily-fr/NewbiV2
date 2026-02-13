@@ -46,6 +46,10 @@ export const GET_NOTIFICATION_PREFERENCES = gql`
         email
         push
       }
+      kanban_task_assigned {
+        email
+        push
+      }
     }
   }
 `;
