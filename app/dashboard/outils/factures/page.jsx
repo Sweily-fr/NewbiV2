@@ -32,6 +32,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
 import { CompanyInfoGuard } from "@/src/components/company-info-guard";
 import { useInvoices, INVOICE_STATUS } from "@/src/graphql/invoiceQueries";
+import { useImportedInvoices } from "@/src/graphql/importedInvoiceQueries";
+import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { useToastManager } from "@/src/components/ui/toast-manager";
 import { SendDocumentModal } from "./components/send-document-modal";
 
@@ -122,6 +124,8 @@ function InvoicesContent() {
 
   // Récupérer les factures pour les stats
   const { invoices, loading: invoicesLoading } = useInvoices();
+  const { workspaceId } = useRequiredWorkspace();
+  const { importedInvoices, loading: importedLoading } = useImportedInvoices(workspaceId);
 
   // Calculer les statistiques
   const invoiceStats = useMemo(() => {
@@ -133,11 +137,9 @@ function InvoicesContent() {
     let overdueAmount = 0;
     let overdueCount = 0;
 
-    // Statistiques basées uniquement sur les factures de vente (créées dans Newbi)
-    // Les factures importées (factures d'achat/fournisseur) ne sont pas incluses
+    // Factures de vente (créées dans Newbi)
     if (invoices && invoices.length > 0) {
       invoices.forEach((invoice) => {
-        // Utiliser finalTotalHT (après remises) ou totalHT si non disponible
         const invoiceAmount = invoice.finalTotalHT ?? invoice.totalHT ?? 0;
 
         // Exclure les brouillons du CA facturé
@@ -150,9 +152,8 @@ function InvoicesContent() {
           totalPaid += invoiceAmount;
         }
 
-        // Factures en retard = en attente + date d'échéance dépassée
+        // Factures en retard = en attente + date d'échéance dépassée (vente uniquement)
         if (invoice.status === INVOICE_STATUS.PENDING && invoice.dueDate) {
-          // dueDate peut être un timestamp en string ou un format ISO
           const dueDateValue = typeof invoice.dueDate === 'string' && /^\d+$/.test(invoice.dueDate)
             ? parseInt(invoice.dueDate, 10)
             : invoice.dueDate;
@@ -166,13 +167,27 @@ function InvoicesContent() {
       });
     }
 
+    // Factures importées (OCR) — incluses dans CA facturé et CA payé, pas dans les retards
+    if (importedInvoices && importedInvoices.length > 0) {
+      importedInvoices.forEach((imported) => {
+        if (imported.status !== "VALIDATED") return;
+        const amount = imported.totalHT ?? 0;
+
+        totalBilled += amount;
+
+        if (imported.paymentDate) {
+          totalPaid += amount;
+        }
+      });
+    }
+
     return {
       totalBilled,
       totalPaid,
       overdueAmount,
       overdueCount,
     };
-  }, [invoices]);
+  }, [invoices, importedInvoices]);
 
   // Formater les montants
   const formatAmount = (amount) => {
@@ -312,7 +327,7 @@ function InvoicesContent() {
               </div>
               <div className="flex items-baseline gap-1">
                 <span className="text-lg font-medium tracking-tight">
-                  {invoicesLoading
+                  {invoicesLoading || importedLoading
                     ? "..."
                     : `${formatAmount(invoiceStats.totalBilled)} €`}
                 </span>
@@ -343,7 +358,7 @@ function InvoicesContent() {
               </div>
               <div className="flex items-baseline gap-1">
                 <span className="text-lg font-medium tracking-tight">
-                  {invoicesLoading
+                  {invoicesLoading || importedLoading
                     ? "..."
                     : `${formatAmount(invoiceStats.totalPaid)} €`}
                 </span>
