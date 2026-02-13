@@ -549,7 +549,7 @@ export const useInvoices = () => {
       ),
     },
     fetchPolicy: "cache-and-network",
-    nextFetchPolicy: "cache-first",
+    nextFetchPolicy: "cache-and-network",
     errorPolicy: "all",
     notifyOnNetworkStatusChange: true,
     skip: !workspaceId, // Ne pas exécuter la query sans workspaceId
@@ -817,6 +817,10 @@ export const useUpdateInvoice = () => {
         variables: { id: data.updateInvoice.id, workspaceId },
         data: { invoice: data.updateInvoice },
       });
+      // Invalider la liste et les statistiques pour mettre à jour les totaux
+      client.refetchQueries({
+        include: [GET_INVOICES, GET_INVOICE_STATS],
+      });
     },
     // onError désactivé - les erreurs sont gérées dans les composants appelants
   });
@@ -933,9 +937,9 @@ export const useMarkInvoiceAsPaid = () => {
         variables: { id: data.markInvoiceAsPaid.id, workspaceId },
         data: { invoice: data.markInvoiceAsPaid },
       });
-      // Invalider les statistiques
+      // Invalider la liste et les statistiques pour mettre à jour les totaux
       client.refetchQueries({
-        include: [GET_INVOICE_STATS],
+        include: [GET_INVOICES, GET_INVOICE_STATS],
       });
     },
     onError: (error) => {
@@ -985,9 +989,9 @@ export const useChangeInvoiceStatus = () => {
           variables: { id: data.changeInvoiceStatus.id, workspaceId },
           data: { invoice: data.changeInvoiceStatus },
         });
-        // Invalider les statistiques
+        // Invalider la liste et les statistiques pour mettre à jour les totaux
         client.refetchQueries({
-          include: [GET_INVOICE_STATS],
+          include: [GET_INVOICES, GET_INVOICE_STATS],
         });
       },
       onError: (error) => {
