@@ -34,157 +34,117 @@ export default function MobileSettingsNavigation({
   onTabSelect,
   session,
 }) {
+  const user = session?.user;
+
+  const renderGroup = (groupTabs) =>
+    groupTabs.map((tab, index) => {
+      const IconComponent = iconMap[tab.icon];
+      const isLast = index === groupTabs.length - 1;
+
+      return (
+        <React.Fragment key={tab.id}>
+          <button
+            onClick={() => !tab.disabled && onTabSelect(tab.id)}
+            disabled={tab.disabled}
+            className={`
+              w-full flex items-center justify-between px-4 py-3 text-left transition-colors
+              ${tab.disabled ? "opacity-50 cursor-not-allowed" : "active:bg-accent"}
+            `}
+          >
+            <div className="flex items-center gap-3">
+              {IconComponent && (
+                <IconComponent className="w-5 h-5 text-[#3D3E42]" strokeWidth={1.8} />
+              )}
+              <span className="text-sm font-normal">
+                {tab.label}
+              </span>
+              {tab.disabled && (
+                <span className="px-2 py-0.5 text-[10px] font-normal bg-[#5a50ff]/10 border border-[#5a50ff]/30 text-[#5a50ff] rounded-md">
+                  à venir
+                </span>
+              )}
+            </div>
+            <ChevronRight className="w-4 h-4 text-[#3D3E42]/40" />
+          </button>
+        </React.Fragment>
+      );
+    });
+
   return (
-    <div className="h-full overflow-y-auto bg-gray-100 dark:bg-[#0A0A0A]">
-      {/* User Profile Section */}
-      <div className="bg-white dark:bg-[#171717] mx-4 mt-4 rounded-xl shadow-sm">
-        <button
-          onClick={() => onTabSelect("user-info")}
-          className="w-full p-4 flex items-center justify-between text-left transition-colors hover:bg-gray-50 dark:hover:bg-[#0A0A0A] active:bg-gray-100 dark:active:bg-[#0A0A0A] rounded-xl"
-        >
-          <div className="flex items-center gap-3">
-            {session?.user?.avatar || session?.user?.profilePictureUrl ? (
+    <div className="h-full overflow-y-auto">
+      {/* User Profile — style nav-user */}
+      <button
+        onClick={() => onTabSelect("user-info")}
+        className="w-full px-4 py-4 flex items-center gap-3 text-left active:bg-accent transition-colors"
+      >
+        <div className="shrink-0">
+          <div className="h-12 w-12 rounded-lg overflow-hidden">
+            {user?.image || user?.avatar || user?.profilePictureUrl ? (
               <img
-                src={session.user.avatar || session.user.profilePictureUrl}
-                alt={session?.user?.name || "Utilisateur"}
-                className="w-12 h-12 rounded-full object-cover"
+                src={user.image || user.avatar || user.profilePictureUrl}
+                alt={user?.name || "Utilisateur"}
+                className="h-full w-full object-cover"
               />
             ) : (
-              <div className="w-12 h-12 bg-[#5b4eff] rounded-full flex items-center justify-center">
-                <span className="text-white font-semibold text-lg">
-                  {session?.user?.name?.charAt(0)?.toUpperCase() || "U"}
-                </span>
+              <div className="h-full w-full flex items-center justify-center bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 font-medium text-sm">
+                {user?.name
+                  ? user.name
+                      .split(" ")
+                      .map((w) => w.charAt(0))
+                      .join("")
+                      .toUpperCase()
+                      .slice(0, 2)
+                  : "U"}
               </div>
             )}
-            <div>
-              <p className="font-semibold text-gray-900 dark:text-white">
-                {session?.user?.name || "Utilisateur"}
-              </p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Mon compte
-              </p>
-            </div>
           </div>
-          <ChevronRight className="h-4 w-4 text-gray-400 dark:text-gray-300" />
-        </button>
+        </div>
+        <div className="grid flex-1 text-left text-sm leading-tight min-w-0">
+          <span className="truncate font-medium text-foreground">
+            {user?.name || "Utilisateur"}
+          </span>
+          <span className="text-muted-foreground truncate text-xs">
+            {user?.email}
+          </span>
+        </div>
+        <ChevronRight className="w-4 h-4 text-[#3D3E42]/40 shrink-0" />
+      </button>
+
+      {/* Separator */}
+      <div className="mx-4 h-px bg-border/50" />
+
+      {/* Espace de travail */}
+      <div className="pt-4">
+        <p className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-wider px-4 pb-1">
+          Espace de travail
+        </p>
+        {renderGroup(tabs.slice(1, 4))}
       </div>
 
-      {/* Settings Groups */}
-      <div className="mt-6 space-y-6">
-        {/* Espace de travail */}
-        <div>
-          <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2 px-4">
-            Espace de travail
-          </p>
-          <div className="bg-white dark:bg-[#171717] mx-4 rounded-xl shadow-sm overflow-hidden">
-            {tabs.slice(1, 4).map((tab, index) => {
-              const IconComponent = iconMap[tab.icon];
-              const isLast = index === 2;
+      {/* Separator */}
+      <div className="mx-4 my-2 h-px bg-border/50" />
 
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => onTabSelect(tab.id)}
-                  className={`
-                    w-full flex items-center justify-between p-4 text-left transition-colors
-                    hover:bg-gray-50 dark:hover:bg-[#0A0A0A] active:bg-gray-100 dark:active:bg-[#0A0A0A]
-                    ${!isLast ? "border-b border-gray-100 dark:border-gray-700" : ""}
-                  `}
-                >
-                  <div className="flex items-center gap-3">
-                    {IconComponent && (
-                      <IconComponent className="h-4 w-4 dark:text-white" />
-                    )}
-                    <span className="text-gray-900 dark:text-white font-normal text-sm">
-                      {tab.label}
-                    </span>
-                  </div>
-                  <ChevronRight className="h-4 w-4 text-gray-400 dark:text-gray-300" />
-                </button>
-              );
-            })}
-          </div>
-        </div>
+      {/* Gestion */}
+      <div>
+        <p className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-wider px-4 pb-1">
+          Gestion
+        </p>
+        {renderGroup(tabs.slice(4, 8))}
+      </div>
 
-        {/* Gestion */}
-        <div>
-          <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2 px-4">
-            Gestion
-          </p>
-          <div className="bg-white dark:bg-[#171717] mx-4 rounded-xl shadow-sm overflow-hidden">
-            {tabs.slice(4, 8).map((tab, index) => {
-              const IconComponent = iconMap[tab.icon];
-              const isLast = index === 3;
+      {/* Separator */}
+      <div className="mx-4 my-2 h-px bg-border/50" />
 
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => !tab.disabled && onTabSelect(tab.id)}
-                  disabled={tab.disabled}
-                  className={`
-                    w-full flex items-center justify-between p-4 text-left transition-colors
-                    ${tab.disabled ? "opacity-50 cursor-not-allowed" : "hover:bg-gray-50 dark:hover:bg-[#0A0A0A] active:bg-gray-100 dark:active:bg-[#0A0A0A]"}
-                    ${!isLast ? "border-b border-gray-100 dark:border-gray-700" : ""}
-                  `}
-                >
-                  <div className="flex items-center gap-3">
-                    {IconComponent && (
-                      <IconComponent className="h-4 w-4 dark:text-white" />
-                    )}
-                    <span className="text-gray-900 dark:text-white font-normal text-sm">
-                      {tab.label}
-                    </span>
-                    {tab.disabled && (
-                      <span className="px-2 py-0.5 text-[10px] font-normal bg-[#5a50ff]/10 border border-[#5a50ff]/30 text-[#5a50ff] rounded-md">
-                        à venir
-                      </span>
-                    )}
-                  </div>
-                  <ChevronRight className="h-4 w-4 text-gray-400 dark:text-gray-300" />
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Préférences */}
-        <div>
-          <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2 px-4">
-            Préférences
-          </p>
-          <div className="bg-white dark:bg-[#171717] mx-4 rounded-xl shadow-sm overflow-hidden">
-            {tabs.slice(8).map((tab, index) => {
-              const IconComponent = iconMap[tab.icon];
-              const isLast = index === tabs.slice(8).length - 1;
-
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => onTabSelect(tab.id)}
-                  className={`
-                    w-full flex items-center justify-between p-4 text-left transition-colors
-                    hover:bg-gray-50 dark:hover:bg-[#0A0A0A] active:bg-gray-100 dark:active:bg-[#0A0A0A]
-                    ${!isLast ? "border-b border-gray-100 dark:border-gray-700" : ""}
-                  `}
-                >
-                  <div className="flex items-center gap-3">
-                    {IconComponent && (
-                      <IconComponent className="h-4 w-4 dark:text-white" />
-                    )}
-                    <span className="text-gray-900 dark:text-white font-normal text-sm">
-                      {tab.label}
-                    </span>
-                  </div>
-                  <ChevronRight className="h-4 w-4 text-gray-400 dark:text-gray-300" />
-                </button>
-              );
-            })}
-          </div>
-        </div>
+      {/* Préférences */}
+      <div>
+        <p className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-wider px-4 pb-1">
+          Préférences
+        </p>
+        {renderGroup(tabs.slice(8))}
       </div>
 
       {/* Bottom padding */}
-      <div className="h-8"></div>
+      <div className="h-8" />
     </div>
   );
 }

@@ -258,16 +258,18 @@ function DashboardContent({ children }) {
       <PwaInstallBanner />
 
       {/* Bottom Navigation Bar — mobile uniquement */}
-      <BottomNavBar
-        onOpenSettings={() => {
-          setSettingsInitialTab("preferences");
-          setSettingsModalOpen(true);
-        }}
-        onOpenNotifications={() => {
-          setSettingsInitialTab("notifications");
-          setSettingsModalOpen(true);
-        }}
-      />
+      {!settingsModalOpen && (
+        <BottomNavBar
+          onOpenSettings={() => {
+            setSettingsInitialTab("preferences");
+            setSettingsModalOpen(true);
+          }}
+          onOpenNotifications={() => {
+            setSettingsInitialTab("notifications");
+            setSettingsModalOpen(true);
+          }}
+        />
+      )}
 
       {/* Bouton de test pour le modal (à retirer en production) */}
       {/* {process.env.NODE_ENV === "development" && (
