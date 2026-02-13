@@ -128,6 +128,13 @@ const notificationCategories = {
         email: false,
         push: true,
       },
+      {
+        key: "kanban_task_assigned",
+        label: "Assignation de tâche",
+        description: "Quand quelqu'un vous assigne à une tâche kanban",
+        email: true,
+        push: true,
+      },
     ],
   },
 };
