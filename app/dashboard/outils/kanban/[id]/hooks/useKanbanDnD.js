@@ -1,383 +1,506 @@
-import { useState, useRef, useCallback } from 'react';
-import { arrayMove } from '@dnd-kit/sortable';
+import { useRef, useEffect } from 'react';
 
-export const useKanbanDnD = (
-  moveTask, 
-  getTasksByColumn, 
-  boardId, 
-  workspaceId, 
-  localColumns, 
-  reorderColumns, 
-  setLocalColumns, 
-  markReorderAction, 
-  markMoveTaskAction
-) => {
-  const [activeTask, setActiveTask] = useState(null);
-  const [activeColumn, setActiveColumn] = useState(null);
-  const [originalTaskState, setOriginalTaskState] = useState(null);
-  const [isDragging, setIsDragging] = useState(false);
-  
-  const dragEndTimeRef = useRef(0);
-  const isDraggingRef = useRef(false);
-  const pendingMutationRef = useRef(false);
-  const localColumnsRef = useRef(localColumns);
-  
-  // Throttle pour handleDragOver (max 20 updates/sec au lieu de 60)
-  const lastDragOverTime = useRef(0);
-  const DRAG_OVER_THROTTLE = 50; // 50ms = 20fps max (plus réactif)
-  
-  // Batch des updates pour réduire les re-renders
-  const pendingUpdate = useRef(null);
-  const updateTimeoutRef = useRef(null);
+const DRAG_THRESHOLD = 5;
+const TOUCH_DELAY = 200;
+const EDGE_ZONE = 120;
+const MAX_SCROLL_SPEED = 25;
 
-  // Synchroniser la ref avec localColumns
-  localColumnsRef.current = localColumns;
+/**
+ * Custom drag-and-drop for Kanban board.
+ * Recalculates positions every frame via getBoundingClientRect() —
+ * works correctly with CSS zoom + horizontal auto-scroll.
+ *
+ * Produces result objects compatible with @hello-pangea/dnd format
+ * so the existing useKanbanDnDSimple handler works unchanged.
+ */
+export function useKanbanDnD({
+  onDragStart,
+  onDragEnd,
+  scrollElementRef,
+  zoomLevel = 1,
+  enabled = true,
+}) {
+  const onDragStartRef = useRef(onDragStart);
+  const onDragEndRef = useRef(onDragEnd);
+  const zoomRef = useRef(zoomLevel);
 
-  const handleDragStart = useCallback((event) => {
-    const { active } = event;
-    const activeData = active.data.current;
-    
-    console.log('🎬 Drag start');
-    
-    setIsDragging(true);
-    isDraggingRef.current = true;
-    lastDragOverTime.current = 0; // Reset throttle
-    
-    if (activeData?.type === 'task') {
-      setActiveTask(activeData.task);
-      
-      const frozenState = Object.freeze({
-        taskId: String(activeData.task.id),
-        columnId: String(activeData.task.columnId),
-        position: Number(activeData.task.position || 0)
+  useEffect(() => { onDragStartRef.current = onDragStart; }, [onDragStart]);
+  useEffect(() => { onDragEndRef.current = onDragEnd; }, [onDragEnd]);
+  useEffect(() => { zoomRef.current = zoomLevel; }, [zoomLevel]);
+
+  useEffect(() => {
+    if (!enabled) return;
+
+    // ─── Mutable state ───
+    let drag = null;
+    let raf = null;
+    let touchTimer = null;
+    let indicator = null;
+    let highlightedDZ = null;
+
+    // ─── Helpers ───
+    function getPointer(e) {
+      const t = e.touches?.[0];
+      return t ? { x: t.clientX, y: t.clientY } : { x: e.clientX, y: e.clientY };
+    }
+
+    function findDraggable(target) {
+      const scrollEl = scrollElementRef.current;
+      if (!scrollEl || !scrollEl.contains(target)) return null;
+      if (target.closest(
+        'button, a, input, textarea, select, [role="button"], [data-radix-collection-item]'
+      )) return null;
+
+      const taskEl = target.closest('[data-dnd-task]');
+      if (taskEl) {
+        return {
+          type: 'task',
+          id: taskEl.dataset.dndTask,
+          columnId: taskEl.dataset.dndColumnId,
+          index: parseInt(taskEl.dataset.dndIndex, 10),
+          element: taskEl,
+        };
+      }
+
+      const handleEl = target.closest('[data-dnd-column-handle]');
+      if (handleEl) {
+        const colEl = handleEl.closest('[data-dnd-column]');
+        if (colEl) {
+          return {
+            type: 'column',
+            id: colEl.dataset.dndColumn,
+            index: parseInt(colEl.dataset.dndColumnIndex, 10),
+            element: colEl,
+          };
+        }
+      }
+      return null;
+    }
+
+    // ─── Clone ───
+    function createClone(element) {
+      const rect = element.getBoundingClientRect();
+      const zoom = zoomRef.current;
+      const clone = element.cloneNode(true);
+
+      // Strip DnD data-attrs so clone is never a target
+      [clone, ...clone.querySelectorAll('*')].forEach(el => {
+        if (el.dataset) {
+          Object.keys(el.dataset).forEach(k => {
+            if (k.startsWith('dnd')) delete el.dataset[k];
+          });
+        }
       });
-      
-      setOriginalTaskState(frozenState);
-    } else if (activeData?.type === 'column') {
-      setActiveColumn(activeData.column);
-    }
-  }, []);
 
-  // Fonction pour appliquer les updates en batch
-  const applyPendingUpdate = useCallback(() => {
-    if (pendingUpdate.current) {
-      setLocalColumns(pendingUpdate.current);
-      pendingUpdate.current = null;
-    }
-  }, [setLocalColumns]);
+      clone.style.cssText = [
+        'position:fixed',
+        `left:${rect.left / zoom}px`,
+        `top:${rect.top / zoom}px`,
+        `width:${rect.width / zoom}px`,
+        `zoom:${zoom}`,
+        'z-index:10000',
+        'pointer-events:none',
+        'opacity:.85',
+        'cursor:grabbing',
+        'box-shadow:0 12px 28px rgba(0,0,0,.15),0 4px 10px rgba(0,0,0,.1)',
+        'border-radius:8px',
+        'transform:rotate(1.5deg) scale(1.02)',
+      ].join(';');
 
-  const handleDragOver = useCallback((event) => {
-    const { active, over } = event;
-    if (!over || !isDraggingRef.current) return;
-    
-    // THROTTLE : Limiter à 10 updates par seconde
-    const now = Date.now();
-    if (now - lastDragOverTime.current < DRAG_OVER_THROTTLE) {
-      return;
-    }
-    lastDragOverTime.current = now;
-    
-    const activeData = active.data.current;
-    const overData = over.data.current;
-    
-    // Debug temporaire
-    console.log('🔍 DragOver:', {
-      activeType: activeData?.type,
-      activeId: active.id,
-      overType: overData?.type,
-      overId: over.id,
-      hasOverData: !!overData
-    });
-    
-    // === RÉORGANISATION DES COLONNES ===
-    if (activeData?.type === 'column' && overData?.type === 'column' && active.id !== over.id) {
-      // Extraire les IDs des colonnes (peuvent avoir le préfixe column-)
-      let activeColumnId = activeData.column?.id;
-      let overColumnId = overData.column?.id;
-      
-      if (typeof active.id === 'string' && active.id.startsWith('column-')) {
-        activeColumnId = active.id.replace('column-', '');
-      }
-      if (typeof over.id === 'string' && over.id.startsWith('column-')) {
-        overColumnId = over.id.replace('column-', '');
-      }
-      
-      const oldIndex = localColumnsRef.current.findIndex((col) => col.id === activeColumnId);
-      const newIndex = localColumnsRef.current.findIndex((col) => col.id === overColumnId);
-      
-      if (oldIndex !== -1 && newIndex !== -1) {
-        const newColumns = arrayMove(localColumnsRef.current, oldIndex, newIndex);
-        
-        // Appliquer directement (pas besoin de batch pour les colonnes)
-        setLocalColumns(newColumns);
-        localColumnsRef.current = newColumns;
-      }
-      return;
+      document.body.appendChild(clone);
+      return clone;
     }
 
-    // === RÉORGANISATION DES TÂCHES ===
-    if (activeData?.type !== 'task') return;
-    
-    const activeTask = activeData.task;
-    
-    // Trouver la colonne actuelle
-    let currentColumnId = null;
-    let currentColumn = null;
-    
-    for (const column of localColumnsRef.current) {
-      if (column.tasks?.find(t => t.id === activeTask.id)) {
-        currentColumnId = column.id;
-        currentColumn = column;
-        break;
+    // ─── Indicator helpers ───
+    function ensureIndicator() {
+      if (indicator) return indicator;
+      indicator = document.createElement('div');
+      indicator.style.cssText =
+        'position:fixed;z-index:9999;pointer-events:none;display:none;' +
+        'background:hsl(221.2 83.2% 53.3%);border-radius:2px;' +
+        'box-shadow:0 0 8px hsl(221.2 83.2% 53.3%/.4);' +
+        'transition:top 60ms ease-out,left 60ms ease-out,width 60ms ease-out,height 60ms ease-out;';
+      document.body.appendChild(indicator);
+      return indicator;
+    }
+
+    function clearHighlight() {
+      if (highlightedDZ) {
+        highlightedDZ.style.backgroundColor = '';
+        highlightedDZ.style.outline = '';
+        highlightedDZ.style.outlineOffset = '';
+        highlightedDZ = null;
       }
     }
-    
-    if (!currentColumnId || !currentColumn) return;
-    
-    let newColumns = localColumnsRef.current;
-    
-    // === DROP SUR UNE TÂCHE ===
-    if (overData?.type === 'task') {
-      const overTask = overData.task;
-      const targetColumnId = overTask.columnId;
-      const targetColumn = localColumnsRef.current.find(col => col.id === targetColumnId);
-      
-      if (!targetColumn) return;
 
-      if (currentColumnId === targetColumnId) {
-        // MÊME COLONNE - Réorganiser
-        const tasks = [...currentColumn.tasks];
-        const activeIndex = tasks.findIndex((t) => t.id === activeTask.id);
-        const overIndex = tasks.findIndex((t) => t.id === overTask.id);
-        
-        if (activeIndex !== -1 && overIndex !== -1 && activeIndex !== overIndex) {
-          const newTasks = arrayMove(tasks, activeIndex, overIndex);
-          
-          newColumns = localColumnsRef.current.map(col => 
-            col.id === currentColumnId ? { ...col, tasks: newTasks } : col
-          );
+    // ─── Target detection (recalculated every frame) ───
+    function findTargetColumn(x, y) {
+      const scrollEl = scrollElementRef.current;
+      if (!scrollEl) return null;
+
+      // elementFromPoint handles CSS zoom correctly (native browser hit-testing)
+      // Clone and indicator have pointer-events:none so they're transparent to this
+      const hit = document.elementFromPoint(x, y);
+      if (hit) {
+        const colEl = hit.closest('[data-dnd-column]');
+        if (colEl && scrollEl.contains(colEl)) {
+          if (!(drag?.type === 'column' && colEl.dataset.dndColumn === drag.id)) {
+            return colEl;
+          }
         }
+      }
+
+      // Fallback: closest column by distance (for when cursor is outside columns)
+      const cols = scrollEl.querySelectorAll('[data-dnd-column]');
+      let best = null;
+      let bestDist = Infinity;
+
+      for (const col of cols) {
+        if (drag?.type === 'column' && col.dataset.dndColumn === drag.id) continue;
+        const r = col.getBoundingClientRect();
+        const cx = Math.max(r.left, Math.min(x, r.right));
+        const cy = Math.max(r.top, Math.min(y, r.bottom));
+        const d = Math.hypot(x - cx, y - cy);
+        if (d < bestDist) { bestDist = d; best = col; }
+      }
+      return bestDist < 300 ? best : null;
+    }
+
+    function computeTaskIndex(columnEl, cursorY) {
+      const dz = columnEl.querySelector('[data-dnd-drop-zone]');
+      if (!dz) return 0;
+      // Exclude the dragged task for same-column reorder
+      const tasks = Array.from(dz.querySelectorAll(':scope > [data-dnd-task]'))
+        .filter(el => !(drag && el.dataset.dndTask === drag.id));
+
+      let idx = 0;
+      for (const t of tasks) {
+        const r = t.getBoundingClientRect();
+        if (cursorY > r.top + r.height / 2) idx++;
+        else break;
+      }
+      return idx;
+    }
+
+    function computeColumnIndex(cursorX) {
+      const scrollEl = scrollElementRef.current;
+      if (!scrollEl) return 0;
+      const remaining = Array.from(scrollEl.querySelectorAll('[data-dnd-column]'))
+        .filter(el => !(drag && el.dataset.dndColumn === drag.id));
+      let idx = 0;
+      for (const c of remaining) {
+        const r = c.getBoundingClientRect();
+        if (cursorX > r.left + r.width / 2) idx++;
+        else break;
+      }
+      return idx;
+    }
+
+    // ─── Visual feedback ───
+    function updateFeedback(x, y) {
+      const ind = ensureIndicator();
+
+      // ── Task drag ──
+      if (drag.type === 'task') {
+        const colEl = findTargetColumn(x, y);
+
+        // Column highlight
+        clearHighlight();
+        if (colEl) {
+          const dz = colEl.querySelector('[data-dnd-drop-zone]');
+          if (dz) {
+            dz.style.backgroundColor = 'hsl(var(--accent)/.12)';
+            dz.style.outline = '2px solid hsl(var(--accent))';
+            dz.style.outlineOffset = '-2px';
+            highlightedDZ = dz;
+          }
+        }
+
+        if (!colEl) { ind.style.display = 'none'; return null; }
+
+        const columnId = colEl.dataset.dndColumn;
+        const insertIndex = computeTaskIndex(colEl, y);
+
+        // Position indicator line
+        const dz = colEl.querySelector('[data-dnd-drop-zone]');
+        if (!dz) { ind.style.display = 'none'; return { columnId, insertIndex }; }
+
+        const tasks = Array.from(dz.querySelectorAll(':scope > [data-dnd-task]'))
+          .filter(el => el.dataset.dndTask !== drag.id);
+        const dzRect = dz.getBoundingClientRect();
+        let top;
+
+        if (tasks.length === 0) {
+          top = dzRect.top + 8;
+        } else if (insertIndex >= tasks.length) {
+          top = tasks[tasks.length - 1].getBoundingClientRect().bottom + 4;
+        } else {
+          top = tasks[insertIndex].getBoundingClientRect().top - 4;
+        }
+
+        Object.assign(ind.style, {
+          display: 'block',
+          top: top + 'px',
+          left: (dzRect.left + 4) + 'px',
+          width: (dzRect.width - 8) + 'px',
+          height: '3px',
+        });
+
+        return { columnId, insertIndex };
+      }
+
+      // ── Column drag ──
+      if (drag.type === 'column') {
+        const insertIndex = computeColumnIndex(x);
+        const scrollEl = scrollElementRef.current;
+        const remaining = Array.from(scrollEl.querySelectorAll('[data-dnd-column]'))
+          .filter(el => el.dataset.dndColumn !== drag.id);
+
+        if (remaining.length === 0) { ind.style.display = 'none'; return { insertIndex }; }
+
+        let left, refRect;
+        if (insertIndex >= remaining.length) {
+          refRect = remaining[remaining.length - 1].getBoundingClientRect();
+          left = refRect.right + 4;
+        } else {
+          refRect = remaining[insertIndex].getBoundingClientRect();
+          left = refRect.left - 6;
+        }
+
+        Object.assign(ind.style, {
+          display: 'block',
+          left: left + 'px',
+          top: refRect.top + 'px',
+          width: '3px',
+          height: refRect.height + 'px',
+        });
+
+        return { insertIndex };
+      }
+
+      return null;
+    }
+
+    // ─── Auto-scroll (speed scaled by zoom so it doesn't overshoot at low zoom) ───
+    function autoScroll(x, y) {
+      const el = scrollElementRef.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      if (y < r.top || y > r.bottom) return;
+      const dL = x - r.left;
+      const dR = r.right - x;
+      const zoom = zoomRef.current;
+      const speed = MAX_SCROLL_SPEED * zoom;
+      if (dL >= 0 && dL < EDGE_ZONE) {
+        el.scrollLeft -= ((1 - dL / EDGE_ZONE) ** 2) * speed;
+      } else if (dR >= 0 && dR < EDGE_ZONE) {
+        el.scrollLeft += ((1 - dR / EDGE_ZONE) ** 2) * speed;
+      }
+    }
+
+    // ─── Drag lifecycle ───
+    function beginDrag() {
+      if (!drag || drag.started) return;
+      drag.started = true;
+      drag.clone = createClone(drag.element);
+      drag.element.style.opacity = '0.25';
+      drag.element.style.transition = 'opacity 150ms';
+      document.body.style.userSelect = 'none';
+      document.body.style.webkitUserSelect = 'none';
+      document.body.style.cursor = 'grabbing';
+      onDragStartRef.current?.({ type: drag.type });
+    }
+
+    function moveDrag(x, y) {
+      if (!drag?.started) return;
+      drag.currentX = x;
+      drag.currentY = y;
+      if (drag.clone) {
+        const zoom = zoomRef.current;
+        drag.clone.style.left = ((x - drag.offsetX) / zoom) + 'px';
+        drag.clone.style.top = ((y - drag.offsetY) / zoom) + 'px';
+      }
+      drag.lastTarget = updateFeedback(x, y);
+    }
+
+    function endDrag() {
+      if (!drag) return;
+      const wasStarted = drag.started;
+      const target = drag.lastTarget;
+      const info = { type: drag.type, id: drag.id, columnId: drag.columnId, index: drag.index };
+
+      // Restore
+      drag.element.style.opacity = '';
+      drag.element.style.transition = '';
+      if (drag.clone) drag.clone.remove();
+      if (indicator) { indicator.remove(); indicator = null; }
+      clearHighlight();
+      document.body.style.userSelect = '';
+      document.body.style.webkitUserSelect = '';
+      document.body.style.cursor = '';
+      if (raf) { cancelAnimationFrame(raf); raf = null; }
+      if (touchTimer) { clearTimeout(touchTimer); touchTimer = null; }
+
+      window.removeEventListener('mousemove', onMouseMove, true);
+      window.removeEventListener('mouseup', onMouseUp, true);
+      window.removeEventListener('touchmove', onTouchMove, true);
+      window.removeEventListener('touchend', onTouchEnd, true);
+      window.removeEventListener('touchcancel', onTouchEnd, true);
+
+      drag = null;
+
+      // Build @hello-pangea/dnd–compatible result
+      if (!wasStarted) return;
+
+      let result;
+      if (info.type === 'task') {
+        result = {
+          type: 'task',
+          draggableId: info.id,
+          source: { droppableId: info.columnId, index: info.index },
+          destination: target
+            ? { droppableId: target.columnId, index: target.insertIndex }
+            : null,
+        };
       } else {
-        // COLONNES DIFFÉRENTES
-        const sourceTasks = currentColumn.tasks.filter(t => t.id !== activeTask.id);
-        const targetTasks = [...targetColumn.tasks];
-        const overIndex = targetTasks.findIndex(t => t.id === overTask.id);
-        
-        targetTasks.splice(overIndex >= 0 ? overIndex : targetTasks.length, 0, {
-          ...activeTask,
-          columnId: targetColumnId
-        });
-        
-        newColumns = localColumnsRef.current.map(col => {
-          if (col.id === currentColumnId) return { ...col, tasks: sourceTasks };
-          if (col.id === targetColumnId) return { ...col, tasks: targetTasks };
-          return col;
-        });
+        result = {
+          type: 'column',
+          draggableId: `column-${info.id}`,
+          source: { droppableId: 'all-columns', index: info.index },
+          destination: target
+            ? { droppableId: 'all-columns', index: target.insertIndex }
+            : null,
+        };
       }
-    } 
-    // === DROP SUR COLONNE VIDE ===
-    else if (overData?.type === 'column') {
-      // Extraire l'ID de la colonne (peut avoir un préfixe empty-, collapsed-, ou column-)
-      let targetColumnId = overData.column?.id || overData.columnId;
-      
-      // Si l'ID a un préfixe, l'extraire
-      if (typeof over.id === 'string') {
-        if (over.id.startsWith('column-')) {
-          targetColumnId = over.id.replace('column-', '');
-        } else if (over.id.startsWith('empty-')) {
-          targetColumnId = over.id.replace('empty-', '');
-        } else if (over.id.startsWith('collapsed-')) {
-          targetColumnId = over.id.replace('collapsed-', '');
+      onDragEndRef.current?.(result);
+    }
+
+    // ─── RAF loop (auto-scroll during drag) ───
+    function tick() {
+      if (!drag?.started) return;
+      autoScroll(drag.currentX, drag.currentY);
+      raf = requestAnimationFrame(tick);
+    }
+
+    // ═══════ Mouse events ═══════
+    function onMouseDown(e) {
+      if (e.button !== 0) return;
+      const d = findDraggable(e.target);
+      if (!d) return;
+
+      const p = getPointer(e);
+      const r = d.element.getBoundingClientRect();
+      drag = {
+        ...d,
+        startX: p.x, startY: p.y,
+        currentX: p.x, currentY: p.y,
+        offsetX: p.x - r.left, offsetY: p.y - r.top,
+        started: false, clone: null, lastTarget: null,
+      };
+      // Don't preventDefault here — let clicks pass through if no drag starts
+      window.addEventListener('mousemove', onMouseMove, true);
+      window.addEventListener('mouseup', onMouseUp, true);
+    }
+
+    function onMouseMove(e) {
+      if (!drag) return;
+      const p = getPointer(e);
+      if (!drag.started) {
+        if (Math.hypot(p.x - drag.startX, p.y - drag.startY) < DRAG_THRESHOLD) return;
+        beginDrag();
+        raf = requestAnimationFrame(tick);
+      }
+      e.preventDefault();
+      moveDrag(p.x, p.y);
+    }
+
+    function onMouseUp() { endDrag(); }
+
+    // ═══════ Touch events ═══════
+    function onTouchStart(e) {
+      const d = findDraggable(e.target);
+      if (!d) return;
+
+      const p = getPointer(e);
+      const r = d.element.getBoundingClientRect();
+      drag = {
+        ...d,
+        startX: p.x, startY: p.y,
+        currentX: p.x, currentY: p.y,
+        offsetX: p.x - r.left, offsetY: p.y - r.top,
+        started: false, touchReady: false,
+        clone: null, lastTarget: null,
+      };
+      // Hold timer — don't drag until held for TOUCH_DELAY ms
+      touchTimer = setTimeout(() => {
+        if (drag && !drag.started) {
+          drag.touchReady = true;
+          if (navigator.vibrate) navigator.vibrate(50);
         }
-      }
-      
-      if (currentColumnId !== targetColumnId) {
-        const targetColumn = localColumnsRef.current.find(col => col.id === targetColumnId);
-        if (!targetColumn) return;
-        
-        const sourceTasks = currentColumn.tasks.filter(t => t.id !== activeTask.id);
-        const targetTasks = [...(targetColumn.tasks || []), {
-          ...activeTask,
-          columnId: targetColumnId
-        }];
-        
-        newColumns = localColumnsRef.current.map(col => {
-          if (col.id === currentColumnId) return { ...col, tasks: sourceTasks };
-          if (col.id === targetColumnId) return { ...col, tasks: targetTasks };
-          return col;
-        });
-      }
-    }
-    
-    // APPLIQUER L'UPDATE (directement pour la fluidité)
-    if (newColumns !== localColumnsRef.current) {
-      setLocalColumns(newColumns);
-      localColumnsRef.current = newColumns;
-    }
-  }, [setLocalColumns]);
+      }, TOUCH_DELAY);
 
-  const handleDragEnd = useCallback(async (event) => {
-    const { active, over } = event;
-    const activeData = active.data.current;
-    
-    console.log('🏁 Drag end');
-    
-    // Nettoyer immédiatement
-    dragEndTimeRef.current = Date.now();
-    lastDragOverTime.current = 0;
-    
-    // Clear any pending updates
-    if (updateTimeoutRef.current) {
-      clearTimeout(updateTimeoutRef.current);
-      updateTimeoutRef.current = null;
-    }
-    pendingUpdate.current = null;
-    
-    setActiveTask(null);
-    setActiveColumn(null);
-    setIsDragging(false);
-
-    if (!over) {
-      setOriginalTaskState(null);
-      isDraggingRef.current = false;
-      return;
+      window.addEventListener('touchmove', onTouchMove, { capture: true, passive: false });
+      window.addEventListener('touchend', onTouchEnd, true);
+      window.addEventListener('touchcancel', onTouchEnd, true);
     }
 
-    // === DRAG DE COLONNE ===
-    if (activeData?.type === 'column') {
-      const columnIds = localColumnsRef.current.map((col) => col.id);
-      markReorderAction();
-      
-      try {
-        console.log('📤 Mutation reorder columns');
-        await reorderColumns({
-          variables: { columns: columnIds, workspaceId },
-        });
-        console.log('✅ Reorder columns OK');
-      } catch (error) {
-        console.error('❌ Erreur reorder columns:', error);
-      }
-      
-      isDraggingRef.current = false;
-      setTimeout(() => {
-        dragEndTimeRef.current = 0;
-      }, 100);
-      return;
-    }
+    function onTouchMove(e) {
+      if (!drag) return;
+      const p = getPointer(e);
+      drag.currentX = p.x;
+      drag.currentY = p.y;
 
-    // === DRAG DE TÂCHE ===
-    if (activeData?.type === 'task' && originalTaskState) {
-      const taskId = activeData.task.id;
-      const originalColumnId = originalTaskState.columnId;
-      const originalPosition = originalTaskState.position;
-
-      let newColumnId = originalColumnId;
-      let newPosition = originalPosition;
-
-      // Trouver la position finale
-      for (const column of localColumnsRef.current) {
-        const taskIndex = column.tasks?.findIndex(t => t.id === taskId);
-        if (taskIndex !== undefined && taskIndex !== -1) {
-          newColumnId = column.id;
-          newPosition = taskIndex;
-          break;
-        }
-      }
-
-      const hasChanged = newColumnId !== originalColumnId || newPosition !== originalPosition;
-
-      if (hasChanged) {
-        // ÉVITER LES DOUBLONS : vérifier qu'une mutation n'est pas déjà en cours
-        if (pendingMutationRef.current) {
-          console.warn('⚠️ Mutation déjà en cours, ignorée');
-          setOriginalTaskState(null);
-          isDraggingRef.current = false;
+      if (!drag.started) {
+        const dist = Math.hypot(p.x - drag.startX, p.y - drag.startY);
+        if (!drag.touchReady) {
+          // Moved before hold delay → it's a scroll, abort drag
+          if (dist > DRAG_THRESHOLD) {
+            clearTimeout(touchTimer);
+            touchTimer = null;
+            window.removeEventListener('touchmove', onTouchMove, true);
+            window.removeEventListener('touchend', onTouchEnd, true);
+            window.removeEventListener('touchcancel', onTouchEnd, true);
+            drag = null;
+          }
           return;
         }
-        
-        try {
-          pendingMutationRef.current = true;
-          
-          console.log('📤 Mutation moveTask:', {
-            taskId,
-            from: { columnId: originalColumnId, position: originalPosition },
-            to: { columnId: newColumnId, position: newPosition }
-          });
-          
-          // Marquer AVANT la mutation pour éviter les updates Redis pendant le traitement
-          markMoveTaskAction();
-          
-          // ENVOYER LA MUTATION - UNE SEULE FOIS
-          await moveTask({
-            variables: {
-              id: taskId,
-              columnId: newColumnId,
-              position: newPosition,
-              workspaceId,
-            },
-          });
-          
-          console.log('✅ Mutation moveTask OK');
-        } catch (error) {
-          console.error('❌ Erreur moveTask:', error);
-          
-          // ROLLBACK en cas d'erreur
-          // Restaurer l'état original
-          const rollbackColumns = localColumnsRef.current.map(col => {
-            if (col.id === originalColumnId || col.id === newColumnId) {
-              // Reconstruire les tasks avec les positions correctes
-              const tasks = col.tasks.map((t, idx) => ({
-                ...t,
-                position: idx,
-                columnId: col.id
-              }));
-              return { ...col, tasks };
-            }
-            return col;
-          });
-          
-          setLocalColumns(rollbackColumns);
-          localColumnsRef.current = rollbackColumns;
-        } finally {
-          // Attendre un peu avant de permettre une nouvelle mutation
-          setTimeout(() => {
-            pendingMutationRef.current = false;
-          }, 200);
-        }
+        if (dist < DRAG_THRESHOLD) return;
+        e.preventDefault();
+        beginDrag();
+        raf = requestAnimationFrame(tick);
+        return;
       }
+      e.preventDefault();
+      moveDrag(p.x, p.y);
     }
 
-    setOriginalTaskState(null);
-    
-    // Attendre avant de réactiver complètement
-    setTimeout(() => {
-      dragEndTimeRef.current = 0;
-      isDraggingRef.current = false;
-    }, 200);
-  }, [
-    moveTask, 
-    workspaceId, 
-    reorderColumns, 
-    markReorderAction, 
-    markMoveTaskAction, 
-    originalTaskState,
-    setLocalColumns
-  ]);
+    function onTouchEnd() { endDrag(); }
 
-  const getLocalTasksByColumn = useCallback((columnId) => {
-    const column = localColumnsRef.current.find(col => col.id === columnId);
-    return column?.tasks || [];
-  }, []);
+    // ═══════ Attach ═══════
+    document.addEventListener('mousedown', onMouseDown, true);
+    document.addEventListener('touchstart', onTouchStart, { capture: true, passive: true });
 
-  return {
-    activeTask,
-    activeColumn,
-    handleDragStart: handleDragStart,
-    handleDragOver,
-    handleDragEnd,
-    isDragging,
-    getLocalTasksByColumn,
-    dragEndTimeRef,
-    isDraggingRef,
-  };
-};
+    return () => {
+      document.removeEventListener('mousedown', onMouseDown, true);
+      document.removeEventListener('touchstart', onTouchStart, true);
+      if (drag) {
+        if (drag.clone) drag.clone.remove();
+        drag.element.style.opacity = '';
+        drag.element.style.transition = '';
+        drag = null;
+      }
+      if (indicator) { indicator.remove(); indicator = null; }
+      clearHighlight();
+      if (raf) cancelAnimationFrame(raf);
+      if (touchTimer) clearTimeout(touchTimer);
+      window.removeEventListener('mousemove', onMouseMove, true);
+      window.removeEventListener('mouseup', onMouseUp, true);
+      window.removeEventListener('touchmove', onTouchMove, true);
+      window.removeEventListener('touchend', onTouchEnd, true);
+      window.removeEventListener('touchcancel', onTouchEnd, true);
+      document.body.style.userSelect = '';
+      document.body.style.webkitUserSelect = '';
+      document.body.style.cursor = '';
+    };
+  }, [enabled, scrollElementRef]);
+}
