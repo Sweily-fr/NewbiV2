@@ -7,6 +7,9 @@ import {
   UPDATE_BOARD,
   DELETE_BOARD,
   BOARD_UPDATED_SUBSCRIPTION,
+  GET_KANBAN_TEMPLATES,
+  CREATE_BOARD_FROM_TEMPLATE,
+  DELETE_KANBAN_TEMPLATE,
 } from "@/src/graphql/kanbanQueries";
 import { toast } from "@/src/utils/debouncedToast";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
@@ -22,6 +25,7 @@ export const useKanbanBoards = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [formData, setFormData] = useState({ title: "", description: "" });
   const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [selectedTemplateId, setSelectedTemplateId] = useState(null);
 
   // Attendre que la session soit chargée avant d'activer la subscription
   useEffect(() => {
@@ -151,6 +155,44 @@ export const useKanbanBoards = () => {
     },
   });
 
+  // Templates
+  const { data: templatesData } = useQuery(GET_KANBAN_TEMPLATES, {
+    variables: { workspaceId },
+    skip: !workspaceId,
+    errorPolicy: "all",
+  });
+
+  const [createBoardFromTemplate, { loading: creatingFromTemplate }] = useMutation(CREATE_BOARD_FROM_TEMPLATE, {
+    onCompleted: () => {
+      setIsCreateDialogOpen(false);
+      setFormData({ title: "", description: "" });
+      setSelectedTemplateId(null);
+    },
+    onError: (error) => {
+      toast.error("Erreur lors de la création depuis le template");
+      console.error("Create from template error:", error);
+    },
+  });
+
+  const [deleteTemplateMutation] = useMutation(DELETE_KANBAN_TEMPLATE, {
+    onCompleted: () => {
+      toast.success("Template supprimé");
+    },
+    onError: (error) => {
+      toast.error("Erreur lors de la suppression du template");
+      console.error("Delete template error:", error);
+    },
+  });
+
+  const templates = templatesData?.kanbanTemplates || [];
+
+  const handleDeleteTemplate = async (templateId) => {
+    await deleteTemplateMutation({
+      variables: { id: templateId, workspaceId },
+      refetchQueries: [{ query: GET_KANBAN_TEMPLATES, variables: { workspaceId } }],
+    });
+  };
+
   const boards = data?.boards || [];
 
   // Gérer l'état de chargement initial
@@ -182,15 +224,28 @@ export const useKanbanBoards = () => {
       return;
     }
 
-    await createBoard({
-      variables: {
-        input: {
-          title: formData.title.trim(),
-          description: formData.description.trim() || null,
+    if (selectedTemplateId) {
+      await createBoardFromTemplate({
+        variables: {
+          input: {
+            title: formData.title.trim(),
+            description: formData.description.trim() || null,
+            templateId: selectedTemplateId,
+          },
+          workspaceId,
         },
-        workspaceId,
-      },
-    });
+      });
+    } else {
+      await createBoard({
+        variables: {
+          input: {
+            title: formData.title.trim(),
+            description: formData.description.trim() || null,
+          },
+          workspaceId,
+        },
+      });
+    }
   };
 
   const handleUpdateBoard = async (e) => {
@@ -279,12 +334,19 @@ export const useKanbanBoards = () => {
 
     // Data & Loading States
     boards: filteredBoards,
-    loading: creating || updating || deleting,
+    loading: creating || updating || deleting || creatingFromTemplate,
     queryLoading,
     isInitialLoading,
     creating,
+    creatingFromTemplate,
     updating,
     deleting,
+
+    // Templates
+    templates,
+    selectedTemplateId,
+    setSelectedTemplateId,
+    handleDeleteTemplate,
 
     // Handlers
     handleCreateBoard,

@@ -80,6 +80,7 @@ import { KanbanListView } from "./components/KanbanListView";
 import { KanbanGanttView } from "./components/KanbanGanttView";
 import { MemberFilterButton } from "./components/MemberFilterButton";
 import { ShareBoardDialog } from "./components/ShareBoardDialog";
+import { SaveTemplateDialog } from "./components/SaveTemplateDialog";
 import { ConvertToInvoiceModal } from "./components/ConvertToInvoiceModal";
 import { KanbanPageSkeleton, KanbanListSkeleton } from "./components/KanbanPageSkeleton";
 import {
@@ -596,11 +597,15 @@ function KanbanBoardPageContent({ params }) {
               </Button>
             )}
             
-            {/* Bouton de partage */}
-            <ShareBoardDialog 
-              boardId={id} 
-              boardTitle={board.title} 
-              workspaceId={workspaceId} 
+            {/* Bouton sauvegarder modèle + partage */}
+            <SaveTemplateDialog
+              boardId={id}
+              boardTitle={board.title}
+            />
+            <ShareBoardDialog
+              boardId={id}
+              boardTitle={board.title}
+              workspaceId={workspaceId}
             />
             
             <ButtonGroup>
