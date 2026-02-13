@@ -139,6 +139,7 @@ import {
   Lock,
   Send,
   Link2,
+  FileVideo,
 } from "lucide-react";
 import {
   Popover,
@@ -172,6 +173,9 @@ const getFileIcon = (
 ) => {
   if (mimeType?.startsWith("image/")) {
     return <FileImage className={className} />;
+  }
+  if (mimeType?.startsWith("video/")) {
+    return <FileVideo className={className} />;
   }
   if (mimeType === "application/pdf") {
     return <FileText className={className} />;
@@ -507,7 +511,7 @@ export default function DocumentsPartagesPage() {
   const canPreview = (doc) => {
     if (!doc) return false;
     const mimeType = doc.mimeType || "";
-    return mimeType.startsWith("image/") || mimeType === "application/pdf";
+    return mimeType.startsWith("image/") || mimeType.startsWith("video/") || mimeType === "application/pdf";
   };
 
   // Créer les dossiers par défaut si aucun dossier n'existe
@@ -1273,7 +1277,7 @@ export default function DocumentsPartagesPage() {
         type="file"
         multiple
         onChange={handleFileInputChange}
-        accept=".jpg,.jpeg,.png,.gif,.webp,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv"
+        accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.webm,.mov,.avi,.mkv,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv"
         className="hidden"
       />
       <input
@@ -2214,6 +2218,7 @@ export default function DocumentsPartagesPage() {
                               <SelectContent>
                                 <SelectItem value="">Tous les types</SelectItem>
                                 <SelectItem value="image">Images</SelectItem>
+                                <SelectItem value="video">Vidéos</SelectItem>
                                 <SelectItem value="pdf">PDF</SelectItem>
                                 <SelectItem value="document">
                                   Documents
@@ -3017,8 +3022,17 @@ export default function DocumentsPartagesPage() {
                             </DropdownMenu>
                           </div>
                           <div className="flex flex-col items-center pt-4">
-                            <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center mb-3 relative">
-                              {getFileIcon(doc.mimeType, doc.fileExtension)}
+                            <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center mb-3 relative overflow-hidden">
+                              {doc.mimeType?.startsWith("image/") ? (
+                                <img
+                                  src={doc.fileUrl}
+                                  alt={doc.name}
+                                  loading="lazy"
+                                  className="w-full h-full object-cover rounded-lg"
+                                />
+                              ) : (
+                                getFileIcon(doc.mimeType, doc.fileExtension)
+                              )}
                               {/* Comments/Tags indicator on grid card */}
                               {((doc.tags && doc.tags.length > 0) ||
                                 (doc.comments && doc.comments.length > 0)) && (
@@ -3908,6 +3922,16 @@ export default function DocumentsPartagesPage() {
                   alt={previewDocument.name}
                   className="max-h-full max-w-full object-contain rounded-lg shadow-lg"
                 />
+              </div>
+            ) : previewDocument?.mimeType?.startsWith("video/") ? (
+              <div className="h-full flex items-center justify-center p-4">
+                <video
+                  src={previewDocument.fileUrl}
+                  controls
+                  className="max-h-full max-w-full rounded-lg shadow-lg"
+                >
+                  Votre navigateur ne supporte pas la lecture vidéo.
+                </video>
               </div>
             ) : previewDocument?.mimeType === "application/pdf" ? (
               <iframe
