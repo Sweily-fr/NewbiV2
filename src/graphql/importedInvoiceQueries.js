@@ -404,33 +404,47 @@ export function useBatchImportInvoices() {
   return { batchImportInvoices, loading, error };
 }
 
+const IMPORTED_INVOICE_REFETCH = ["GetImportedInvoices", "GetImportedInvoiceStats"];
+
 export function useUpdateImportedInvoice() {
-  const [updateImportedInvoice, { loading, error }] = useMutation(UPDATE_IMPORTED_INVOICE);
+  const [updateImportedInvoice, { loading, error }] = useMutation(UPDATE_IMPORTED_INVOICE, {
+    refetchQueries: IMPORTED_INVOICE_REFETCH,
+  });
   return { updateImportedInvoice, loading, error };
 }
 
 export function useValidateImportedInvoice() {
-  const [validateImportedInvoice, { loading, error }] = useMutation(VALIDATE_IMPORTED_INVOICE);
+  const [validateImportedInvoice, { loading, error }] = useMutation(VALIDATE_IMPORTED_INVOICE, {
+    refetchQueries: IMPORTED_INVOICE_REFETCH,
+  });
   return { validateImportedInvoice, loading, error };
 }
 
 export function useRejectImportedInvoice() {
-  const [rejectImportedInvoice, { loading, error }] = useMutation(REJECT_IMPORTED_INVOICE);
+  const [rejectImportedInvoice, { loading, error }] = useMutation(REJECT_IMPORTED_INVOICE, {
+    refetchQueries: IMPORTED_INVOICE_REFETCH,
+  });
   return { rejectImportedInvoice, loading, error };
 }
 
 export function useArchiveImportedInvoice() {
-  const [archiveImportedInvoice, { loading, error }] = useMutation(ARCHIVE_IMPORTED_INVOICE);
+  const [archiveImportedInvoice, { loading, error }] = useMutation(ARCHIVE_IMPORTED_INVOICE, {
+    refetchQueries: IMPORTED_INVOICE_REFETCH,
+  });
   return { archiveImportedInvoice, loading, error };
 }
 
 export function useDeleteImportedInvoice() {
-  const [deleteImportedInvoice, { loading, error }] = useMutation(DELETE_IMPORTED_INVOICE);
+  const [deleteImportedInvoice, { loading, error }] = useMutation(DELETE_IMPORTED_INVOICE, {
+    refetchQueries: IMPORTED_INVOICE_REFETCH,
+  });
   return { deleteImportedInvoice, loading, error };
 }
 
 export function useDeleteImportedInvoices() {
-  const [deleteImportedInvoices, { loading, error }] = useMutation(DELETE_IMPORTED_INVOICES);
+  const [deleteImportedInvoices, { loading, error }] = useMutation(DELETE_IMPORTED_INVOICES, {
+    refetchQueries: IMPORTED_INVOICE_REFETCH,
+  });
   return { deleteImportedInvoices, loading, error };
 }
 
