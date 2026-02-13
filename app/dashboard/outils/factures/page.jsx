@@ -174,10 +174,7 @@ function InvoicesContent() {
         const amount = imported.totalHT ?? 0;
 
         totalBilled += amount;
-
-        if (imported.paymentDate) {
-          totalPaid += amount;
-        }
+        totalPaid += amount;
       });
     }
 
