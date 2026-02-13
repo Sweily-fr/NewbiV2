@@ -1,6 +1,10 @@
 "use client";
 
+<<<<<<< HEAD
 import { use, useState, useEffect, useMemo } from "react";
+=======
+import { use, useState, useEffect, Suspense } from "react";
+>>>>>>> 102d81f (save)
 import * as React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Plus, LoaderCircle, Search, Trash2, AlignLeft, Filter, Users, ZoomIn, ZoomOut, FileText, Euro } from "lucide-react";
@@ -80,7 +84,11 @@ import { KanbanListView } from "./components/KanbanListView";
 import { KanbanGanttView } from "./components/KanbanGanttView";
 import { MemberFilterButton } from "./components/MemberFilterButton";
 import { ShareBoardDialog } from "./components/ShareBoardDialog";
+<<<<<<< HEAD
 import { ConvertToInvoiceModal } from "./components/ConvertToInvoiceModal";
+=======
+import { KanbanPageSkeleton, KanbanListSkeleton } from "./components/KanbanPageSkeleton";
+>>>>>>> 102d81f (save)
 import {
   GET_BOARD,
   CREATE_COLUMN,
@@ -98,12 +106,15 @@ import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 
 import { useMutation } from "@apollo/client";
 
-export default function KanbanBoardPage({ params }) {
+function KanbanBoardPageContent({ params }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { id } = use(params);
   const [isRedirecting, setIsRedirecting] = React.useState(false);
   const taskIdFromUrl = searchParams.get("task");
+
+  // Hook viewMode en premier pour avoir le bon skeleton dès le début
+  const { viewMode, setViewMode, isBoard, isList, isGantt, isReady: isViewModeReady } = useViewMode(id);
 
   // Hooks
   const { board, loading, error, refetch, getTasksByColumn, workspaceId, markReorderAction } =
@@ -543,8 +554,6 @@ export default function KanbanBoardPage({ params }) {
     );
   }, [localColumns, filterTasks, getLocalTasksByColumn, isColumnCollapsed, handleColumnAddTask, handleColumnEditTask, handleColumnDeleteTask, handleColumnEditColumn, handleColumnDeleteColumn, handleColumnToggleCollapse, loading, openAddModal]);
 
-  const { viewMode, setViewMode, isBoard, isList, isGantt } = useViewMode(id);
-
   // Hook pour le drag-to-scroll horizontal
   const scrollRef = useDragToScroll({ enabled: isBoard, scrollSpeed: 1.5 });
 
@@ -576,15 +585,17 @@ export default function KanbanBoardPage({ params }) {
     }
   }, [error, workspaceId, router, id, isRedirecting]);
 
-  if (workspaceLoading) {
-    return null;
+  // Pendant le chargement, afficher le skeleton
+  // Le skeleton lit lui-même le viewMode depuis localStorage
+  if (workspaceLoading || loading || !board) {
+    return <KanbanPageSkeleton />;
   }
 
   if (hasChangedOrganization) {
     return null;
   }
 
-  if (isRedirecting || !board) {
+  if (isRedirecting) {
     return null;
   }
 
@@ -1054,53 +1065,34 @@ export default function KanbanBoardPage({ params }) {
         )}
 
         {isBoard && (
-          <>
-            {loading ? (
-              <div className="h-full overflow-x-auto overflow-y-hidden pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                <div className="flex gap-4 sm:gap-6 flex-nowrap items-start h-full">
-                  {[1, 2, 3, 4].map((i) => (
-                    <div key={i} className="bg-muted/30 rounded-xl p-2 sm:p-3 min-w-[240px] max-w-[240px] sm:min-w-[300px] sm:max-w-[300px] border border-border flex-shrink-0">
-                      <div className="h-8 bg-muted rounded mb-3"></div>
-                      <div className="space-y-2">
-                        <div className="h-[148px] bg-muted rounded"></div>
-                        <div className="h-[148px] bg-muted rounded"></div>
-                        <div className="h-[148px] bg-muted rounded"></div>
-                      </div>
+          <DragDropContext onDragEnd={handleDragEnd} onDragStart={handleDragStart}>
+            <div 
+              ref={scrollRef}
+              className="h-full overflow-x-auto overflow-y-hidden pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+            >
+              <div 
+                className="h-full w-max min-w-full origin-top-left flex flex-nowrap items-start"
+                style={{ 
+                  zoom: zoomLevel,
+                  gap: '16px'
+                }}
+              >
+                {columnsContent ? (
+                  columnsContent
+                ) : (
+                  <div className="text-center py-12">
+                    <div className="text-muted-foreground mb-4">
+                      Ce tableau ne contient aucune colonne
                     </div>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <DragDropContext onDragEnd={handleDragEnd} onDragStart={handleDragStart}>
-                <div 
-                  ref={scrollRef}
-                  className="h-full overflow-x-auto overflow-y-hidden pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
-                >
-                  <div 
-                    className="h-full w-max min-w-full origin-top-left flex flex-nowrap items-start"
-                    style={{ 
-                      zoom: zoomLevel,
-                      gap: '16px'
-                    }}
-                  >
-                    {columnsContent ? (
-                      columnsContent
-                    ) : (
-                      <div className="text-center py-12">
-                        <div className="text-muted-foreground mb-4">
-                          Ce tableau ne contient aucune colonne
-                        </div>
-                        <Button variant="default" onClick={openAddModal}>
-                          <Plus className="mr-2 h-4 w-4" />
-                          Créer votre première colonne
-                        </Button>
-                      </div>
-                    )}
+                    <Button variant="default" onClick={openAddModal}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Créer votre première colonne
+                    </Button>
                   </div>
-                </div>
-              </DragDropContext>
-            )}
-          </>
+                )}
+              </div>
+            </div>
+          </DragDropContext>
         )}
       </div>
 
@@ -1208,5 +1200,14 @@ export default function KanbanBoardPage({ params }) {
         members={members}
       />
     </div>
+  );
+}
+
+// Wrapper avec Suspense pour éviter le double skeleton causé par useSearchParams
+export default function KanbanBoardPage({ params }) {
+  return (
+    <Suspense fallback={<KanbanPageSkeleton />}>
+      <KanbanBoardPageContent params={params} />
+    </Suspense>
   );
 }
