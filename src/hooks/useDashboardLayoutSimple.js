@@ -219,7 +219,8 @@ export function useDashboardLayoutSimple() {
     isHydrated,
     session?.session?.activeOrganizationId,
     activeOrganization?.id,
-    orgLoading,
+    // Note: orgLoading retiré des deps pour éviter les re-déclenchements
+    // inutiles qui causaient des flashs de loading en production
   ]);
 
   // Polling automatique après retour de Stripe

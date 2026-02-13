@@ -1,10 +1,6 @@
 "use client";
 
-<<<<<<< HEAD
-import { use, useState, useEffect, useMemo } from "react";
-=======
-import { use, useState, useEffect, Suspense } from "react";
->>>>>>> 102d81f (save)
+import { use, useState, useEffect, useMemo, Suspense } from "react";
 import * as React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Plus, LoaderCircle, Search, Trash2, AlignLeft, Filter, Users, ZoomIn, ZoomOut, FileText, Euro } from "lucide-react";
@@ -84,11 +80,8 @@ import { KanbanListView } from "./components/KanbanListView";
 import { KanbanGanttView } from "./components/KanbanGanttView";
 import { MemberFilterButton } from "./components/MemberFilterButton";
 import { ShareBoardDialog } from "./components/ShareBoardDialog";
-<<<<<<< HEAD
 import { ConvertToInvoiceModal } from "./components/ConvertToInvoiceModal";
-=======
 import { KanbanPageSkeleton, KanbanListSkeleton } from "./components/KanbanPageSkeleton";
->>>>>>> 102d81f (save)
 import {
   GET_BOARD,
   CREATE_COLUMN,

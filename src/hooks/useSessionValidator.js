@@ -116,8 +116,14 @@ export function useSessionValidator() {
         return;
       }
 
-      if (!response.ok || response.status === 401) {
+      if (response.status === 401) {
         await handleSessionExpired("inactivity");
+      } else if (!response.ok) {
+        // Erreur serveur (500, 503, etc.) - ne PAS traiter comme session expirée
+        // En production, MongoDB peut avoir des timeouts transitoires
+        console.warn(
+          `⚠️ [SESSION-VALIDATOR] Erreur serveur (${response.status}), on ignore (pas une expiration de session)`
+        );
       } else {
         const data = await response.json();
         if (!data.valid && !isSessionErrorShown) {
