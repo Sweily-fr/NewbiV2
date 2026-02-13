@@ -13,6 +13,8 @@ import {
   ChevronLastIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  BookTemplate,
+  Settings2,
 } from "lucide-react";
 import { flexRender } from "@tanstack/react-table";
 import { Button } from "@/src/components/ui/button";
@@ -52,6 +54,11 @@ import {
   PaginationItem,
 } from "@/src/components/ui/pagination";
 import { Skeleton } from "@/src/components/ui/skeleton";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/src/components/ui/popover";
 import { useKanbanBoards } from "./hooks/useKanbanBoards";
 import { useKanbanBoardsTable } from "./hooks/useKanbanBoardsTable";
 
@@ -80,8 +87,15 @@ function KanbanPageContent() {
     queryLoading,
     isInitialLoading,
     creating,
+    creatingFromTemplate,
     updating,
     deleting,
+
+    // Templates
+    templates,
+    selectedTemplateId,
+    setSelectedTemplateId,
+    handleDeleteTemplate,
 
     // Handlers
     handleCreateBoard,
@@ -110,7 +124,10 @@ function KanbanPageContent() {
         <div>
           <h1 className="text-2xl font-medium mb-2">Mes listes de tâches</h1>
         </div>
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <Dialog open={isCreateDialogOpen} onOpenChange={(open) => {
+          setIsCreateDialogOpen(open);
+          if (!open) setSelectedTemplateId(null);
+        }}>
           <DialogTrigger asChild>
             <Button
               variant="default"
@@ -147,6 +164,70 @@ function KanbanPageContent() {
                   />
                 </div>
                 <div className="grid gap-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-foreground">
+                      Template (optionnel)
+                    </Label>
+                    {templates.length > 0 && (
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-6 px-2 text-xs text-muted-foreground">
+                            <Settings2 className="h-3 w-3 mr-1" />
+                            Gérer
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-72 p-3" align="end">
+                          <p className="text-sm font-medium mb-2">Mes templates</p>
+                          <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                            {templates.map((t) => (
+                              <div key={t.id} className="flex items-center justify-between gap-2 py-1.5 px-2 rounded hover:bg-muted/50">
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-sm truncate">{t.name}</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {t.columns.length} col. · {t.tasks.length} tâche(s)
+                                  </p>
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive flex-shrink-0"
+                                  onClick={() => handleDeleteTemplate(t.id)}
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                    )}
+                  </div>
+                  <Select
+                    value={selectedTemplateId || "none"}
+                    onValueChange={(value) => setSelectedTemplateId(value === "none" ? null : value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Aucun template (colonnes par défaut)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">
+                        Aucun template (colonnes par défaut)
+                      </SelectItem>
+                      {templates.map((t) => (
+                        <SelectItem key={t.id} value={t.id}>
+                          <div className="flex items-center gap-2">
+                            <BookTemplate className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                            <span>{t.name}</span>
+                            <span className="text-xs text-muted-foreground">
+                              ({t.columns.length} col. · {t.tasks.length} tâches)
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
                   <Label htmlFor="description" className="text-foreground">
                     Description
                   </Label>
@@ -176,7 +257,7 @@ function KanbanPageContent() {
                   {loading ? (
                     <>
                       <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
-                      Création...
+                      {creatingFromTemplate ? "Création depuis template..." : "Création..."}
                     </>
                   ) : (
                     "Créer"
