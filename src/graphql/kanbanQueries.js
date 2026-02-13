@@ -1300,3 +1300,80 @@ export const LOGOUT_INVITED_USER = gql`
     logoutInvitedUser(sessionToken: $sessionToken)
   }
 `;
+
+// ============================================
+// TEMPLATES KANBAN
+// ============================================
+
+export const GET_KANBAN_TEMPLATES = gql`
+  query GetKanbanTemplates($workspaceId: ID) {
+    kanbanTemplates(workspaceId: $workspaceId) {
+      id
+      name
+      description
+      columns {
+        title
+        color
+        order
+      }
+      tasks {
+        title
+        description
+        priority
+        tags {
+          name
+          className
+          bg
+          text
+          border
+        }
+        checklist {
+          text
+          completed
+        }
+        position
+        columnIndex
+      }
+      createdAt
+    }
+  }
+`;
+
+export const SAVE_BOARD_AS_TEMPLATE = gql`
+  mutation SaveBoardAsTemplate($input: SaveBoardAsTemplateInput!, $workspaceId: ID) {
+    saveBoardAsTemplate(input: $input, workspaceId: $workspaceId) {
+      id
+      name
+      description
+      columns {
+        title
+        color
+        order
+      }
+      tasks {
+        title
+        columnIndex
+      }
+      createdAt
+    }
+  }
+`;
+
+export const CREATE_BOARD_FROM_TEMPLATE = gql`
+  mutation CreateBoardFromTemplate($input: CreateBoardFromTemplateInput!, $workspaceId: ID) {
+    createBoardFromTemplate(input: $input, workspaceId: $workspaceId) {
+      id
+      title
+      description
+      totalBillableAmount
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const DELETE_KANBAN_TEMPLATE = gql`
+  mutation DeleteKanbanTemplate($id: ID!, $workspaceId: ID) {
+    deleteKanbanTemplate(id: $id, workspaceId: $workspaceId)
+  }
+`;
