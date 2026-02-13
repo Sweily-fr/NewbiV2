@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { X, ChevronLeft } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import MobileSettingsNavigation from "./mobile-settings-navigation";
 
@@ -165,40 +165,24 @@ export function MobileSettingsModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-gray-100 dark:bg-[#0A0A0A] flex flex-col">
-      {/* Header fixe avec style iOS */}
-      <div className="flex-shrink-0 bg-gray-100 dark:bg-[#0A0A0A]">
-        <div className="flex items-center justify-between px-4 py-3 pt-6">
-          {/* Bouton retour ou navigation */}
-          {showNavigation ? (
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onClose}
-                className="p-2 hover:bg-gray-200 dark:hover:bg-[#171717]"
-              >
-                <X className="h-5 w-5 text-gray-600 dark:text-gray-400" />
-              </Button>
-              <h1 className="text-xl font-medium text-gray-900 dark:text-white">
-                Paramètres
-              </h1>
-            </div>
-          ) : (
-            <div className="flex items-center gap-3">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowNavigation(true)}
-                className="p-2 hover:bg-gray-200 dark:hover:bg-[#171717]"
-              >
-                <ChevronLeft className="h-5 w-5 text-gray-600 dark:text-gray-400" />
-                </Button>
-              <h1 className="text-xl font-medium text-gray-900 dark:text-white">
-                {currentTab?.label}
-              </h1>
-            </div>
-          )}
+    <div className="fixed inset-0 z-50 bg-background flex flex-col animate-in slide-in-from-right duration-300">
+      {/* Header */}
+      <div className="flex-shrink-0">
+        <div className="relative flex items-center justify-center px-4 py-3">
+          {/* Bouton retour */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={showNavigation ? onClose : () => setShowNavigation(true)}
+            className="absolute left-1 p-2"
+          >
+            <ChevronLeft className="h-5 w-5 text-muted-foreground" />
+          </Button>
+
+          {/* Titre centré */}
+          <h1 className="text-base font-medium text-foreground">
+            {showNavigation ? "Paramètres" : currentTab?.label}
+          </h1>
 
           {/* Bouton de sauvegarde (si applicable) */}
           {!showNavigation &&
@@ -211,7 +195,7 @@ export function MobileSettingsModal({
                 type="submit"
                 disabled={formIsSubmitting || !isDirty}
                 onClick={onSubmit}
-                className="bg-[#5b4eff] hover:bg-[#5b4eff] text-white px-4 py-2 rounded-md font-medium"
+                className="absolute right-4 bg-[#5b4eff] hover:bg-[#5b4eff] text-white px-4 py-2 rounded-md font-medium"
                 size="sm"
               >
                 {formIsSubmitting ? "Sauvegarde..." : "Sauvegarder"}
@@ -245,10 +229,8 @@ export function MobileSettingsModal({
             showNavigation ? "translate-x-full" : "translate-x-0"
           }`}
         >
-          <div className="h-full overflow-y-auto bg-gray-100 dark:bg-[#0A0A0A]">
-            <div className="bg-white dark:bg-[#171717] mx-4 mt-4 rounded-xl shadow-sm">
-              <div className="p-4">{renderContent()}</div>
-            </div>
+          <div className="h-full overflow-y-auto">
+            <div className="px-4 pt-4 pb-8">{renderContent()}</div>
           </div>
         </div>
       </div>
