@@ -19,10 +19,10 @@ export async function GET(request) {
       );
     }
 
-    // Proxy vers l'API backend
+    // Proxy vers l'API backend (strip /graphql si présent)
     const backendUrl = (
       process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
-    ).replace(/\/$/, "");
+    ).replace(/\/graphql\/?$/, "").replace(/\/$/, "");
     const response = await fetch(`${backendUrl}/banking-connect/status`, {
       headers: {
         "x-workspace-id": workspaceId,
@@ -31,12 +31,22 @@ export async function GET(request) {
       },
     });
 
-    if (!response.ok) {
-      const error = await response.json();
-      return NextResponse.json(error, { status: response.status });
+    const text = await response.text();
+
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      return NextResponse.json(
+        { error: text || "Réponse invalide du serveur" },
+        { status: response.status }
+      );
     }
 
-    const data = await response.json();
+    if (!response.ok) {
+      return NextResponse.json(data, { status: response.status });
+    }
+
     return NextResponse.json(data);
   } catch (error) {
     console.error("Erreur proxy banking status:", error);

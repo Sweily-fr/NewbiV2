@@ -23,6 +23,7 @@ import {
   Search,
   ChevronRight,
   Users,
+  Receipt,
 } from "lucide-react";
 import { authClient, useSession } from "@/src/lib/auth-client";
 import { useActivityNotifications } from "@/src/hooks/useActivityNotifications";
@@ -79,6 +80,7 @@ const moreMenuSections = [
     title: "Gestion",
     items: [
       { label: "Notifications", icon: Inbox, action: "notifications", badge: true },
+      { label: "Factures d'achat", href: "/dashboard/outils/factures-achat", icon: Receipt },
       { label: "Calendrier", href: "/dashboard/calendar", icon: Calendar },
       { label: "Tâches", href: "/dashboard/outils/kanban", icon: FolderKanban },
       { label: "Transfert de fichiers", href: "/dashboard/outils/transferts-fichiers", icon: FileUp },
@@ -218,6 +220,12 @@ function useSwipeDown(sheetRef, scrollRef, onClose, isOpen) {
 }
 
 // ─── Component ───────────────────────────────────────────────────
+// Pages where the bottom nav should be hidden
+const hiddenPaths = [
+  "/dashboard/outils/factures/new",
+  "/dashboard/outils/devis/new",
+];
+
 export function BottomNavBar({ onOpenSettings, onOpenNotifications }) {
   const pathname = usePathname();
   const [billingOpen, setBillingOpen] = useState(false);
@@ -332,6 +340,12 @@ export function BottomNavBar({ onOpenSettings, onOpenNotifications }) {
 
   const showOverlay = billingOpen || moreOpen;
   const user = session?.user;
+
+  // Hide on creation/edit pages
+  const isHidden = hiddenPaths.some(
+    (p) => pathname === p || pathname?.startsWith(p + "/")
+  ) || pathname?.match(/\/(factures|devis)\/[^/]+\/(edit|duplicate)$/);
+  if (isHidden) return null;
 
   return (
     <>

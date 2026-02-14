@@ -1298,7 +1298,31 @@ export default function TransactionTable({
         <div className="flex-1 overflow-auto">
           <table className="w-full table-fixed">
             <tbody>
-              {tableWithFilteredData.getRowModel().rows?.length ? (
+              {loading ? (
+                Array.from({ length: 8 }).map((_, i) => (
+                  <tr key={`skeleton-${i}`} className="border-b">
+                    <td className="p-2 pl-4 sm:pl-6"><div className="h-4 w-4 rounded bg-muted animate-pulse" /></td>
+                    <td className="p-2">
+                      <div className="flex items-center gap-3">
+                        <div className="h-8 w-8 rounded-full bg-muted animate-pulse flex-shrink-0" />
+                        <div className="h-4 w-[140px] rounded bg-muted animate-pulse" />
+                      </div>
+                    </td>
+                    <td className="p-2"><div className="h-4 w-[70px] rounded bg-muted animate-pulse" /></td>
+                    <td className="p-2"><div className="h-4 w-[70px] rounded bg-muted animate-pulse" /></td>
+                    <td className="p-2">
+                      <div className="flex items-center gap-2">
+                        <div className="h-7 w-7 rounded-full bg-muted animate-pulse flex-shrink-0" />
+                        <div className="h-4 w-[60px] rounded bg-muted animate-pulse" />
+                      </div>
+                    </td>
+                    <td className="p-2"><div className="h-4 w-[60px] rounded bg-muted animate-pulse" /></td>
+                    <td className="p-2"><div className="h-4 w-[50px] rounded bg-muted animate-pulse" /></td>
+                    <td className="p-2"><div className="h-4 w-4 rounded bg-muted animate-pulse" /></td>
+                    <td className="p-2 pr-4 sm:pr-6"><div className="h-7 w-7 rounded bg-muted animate-pulse" /></td>
+                  </tr>
+                ))
+              ) : tableWithFilteredData.getRowModel().rows?.length ? (
                 tableWithFilteredData.getRowModel().rows.map((row) => (
                   <tr
                     key={row.id}
@@ -1336,7 +1360,7 @@ export default function TransactionTable({
                     colSpan={tableWithFilteredData.getAllColumns().length}
                     className="h-24 text-center p-2"
                   >
-                    {loading ? "Chargement..." : "Aucune transaction trouvée."}
+                    Aucune transaction trouvée.
                   </td>
                 </tr>
               )}
