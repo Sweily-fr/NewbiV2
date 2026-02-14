@@ -7,7 +7,7 @@ import {
   ButtonGroupSeparator,
 } from "@/src/components/ui/button-group";
 import { PermissionButton } from "@/src/components/rbac";
-import { Plus, Settings, Bell } from "lucide-react";
+import { Plus, Settings, Bell, ArrowRightFromLine, Download } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -17,6 +17,7 @@ import {
 import { Skeleton } from "@/src/components/ui/skeleton";
 import QuoteTable from "./components/quote-table";
 import { QuoteSettingsModal } from "./components/quote-settings-modal";
+import QuoteExportButton from "./components/quote-export-button";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
 import { CompanyInfoGuard } from "@/src/components/company-info-guard";
@@ -29,6 +30,9 @@ function QuotesContent() {
   const searchParams = useSearchParams();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [quoteIdToOpen, setQuoteIdToOpen] = useState(null);
+
+  // Refs pour déclencher les actions depuis le header
+  const [triggerImport, setTriggerImport] = useState(false);
 
   // Toast manager et modal d'envoi pour les nouveaux devis
   const toastManager = useToastManager();
@@ -149,6 +153,40 @@ function QuotesContent() {
                   <Button
                     variant="secondary"
                     size="icon"
+                    onClick={() => setTriggerImport(true)}
+                  >
+                    <Download className="h-4 w-4" strokeWidth={1.5} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent
+                  side="bottom"
+                  className="bg-[#202020] text-white border-0"
+                >
+                  <p>Importer des devis</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span>
+                    <QuoteExportButton quotes={quotes} iconOnly />
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent
+                  side="bottom"
+                  className="bg-[#202020] text-white border-0"
+                >
+                  <p>Exporter des devis</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="secondary"
+                    size="icon"
                     onClick={() => setIsSettingsOpen(true)}
                   >
                     <Settings className="h-4 w-4" strokeWidth={1.5} />
@@ -251,6 +289,8 @@ function QuotesContent() {
           <QuoteTable
             handleNewQuote={handleNewQuote}
             quoteIdToOpen={quoteIdToOpen}
+            triggerImport={triggerImport}
+            onImportTriggered={() => setTriggerImport(false)}
           />
         </Suspense>
       </div>
@@ -281,7 +321,11 @@ function QuotesContent() {
 
         {/* Table */}
         <Suspense fallback={<QuoteTableSkeleton />}>
-          <QuoteTable quoteIdToOpen={quoteIdToOpen} />
+          <QuoteTable
+            quoteIdToOpen={quoteIdToOpen}
+            triggerImport={triggerImport}
+            onImportTriggered={() => setTriggerImport(false)}
+          />
         </Suspense>
 
         {/* Bouton flottant mobile avec protection RBAC */}

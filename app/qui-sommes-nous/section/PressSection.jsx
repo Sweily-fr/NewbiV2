@@ -15,7 +15,7 @@ const pressLogos = [
   },
   {
     name: "Appvizer",
-    logo: "https://www.lentrepreneurcharentais.fr/wp-content/uploads/2018/06/appvizer.png",
+    logo: "/logos/appvizer.svg",
     url: "https://www.appvizer.fr/operations/gestion-entreprise/newbi",
   },
 ];
