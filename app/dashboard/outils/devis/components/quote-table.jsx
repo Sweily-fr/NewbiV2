@@ -95,19 +95,27 @@ import {
   QUOTE_STATUS_LABELS,
   QUOTE_STATUS_COLORS,
 } from "@/src/graphql/quoteQueries";
+import { useImportedQuotes } from "@/src/graphql/importedQuoteQueries";
+import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { useQuoteTable } from "../hooks/use-quote-table";
 import QuoteRowActions from "./quote-row-actions";
 import QuoteFilters from "./quote-filters";
 import QuoteSidebar from "./quote-sidebar";
+import { ImportQuoteModal } from "./import-quote-modal";
+import { ImportedQuoteSidebar } from "./imported-quote-sidebar";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
 
-export default function QuoteTable({ handleNewQuote, quoteIdToOpen }) {
+export default function QuoteTable({ handleNewQuote, quoteIdToOpen, triggerImport, onImportTriggered }) {
   const { quotes, loading, error, refetch } = useQuotes();
+  const { workspaceId } = useRequiredWorkspace();
+  const { importedQuotes, refetch: refetchImported } = useImportedQuotes(workspaceId);
   const { canCreate, canExport } = usePermissions();
   const [canCreateQuote, setCanCreateQuote] = useState(false);
   const [canExportQuote, setCanExportQuote] = useState(false);
   const [quoteToOpen, setQuoteToOpen] = useState(null);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [selectedImportedQuote, setSelectedImportedQuote] = useState(null);
 
   const {
     table,
@@ -180,6 +188,14 @@ export default function QuoteTable({ handleNewQuote, quoteIdToOpen }) {
       }
     }
   }, [quoteIdToOpen, quotes]);
+
+  // Gérer le déclenchement de l'import depuis le parent
+  useEffect(() => {
+    if (triggerImport) {
+      setIsImportModalOpen(true);
+      onImportTriggered?.();
+    }
+  }, [triggerImport, onImportTriggered]);
 
   if (loading) {
     return <QuoteTableSkeleton />;
@@ -694,6 +710,22 @@ export default function QuoteTable({ handleNewQuote, quoteIdToOpen }) {
           onRefetch={refetch}
         />
       )}
+
+      {/* Modal d'import de devis */}
+      <ImportQuoteModal
+        open={isImportModalOpen}
+        onOpenChange={setIsImportModalOpen}
+      />
+
+      {/* Sidebar pour les devis importés */}
+      <ImportedQuoteSidebar
+        quote={selectedImportedQuote}
+        open={!!selectedImportedQuote}
+        onOpenChange={(open) => {
+          if (!open) setSelectedImportedQuote(null);
+        }}
+        onUpdate={() => refetchImported()}
+      />
     </div>
   );
 }
