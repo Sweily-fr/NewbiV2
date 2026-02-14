@@ -106,8 +106,9 @@ const TaskCard = memo(function TaskCard({ task, onEdit, onDelete, index, isDragg
             <img
               src={task.images[0].url}
               alt={task.images[0].fileName || "Image de la tâche"}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover pointer-events-none select-none"
               loading="lazy"
+              draggable="false"
             />
           </div>
         )}
