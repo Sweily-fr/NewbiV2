@@ -40,6 +40,7 @@ import {
   FileText,
   ClipboardCheck,
   Receipt,
+  ShoppingBasket,
   BarChart3,
   FolderOpen,
 } from "lucide-react";
@@ -120,6 +121,11 @@ const data = {
     },
   ],
   navAfterVentes: [
+    {
+      title: "Factures d'achat",
+      url: "/dashboard/outils/factures-achat",
+      icon: ShoppingBasket,
+    },
     {
       title: "Notifications",
       url: "#",
