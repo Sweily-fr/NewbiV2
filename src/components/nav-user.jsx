@@ -43,6 +43,7 @@ import { toast } from "@/src/components/ui/sonner";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useApolloClient } from "@apollo/client";
+import { resetOrganizationIdForApollo } from "@/src/lib/apolloClient";
 import { SettingsModal } from "./settings-modal";
 import { useTheme } from "@/src/components/theme-provider";
 
@@ -78,6 +79,9 @@ export function NavUser({ user }) {
 
       // Clear complet du cache Apollo pour éviter les fuites de données entre utilisateurs
       await apolloClient.clearStore();
+
+      // ✅ Réinitialiser la variable module-level d'org ID pour éviter les fuites entre sessions
+      resetOrganizationIdForApollo();
 
       // Vider tous les caches localStorage
       try {

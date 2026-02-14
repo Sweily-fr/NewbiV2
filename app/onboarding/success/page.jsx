@@ -42,6 +42,11 @@ function SuccessContent() {
   const handleAnimationComplete = async () => {
     console.log("🚀 [ONBOARDING-SUCCESS] Animation terminée, préparation redirection...");
 
+    // ✅ Nettoyer le localStorage pour éviter qu'un ancien org ID soit envoyé par Apollo
+    // avant que useWorkspace ne soit initialisé sur le dashboard
+    localStorage.removeItem("active_organization_id");
+    localStorage.removeItem("user_role");
+
     // S'assurer que l'organisation est active avant de rediriger
     try {
       const { data: organizations } = await authClient.organization.list();

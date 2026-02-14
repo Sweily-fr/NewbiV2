@@ -68,8 +68,9 @@ const forceSessionExpiredRedirect = (reason = "inactivity") => {
   }
   isRedirecting = true;
 
-  // Nettoyer le token
+  // Nettoyer le token et l'org ID
   localStorage.removeItem("bearer_token");
+  resetOrganizationIdForApollo();
 
   // Réinitialiser la garde après 3 secondes au cas où la redirection échoue
   setTimeout(() => {
@@ -80,6 +81,30 @@ const forceSessionExpiredRedirect = (reason = "inactivity") => {
   console.log(`🔒 [Apollo] Redirection forcée vers /auth/session-expired (${reason})`);
   window.location.href = `/auth/session-expired?reason=${reason}`;
 };
+
+// ==================== SYNCHRONISATION ORG ID AVEC useWorkspace ====================
+// Module-level variable pour éviter d'envoyer un x-organization-id périmé
+// depuis localStorage avant que useWorkspace ne confirme l'org du user courant.
+// Le RBAC fallback côté API gère le cas où aucun org ID n'est envoyé.
+let _workspaceReady = false;
+let _confirmedOrgId = null;
+
+/**
+ * Appelée par useWorkspace quand l'organisation active est confirmée.
+ * Met à jour la variable module-level ET localStorage.
+ */
+export function setOrganizationIdForApollo(orgId) {
+  _workspaceReady = true;
+  _confirmedOrgId = orgId || null;
+}
+
+/**
+ * Réinitialise l'état (utile au logout ou changement de session).
+ */
+export function resetOrganizationIdForApollo() {
+  _workspaceReady = false;
+  _confirmedOrgId = null;
+}
 
 // Configuration Upload Link avec support des uploads de fichiers
 const uploadLink = createUploadLink({
@@ -282,9 +307,17 @@ const authLink = setContext(async (_, { headers }) => {
       }
     }
 
-    // 3. Récupérer l'organization ID et le rôle depuis localStorage (définis par le frontend)
-    const organizationId = localStorage.getItem("active_organization_id");
-    const userRole = localStorage.getItem("user_role");
+    // 3. Récupérer l'organization ID et le rôle
+    // ✅ Utiliser la variable module-level confirmée par useWorkspace si disponible.
+    // Si useWorkspace n'a pas encore chargé, ne pas envoyer de header org ID
+    // pour éviter les org ID périmés dans localStorage. Le RBAC API a un fallback
+    // qui retrouve l'org via la collection member.
+    const organizationId = _workspaceReady
+      ? _confirmedOrgId
+      : null;
+    const userRole = _workspaceReady
+      ? localStorage.getItem("user_role")
+      : null;
 
     // 4. Construire les headers avec JWT + organization + role
     const requestHeaders = {
