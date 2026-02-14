@@ -71,7 +71,7 @@ function HelpDropdownMenu({ onCommunityClick }) {
   };
 
   const buildMailtoLink = () => {
-    const to = "contact@newbi.app";
+    const to = "contact@newbi.fr";
     const subject = encodeURIComponent("Demande d'aide - Newbi");
     const userEmail = session?.user?.email;
     const body = userEmail
