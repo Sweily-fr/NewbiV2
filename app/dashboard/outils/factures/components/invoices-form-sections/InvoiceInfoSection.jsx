@@ -686,11 +686,11 @@ export default function InvoiceInfoSection({
         </CardHeader>
         <CardContent className="space-y-4 p-0">
           {/* Numéro automatique de facture - Affiché en premier */}
-          <div className="flex items-center gap-2 text-sm">
-            <span className="text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm">
+            <span className="text-muted-foreground whitespace-nowrap">
               Numéro automatique de facture :
             </span>
-            <span className="font-medium">{fullInvoiceNumber}</span>
+            <span className="font-medium break-all">{fullInvoiceNumber}</span>
             <Tooltip>
               <TooltipTrigger asChild>
                 <Info className="h-4 w-4 text-muted-foreground cursor-help" />

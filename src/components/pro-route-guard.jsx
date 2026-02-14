@@ -57,13 +57,8 @@ export function ProRouteGuard({
   // 🔒 Afficher un loader pendant la vérification (sécurisé)
   if (loading || !hasInitialized) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center space-y-4">
-          <Loader2 className="w-8 h-8 animate-spin text-[#5A50FF] mx-auto" />
-          <p className="text-sm text-muted-foreground">
-            Vérification de l'accès...
-          </p>
-        </div>
+      <div className="flex items-center justify-center h-[calc(100vh-64px)]">
+        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
       </div>
     );
   }
@@ -75,11 +70,8 @@ export function ProRouteGuard({
 
   // 🔒 Si pas d'accès, afficher le loader (redirection en cours)
   return (
-    <div className="flex items-center justify-center min-h-[400px]">
-      <div className="text-center space-y-4">
-        <Loader2 className="w-8 h-8 animate-spin text-[#5A50FF] mx-auto" />
-        <p className="text-sm text-muted-foreground">Redirection...</p>
-      </div>
+    <div className="flex items-center justify-center h-[calc(100vh-64px)]">
+      <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
     </div>
   );
 }
