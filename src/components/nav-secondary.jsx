@@ -20,6 +20,7 @@ import {
   HelpCircle,
 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
+import { useUser } from "@/src/lib/auth/hooks";
 import { SettingsModal } from "@/src/components/settings-modal";
 // DÉSACTIVÉ: SuperPDP API pas encore active
 // import { EInvoicingPromoModal } from "@/src/components/e-invoicing-promo-modal";
@@ -59,6 +60,7 @@ import {
 // Composant pour le menu Aide et support avec dropdown
 function HelpDropdownMenu({ onCommunityClick }) {
   const { isMobile, setOpenMobile, state } = useSidebar();
+  const { session } = useUser();
   const isCollapsed = state === "collapsed";
   const [open, setOpen] = useState(false);
 
@@ -66,6 +68,16 @@ function HelpDropdownMenu({ onCommunityClick }) {
     if (isMobile) {
       setOpenMobile(false);
     }
+  };
+
+  const buildMailtoLink = () => {
+    const to = "contact@newbi.app";
+    const subject = encodeURIComponent("Demande d'aide - Newbi");
+    const userEmail = session?.user?.email;
+    const body = userEmail
+      ? encodeURIComponent(`\n\n---\nEnvoyé depuis : ${userEmail}`)
+      : "";
+    return `mailto:${to}?subject=${subject}${body ? `&body=${body}` : ""}`;
   };
 
   return (
@@ -91,11 +103,7 @@ function HelpDropdownMenu({ onCommunityClick }) {
             className="cursor-pointer flex-col items-start gap-1"
             asChild
           >
-            <a
-              href="https://chat.whatsapp.com/FGLms8EYhpv1o5rkrnIldL"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
+            <a href={buildMailtoLink()}>
               <div className="flex items-center gap-2 w-full">
                 <HelpCircle className="h-4 w-4" />
                 <div className="flex flex-col">
