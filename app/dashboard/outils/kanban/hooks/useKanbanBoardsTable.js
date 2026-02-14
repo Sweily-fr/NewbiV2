@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState, useCallback } from "react";
 import {
   getCoreRowModel,
   getFilteredRowModel,
@@ -11,6 +11,41 @@ import {
 import { Checkbox } from "@/src/components/ui/checkbox";
 import { Button } from "@/src/components/ui/button";
 import { ArrowUpDown, Eye, Edit, Trash2, Euro } from "lucide-react";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/src/components/ui/tooltip";
+
+function TruncatedText({ children, className }) {
+  const ref = useRef(null);
+  const [showTooltip, setShowTooltip] = useState(false);
+
+  const handleMouseEnter = () => {
+    const el = ref.current;
+    if (el && el.scrollWidth > el.clientWidth) {
+      setShowTooltip(true);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    setShowTooltip(false);
+  };
+
+  return (
+    <Tooltip open={showTooltip}>
+      <TooltipTrigger asChild>
+        <div
+          ref={ref}
+          className={`truncate ${className || ""}`}
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
+        >
+          {children}
+        </div>
+      </TooltipTrigger>
+      <TooltipContent side="top" className="max-w-xs break-words">
+        {children}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
 
 // Custom filter function for multi-column search
 const multiColumnFilterFn = (row, columnId, filterValue) => {
@@ -85,10 +120,10 @@ export function useKanbanBoardsTable({
         cell: ({ row }) => {
           const board = row.original;
           return (
-            <div className="min-h-[40px] flex flex-col justify-center">
-              <div className="font-medium">{board.title}</div>
+            <div className="min-h-[40px] flex flex-col justify-center min-w-0">
+              <TruncatedText className="font-medium">{board.title}</TruncatedText>
               {board.description && (
-                <div className="text-xs text-muted-foreground truncate max-w-[300px]">
+                <div className="text-xs text-muted-foreground truncate">
                   {board.description}
                 </div>
               )}

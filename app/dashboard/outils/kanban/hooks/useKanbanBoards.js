@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useSubscription } from "@apollo/client";
 import { useSession } from "@/src/lib/auth-client";
+import { useSearchParams, useRouter } from "next/navigation";
 import {
   GET_BOARDS,
   CREATE_BOARD,
@@ -17,6 +18,8 @@ import { useWorkspace } from "@/src/hooks/useWorkspace";
 export const useKanbanBoards = () => {
   const { workspaceId } = useWorkspace();
   const { data: session, isPending: sessionLoading } = useSession();
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const [isReady, setIsReady] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [boardToDelete, setBoardToDelete] = useState(null);
@@ -26,6 +29,14 @@ export const useKanbanBoards = () => {
   const [formData, setFormData] = useState({ title: "", description: "" });
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [selectedTemplateId, setSelectedTemplateId] = useState(null);
+
+  // Ouvrir la modal de création si ?new=true est dans l'URL
+  useEffect(() => {
+    if (searchParams.get("new") === "true") {
+      setIsCreateDialogOpen(true);
+      router.replace("/dashboard/outils/kanban", { scroll: false });
+    }
+  }, [searchParams, router]);
 
   // Attendre que la session soit chargée avant d'activer la subscription
   useEffect(() => {
