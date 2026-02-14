@@ -206,7 +206,7 @@ function KanbanPageContent() {
                     value={selectedTemplateId || "none"}
                     onValueChange={(value) => setSelectedTemplateId(value === "none" ? null : value)}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="w-full min-w-0">
                       <SelectValue placeholder="Aucun template (colonnes par défaut)" />
                     </SelectTrigger>
                     <SelectContent>
@@ -215,10 +215,10 @@ function KanbanPageContent() {
                       </SelectItem>
                       {templates.map((t) => (
                         <SelectItem key={t.id} value={t.id}>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 min-w-0">
                             <BookTemplate className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-                            <span>{t.name}</span>
-                            <span className="text-xs text-muted-foreground">
+                            <span className="truncate">{t.name}</span>
+                            <span className="text-xs text-muted-foreground flex-shrink-0">
                               ({t.columns.length} col. · {t.tasks.length} tâches)
                             </span>
                           </div>

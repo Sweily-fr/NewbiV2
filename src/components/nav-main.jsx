@@ -434,7 +434,7 @@ export function NavMain({
 
               <DropdownMenuSeparator className="my-1" />
 
-              {/* Créer un nouveau dossier */}
+              {/* Créer une nouvelle liste */}
               <DropdownMenuItem asChild>
                 <Link
                   href="/dashboard/outils/kanban?new=true"
@@ -442,7 +442,7 @@ export function NavMain({
                   className="flex items-center gap-2 px-2 py-2 cursor-pointer"
                 >
                   <Plus className="h-4 w-4" />
-                  <span className="text-xs">Nouveau dossier</span>
+                  <span className="text-xs">Nouvelle liste</span>
                 </Link>
               </DropdownMenuItem>
             </DropdownMenuContent>
