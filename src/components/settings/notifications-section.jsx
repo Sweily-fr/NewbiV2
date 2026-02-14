@@ -275,6 +275,8 @@ export function NotificationsSection() {
       // Sauvegarder dans le localStorage
       if (typeof window !== "undefined") {
         localStorage.setItem("readNotifications", JSON.stringify(updated));
+        // Notifier la sidebar pour rafraîchir le compteur
+        window.dispatchEvent(new Event("notificationsRead"));
       }
       return updated;
     });
@@ -290,6 +292,8 @@ export function NotificationsSection() {
     // Sauvegarder dans le localStorage
     if (typeof window !== "undefined") {
       localStorage.setItem("readNotifications", JSON.stringify(allIds));
+      // Notifier la sidebar pour rafraîchir le compteur
+      window.dispatchEvent(new Event("notificationsRead"));
     }
     toast.success("Toutes les notifications ont été marquées comme lues");
   }, [pendingInvitations, sentInvitations]);
@@ -580,6 +584,20 @@ export function NotificationsSection() {
 
         {/* Contenu: Activité - Notifications d'assignation de tâches */}
         <TabsContent value="activity" className="space-y-2 mt-6">
+          {/* Bouton tout marquer comme lu pour les activités */}
+          {activityUnreadCount > 0 && (
+            <div className="flex justify-end">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={markAllActivityAsRead}
+                className="cursor-pointer text-xs"
+              >
+                <CheckCheck className="w-4 h-4 mr-2" />
+                Tout marquer comme lu
+              </Button>
+            </div>
+          )}
           {activityLoading ? (
             <div className="text-center py-8 text-sm text-muted-foreground">
               Chargement des notifications...

@@ -11,7 +11,7 @@ import {
   BriefcaseBusiness,
   FileText,
   MoreHorizontal,
-  Inbox,
+  Bell,
   Calendar,
   FolderKanban,
   FileUp,
@@ -79,7 +79,7 @@ const moreMenuSections = [
   {
     title: "Gestion",
     items: [
-      { label: "Notifications", icon: Inbox, action: "notifications", badge: true },
+      { label: "Notifications", icon: Bell, action: "notifications", badge: true },
       { label: "Factures d'achat", href: "/dashboard/outils/factures-achat", icon: Receipt },
       { label: "Calendrier", href: "/dashboard/calendar", icon: Calendar },
       { label: "Tâches", href: "/dashboard/outils/kanban", icon: FolderKanban },

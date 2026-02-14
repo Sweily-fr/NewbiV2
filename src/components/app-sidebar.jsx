@@ -35,7 +35,7 @@ import {
   FileMinus,
   Search,
   MessageCircleQuestionMark,
-  Inbox,
+  Bell,
   Landmark,
   FileText,
   ClipboardCheck,
@@ -129,7 +129,7 @@ const data = {
     {
       title: "Notifications",
       url: "#",
-      icon: Inbox,
+      icon: Bell,
       action: "openNotifications",
     },
     {
@@ -443,19 +443,28 @@ export function AppSidebar({
   React.useEffect(() => {
     const fetchNotifications = async () => {
       try {
+        // Récupérer les IDs déjà lus depuis le localStorage
+        const readNotifications = typeof window !== "undefined"
+          ? JSON.parse(localStorage.getItem("readNotifications") || "[]")
+          : [];
+
         // Récupérer les invitations reçues
         const { data: receivedInvitations } =
           await authClient.organization.listUserInvitations();
         const pendingReceived =
-          receivedInvitations?.filter((inv) => inv.status === "pending") || [];
+          receivedInvitations?.filter(
+            (inv) => inv.status === "pending" && !readNotifications.includes(inv.id)
+          ) || [];
 
         // Récupérer les invitations envoyées
         const sentResult = await listInvitations();
         const pendingSent = sentResult.success
-          ? sentResult.data?.filter((inv) => inv.status === "pending") || []
+          ? sentResult.data?.filter(
+              (inv) => inv.status === "pending" && !readNotifications.includes(inv.id)
+            ) || []
           : [];
 
-        // Total des notifications (invitations + activité)
+        // Total des notifications (invitations non lues + activité non lue)
         const total = pendingReceived.length + pendingSent.length + (activityUnreadCount || 0);
         setNotificationCount(total);
       } catch (error) {
@@ -471,7 +480,15 @@ export function AppSidebar({
 
       // Rafraîchir toutes les 30 secondes
       const interval = setInterval(fetchNotifications, 30000);
-      return () => clearInterval(interval);
+
+      // Écouter les marquages "lu" depuis le panneau de notifications
+      const handleNotificationsRead = () => fetchNotifications();
+      window.addEventListener("notificationsRead", handleNotificationsRead);
+
+      return () => {
+        clearInterval(interval);
+        window.removeEventListener("notificationsRead", handleNotificationsRead);
+      };
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session?.user?.id, activityUnreadCount]); // Dépendre de l'ID utilisateur et des notifications d'activité
