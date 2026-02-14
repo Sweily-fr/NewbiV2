@@ -49,55 +49,60 @@ const ensureActiveOrganization = async () => {
 
     // Si pas d'organisation active et qu'il y a des organisations disponibles
     if (organizations && organizations.length > 0) {
-      // Stratégie de sélection par priorité :
-      // 1. Organisation où l'utilisateur est owner
-      // 2. Organisation où l'utilisateur est admin
-      // 3. Première organisation
-
       let selectedOrg = null;
 
-      // Récupérer les détails de chaque organisation pour connaître le rôle
-      for (const org of organizations) {
-        try {
-          const { data: fullOrg } =
-            await authClient.organization.getFullOrganization({
-              organizationId: org.id,
-            });
-
-          if (fullOrg) {
-            // Trouver le membre correspondant à l'utilisateur actuel
-            const { data: session } = await authClient.getSession();
-            const currentUserMember = fullOrg.members?.find(
-              (m) => m.userId === session?.user?.id
-            );
-
-            if (currentUserMember?.role === "owner") {
-              selectedOrg = org;
-              console.log(
-                `✅ [ENSURE ORG] Organisation owner trouvée: ${org.id}`
-              );
-              break; // Priorité maximale, on arrête la recherche
-            } else if (currentUserMember?.role === "admin" && !selectedOrg) {
-              selectedOrg = org;
-              console.log(
-                `✅ [ENSURE ORG] Organisation admin trouvée: ${org.id}`
-              );
-            }
-          }
-        } catch (error) {
-          console.warn(
-            `⚠️ [ENSURE ORG] Erreur récupération org ${org.id}:`,
-            error
-          );
-        }
-      }
-
-      // Si aucune organisation owner/admin trouvée, prendre la première
-      if (!selectedOrg) {
+      // Fast path : une seule org → pas besoin de vérifier les rôles
+      if (organizations.length === 1) {
         selectedOrg = organizations[0];
         console.log(
-          `✅ [ENSURE ORG] Première organisation sélectionnée: ${selectedOrg.id}`
+          `✅ [ENSURE ORG] Organisation unique sélectionnée: ${selectedOrg.id}`
         );
+      } else {
+        // Multiple orgs : sélection par priorité de rôle
+        // Récupérer la session UNE SEULE FOIS avant la boucle
+        const { data: session } = await authClient.getSession();
+        const currentUserId = session?.user?.id;
+
+        for (const org of organizations) {
+          try {
+            const { data: fullOrg } =
+              await authClient.organization.getFullOrganization({
+                organizationId: org.id,
+              });
+
+            if (fullOrg) {
+              const currentUserMember = fullOrg.members?.find(
+                (m) => m.userId === currentUserId
+              );
+
+              if (currentUserMember?.role === "owner") {
+                selectedOrg = org;
+                console.log(
+                  `✅ [ENSURE ORG] Organisation owner trouvée: ${org.id}`
+                );
+                break; // Priorité maximale, on arrête la recherche
+              } else if (currentUserMember?.role === "admin" && !selectedOrg) {
+                selectedOrg = org;
+                console.log(
+                  `✅ [ENSURE ORG] Organisation admin trouvée: ${org.id}`
+                );
+              }
+            }
+          } catch (error) {
+            console.warn(
+              `⚠️ [ENSURE ORG] Erreur récupération org ${org.id}:`,
+              error
+            );
+          }
+        }
+
+        // Si aucune organisation owner/admin trouvée, prendre la première
+        if (!selectedOrg) {
+          selectedOrg = organizations[0];
+          console.log(
+            `✅ [ENSURE ORG] Première organisation sélectionnée: ${selectedOrg.id}`
+          );
+        }
       }
 
       const { error: setActiveError } = await authClient.organization.setActive(
@@ -226,61 +231,46 @@ const LoginForm = () => {
           console.warn("⚠️ [LOGIN] Aucun token JWT trouvé dans les headers");
         }
 
-        // Vérifier la limite de sessions via l'API Better Auth
-        console.log("🔍 [LOGIN] Vérification de la limite de sessions...");
-
-        try {
-          // Appeler notre API qui utilise Better Auth côté serveur
-          const sessionCheckResponse = await fetch("/api/check-session-limit", {
-            method: "GET",
-            credentials: "include",
-            headers: {
-              "Content-Type": "application/json",
-            },
-          });
-
-          console.log("📡 [LOGIN] Réponse API:", sessionCheckResponse.status);
-
-          if (sessionCheckResponse.ok) {
-            const sessionData = await sessionCheckResponse.json();
-            console.log(
-              "📊 [LOGIN] Résultat vérification sessions:",
-              sessionData
-            );
-
-            if (sessionData.hasReachedLimit) {
-              console.log(
-                "⚠️ [LOGIN] Limite de sessions atteinte, redirection vers /auth/manage-devices"
-              );
-              toast.info("Vous êtes déjà connecté sur un autre appareil");
-              router.push("/auth/manage-devices");
-              return;
-            } else {
-              console.log(
-                "✅ [LOGIN] Limite OK, nombre de sessions:",
-                sessionData.sessionCount
-              );
-            }
-          } else {
-            console.warn(
-              "⚠️ [LOGIN] Impossible de vérifier la limite de sessions"
-            );
-          }
-        } catch (sessionCheckError) {
-          console.error(
-            "❌ [LOGIN] Erreur vérification sessions:",
-            sessionCheckError
-          );
-          // Continuer la connexion même en cas d'erreur
-        }
-
         // Ne pas afficher la notification si l'utilisateur n'a pas terminé l'onboarding
         if (ctx.data.user?.hasSeenOnboarding) {
           toast.success("Connexion réussie");
         }
 
-        // Définir l'organisation active après la connexion
-        await ensureActiveOrganization();
+        // Vérifier la limite de sessions ET définir l'organisation active en parallèle
+        // Ces deux opérations sont indépendantes l'une de l'autre
+        console.log("🔍 [LOGIN] Vérification sessions + organisation en parallèle...");
+
+        const [sessionLimitResult] = await Promise.all([
+          // 1. Vérifier la limite de sessions
+          fetch("/api/check-session-limit", {
+            method: "GET",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+          })
+            .then(async (res) => {
+              if (res.ok) {
+                const data = await res.json();
+                console.log("📊 [LOGIN] Résultat vérification sessions:", data);
+                return data;
+              }
+              console.warn("⚠️ [LOGIN] Impossible de vérifier la limite de sessions");
+              return null;
+            })
+            .catch((err) => {
+              console.error("❌ [LOGIN] Erreur vérification sessions:", err);
+              return null; // Continuer la connexion même en cas d'erreur
+            }),
+          // 2. Définir l'organisation active
+          ensureActiveOrganization(),
+        ]);
+
+        // Vérifier le résultat de la limite de sessions
+        if (sessionLimitResult?.hasReachedLimit) {
+          console.log("⚠️ [LOGIN] Limite de sessions atteinte, redirection vers /auth/manage-devices");
+          toast.info("Vous êtes déjà connecté sur un autre appareil");
+          router.push("/auth/manage-devices");
+          return;
+        }
 
         // Vérifier s'il y a des paramètres d'invitation dans l'URL
         const urlParams = new URLSearchParams(window.location.search);
