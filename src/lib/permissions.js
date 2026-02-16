@@ -21,6 +21,16 @@ export const statement = {
     "send",
     "export",
   ],
+  purchaseOrders: [
+    "view",
+    "create",
+    "edit",
+    "delete",
+    "approve",
+    "convert",
+    "send",
+    "export",
+  ],
   invoices: [
     "view",
     "create",
@@ -95,6 +105,16 @@ export const owner = ac.newRole({
     "send",
     "export",
   ],
+  purchaseOrders: [
+    "view",
+    "create",
+    "edit",
+    "delete",
+    "approve",
+    "convert",
+    "send",
+    "export",
+  ],
   invoices: [
     "view",
     "create",
@@ -156,6 +176,16 @@ export const admin = ac.newRole({
     "send",
     "export",
   ],
+  purchaseOrders: [
+    "view",
+    "create",
+    "edit",
+    "delete",
+    "approve",
+    "convert",
+    "send",
+    "export",
+  ],
   invoices: [
     "view",
     "create",
@@ -207,6 +237,7 @@ export const admin = ac.newRole({
 export const member = ac.newRole({
   // Documents commerciaux - Création + envoi + export
   quotes: ["view", "create", "send", "export"],
+  purchaseOrders: ["view", "create", "send", "export"],
   invoices: ["view", "create", "send", "export", "import"],
   creditNotes: ["view", "create", "export"],
 
@@ -245,6 +276,7 @@ export const member = ac.newRole({
 export const viewer = ac.newRole({
   // Documents commerciaux - Lecture seule
   quotes: ["view"],
+  purchaseOrders: ["view"],
   invoices: ["view"],
   creditNotes: ["view"],
 
@@ -282,6 +314,7 @@ export const viewer = ac.newRole({
 export const accountant = ac.newRole({
   // Documents commerciaux - Lecture + export
   quotes: ["view", "export"],
+  purchaseOrders: ["view", "export"],
   invoices: ["view", "export", "mark-paid", "import"], // Peut marquer comme payé + import
   creditNotes: ["view", "export"],
 

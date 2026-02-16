@@ -15,6 +15,7 @@ import {
   FileCheck,
   Send,
   Download,
+  ShoppingCart,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
@@ -35,6 +36,17 @@ import {
   QUOTE_STATUS_COLORS,
 } from "@/src/graphql/quoteQueries";
 import { useCreateLinkedInvoice } from "@/src/graphql/invoiceQueries";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/src/components/ui/alert-dialog";
+import { useConvertQuoteToPurchaseOrder } from "@/src/graphql/purchaseOrderQueries";
 import { toast } from "@/src/components/ui/sonner";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import UniversalPDFDownloader from "@/src/components/pdf/UniversalPDFDownloader";
@@ -54,6 +66,9 @@ export default function QuoteSidebar({
   const { convertToInvoice, loading: converting } = useConvertQuoteToInvoice();
   const { createLinkedInvoice, loading: creatingLinkedInvoice } =
     useCreateLinkedInvoice();
+  const { convertToPurchaseOrder, loading: convertingToPO } =
+    useConvertQuoteToPurchaseOrder();
+  const [showPurchaseOrderDialog, setShowPurchaseOrderDialog] = useState(false);
 
   // Récupérer les données complètes du devis
   const {
@@ -125,11 +140,31 @@ export default function QuoteSidebar({
   const handleAccept = async () => {
     try {
       await changeStatus(quote.id, QUOTE_STATUS.COMPLETED);
-      toast.success("Devis accepté");
       if (onRefetch) onRefetch();
+      setShowPurchaseOrderDialog(true);
     } catch (error) {
       toast.error("Erreur lors de l'acceptation du devis");
     }
+  };
+
+  const handleCreatePurchaseOrder = async () => {
+    try {
+      const result = await convertToPurchaseOrder(quote.id);
+      setShowPurchaseOrderDialog(false);
+      toast.success("Bon de commande créé à partir du devis");
+      if (onRefetch) onRefetch();
+      if (result?.id) {
+        router.push(`/dashboard/outils/bons-commande/${result.id}/editer`);
+      }
+      onClose();
+    } catch (error) {
+      toast.error("Erreur lors de la création du bon de commande");
+    }
+  };
+
+  const handleSkipPurchaseOrder = () => {
+    setShowPurchaseOrderDialog(false);
+    toast.success("Devis accepté");
   };
 
   const handleReject = async () => {
@@ -185,7 +220,7 @@ export default function QuoteSidebar({
     }
   };
 
-  const isLoading = changingStatus || converting || creatingLinkedInvoice;
+  const isLoading = changingStatus || converting || creatingLinkedInvoice || convertingToPO;
 
   return (
     <>
@@ -209,6 +244,27 @@ export default function QuoteSidebar({
           </div>
         </div>
       </div>
+
+      {/* Dialog pour proposer la création d'un bon de commande après acceptation */}
+      <AlertDialog open={showPurchaseOrderDialog} onOpenChange={setShowPurchaseOrderDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Devis accepté</AlertDialogTitle>
+            <AlertDialogDescription>
+              Souhaitez-vous créer un bon de commande à partir de ce devis ?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleSkipPurchaseOrder}>
+              Non merci
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleCreatePurchaseOrder} disabled={convertingToPO}>
+              <ShoppingCart className="h-4 w-4 mr-2" />
+              Créer un bon de commande
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Main Sidebar */}
       <div
