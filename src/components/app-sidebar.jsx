@@ -96,10 +96,15 @@ const data = {
       url: "/dashboard",
       icon: CircleGauge,
     },
+  ],
+  navFinances: [
     {
       title: "Transactions",
       url: "/dashboard/outils/transactions",
-      icon: Landmark,
+    },
+    {
+      title: "Prévision",
+      url: "/dashboard/outils/prevision",
     },
   ],
   navVentes: [
@@ -555,6 +560,7 @@ export function AppSidebar({
               // Vue Entreprise : afficher la navigation standard
               <NavMain
                 items={data.navMain}
+                navFinances={data.navFinances}
                 navVentes={data.navVentes}
                 navAfterVentes={data.navAfterVentes}
                 navProjets={data.navProjets}

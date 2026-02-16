@@ -220,3 +220,29 @@ export const MERGE_SUPPLIERS = gql`
     }
   }
 `;
+
+// ============================================================
+// Synchronisation e-invoicing (SuperPDP)
+// ============================================================
+
+export const SYNC_PURCHASE_INVOICES_FROM_SUPERPDP = gql`
+  mutation SyncPurchaseInvoicesFromSuperPdp($workspaceId: ID!, $since: String) {
+    syncPurchaseInvoicesFromSuperPdp(workspaceId: $workspaceId, since: $since) {
+      success
+      imported
+      skipped
+      errors
+      message
+    }
+  }
+`;
+
+export const ACKNOWLEDGE_PURCHASE_INVOICE_EINVOICE = gql`
+  mutation AcknowledgePurchaseInvoiceEInvoice($id: ID!) {
+    acknowledgePurchaseInvoiceEInvoice(id: $id) {
+      id
+      eInvoiceStatus
+      status
+    }
+  }
+`;

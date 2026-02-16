@@ -23,6 +23,7 @@ import {
   Plus,
   Search,
   LayoutGrid,
+  Landmark,
 } from "lucide-react";
 import { Input } from "@/src/components/ui/input";
 
@@ -57,6 +58,7 @@ import { usePermissions } from "@/src/hooks/usePermissions";
 
 export function NavMain({
   items,
+  navFinances = [],
   navVentes = [],
   navAfterVentes = [],
   navProjets = [],
@@ -109,6 +111,9 @@ export function NavMain({
   const proTabs = [];
 
   // Vérifier si un sous-lien est actif pour chaque menu
+  const isFinancesSubActive = navFinances.some(
+    (item) => pathname === item.url || pathname?.startsWith(item.url + "/")
+  );
   const isVentesSubActive = navVentes.some(
     (item) => pathname === item.url || pathname?.startsWith(item.url + "/")
   );
@@ -123,6 +128,7 @@ export function NavMain({
   );
 
   // États pour les menus collapsibles
+  const [isFinancesOpen, setIsFinancesOpen] = useState(isFinancesSubActive);
   const [isVentesOpen, setIsVentesOpen] = useState(isVentesSubActive);
   const [isProjetsOpen, setIsProjetsOpen] = useState(true); // Toujours ouvert par défaut pour voir les tableaux
   const [isDocumentsOpen, setIsDocumentsOpen] = useState(isDocumentsSubActive);
@@ -149,6 +155,10 @@ export function NavMain({
   }, [items, pathname]);
 
   // Garder les menus ouverts si un sous-lien est actif
+  useEffect(() => {
+    if (isFinancesSubActive) setIsFinancesOpen(true);
+  }, [isFinancesSubActive]);
+
   useEffect(() => {
     if (isVentesSubActive) setIsVentesOpen(true);
   }, [isVentesSubActive]);
@@ -919,8 +929,19 @@ export function NavMain({
     <SidebarGroup>
       <SidebarGroupContent className="flex flex-col gap-1 pt-2">
         <SidebarMenu>
-          {/* Dashboard et Transactions */}
+          {/* Dashboard */}
           {items.map((item) => renderSimpleItem(item))}
+
+          {/* Menu Finances (Transactions + Prévision) */}
+          {navFinances.length > 0 &&
+            renderCollapsibleMenu(
+              "Finances",
+              Landmark,
+              navFinances,
+              isFinancesOpen,
+              setIsFinancesOpen,
+              isFinancesSubActive
+            )}
 
           {/* Menu Ventes avec sous-menus et actions rapides */}
           {navVentes.length > 0 && (() => {
