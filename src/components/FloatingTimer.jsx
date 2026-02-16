@@ -36,7 +36,7 @@ export function FloatingTimer() {
 
   // Mutation pour arrêter le timer
   const [stopTimer, { loading: stopping }] = useMutation(STOP_TIMER, {
-    refetchQueries: ["GetActiveTimers"],
+    refetchQueries: [{ query: GET_ACTIVE_TIMERS, variables: { workspaceId } }],
     onCompleted: () => {
       toast.success("Timer arrêté");
     },

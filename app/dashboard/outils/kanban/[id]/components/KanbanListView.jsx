@@ -18,6 +18,11 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/src/components/ui/popover";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/src/components/ui/tooltip";
 import { Calendar as CalendarComponent } from "@/src/components/ui/calendar";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -661,7 +666,14 @@ export function KanbanListView({
                                     </DropdownMenuContent>
                                   </DropdownMenu>
                                   <div className="flex-1 w-0 flex items-center gap-1 min-w-0">
-                                    <p className="text-sm truncate font-normal text-foreground/90 group-hover:text-foreground">{task.title}</p>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <p className="text-sm truncate font-normal text-foreground/90 group-hover:text-foreground">{task.title}</p>
+                                      </TooltipTrigger>
+                                      <TooltipContent side="top" className="max-w-sm break-words">
+                                        {task.title}
+                                      </TooltipContent>
+                                    </Tooltip>
                                     {task.description && (
                                       <Popover>
                                         <PopoverTrigger asChild>

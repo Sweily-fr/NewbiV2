@@ -86,19 +86,27 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
             console.log("📝 [Subscription] Création tâche - Cache data:", cacheData?.board?.tasks?.length, "tâches");
             
             if (cacheData?.board) {
-              const newTasks = [...(cacheData.board.tasks || []), task];
-              console.log("✅ [Subscription] Ajout tâche au cache:", task.title, "- Total:", newTasks.length);
-              
-              apolloClient.cache.writeQuery({
-                query: GET_BOARD,
-                variables: { id, workspaceId },
-                data: {
-                  board: {
-                    ...cacheData.board,
-                    tasks: newTasks
+              // Vérifier que la tâche n'existe pas déjà (ajoutée par la mutation update)
+              const taskExists = (cacheData.board.tasks || []).some(
+                (t) => t.id === task.id
+              );
+              if (taskExists) {
+                console.log("ℹ️ [Subscription] Tâche déjà dans le cache, skip:", task.title);
+              } else {
+                const newTasks = [...(cacheData.board.tasks || []), task];
+                console.log("✅ [Subscription] Ajout tâche au cache:", task.title, "- Total:", newTasks.length);
+
+                apolloClient.cache.writeQuery({
+                  query: GET_BOARD,
+                  variables: { id, workspaceId },
+                  data: {
+                    board: {
+                      ...cacheData.board,
+                      tasks: newTasks
+                    }
                   }
-                }
-              });
+                });
+              }
             } else {
               console.warn("⚠️ [Subscription] Cache board non trouvé pour id:", id, "workspaceId:", workspaceId);
             }

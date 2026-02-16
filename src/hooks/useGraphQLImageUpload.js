@@ -34,6 +34,8 @@ export function useGraphQLImageUpload({
 
   // Mutations GraphQL
   const [uploadImageMutation] = useMutation(UPLOAD_USER_PROFILE_IMAGE, {
+    refetchQueries: ['GetCurrentUser'],
+    awaitRefetchQueries: true,
     onCompleted: async (data) => {
       if (data.uploadUserProfileImage.success) {
         const imageUrl = data.uploadUserProfileImage.url;

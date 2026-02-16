@@ -292,7 +292,13 @@ export const useUpdateExpense = () => {
  * Hook pour ajouter un fichier à une dépense
  */
 export const useAddExpenseFile = () => {
-  const [addExpenseFileMutation, { loading }] = useMutation(ADD_EXPENSE_FILE);
+  const { workspaceId } = useRequiredWorkspace();
+  const [addExpenseFileMutation, { loading }] = useMutation(ADD_EXPENSE_FILE, {
+    refetchQueries: [
+      { query: GET_EXPENSES, variables: { workspaceId } },
+      { query: GET_EXPENSE_STATS, variables: { workspaceId } },
+    ],
+  });
 
   const addExpenseFile = async (expenseId, fileInput) => {
     try {

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
+import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
 import { useQuery } from "@apollo/client";
 import { GET_BOARDS } from "@/src/graphql/kanbanQueries";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
@@ -78,6 +79,7 @@ export function NavMain({
 
   // État pour la recherche des tableaux Kanban
   const [kanbanSearchTerm, setKanbanSearchTerm] = useState("");
+  const debouncedKanbanSearch = useDebouncedValue(kanbanSearchTerm, 300);
 
   // Récupérer les tableaux Kanban
   const { data: kanbanData } = useQuery(GET_BOARDS, {
@@ -94,13 +96,13 @@ export function NavMain({
       (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
     );
     // Filtrer par terme de recherche si présent, sinon afficher tous
-    const filtered = kanbanSearchTerm
+    const filtered = debouncedKanbanSearch
       ? sortedBoards.filter((board) =>
-          board.title.toLowerCase().includes(kanbanSearchTerm.toLowerCase())
+          board.title.toLowerCase().includes(debouncedKanbanSearch.toLowerCase())
         )
       : sortedBoards; // Afficher tous les dossiers
     return filtered;
-  }, [kanbanData?.boards, kanbanSearchTerm]);
+  }, [kanbanData?.boards, debouncedKanbanSearch]);
 
   // ✅ DÉSACTIVÉ: Plus de restriction Pro sur les onglets principaux
   // Tous les utilisateurs abonnés (y compris trialing) ont accès

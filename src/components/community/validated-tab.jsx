@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { useDebouncedValue } from '@/src/hooks/useDebouncedValue';
 import { useQuery } from '@apollo/client';
 import { GET_COMMUNITY_SUGGESTIONS } from '../../graphql/queries/communitySuggestion';
 import { SuggestionCard } from './suggestion-card';
@@ -13,6 +14,7 @@ import { CheckCircle2, Search, Filter } from 'lucide-react';
 export function ValidatedTab() {
   const [filter, setFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearchQuery = useDebouncedValue(searchQuery, 300);
 
   const { data, loading, refetch } = useQuery(GET_COMMUNITY_SUGGESTIONS, {
     variables: {
@@ -34,16 +36,16 @@ export function ValidatedTab() {
     }
 
     // Filtre par recherche
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(s => 
-        s.title.toLowerCase().includes(query) || 
+    if (debouncedSearchQuery.trim()) {
+      const query = debouncedSearchQuery.toLowerCase();
+      filtered = filtered.filter(s =>
+        s.title.toLowerCase().includes(query) ||
         s.description.toLowerCase().includes(query)
       );
     }
 
     return filtered;
-  }, [suggestions, filter, searchQuery]);
+  }, [suggestions, filter, debouncedSearchQuery]);
 
   if (loading && !data) {
     return (

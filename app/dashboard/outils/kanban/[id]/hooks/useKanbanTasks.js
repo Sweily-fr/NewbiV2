@@ -7,6 +7,7 @@ import {
   DELETE_TASK,
   MOVE_TASK,
   ADD_COMMENT,
+  GET_BOARD,
 } from "@/src/graphql/kanbanQueries";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 
@@ -101,6 +102,36 @@ export const useKanbanTasks = (boardId, board) => {
   const [createTask, { loading: createTaskLoading }] = useMutation(
     CREATE_TASK,
     {
+      update(cache, { data }) {
+        if (!data?.createTask) return;
+        const newTask = data.createTask;
+        try {
+          const cacheData = cache.readQuery({
+            query: GET_BOARD,
+            variables: { id: boardId, workspaceId },
+          });
+          if (cacheData?.board) {
+            // Vérifier que la tâche n'existe pas déjà dans le cache
+            const taskExists = (cacheData.board.tasks || []).some(
+              (t) => t.id === newTask.id
+            );
+            if (!taskExists) {
+              cache.writeQuery({
+                query: GET_BOARD,
+                variables: { id: boardId, workspaceId },
+                data: {
+                  board: {
+                    ...cacheData.board,
+                    tasks: [...(cacheData.board.tasks || []), newTask],
+                  },
+                },
+              });
+            }
+          }
+        } catch (error) {
+          console.error("❌ [CreateTask] Erreur mise à jour cache:", error);
+        }
+      },
       onCompleted: async (data) => {
         // Si des commentaires sont en attente, les créer maintenant
         if (taskForm.pendingComments && taskForm.pendingComments.length > 0 && data?.createTask?.id) {
@@ -139,11 +170,9 @@ export const useKanbanTasks = (boardId, board) => {
           }
         }
 
-        // Plus de toast ici - la subscription temps réel s'en charge
         setTaskForm(initialTaskForm);
         setSelectedColumnId(null);
-        setIsAddTaskOpen(false); // Close the add task modal after successful creation
-        // Plus besoin de refetch() - la subscription s'en charge
+        setIsAddTaskOpen(false);
       },
       onError: () => {
         toast.error("Erreur lors de la création de la tâche");
