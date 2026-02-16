@@ -13,6 +13,7 @@ import {
   XCircle,
   FileCheck,
   Mail,
+  ShoppingCart,
 } from "lucide-react";
 import { ButtonGroup } from "@/src/components/ui/button-group";
 import {
@@ -35,6 +36,17 @@ import {
   useConvertQuoteToInvoice,
   QUOTE_STATUS,
 } from "@/src/graphql/quoteQueries";
+import { useConvertQuoteToPurchaseOrder } from "@/src/graphql/purchaseOrderQueries";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/src/components/ui/alert-dialog";
 import { toast } from "@/src/components/ui/sonner";
 import QuoteSidebar from "./quote-sidebar";
 import QuoteMobileFullscreen from "./quote-mobile-fullscreen";
@@ -74,6 +86,7 @@ export default function QuoteRowActions({ row, onRefetch }) {
   const [isMobileFullscreenOpen, setIsMobileFullscreenOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [showSendEmailModal, setShowSendEmailModal] = useState(false);
+  const [showPurchaseOrderDialog, setShowPurchaseOrderDialog] = useState(false);
   const router = useRouter();
   const quote = row.original;
 
@@ -89,6 +102,7 @@ export default function QuoteRowActions({ row, onRefetch }) {
   const { changeStatus, loading: changingStatus } = useChangeQuoteStatus();
   const { deleteQuote, loading: isDeleting } = useDeleteQuote();
   const { convertToInvoice, loading: converting } = useConvertQuoteToInvoice();
+  const { convertToPurchaseOrder, loading: convertingToPO } = useConvertQuoteToPurchaseOrder();
 
   const handleView = () => {
     if (isMobile) {
@@ -125,11 +139,30 @@ export default function QuoteRowActions({ row, onRefetch }) {
   const handleAccept = async () => {
     try {
       await changeStatus(quote.id, QUOTE_STATUS.COMPLETED);
-      toast.success("Devis accepté");
       if (onRefetch) onRefetch();
+      setShowPurchaseOrderDialog(true);
     } catch (error) {
       toast.error("Erreur lors de l'acceptation du devis");
     }
+  };
+
+  const handleCreatePurchaseOrder = async () => {
+    try {
+      const result = await convertToPurchaseOrder(quote.id);
+      setShowPurchaseOrderDialog(false);
+      toast.success("Bon de commande créé à partir du devis");
+      if (onRefetch) onRefetch();
+      if (result?.id) {
+        router.push(`/dashboard/outils/bons-commande/${result.id}/editer`);
+      }
+    } catch (error) {
+      toast.error("Erreur lors de la création du bon de commande");
+    }
+  };
+
+  const handleSkipPurchaseOrder = () => {
+    setShowPurchaseOrderDialog(false);
+    toast.success("Devis accepté");
   };
 
   const handleReject = async () => {
@@ -158,14 +191,29 @@ export default function QuoteRowActions({ row, onRefetch }) {
     }
   };
 
-  const isLoading = changingStatus || isDeleting || converting;
+  const handleConvertToPurchaseOrder = async () => {
+    try {
+      const result = await convertToPurchaseOrder(quote.id);
+      toast.success("Bon de commande créé à partir du devis");
+      if (onRefetch) onRefetch();
+      if (result?.id) {
+        router.push(`/dashboard/outils/bons-commande/${result.id}/editer`);
+      }
+    } catch (error) {
+      toast.error("Erreur lors de la création du bon de commande");
+    }
+  };
+
+  const isLoading = changingStatus || isDeleting || converting || convertingToPO;
 
   // Logique pour déterminer quelles actions sont disponibles
+  const canConvertToPO = quote.status === QUOTE_STATUS.COMPLETED;
+  const canConvertToInvoice = quote.status === QUOTE_STATUS.COMPLETED &&
+    (!quote.linkedInvoices || quote.linkedInvoices.length === 0);
   const hasStatusActions =
     quote.status === QUOTE_STATUS.DRAFT || // Envoyer le devis
     quote.status === QUOTE_STATUS.PENDING || // Accepter/Rejeter
-    (quote.status === QUOTE_STATUS.COMPLETED &&
-      (!quote.linkedInvoices || quote.linkedInvoices.length === 0)); // Convertir en facture
+    canConvertToInvoice || canConvertToPO;
 
   const hasDeleteAction = quote.status === QUOTE_STATUS.DRAFT;
 
@@ -250,14 +298,23 @@ export default function QuoteRowActions({ row, onRefetch }) {
               </>
             )}
 
-            {quote.status === QUOTE_STATUS.COMPLETED &&
-              (!quote.linkedInvoices || quote.linkedInvoices.length === 0) && (
+            {canConvertToInvoice && (
                 <DropdownMenuItem
                   onClick={handleConvertToInvoice}
                   disabled={isLoading}
                 >
                   <FileCheck className="mr-2 h-4 w-4" />
                   Convertir en facture
+                </DropdownMenuItem>
+              )}
+
+            {canConvertToPO && (
+                <DropdownMenuItem
+                  onClick={handleConvertToPurchaseOrder}
+                  disabled={isLoading}
+                >
+                  <ShoppingCart className="mr-2 h-4 w-4" />
+                  Créer un bon de commande
                 </DropdownMenuItem>
               )}
 
@@ -313,6 +370,27 @@ export default function QuoteRowActions({ row, onRefetch }) {
           }}
         />
       )}
+
+      {/* Dialog pour proposer la création d'un bon de commande après acceptation */}
+      <AlertDialog open={showPurchaseOrderDialog} onOpenChange={setShowPurchaseOrderDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Devis accepté</AlertDialogTitle>
+            <AlertDialogDescription>
+              Souhaitez-vous créer un bon de commande à partir de ce devis ?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleSkipPurchaseOrder}>
+              Non merci
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleCreatePurchaseOrder} disabled={convertingToPO}>
+              <ShoppingCart className="h-4 w-4 mr-2" />
+              Créer un bon de commande
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
