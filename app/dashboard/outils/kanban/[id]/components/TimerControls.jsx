@@ -340,7 +340,7 @@ export function TimerControls({ taskId, timeTracking, onTimerUpdate }) {
         <div className="flex items-center gap-2 pl-6 text-xs text-muted-foreground">
           <span>Lancé par</span>
           <Avatar className="h-5 w-5">
-            <AvatarImage src={timeTracking.startedBy.userImage} alt={timeTracking.startedBy.userName} />
+            <AvatarImage src={timeTracking.startedBy.userImage} alt={timeTracking.startedBy.userName} className="object-cover" />
             <AvatarFallback className="text-[9px]">
               {timeTracking.startedBy.userName?.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2) || "?"}
             </AvatarFallback>

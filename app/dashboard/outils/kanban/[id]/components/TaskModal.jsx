@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { LoaderCircle, Trash2, X, CalendarIcon, Clock, User, FileText, MessageSquare, ChevronDown, Flag, Users, UserPlus, Columns, Tag, Send, Edit2, Paperclip } from 'lucide-react';
+import { LoaderCircle, Trash2, X, CalendarIcon, Clock, FileText, MessageSquare, ChevronDown, Flag, Users, UserPlus, Columns, Tag, Send, Edit2, Paperclip } from 'lucide-react';
 import { Button } from '@/src/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/src/components/ui/dialog';
 import { Input } from '@/src/components/ui/input';
@@ -444,16 +444,16 @@ export function TaskModal({
   };
 
   // Trouver le créateur de la tâche
-  const getCreatorName = () => {
+  const getCreatorInfo = () => {
     if (!taskForm.userId || !board?.members) {
-      return 'Inconnu';
+      return { name: 'Inconnu', image: null };
     }
-    
+
     const creator = board.members.find(m =>
       String(m.id) === String(taskForm.userId)
     );
-    
-    return creator ? creator.name : 'Inconnu';
+
+    return creator ? { name: creator.name, image: creator.image } : { name: 'Inconnu', image: null };
   };
 
   return (
@@ -1009,23 +1009,26 @@ export function TaskModal({
             {/* Footer fixe */}
             <div className="border-t border-border bg-card px-6 py-4 flex-shrink-0 space-y-3">
             {/* Informations de création (uniquement en mode édition) */}
-            {isEditing && taskForm.createdAt && (
-              <div className="flex items-center gap-4 text-xs text-muted-foreground pb-2 border-b border-border">
-                <div className="flex items-center gap-1.5">
-                  <User className="h-3 w-3" />
-                  <span>Créé par <span className="font-medium text-foreground">{getCreatorName()}</span></span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <Clock className="h-3 w-3" />
-                  <span>{formatCreatedDate(taskForm.createdAt)}</span>
-                </div>
-                {taskForm.updatedAt && taskForm.updatedAt !== taskForm.createdAt && (
+            {isEditing && taskForm.createdAt && (() => {
+              const creator = getCreatorInfo();
+              return (
+                <div className="flex items-center gap-4 text-xs text-muted-foreground pb-2 border-b border-border">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-muted-foreground/70">• Modifié le {formatCreatedDate(taskForm.updatedAt)}</span>
+                    <UserAvatar src={creator.image} name={creator.name} size="xs" />
+                    <span>Créé par <span className="font-medium text-foreground">{creator.name}</span></span>
                   </div>
-                )}
-              </div>
-            )}
+                  <div className="flex items-center gap-1.5">
+                    <Clock className="h-3 w-3" />
+                    <span>{formatCreatedDate(taskForm.createdAt)}</span>
+                  </div>
+                  {taskForm.updatedAt && taskForm.updatedAt !== taskForm.createdAt && (
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-muted-foreground/70">• Modifié le {formatCreatedDate(taskForm.updatedAt)}</span>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
             
             {/* Boutons d'action */}
             <div className="flex justify-end gap-3">
@@ -1059,10 +1062,10 @@ export function TaskModal({
             <div className="px-6 py-4 border-b border-border bg-background">
               <h3 className="text-lg font-semibold">Activité</h3>
             </div>
-            <div className="flex-1 overflow-y-auto px-2 bg-muted/40">
+            <div className="flex-1 min-h-0 overflow-hidden px-2 bg-muted/40">
               {isEditing && (taskForm.id || taskForm._id) ? (
-                <TaskActivity 
-                  task={taskActivityData} 
+                <TaskActivity
+                  task={taskActivityData}
                   workspaceId={workspaceId}
                   currentUser={board?.members?.find(m => m.userId === taskActivityData.userId)}
                   boardMembers={board?.members || []}
@@ -1640,18 +1643,21 @@ export function TaskModal({
               {/* Footer fixe mobile */}
               <div className="border-t border-border bg-card px-4 py-3 flex-shrink-0 space-y-3">
                 {/* Informations de création */}
-                {isEditing && taskForm.createdAt && (
-                  <div className="flex flex-col gap-2 text-xs text-muted-foreground pb-2 border-b border-border">
-                    <div className="flex items-center gap-1.5">
-                      <User className="h-3 w-3" />
-                      <span>Créé par <span className="font-medium text-foreground">{getCreatorName()}</span></span>
+                {isEditing && taskForm.createdAt && (() => {
+                  const creator = getCreatorInfo();
+                  return (
+                    <div className="flex flex-col gap-2 text-xs text-muted-foreground pb-2 border-b border-border">
+                      <div className="flex items-center gap-1.5">
+                        <UserAvatar src={creator.image} name={creator.name} size="xs" />
+                        <span>Créé par <span className="font-medium text-foreground">{creator.name}</span></span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Clock className="h-3 w-3" />
+                        <span>{formatCreatedDate(taskForm.createdAt)}</span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1.5">
-                      <Clock className="h-3 w-3" />
-                      <span>{formatCreatedDate(taskForm.createdAt)}</span>
-                    </div>
-                  </div>
-                )}
+                  );
+                })()}
                 
                 {/* Boutons d'action */}
                 <div className="flex gap-2">
@@ -1681,10 +1687,10 @@ export function TaskModal({
 
             {/* Onglet Activité (mobile) */}
             <TabsContent value="activity" className="flex-1 flex flex-col overflow-hidden m-0 data-[state=active]:flex bg-muted/40">
-              <div className="flex-1 overflow-y-auto">
+              <div className="flex-1 min-h-0 overflow-hidden">
                 {isEditing && (taskForm.id || taskForm._id) ? (
-                  <TaskActivity 
-                    task={taskActivityData} 
+                  <TaskActivity
+                    task={taskActivityData}
                     workspaceId={workspaceId}
                     currentUser={board?.members?.find(m => m.userId === taskActivityData.userId)}
                     boardMembers={board?.members || []}
