@@ -241,9 +241,8 @@ export const GET_QUOTE_STATS = gql`
       totalCount
       draftCount
       pendingCount
-      acceptedCount
-      rejectedCount
-      expiredCount
+      completedCount
+      canceledCount
       totalAmount
     }
   }

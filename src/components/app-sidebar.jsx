@@ -117,6 +117,10 @@ const data = {
       url: "/dashboard/outils/devis",
     },
     {
+      title: "Bons de commande",
+      url: "/dashboard/outils/bons-commande",
+    },
+    {
       title: "Liste client (CRM)",
       url: "/dashboard/clients",
     },

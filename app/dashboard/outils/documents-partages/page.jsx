@@ -141,6 +141,7 @@ import {
   Send,
   Link2,
   FileVideo,
+  Copy,
 } from "lucide-react";
 import {
   Popover,
@@ -370,6 +371,7 @@ export default function DocumentsPartagesPage() {
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [showTransferSuccessDialog, setShowTransferSuccessDialog] = useState(false);
   const [transferLink, setTransferLink] = useState("");
+  const [showDuplicateBanner, setShowDuplicateBanner] = useState(true);
 
   // Debounced search
   const debouncedSearch = useDebouncedValue(searchQuery, 300);
@@ -539,6 +541,29 @@ export default function DocumentsPartagesPage() {
   // Les documents sont déjà filtrés côté serveur via debouncedSearch
   // On utilise directement les documents retournés par l'API
   const filteredDocuments = documents;
+
+  // Détection des doublons (même taille + même type MIME)
+  const duplicateGroups = useMemo(() => {
+    const groups = {};
+    filteredDocuments.forEach((doc) => {
+      const key = `${doc.fileSize}_${doc.mimeType || doc.fileExtension}`;
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(doc);
+    });
+    return Object.values(groups).filter((group) => group.length > 1);
+  }, [filteredDocuments]);
+
+  const duplicateDocIds = useMemo(() => {
+    const ids = new Set();
+    duplicateGroups.forEach((group) => {
+      group.forEach((doc) => ids.add(doc.id));
+    });
+    return ids;
+  }, [duplicateGroups]);
+
+  const duplicateCount = useMemo(() => {
+    return duplicateGroups.reduce((acc, group) => acc + group.length - 1, 0);
+  }, [duplicateGroups]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -1030,6 +1055,7 @@ export default function DocumentsPartagesPage() {
   // Clear folder selection when navigating
   useEffect(() => {
     setSelectedFolders([]);
+    setShowDuplicateBanner(true);
   }, [selectedFolder, showTrash]);
 
   // Total selection count (folders + documents)
@@ -2697,6 +2723,45 @@ export default function DocumentsPartagesPage() {
                   </div>
                 )}
 
+                {showDuplicateBanner && duplicateGroups.length > 0 && !showTrash && (
+                  <div className="mx-2 sm:mx-4 mt-2 p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg flex items-center gap-3">
+                    <AlertTriangle className="h-4 w-4 text-amber-500 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                        {duplicateCount} doublon{duplicateCount > 1 ? "s" : ""} détecté{duplicateCount > 1 ? "s" : ""}
+                      </p>
+                      <p className="text-xs text-amber-600 dark:text-amber-400 mt-0.5">
+                        {duplicateGroups.length} groupe{duplicateGroups.length > 1 ? "s" : ""} de fichiers identiques (même taille et type).
+                        Sélectionnez les doublons à supprimer.
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-shrink-0 border-amber-300 text-amber-700 hover:bg-amber-100 dark:border-amber-700 dark:text-amber-300 dark:hover:bg-amber-900/50"
+                      onClick={() => {
+                        const idsToSelect = [];
+                        duplicateGroups.forEach((group) => {
+                          const sorted = [...group].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+                          sorted.slice(1).forEach((doc) => idsToSelect.push(doc.id));
+                        });
+                        setSelectedDocuments(idsToSelect);
+                      }}
+                    >
+                      <Copy className="h-3.5 w-3.5 mr-1.5" />
+                      Sélectionner les doublons
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-amber-500 hover:text-amber-700 flex-shrink-0"
+                      onClick={() => setShowDuplicateBanner(false)}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                )}
+
                 {docsInitialLoading ? (
                   <div className="space-y-2 p-2 sm:p-4">
                     {[1, 2, 3, 4, 5].map((i) => (
@@ -2784,6 +2849,13 @@ export default function DocumentsPartagesPage() {
                                 <p className="text-sm font-normal truncate">
                                   {doc.name}
                                 </p>
+                                {/* Badge doublon */}
+                                {duplicateDocIds.has(doc.id) && (
+                                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 flex-shrink-0">
+                                    <Copy className="h-2.5 w-2.5" />
+                                    Doublon
+                                  </span>
+                                )}
                                 {/* Tags inline - hide on mobile */}
                                 {doc.tags && doc.tags.length > 0 && (
                                   <div className="hidden sm:flex items-center gap-1 flex-shrink-0">
@@ -3032,6 +3104,12 @@ export default function DocumentsPartagesPage() {
                             <p className="text-sm font-medium text-center truncate w-full">
                               {doc.name}
                             </p>
+                            {duplicateDocIds.has(doc.id) && (
+                              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 mt-1">
+                                <Copy className="h-2.5 w-2.5" />
+                                Doublon
+                              </span>
+                            )}
                             <p className="text-xs text-muted-foreground mt-1">
                               {formatFileSize(doc.fileSize)}
                             </p>

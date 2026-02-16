@@ -119,6 +119,7 @@ const UniversalPreviewPDF = ({
 
   // Déterminer si c'est un avoir (credit note)
   const isCreditNote = type === "creditNote";
+  const isPurchaseOrder = type === "purchaseOrder";
 
   // Debug: Log des données reçues pour les devis
   useEffect(() => {
@@ -502,6 +503,9 @@ const UniversalPreviewPDF = ({
     if (isCreditNote) {
       return "Avoir";
     }
+    if (isPurchaseOrder) {
+      return "Bon de commande";
+    }
     if (data.invoiceType === "situation") {
       return "Facture de situation";
     }
@@ -580,15 +584,17 @@ const UniversalPreviewPDF = ({
                   <span className="font-medium w-38 dark:text-[#0A0A0A] mr-2">
                     {isCreditNote
                       ? "Numéro d'avoir"
-                      : type === "quote"
-                        ? "Numéro de devis"
-                        : "Numéro de facture"}
+                      : isPurchaseOrder
+                        ? "Numéro de BC"
+                        : type === "quote"
+                          ? "Numéro de devis"
+                          : "Numéro de facture"}
                     :
                   </span>
                   <span className="dark:text-[#0A0A0A]">
                     {(() => {
-                      // Pour les devis, construire le numéro avec prefix et number
-                      if (type === "quote") {
+                      // Pour les devis et bons de commande, construire le numéro avec prefix et number
+                      if (type === "quote" || isPurchaseOrder) {
                         const prefix = data.prefix?.trim();
                         const number = data.number?.trim();
 
@@ -599,7 +605,7 @@ const UniversalPreviewPDF = ({
                         } else if (prefix) {
                           return prefix;
                         }
-                        return "D-202507-001"; // Placeholder pour devis
+                        return isPurchaseOrder ? "BC-202507-001" : "D-202507-001";
                       }
 
                       // Pour les factures et avoirs
@@ -631,13 +637,13 @@ const UniversalPreviewPDF = ({
                     style={{ fontSize: "10px" }}
                   >
                     <span className="font-medium w-38 dark:text-[#0A0A0A] mr-2">
-                      {type === "quote"
+                      {type === "quote" || isPurchaseOrder
                         ? "Date de validité:"
                         : "Date d'échéance:"}
                     </span>
                     <span className="dark:text-[#0A0A0A]">
                       {formatDate(
-                        type === "quote" ? data.validUntil : data.dueDate
+                        (type === "quote" || isPurchaseOrder) ? data.validUntil : data.dueDate
                       ) ||
                         formatDate(
                           new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)

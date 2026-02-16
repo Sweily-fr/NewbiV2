@@ -282,6 +282,7 @@ export default function EnhancedQuoteForm({
   currentStep: externalCurrentStep,
   onStepChange,
   onEditClient,
+  documentType = "quote",
 }) {
   const { watch, setValue, getValues, control } = useFormContext();
   const data = watch();
@@ -407,7 +408,7 @@ export default function EnhancedQuoteForm({
       {/* Form Content */}
       <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent min-h-0">
         <div className="space-y-4 pb-20">
-          {/* Étape 1: Détails du devis */}
+          {/* Étape 1: Détails du document */}
           {currentStep === 1 && (
             <>
               {/* Section 1: Sélection d'un client (en premier comme pour les factures) */}
@@ -429,7 +430,7 @@ export default function EnhancedQuoteForm({
                 />
               </div>
 
-              {/* Section 2: Informations du devis */}
+              {/* Section 2: Informations du document */}
               <QuoteInfoSection
                 canEdit={canEdit}
                 nextQuoteNumber={nextQuoteNumber}
@@ -540,7 +541,7 @@ export default function EnhancedQuoteForm({
                     disabled={!isStep2Valid() || !canEdit || saving}
                     className="px-6 text-sm font-normal"
                   >
-                    {saving ? "Création..." : "Créer le devis"}
+                    {saving ? "Création..." : documentType === "purchaseOrder" ? "Créer le bon de commande" : "Créer le devis"}
                   </Button>
                 </>
               )}
