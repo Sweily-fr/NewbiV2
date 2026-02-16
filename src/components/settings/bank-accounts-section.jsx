@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
+import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { Separator } from "@/src/components/ui/separator";
@@ -92,6 +93,7 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
   const [institutions, setInstitutions] = useState([]);
   const [isLoadingInstitutions, setIsLoadingInstitutions] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearchQuery = useDebouncedValue(searchQuery, 300);
   const [selectedBank, setSelectedBank] = useState(null);
   const [isConnecting, setIsConnecting] = useState(false);
 
@@ -254,14 +256,14 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
 
   // Filtrer les institutions par recherche
   const filteredInstitutions = useMemo(() => {
-    if (!searchQuery) return institutions;
-    const query = searchQuery.toLowerCase();
+    if (!debouncedSearchQuery) return institutions;
+    const query = debouncedSearchQuery.toLowerCase();
     return institutions.filter(
       (inst) =>
         inst.name.toLowerCase().includes(query) ||
         inst.groupName?.toLowerCase().includes(query),
     );
-  }, [institutions, searchQuery]);
+  }, [institutions, debouncedSearchQuery]);
 
   // Ouvrir le modal de sélection
   const handleOpenModal = () => {

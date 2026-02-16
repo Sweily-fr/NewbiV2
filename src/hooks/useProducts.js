@@ -64,7 +64,6 @@ export const useCreateProduct = (options = {}) => {
   const { showToast = true } = options;
 
   const [createProduct, { loading, error }] = useMutation(CREATE_PRODUCT, {
-    refetchQueries: ["GetProducts"],
     onCompleted: () => {
       if (showToast) {
         toast.success("Produit créé avec succès");
@@ -72,7 +71,6 @@ export const useCreateProduct = (options = {}) => {
     },
     onError: (error) => {
       if (showToast) {
-        // Afficher un message d'erreur plus détaillé si disponible
         const errorMessage =
           error.message || "Erreur lors de la création du produit";
         toast.error(errorMessage);
@@ -94,6 +92,7 @@ export const useCreateProduct = (options = {}) => {
               workspaceId,
             },
           },
+          refetchQueries: [{ query: GET_PRODUCTS, variables: { workspaceId } }],
         });
         return result;
       } catch {
@@ -107,8 +106,9 @@ export const useCreateProduct = (options = {}) => {
 };
 
 export const useUpdateProduct = () => {
+  const { workspaceId } = useRequiredWorkspace();
   const [updateProduct, { loading, error }] = useMutation(UPDATE_PRODUCT, {
-    refetchQueries: ["GetProducts"],
+    refetchQueries: [{ query: GET_PRODUCTS, variables: { workspaceId } }],
     onCompleted: () => {
       toast.success("Produit modifié avec succès");
     },
@@ -137,9 +137,10 @@ export const useUpdateProduct = () => {
 
 export const useDeleteProduct = (options = {}) => {
   const { showToast = true } = options;
+  const { workspaceId } = useRequiredWorkspace();
 
   const [deleteProduct, { loading, error }] = useMutation(DELETE_PRODUCT, {
-    refetchQueries: ["GetProducts"],
+    refetchQueries: [{ query: GET_PRODUCTS, variables: { workspaceId } }],
     onCompleted: () => {
       if (showToast) {
         toast.success("Produit supprimé avec succès");

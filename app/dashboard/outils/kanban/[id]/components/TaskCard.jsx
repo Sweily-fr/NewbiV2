@@ -120,11 +120,11 @@ const TaskCard = memo(function TaskCard({ task, onEdit, onDelete, index, isDragg
           <div className="flex-1 min-w-0">
             <Tooltip>
               <TooltipTrigger asChild>
-                <h4 className="font-medium text-sm text-foreground line-clamp-2">
+                <h4 className="font-medium text-sm text-foreground truncate">
                   {task.title}
                 </h4>
               </TooltipTrigger>
-              <TooltipContent side="top" className="max-w-xs">
+              <TooltipContent side="top" className="max-w-sm break-words">
                 {task.title}
               </TooltipContent>
             </Tooltip>

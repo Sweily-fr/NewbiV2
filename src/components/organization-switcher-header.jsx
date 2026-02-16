@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
 import {
   ChevronsUpDown,
   Plus,
@@ -119,6 +120,7 @@ const getIconComponent = (iconName) => {
 export function OrganizationSwitcherHeader() {
   const { isActive } = useSubscription();
   const [searchQuery, setSearchQuery] = React.useState("");
+  const debouncedSearchQuery = useDebouncedValue(searchQuery, 300);
   const [isChangingOrg, setIsChangingOrg] = React.useState(false);
   const [sortedOrganizations, setSortedOrganizations] = React.useState([]);
   const [organizationsLoading, setOrganizationsLoading] = React.useState(true);
@@ -168,11 +170,11 @@ export function OrganizationSwitcherHeader() {
 
   // Filtrer les organisations selon la recherche
   const filteredOrganizations = React.useMemo(() => {
-    if (!searchQuery.trim()) return sortedOrganizations;
+    if (!debouncedSearchQuery.trim()) return sortedOrganizations;
     return sortedOrganizations.filter((org) =>
-      org.name.toLowerCase().includes(searchQuery.toLowerCase())
+      org.name.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
     );
-  }, [sortedOrganizations, searchQuery]);
+  }, [sortedOrganizations, debouncedSearchQuery]);
 
   // Fonction pour changer d'organisation active
   const handleSetActiveOrganization = async (organizationId) => {

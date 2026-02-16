@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
 import {
   UserRoundPlusIcon,
   MoreHorizontal,
@@ -65,6 +66,7 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
   const [selectedOrg, setSelectedOrg] = useState(null);
   const [members, setMembers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebouncedValue(searchTerm, 300);
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [membersLoading, setMembersLoading] = useState(false);
@@ -241,9 +243,9 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
   // Filter members based on search term (afficher tous les statuts : active, pending, etc.)
   const filteredMembers = members.filter(
     (member) =>
-      member.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      member.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      member.role?.toLowerCase().includes(searchTerm.toLowerCase())
+      member.name?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+      member.email?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+      member.role?.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
   );
 
   const handleDeleteMember = (member) => {
