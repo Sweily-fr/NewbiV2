@@ -8,6 +8,15 @@ import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { ForecastKpiTable } from "./components/forecast-kpi-table";
 import { ForecastPaymentsCard } from "./components/forecast-payments-card";
 import { ForecastExportDialog } from "./components/forecast-export-dialog";
+import { Button } from "@/src/components/ui/button";
+import { Download } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/src/components/ui/select";
 
 const PERIOD_OPTIONS = [
   { value: "6", label: "6 mois" },
@@ -70,30 +79,55 @@ export default function PrevisionPage() {
 
   return (
     <div className="flex flex-col min-h-full">
-      {/* ─── Section 1: KPIs Table ─── */}
-      <div className="pt-4 sm:pt-6">
-        <ForecastKpiTable
-          months={forecastData?.months}
-          kpi={forecastData?.kpi}
-          loading={loading}
-          onExport={() => setExportOpen(true)}
-          period={period}
-          onPeriodChange={(v) => v && setPeriod(v)}
-          periodOptions={PERIOD_OPTIONS}
-          bankAccounts={bankAccounts}
-          accountFilter={accountFilter}
-          onAccountFilterChange={setAccountFilter}
-        />
+      {/* ─── Header: Title + actions ─── */}
+      <div className="flex items-center justify-between pt-4 sm:pt-6 mb-8 px-4 sm:px-6">
+        <h1 className="text-2xl font-medium">Prévision</h1>
+        <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-9 w-9 border-gray-200"
+            onClick={() => setExportOpen(true)}
+          >
+            <Download className="h-4 w-4 text-gray-500" />
+          </Button>
+
+          {bankAccounts?.length > 1 && (
+            <Select value={accountFilter} onValueChange={setAccountFilter}>
+              <SelectTrigger className="w-[180px] h-8 text-xs">
+                <SelectValue placeholder="Tous les comptes" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tous les comptes</SelectItem>
+                {bankAccounts.map((acc) => (
+                  <SelectItem key={acc.id} value={acc.id}>
+                    {acc.name || acc.bankName || "Compte"}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        </div>
       </div>
 
-      {/* ─── Section 2: Payments Card ─── */}
-      <div className="bg-[#FAFAFA] px-4 sm:px-6 pt-10 pb-6 flex-1">
+      {/* ─── Section 1: Payments Card (Chart) ─── */}
+      <div className="bg-white px-4 sm:px-6 pb-6 flex-1">
         <ForecastPaymentsCard
           months={forecastData?.months}
           kpi={forecastData?.kpi}
           loading={loading}
         />
       </div>
+
+      {/* TODO: réactiver la section KPIs Table
+      <div className="pt-4 sm:pt-6">
+        <ForecastKpiTable
+          months={forecastData?.months}
+          kpi={forecastData?.kpi}
+          loading={loading}
+        />
+      </div>
+      */}
 
       {/* ─── Export Dialog ─── */}
       <ForecastExportDialog

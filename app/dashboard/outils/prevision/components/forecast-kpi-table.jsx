@@ -1,20 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/src/components/ui/select";
 import { Skeleton } from "@/src/components/ui/skeleton";
-import { ChevronDown, ChevronRight, Download, TrendingUp, TrendingDown } from "lucide-react";
-import { Button } from "@/src/components/ui/button";
-import {
-  ToggleGroup,
-  ToggleGroupItem,
-} from "@/src/components/ui/toggle-group";
+import { ChevronDown, ChevronRight, TrendingUp, TrendingDown } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 
 // ─── Formatters ───
@@ -158,7 +146,7 @@ function CategoryCell({ m, category, type, currentMonth }) {
 
 // ─── Component ───
 
-export function ForecastKpiTable({ months, kpi, loading, onExport, period, onPeriodChange, periodOptions, bankAccounts, accountFilter, onAccountFilterChange }) {
+export function ForecastKpiTable({ months, kpi, loading }) {
   const [expandedIncome, setExpandedIncome] = useState(false);
   const [expandedExpense, setExpandedExpense] = useState(false);
 
@@ -231,62 +219,7 @@ export function ForecastKpiTable({ months, kpi, loading, onExport, period, onPer
   const headerCell = "py-2.5 px-3 text-right text-xs font-normal text-[#9CA3AF] whitespace-nowrap";
 
   return (
-    <div className="pt-2">
-      {/* Title + action icons */}
-      <div className="flex items-center justify-between mb-8 px-4 sm:px-6">
-        <h1 className="text-2xl font-medium">
-          Prévision
-        </h1>
-        <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-9 w-9 border-gray-200"
-            onClick={onExport}
-          >
-            <Download className="h-4 w-4 text-gray-500" />
-          </Button>
-          {/* TODO: réactiver le filtre période
-          {periodOptions && (
-            <ToggleGroup
-              type="single"
-              value={period}
-              onValueChange={onPeriodChange}
-              variant="outline"
-              size="sm"
-              className="h-8"
-            >
-              {periodOptions.map((opt) => (
-                <ToggleGroupItem
-                  key={opt.value}
-                  value={opt.value}
-                  className="text-xs h-8"
-                >
-                  {opt.label}
-                </ToggleGroupItem>
-              ))}
-            </ToggleGroup>
-          )}
-          */}
-
-          {bankAccounts?.length > 1 && (
-            <Select value={accountFilter} onValueChange={onAccountFilterChange}>
-              <SelectTrigger className="w-[180px] h-8 text-xs">
-                <SelectValue placeholder="Tous les comptes" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tous les comptes</SelectItem>
-                {bankAccounts.map((acc) => (
-                  <SelectItem key={acc.id} value={acc.id}>
-                    {acc.name || acc.bankName || "Compte"}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-        </div>
-      </div>
-
+    <div>
       {/* Two-column layout: hero KPIs left, monthly table right */}
       <div className="flex border-t border-b border-gray-200 pl-4 sm:pl-6">
         {/* ─ Left column: Hero KPIs ─ */}
