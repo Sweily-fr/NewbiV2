@@ -22,6 +22,8 @@ import {
   UPDATE_SUPPLIER,
   DELETE_SUPPLIER,
   MERGE_SUPPLIERS,
+  SYNC_PURCHASE_INVOICES_FROM_SUPERPDP,
+  ACKNOWLEDGE_PURCHASE_INVOICE_EINVOICE,
 } from "../graphql/mutations/purchaseInvoices";
 import { toast } from "@/src/components/ui/sonner";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
@@ -384,4 +386,64 @@ export const useDeleteSupplier = () => {
   };
 
   return { deleteSupplier, loading };
+};
+
+// ============================================================
+// Synchronisation e-invoicing (SuperPDP)
+// ============================================================
+
+export const useSyncPurchaseInvoicesFromSuperPdp = () => {
+  const { workspaceId } = useRequiredWorkspace();
+
+  const [syncMutation, { loading }] = useMutation(SYNC_PURCHASE_INVOICES_FROM_SUPERPDP, {
+    refetchQueries: [
+      { query: GET_PURCHASE_INVOICES, variables: { workspaceId, page: 1, limit: 200 } },
+      { query: GET_PURCHASE_INVOICE_STATS, variables: { workspaceId } },
+    ],
+    awaitRefetchQueries: true,
+  });
+
+  const syncFromSuperPdp = async (since) => {
+    try {
+      const result = await syncMutation({
+        variables: { workspaceId, since },
+      });
+
+      const data = result.data?.syncPurchaseInvoicesFromSuperPdp;
+
+      if (data?.success) {
+        if (data.imported > 0) {
+          toast.success(`${data.imported} facture(s) importée(s) depuis SuperPDP`);
+        } else {
+          toast.info("Aucune nouvelle facture à importer");
+        }
+        return data;
+      }
+
+      toast.error(data?.message || "Erreur de synchronisation");
+      return data;
+    } catch (error) {
+      toast.error(error.message || "Erreur de synchronisation SuperPDP");
+      return { success: false, error };
+    }
+  };
+
+  return { syncFromSuperPdp, loading };
+};
+
+export const useAcknowledgePurchaseInvoiceEInvoice = () => {
+  const [acknowledgeMutation, { loading }] = useMutation(ACKNOWLEDGE_PURCHASE_INVOICE_EINVOICE);
+
+  const acknowledge = async (id) => {
+    try {
+      const result = await acknowledgeMutation({ variables: { id } });
+      toast.success("Facture électronique acceptée");
+      return result.data?.acknowledgePurchaseInvoiceEInvoice;
+    } catch (error) {
+      toast.error(error.message || "Erreur");
+      return null;
+    }
+  };
+
+  return { acknowledge, loading };
 };
