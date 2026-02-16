@@ -773,7 +773,7 @@ export const useCreateInvoice = () => {
   const { workspaceId } = useRequiredWorkspace();
 
   const [createInvoiceMutation, { loading }] = useMutation(CREATE_INVOICE, {
-    refetchQueries: ["GetInvoices", "GetInvoiceStats"],
+    refetchQueries: [{ query: GET_INVOICES, variables: { workspaceId } }, { query: GET_INVOICE_STATS, variables: { workspaceId } }],
     awaitRefetchQueries: true,
     // onError désactivé - les erreurs sont gérées dans les composants appelants
   });

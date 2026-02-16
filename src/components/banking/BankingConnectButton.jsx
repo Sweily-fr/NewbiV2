@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
 import { Button } from "@/src/components/ui/button";
 import {
   Dialog,
@@ -37,6 +38,7 @@ export default function BankingConnectButton() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearchQuery = useDebouncedValue(searchQuery, 300);
   const [selectedInstitution, setSelectedInstitution] = useState(null);
   const [isConnecting, setIsConnecting] = useState(false);
 
@@ -49,7 +51,7 @@ export default function BankingConnectButton() {
 
   // Filtrer les institutions par recherche
   const filteredInstitutions = institutions.filter((inst) =>
-    inst.name.toLowerCase().includes(searchQuery.toLowerCase())
+    inst.name.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
   );
 
   const handleOpenModal = () => {

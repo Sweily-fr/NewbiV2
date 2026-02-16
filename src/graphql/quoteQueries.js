@@ -541,7 +541,7 @@ export const useCreateQuote = () => {
   const { handleMutationError } = useErrorHandler();
 
   const [createQuoteMutation, { loading }] = useMutation(CREATE_QUOTE, {
-    refetchQueries: ['GetQuotes', 'GetQuoteStats'],
+    refetchQueries: [{ query: GET_QUOTES, variables: { workspaceId } }, { query: GET_QUOTE_STATS, variables: { workspaceId } }],
     awaitRefetchQueries: true,
     onError: (error) => {
       handleMutationError(error, "create", "quote");

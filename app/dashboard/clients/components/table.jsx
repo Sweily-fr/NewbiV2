@@ -8,6 +8,7 @@ import {
   useState,
   useCallback,
 } from "react";
+import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -333,11 +334,13 @@ export default function TableClients({
     : internalGlobalFilter;
   const setGlobalFilter = setInternalGlobalFilter;
 
+  const debouncedGlobalFilter = useDebouncedValue(globalFilter, 300);
+
   // Utilisation du hook pour récupérer les clients ou utilisation des clients passés en props
   const hookResult = useClients(
     pagination.pageIndex + 1,
     pagination.pageSize,
-    globalFilter
+    debouncedGlobalFilter
   );
 
   const {
@@ -396,14 +399,6 @@ export default function TableClients({
       desc: false,
     },
   ]);
-
-  // Effet pour gérer la recherche globale
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      // La recherche est gérée par le hook useClients
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [globalFilter]);
 
   const handleDeleteRows = async () => {
     try {

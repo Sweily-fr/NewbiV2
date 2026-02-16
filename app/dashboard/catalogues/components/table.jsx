@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
 import { useRouter } from "next/navigation";
 import {
   ColumnDef,
@@ -216,6 +217,7 @@ export default function TableClients({ handleAddUser }) {
   });
   const inputRef = useRef(null);
   const [globalFilter, setGlobalFilter] = useState("");
+  const debouncedGlobalFilter = useDebouncedValue(globalFilter, 300);
   const [editingClient, setEditingClient] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
@@ -228,7 +230,7 @@ export default function TableClients({ handleAddUser }) {
     loading,
     error,
     refetch,
-  } = useClients(pagination.pageIndex + 1, pagination.pageSize, globalFilter);
+  } = useClients(pagination.pageIndex + 1, pagination.pageSize, debouncedGlobalFilter);
 
   const { deleteClient } = useDeleteClient();
 
@@ -238,14 +240,6 @@ export default function TableClients({ handleAddUser }) {
       desc: false,
     },
   ]);
-
-  // Effet pour gérer la recherche globale
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      // La recherche est gérée par le hook useClients
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [globalFilter]);
 
   const handleDeleteRows = async () => {
     const selectedRows = table.getSelectedRowModel().rows;

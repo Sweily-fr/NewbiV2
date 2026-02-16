@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
+import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import {
@@ -125,6 +126,8 @@ export default function TransferTable({
   const { deleteTransfer, formatFileSize } = useFileTransfer();
   const { session } = useUser();
 
+  const debouncedSearchQuery = useDebouncedValue(searchQuery, 300);
+
   // Filtrer les données par statut (tab)
   const filteredData = useMemo(() => {
     let result = transfers || [];
@@ -143,8 +146,8 @@ export default function TransferTable({
     }
 
     // Filtrer par recherche
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
+    if (debouncedSearchQuery) {
+      const query = debouncedSearchQuery.toLowerCase();
       result = result.filter((transfer) => {
         const files = transfer.files || [];
         return files.some((file) =>
@@ -156,7 +159,7 @@ export default function TransferTable({
     }
 
     return result;
-  }, [transfers, activeTab, searchQuery]);
+  }, [transfers, activeTab, debouncedSearchQuery]);
 
   const data = useMemo(() => filteredData, [filteredData]);
 

@@ -70,7 +70,8 @@ export const useCreateClientList = () => {
     createList: async (workspaceId, input) => {
       try {
         const { data } = await createList({
-          variables: { workspaceId, input }
+          variables: { workspaceId, input },
+          refetchQueries: [{ query: GET_CLIENT_LISTS, variables: { workspaceId } }],
         });
         return data.createClientList;
       } catch (err) {
@@ -90,7 +91,8 @@ export const useUpdateClientList = () => {
     updateList: async (workspaceId, id, input) => {
       try {
         const { data } = await updateList({
-          variables: { workspaceId, id, input }
+          variables: { workspaceId, id, input },
+          refetchQueries: [{ query: GET_CLIENT_LISTS, variables: { workspaceId } }],
         });
         return data.updateClientList;
       } catch (err) {
@@ -110,7 +112,8 @@ export const useDeleteClientList = () => {
     deleteList: async (workspaceId, id) => {
       try {
         const { data } = await deleteList({
-          variables: { workspaceId, id }
+          variables: { workspaceId, id },
+          refetchQueries: [{ query: GET_CLIENT_LISTS, variables: { workspaceId } }],
         });
         return data.deleteClientList;
       } catch (err) {
@@ -130,7 +133,11 @@ export const useAddClientToList = () => {
     addClient: async (workspaceId, listId, clientId) => {
       try {
         const { data } = await addClient({
-          variables: { workspaceId, listId, clientId }
+          variables: { workspaceId, listId, clientId },
+          refetchQueries: [
+            { query: GET_CLIENT_LISTS, variables: { workspaceId } },
+            { query: GET_CLIENT_LISTS_BY_CLIENT, variables: { workspaceId, clientId } },
+          ],
         });
         return data.addClientToList;
       } catch (err) {
@@ -150,7 +157,11 @@ export const useRemoveClientFromList = () => {
     removeClient: async (workspaceId, listId, clientId) => {
       try {
         const { data } = await removeClient({
-          variables: { workspaceId, listId, clientId }
+          variables: { workspaceId, listId, clientId },
+          refetchQueries: [
+            { query: GET_CLIENT_LISTS, variables: { workspaceId } },
+            { query: GET_CLIENT_LISTS_BY_CLIENT, variables: { workspaceId, clientId } },
+          ],
         });
         return data.removeClientFromList;
       } catch (err) {
@@ -170,7 +181,8 @@ export const useAddClientsToList = () => {
     addClients: async (workspaceId, listId, clientIds) => {
       try {
         const { data } = await addClients({
-          variables: { workspaceId, listId, clientIds }
+          variables: { workspaceId, listId, clientIds },
+          refetchQueries: [{ query: GET_CLIENT_LISTS, variables: { workspaceId } }],
         });
         return data.addClientsToList;
       } catch (err) {
@@ -190,7 +202,8 @@ export const useRemoveClientsFromList = () => {
     removeClients: async (workspaceId, listId, clientIds) => {
       try {
         const { data } = await removeClients({
-          variables: { workspaceId, listId, clientIds }
+          variables: { workspaceId, listId, clientIds },
+          refetchQueries: [{ query: GET_CLIENT_LISTS, variables: { workspaceId } }],
         });
         return data.removeClientsFromList;
       } catch (err) {
@@ -210,7 +223,11 @@ export const useAddClientToLists = () => {
     addToLists: async (workspaceId, clientId, listIds) => {
       try {
         const { data } = await addToLists({
-          variables: { workspaceId, clientId, listIds }
+          variables: { workspaceId, clientId, listIds },
+          refetchQueries: [
+            { query: GET_CLIENT_LISTS, variables: { workspaceId } },
+            { query: GET_CLIENT_LISTS_BY_CLIENT, variables: { workspaceId, clientId } },
+          ],
         });
         return data.addClientToLists;
       } catch (err) {
@@ -230,7 +247,11 @@ export const useRemoveClientFromLists = () => {
     removeFromLists: async (workspaceId, clientId, listIds) => {
       try {
         const { data } = await removeFromLists({
-          variables: { workspaceId, clientId, listIds }
+          variables: { workspaceId, clientId, listIds },
+          refetchQueries: [
+            { query: GET_CLIENT_LISTS, variables: { workspaceId } },
+            { query: GET_CLIENT_LISTS_BY_CLIENT, variables: { workspaceId, clientId } },
+          ],
         });
         return data.removeClientFromLists;
       } catch (err) {

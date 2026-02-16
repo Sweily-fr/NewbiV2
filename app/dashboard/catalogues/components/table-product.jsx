@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useMemo, useRef, useState } from "react";
+import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -270,6 +271,7 @@ export default function TableProduct({ handleAddProduct, hideHeaderButtons = fal
   });
   const inputRef = useRef(null);
   const [globalFilter, setGlobalFilter] = useState("");
+  const debouncedGlobalFilter = useDebouncedValue(globalFilter, 300);
   const [editingProduct, setEditingProduct] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
@@ -290,15 +292,15 @@ export default function TableProduct({ handleAddProduct, hideHeaderButtons = fal
 
   // Filtrage local des produits
   const filteredProducts = useMemo(() => {
-    if (!globalFilter) return allProducts;
+    if (!debouncedGlobalFilter) return allProducts;
 
-    const searchTerm = globalFilter.toLowerCase();
+    const searchTerm = debouncedGlobalFilter.toLowerCase();
     return allProducts.filter((product) => {
       const searchableContent =
         `${product.name} ${product.reference || ""} ${product.category || ""}`.toLowerCase();
       return searchableContent.includes(searchTerm);
     });
-  }, [allProducts, globalFilter]);
+  }, [allProducts, debouncedGlobalFilter]);
 
   const [sorting, setSorting] = useState([
     {

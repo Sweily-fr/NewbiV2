@@ -7,6 +7,7 @@ import React, {
   useRef,
   useEffect,
 } from "react";
+import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
 import { useIsMobile } from "@/src/hooks/use-mobile";
 import {
   useSharedDocuments,
@@ -371,8 +372,7 @@ export default function DocumentsPartagesPage() {
   const [transferLink, setTransferLink] = useState("");
 
   // Debounced search
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const searchTimeoutRef = useRef(null);
+  const debouncedSearch = useDebouncedValue(searchQuery, 300);
 
   // Corbeille (Trash)
   const [showTrash, setShowTrash] = useState(false);
@@ -382,21 +382,6 @@ export default function DocumentsPartagesPage() {
   const [showPermanentDeleteModal, setShowPermanentDeleteModal] =
     useState(false);
   const [expandedTrashFolders, setExpandedTrashFolders] = useState([]);
-
-  // Debounce search input
-  useEffect(() => {
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current);
-    }
-    searchTimeoutRef.current = setTimeout(() => {
-      setDebouncedSearch(searchQuery);
-    }, 300);
-    return () => {
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
-      }
-    };
-  }, [searchQuery]);
 
   // Hooks
   // Documents du dossier sélectionné (pour la zone de droite)
