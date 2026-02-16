@@ -84,6 +84,11 @@ export const GET_BOARD = gql`
           totalSeconds
           isRunning
           currentStartTime
+          startedBy {
+            userId
+            userName
+            userImage
+          }
           entries {
             id
             startTime
@@ -253,6 +258,9 @@ export const CREATE_TASK = gql`
       dueDate
       columnId
       position
+      userId
+      createdAt
+      updatedAt
       tags {
         name
         className
@@ -265,6 +273,25 @@ export const CREATE_TASK = gql`
         text
         completed
       }
+      assignedMembers
+      timeTracking {
+        totalSeconds
+        isRunning
+        currentStartTime
+        startedBy {
+          userId
+          userName
+          userImage
+        }
+        entries {
+          id
+          startTime
+          endTime
+          duration
+        }
+        hourlyRate
+        roundingOption
+      }
       images {
         id
         key
@@ -274,6 +301,37 @@ export const CREATE_TASK = gql`
         contentType
         uploadedBy
         uploadedAt
+      }
+      comments {
+        id
+        userId
+        userName
+        userImage
+        content
+        images {
+          id
+          key
+          url
+          fileName
+          fileSize
+          contentType
+          uploadedBy
+          uploadedAt
+        }
+        createdAt
+        updatedAt
+      }
+      activity {
+        id
+        userId
+        userName
+        userImage
+        type
+        field
+        oldValue
+        newValue
+        description
+        createdAt
       }
     }
   }
@@ -291,6 +349,9 @@ export const UPDATE_TASK = gql`
       dueDate
       columnId
       position
+      userId
+      createdAt
+      updatedAt
       tags {
         name
         className
@@ -303,6 +364,25 @@ export const UPDATE_TASK = gql`
         text
         completed
       }
+      assignedMembers
+      timeTracking {
+        totalSeconds
+        isRunning
+        currentStartTime
+        startedBy {
+          userId
+          userName
+          userImage
+        }
+        entries {
+          id
+          startTime
+          endTime
+          duration
+        }
+        hourlyRate
+        roundingOption
+      }
       images {
         id
         key
@@ -312,6 +392,37 @@ export const UPDATE_TASK = gql`
         contentType
         uploadedBy
         uploadedAt
+      }
+      comments {
+        id
+        userId
+        userName
+        userImage
+        content
+        images {
+          id
+          key
+          url
+          fileName
+          fileSize
+          contentType
+          uploadedBy
+          uploadedAt
+        }
+        createdAt
+        updatedAt
+      }
+      activity {
+        id
+        userId
+        userName
+        userImage
+        type
+        field
+        oldValue
+        newValue
+        description
+        createdAt
       }
     }
   }

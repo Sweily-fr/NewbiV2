@@ -2,7 +2,7 @@ import { useState, useCallback, useRef } from 'react';
 import * as React from 'react';
 import { Button } from '@/src/components/ui/button';
 import { Textarea } from '@/src/components/ui/textarea';
-import { Send, Edit2, Trash2, ChevronDown, ChevronUp, ImagePlus, X, ZoomIn, Loader2 } from 'lucide-react';
+import { Send, Edit2, Trash2, ImagePlus, ImageMinus, X, ZoomIn, Loader2, Flag, Check, Square, Plus } from 'lucide-react';
 import { Dialog, DialogContent, DialogTrigger, DialogTitle } from '@/src/components/ui/dialog';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/src/components/ui/tabs';
@@ -29,12 +29,12 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editingContent, setEditingContent] = useState('');
   const [commentToDelete, setCommentToDelete] = useState(null);
-  const [showAllActivities, setShowAllActivities] = useState(false);
   const [pendingImages, setPendingImages] = useState([]);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef(null);
   const textareaRef = useRef(null);
+  const scrollContainerRef = useRef(null);
   const { data: session } = useSession();
 
   // Gestion du drag-and-drop sur le textarea
@@ -169,8 +169,12 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
 
   const [uploadCommentImage] = useMutation(UPLOAD_COMMENT_IMAGE);
 
+  // Ref pour bloquer le onCompleted quand on upload des images avec le commentaire
+  const skipCommentUpdateRef = useRef(false);
+
   const [addComment, { loading: addingComment }] = useMutation(ADD_COMMENT, {
     onCompleted: (data) => {
+      if (skipCommentUpdateRef.current) return; // On attend la fin des uploads
       if (data?.addComment) {
         setTask(data.addComment);
         if (onTaskUpdate) {
@@ -207,68 +211,64 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
       return;
     }
 
+    const hasImages = pendingImages.length > 0;
+
     try {
       setIsUploadingImage(true);
-      
+
+      // Bloquer le onCompleted si on a des images (on veut tout afficher d'un coup)
+      if (hasImages) {
+        skipCommentUpdateRef.current = true;
+      }
+
       // 1. Créer le commentaire (contenu vide autorisé si images présentes)
       const result = await addComment({
         variables: {
           taskId,
-          input: { content: newComment.trim() || (pendingImages.length > 0 ? '' : ' ') },
+          input: { content: newComment.trim() || '' },
           workspaceId
         },
-        refetchQueries: ['GetBoard'],
-        awaitRefetchQueries: true,
       });
 
-      // 2. Si des images sont en attente, les uploader
-      if (pendingImages.length > 0 && result.data?.addComment?.comments) {
-        // Trouver le commentaire qu'on vient de créer (le dernier)
-        const comments = result.data.addComment.comments;
+      // 2. Si des images, les uploader en parallèle puis tout afficher d'un coup
+      if (hasImages && result.data?.addComment?.comments) {
+        const taskData = result.data.addComment;
+        const comments = taskData.comments;
         const newCommentData = comments[comments.length - 1];
-        
+
         if (newCommentData?.id) {
-          // Collecter les images uploadées
-          const uploadedImages = [];
-          
-          // Uploader chaque image
-          for (const img of pendingImages) {
-            try {
-              const uploadResult = await uploadCommentImage({
-                variables: {
-                  taskId,
-                  commentId: newCommentData.id,
-                  file: img.file,
-                  workspaceId
-                },
-                refetchQueries: ['GetBoard'],
-              });
-              
-              // Collecter l'image uploadée
-              if (uploadResult.data?.uploadCommentImage?.success) {
-                uploadedImages.push(uploadResult.data.uploadCommentImage.image);
-              }
-            } catch (uploadError) {
-              console.error('Error uploading comment image:', uploadError);
+          // Uploader toutes les images en parallèle
+          const uploadPromises = pendingImages.map(img =>
+            uploadCommentImage({
+              variables: {
+                taskId,
+                commentId: newCommentData.id,
+                file: img.file,
+                workspaceId
+              },
+            }).then(res => {
+              URL.revokeObjectURL(img.preview);
+              return res.data?.uploadCommentImage?.success ? res.data.uploadCommentImage.image : null;
+            }).catch(err => {
+              console.error('Error uploading comment image:', err);
+              URL.revokeObjectURL(img.preview);
+              return null;
+            })
+          );
+
+          const uploadedImages = (await Promise.all(uploadPromises)).filter(Boolean);
+
+          // Mise à jour unique : commentaire + images en même temps
+          const finalComments = taskData.comments.map(c => {
+            if (c.id === newCommentData.id) {
+              return { ...c, images: [...(c.images || []), ...uploadedImages] };
             }
-            // Libérer l'URL de preview
-            URL.revokeObjectURL(img.preview);
-          }
-          
-          // Mettre à jour le state local avec les images uploadées
-          if (uploadedImages.length > 0) {
-            setTask(prevTask => {
-              const updatedComments = prevTask.comments.map(c => {
-                if (c.id === newCommentData.id) {
-                  return {
-                    ...c,
-                    images: [...(c.images || []), ...uploadedImages]
-                  };
-                }
-                return c;
-              });
-              return { ...prevTask, comments: updatedComments };
-            });
+            return c;
+          });
+          const finalTask = { ...taskData, comments: finalComments };
+          setTask(finalTask);
+          if (onTaskUpdate) {
+            onTaskUpdate(prev => ({ ...prev, comments: finalComments, activity: taskData.activity }));
           }
         }
       }
@@ -279,6 +279,7 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
     } catch (error) {
       console.error('Error adding comment:', error);
     } finally {
+      skipCommentUpdateRef.current = false;
       setIsUploadingImage(false);
     }
   };
@@ -326,89 +327,265 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
     if (!dateString) return '';
     const date = new Date(dateString);
     const now = new Date();
-    const diffInHours = (now - date) / (1000 * 60 * 60);
 
-    if (diffInHours < 24) {
+    // Comparer les jours calendaires (pas les heures écoulées)
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const dateDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+    if (dateDay.getTime() === today.getTime()) {
       return format(date, "'Aujourd''hui à' HH:mm", { locale: fr });
-    } else if (diffInHours < 48) {
+    } else if (dateDay.getTime() === yesterday.getTime()) {
       return format(date, "'Hier à' HH:mm", { locale: fr });
     } else {
       return format(date, "d MMM 'à' HH:mm", { locale: fr });
     }
   };
 
+  const PRIORITY_MAP = {
+    high: { label: 'Urgent', color: 'text-red-500 fill-red-500' },
+    medium: { label: 'Moyen', color: 'text-yellow-500 fill-yellow-500' },
+    low: { label: 'Faible', color: 'text-green-500 fill-green-500' },
+    '': { label: 'Aucune', color: 'text-gray-400 fill-gray-400' },
+  };
+
   const getActivityDisplay = (activity) => {
-    const icons = {
-      created: '✨',
-      updated: '📝',
-      moved: '🔄',
-      assigned: '👤',
-      unassigned: '👤',
-      completed: '✅',
-      reopened: '🔓'
-    };
-    
-    const fieldIcons = {
-      title: '✏️',
-      description: '📄',
-      priority: '🎯',
-      dueDate: '📅',
-      tags: '🏷️',
-      assignedTo: '👤',
-      checklist: '✅'
-    };
-    
-    let text = activity.description || `a modifié ${activity.field}`;
+    let text = '';
+    let details = null;
     let moveDetails = null;
-    
-    if (activity.type === 'moved' && columns.length > 0) {
-      const oldColumn = columns.find(col => col.id === activity.oldValue);
-      const newColumn = columns.find(col => col.id === activity.newValue);
-      
-      if (oldColumn && newColumn) {
-        text = 'a déplacé la tâche';
-        moveDetails = {
-          from: { title: oldColumn.title, color: oldColumn.color },
-          to: { title: newColumn.title, color: newColumn.color }
-        };
-      }
-    }
-    
-    if ((activity.type === 'assigned' || activity.type === 'unassigned') && boardMembers.length > 0) {
-      const memberIds = [];
-      
-      if (activity.type === 'assigned' && Array.isArray(activity.newValue)) {
-        memberIds.push(...activity.newValue);
-      } else if (activity.type === 'unassigned' && Array.isArray(activity.oldValue)) {
-        memberIds.push(...activity.oldValue);
-      }
-      
-      const memberNames = memberIds
-        .map(id => {
-          const member = boardMembers.find(m => m.userId === id || m.id === id);
-          return member ? member.name : null;
-        })
-        .filter(Boolean);
-      
-      if (memberNames.length > 0) {
-        if (activity.type === 'assigned') {
-          text = `a assigné ${memberNames.join(', ')}`;
-        } else {
-          text = `a désassigné ${memberNames.join(', ')}`;
+    let priorityDetails = null;
+    let memberDetails = null;
+    let checklistDetails = null;
+    let tagDetails = null;
+
+    const cap = (str) => str ? str.charAt(0).toUpperCase() + str.slice(1) : str;
+    const result = () => ({ text: cap(text), details: cap(details), moveDetails, priorityDetails, memberDetails, checklistDetails, tagDetails });
+
+    // Déplacement de tâche
+    if (activity.type === 'moved') {
+      text = 'A déplacé la tâche :';
+      if (columns.length > 0) {
+        const oldColumn = columns.find(col => col.id === activity.oldValue);
+        const newColumn = columns.find(col => col.id === activity.newValue);
+        if (oldColumn && newColumn) {
+          moveDetails = {
+            from: { title: oldColumn.title, color: oldColumn.color },
+            to: { title: newColumn.title, color: newColumn.color }
+          };
         }
       }
+      return result();
     }
-    
-    let icon = icons[activity.type] || '📝';
-    if (activity.type !== 'moved' && activity.field && fieldIcons[activity.field]) {
-      icon = fieldIcons[activity.field];
+
+    // Priorité modifiée
+    if (activity.type === 'priority_changed') {
+      text = 'A modifié la priorité :';
+      const oldPriority = PRIORITY_MAP[activity.oldValue] || PRIORITY_MAP[''];
+      const newPriority = PRIORITY_MAP[activity.newValue] || PRIORITY_MAP[''];
+      priorityDetails = {
+        from: { label: oldPriority.label, color: oldPriority.color },
+        to: { label: newPriority.label, color: newPriority.color },
+      };
+      return result();
     }
-    
-    return {
-      icon: icon,
-      text: text,
-      moveDetails: moveDetails
+
+    // Assignation / désassignation de membres
+    if (activity.type === 'assigned' || activity.type === 'unassigned') {
+      // Extraire les IDs des membres (tableau ou chaîne séparée par des virgules pour les anciennes données)
+      const rawValue = activity.type === 'assigned' ? activity.newValue : activity.oldValue;
+      let memberIds = [];
+      if (Array.isArray(rawValue)) {
+        memberIds = rawValue;
+      } else if (typeof rawValue === 'string' && rawValue.length > 0) {
+        memberIds = rawValue.split(',').map(s => s.trim()).filter(Boolean);
+      }
+
+      // Résoudre les membres depuis boardMembers
+      const members = boardMembers.length > 0
+        ? memberIds
+            .map(id => {
+              const member = boardMembers.find(m => m.userId === id || m.id === id);
+              return member ? { name: member.name, image: member.image } : null;
+            })
+            .filter(Boolean)
+        : [];
+
+      if (members.length > 0) {
+        text = activity.type === 'assigned' ? 'A assigné :' : 'A désassigné :';
+        memberDetails = members;
+      } else {
+        text = activity.type === 'assigned' ? 'A assigné des membres' : 'A désassigné des membres';
+      }
+      return result();
+    }
+
+    // Création de tâche
+    if (activity.type === 'created') {
+      text = 'A créé la tâche';
+      return result();
+    }
+
+    // Timer
+    if (activity.type === 'timer_started') {
+      text = 'A lancé le timer';
+      return result();
+    }
+    if (activity.type === 'timer_stopped') {
+      text = 'A arrêté le timer';
+      // Extraire la durée depuis la description backend (ex: "a arrêté le timer (5m 30s)")
+      const durationMatch = activity.description?.match(/\(([^)]+)\)/);
+      if (durationMatch) {
+        details = durationMatch[1];
+      }
+      return result();
+    }
+    if (activity.type === 'timer_reset') {
+      text = 'A réinitialisé le timer';
+      return result();
+    }
+
+    // Complétion / réouverture
+    if (activity.type === 'completed') {
+      text = 'A terminé la tâche';
+      return result();
+    }
+    if (activity.type === 'reopened') {
+      text = 'A réouvert la tâche';
+      return result();
+    }
+
+    // Autres activités (updated) — parser la description pour séparer verbe et détails
+    const desc = activity.description || '';
+
+    // Images — activité dédiée avec field === 'images'
+    if (activity.field === 'images') {
+      const added = Array.isArray(activity.newValue) ? activity.newValue : [];
+      const removed = Array.isArray(activity.oldValue) ? activity.oldValue : [];
+      const count = added.length || removed.length || 1;
+      if (added.length > 0) {
+        text = `A ajouté ${count} image${count > 1 ? 's' : ''}`;
+      } else {
+        text = `A supprimé ${count} image${count > 1 ? 's' : ''}`;
+      }
+      return result();
+    }
+
+    // Tags — activité dédiée avec field === 'tags'
+    if (activity.field === 'tags') {
+      const addedTags = Array.isArray(activity.newValue) ? activity.newValue : [];
+      const removedTags = Array.isArray(activity.oldValue) ? activity.oldValue : [];
+
+      if (addedTags.length > 0 && removedTags.length === 0) {
+        text = addedTags.length > 1 ? 'A ajouté les tags :' : 'A ajouté le tag :';
+      } else if (removedTags.length > 0 && addedTags.length === 0) {
+        text = removedTags.length > 1 ? 'A supprimé les tags :' : 'A supprimé le tag :';
+      } else if (addedTags.length > 0 && removedTags.length > 0) {
+        text = 'A modifié les tags :';
+      } else {
+        // Fallback pour les anciennes données sans newValue/oldValue
+        text = cap(desc);
+        return result();
+      }
+
+      tagDetails = {
+        added: addedTags,
+        removed: removedTags,
+      };
+      return result();
+    }
+
+    // Checklist — activité dédiée avec field === 'checklist'
+    if (activity.field === 'checklist' && desc) {
+      // Parser les différentes parties de la description
+      // Format : "a ajouté l'élément : X" / "a supprimé l'élément : X" / "a coché l'élément : X" / "a décoché l'élément : X"
+      // Peut contenir plusieurs parties séparées par " et "
+      const clParts = desc.split(/\s+et\s+a\s+/i);
+      const items = [];
+      const parseChecklistPart = (part) => {
+        // IMPORTANT : décoché AVANT coché, sinon "coché" matche aussi dans "décoché"
+        const uncheckMatch = part.match(/^a?\s*décoché\s+(?:les?\s+éléments?|l'élément)\s*:\s*(.+)/i);
+        if (uncheckMatch) {
+          uncheckMatch[1].split(',').map(s => s.trim()).filter(Boolean).forEach(name => {
+            items.push({ name, type: 'unchecked' });
+          });
+          return;
+        }
+        const checkMatch = part.match(/^a?\s*coché\s+(?:les?\s+éléments?|l'élément)\s*:\s*(.+)/i);
+        if (checkMatch) {
+          checkMatch[1].split(',').map(s => s.trim()).filter(Boolean).forEach(name => {
+            items.push({ name, type: 'checked' });
+          });
+          return;
+        }
+        const addMatch = part.match(/^a?\s*ajouté\s+(?:les?\s+éléments?|l'élément)\s*:\s*(.+)/i);
+        if (addMatch) {
+          addMatch[1].split(',').map(s => s.trim()).filter(Boolean).forEach(name => {
+            items.push({ name, type: 'added' });
+          });
+          return;
+        }
+        const removeMatch = part.match(/^a?\s*supprimé\s+(?:les?\s+éléments?|l'élément)\s*:\s*(.+)/i);
+        if (removeMatch) {
+          removeMatch[1].split(',').map(s => s.trim()).filter(Boolean).forEach(name => {
+            items.push({ name, type: 'removed' });
+          });
+        }
+      };
+      clParts.forEach(parseChecklistPart);
+
+      if (items.length > 0) {
+        text = 'A modifié la checklist :';
+        checklistDetails = items;
+        return result();
+      }
+    }
+
+    // Nettoyer les détails : supprimer les préfixes "ajouté le/les tag(s)" des anciens formats
+    const cleanTagDetails = (raw) => {
+      return raw
+        .replace(/^ajouté\s+(les?\s+tags?\s+)?/i, '')
+        .replace(/^supprimé\s+(les?\s+tags?\s+)?/i, '')
+        .replace(/\s+et\s+/g, ', ')
+        .trim();
     };
+
+    // Patterns : "a modifié ...", "a ajouté ...", "a supprimé ..."
+    const verbPatterns = [
+      // Tags avec ":" (nouveau format)
+      { match: /^a modifié les tags\s*:\s*(.+)$/i, verb: 'A modifié les tags :', clean: true },
+      { match: /^a ajouté (les tags|le tag)\s*:\s*(.+)$/i, verb: null, build: (m) => ({ verb: `A ajouté ${m[1]} :`, detail: m[2] }) },
+      { match: /^a supprimé (les tags|le tag)\s*:\s*(.+)$/i, verb: null, build: (m) => ({ verb: `A supprimé ${m[1]} :`, detail: m[2] }) },
+      // Tags sans ":" (ancien format)
+      { match: /^a ajouté (les tags|le tag)\s+(.+)$/i, verb: null, build: (m) => ({ verb: `A ajouté ${m[1]} :`, detail: m[2] }) },
+      { match: /^a supprimé (les tags|le tag)\s+(.+)$/i, verb: null, build: (m) => ({ verb: `A supprimé ${m[1]} :`, detail: m[2] }) },
+      // Ancien format "a modifié ajouté le/les tag(s) X Y"
+      { match: /^a modifié\s+(ajouté\s+(?:les?\s+tags?\s+)?.+)$/i, verb: 'A modifié les tags :', clean: true },
+      { match: /^a modifié\s+(supprimé\s+(?:les?\s+tags?\s+)?.+)$/i, verb: 'A modifié les tags :', clean: true },
+      // Générique
+      { match: /^a modifié\s+(.+)$/i, verb: 'A modifié :' },
+      { match: /^a ajouté\s+(.+)$/i, verb: 'A ajouté :' },
+      { match: /^a supprimé\s+(.+)$/i, verb: 'A supprimé :' },
+    ];
+
+    for (const pattern of verbPatterns) {
+      const m = desc.match(pattern.match);
+      if (m) {
+        if (pattern.build) {
+          const built = pattern.build(m);
+          text = built.verb;
+          details = built.detail;
+        } else {
+          text = pattern.verb;
+          details = pattern.clean ? cleanTagDetails(m[1]) : m[1];
+        }
+        return result();
+      }
+    }
+
+    // Fallback
+    text = desc || `A modifié ${activity.field || 'la tâche'}`;
+    return result();
   };
 
   // Recalculer les commentaires et activités enrichis quand usersInfo change
@@ -427,59 +604,56 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
   
   const allActivity = React.useMemo(() => {
     return [
-      ...comments.map(c => ({ ...c, type: 'comment' })),
-      ...activities.map(a => ({ ...a, type: 'activity' }))
+      ...comments.map(c => ({ ...c, _kind: 'comment' })),
+      ...activities.map(a => ({ ...a, _kind: 'activity' }))
     ].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
   }, [comments, activities]);
 
+  // Auto-scroll vers le bas pour voir les dernières activités
+  React.useEffect(() => {
+    requestAnimationFrame(() => {
+      const el = scrollContainerRef.current;
+      if (el) el.scrollTop = el.scrollHeight;
+    });
+  }, [allActivity.length, comments.length, activities.length]);
+
+  const scrollToBottom = React.useCallback(() => {
+    requestAnimationFrame(() => {
+      const el = scrollContainerRef.current;
+      if (el) el.scrollTop = el.scrollHeight;
+    });
+  }, []);
+
   return (
-    <div className="flex flex-col h-full">
-      <Tabs defaultValue="all" className="flex flex-col h-full">
-        <div className="flex-1 overflow-y-auto pl-2 px-4 py-4">
-          <TabsContent value="all" className="space-y-3 mt-0">
+    <div className="flex flex-col h-full min-h-0">
+      <Tabs defaultValue="all" className="flex flex-col h-full min-h-0" onValueChange={scrollToBottom}>
+        <div ref={scrollContainerRef} className="flex-1 min-h-0 overflow-y-auto pl-2 px-4 py-4">
+          <TabsContent value="all" className="space-y-4 mt-0">
             {allActivity.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-8">
                 Aucune activité
               </p>
             ) : (
               <>
-                {allActivity.length > 3 && !showAllActivities && (
-                  <button
-                    onClick={() => setShowAllActivities(true)}
-                    className="w-full text-xs text-muted-foreground hover:text-foreground flex items-center justify-start gap-1 py-2 transition-colors"
-                  >
-                    <ChevronDown className="h-3 w-3" />
-                    Voir plus ({allActivity.length - 3} activités)
-                  </button>
-                )}
-                {allActivity.length > 3 && showAllActivities && (
-                  <button
-                    onClick={() => setShowAllActivities(false)}
-                    className="w-full text-xs text-muted-foreground hover:text-foreground flex items-center justify-start gap-1 py-2 transition-colors"
-                  >
-                    <ChevronUp className="h-3 w-3" />
-                    Voir moins
-                  </button>
-                )}
-                {(showAllActivities ? allActivity : allActivity.slice(-3)).map((item, index) => {
-                const display = item.type === 'activity' ? getActivityDisplay(item) : null;
+                {allActivity.map((item, index) => {
+                const display = item._kind === 'activity' ? getActivityDisplay(item) : null;
                 return (
-                  <div key={`${item.type}-${item.id || index}`} className="flex gap-3">
-                    {item.type === 'comment' ? (
+                  <div key={`${item._kind}-${item.id || index}`} className="flex gap-3">
+                    {item._kind === 'comment' ? (
                       <div className="bg-background rounded-lg p-3 flex-1 border border-border">
                         <div className="flex gap-3">
                           <UserAvatar
                             src={item.userImage}
                             name={item.userName}
                             size="sm"
-                            className="flex-shrink-0"
+                            className="flex-shrink-0 mt-0.5"
                           />
                           <div className="flex-1 space-y-2">
                             {editingCommentId === item.id ? (
                               <>
                                 <div className="flex items-center gap-2">
-                                  <span className="text-xs font-medium">{item.userName}</span>
-                                  <span className="text-xs text-muted-foreground">
+                                  <span className="text-[13px] font-medium">{item.userName}</span>
+                                  <span className="text-[13px] text-muted-foreground">
                                     {formatDate(item.createdAt)}
                                   </span>
                                 </div>
@@ -517,8 +691,8 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
                               <>
                                 <div className="flex items-center justify-between gap-2">
                                   <div className="flex items-center gap-2">
-                                    <span className="text-xs font-medium">{item.userName}</span>
-                                    <span className="text-xs text-muted-foreground">
+                                    <span className="text-[13px] font-medium">{item.userName}</span>
+                                    <span className="text-[13px] text-muted-foreground">
                                       {formatDate(item.createdAt)}
                                     </span>
                                   </div>
@@ -572,7 +746,7 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
                                     </AlertDialog>
                                   </div>
                                 </div>
-                                <p className="text-sm whitespace-pre-wrap">{item.content}</p>
+                                {item.content && <p className="text-[14px] whitespace-pre-wrap">{item.content}</p>}
                                 {/* Affichage des images du commentaire dans le fil "Tout" */}
                                 {item.images && item.images.length > 0 && (
                                   <div className="grid grid-cols-2 gap-2 mt-2">
@@ -610,49 +784,106 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
                         </div>
                       </div>
                     ) : (
-                      <>
-                        <div className="w-8 flex items-start justify-center flex-shrink-0 pt-1.5">
-                          <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40" />
-                        </div>
-                        <div className="flex-1 space-y-2">
+                      <div className={`flex gap-3 flex-1 ${display && !display.details && !display.moveDetails && !display.priorityDetails && !display.memberDetails && !display.checklistDetails && !display.tagDetails ? 'items-center' : ''}`}>
+                        <UserAvatar
+                          src={item.userImage}
+                          name={item.userName}
+                          size="sm"
+                          className={`flex-shrink-0 ${display && !display.details && !display.moveDetails && !display.priorityDetails && !display.memberDetails && !display.checklistDetails && !display.tagDetails ? '' : 'mt-0.5'}`}
+                        />
+                        <div className="flex-1 min-w-0">
                           {display ? (
-                            <>
-                              <div className="flex items-center justify-between gap-2">
-                                <div className="flex items-center gap-2 flex-wrap flex-1">
-                                  <span className="text-xs font-normal">{item.userName}</span>
-                                  <span className="text-xs text-muted-foreground">{display.text}</span>
-                                  {display.moveDetails && (
-                                    <>
-                                      <div className="flex items-center gap-1">
-                                        <div 
-                                          className="w-2 h-2 rounded-full flex-shrink-0"
-                                          style={{ backgroundColor: display.moveDetails.from.color }}
-                                        />
-                                        <span className="text-xs text-foreground">
-                                          {display.moveDetails.from.title}
-                                        </span>
-                                      </div>
-                                      <span className="text-muted-foreground text-xs">→</span>
-                                      <div className="flex items-center gap-1">
-                                        <div 
-                                          className="w-2 h-2 rounded-full flex-shrink-0"
-                                          style={{ backgroundColor: display.moveDetails.to.color }}
-                                        />
-                                        <span className="text-xs text-foreground">
-                                          {display.moveDetails.to.title}
-                                        </span>
-                                      </div>
-                                    </>
-                                  )}
-                                </div>
-                                <span className="text-xs text-muted-foreground whitespace-nowrap">
+                            <div>
+                              <div className="flex items-start justify-between gap-2">
+                                <p className="text-[13px]">
+                                  <span className="font-medium whitespace-nowrap">{item.userName}</span>
+                                  {' '}
+                                  <span className="text-muted-foreground">{display.text}</span>
+                                </p>
+                                <span className="text-[13px] text-muted-foreground whitespace-nowrap flex-shrink-0">
                                   {formatDate(item.createdAt)}
                                 </span>
                               </div>
-                            </>
+                              {display.details && (
+                                <p className="text-[13px] text-foreground mt-0.5">{display.details}</p>
+                              )}
+                              {display.memberDetails && (
+                                <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                                  {display.memberDetails.map((member, idx) => (
+                                    <div key={idx} className="flex items-center gap-1.5 bg-muted/50 rounded-full pl-1 pr-2.5 py-0.5 border border-border">
+                                      <UserAvatar src={member.image} name={member.name} size="xs" />
+                                      <span className="text-[12px] font-medium">{member.name}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              {display.tagDetails && (
+                                <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                                  {display.tagDetails.added.map((tag, idx) => (
+                                    <span key={`add-${idx}`} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium border ${tag.bg} ${tag.text} ${tag.border}`}>
+                                      <Plus className="w-3 h-3" />
+                                      {tag.name}
+                                    </span>
+                                  ))}
+                                  {display.tagDetails.removed.map((tag, idx) => (
+                                    <span key={`rem-${idx}`} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium border line-through opacity-60 ${tag.bg} ${tag.text} ${tag.border}`}>
+                                      <X className="w-3 h-3" />
+                                      {tag.name}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                              {display.checklistDetails && (
+                                <div className="flex flex-col gap-1 mt-1.5">
+                                  {display.checklistDetails.map((item, idx) => (
+                                    <div key={idx} className="flex items-center gap-1.5">
+                                      {item.type === 'checked' && <Check className="w-3.5 h-3.5 text-green-600 flex-shrink-0" />}
+                                      {item.type === 'unchecked' && <Square className="w-3.5 h-3.5 text-orange-500 flex-shrink-0" />}
+                                      {item.type === 'removed' && <X className="w-3.5 h-3.5 text-red-500 flex-shrink-0" />}
+                                      {item.type === 'added' && <Plus className="w-3.5 h-3.5 text-blue-600 flex-shrink-0" />}
+                                      <span className={`text-[12px] ${item.type === 'removed' ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
+                                        {item.name}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              {display.moveDetails && (
+                                <div className="flex items-center gap-1.5 mt-1">
+                                  <div
+                                    className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                                    style={{ backgroundColor: display.moveDetails.from.color }}
+                                  />
+                                  <span className="text-[13px] text-foreground">
+                                    {display.moveDetails.from.title}
+                                  </span>
+                                  <span className="text-muted-foreground text-[13px]">→</span>
+                                  <div
+                                    className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                                    style={{ backgroundColor: display.moveDetails.to.color }}
+                                  />
+                                  <span className="text-[13px] text-foreground">
+                                    {display.moveDetails.to.title}
+                                  </span>
+                                </div>
+                              )}
+                              {display.priorityDetails && (
+                                <div className="flex items-center gap-1.5 mt-1">
+                                  <Flag className={`w-3.5 h-3.5 flex-shrink-0 ${display.priorityDetails.from.color}`} />
+                                  <span className="text-[13px] text-foreground">
+                                    {display.priorityDetails.from.label}
+                                  </span>
+                                  <span className="text-muted-foreground text-[13px]">→</span>
+                                  <Flag className={`w-3.5 h-3.5 flex-shrink-0 ${display.priorityDetails.to.color}`} />
+                                  <span className="text-[13px] text-foreground">
+                                    {display.priorityDetails.to.label}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
                           ) : null}
                         </div>
-                      </>
+                      </div>
                     )}
                   </div>
                 );
@@ -661,7 +892,7 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
             )}
           </TabsContent>
 
-          <TabsContent value="comments" className="space-y-3 mt-4">
+          <TabsContent value="comments" className="space-y-4 mt-4">
             {comments.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-8">
                 Aucun commentaire
@@ -674,14 +905,14 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
                       src={comment.userImage}
                       name={comment.userName}
                       size="sm"
-                      className="flex-shrink-0"
+                      className="flex-shrink-0 mt-0.5"
                     />
                     <div className="flex-1 space-y-2">
                       {editingCommentId === comment.id ? (
                         <>
                           <div className="flex items-center gap-2">
-                            <span className="text-xs font-medium">{comment.userName}</span>
-                            <span className="text-xs text-muted-foreground">
+                            <span className="text-[13px] font-medium">{comment.userName}</span>
+                            <span className="text-[13px] text-muted-foreground">
                               {formatDate(comment.createdAt)}
                             </span>
                           </div>
@@ -719,8 +950,8 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
                         <>
                           <div className="flex items-center justify-between gap-2">
                             <div className="flex items-center gap-2">
-                              <span className="text-xs font-medium">{comment.userName}</span>
-                              <span className="text-xs text-muted-foreground">
+                              <span className="text-[13px] font-medium">{comment.userName}</span>
+                              <span className="text-[13px] text-muted-foreground">
                                 {formatDate(comment.createdAt)}
                               </span>
                             </div>
@@ -774,7 +1005,7 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
                               </AlertDialog>
                             </div>
                           </div>
-                          <p className="text-sm whitespace-pre-wrap">{comment.content}</p>
+                          {comment.content && <p className="text-[14px] whitespace-pre-wrap">{comment.content}</p>}
                           {/* Affichage des images du commentaire */}
                           {comment.images && comment.images.length > 0 && (
                             <div className="grid grid-cols-2 gap-2 mt-2">
@@ -815,70 +1046,112 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
             )}
           </TabsContent>
 
-          <TabsContent value="activity" className="space-y-3 mt-4">
+          <TabsContent value="activity" className="space-y-4 mt-4">
             {activities.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-8">
                 Aucune activité
               </p>
             ) : (
               <>
-                {activities.length > 3 && !showAllActivities && (
-                  <button
-                    onClick={() => setShowAllActivities(true)}
-                    className="w-full text-xs text-muted-foreground hover:text-foreground flex items-center justify-start gap-1 py-2 transition-colors"
-                  >
-                    <ChevronDown className="h-3 w-3" />
-                    Voir plus ({activities.length - 3} activités)
-                  </button>
-                )}
-                {activities.length > 3 && showAllActivities && (
-                  <button
-                    onClick={() => setShowAllActivities(false)}
-                    className="w-full text-xs text-muted-foreground hover:text-foreground flex items-center justify-start gap-1 py-2 transition-colors"
-                  >
-                    <ChevronUp className="h-3 w-3" />
-                    Voir moins
-                  </button>
-                )}
-                {(showAllActivities ? activities : activities.slice(-3)).map((activity, index) => {
+                {activities.map((activity, index) => {
                 const display = getActivityDisplay(activity);
+                const hasExtraDetails = display.details || display.moveDetails || display.priorityDetails || display.memberDetails || display.checklistDetails || display.tagDetails;
                 return (
-                  <div key={activity.id || index} className="flex gap-3">
-                    <div className="w-8 flex items-start justify-center flex-shrink-0 pt-1.5">
-                      <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2 flex-wrap flex-1">
-                          <span className="text-xs font-normal">{activity.userName}</span>
-                          <span className="text-xs text-muted-foreground">{display.text}</span>
-                          {display.moveDetails && (
-                            <>
-                              <div className="flex items-center gap-1">
-                                <div 
-                                  className="w-2 h-2 rounded-full flex-shrink-0"
-                                  style={{ backgroundColor: display.moveDetails.from.color }}
-                                />
-                                <span className="text-xs text-foreground">
-                                  {display.moveDetails.from.title}
-                                </span>
-                              </div>
-                              <span className="text-muted-foreground text-xs">→</span>
-                              <div className="flex items-center gap-1">
-                                <div 
-                                  className="w-2 h-2 rounded-full flex-shrink-0"
-                                  style={{ backgroundColor: display.moveDetails.to.color }}
-                                />
-                                <span className="text-xs text-foreground">
-                                  {display.moveDetails.to.title}
-                                </span>
-                              </div>
-                            </>
-                          )}
+                  <div key={activity.id || index} className={`flex gap-3 ${!hasExtraDetails ? 'items-center' : ''}`}>
+                    <UserAvatar
+                      src={activity.userImage}
+                      name={activity.userName}
+                      size="sm"
+                      className={`flex-shrink-0 ${hasExtraDetails ? 'mt-0.5' : ''}`}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div>
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="text-[13px]">
+                            <span className="font-medium whitespace-nowrap">{activity.userName}</span>
+                            {' '}
+                            <span className="text-muted-foreground">{display.text}</span>
+                          </p>
+                          <span className="text-[13px] text-muted-foreground whitespace-nowrap flex-shrink-0">
+                            {formatDate(activity.createdAt)}
+                          </span>
                         </div>
-                        <span className="text-xs text-muted-foreground whitespace-nowrap">
-                          {formatDate(activity.createdAt)}
-                        </span>
+                        {display.details && (
+                          <p className="text-[13px] text-foreground mt-0.5">{display.details}</p>
+                        )}
+                        {display.memberDetails && (
+                          <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                            {display.memberDetails.map((member, idx) => (
+                              <div key={idx} className="flex items-center gap-1.5 bg-muted/50 rounded-full pl-1 pr-2.5 py-0.5 border border-border">
+                                <UserAvatar src={member.image} name={member.name} size="xs" />
+                                <span className="text-[12px] font-medium">{member.name}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {display.tagDetails && (
+                          <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                            {display.tagDetails.added.map((tag, idx) => (
+                              <span key={`add-${idx}`} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium border ${tag.bg} ${tag.text} ${tag.border}`}>
+                                <Plus className="w-3 h-3" />
+                                {tag.name}
+                              </span>
+                            ))}
+                            {display.tagDetails.removed.map((tag, idx) => (
+                              <span key={`rem-${idx}`} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium border line-through opacity-60 ${tag.bg} ${tag.text} ${tag.border}`}>
+                                <X className="w-3 h-3" />
+                                {tag.name}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        {display.checklistDetails && (
+                          <div className="flex flex-col gap-1 mt-1.5">
+                            {display.checklistDetails.map((item, idx) => (
+                              <div key={idx} className="flex items-center gap-1.5">
+                                {item.type === 'checked' && <Check className="w-3.5 h-3.5 text-green-600 flex-shrink-0" />}
+                                {item.type === 'unchecked' && <Square className="w-3.5 h-3.5 text-orange-500 flex-shrink-0" />}
+                                {item.type === 'removed' && <X className="w-3.5 h-3.5 text-red-500 flex-shrink-0" />}
+                                {item.type === 'added' && <Plus className="w-3.5 h-3.5 text-blue-600 flex-shrink-0" />}
+                                <span className={`text-[12px] ${item.type === 'removed' ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
+                                  {item.name}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {display.moveDetails && (
+                          <div className="flex items-center gap-1.5 mt-1">
+                            <div
+                              className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                              style={{ backgroundColor: display.moveDetails.from.color }}
+                            />
+                            <span className="text-[13px] text-foreground">
+                              {display.moveDetails.from.title}
+                            </span>
+                            <span className="text-muted-foreground text-[13px]">→</span>
+                            <div
+                              className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                              style={{ backgroundColor: display.moveDetails.to.color }}
+                            />
+                            <span className="text-[13px] text-foreground">
+                              {display.moveDetails.to.title}
+                            </span>
+                          </div>
+                        )}
+                        {display.priorityDetails && (
+                          <div className="flex items-center gap-1.5 mt-1">
+                            <Flag className={`w-3.5 h-3.5 flex-shrink-0 ${display.priorityDetails.from.color}`} />
+                            <span className="text-[13px] text-foreground">
+                              {display.priorityDetails.from.label}
+                            </span>
+                            <span className="text-muted-foreground text-[13px]">→</span>
+                            <Flag className={`w-3.5 h-3.5 flex-shrink-0 ${display.priorityDetails.to.color}`} />
+                            <span className="text-[13px] text-foreground">
+                              {display.priorityDetails.to.label}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -915,6 +1188,7 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
               onPaste={handlePaste}
+              disabled={isUploadingImage || addingComment}
               placeholder={isDragOver ? "Déposez vos images ici..." : "Ajouter un commentaire... (glissez-déposez des images)"}
               className={`min-h-[80px] text-sm bg-background border-border ${isDragOver ? 'border-primary' : ''}`}
               onKeyDown={(e) => {
@@ -942,17 +1216,23 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
                   <img
                     src={img.preview}
                     alt={img.file.name}
-                    className="w-16 h-16 object-cover rounded-md border border-border"
+                    className={`w-16 h-16 object-cover rounded-md border border-border ${isUploadingImage ? 'opacity-50' : ''}`}
                   />
-                  <button
-                    onClick={() => {
-                      setPendingImages(prev => prev.filter((_, i) => i !== index));
-                      URL.revokeObjectURL(img.preview);
-                    }}
-                    className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-white text-black border border-gray-200 shadow-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-100"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
+                  {isUploadingImage ? (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        setPendingImages(prev => prev.filter((_, i) => i !== index));
+                        URL.revokeObjectURL(img.preview);
+                      }}
+                      className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-white text-black border border-gray-200 shadow-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-100"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
@@ -999,8 +1279,17 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
               onClick={handleAddComment}
               disabled={(!newComment.trim() && pendingImages.length === 0) || addingComment || isUploadingImage}
             >
-              <Send className="h-3 w-3 mr-2" />
-              Envoyer
+              {(addingComment || isUploadingImage) ? (
+                <>
+                  <Loader2 className="h-3 w-3 mr-2 animate-spin" />
+                  Envoi...
+                </>
+              ) : (
+                <>
+                  <Send className="h-3 w-3 mr-2" />
+                  Envoyer
+                </>
+              )}
             </Button>
           </div>
         </div>
