@@ -176,7 +176,9 @@ export function ChartAreaInteractive({
   isLoading = false,
   ...props
 }) {
-  const chartId = React.useId();
+  // Sanitize useId() output — colons in IDs can break SVG url(#id) gradient references
+  const rawId = React.useId();
+  const chartId = rawId.replace(/:/g, "");
   const isMobile = useIsMobile();
   const [timeRange, setTimeRange] = React.useState("90d");
   const [customStartDate, setCustomStartDate] = React.useState("");
@@ -403,7 +405,15 @@ export function ChartAreaInteractive({
           className={`aspect-${aspectRatio} w-full`}
           style={{ height }}
         >
-          <AreaChart data={filteredData}>
+          <AreaChart
+            data={filteredData}
+            margin={{
+              left: -20,
+              right: 12,
+              top: 12,
+              bottom: 0,
+            }}
+          >
             {showGradient && (
               <defs>
                 <linearGradient
@@ -501,6 +511,8 @@ export function ChartAreaInteractive({
                 }
                 fillOpacity={1}
                 stroke={config.desktop?.color || "#5B4FFF"}
+                strokeWidth={2}
+                connectNulls
               />
             ) : (
               <>
@@ -515,7 +527,9 @@ export function ChartAreaInteractive({
                     }
                     fillOpacity={1}
                     stroke={config.mobile?.color || "#a44fff"}
+                    strokeWidth={2}
                     stackId="a"
+                    connectNulls
                   />
                 )}
                 {showDesktop && (
@@ -529,7 +543,9 @@ export function ChartAreaInteractive({
                     }
                     fillOpacity={1}
                     stroke={config.desktop?.color || "#5B4FFF"}
+                    strokeWidth={2}
                     stackId={hideMobileCurve ? undefined : "a"}
+                    connectNulls
                   />
                 )}
               </>
