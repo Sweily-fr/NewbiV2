@@ -1022,6 +1022,82 @@ export function useMoveSharedFolder() {
 }
 
 /**
+ * Hook pour télécharger un fichier individuel
+ */
+export function useDownloadFile() {
+  const { workspaceId } = useWorkspace();
+  const [loading, setLoading] = React.useState(false);
+
+  const downloadFile = async (doc) => {
+    if (!workspaceId || !doc?.id) {
+      toast.error("Paramètres manquants");
+      return;
+    }
+
+    const token = localStorage.getItem("bearer_token");
+    if (!token) {
+      toast.error("Non authentifié");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const apiUrl = (
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
+      ).replace(/\/$/, "");
+
+      const response = await fetch(
+        `${apiUrl}/api/shared-documents/download-file/${doc.id}?workspaceId=${workspaceId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          const error = await response.json();
+          throw new Error(error.message || "Erreur lors du téléchargement");
+        }
+        throw new Error(`Erreur ${response.status}: ${response.statusText}`);
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = doc.originalName || doc.name || "document";
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error("Erreur téléchargement fichier:", error);
+      toast.error(error.message || "Erreur lors du téléchargement");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /**
+   * Construit l'URL de preview pour un document (utilisable dans img/video/iframe src)
+   */
+  const getPreviewUrl = (docId) => {
+    if (!workspaceId || !docId) return null;
+    const token = localStorage.getItem("bearer_token");
+    if (!token) return null;
+    const apiUrl = (
+      process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
+    ).replace(/\/$/, "");
+    return `${apiUrl}/api/shared-documents/preview-file/${docId}?workspaceId=${workspaceId}&token=${token}`;
+  };
+
+  return { downloadFile, getPreviewUrl, loading };
+}
+
+/**
  * Hook pour télécharger un dossier en ZIP
  */
 export function useDownloadFolder() {

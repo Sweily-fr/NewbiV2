@@ -4,6 +4,10 @@ import { Skeleton } from "@/src/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "@/src/components/ui/card";
 import { useState, useEffect } from "react";
 
+// Hauteurs pré-définies pour éviter Math.random() pendant le rendu (hydratation)
+const CHART_HEIGHTS_1 = [65, 42, 78, 35, 90, 55, 48, 72, 38, 85, 60, 45];
+const CHART_HEIGHTS_2 = [50, 70, 40, 82, 58, 45, 75, 38, 68, 52, 88, 43];
+
 export function DashboardSkeleton() {
   const [isMobile, setIsMobile] = useState(false);
 
@@ -18,17 +22,9 @@ export function DashboardSkeleton() {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  // Génération des hauteurs aléatoires pour les graphiques
-  const generateChartBars = (count) => {
-    return Array.from({ length: count }, (_, i) => ({
-      id: i,
-      height: Math.random() * 60 + 30,
-    }));
-  };
-
   const chartBarsCount = isMobile ? 8 : 12;
-  const chartBars1 = generateChartBars(chartBarsCount);
-  const chartBars2 = generateChartBars(chartBarsCount);
+  const chartBars1 = CHART_HEIGHTS_1.slice(0, chartBarsCount).map((h, i) => ({ id: i, height: h }));
+  const chartBars2 = CHART_HEIGHTS_2.slice(0, chartBarsCount).map((h, i) => ({ id: i, height: h }));
 
   return (
     <div className="flex flex-col gap-4 py-8 sm:p-6 md:gap-6 md:py-6 p-4 md:p-6">

@@ -82,8 +82,8 @@ const ensureConnection = async () => {
 // Gestion des événements de connexion
 if (client) {
   client.on("close", () => {
-    console.warn("⚠️ MongoDB connection closed");
-    global._mongoDb = null;
+    console.warn("⚠️ MongoDB connection closed (driver will auto-reconnect)");
+    // Ne pas nullifier global._mongoDb — le driver MongoDB gère la reconnexion automatiquement
   });
 
   client.on("error", (error) => {
@@ -105,15 +105,21 @@ export async function getMongoDb() {
 // Le Proxy intercepte les accès et retourne global._mongoDb ou client.db(dbName)
 const mongoDbProxy = new Proxy({}, {
   get(target, prop, receiver) {
-    const db = global._mongoDb || client.db(dbName);
-    const value = db[prop];
-    
-    // Si c'est une fonction, la binder au bon contexte
-    if (typeof value === 'function') {
-      return value.bind(db);
+    try {
+      const db = global._mongoDb || client.db(dbName);
+      const value = db[prop];
+
+      // Si c'est une fonction, la binder au bon contexte
+      if (typeof value === 'function') {
+        return value.bind(db);
+      }
+
+      return value;
+    } catch (error) {
+      console.error("❌ MongoDB Proxy access error:", error?.message);
+      // Retourner undefined au lieu de crasher le module
+      return undefined;
     }
-    
-    return value;
   }
 });
 
