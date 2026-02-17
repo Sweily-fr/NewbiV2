@@ -299,7 +299,7 @@ const Footer7 = ({
                   size={14}
                   className="inline-block text-red-500 fill-red-500 mx-1"
                 />{" "}
-                in France • © {new Date().getFullYear()}
+                in France • © 2026
               </div>
             </div>
           </div>

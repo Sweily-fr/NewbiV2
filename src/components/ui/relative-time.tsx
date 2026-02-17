@@ -64,7 +64,7 @@ export type RelativeTimeProps = HTMLAttributes<HTMLDivElement> & {
 
 export const RelativeTime = ({
   time: controlledTime,
-  defaultTime = new Date(),
+  defaultTime,
   onTimeChange,
   dateFormatOptions,
   timeFormatOptions,
@@ -72,12 +72,17 @@ export const RelativeTime = ({
   ...props
 }: RelativeTimeProps) => {
   const [time, setTime] = useControllableState<Date>({
-    defaultProp: defaultTime,
+    defaultProp: defaultTime ?? new Date(),
     prop: controlledTime,
     onChange: onTimeChange,
   });
 
   useEffect(() => {
+    // Set initial time on client to avoid hydration mismatch
+    if (!controlledTime) {
+      setTime(new Date());
+    }
+
     if (controlledTime) {
       return;
     }

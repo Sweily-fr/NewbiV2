@@ -14,6 +14,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/src/components/ui/card";
+import { Skeleton } from "@/src/components/ui/skeleton";
 import {
   ChartConfig,
   ChartContainer,
@@ -142,6 +143,7 @@ export function ExpenseCategoryChart({
   expenses = [],
   bankTransactions = [],
   className,
+  isLoading = false,
 }) {
   const isMobile = useIsMobile();
   const [timeRange, setTimeRange] = useState("90d"); // 30d, 90d, 365d, custom
@@ -400,6 +402,33 @@ export function ExpenseCategoryChart({
       </DropdownMenuContent>
     </DropdownMenu>
   );
+
+  if (isLoading) {
+    return (
+      <Card className={`@container/card flex flex-col ${className || ""}`}>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+          <div className="flex flex-col gap-1">
+            <Skeleton className="h-5 w-36" />
+            <Skeleton className="h-4 w-24" />
+          </div>
+          <Skeleton className="h-8 w-28 rounded-md" />
+        </CardHeader>
+        <CardContent className="flex-1 pb-2 sm:pb-4">
+          <div className="flex items-center gap-8">
+            <Skeleton className="h-[240px] w-[240px] rounded-full flex-shrink-0" />
+            <div className="flex-1 space-y-3 hidden md:block">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="flex items-center gap-3">
+                  <Skeleton className="h-2 w-2 rounded-full" />
+                  <Skeleton className="h-3 w-full max-w-[150px]" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   // Si pas de données, afficher un message avec le filtre
   if (chartData.length === 0) {

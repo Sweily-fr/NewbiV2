@@ -172,6 +172,10 @@ export function useDashboardData() {
     // États de chargement
     isLoading,
     isInitialized: !isLoading,
+    // États de chargement individuels pour le rendu progressif
+    invoicesLoading,
+    accountsLoading,
+    transactionsLoading: bankLoading,
 
     // Fonctions de gestion
     refreshData,

@@ -201,7 +201,7 @@ function DashboardContent({ children }) {
       {/* Modal d'onboarding pour les nouveaux utilisateurs */}
       <OnboardingModal
         isOpen={isOnboardingOpen}
-        onClose={() => setIsOnboardingOpen(false)}
+        onClose={completeOnboarding}
         onComplete={completeOnboarding}
       />
 

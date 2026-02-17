@@ -18,13 +18,15 @@ export function ThemeProvider({
   const pathname = usePathname();
   const isDashboardRoute = pathname?.startsWith("/dashboard");
   
-  const [theme, setTheme] = useState(() => {
-    // Check if code is running in browser environment
-    if (typeof window !== "undefined") {
-      return localStorage.getItem(storageKey) || defaultTheme;
+  const [theme, setTheme] = useState(defaultTheme);
+
+  // Sync with localStorage on mount (client-side only)
+  useEffect(() => {
+    const stored = localStorage.getItem(storageKey);
+    if (stored) {
+      setTheme(stored);
     }
-    return defaultTheme;
-  });
+  }, [storageKey]);
 
   useEffect(() => {
     const root = window.document.documentElement;
