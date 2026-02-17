@@ -499,28 +499,22 @@ export function ChartAreaInteractive({
                     ? `url(#fillDesktop-${chartId})`
                     : config.desktop?.color || "#5B4FFF"
                 }
+                fillOpacity={1}
                 stroke={config.desktop?.color || "#5B4FFF"}
-                stackId="a"
               />
             ) : (
               <>
-                {showMobile && (
+                {showMobile && !hideMobileCurve && (
                   <Area
                     dataKey="mobile"
                     type="monotone"
                     fill={
-                      hideMobileCurve
-                        ? "transparent"
-                        : showGradient
-                          ? `url(#fillMobile-${chartId})`
-                          : config.mobile?.color || "#a44fff"
-                    }
-                    stroke={
-                      hideMobileCurve
-                        ? "transparent"
+                      showGradient
+                        ? `url(#fillMobile-${chartId})`
                         : config.mobile?.color || "#a44fff"
                     }
-                    strokeWidth={hideMobileCurve ? 0 : undefined}
+                    fillOpacity={1}
+                    stroke={config.mobile?.color || "#a44fff"}
                     stackId="a"
                   />
                 )}
@@ -533,8 +527,9 @@ export function ChartAreaInteractive({
                         ? `url(#fillDesktop-${chartId})`
                         : config.desktop?.color || "#5B4FFF"
                     }
+                    fillOpacity={1}
                     stroke={config.desktop?.color || "#5B4FFF"}
-                    stackId="a"
+                    stackId={hideMobileCurve ? undefined : "a"}
                   />
                 )}
               </>
