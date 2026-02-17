@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef, useMemo } from "react";
 import { authClient } from "@/src/lib/auth-client";
 import { useSession } from "@/src/lib/auth-client";
+import { setOrganizationIdForApollo } from "@/src/lib/apolloClient";
 
 /**
  * Hook pour obtenir les informations du workspace actuel
@@ -69,8 +70,7 @@ export const useWorkspace = () => {
   // Utiliser l'organisation complète si disponible, sinon l'organisation active
   const orgWithMembers = fullOrganization || activeOrganization;
 
-  // Stocker l'organizationId dans localStorage pour Apollo Client
-  // OPTIMISÉ: Utiliser useMemo pour éviter les re-renders inutiles
+  // Stocker l'organizationId pour Apollo Client via module-level + localStorage
   const orgId = activeOrganization?.id;
   useEffect(() => {
     if (orgId) {
@@ -81,6 +81,9 @@ export const useWorkspace = () => {
     } else {
       localStorage.removeItem("active_organization_id");
     }
+    // ✅ Synchroniser la variable module-level dans apolloClient
+    // pour que authLink utilise l'org confirmée au lieu de lire un localStorage potentiellement périmé
+    setOrganizationIdForApollo(orgId || null);
   }, [orgId]);
 
   // Stocker le userRole dans localStorage pour Apollo Client
