@@ -56,6 +56,11 @@ export const authClient = createAuthClient({
             activityCategory: { type: "string" },
             isVatSubject: { type: "boolean" },
             hasCommercialActivity: { type: "boolean" },
+            vatRegime: { type: "string" },
+            vatFrequency: { type: "string" },
+            vatMode: { type: "string" },
+            fiscalYearStartDate: { type: "string" },
+            fiscalYearEndDate: { type: "string" },
             // Address information (flattened)
             addressStreet: { type: "string" },
             addressCity: { type: "string" },

@@ -115,13 +115,14 @@ export const processExpensesForCharts = (expenses) => {
 // MODE BANCAIRE PUR : Entrées basées uniquement sur les transactions bancaires positives
 export const processIncomeForCharts = (
   paidInvoices = [],
-  bankTransactions = []
+  bankTransactions = [],
+  days = 365
 ) => {
   const now = new Date();
   const chartData = [];
 
-  // Generate data for the last 90 days
-  for (let i = 89; i >= 0; i--) {
+  // Generate data for the last N days
+  for (let i = days - 1; i >= 0; i--) {
     const date = new Date(now);
     date.setDate(date.getDate() - i);
     const dateStr = date.toISOString().split("T")[0];
@@ -159,13 +160,14 @@ export const processIncomeForCharts = (
 // MODE BANCAIRE PUR : Sorties basées uniquement sur les transactions bancaires négatives
 export const processExpensesWithBankForCharts = (
   expenses = [],
-  bankTransactions = []
+  bankTransactions = [],
+  days = 365
 ) => {
   const now = new Date();
   const chartData = [];
 
-  // Generate data for the last 90 days
-  for (let i = 89; i >= 0; i--) {
+  // Generate data for the last N days
+  for (let i = days - 1; i >= 0; i--) {
     const date = new Date(now);
     date.setDate(date.getDate() - i);
     const dateStr = date.toISOString().split("T")[0];

@@ -542,7 +542,9 @@ function DashboardContent() {
         <div className="flex flex-col md:flex-row gap-4 md:gap-6 w-full">
           <ChartAreaInteractive
             title="Entrées"
-            description={formatCurrency(filteredTotalIncome)}
+            computeDescription={(filtered) =>
+              formatCurrency(filtered.reduce((sum, d) => sum + (d.desktop || 0), 0))
+            }
             height="200px"
             className="shadow-xs w-full md:w-1/2"
             config={incomeChartConfig}
@@ -552,7 +554,9 @@ function DashboardContent() {
           />
           <ChartAreaInteractive
             title="Sorties"
-            description={formatCurrency(filteredTotalExpenses)}
+            computeDescription={(filtered) =>
+              formatCurrency(filtered.reduce((sum, d) => sum + (d.desktop || 0), 0))
+            }
             height="200px"
             className="shadow-xs w-full md:w-1/2"
             config={expenseChartConfig}
