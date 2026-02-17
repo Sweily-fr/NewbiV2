@@ -112,6 +112,11 @@ export function SettingsModal({
         category: "",
         isVatSubject: false,
         hasCommercialActivity: false,
+        vatRegime: "",
+        vatFrequency: "",
+        vatMode: "",
+        fiscalYearStartDate: "",
+        fiscalYearEndDate: "",
       },
     },
   });
@@ -164,6 +169,11 @@ export function SettingsModal({
           category: organization.activityCategory || "",
           isVatSubject: organization.isVatSubject || false,
           hasCommercialActivity: organization.hasCommercialActivity || false,
+          vatRegime: organization.vatRegime || "",
+          vatFrequency: organization.vatFrequency || "",
+          vatMode: organization.vatMode || "",
+          fiscalYearStartDate: organization.fiscalYearStartDate || "",
+          fiscalYearEndDate: organization.fiscalYearEndDate || "",
         },
       };
 
@@ -217,6 +227,11 @@ export function SettingsModal({
         activityCategory: formData.legal?.category || "",
         isVatSubject: formData.legal?.isVatSubject || false,
         hasCommercialActivity: formData.legal?.hasCommercialActivity || false,
+        vatRegime: formData.legal?.vatRegime || "",
+        vatFrequency: formData.legal?.vatFrequency || "",
+        vatMode: formData.legal?.vatMode || "",
+        fiscalYearStartDate: formData.legal?.fiscalYearStartDate || "",
+        fiscalYearEndDate: formData.legal?.fiscalYearEndDate || "",
       };
 
       // Sauvegarder via Better Auth

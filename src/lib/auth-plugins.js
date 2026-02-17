@@ -1621,6 +1621,31 @@ export const organizationPlugin = organization({
           input: true,
           required: false,
         },
+        vatRegime: {
+          type: "string",
+          input: true,
+          required: false,
+        },
+        vatFrequency: {
+          type: "string",
+          input: true,
+          required: false,
+        },
+        vatMode: {
+          type: "string",
+          input: true,
+          required: false,
+        },
+        fiscalYearStartDate: {
+          type: "string",
+          input: true,
+          required: false,
+        },
+        fiscalYearEndDate: {
+          type: "string",
+          input: true,
+          required: false,
+        },
         // Address information (flattened)
         addressStreet: {
           type: "string",

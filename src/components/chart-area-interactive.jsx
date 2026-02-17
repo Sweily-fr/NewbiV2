@@ -161,6 +161,7 @@ export function ChartAreaInteractive({
   title = "Total Visitors",
   description = "Total for the last 3 months",
   shortDescription = "Last 3 months",
+  computeDescription,
   data = chartData,
   config = chartConfig,
   showTimeRange = true,
@@ -240,6 +241,11 @@ export function ChartAreaInteractive({
     return date >= startDate;
   });
 
+  // Compute dynamic description from filtered data if computeDescription is provided
+  const resolvedDescription = computeDescription
+    ? computeDescription(filteredData)
+    : description;
+
   if (isLoading) {
     return (
       <Card className={`@container/card ${className}`} style={{ width }} {...props}>
@@ -275,9 +281,9 @@ export function ChartAreaInteractive({
         <CardTitle className="text-base font-normal">{title}</CardTitle>
         <CardDescription>
           <span className="hidden @[540px]/card:block text-lg">
-            {description}
+            {resolvedDescription}
           </span>
-          <span className="@[540px]/card:hidden">{shortDescription}</span>
+          <span className="@[540px]/card:hidden">{computeDescription ? resolvedDescription : shortDescription}</span>
         </CardDescription>
         {showTimeRange && (
           <CardAction>
