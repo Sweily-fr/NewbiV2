@@ -121,12 +121,26 @@ const data = {
       url: "/dashboard/outils/bons-commande",
     },
     {
-      title: "Liste client (CRM)",
+      title: "Catalogues",
+      url: "/dashboard/catalogues",
+    },
+  ],
+  navClients: [
+    {
+      title: "Mes clients",
       url: "/dashboard/clients",
     },
     {
-      title: "Catalogues",
-      url: "/dashboard/catalogues",
+      title: "Listes",
+      url: "/dashboard/clients/listes",
+    },
+    {
+      title: "Segments",
+      url: "/dashboard/clients/segments",
+    },
+    {
+      title: "Blocked",
+      url: "/dashboard/clients/blocked",
     },
   ],
   navAfterVentes: [
@@ -134,12 +148,6 @@ const data = {
       title: "Factures d'achat",
       url: "/dashboard/outils/factures-achat",
       icon: ShoppingBasket,
-    },
-    {
-      title: "Notifications",
-      url: "#",
-      icon: Bell,
-      action: "openNotifications",
     },
     {
       title: "Calendrier",
@@ -566,6 +574,7 @@ export function AppSidebar({
                 items={data.navMain}
                 navFinances={data.navFinances}
                 navVentes={data.navVentes}
+                navClients={data.navClients}
                 navAfterVentes={data.navAfterVentes}
                 navProjets={data.navProjets}
                 navDocuments={data.navDocuments}
@@ -578,6 +587,8 @@ export function AppSidebar({
               items={data.navSecondary}
               onCommunityClick={onCommunityClick}
               onOpenEInvoicingPromo={onOpenEInvoicingPromo}
+              onOpenNotifications={onOpenNotifications}
+              notificationCount={notificationCount}
               className="mt-auto"
             />
           </>

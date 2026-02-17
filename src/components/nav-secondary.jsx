@@ -18,6 +18,7 @@ import {
   GraduationCap,
   UsersRound,
   HelpCircle,
+  Bell,
 } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import { useUser } from "@/src/lib/auth/hooks";
@@ -250,6 +251,8 @@ export function NavSecondary({
   items,
   onCommunityClick,
   onOpenEInvoicingPromo, // DÉSACTIVÉ: SuperPDP API pas encore active
+  onOpenNotifications,
+  notificationCount = 0,
   ...props
 }) {
   const [open, setOpen] = useState(false);
@@ -299,6 +302,33 @@ export function NavSecondary({
             </SidebarMenuItem>
           </SidebarMenu>
         )} */}
+
+        {/* Notifications */}
+        <SidebarMenu>
+          <SidebarMenuItem className="relative">
+            <SidebarMenuButton
+              className="mb-1 cursor-pointer"
+              tooltip="Notifications"
+              onClick={() => {
+                if (onOpenNotifications) onOpenNotifications();
+                handleLinkClick();
+              }}
+            >
+              <Bell />
+              <span>Notifications</span>
+              {!isCollapsed && notificationCount > 0 && (
+                <kbd className="ml-auto inline-flex items-center justify-center rounded border-y border-b-[#5b4eff]/30 border-t-[#5b4eff]/10 bg-[#5b4eff]/20 px-1 font-sans text-[10px] text-[#5b4eff] ring-1 ring-[#5b4eff]/20 h-4 min-w-4">
+                  {notificationCount}
+                </kbd>
+              )}
+            </SidebarMenuButton>
+            {isCollapsed && notificationCount > 0 && (
+              <kbd className="absolute top-0 right-0 inline-flex items-center justify-center rounded border-y border-b-[#5b4eff]/30 border-t-[#5b4eff]/10 bg-[#5b4eff]/20 px-1 font-sans text-[10px] text-[#5b4eff] ring-1 ring-[#5b4eff]/20 h-4 min-w-4">
+                {notificationCount > 9 ? "9+" : notificationCount}
+              </kbd>
+            )}
+          </SidebarMenuItem>
+        </SidebarMenu>
 
         {/* Menu Paramètres avec dropdown */}
         <SidebarMenu>
