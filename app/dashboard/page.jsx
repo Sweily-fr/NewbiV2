@@ -296,6 +296,24 @@ function DashboardContent() {
     [filteredPaidExpenses, filteredTransactions]
   );
 
+  // Debug: vérifier les données des graphiques entrées/sorties
+  console.log("📊 [DASHBOARD] Chart data debug:", {
+    filteredTransactionsCount: filteredTransactions.length,
+    incomeDataPoints: incomeChartData.length,
+    incomeNonZero: incomeChartData.filter(d => d.desktop > 0).length,
+    incomeTotalDesktop: incomeChartData.reduce((sum, d) => sum + (d.desktop || 0), 0),
+    expenseDataPoints: expenseChartData.length,
+    expenseNonZero: expenseChartData.filter(d => d.desktop > 0).length,
+    expenseTotalDesktop: expenseChartData.reduce((sum, d) => sum + (d.desktop || 0), 0),
+    sampleIncomeData: incomeChartData.filter(d => d.desktop > 0).slice(0, 3),
+    sampleExpenseData: expenseChartData.filter(d => d.desktop > 0).slice(0, 3),
+    sampleTransactions: filteredTransactions.slice(0, 3).map(t => ({
+      amount: t.amount,
+      date: t.date,
+      description: t.description?.substring(0, 30),
+    })),
+  });
+
   // Utiliser les configurations importées
   const incomeChartConfig = getIncomeChartConfig();
   const expenseChartConfig = getExpenseChartConfig();
