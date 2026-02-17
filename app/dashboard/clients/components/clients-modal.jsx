@@ -591,17 +591,16 @@ export default function ClientsModal({
         className={`flex flex-col p-0 overflow-hidden ${
           isMobile
             ? "!fixed !inset-0 !w-screen !max-w-none !m-0 !rounded-none !translate-x-0 !translate-y-0"
-            : "!max-w-[1400px] !w-[calc(100vw-4rem)] h-[calc(100vh-4rem)]"
+            : "!max-w-[700px] !w-[calc(100vw-4rem)] !max-h-[calc(100vh-4rem)]"
         }`}
         style={isMobile ? { height: "100dvh", maxHeight: "100dvh" } : {}}
       >
         {!isMobile ? (
-          // Mode desktop : 2 colonnes (création et édition)
-          <div className="flex h-full">
-            {/* Colonne gauche : Formulaire - 50% */}
-            <div className="w-1/2 flex flex-col border-r">
+          // Mode desktop : formulaire seul
+          <div className="flex flex-col max-h-[calc(100vh-4rem)] overflow-hidden">
+            <div className="flex flex-col flex-1 min-h-0">
               {/* Header */}
-              <div className="flex-shrink-0 p-6 pb-4 border-b">
+              <div className="flex-shrink-0 p-6 pb-4">
                 <DialogHeader>
                   <DialogTitle className="text-left">
                     {client ? "Modifier le client" : "Ajouter un client"}
@@ -1362,38 +1361,6 @@ export default function ClientsModal({
               </form>
             </div>
 
-            {/* Colonne droite : Timeline d'activité - 50% */}
-            <div className="w-1/2 flex flex-col bg-muted/30">
-              <div className="flex-shrink-0 px-6 py-4 border-b bg-background flex items-center justify-between">
-                <h3 className="font-semibold text-sm">Activité</h3>
-                {isEditing && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="h-7 text-xs gap-1.5 mr-4"
-                    onClick={() => setIsReminderDialogOpen(true)}
-                  >
-                    <Bell className="h-3.5 w-3.5" />
-                    Rappel
-                  </Button>
-                )}
-              </div>
-              <div className="flex-1 overflow-hidden">
-                <ClientActivity
-                  client={currentClient}
-                  workspaceId={workspaceId}
-                  onClientUpdate={setCurrentClient}
-                  pendingNotes={pendingNotes}
-                  onAddPendingNote={addPendingNote}
-                  onUpdatePendingNote={updatePendingNote}
-                  onRemovePendingNote={removePendingNote}
-                  isCreating={!isEditing}
-                  isReminderDialogOpen={isReminderDialogOpen}
-                  onReminderDialogClose={() => setIsReminderDialogOpen(false)}
-                />
-              </div>
-            </div>
           </div>
         ) : (
           // Mode mobile : Onglets (création et édition)

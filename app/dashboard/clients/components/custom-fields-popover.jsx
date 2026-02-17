@@ -377,6 +377,7 @@ export default function CustomFieldsPopover({ trigger }) {
         <PopoverTrigger asChild>
           {trigger || (
             <Button
+              size="sm"
               variant="outline"
               className="font-normal"
             >

@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import {
   useAddClientToLists,
   useClientListsByClient,
   useRemoveClientFromLists,
 } from "@/src/hooks/useClientLists";
+import { useDeleteClient } from "@/src/hooks/useClients";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import {
@@ -16,7 +18,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel,
 } from "@/src/components/ui/dropdown-menu";
-import { Plus, Loader2, X } from "lucide-react";
+import { Plus, Loader2, X, FileText, Download } from "lucide-react";
 import { toast } from "@/src/components/ui/sonner";
 import TableUser from "./table";
 import ClientsModal from "./clients-modal";
@@ -117,10 +119,16 @@ export default function ClientsTable({
   selectedTypes = [],
   selectedList = null,
   hideSearchBar = false,
+  selectedClients: externalSelectedClients,
+  onSelectedClientsChange,
 }) {
-  const [selectedClients, setSelectedClients] = useState(new Set());
+  const router = useRouter();
+  const [internalSelectedClients, setInternalSelectedClients] = useState(new Set());
+  const selectedClients = externalSelectedClients || internalSelectedClients;
+  const setSelectedClients = onSelectedClientsChange || setInternalSelectedClients;
   const { addToLists } = useAddClientToLists();
   const { removeFromLists } = useRemoveClientFromLists();
+  const { deleteClient } = useDeleteClient();
   const [assigningLists, setAssigningLists] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -150,6 +158,50 @@ export default function ClientsTable({
       setAssigningLists(false);
     }
   };
+
+  const handleCreateInvoice = useCallback(() => {
+    if (selectedClients.size !== 1) return;
+    const clientId = Array.from(selectedClients)[0];
+    router.push(`/dashboard/outils/factures/new?clientId=${clientId}`);
+  }, [selectedClients, router]);
+
+  const handleExportCSV = useCallback(() => {
+    if (selectedClients.size === 0 || !clientsProp) return;
+    const selectedData = (clientsProp || []).filter((c) =>
+      selectedClients.has(c.id)
+    );
+    const headers = ["Nom", "Email", "Type", "Téléphone", "Ville", "Pays", "SIRET"];
+    const rows = selectedData.map((c) => [
+      c.name || "",
+      c.email || "",
+      c.type === "COMPANY" ? "Entreprise" : "Particulier",
+      c.phone || "",
+      c.address?.city || "",
+      c.address?.country || "",
+      c.siret || "",
+    ]);
+    const csv = [headers, ...rows].map((r) => r.map((v) => `"${v}"`).join(",")).join("\n");
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `clients-export-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success(`${selectedData.length} contact(s) exporté(s)`);
+  }, [selectedClients, clientsProp]);
+
+  const handleDeleteSelected = useCallback(async () => {
+    try {
+      await Promise.all(
+        Array.from(selectedClients).map((clientId) => deleteClient(clientId))
+      );
+      setSelectedClients(new Set());
+      onListsUpdated?.();
+    } catch (error) {
+      // Error handled by hook
+    }
+  }, [selectedClients, deleteClient, onListsUpdated]);
 
   const handleRemoveFromList = async (listId) => {
     if (selectedClients.size === 0) {
@@ -198,6 +250,17 @@ export default function ClientsTable({
 
           {/* Boutons d'action */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+            {selectedClients.size === 1 && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-2 cursor-pointer font-normal"
+                onClick={handleCreateInvoice}
+              >
+                <FileText className="w-4 h-4" />
+                Créer une facture
+              </Button>
+            )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -234,6 +297,15 @@ export default function ClientsTable({
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-2 cursor-pointer font-normal"
+              onClick={handleExportCSV}
+            >
+              <Download className="w-4 h-4" />
+              Exporter
+            </Button>
           </div>
         </div>
       )}

@@ -105,7 +105,8 @@ export default function ClientFilters({
       <DropdownMenuTrigger asChild>
         <Button
           variant="outline"
-          className={cn("h-9 gap-2 font-normal", className)}
+          size="sm"
+          className={cn("gap-2 font-normal", className)}
         >
           <Filter className="h-4 w-4" />
           <span>Filtres</span>

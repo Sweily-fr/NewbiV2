@@ -41,6 +41,7 @@ const ClientActivity = ({
   isCreating = false,
   isReminderDialogOpen = false,
   onReminderDialogClose,
+  defaultTab = "all",
 }) => {
   const [newNote, setNewNote] = useState("");
   const [editingNoteId, setEditingNoteId] = useState(null);
@@ -317,7 +318,7 @@ const ClientActivity = ({
 
   return (
     <div className="flex flex-col h-full">
-      <Tabs defaultValue="all" className="flex flex-col h-full">
+      <Tabs defaultValue={defaultTab} className="flex flex-col h-full">
         <div className="flex-1 overflow-y-auto pl-2 px-4 py-4">
           <TabsContent value="all" className="space-y-3 mt-0">
             {allActivity.length === 0 ? (
