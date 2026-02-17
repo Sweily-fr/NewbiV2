@@ -24,6 +24,7 @@ import {
   Search,
   LayoutGrid,
   Landmark,
+  Users,
 } from "lucide-react";
 import { Input } from "@/src/components/ui/input";
 
@@ -60,6 +61,7 @@ export function NavMain({
   items,
   navFinances = [],
   navVentes = [],
+  navClients = [],
   navAfterVentes = [],
   navProjets = [],
   navDocuments = [],
@@ -117,6 +119,9 @@ export function NavMain({
   const isVentesSubActive = navVentes.some(
     (item) => pathname === item.url || pathname?.startsWith(item.url + "/")
   );
+  const isClientsSubActive = navClients.some(
+    (item) => pathname === item.url || pathname?.startsWith(item.url + "/")
+  );
   const isProjetsSubActive = navProjets.some(
     (item) => pathname === item.url || pathname?.startsWith(item.url + "/")
   );
@@ -130,6 +135,7 @@ export function NavMain({
   // États pour les menus collapsibles
   const [isFinancesOpen, setIsFinancesOpen] = useState(isFinancesSubActive);
   const [isVentesOpen, setIsVentesOpen] = useState(isVentesSubActive);
+  const [isClientsOpen, setIsClientsOpen] = useState(isClientsSubActive);
   const [isProjetsOpen, setIsProjetsOpen] = useState(true); // Toujours ouvert par défaut pour voir les tableaux
   const [isDocumentsOpen, setIsDocumentsOpen] = useState(isDocumentsSubActive);
   const [isCommunicationOpen, setIsCommunicationOpen] = useState(
@@ -162,6 +168,10 @@ export function NavMain({
   useEffect(() => {
     if (isVentesSubActive) setIsVentesOpen(true);
   }, [isVentesSubActive]);
+
+  useEffect(() => {
+    if (isClientsSubActive) setIsClientsOpen(true);
+  }, [isClientsSubActive]);
 
   useEffect(() => {
     if (isProjetsSubActive) setIsProjetsOpen(true);
@@ -946,14 +956,25 @@ export function NavMain({
           {/* Menu Ventes avec sous-menus et actions rapides */}
           {navVentes.length > 0 && (() => {
             // Filtrer les items pour le comptable (pas de Catalogues)
-            const accountantAllowedVentes = ["Factures clients", "Devis", "Liste client (CRM)"];
+            const accountantAllowedVentes = ["Factures clients", "Devis"];
             const filteredNavVentes = userRole === "accountant"
               ? navVentes.filter(item => accountantAllowedVentes.includes(item.title))
               : navVentes;
             return filteredNavVentes.length > 0 && renderVentesMenu(filteredNavVentes);
           })()}
 
-          {/* Catalogue, Boîte de réception, Calendrier */}
+          {/* Menu Clients (CRM) avec sous-menus */}
+          {navClients.length > 0 &&
+            renderCollapsibleMenu(
+              "Clients",
+              Users,
+              navClients,
+              isClientsOpen,
+              setIsClientsOpen,
+              isClientsSubActive
+            )}
+
+          {/* Factures d'achat, Calendrier */}
           {navAfterVentes.map((item) => renderSimpleItem(item))}
         </SidebarMenu>
 

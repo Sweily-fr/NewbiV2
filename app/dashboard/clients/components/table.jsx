@@ -41,7 +41,9 @@ import {
   User,
 } from "lucide-react";
 
+import { useRouter } from "next/navigation";
 import { cn } from "@/src/lib/utils";
+import { UserAvatar } from "@/src/components/ui/user-avatar";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -171,11 +173,14 @@ const columns = (
           ? `${client.firstName || ""} ${client.lastName || ""}`.trim()
           : client.name;
       return (
-        <div
-          className="font-normal max-w-[150px] md:max-w-none truncate"
-          title={displayName}
-        >
-          {displayName}
+        <div className="flex items-center gap-3">
+          <UserAvatar name={displayName} colorKey={client.email} size="xs" className="rounded-md" fallbackClassName="bg-gray-100 text-gray-600 rounded-md" />
+          <div
+            className="font-normal max-w-[150px] md:max-w-none truncate"
+            title={displayName}
+          >
+            {displayName}
+          </div>
         </div>
       );
     },
@@ -317,6 +322,7 @@ export default function TableClients({
   hideSearchBar = false,
 }) {
   const id = useId();
+  const router = useRouter();
   const [columnFilters, setColumnFilters] = useState([]);
   const [columnVisibility, setColumnVisibility] = useState({});
   const [pagination, setPagination] = useState({
@@ -601,56 +607,6 @@ export default function TableClients({
           </div>
         )}
 
-        {/* Delete button - shown when rows are selected (always visible, outside hideSearchBar) */}
-        {selectedClients.size > 0 && (
-          <div className="flex items-center justify-end gap-2 px-4 sm:px-6 py-2 flex-shrink-0">
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  variant="destructive"
-                  data-mobile-delete-trigger
-                  className="cursor-pointer font-normal"
-                >
-                  <TrashIcon className="mr-2 h-4 w-4" />
-                  Supprimer ({selectedClients.size})
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <div className="flex flex-col gap-2 max-sm:items-center sm:flex-row sm:gap-4">
-                  <div
-                    className="flex size-9 shrink-0 items-center justify-center rounded-full border"
-                    aria-hidden="true"
-                  >
-                    <CircleAlertIcon className="opacity-80" size={16} />
-                  </div>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>
-                      Êtes-vous absolument sûr ?
-                    </AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Cette action ne peut pas être annulée. Cela supprimera
-                      définitivement {selectedClients.size}{" "}
-                      {selectedClients.size === 1
-                        ? "client sélectionné"
-                        : "clients sélectionnés"}
-                      .
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                </div>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Annuler</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={handleDeleteRows}
-                    variant="destructive"
-                  >
-                    Supprimer
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
-        )}
-
         {/* Table - Desktop style avec header fixe et body scrollable */}
         <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
           {/* Header fixe */}
@@ -770,7 +726,7 @@ export default function TableClients({
                       data-state={row.getIsSelected() && "selected"}
                       className="border-b hover:bg-muted/50 data-[state=selected]:bg-muted cursor-pointer transition-colors"
                       onClick={(e) => {
-                        // Ne pas ouvrir le modal si on clique sur la checkbox ou le menu d'actions
+                        // Ne pas naviguer si on clique sur la checkbox ou le menu d'actions
                         if (
                           e.target.closest('[role="checkbox"]') ||
                           e.target.closest("button") ||
@@ -778,7 +734,7 @@ export default function TableClients({
                         ) {
                           return;
                         }
-                        handleEditClient(row.original);
+                        router.push(`/dashboard/clients/${row.original.id}`);
                       }}
                     >
                       {row.getVisibleCells().map((cell, index, arr) => (
@@ -978,28 +934,6 @@ export default function TableClients({
               </PopoverContent>
             </Popover>
 
-            {/* Delete button for mobile - shown when rows are selected */}
-            {selectedClients.size > 0 && (
-              <Button
-                variant="destructive"
-                size="sm"
-                className="h-9 px-2 sm:px-3 text-xs flex-shrink-0"
-                title={`Supprimer ${selectedClients.size} client(s)`}
-                onClick={() => {
-                  // Trigger the delete dialog
-                  const deleteButton = document.querySelector(
-                    "[data-mobile-delete-trigger]"
-                  );
-                  if (deleteButton) deleteButton.click();
-                }}
-              >
-                <TrashIcon className="h-4 w-4" />
-                <span className="hidden sm:inline ml-1">
-                  ({selectedClients.size})
-                </span>
-                <span className="sm:hidden ml-1">{selectedClients.size}</span>
-              </Button>
-            )}
 
             {/* Add Client Button - Icon only */}
             {/* <Button
@@ -1103,7 +1037,7 @@ export default function TableClients({
                     data-state={row.getIsSelected() && "selected"}
                     className="border-b border-gray-100 dark:border-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer"
                     onClick={(e) => {
-                      // Ne pas ouvrir le modal si on clique sur la checkbox ou le menu d'actions
+                      // Ne pas naviguer si on clique sur la checkbox ou le menu d'actions
                       if (
                         e.target.closest('[role="checkbox"]') ||
                         e.target.closest("button") ||
@@ -1111,7 +1045,7 @@ export default function TableClients({
                       ) {
                         return;
                       }
-                      handleEditClient(row.original);
+                      router.push(`/dashboard/clients/${row.original.id}`);
                     }}
                   >
                     {row

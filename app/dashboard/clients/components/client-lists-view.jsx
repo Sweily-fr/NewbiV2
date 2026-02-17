@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import { toast } from '@/src/components/ui/sonner';
 import { Button } from '@/src/components/ui/button';
 import { Badge } from '@/src/components/ui/badge';
-import { Edit2, Trash2, Users, MoreHorizontal, ChevronFirstIcon, ChevronLastIcon, ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
+import { Edit2, Trash2, Users, MoreHorizontal, ChevronFirstIcon, ChevronLastIcon, ChevronLeftIcon, ChevronRightIcon, List } from 'lucide-react';
+import { Empty, EmptyMedia, EmptyHeader, EmptyTitle, EmptyDescription, EmptyContent } from '@/src/components/ui/empty';
 import {
   Tooltip,
   TooltipContent,
@@ -305,22 +306,18 @@ export default function ClientListsView({ workspaceId, lists, onListsUpdated, se
       {/* Table */}
       {lists?.length === 0 && !globalFilter ? (
         <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <div className="text-foreground mb-6 text-center">
-              <h3 className="text-xl font-medium mb-2">
-                Commencez votre organisation
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                Créez votre première liste pour organiser vos contacts
-              </p>
-            </div>
-            <Button
-              onClick={onCreateList}
-              className="flex items-center gap-2 font-normal"
-            >
-              Créer votre première liste
-            </Button>
-          </div>
+          <Empty>
+            <EmptyMedia variant="icon"><List /></EmptyMedia>
+            <EmptyHeader className="max-w-md">
+              <EmptyTitle>Commencez votre organisation</EmptyTitle>
+              <EmptyDescription>Créez votre première liste pour organiser vos contacts par catégories ou segments.</EmptyDescription>
+            </EmptyHeader>
+            <EmptyContent>
+              <Button variant="outline" onClick={onCreateList} className="font-normal">
+                Créer votre première liste
+              </Button>
+            </EmptyContent>
+          </Empty>
         </div>
       ) : (
         <div className="flex flex-col flex-1 min-h-0 overflow-hidden">

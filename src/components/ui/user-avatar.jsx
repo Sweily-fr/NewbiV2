@@ -62,7 +62,7 @@ function getInitials(name) {
  * @param {string} props.className - Classes CSS additionnelles
  * @param {string} props.size - Taille de l'avatar (sm, md, lg, xl)
  */
-export function UserAvatar({ src, name, colorKey, className, size = "md" }) {
+export function UserAvatar({ src, name, colorKey, className, fallbackClassName, size = "md" }) {
   const sizeClasses = {
     xs: "h-6 w-6 text-[10px]",
     sm: "h-8 w-8 text-xs",
@@ -70,14 +70,14 @@ export function UserAvatar({ src, name, colorKey, className, size = "md" }) {
     lg: "h-12 w-12 text-base",
     xl: "h-16 w-16 text-lg",
   };
-  
+
   const bgColor = getAvatarColor(colorKey || name);
   const initials = getInitials(name);
-  
+
   return (
     <Avatar className={cn(sizeClasses[size], className)}>
       {src && <AvatarImage src={src} alt={name} className="object-cover" />}
-      <AvatarFallback className={cn(bgColor, "text-white font-medium")}>
+      <AvatarFallback className={fallbackClassName || cn(bgColor, "text-white font-medium")}>
         {initials}
       </AvatarFallback>
     </Avatar>
