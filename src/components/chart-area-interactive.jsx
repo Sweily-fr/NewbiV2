@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import { Area, ComposedChart, CartesianGrid, XAxis, YAxis } from "recharts";
 
 import { useIsMobile } from "@/src/hooks/use-mobile";
 import {
@@ -405,7 +405,7 @@ export function ChartAreaInteractive({
           className={`aspect-${aspectRatio} w-full`}
           style={{ height }}
         >
-          <AreaChart
+          <ComposedChart
             data={filteredData}
             margin={{
               left: -20,
@@ -550,7 +550,7 @@ export function ChartAreaInteractive({
                 )}
               </>
             )}
-          </AreaChart>
+          </ComposedChart>
         </ChartContainer>
       </CardContent>
     </Card>
