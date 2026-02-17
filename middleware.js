@@ -1,8 +1,13 @@
+import { NextResponse } from 'next/server';
 import { subscriptionMiddleware } from './src/middleware/subscription';
 
 export async function middleware(request) {
-  // Appliquer le middleware de vérification d'abonnement
-  return await subscriptionMiddleware(request);
+  try {
+    return await subscriptionMiddleware(request);
+  } catch (error) {
+    console.error('[Middleware] Erreur fatale, laisser passer:', error?.message || error);
+    return NextResponse.next();
+  }
 }
 
 export const config = {

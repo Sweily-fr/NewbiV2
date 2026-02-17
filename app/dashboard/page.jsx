@@ -101,6 +101,9 @@ function DashboardContent() {
     bankBalance,
     isLoading,
     isInitialized,
+    invoicesLoading,
+    accountsLoading,
+    transactionsLoading,
     formatCurrency,
     refreshData,
     cacheInfo,
@@ -293,27 +296,14 @@ function DashboardContent() {
     [filteredPaidExpenses, filteredTransactions]
   );
 
-  // Debug pour vérifier l'état du cache
-  console.log("🔍 Dashboard render:", {
-    isLoading,
-    isInitialized,
-    hasCache: !!cacheInfo?.isFromCache,
-    lastUpdate: cacheInfo?.lastUpdate,
-  });
-
-  // Si les données sont en cours de chargement, afficher le skeleton
-  if (isLoading || !isInitialized) {
-    console.log("📊 Dashboard: Affichage du skeleton");
-    return <DashboardSkeleton />;
-  }
-
-  console.log("📊 Dashboard: Affichage du contenu réel");
-
-  // Note: Les transactions sont maintenant gérées par le composant BridgeTransactions
-
   // Utiliser les configurations importées
   const incomeChartConfig = getIncomeChartConfig();
   const expenseChartConfig = getExpenseChartConfig();
+
+  // Loading states par section
+  const cardsLoading = accountsLoading || transactionsLoading;
+  const chartsLoading = transactionsLoading;
+  const categoryChartsLoading = transactionsLoading;
 
   const balanceChartConfig = {
     visitors: {
@@ -531,13 +521,13 @@ function DashboardContent() {
             totalExpenses={filteredTotalExpenses}
             bankAccounts={filteredBankAccounts}
             bankBalance={filteredBalance}
-            isLoading={isLoading}
+            isLoading={cardsLoading}
           />
           <RecentTransactionsCard
             className="shadow-xs w-full md:w-1/2"
             transactions={filteredTransactions}
             limit={5}
-            isLoading={isLoading}
+            isLoading={transactionsLoading}
           />
         </div>
         {/* Graphique de trésorerie - Pleine largeur (MODE BANCAIRE PUR) */}
@@ -546,6 +536,7 @@ function DashboardContent() {
             bankTransactions={filteredTransactions}
             className="shadow-xs"
             initialBalance={filteredBalance || 0}
+            isLoading={chartsLoading}
           />
         </div>
         <div className="flex flex-col md:flex-row gap-4 md:gap-6 w-full">
@@ -557,6 +548,7 @@ function DashboardContent() {
             config={incomeChartConfig}
             data={incomeChartData}
             hideMobileCurve={true}
+            isLoading={chartsLoading}
           />
           <ChartAreaInteractive
             title="Sorties"
@@ -566,6 +558,7 @@ function DashboardContent() {
             config={expenseChartConfig}
             data={expenseChartData}
             hideMobileCurve={true}
+            isLoading={chartsLoading}
           />
         </div>
 
@@ -575,11 +568,13 @@ function DashboardContent() {
             invoices={paidInvoices}
             bankTransactions={filteredTransactions}
             className="shadow-xs w-full md:w-1/2"
+            isLoading={categoryChartsLoading}
           />
           <ExpenseCategoryChart
             expenses={paidExpenses}
             bankTransactions={filteredTransactions}
             className="shadow-xs w-full md:w-1/2"
+            isLoading={categoryChartsLoading}
           />
         </div>
       </div>

@@ -18,6 +18,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/src/components/ui/chart";
+import { Skeleton } from "@/src/components/ui/skeleton";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -152,6 +153,8 @@ const chartConfig = {
   },
 };
 
+const AREA_SKELETON_HEIGHTS = [65, 42, 78, 35, 90, 55, 48, 72, 38, 85, 60, 45];
+
 export function ChartAreaInteractive({
   width,
   height = "250px",
@@ -169,6 +172,7 @@ export function ChartAreaInteractive({
   hideMobileCurve = false,
   className = "",
   aspectRatio = "auto",
+  isLoading = false,
   ...props
 }) {
   const chartId = React.useId();
@@ -235,6 +239,31 @@ export function ChartAreaInteractive({
     startDate.setDate(startDate.getDate() - daysToSubtract);
     return date >= startDate;
   });
+
+  if (isLoading) {
+    return (
+      <Card className={`@container/card ${className}`} style={{ width }} {...props}>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <Skeleton className="h-5 w-16" />
+            <Skeleton className="h-4 w-4 rounded" />
+          </div>
+          <Skeleton className="h-7 w-28" />
+        </CardHeader>
+        <CardContent className="px-2 pt-4 pb-2 sm:px-6 sm:pt-6 sm:pb-4">
+          <div className="flex items-end justify-between gap-1 md:gap-2" style={{ height }}>
+            {AREA_SKELETON_HEIGHTS.map((h, i) => (
+              <Skeleton
+                key={i}
+                className="rounded-t-sm flex-1 animate-pulse"
+                style={{ height: `${h}%`, minHeight: "20px" }}
+              />
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card

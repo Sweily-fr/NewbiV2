@@ -145,13 +145,15 @@ export function NotificationsSection() {
   const [loading, setLoading] = useState(true);
   const [loadingSent, setLoadingSent] = useState(true);
   const [dismissedNotifications, setDismissedNotifications] = useState([]);
-  const [readNotifications, setReadNotifications] = useState(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("readNotifications");
-      return saved ? JSON.parse(saved) : [];
+  const [readNotifications, setReadNotifications] = useState([]);
+
+  // Charger les notifications lues depuis localStorage côté client
+  useEffect(() => {
+    const saved = localStorage.getItem("readNotifications");
+    if (saved) {
+      setReadNotifications(JSON.parse(saved));
     }
-    return [];
-  });
+  }, []);
 
   // Hook pour les préférences de notifications (backend)
   const {

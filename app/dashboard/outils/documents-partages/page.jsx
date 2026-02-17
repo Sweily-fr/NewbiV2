@@ -23,6 +23,7 @@ import {
   useUpdateSharedDocument,
   useMoveSharedFolder,
   useCreateDefaultFolders,
+  useDownloadFile,
   useDownloadFolder,
   useDownloadSelection,
   useSelectionInfo,
@@ -372,6 +373,7 @@ export default function DocumentsPartagesPage() {
   const [showTransferSuccessDialog, setShowTransferSuccessDialog] = useState(false);
   const [transferLink, setTransferLink] = useState("");
   const [showDuplicateBanner, setShowDuplicateBanner] = useState(true);
+  const [showDuplicatesModal, setShowDuplicatesModal] = useState(false);
 
   // Debounced search
   const debouncedSearch = useDebouncedValue(searchQuery, 300);
@@ -443,6 +445,8 @@ export default function DocumentsPartagesPage() {
   const { update: updateDocument, loading: updateDocLoading } =
     useUpdateSharedDocument();
   const { moveFolder, loading: moveFolderLoading } = useMoveSharedFolder();
+  const { downloadFile, getPreviewUrl, loading: downloadFileLoading } =
+    useDownloadFile();
   const { downloadFolder, loading: downloadFolderLoading } =
     useDownloadFolder();
   const { downloadSelection, loading: downloadSelectionLoading } =
@@ -564,6 +568,30 @@ export default function DocumentsPartagesPage() {
   const duplicateCount = useMemo(() => {
     return duplicateGroups.reduce((acc, group) => acc + group.length - 1, 0);
   }, [duplicateGroups]);
+
+  // Détection des doublons sur TOUS les documents (tous dossiers confondus)
+  const allDuplicateGroups = useMemo(() => {
+    const groups = {};
+    allDocuments.forEach((doc) => {
+      const key = `${doc.fileSize}_${doc.mimeType || doc.fileExtension}`;
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(doc);
+    });
+    return Object.values(groups).filter((group) => group.length > 1);
+  }, [allDocuments]);
+
+  const allDuplicateCount = useMemo(() => {
+    return allDuplicateGroups.reduce((acc, group) => acc + group.length - 1, 0);
+  }, [allDuplicateGroups]);
+
+  const getFolderName = useCallback(
+    (folderId) => {
+      if (!folderId) return "Documents à classer";
+      const folder = folders.find((f) => f.id === folderId);
+      return folder?.name || "Dossier inconnu";
+    },
+    [folders],
+  );
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -874,7 +902,7 @@ export default function DocumentsPartagesPage() {
   };
 
   const handleDownload = (doc) => {
-    window.open(doc.fileUrl, "_blank");
+    downloadFile(doc);
   };
 
   // Folder selection toggle
@@ -1684,11 +1712,8 @@ export default function DocumentsPartagesPage() {
                           <>
                             <DropdownMenuItem
                               onClick={() => {
-                                if (treeContextMenu.item.data?.fileUrl) {
-                                  window.open(
-                                    treeContextMenu.item.data.fileUrl,
-                                    "_blank",
-                                  );
+                                if (treeContextMenu.item.data) {
+                                  handleDownload(treeContextMenu.item.data);
                                 }
                                 setTreeContextMenu(null);
                               }}
@@ -2089,6 +2114,34 @@ export default function DocumentsPartagesPage() {
                         </TooltipProvider>
                       </>
                     )}
+
+                    {/* Doublons */}
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant={allDuplicateCount > 0 ? "secondary" : "ghost"}
+                            size="icon"
+                            className="relative"
+                            onClick={() => setShowDuplicatesModal(true)}
+                            disabled={allDocsLoading}
+                          >
+                            <Copy className="h-4 w-4" strokeWidth={1.5} />
+                            {allDuplicateCount > 0 && (
+                              <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-amber-500 text-white text-[10px] font-semibold shadow-sm">
+                                {allDuplicateCount}
+                              </span>
+                            )}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent
+                          side="bottom"
+                          className="bg-[#202020] text-white border-0"
+                        >
+                          <p>Doublons</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
 
                     {/* Tri */}
                     <TooltipProvider>
@@ -2830,7 +2883,7 @@ export default function DocumentsPartagesPage() {
                             if (canPreview(doc)) {
                               setPreviewDocument(doc);
                             } else {
-                              window.open(doc.fileUrl, "_blank");
+                              handleDownload(doc);
                             }
                           }}
                         >
@@ -2942,7 +2995,7 @@ export default function DocumentsPartagesPage() {
                                   if (canPreview(doc)) {
                                     setPreviewDocument(doc);
                                   } else {
-                                    window.open(doc.fileUrl, "_blank");
+                                    handleDownload(doc);
                                   }
                                 }}
                               >
@@ -3014,7 +3067,7 @@ export default function DocumentsPartagesPage() {
                             if (canPreview(doc)) {
                               setPreviewDocument(doc);
                             } else {
-                              window.open(doc.fileUrl, "_blank");
+                              handleDownload(doc);
                             }
                           }}
                         >
@@ -3082,7 +3135,7 @@ export default function DocumentsPartagesPage() {
                             <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center mb-3 relative overflow-hidden">
                               {doc.mimeType?.startsWith("image/") ? (
                                 <img
-                                  src={doc.fileUrl}
+                                  src={getPreviewUrl(doc.id) || doc.fileUrl}
                                   alt={doc.name}
                                   loading="lazy"
                                   className="w-full h-full object-cover rounded-lg"
@@ -3823,9 +3876,10 @@ export default function DocumentsPartagesPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() =>
-                window.open(selectedDocumentDetails?.fileUrl, "_blank")
-              }
+              onClick={() => {
+                const url = getPreviewUrl(selectedDocumentDetails?.id);
+                if (url) window.open(url, "_blank");
+              }}
               className="gap-1"
             >
               <ExternalLink className="h-4 w-4" />
@@ -3957,9 +4011,10 @@ export default function DocumentsPartagesPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() =>
-                    window.open(previewDocument?.fileUrl, "_blank")
-                  }
+                  onClick={() => {
+                    const url = getPreviewUrl(previewDocument?.id);
+                    if (url) window.open(url, "_blank");
+                  }}
                   className="h-8 px-2 sm:px-3"
                 >
                   <ExternalLink className="h-4 w-4 sm:mr-2" />
@@ -3981,7 +4036,7 @@ export default function DocumentsPartagesPage() {
             {previewDocument?.mimeType?.startsWith("image/") ? (
               <div className="h-full flex items-center justify-center p-4">
                 <img
-                  src={previewDocument.fileUrl}
+                  src={getPreviewUrl(previewDocument.id) || previewDocument.fileUrl}
                   alt={previewDocument.name}
                   className="max-h-full max-w-full object-contain rounded-lg shadow-lg"
                 />
@@ -3989,7 +4044,7 @@ export default function DocumentsPartagesPage() {
             ) : previewDocument?.mimeType?.startsWith("video/") ? (
               <div className="h-full flex items-center justify-center p-4">
                 <video
-                  src={previewDocument.fileUrl}
+                  src={getPreviewUrl(previewDocument.id) || previewDocument.fileUrl}
                   controls
                   className="max-h-full max-w-full rounded-lg shadow-lg"
                 >
@@ -3998,7 +4053,7 @@ export default function DocumentsPartagesPage() {
               </div>
             ) : previewDocument?.mimeType === "application/pdf" ? (
               <iframe
-                src={previewDocument.fileUrl}
+                src={getPreviewUrl(previewDocument.id) || previewDocument.fileUrl}
                 className="w-full h-full border-0"
                 title={previewDocument.name}
               />
@@ -4010,9 +4065,10 @@ export default function DocumentsPartagesPage() {
                   <Button
                     variant="outline"
                     className="mt-4"
-                    onClick={() =>
-                      window.open(previewDocument?.fileUrl, "_blank")
-                    }
+                    onClick={() => {
+                      const url = getPreviewUrl(previewDocument?.id);
+                      if (url) window.open(url, "_blank");
+                    }}
                   >
                     <ExternalLink className="h-4 w-4 mr-2" />
                     Ouvrir dans un nouvel onglet
@@ -4344,6 +4400,133 @@ export default function DocumentsPartagesPage() {
             </Button>
           </div>
         </div>
+      </DialogContent>
+    </Dialog>
+
+    {/* Modale des doublons */}
+    <Dialog open={showDuplicatesModal} onOpenChange={setShowDuplicatesModal}>
+      <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Copy className="h-5 w-5 text-amber-500" />
+            Doublons détectés
+            {allDuplicateCount > 0 && (
+              <Badge variant="secondary" className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                {allDuplicateCount} doublon{allDuplicateCount > 1 ? "s" : ""}
+              </Badge>
+            )}
+          </DialogTitle>
+          <DialogDescription>
+            {allDuplicateGroups.length > 0
+              ? `${allDuplicateGroups.length} groupe${allDuplicateGroups.length > 1 ? "s" : ""} de fichiers similaires (même taille et type) détecté${allDuplicateGroups.length > 1 ? "s" : ""} dans tous vos documents.`
+              : "Aucun doublon détecté dans vos documents."}
+          </DialogDescription>
+        </DialogHeader>
+
+        <ScrollArea className="flex-1 -mx-6 px-6">
+          {allDuplicateGroups.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+              <CheckCircle2 className="h-12 w-12 mb-3 text-green-500" />
+              <p className="text-sm font-medium">Aucun doublon</p>
+              <p className="text-xs mt-1">Tous vos documents sont uniques.</p>
+            </div>
+          ) : (
+            <div className="space-y-4 pb-4">
+              {allDuplicateGroups.map((group, groupIndex) => (
+                <div
+                  key={groupIndex}
+                  className="border rounded-lg overflow-hidden"
+                >
+                  <div className="bg-muted/50 px-3 py-2 flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="font-medium">
+                        {group.length} fichiers similaires
+                      </span>
+                      <span className="text-muted-foreground">
+                        · {formatFileSize(group[0]?.fileSize)} · {group[0]?.mimeType || group[0]?.fileExtension}
+                      </span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-xs text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-900/20"
+                      onClick={() => {
+                        const sorted = [...group].sort(
+                          (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
+                        );
+                        const duplicateIds = sorted.slice(1).map((d) => d.id);
+                        setSelectedDocuments(duplicateIds);
+                        setSelectedFolders([]);
+                        setShowDuplicatesModal(false);
+                      }}
+                    >
+                      Sélectionner les doublons
+                    </Button>
+                  </div>
+                  <div className="divide-y">
+                    {[...group]
+                      .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+                      .map((doc, docIndex) => (
+                        <div
+                          key={doc.id}
+                          className={cn(
+                            "flex items-center gap-3 px-3 py-2 text-sm",
+                            docIndex === 0 && "bg-green-50/50 dark:bg-green-900/10",
+                          )}
+                        >
+                          {getFileIcon(doc.mimeType, doc.fileExtension, "h-4 w-4 flex-shrink-0 text-muted-foreground")}
+                          <div className="flex-1 min-w-0">
+                            <p className="truncate font-medium">{doc.originalName}</p>
+                            <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                              <Folder className="h-3 w-3" />
+                              {getFolderName(doc.folderId)}
+                              <span>·</span>
+                              {format(new Date(doc.createdAt), "dd MMM yyyy", { locale: fr })}
+                            </p>
+                          </div>
+                          {docIndex === 0 && (
+                            <Badge variant="outline" className="text-[10px] h-5 border-green-300 text-green-700 dark:border-green-700 dark:text-green-400 flex-shrink-0">
+                              Original
+                            </Badge>
+                          )}
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </ScrollArea>
+
+        {allDuplicateGroups.length > 0 && (
+          <DialogFooter className="sm:justify-between gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowDuplicatesModal(false)}
+              className="font-normal"
+            >
+              Fermer
+            </Button>
+            <Button
+              variant="default"
+              className="bg-amber-500 hover:bg-amber-600 text-white font-normal"
+              onClick={() => {
+                const allDuplicateIds = [];
+                allDuplicateGroups.forEach((group) => {
+                  const sorted = [...group].sort(
+                    (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
+                  );
+                  sorted.slice(1).forEach((d) => allDuplicateIds.push(d.id));
+                });
+                setSelectedDocuments(allDuplicateIds);
+                setSelectedFolders([]);
+                setShowDuplicatesModal(false);
+              }}
+            >
+              Sélectionner tous les doublons ({allDuplicateCount})
+            </Button>
+          </DialogFooter>
+        )}
       </DialogContent>
     </Dialog>
     </>

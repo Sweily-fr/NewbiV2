@@ -16,6 +16,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/src/components/ui/card";
+import { Skeleton } from "@/src/components/ui/skeleton";
 import {
   ChartContainer,
   ChartTooltip,
@@ -60,12 +61,15 @@ const chartConfig = {
   },
 };
 
+const TREASURY_SKELETON_HEIGHTS = [45, 55, 40, 70, 50, 65, 35, 80, 48, 60, 72, 42];
+
 export function TreasuryChart({
   expenses = [],
   invoices = [],
   bankTransactions = [],
   className = "",
   initialBalance = 0,
+  isLoading = false,
 }) {
   const [timeRange, setTimeRange] = useState("90d"); // 90d, 30d, 365d, 730d, custom
   const [customStartDate, setCustomStartDate] = useState("");
@@ -223,6 +227,31 @@ export function TreasuryChart({
       minimumFractionDigits: 2,
     }).format(value);
   };
+
+  if (isLoading) {
+    return (
+      <Card className={className}>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <div className="flex flex-col gap-1">
+            <Skeleton className="h-5 w-20" />
+            <Skeleton className="h-7 w-32" />
+          </div>
+          <Skeleton className="h-8 w-28 rounded-md" />
+        </CardHeader>
+        <CardContent className="px-2 pt-4 pb-2 sm:px-6 sm:pt-6 sm:pb-4">
+          <div className="h-[200px] flex items-end justify-between gap-1">
+            {TREASURY_SKELETON_HEIGHTS.map((h, i) => (
+              <Skeleton
+                key={i}
+                className="rounded-t-sm flex-1 animate-pulse"
+                style={{ height: `${h}%`, minHeight: "20px" }}
+              />
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className={className}>
