@@ -202,48 +202,88 @@ export function ChartAreaInteractive({
     }
   }, [isMobile]);
 
-  const filteredData = data.filter((item) => {
-    const date = new Date(item.date);
-    
-    // Si période personnalisée
-    if (timeRange === "custom") {
-      if (!customStartDate && !customEndDate) return true;
-      
-      const start = customStartDate ? new Date(customStartDate) : null;
-      const end = customEndDate ? new Date(customEndDate) : null;
-      
-      if (start && end) {
-        return date >= start && date <= end;
-      } else if (start) {
-        return date >= start;
-      } else if (end) {
-        return date <= end;
+  const filteredData = React.useMemo(() => {
+    return data.filter((item) => {
+      const date = new Date(item.date);
+
+      // Si période personnalisée
+      if (timeRange === "custom") {
+        if (!customStartDate && !customEndDate) return true;
+
+        const start = customStartDate ? new Date(customStartDate) : null;
+        const end = customEndDate ? new Date(customEndDate) : null;
+
+        if (start && end) {
+          return date >= start && date <= end;
+        } else if (start) {
+          return date >= start;
+        } else if (end) {
+          return date <= end;
+        }
+        return true;
       }
-      return true;
-    }
-    
-    // Périodes prédéfinies
-    const referenceDate = new Date();
-    let daysToSubtract = 90;
-    
-    if (timeRange === "7d") {
-      daysToSubtract = 7;
-    } else if (timeRange === "30d") {
-      daysToSubtract = 30;
-    } else if (timeRange === "90d") {
-      daysToSubtract = 90;
-    } else if (timeRange === "365d") {
-      daysToSubtract = 365;
-    } else if (timeRange === "730d") {
-      daysToSubtract = 730;
-    }
-    
-    const startDate = new Date(referenceDate);
-    startDate.setDate(startDate.getDate() - daysToSubtract);
-    return date >= startDate;
-  });
+
+      // Périodes prédéfinies
+      const referenceDate = new Date();
+      let daysToSubtract = 90;
+
+      if (timeRange === "7d") {
+        daysToSubtract = 7;
+      } else if (timeRange === "30d") {
+        daysToSubtract = 30;
+      } else if (timeRange === "90d") {
+        daysToSubtract = 90;
+      } else if (timeRange === "365d") {
+        daysToSubtract = 365;
+      } else if (timeRange === "730d") {
+        daysToSubtract = 730;
+      }
+
+      const startDate = new Date(referenceDate);
+      startDate.setDate(startDate.getDate() - daysToSubtract);
+      return date >= startDate;
+    });
+  }, [data, timeRange, customStartDate, customEndDate]);
+
+  // Agréger les données par semaine ou par mois pour les longues périodes
+  // Évite les courbes invisibles quand il y a peu de transactions sur beaucoup de jours
+  const aggregatedData = React.useMemo(() => {
+    if (timeRange === "7d") return filteredData;
+
+    // Déterminer la granularité : jour (30d), semaine (90d), mois (365d+)
+    let groupBy = "day";
+    if (timeRange === "90d" || timeRange === "custom") groupBy = "week";
+    if (timeRange === "365d" || timeRange === "730d") groupBy = "month";
+
+    if (groupBy === "day") return filteredData;
+
+    const groups = {};
+    filteredData.forEach((item) => {
+      const date = new Date(item.date);
+      let key;
+
+      if (groupBy === "week") {
+        // Début de semaine (lundi)
+        const d = new Date(date);
+        const day = d.getDay();
+        const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+        d.setDate(diff);
+        key = d.toISOString().split("T")[0];
+      } else {
+        // Début de mois
+        key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-01`;
+      }
+
+      if (!groups[key]) groups[key] = { date: key, desktop: 0, mobile: 0 };
+      groups[key].desktop += item.desktop || 0;
+      groups[key].mobile += item.mobile || 0;
+    });
+
+    return Object.values(groups).sort((a, b) => a.date.localeCompare(b.date));
+  }, [filteredData, timeRange]);
 
   // Compute dynamic description from filtered data if computeDescription is provided
+  // Utiliser filteredData (non agrégé) pour les totaux corrects
   const resolvedDescription = computeDescription
     ? computeDescription(filteredData)
     : description;
@@ -406,7 +446,7 @@ export function ChartAreaInteractive({
           style={{ height }}
         >
           <ComposedChart
-            data={filteredData}
+            data={aggregatedData}
             margin={{
               left: -20,
               right: 12,
