@@ -440,6 +440,7 @@ export function ChartAreaInteractive({
         )}
       </CardHeader>
       <CardContent className="px-2 pt-4 pb-2 sm:px-6 sm:pt-6 sm:pb-4">
+        {filteredData.some((item) => item.desktop > 0) ? (
         <ChartContainer
           config={config}
           className={`aspect-${aspectRatio} w-full`}
@@ -592,6 +593,14 @@ export function ChartAreaInteractive({
             )}
           </ComposedChart>
         </ChartContainer>
+        ) : (
+        <div
+          className="flex items-center justify-center text-muted-foreground text-sm"
+          style={{ height }}
+        >
+          Aucune donnée pour cette période
+        </div>
+        )}
       </CardContent>
     </Card>
   );

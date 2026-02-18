@@ -1,6 +1,18 @@
 // Utilitaires pour traiter les données des graphiques
 // Évite la duplication de code entre dashboard et transactions
 
+// Helper : convertit une valeur de date en clé YYYY-MM-DD en timezone locale
+// Évite le décalage UTC (+1/+2 en France) que cause toISOString()
+const toLocalDateKey = (raw) => {
+  if (!raw) return null;
+  const d = new Date(raw);
+  if (isNaN(d.getTime())) return null;
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+};
+
 export const processInvoicesForCharts = (paidInvoices) => {
   const now = new Date();
   const chartData = [];
@@ -119,47 +131,54 @@ export const processIncomeForCharts = (
   days = 365
 ) => {
   const now = new Date();
+
+  // Phase 1 : filtrer les transactions positives et les grouper par date locale dans une Map
+  const incomeByDate = new Map(); // clé = "YYYY-MM-DD", valeur = { amount, count }
+  let parseFails = 0;
+
+  for (const t of bankTransactions) {
+    if (t.amount <= 0) continue;
+    const rawDate = t.date || t.processedAt || t.createdAt;
+    const key = toLocalDateKey(rawDate);
+    if (!key) { parseFails++; continue; }
+
+    const entry = incomeByDate.get(key);
+    if (entry) {
+      entry.amount += t.amount;
+      entry.count += 1;
+    } else {
+      incomeByDate.set(key, { amount: t.amount, count: 1 });
+    }
+  }
+
+  // Phase 2 : générer les N jours de données en consultant la Map (lookup O(1))
   const chartData = [];
-
-  // Pré-filtrer les transactions positives pour optimiser
-  const positiveTransactions = bankTransactions.filter((t) => t.amount > 0);
-
-  // Generate data for the last N days
   for (let i = days - 1; i >= 0; i--) {
     const date = new Date(now);
     date.setDate(date.getDate() - i);
-    const dateStr = date.toISOString().split("T")[0];
+    const dateStr = toLocalDateKey(date);
 
-    // MODE BANCAIRE PUR : Uniquement les transactions bancaires positives
-    const dayBankIncome = positiveTransactions.filter((t) => {
-      // Utiliser date, processedAt ou createdAt comme fallback
-      const rawDate = t.date || t.processedAt || t.createdAt;
-      if (!rawDate) return false;
-
-      const transactionDate = new Date(rawDate);
-      if (isNaN(transactionDate.getTime())) return false;
-      return transactionDate.toISOString().split("T")[0] === dateStr;
-    });
-
-    const dayIncome = dayBankIncome.reduce((sum, t) => sum + t.amount, 0);
-    const dayCount = dayBankIncome.length;
-
+    const entry = incomeByDate.get(dateStr);
     chartData.push({
       date: dateStr,
-      desktop: dayIncome,
-      mobile: dayCount,
+      desktop: entry ? entry.amount : 0,
+      mobile: entry ? entry.count : 0,
     });
   }
 
   // Debug: résumé des données générées
   const totalDesktop = chartData.reduce((sum, d) => sum + d.desktop, 0);
   const daysWithData = chartData.filter((d) => d.desktop > 0).length;
+  const positiveCount = bankTransactions.filter((t) => t.amount > 0).length;
   console.log("📊 [ChartProcessor] Entrées:", {
     totalTransactions: bankTransactions.length,
-    positiveTransactions: positiveTransactions.length,
+    positiveTransactions: positiveCount,
+    uniqueDatesInMap: incomeByDate.size,
+    parseFails,
     daysWithData,
     totalAmount: totalDesktop,
     dateRange: chartData.length > 0 ? `${chartData[0].date} → ${chartData[chartData.length - 1].date}` : "vide",
+    sampleEntries: [...incomeByDate.entries()].slice(0, 3),
   });
 
   return chartData;
@@ -172,49 +191,55 @@ export const processExpensesWithBankForCharts = (
   days = 365
 ) => {
   const now = new Date();
+
+  // Phase 1 : filtrer les transactions négatives et les grouper par date locale dans une Map
+  const expenseByDate = new Map(); // clé = "YYYY-MM-DD", valeur = { amount, count }
+  let parseFails = 0;
+
+  for (const t of bankTransactions) {
+    if (t.amount >= 0) continue;
+    const rawDate = t.date || t.processedAt || t.createdAt;
+    const key = toLocalDateKey(rawDate);
+    if (!key) { parseFails++; continue; }
+
+    const absAmount = Math.abs(t.amount);
+    const entry = expenseByDate.get(key);
+    if (entry) {
+      entry.amount += absAmount;
+      entry.count += 1;
+    } else {
+      expenseByDate.set(key, { amount: absAmount, count: 1 });
+    }
+  }
+
+  // Phase 2 : générer les N jours de données en consultant la Map (lookup O(1))
   const chartData = [];
-
-  // Pré-filtrer les transactions négatives pour optimiser
-  const negativeTransactions = bankTransactions.filter((t) => t.amount < 0);
-
-  // Generate data for the last N days
   for (let i = days - 1; i >= 0; i--) {
     const date = new Date(now);
     date.setDate(date.getDate() - i);
-    const dateStr = date.toISOString().split("T")[0];
+    const dateStr = toLocalDateKey(date);
 
-    // MODE BANCAIRE PUR : Uniquement les transactions bancaires négatives
-    const dayBankExpenses = negativeTransactions.filter((t) => {
-      // Utiliser date, processedAt ou createdAt comme fallback
-      const rawDate = t.date || t.processedAt || t.createdAt;
-      if (!rawDate) return false;
-
-      const transactionDate = new Date(rawDate);
-      if (isNaN(transactionDate.getTime())) return false;
-      return transactionDate.toISOString().split("T")[0] === dateStr;
-    });
-
-    const dayExpenseAmount = Math.abs(
-      dayBankExpenses.reduce((sum, t) => sum + t.amount, 0)
-    );
-    const dayCount = dayBankExpenses.length;
-
+    const entry = expenseByDate.get(dateStr);
     chartData.push({
       date: dateStr,
-      desktop: dayExpenseAmount,
-      mobile: dayCount,
+      desktop: entry ? entry.amount : 0,
+      mobile: entry ? entry.count : 0,
     });
   }
 
   // Debug: résumé des données générées
   const totalDesktop = chartData.reduce((sum, d) => sum + d.desktop, 0);
   const daysWithData = chartData.filter((d) => d.desktop > 0).length;
+  const negativeCount = bankTransactions.filter((t) => t.amount < 0).length;
   console.log("📊 [ChartProcessor] Sorties:", {
     totalTransactions: bankTransactions.length,
-    negativeTransactions: negativeTransactions.length,
+    negativeTransactions: negativeCount,
+    uniqueDatesInMap: expenseByDate.size,
+    parseFails,
     daysWithData,
     totalAmount: totalDesktop,
     dateRange: chartData.length > 0 ? `${chartData[0].date} → ${chartData[chartData.length - 1].date}` : "vide",
+    sampleEntries: [...expenseByDate.entries()].slice(0, 3),
   });
 
   return chartData;
