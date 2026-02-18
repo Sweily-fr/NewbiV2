@@ -170,7 +170,7 @@ export const processIncomeForCharts = (
   const totalDesktop = chartData.reduce((sum, d) => sum + d.desktop, 0);
   const daysWithData = chartData.filter((d) => d.desktop > 0).length;
   const positiveCount = bankTransactions.filter((t) => t.amount > 0).length;
-  console.log("📊 [ChartProcessor] Entrées:", {
+  console.warn("📊 [ChartProcessor] Entrées:", {
     totalTransactions: bankTransactions.length,
     positiveTransactions: positiveCount,
     uniqueDatesInMap: incomeByDate.size,
@@ -231,7 +231,7 @@ export const processExpensesWithBankForCharts = (
   const totalDesktop = chartData.reduce((sum, d) => sum + d.desktop, 0);
   const daysWithData = chartData.filter((d) => d.desktop > 0).length;
   const negativeCount = bankTransactions.filter((t) => t.amount < 0).length;
-  console.log("📊 [ChartProcessor] Sorties:", {
+  console.warn("📊 [ChartProcessor] Sorties:", {
     totalTransactions: bankTransactions.length,
     negativeTransactions: negativeCount,
     uniqueDatesInMap: expenseByDate.size,

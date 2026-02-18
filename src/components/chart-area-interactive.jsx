@@ -268,7 +268,7 @@ export function ChartAreaInteractive({
         const day = d.getDay();
         const diff = d.getDate() - day + (day === 0 ? -6 : 1);
         d.setDate(diff);
-        key = d.toISOString().split("T")[0];
+        key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
       } else {
         // Début de mois
         key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-01`;

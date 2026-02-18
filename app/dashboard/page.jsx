@@ -297,7 +297,7 @@ function DashboardContent() {
   );
 
   // Debug: vérifier les données des graphiques entrées/sorties
-  console.log("📊 [DASHBOARD] Chart data debug:", {
+  console.warn("📊 [DASHBOARD] Chart data debug:", {
     filteredTransactionsCount: filteredTransactions.length,
     incomeDataPoints: incomeChartData.length,
     incomeNonZero: incomeChartData.filter(d => d.desktop > 0).length,

@@ -103,7 +103,7 @@ export function useDashboardData() {
 
   // Debug: vérifier les données extraites
   if (!bankLoading && workspaceId) {
-    console.log("📊 [Dashboard] Données transactions:", {
+    console.warn("📊 [Dashboard] Données transactions:", {
       hasData: !!transactionsData,
       transactionsCount: bankTransactions.length,
       hasError: !!transactionsError,
