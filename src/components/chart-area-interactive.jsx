@@ -172,7 +172,6 @@ export function ChartAreaInteractive({
   singleCurve = false,
   hideMobileCurve = false,
   className = "",
-  aspectRatio = "auto",
   isLoading = false,
   ...props
 }) {
@@ -288,21 +287,7 @@ export function ChartAreaInteractive({
     ? computeDescription(filteredData)
     : description;
 
-  // Debug: diagnostiquer le rendu en production
   const hasNonZeroData = filteredData.some((item) => item.desktop > 0);
-  console.warn(`📊 [ChartArea "${title}"] Render diagnostic:`, {
-    dataLength: data.length,
-    dataNonZero: data.filter((d) => d.desktop > 0).length,
-    filteredLength: filteredData.length,
-    filteredNonZero: filteredData.filter((d) => d.desktop > 0).length,
-    hasNonZeroData,
-    aggregatedLength: aggregatedData.length,
-    aggregatedNonZero: aggregatedData.filter((d) => d.desktop > 0).length,
-    timeRange,
-    isLoading,
-    sampleData: data.slice(0, 2),
-    sampleFiltered: filteredData.filter((d) => d.desktop > 0).slice(0, 2),
-  });
 
   if (isLoading) {
     return (
@@ -456,167 +441,168 @@ export function ChartAreaInteractive({
         )}
       </CardHeader>
       <CardContent className="px-2 pt-4 pb-2 sm:px-6 sm:pt-6 sm:pb-4">
-        {hasNonZeroData ? (
-        <ChartContainer
-          config={config}
-          className={`aspect-${aspectRatio} w-full`}
-          style={{ height }}
-        >
-          <ComposedChart
-            data={aggregatedData}
-            margin={{
-              left: -20,
-              right: 12,
-              top: 12,
-              bottom: 0,
-            }}
+        <div className="relative" style={{ height }}>
+          <ChartContainer
+            config={config}
+            className="w-full"
+            style={{ height }}
           >
-            {showGradient && (
-              <defs>
-                <linearGradient
-                  id={`fillDesktop-${chartId}`}
-                  x1="0"
-                  y1="0"
-                  x2="0"
-                  y2="1"
-                >
-                  <stop
-                    offset="5%"
-                    stopColor={config.desktop?.color || "#5B4FFF"}
-                    stopOpacity={1.0}
-                  />
-                  <stop
-                    offset="95%"
-                    stopColor={config.desktop?.color || "#5B4FFF"}
-                    stopOpacity={0.1}
-                  />
-                </linearGradient>
-                <linearGradient
-                  id={`fillMobile-${chartId}`}
-                  x1="0"
-                  y1="0"
-                  x2="0"
-                  y2="1"
-                >
-                  <stop
-                    offset="5%"
-                    stopColor={config.mobile?.color || "#a44fff"}
-                    stopOpacity={0.8}
-                  />
-                  <stop
-                    offset="95%"
-                    stopColor={config.mobile?.color || "#a44fff"}
-                    stopOpacity={0.1}
-                  />
-                </linearGradient>
-              </defs>
-            )}
-            <CartesianGrid vertical={false} />
-            <XAxis
-              dataKey="date"
-              tickLine={false}
-              axisLine={false}
-              tickMargin={8}
-              minTickGap={32}
-              tickFormatter={(value) => {
-                const date = new Date(value);
-                return date.toLocaleDateString("fr-FR", {
-                  month: "short",
-                  year: "numeric",
-                });
+            <ComposedChart
+              data={aggregatedData}
+              margin={{
+                left: -20,
+                right: 12,
+                top: 12,
+                bottom: 0,
               }}
-            />
-            <YAxis
-              tickLine={false}
-              axisLine={false}
-              tickMargin={8}
-              width={35}
-              tickFormatter={(value) => {
-                // Formater les valeurs en milliers (k) si > 1000
-                if (value >= 1000) {
-                  return `${(value / 1000).toFixed(0)}k`;
-                }
-                return value.toString();
-              }}
-            />
-            {showTooltip && (
-              <ChartTooltip
-                cursor={false}
-                defaultIndex={isMobile ? -1 : 10}
-                content={
-                  <ChartTooltipContent
-                    labelFormatter={(value) => {
-                      return new Date(value).toLocaleDateString("fr-FR", {
-                        month: "short",
-                        year: "numeric",
-                      });
-                    }}
-                    indicator="none"
-                    className={isMobile ? "hidden" : "min-w-[200px]"}
-                  />
-                }
+            >
+              {showGradient && (
+                <defs>
+                  <linearGradient
+                    id={`fillDesktop-${chartId}`}
+                    x1="0"
+                    y1="0"
+                    x2="0"
+                    y2="1"
+                  >
+                    <stop
+                      offset="5%"
+                      stopColor={config.desktop?.color || "#5B4FFF"}
+                      stopOpacity={1.0}
+                    />
+                    <stop
+                      offset="95%"
+                      stopColor={config.desktop?.color || "#5B4FFF"}
+                      stopOpacity={0.1}
+                    />
+                  </linearGradient>
+                  <linearGradient
+                    id={`fillMobile-${chartId}`}
+                    x1="0"
+                    y1="0"
+                    x2="0"
+                    y2="1"
+                  >
+                    <stop
+                      offset="5%"
+                      stopColor={config.mobile?.color || "#a44fff"}
+                      stopOpacity={0.8}
+                    />
+                    <stop
+                      offset="95%"
+                      stopColor={config.mobile?.color || "#a44fff"}
+                      stopOpacity={0.1}
+                    />
+                  </linearGradient>
+                </defs>
+              )}
+              <CartesianGrid vertical={false} />
+              <XAxis
+                dataKey="date"
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                minTickGap={32}
+                tickFormatter={(value) => {
+                  const date = new Date(value);
+                  return date.toLocaleDateString("fr-FR", {
+                    month: "short",
+                    year: "numeric",
+                  });
+                }}
               />
-            )}
-            {singleCurve ? (
-              <Area
-                dataKey="desktop"
-                type="monotone"
-                fill={
-                  showGradient
-                    ? `url(#fillDesktop-${chartId})`
-                    : config.desktop?.color || "#5B4FFF"
-                }
-                fillOpacity={1}
-                stroke={config.desktop?.color || "#5B4FFF"}
-                strokeWidth={2}
-                connectNulls
+              <YAxis
+                tickLine={false}
+                axisLine={false}
+                tickMargin={8}
+                width={35}
+                tickFormatter={(value) => {
+                  // Formater les valeurs en milliers (k) si > 1000
+                  if (value >= 1000) {
+                    return `${(value / 1000).toFixed(0)}k`;
+                  }
+                  return value.toString();
+                }}
               />
-            ) : (
-              <>
-                {showMobile && !hideMobileCurve && (
-                  <Area
-                    dataKey="mobile"
-                    type="monotone"
-                    fill={
-                      showGradient
-                        ? `url(#fillMobile-${chartId})`
-                        : config.mobile?.color || "#a44fff"
-                    }
-                    fillOpacity={1}
-                    stroke={config.mobile?.color || "#a44fff"}
-                    strokeWidth={2}
-                    stackId="a"
-                    connectNulls
-                  />
-                )}
-                {showDesktop && (
-                  <Area
-                    dataKey="desktop"
-                    type="monotone"
-                    fill={
-                      showGradient
-                        ? `url(#fillDesktop-${chartId})`
-                        : config.desktop?.color || "#5B4FFF"
-                    }
-                    fillOpacity={1}
-                    stroke={config.desktop?.color || "#5B4FFF"}
-                    strokeWidth={2}
-                    stackId={hideMobileCurve ? undefined : "a"}
-                    connectNulls
-                  />
-                )}
-              </>
-            )}
-          </ComposedChart>
-        </ChartContainer>
-        ) : (
-        <div
-          className="flex items-center justify-center text-muted-foreground text-sm"
-          style={{ height }}
-        >
-          Aucune donnée pour cette période
+              {showTooltip && (
+                <ChartTooltip
+                  cursor={false}
+                  defaultIndex={isMobile ? -1 : 10}
+                  content={
+                    <ChartTooltipContent
+                      labelFormatter={(value) => {
+                        return new Date(value).toLocaleDateString("fr-FR", {
+                          month: "short",
+                          year: "numeric",
+                        });
+                      }}
+                      indicator="none"
+                      className={isMobile ? "hidden" : "min-w-[200px]"}
+                    />
+                  }
+                />
+              )}
+              {singleCurve ? (
+                <Area
+                  dataKey="desktop"
+                  type="monotone"
+                  fill={
+                    showGradient
+                      ? `url(#fillDesktop-${chartId})`
+                      : config.desktop?.color || "#5B4FFF"
+                  }
+                  fillOpacity={1}
+                  stroke={config.desktop?.color || "#5B4FFF"}
+                  strokeWidth={2}
+                  connectNulls
+                />
+              ) : (
+                <>
+                  {showMobile && !hideMobileCurve && (
+                    <Area
+                      dataKey="mobile"
+                      type="monotone"
+                      fill={
+                        showGradient
+                          ? `url(#fillMobile-${chartId})`
+                          : config.mobile?.color || "#a44fff"
+                      }
+                      fillOpacity={1}
+                      stroke={config.mobile?.color || "#a44fff"}
+                      strokeWidth={2}
+                      stackId="a"
+                      connectNulls
+                    />
+                  )}
+                  {showDesktop && (
+                    <Area
+                      dataKey="desktop"
+                      type="monotone"
+                      fill={
+                        showGradient
+                          ? `url(#fillDesktop-${chartId})`
+                          : config.desktop?.color || "#5B4FFF"
+                      }
+                      fillOpacity={1}
+                      stroke={config.desktop?.color || "#5B4FFF"}
+                      strokeWidth={2}
+                      stackId={hideMobileCurve ? undefined : "a"}
+                      connectNulls
+                    />
+                  )}
+                </>
+              )}
+            </ComposedChart>
+          </ChartContainer>
+          {!hasNonZeroData && (
+            <div
+              className="absolute inset-0 flex items-center justify-center text-muted-foreground text-sm bg-background"
+              style={{ height }}
+            >
+              Aucune donnée pour cette période
+            </div>
+          )}
         </div>
-        )}
       </CardContent>
     </Card>
   );
