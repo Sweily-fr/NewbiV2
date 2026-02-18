@@ -249,8 +249,8 @@ export function PurchaseInvoiceDetailDrawer({
     const data = {
       supplierName: form.supplierName,
       invoiceNumber: form.invoiceNumber || undefined,
-      issueDate: form.issueDate,
-      dueDate: form.dueDate || undefined,
+      issueDate: form.issueDate ? new Date(form.issueDate).toISOString() : new Date().toISOString(),
+      dueDate: form.dueDate ? new Date(form.dueDate).toISOString() : undefined,
       amountHT: parseFloat(form.amountHT) || 0,
       amountTVA: parseFloat(form.amountTVA) || 0,
       vatRate: parseFloat(form.vatRate) || 20,
@@ -262,12 +262,16 @@ export function PurchaseInvoiceDetailDrawer({
       internalReference: form.internalReference || undefined,
       paymentMethod: form.paymentMethod || undefined,
     };
-    if (isCreate) {
-      await createInvoice(data);
-    } else {
-      await updateInvoice(invoice.id, data);
+    try {
+      if (isCreate) {
+        await createInvoice(data);
+      } else {
+        await updateInvoice(invoice.id, data);
+      }
+      onSaved?.();
+    } catch {
+      // Error toast is handled by the hook's onError callback
     }
-    onSaved?.();
   };
 
   const handleDelete = async () => {
@@ -339,20 +343,9 @@ export function PurchaseInvoiceDetailDrawer({
                   <Building2 className="h-5 w-5 text-muted-foreground" />
                 </div>
                 <div className="flex-1">
-                  {isEditMode ? (
-                    <Input
-                      value={form.supplierName}
-                      onChange={(e) =>
-                        handleChange("supplierName", e.target.value)
-                      }
-                      placeholder="Nom du fournisseur"
-                      className="text-sm font-medium h-auto py-1 border-none shadow-none px-0 focus-visible:ring-0"
-                    />
-                  ) : (
-                    <p className="text-xs text-muted-foreground">
-                      {form.supplierName || "Fournisseur"}
-                    </p>
-                  )}
+                  <p className="text-xs text-muted-foreground">
+                    {form.supplierName || "Fournisseur"}
+                  </p>
                   {isEditMode ? (
                     <div className="flex items-center gap-2">
                       <Input
@@ -380,7 +373,7 @@ export function PurchaseInvoiceDetailDrawer({
 
             <Separator />
 
-            {/* Fournisseur */}
+            {/* Fournisseur (view mode) */}
             {!isEditMode && (
               <>
                 <div className="space-y-3">
@@ -415,6 +408,22 @@ export function PurchaseInvoiceDetailDrawer({
 
               {isEditMode ? (
                 <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Building2 className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-normal text-muted-foreground">
+                        Fournisseur *
+                      </span>
+                    </div>
+                    <Input
+                      value={form.supplierName}
+                      onChange={(e) =>
+                        handleChange("supplierName", e.target.value)
+                      }
+                      placeholder="Nom du fournisseur"
+                      className="w-44 h-8 text-sm text-right"
+                    />
+                  </div>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Hash className="h-4 w-4 text-muted-foreground" />

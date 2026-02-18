@@ -195,6 +195,19 @@ export function PurchaseInvoiceUploadDrawer({
     setCurrentStep("review");
   };
 
+  const normalizeDate = (dateStr) => {
+    if (!dateStr) return null;
+    // Handle French format DD/MM/YYYY
+    const frMatch = dateStr.match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})$/);
+    if (frMatch) {
+      const [, day, month, year] = frMatch;
+      return new Date(`${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}T00:00:00.000Z`).toISOString();
+    }
+    // Handle ISO or other standard formats
+    const d = new Date(dateStr);
+    return isNaN(d.getTime()) ? null : d.toISOString();
+  };
+
   const handleCreate = async () => {
     if (!editableData.supplierName || !editableData.amountTTC) {
       toast.error("Fournisseur et montant TTC requis");
@@ -204,8 +217,8 @@ export function PurchaseInvoiceUploadDrawer({
       const invoice = await createInvoice({
         supplierName: editableData.supplierName,
         invoiceNumber: editableData.invoiceNumber || undefined,
-        issueDate: editableData.issueDate || new Date().toISOString(),
-        dueDate: editableData.dueDate || undefined,
+        issueDate: normalizeDate(editableData.issueDate) || new Date().toISOString(),
+        dueDate: normalizeDate(editableData.dueDate) || undefined,
         amountHT: parseFloat(editableData.amountHT) || 0,
         amountTVA: parseFloat(editableData.amountTVA) || 0,
         vatRate: parseFloat(editableData.vatRate) || 20,
