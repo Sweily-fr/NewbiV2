@@ -7,6 +7,7 @@ export const PURCHASE_ORDER_FRAGMENT = gql`
     id
     number
     prefix
+    purchaseOrderNumber
     status
     issueDate
     validUntil
@@ -190,6 +191,16 @@ export const PURCHASE_ORDER_LIST_FRAGMENT = gql`
 
 // ==================== QUERIES ====================
 
+export const GET_LAST_PURCHASE_ORDER_PREFIX = gql`
+  query GetLastPurchaseOrderPrefix($workspaceId: ID!) {
+    purchaseOrders(workspaceId: $workspaceId, limit: 1, page: 1) {
+      purchaseOrders {
+        prefix
+      }
+    }
+  }
+`;
+
 export const GET_PURCHASE_ORDERS = gql`
   query GetPurchaseOrders(
     $workspaceId: ID!
@@ -318,6 +329,27 @@ import { useState, useMemo, useCallback } from "react";
 import { toast } from "@/src/components/ui/sonner";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { useErrorHandler } from "@/src/hooks/useErrorHandler";
+
+// Hook pour récupérer le dernier préfixe de bon de commande
+export const useLastPurchaseOrderPrefix = () => {
+  const { workspaceId } = useRequiredWorkspace();
+
+  const { data, loading, error } = useQuery(GET_LAST_PURCHASE_ORDER_PREFIX, {
+    variables: { workspaceId },
+    skip: !workspaceId,
+    fetchPolicy: "network-only",
+    errorPolicy: "all",
+  });
+
+  return useMemo(
+    () => ({
+      prefix: data?.purchaseOrders?.purchaseOrders?.[0]?.prefix || null,
+      loading,
+      error,
+    }),
+    [data, loading, error]
+  );
+};
 
 // Hook pour récupérer la liste des bons de commande
 export const usePurchaseOrders = (filters = {}) => {
@@ -602,11 +634,17 @@ export const useConvertQuoteToPurchaseOrder = () => {
     },
     onError: (error) => {
       console.error("Erreur lors de la conversion:", error);
+      console.error("Détails networkError:", error.networkError?.result);
+      console.error("Détails graphQLErrors:", error.graphQLErrors);
       toast.error(error.message || "Erreur lors de la conversion en bon de commande");
     },
   });
 
   const convertToPurchaseOrder = async (quoteId) => {
+    if (!workspaceId) {
+      throw new Error("Aucun workspace sélectionné");
+    }
+    console.log("DEBUG convertToPurchaseOrder - quoteId:", quoteId, "workspaceId:", workspaceId);
     try {
       const result = await convertMutation({
         variables: { quoteId, workspaceId },
@@ -643,6 +681,9 @@ export const useConvertPurchaseOrderToInvoice = () => {
   });
 
   const convertToInvoice = async (id) => {
+    if (!workspaceId) {
+      throw new Error("Aucun workspace sélectionné");
+    }
     try {
       const result = await convertMutation({
         variables: { id, workspaceId },

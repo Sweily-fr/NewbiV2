@@ -4,14 +4,13 @@ import { useState, useEffect } from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import { Button } from "@/src/components/ui/button";
 import { X, LoaderCircle } from "lucide-react";
-import QuoteSettingsView from "./quote-settings-view";
+import QuoteSettingsView from "@/app/dashboard/outils/devis/components/quote-settings-view";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import { toast } from "@/src/components/ui/sonner";
 import { updateOrganization, getActiveOrganization } from "@/src/lib/organization-client";
 
-// Données de démonstration pour la preview
-const getDemoQuoteData = (formData, organization) => {
-  // Récupérer les paramètres depuis le formulaire
+// Données de démonstration pour la preview des bons de commande
+const getDemoPurchaseOrderData = (formData, organization) => {
   const quoteSettings = formData?.quoteSettings || {};
   const bankDetails = formData?.bankDetails || {};
   const headerNotes = formData?.headerNotes || "";
@@ -24,12 +23,12 @@ const getDemoQuoteData = (formData, organization) => {
   const clientPositionRight = formData?.clientPositionRight || false;
 
   return {
-    quoteNumber: "DEMO-2024-001",
-    prefix: "DEV",
+    quoteNumber: "BD-DEMO-2024-001",
+    prefix: "BD",
     number: "001",
     issueDate: new Date().toISOString(),
     validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-    status: "PENDING",
+    status: "CONFIRMED",
     client: {
       name: "Client Exemple SARL",
       email: "contact@client-exemple.fr",
@@ -57,7 +56,6 @@ const getDemoQuoteData = (formData, organization) => {
       siret: organization?.siret || "98765432109876",
       vatNumber: organization?.vatNumber || "FR98765432109",
       logo: organization?.logo || null,
-      // Appliquer les coordonnées bancaires du formulaire
       bankDetails: {
         iban: bankDetails?.iban || "",
         bic: bankDetails?.bic || "",
@@ -83,7 +81,6 @@ const getDemoQuoteData = (formData, organization) => {
     subtotal: 9000,
     totalVAT: 1800,
     total: 10800,
-    // Appliquer les paramètres du formulaire
     headerNotes: headerNotes,
     footerNotes: footerNotes,
     termsAndConditions: termsAndConditions,
@@ -94,13 +91,11 @@ const getDemoQuoteData = (formData, organization) => {
       bankName: bankDetails?.bankName || "",
     },
     primaryColor: headerBgColor,
-    // Appliquer la couleur via appearance (utilisé par UniversalPreviewPDF)
     appearance: {
       headerBgColor: headerBgColor,
       headerTextColor: headerTextColor,
       textColor: textColor,
     },
-    // Appliquer tous les autres paramètres de quote settings
     quoteSettings: {
       ...quoteSettings,
       headerNotes: headerNotes,
@@ -109,12 +104,11 @@ const getDemoQuoteData = (formData, organization) => {
       showBankDetails: showBankDetails,
       primaryColor: headerBgColor,
     },
-    // Position du client dans le PDF
     clientPositionRight: clientPositionRight,
   };
 };
 
-export function QuoteSettingsModal({ open, onOpenChange }) {
+export function PurchaseOrderSettingsModal({ open, onOpenChange }) {
   const [isSaving, setIsSaving] = useState(false);
   const [organization, setOrganization] = useState(null);
   const [debouncedFormData, setDebouncedFormData] = useState(null);
@@ -129,21 +123,8 @@ export function QuoteSettingsModal({ open, onOpenChange }) {
           setIsLoading(true);
           const org = await getActiveOrganization();
           setOrganization(org);
-          
-          console.log("📋 Chargement des paramètres de l'organisation (devis):", {
-            headerNotes: org?.quoteHeaderNotes || org?.documentHeaderNotes,
-            footerNotes: org?.quoteFooterNotes || org?.documentFooterNotes,
-            termsAndConditions: org?.quoteTermsAndConditions || org?.documentTermsAndConditions,
-            showBankDetails: org?.showBankDetails,
-            primaryColor: org?.documentHeaderBgColor,
-            bankDetails: {
-              iban: org?.bankIban,
-              bic: org?.bankBic,
-              bankName: org?.bankName,
-            },
-          });
-          
-          // Préparer les valeurs initiales depuis l'organisation (même structure que l'éditeur)
+
+          // Préparer les valeurs initiales depuis l'organisation (champs PO-spécifiques avec fallback)
           const formValues = {
             quoteSettings: {},
             bankDetails: {
@@ -151,15 +132,14 @@ export function QuoteSettingsModal({ open, onOpenChange }) {
               bic: org?.bankBic || "",
               bankName: org?.bankName || "",
             },
-            // Ajouter userBankDetails pour que QuoteSettingsView puisse détecter les coordonnées bancaires
             userBankDetails: {
               iban: org?.bankIban || "",
               bic: org?.bankBic || "",
               bankName: org?.bankName || "",
             },
-            headerNotes: org?.quoteHeaderNotes || org?.documentHeaderNotes || "",
-            footerNotes: org?.quoteFooterNotes || org?.documentFooterNotes || "",
-            termsAndConditions: org?.quoteTermsAndConditions || org?.documentTermsAndConditions || "",
+            headerNotes: org?.purchaseOrderHeaderNotes || org?.documentHeaderNotes || "",
+            footerNotes: org?.purchaseOrderFooterNotes || org?.documentFooterNotes || "",
+            termsAndConditions: org?.purchaseOrderTermsAndConditions || org?.documentTermsAndConditions || "",
             showBankDetails: org?.showBankDetails || false,
             primaryColor: org?.documentHeaderBgColor || "#5b4fff",
             appearance: {
@@ -167,11 +147,9 @@ export function QuoteSettingsModal({ open, onOpenChange }) {
               headerTextColor: org?.documentHeaderTextColor || "#ffffff",
               headerBgColor: org?.documentHeaderBgColor || "#5b4fff",
             },
-            clientPositionRight: org?.quoteClientPositionRight || false,
+            clientPositionRight: org?.purchaseOrderClientPositionRight || false,
           };
-          
-          console.log("📝 Valeurs initiales du formulaire (devis):", formValues);
-          
+
           setInitialValues(formValues);
           setDebouncedFormData(formValues);
           setIsLoading(false);
@@ -180,10 +158,9 @@ export function QuoteSettingsModal({ open, onOpenChange }) {
           setIsLoading(false);
         }
       };
-      
+
       loadOrganization();
     } else {
-      // Réinitialiser l'état quand le modal se ferme
       setIsLoading(true);
       setDebouncedFormData(null);
       setInitialValues(null);
@@ -220,7 +197,7 @@ export function QuoteSettingsModal({ open, onOpenChange }) {
   // Observer tous les changements du formulaire
   const formData = form.watch();
 
-  // Debounce pour la preview (évite les saccades)
+  // Debounce pour la preview
   useEffect(() => {
     if (!isLoading && formData) {
       const timer = setTimeout(() => {
@@ -235,27 +212,27 @@ export function QuoteSettingsModal({ open, onOpenChange }) {
     try {
       setIsSaving(true);
       const formValues = form.getValues();
-      
+
       if (!organization?.id) {
         toast.error("Aucune organisation active");
         setIsSaving(false);
         return;
       }
-      
-      // Préparer les données pour la mise à jour (même structure que l'éditeur)
+
+      // Préparer les données pour la mise à jour (champs PO-spécifiques)
       const updateData = {
-        // Notes et conditions spécifiques aux devis
-        quoteHeaderNotes: formValues.headerNotes,
-        quoteFooterNotes: formValues.footerNotes,
-        quoteTermsAndConditions: formValues.termsAndConditions,
+        // Notes et conditions spécifiques aux bons de commande
+        purchaseOrderHeaderNotes: formValues.headerNotes,
+        purchaseOrderFooterNotes: formValues.footerNotes,
+        purchaseOrderTermsAndConditions: formValues.termsAndConditions,
 
         // Couleurs du document (lues depuis appearance.*)
         documentHeaderBgColor: formValues.appearance?.headerBgColor || formValues.primaryColor || "#5b4fff",
         documentHeaderTextColor: formValues.appearance?.headerTextColor || "#ffffff",
         documentTextColor: formValues.appearance?.textColor || "#000000",
 
-        // Position du client dans le PDF (devis)
-        quoteClientPositionRight: formValues.clientPositionRight || false,
+        // Position du client dans le PDF (bons de commande)
+        purchaseOrderClientPositionRight: formValues.clientPositionRight || false,
 
         // Coordonnées bancaires
         bankIban: formValues.bankDetails?.iban || "",
@@ -264,15 +241,12 @@ export function QuoteSettingsModal({ open, onOpenChange }) {
         showBankDetails: formValues.showBankDetails,
       };
 
-      console.log("💾 Sauvegarde des paramètres pour l'organisation (devis):", organization.id);
-      console.log("💾 Données à sauvegarder:", updateData);
-
       await updateOrganization(organization.id, updateData);
-      
+
       toast.success("Paramètres enregistrés avec succès");
       onOpenChange(false);
     } catch (error) {
-      console.error("❌ Erreur lors de l'enregistrement:", error);
+      console.error("Erreur lors de l'enregistrement:", error);
       toast.error("Erreur lors de l'enregistrement des paramètres");
     } finally {
       setIsSaving(false);
@@ -281,7 +255,7 @@ export function QuoteSettingsModal({ open, onOpenChange }) {
 
   if (!open) return null;
 
-  const demoData = debouncedFormData ? getDemoQuoteData(debouncedFormData, organization) : null;
+  const demoData = debouncedFormData ? getDemoPurchaseOrderData(debouncedFormData, organization) : null;
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-background">
@@ -291,7 +265,7 @@ export function QuoteSettingsModal({ open, onOpenChange }) {
           <div className="max-w-2xl mx-auto flex flex-col w-full h-full">
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold">Paramètres des devis</h2>
+              <h2 className="text-lg font-semibold">Paramètres des bons de commande</h2>
               <Button
                 variant="ghost"
                 size="sm"
@@ -310,6 +284,7 @@ export function QuoteSettingsModal({ open, onOpenChange }) {
                     canEdit={true}
                     onCancel={() => onOpenChange(false)}
                     onSave={handleSave}
+                    documentType="purchaseOrder"
                   />
                 </FormProvider>
               </div>
@@ -325,7 +300,7 @@ export function QuoteSettingsModal({ open, onOpenChange }) {
                 <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
               </div>
             ) : (
-              <UniversalPreviewPDF data={demoData} type="quote" />
+              <UniversalPreviewPDF data={demoData} type="purchaseOrder" />
             )}
           </div>
         </div>

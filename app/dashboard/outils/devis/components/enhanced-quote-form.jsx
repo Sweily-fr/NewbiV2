@@ -437,6 +437,7 @@ export default function EnhancedQuoteForm({
                 validateQuoteNumber={validateQuoteNumber}
                 hasExistingQuotes={hasExistingQuotes}
                 validationErrors={validationErrors}
+                documentType={documentType}
               />
             </>
           )}
@@ -485,14 +486,16 @@ export default function EnhancedQuoteForm({
                 Annuler
               </Button>
 
-              <Button
-                variant="outline"
-                onClick={handleSaveDraft}
-                disabled={!canEdit || saving}
-                className="text-sm font-normal"
-              >
-                {saving ? "Sauvegarde..." : "Brouillon"}
-              </Button>
+              {documentType !== "purchaseOrder" && (
+                <Button
+                  variant="outline"
+                  onClick={handleSaveDraft}
+                  disabled={!canEdit || saving}
+                  className="text-sm font-normal"
+                >
+                  {saving ? "Sauvegarde..." : "Brouillon"}
+                </Button>
+              )}
             </div>
 
             <div className="flex gap-3">
