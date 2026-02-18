@@ -288,6 +288,22 @@ export function ChartAreaInteractive({
     ? computeDescription(filteredData)
     : description;
 
+  // Debug: diagnostiquer le rendu en production
+  const hasNonZeroData = filteredData.some((item) => item.desktop > 0);
+  console.warn(`📊 [ChartArea "${title}"] Render diagnostic:`, {
+    dataLength: data.length,
+    dataNonZero: data.filter((d) => d.desktop > 0).length,
+    filteredLength: filteredData.length,
+    filteredNonZero: filteredData.filter((d) => d.desktop > 0).length,
+    hasNonZeroData,
+    aggregatedLength: aggregatedData.length,
+    aggregatedNonZero: aggregatedData.filter((d) => d.desktop > 0).length,
+    timeRange,
+    isLoading,
+    sampleData: data.slice(0, 2),
+    sampleFiltered: filteredData.filter((d) => d.desktop > 0).slice(0, 2),
+  });
+
   if (isLoading) {
     return (
       <Card className={`@container/card ${className}`} style={{ width }} {...props}>
@@ -440,7 +456,7 @@ export function ChartAreaInteractive({
         )}
       </CardHeader>
       <CardContent className="px-2 pt-4 pb-2 sm:px-6 sm:pt-6 sm:pb-4">
-        {filteredData.some((item) => item.desktop > 0) ? (
+        {hasNonZeroData ? (
         <ChartContainer
           config={config}
           className={`aspect-${aspectRatio} w-full`}
