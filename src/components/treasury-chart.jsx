@@ -395,7 +395,7 @@ export function TreasuryChart({
           <ComposedChart
             data={treasuryData}
             margin={{
-              left: -20,
+              left: 12,
               right: 12,
               top: 12,
               bottom: 12,
