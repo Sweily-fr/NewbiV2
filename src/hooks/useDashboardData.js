@@ -67,12 +67,23 @@ export function useDashboardData() {
   const {
     data: transactionsData,
     loading: bankLoading,
+    error: transactionsError,
     refetch: refetchBankTransactions,
   } = useQuery(GET_TRANSACTIONS, {
     variables: { workspaceId, limit: 5000 },
     fetchPolicy: "network-only", // Forcer le rechargement depuis le serveur
     skip: !workspaceId,
   });
+
+  // Log des erreurs GraphQL pour les transactions
+  if (transactionsError) {
+    console.error("❌ [Dashboard] Erreur GET_TRANSACTIONS:", transactionsError.message);
+    if (transactionsError.graphQLErrors?.length > 0) {
+      transactionsError.graphQLErrors.forEach((err, i) => {
+        console.error(`  GraphQL Error ${i}:`, err.message, err.extensions);
+      });
+    }
+  }
 
   // Rafraîchir les données si le cache est expiré (une seule fois au montage)
   useEffect(() => {
@@ -89,6 +100,23 @@ export function useDashboardData() {
   // Extraire les données
   const bankAccounts = accountsData?.bankingAccounts || [];
   const bankTransactions = transactionsData?.transactions || [];
+
+  // Debug: vérifier les données extraites
+  if (!bankLoading && workspaceId) {
+    console.log("📊 [Dashboard] Données transactions:", {
+      hasData: !!transactionsData,
+      transactionsCount: bankTransactions.length,
+      hasError: !!transactionsError,
+      accountsCount: bankAccounts.length,
+      sampleTransaction: bankTransactions[0] ? {
+        id: bankTransactions[0].id,
+        date: bankTransactions[0].date,
+        dateType: typeof bankTransactions[0].date,
+        amount: bankTransactions[0].amount,
+        description: bankTransactions[0].description?.substring(0, 30),
+      } : null,
+    });
+  }
 
   // Calculer le solde total
   const bankBalance = useMemo(() => {

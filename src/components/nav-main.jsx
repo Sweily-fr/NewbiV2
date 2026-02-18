@@ -241,6 +241,16 @@ export function NavMain({
                       <Plus className="h-4 w-4" />
                     </Link>
                   </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link
+                      href="/dashboard/outils/bons-commande/new"
+                      onClick={handleLinkClick}
+                      className="cursor-pointer flex justify-between w-full"
+                    >
+                      <span>Nouveau bon de commande</span>
+                      <Plus className="h-4 w-4" />
+                    </Link>
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                 </>
               )}

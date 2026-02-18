@@ -1076,7 +1076,7 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
           session,
           existingPurchaseOrder
         );
-        input.status = "DRAFT";
+        input.status = "CONFIRMED";
 
         let result;
         if (mode === "create" || !purchaseOrderId) {
@@ -1089,7 +1089,7 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
             }
 
             if (!isAutoSave) {
-              toast.success("Brouillon sauvegardé");
+              toast.success("Bon de commande sauvegardé");
               router.push("/dashboard/outils/bons-commande");
             }
           }
@@ -1097,7 +1097,7 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
           result = await updatePurchaseOrder(purchaseOrderId, input);
 
           if (!isAutoSave) {
-            toast.success("Brouillon sauvegardé");
+            toast.success("Bon de commande sauvegardé");
             router.push("/dashboard/outils/bons-commande");
           }
         }
@@ -1476,7 +1476,7 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
     validatePurchaseOrderNumber,
     hasExistingOrders,
     canEdit:
-      !loadingPurchaseOrder && (mode === "create" || existingPurchaseOrder?.status === "DRAFT"),
+      !loadingPurchaseOrder && (mode === "create" || !["DELIVERED", "CANCELED"].includes(existingPurchaseOrder?.status)),
 
     // Organization settings
     saveSettingsToOrganization,
@@ -1526,7 +1526,7 @@ function getInitialFormData(mode, initialData, session, organization) {
     // Informations du bon de commande
     prefix: "",
     number: "",
-    reference: "",
+    purchaseOrderNumber: "",
     issueDate: today,
     validUntil: initialData?.validUntil || defaultValidUntil,
     deliveryDate: "",
@@ -1699,7 +1699,13 @@ function transformPurchaseOrderToFormData(purchaseOrder) {
   return {
     prefix: purchaseOrder.prefix || "",
     number: purchaseOrder.number || "",
-    reference: purchaseOrder.reference || "",
+    purchaseOrderNumber: purchaseOrder.purchaseOrderNumber || (
+      purchaseOrder.sourceQuote
+        ? (purchaseOrder.sourceQuote.prefix
+          ? `${purchaseOrder.sourceQuote.prefix}-${purchaseOrder.sourceQuote.number}`
+          : purchaseOrder.sourceQuote.number)
+        : ""
+    ),
     issueDate: issueDate,
     validUntil: purchaseOrder.validUntil
       ? transformDate(purchaseOrder.validUntil, "validUntil")
@@ -1862,8 +1868,8 @@ function transformFormDataToInput(
             ? formData.client.companyName || "Entreprise"
             : `${formData.client.firstName || ""} ${formData.client.lastName || ""}`.trim() ||
               "Client"),
-        email: formData.client.email,
-        type: formData.client.type,
+        email: formData.client.email || "",
+        type: formData.client.type || "INDIVIDUAL",
         firstName: formData.client.firstName,
         lastName: formData.client.lastName,
         siret: formData.client.siret,
@@ -1872,7 +1878,7 @@ function transformFormDataToInput(
           formData.client.hasDifferentShippingAddress,
         address: formData.client.address
           ? typeof formData.client.address === "string"
-            ? parseAddressString(formData.client.address)
+            ? parseAddressString(formData.client.address) || { street: "", city: "", postalCode: "", country: "France" }
             : (() => {
                 const addr = formData.client.address;
                 // Supprimer __typename si présent (pollution GraphQL)
@@ -1883,7 +1889,7 @@ function transformFormDataToInput(
                 }
                 return addr;
               })()
-          : null,
+          : { street: "", city: "", postalCode: "", country: "France" },
         shippingAddress: formData.client.shippingAddress
           ? {
               fullName: formData.client.shippingAddress.fullName,
@@ -2044,6 +2050,7 @@ function transformFormDataToInput(
   return {
     ...(shouldSendPrefix && { prefix: prefixToSend }),
     ...(numberToSend !== undefined && { number: numberToSend }),
+    purchaseOrderNumber: formData.purchaseOrderNumber || "",
     // Utiliser les dates formatées avec des valeurs par défaut sécurisées
     issueDate: finalIssueDate,
     ...(formData.validUntil && { validUntil: formatFinalDate(formData.validUntil) }),
@@ -2062,7 +2069,7 @@ function transformFormDataToInput(
           quantity: parseFloat(item.quantity) || 0,
           unitPrice: parseFloat(item.unitPrice) || 0,
           vatRate: itemVatRate,
-          unit: item.unit !== undefined ? item.unit : "",
+          unit: item.unit != null ? item.unit : "",
           discount: parseFloat(item.discount) || 0,
           discountType: (item.discountType || "PERCENTAGE").toUpperCase(),
           details: item.details || "",
@@ -2087,8 +2094,8 @@ function transformFormDataToInput(
     termsAndConditions: formData.terms || formData.termsAndConditions || "",
     customFields:
       formData.customFields?.map((field) => ({
-        key: field.name,
-        value: field.value,
+        key: field.name || "",
+        value: field.value || "",
       })) || [],
     // Inclure les paramètres d'apparence
     appearance: {

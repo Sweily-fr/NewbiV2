@@ -152,7 +152,7 @@ function DraggableItem({ id, item, level, isExpanded, onToggle, onClick, onConte
 
         {isFolder ? (
           isInbox ? (
-            <Inbox className="size-3.5 text-amber-500/80 shrink-0" />
+            <Inbox className="size-3.5 text-[#5a50ff]/80 shrink-0" />
           ) : (
             <FolderClosed
               className="size-3.5 shrink-0"
@@ -196,7 +196,7 @@ function DragOverlayContent({ item }) {
     <div className="inline-flex items-center gap-1.5 px-2 py-1 bg-background/95 border border-border/40 shadow-sm rounded text-xs max-w-[140px]">
       {item.isFolder ? (
         item.isInbox ? (
-          <Inbox className="size-3 text-amber-500/80 shrink-0" />
+          <Inbox className="size-3 text-[#5a50ff]/80 shrink-0" />
         ) : (
           <FolderClosed
             className="size-3 shrink-0"

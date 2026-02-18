@@ -47,7 +47,11 @@ export default function QuoteSettingsView({
   onCancel,
   onSave,
   onCloseAttempt,
+  documentType = "quote",
 }) {
+  const isPurchaseOrder = documentType === "purchaseOrder";
+  const documentLabel = isPurchaseOrder ? "bon de commande" : "devis";
+  const documentLabelPlural = isPurchaseOrder ? "bons de commande" : "devis";
   const {
     watch,
     setValue,
@@ -194,7 +198,7 @@ export default function QuoteSettingsView({
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 p-0">
-              {/* Préfixe et numéro de devis */}
+              {/* Préfixe et numéro */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
@@ -202,7 +206,7 @@ export default function QuoteSettingsView({
                       htmlFor="quote-prefix"
                       className="text-sm font-light"
                     >
-                      Préfixe de devis
+                      Préfixe de {documentLabel}
                     </Label>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -213,7 +217,7 @@ export default function QuoteSettingsView({
                         className="max-w-[280px] sm:max-w-xs"
                       >
                         <p>
-                          Préfixe personnalisable pour identifier vos devis.
+                          Préfixe personnalisable pour identifier vos {documentLabelPlural}.
                           Tapez <span className="font-mono">MM</span> pour
                           insérer le mois actuel ou{" "}
                           <span className="font-mono">AAAA</span> pour l'année.
@@ -232,14 +236,18 @@ export default function QuoteSettingsView({
                             "Le préfixe ne doit pas dépasser 20 caractères",
                         },
                         pattern: {
-                          value: /^D-\d{6}$/,
-                          message: "Format attendu : D-MMAAAA (ex: D-022025)",
+                          value: isPurchaseOrder ? /^BD-\d{6}$/ : /^D-\d{6}$/,
+                          message: isPurchaseOrder
+                            ? "Format attendu : BD-MMAAAA (ex: BD-022025)"
+                            : "Format attendu : D-MMAAAA (ex: D-022025)",
                         },
                       })}
                       onFocus={(e) => {
                         if (!e.target.value) {
                           const { month, year } = getCurrentMonthYear();
-                          e.target.placeholder = `D-${month}${year}`;
+                          e.target.placeholder = isPurchaseOrder
+                            ? `BD-${month}${year}`
+                            : `D-${month}${year}`;
                         }
                       }}
                       onBlur={(e) => {
@@ -254,7 +262,7 @@ export default function QuoteSettingsView({
                           }
                         }
                       }}
-                      placeholder="D-MMAAAA"
+                      placeholder={isPurchaseOrder ? "BD-MMAAAA" : "D-MMAAAA"}
                       disabled={!canEdit}
                     />
                     {errors?.prefix && (
@@ -270,7 +278,7 @@ export default function QuoteSettingsView({
                       htmlFor="quote-number"
                       className="text-sm font-light"
                     >
-                      Numéro de devis
+                      Numéro de {documentLabel}
                     </Label>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -281,7 +289,7 @@ export default function QuoteSettingsView({
                         className="max-w-[280px] sm:max-w-xs"
                       >
                         <p>
-                          Numéro unique et séquentiel de votre devis. Il sera
+                          Numéro unique et séquentiel de votre {documentLabel}. Il sera
                           automatiquement formaté avec des zéros (ex: 000001).
                         </p>
                       </TooltipContent>
@@ -291,7 +299,7 @@ export default function QuoteSettingsView({
                     <Input
                       id="quote-number"
                       {...register("number", {
-                        required: "Le numéro de devis est requis",
+                        required: `Le numéro de ${documentLabel} est requis`,
                       })}
                       value={data.number || ""}
                       placeholder="000001"
@@ -332,9 +340,9 @@ export default function QuoteSettingsView({
               <div className="mt-4 p-3 bg-muted/30 rounded-lg border border-muted">
                 <p className="text-xs text-muted-foreground leading-relaxed">
                   <span className="font-medium">Note :</span> La numérotation
-                  des devis doit être séquentielle et continue pour respecter
+                  des {documentLabelPlural} doit être séquentielle et continue pour respecter
                   les obligations légales françaises. Le préfixe vous permet
-                  d'organiser vos devis par période (ex: D-122025 pour décembre
+                  d'organiser vos {documentLabelPlural} par période (ex: {isPurchaseOrder ? "BD" : "D"}-122025 pour décembre
                   2025). Le système vérifie automatiquement qu'il n'y a pas de
                   saut dans la numérotation.
                 </p>
@@ -417,7 +425,7 @@ export default function QuoteSettingsView({
             </CardHeader>
             <CardContent className="space-y-4 p-0">
               <p className="text-sm text-muted-foreground">
-                Choisissez où afficher les informations du client dans vos devis
+                Choisissez où afficher les informations du client dans vos {documentLabelPlural}
               </p>
               <div className="grid grid-cols-2 gap-3">
                 {/* Option Centre */}
@@ -535,7 +543,7 @@ export default function QuoteSettingsView({
                       },
                     })}
                     defaultValue={data.headerNotes || ""}
-                    placeholder="Notes qui apparaîtront en haut du devis..."
+                    placeholder={`Notes qui apparaîtront en haut du ${documentLabel}...`}
                     rows={3}
                     disabled={!canEdit}
                   />
@@ -573,7 +581,7 @@ export default function QuoteSettingsView({
                       },
                     })}
                     defaultValue={data.footerNotes || ""}
-                    placeholder="Notes qui apparaîtront en bas du devis..."
+                    placeholder={`Notes qui apparaîtront en bas du ${documentLabel}...`}
                     rows={3}
                     disabled={!canEdit}
                   />

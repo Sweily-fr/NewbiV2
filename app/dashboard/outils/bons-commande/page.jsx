@@ -17,6 +17,7 @@ import {
 import { Skeleton } from "@/src/components/ui/skeleton";
 import PurchaseOrderTable from "./components/purchase-order-table";
 import PurchaseOrderExportButton from "./components/purchase-order-export-button";
+import { PurchaseOrderSettingsModal } from "./components/purchase-order-settings-modal";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
 import { CompanyInfoGuard } from "@/src/components/company-info-guard";
@@ -31,6 +32,7 @@ function PurchaseOrdersContent() {
 
   // Ref pour déclencher l'import depuis le header
   const [triggerImport, setTriggerImport] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   // Toast manager et modal d'envoi
   const toastManager = useToastManager();
@@ -172,6 +174,25 @@ function PurchaseOrdersContent() {
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    onClick={() => setIsSettingsOpen(true)}
+                  >
+                    <Settings className="h-4 w-4" strokeWidth={1.5} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent
+                  side="bottom"
+                  className="bg-[#202020] text-white border-0"
+                >
+                  <p>Paramètres</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
             <ButtonGroup>
               <Button
                 onClick={handleNewPurchaseOrder}
@@ -309,6 +330,12 @@ function PurchaseOrdersContent() {
           onClose={() => setShowSendEmailModal(false)}
         />
       )}
+
+      {/* Modal des paramètres */}
+      <PurchaseOrderSettingsModal
+        open={isSettingsOpen}
+        onOpenChange={setIsSettingsOpen}
+      />
     </>
   );
 }

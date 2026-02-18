@@ -121,6 +121,9 @@ export const processIncomeForCharts = (
   const now = new Date();
   const chartData = [];
 
+  // Pré-filtrer les transactions positives pour optimiser
+  const positiveTransactions = bankTransactions.filter((t) => t.amount > 0);
+
   // Generate data for the last N days
   for (let i = days - 1; i >= 0; i--) {
     const date = new Date(now);
@@ -128,18 +131,12 @@ export const processIncomeForCharts = (
     const dateStr = date.toISOString().split("T")[0];
 
     // MODE BANCAIRE PUR : Uniquement les transactions bancaires positives
-    const dayBankIncome = bankTransactions.filter((t) => {
+    const dayBankIncome = positiveTransactions.filter((t) => {
       // Utiliser date, processedAt ou createdAt comme fallback
       const rawDate = t.date || t.processedAt || t.createdAt;
-      if (!rawDate || t.amount <= 0) return false;
+      if (!rawDate) return false;
 
-      let transactionDate;
-      if (typeof rawDate === "string") {
-        transactionDate = new Date(rawDate);
-      } else {
-        transactionDate = new Date(rawDate);
-      }
-
+      const transactionDate = new Date(rawDate);
       if (isNaN(transactionDate.getTime())) return false;
       return transactionDate.toISOString().split("T")[0] === dateStr;
     });
@@ -154,6 +151,17 @@ export const processIncomeForCharts = (
     });
   }
 
+  // Debug: résumé des données générées
+  const totalDesktop = chartData.reduce((sum, d) => sum + d.desktop, 0);
+  const daysWithData = chartData.filter((d) => d.desktop > 0).length;
+  console.log("📊 [ChartProcessor] Entrées:", {
+    totalTransactions: bankTransactions.length,
+    positiveTransactions: positiveTransactions.length,
+    daysWithData,
+    totalAmount: totalDesktop,
+    dateRange: chartData.length > 0 ? `${chartData[0].date} → ${chartData[chartData.length - 1].date}` : "vide",
+  });
+
   return chartData;
 };
 
@@ -166,6 +174,9 @@ export const processExpensesWithBankForCharts = (
   const now = new Date();
   const chartData = [];
 
+  // Pré-filtrer les transactions négatives pour optimiser
+  const negativeTransactions = bankTransactions.filter((t) => t.amount < 0);
+
   // Generate data for the last N days
   for (let i = days - 1; i >= 0; i--) {
     const date = new Date(now);
@@ -173,18 +184,12 @@ export const processExpensesWithBankForCharts = (
     const dateStr = date.toISOString().split("T")[0];
 
     // MODE BANCAIRE PUR : Uniquement les transactions bancaires négatives
-    const dayBankExpenses = bankTransactions.filter((t) => {
+    const dayBankExpenses = negativeTransactions.filter((t) => {
       // Utiliser date, processedAt ou createdAt comme fallback
       const rawDate = t.date || t.processedAt || t.createdAt;
-      if (!rawDate || t.amount >= 0) return false;
+      if (!rawDate) return false;
 
-      let transactionDate;
-      if (typeof rawDate === "string") {
-        transactionDate = new Date(rawDate);
-      } else {
-        transactionDate = new Date(rawDate);
-      }
-
+      const transactionDate = new Date(rawDate);
       if (isNaN(transactionDate.getTime())) return false;
       return transactionDate.toISOString().split("T")[0] === dateStr;
     });
@@ -200,6 +205,17 @@ export const processExpensesWithBankForCharts = (
       mobile: dayCount,
     });
   }
+
+  // Debug: résumé des données générées
+  const totalDesktop = chartData.reduce((sum, d) => sum + d.desktop, 0);
+  const daysWithData = chartData.filter((d) => d.desktop > 0).length;
+  console.log("📊 [ChartProcessor] Sorties:", {
+    totalTransactions: bankTransactions.length,
+    negativeTransactions: negativeTransactions.length,
+    daysWithData,
+    totalAmount: totalDesktop,
+    dateRange: chartData.length > 0 ? `${chartData[0].date} → ${chartData[chartData.length - 1].date}` : "vide",
+  });
 
   return chartData;
 };
