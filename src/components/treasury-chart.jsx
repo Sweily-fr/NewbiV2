@@ -105,8 +105,16 @@ export function TreasuryChart({
     })),
   });
 
+  // Si initialBalance est 0 mais qu'il y a des transactions,
+  // utiliser la somme des transactions comme solde estimé
+  const effectiveBalance = useMemo(() => {
+    if (initialBalance !== 0) return initialBalance;
+    if (bankTransactions.length === 0) return 0;
+    return bankTransactions.reduce((sum, t) => sum + (t.amount || 0), 0);
+  }, [initialBalance, bankTransactions]);
+
   // Calculer les données de trésorerie par jour
-  // Le solde actuel (initialBalance) est le point d'arrivée, on calcule en arrière
+  // Le solde actuel (effectiveBalance) est le point d'arrivée, on calcule en arrière
   const treasuryData = useMemo(() => {
     const now = new Date();
     const chartData = [];
@@ -174,7 +182,7 @@ export function TreasuryChart({
 
     // Calculer la trésorerie en partant du solde actuel et en remontant
     // Le dernier jour = solde actuel, puis on soustrait les mouvements pour remonter
-    let treasury = initialBalance;
+    let treasury = effectiveBalance;
 
     // Parcourir en sens inverse pour calculer le solde de départ
     for (let i = dailyMovements.length - 1; i >= 0; i--) {
@@ -206,7 +214,7 @@ export function TreasuryChart({
     return chartData;
   }, [
     bankTransactions,
-    initialBalance,
+    effectiveBalance,
     timeRange,
     customStartDate,
     customEndDate,
@@ -426,7 +434,12 @@ export function TreasuryChart({
               tickLine={false}
               axisLine={false}
               tickMargin={8}
-              tickFormatter={(value) => `${(value / 1000).toFixed(0)}K`}
+              tickFormatter={(value) => {
+                const absValue = Math.abs(value);
+                if (absValue >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
+                if (absValue >= 1000) return `${(value / 1000).toFixed(0)}K`;
+                return `${value.toFixed(0)}€`;
+              }}
             />
             <ChartTooltip
               content={
