@@ -3443,7 +3443,7 @@ export default function DocumentsPartagesPage() {
               Sélectionnez le dossier de destination
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4 space-y-2">
+          <div className="py-4 space-y-1">
             <button
               onClick={() => handleMoveDocuments(null)}
               disabled={moveLoading}
@@ -3452,17 +3452,58 @@ export default function DocumentsPartagesPage() {
               <Inbox className="h-4 w-4" />
               <span>Documents à classer</span>
             </button>
-            {folders.map((folder) => (
-              <button
-                key={folder.id}
-                onClick={() => handleMoveDocuments(folder.id)}
-                disabled={moveLoading}
-                className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-accent transition-colors"
-              >
-                <Folder className="h-4 w-4" style={{ color: folder.color }} />
-                <span>{folder.name}</span>
-              </button>
-            ))}
+            {(() => {
+              // Filtrer les dossiers supprimés (sécurité côté frontend)
+              const activeFolders = folders.filter(f => !f.trashedAt);
+              // Construire l'arbre de dossiers
+              const childrenMap = {};
+              activeFolders.forEach((f) => {
+                const pid = f.parentId || 'root';
+                if (!childrenMap[pid]) childrenMap[pid] = [];
+                childrenMap[pid].push(f);
+              });
+              Object.values(childrenMap).forEach((children) => {
+                children.sort((a, b) => (a.order || 0) - (b.order || 0));
+              });
+              const treeItems = [];
+              function traverse(parentId, depth, ancestorHasMore) {
+                const children = childrenMap[parentId] || [];
+                children.forEach((folder, index) => {
+                  const isLast = index === children.length - 1;
+                  treeItems.push({ ...folder, depth, isLast, guides: [...ancestorHasMore] });
+                  traverse(folder.id, depth + 1, [...ancestorHasMore, !isLast]);
+                });
+              }
+              traverse('root', 0, []);
+
+              return treeItems.map((folder) => {
+                // Générer le préfixe arborescence
+                let prefix = '';
+                for (let i = 0; i < folder.guides.length; i++) {
+                  if (i === folder.guides.length - 1) {
+                    prefix += folder.isLast ? '└─ ' : '├─ ';
+                  } else {
+                    prefix += folder.guides[i] ? '│  ' : '   ';
+                  }
+                }
+                return (
+                  <button
+                    key={folder.id}
+                    onClick={() => handleMoveDocuments(folder.id)}
+                    disabled={moveLoading}
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-accent transition-colors"
+                  >
+                    {folder.depth > 0 && (
+                      <span className="text-muted-foreground font-mono text-xs whitespace-pre flex-shrink-0">
+                        {prefix}
+                      </span>
+                    )}
+                    <Folder className="h-4 w-4 flex-shrink-0" style={{ color: folder.color }} />
+                    <span className="truncate">{folder.name}</span>
+                  </button>
+                );
+              });
+            })()}
           </div>
         </DialogContent>
       </Dialog>
