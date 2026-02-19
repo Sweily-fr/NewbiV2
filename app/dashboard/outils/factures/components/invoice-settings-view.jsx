@@ -457,7 +457,7 @@ export default function InvoiceSettingsView({
                           );
                         }
                       }}
-                      placeholder="F-MMYYYY"
+                      placeholder="F-MMAAAA"
                       disabled={!canEdit}
                       className={
                         errors?.prefix

@@ -779,6 +779,16 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
       // Charger la position du client depuis l'organisation
       setValue("clientPositionRight", organization.purchaseOrderClientPositionRight || false, { shouldDirty: false });
 
+      // Synchroniser les champs plats pour CompanyInfoSettingsSection dans la vue paramètres
+      setValue("companyName", organization.companyName || organization.name || "", { shouldDirty: false });
+      setValue("companyEmail", organization.companyEmail || "", { shouldDirty: false });
+      setValue("companyPhone", organization.companyPhone || "", { shouldDirty: false });
+      setValue("website", organization.website || "", { shouldDirty: false });
+      setValue("addressStreet", organization.addressStreet || "", { shouldDirty: false });
+      setValue("addressCity", organization.addressCity || "", { shouldDirty: false });
+      setValue("addressZipCode", organization.addressZipCode || "", { shouldDirty: false });
+      setValue("addressCountry", organization.addressCountry || "France", { shouldDirty: false });
+
       // Marquer le formulaire comme initialisé
       setTimeout(() => {
         setIsFormInitialized(true);
@@ -788,6 +798,25 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
 
   // Les informations de l'entreprise sont gérées par l'organisation active
   // passée en prop depuis le composant parent
+
+  // Synchroniser les champs plats pour CompanyInfoSettingsSection en mode édition
+  useEffect(() => {
+    if (isFormInitialized && mode !== "create") {
+      const companyInfo = getValues("companyInfo");
+      if (companyInfo) {
+        setValue("companyName", companyInfo.name || "", { shouldDirty: false });
+        setValue("companyEmail", companyInfo.email || "", { shouldDirty: false });
+        setValue("companyPhone", companyInfo.phone || "", { shouldDirty: false });
+        setValue("website", companyInfo.website || "", { shouldDirty: false });
+        if (typeof companyInfo.address === "object" && companyInfo.address) {
+          setValue("addressStreet", companyInfo.address.street || "", { shouldDirty: false });
+          setValue("addressCity", companyInfo.address.city || "", { shouldDirty: false });
+          setValue("addressZipCode", companyInfo.address.postalCode || "", { shouldDirty: false });
+          setValue("addressCountry", companyInfo.address.country || "France", { shouldDirty: false });
+        }
+      }
+    }
+  }, [isFormInitialized, mode, setValue, getValues]);
 
   // Validation functions
   const validateStep1 = useCallback(() => {
@@ -1423,23 +1452,44 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
       const activeOrganization = await getActiveOrganization();
 
       const organizationData = {
-        documentTextColor: currentFormData.appearance?.textColor || "#000000",
-        documentHeaderTextColor:
+        purchaseOrderTextColor: currentFormData.appearance?.textColor || "#000000",
+        purchaseOrderHeaderTextColor:
           currentFormData.appearance?.headerTextColor || "#ffffff",
-        documentHeaderBgColor:
+        purchaseOrderHeaderBgColor:
           currentFormData.appearance?.headerBgColor || "#5b50FF",
         purchaseOrderHeaderNotes: currentFormData.headerNotes || "",
         purchaseOrderFooterNotes: currentFormData.footerNotes || "",
         purchaseOrderTermsAndConditions: currentFormData.termsAndConditions || "",
         showBankDetails: currentFormData.showBankDetails || false,
         purchaseOrderClientPositionRight: currentFormData.clientPositionRight || false,
+        // Informations de l'entreprise
+        companyName: currentFormData.companyName || "",
+        companyEmail: currentFormData.companyEmail || "",
+        companyPhone: currentFormData.companyPhone || "",
+        website: currentFormData.website || "",
+        addressStreet: currentFormData.addressStreet || "",
+        addressCity: currentFormData.addressCity || "",
+        addressZipCode: currentFormData.addressZipCode || "",
+        addressCountry: currentFormData.addressCountry || "France",
       };
 
       await updateOrganization(activeOrganization.id, organizationData);
+
+      // Synchroniser les champs companyInfo du formulaire avec les valeurs sauvegardées
+      setValue("companyInfo.name", currentFormData.companyName || "");
+      setValue("companyInfo.email", currentFormData.companyEmail || "");
+      setValue("companyInfo.phone", currentFormData.companyPhone || "");
+      setValue("companyInfo.website", currentFormData.website || "");
+      setValue("companyInfo.address", {
+        street: currentFormData.addressStreet || "",
+        city: currentFormData.addressCity || "",
+        postalCode: currentFormData.addressZipCode || "",
+        country: currentFormData.addressCountry || "France",
+      });
     } catch (error) {
       throw error;
     }
-  }, [getValues]);
+  }, [getValues, setValue]);
 
   return {
     // Form methods

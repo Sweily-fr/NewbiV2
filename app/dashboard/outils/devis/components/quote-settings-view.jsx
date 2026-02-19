@@ -61,6 +61,39 @@ export default function QuoteSettingsView({
   } = useFormContext();
   const data = watch();
 
+  // Handle prefix changes with auto-fill for MM and AAAA
+  const handlePrefixChange = (e) => {
+    const value = e.target.value;
+    const cursorPosition = e.target.selectionStart;
+
+    // Auto-fill MM (month)
+    if (value.includes("MM")) {
+      const { month } = getCurrentMonthYear();
+      const newValue = value.replace("MM", month);
+      setValue("prefix", newValue, { shouldValidate: true });
+      const newPosition = cursorPosition + month.length - 2;
+      setTimeout(() => {
+        e.target.setSelectionRange(newPosition, newPosition);
+      }, 0);
+      return;
+    }
+
+    // Auto-fill AAAA (year)
+    if (value.includes("AAAA")) {
+      const { year } = getCurrentMonthYear();
+      const newValue = value.replace("AAAA", year);
+      setValue("prefix", newValue, { shouldValidate: true });
+      const newPosition = cursorPosition + year.length - 4;
+      setTimeout(() => {
+        e.target.setSelectionRange(newPosition, newPosition);
+      }, 0);
+      return;
+    }
+
+    // Default behavior
+    setValue("prefix", value, { shouldValidate: true });
+  };
+
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const initialValuesRef = useRef(null);
@@ -247,6 +280,7 @@ export default function QuoteSettingsView({
                             : "Format attendu : D-MMAAAA (ex: D-022025)",
                         },
                       })}
+                      onChange={handlePrefixChange}
                       onFocus={(e) => {
                         if (!e.target.value) {
                           const { month, year } = getCurrentMonthYear();
