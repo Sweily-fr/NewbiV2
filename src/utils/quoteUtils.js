@@ -97,19 +97,69 @@ export const getQuoteDisplayNumber = (prefix, number) => {
  */
 export const parseFullQuoteNumber = (fullNumber) => {
   if (!fullNumber) return null;
-  
+
   const match = fullNumber.match(/^(D-\d{6})-(\d{6})$/);
   if (!match) return null;
-  
+
   const [, prefix, number] = match;
   const prefixParts = parseQuotePrefix(prefix);
-  
+
   if (!prefixParts) return null;
-  
+
   return {
     prefix,
     number,
     month: prefixParts.month,
     year: prefixParts.year
   };
+};
+
+// ============================================
+// Purchase Order (Bon de commande) Utilities
+// ============================================
+
+/**
+ * Generates a purchase order prefix based on the current date
+ * @param {Date} [date] - Optional date to use (defaults to current date)
+ * @returns {string} Formatted purchase order prefix (e.g., "BD-022025" for February 2025)
+ */
+export const generatePurchaseOrderPrefix = (date = new Date()) => {
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  return `BD-${month}${year}`;
+};
+
+/**
+ * Extracts month and year from a purchase order prefix
+ * @param {string} prefix - The purchase order prefix (e.g., "BD-022025")
+ * @returns {{month: string, year: string} | null} Object with month and year, or null if invalid format
+ */
+export const parsePurchaseOrderPrefix = (prefix) => {
+  if (!prefix) return null;
+
+  // Match BD-MMYYYY or BD-MM-YYYY or BD-MM/YYYY
+  const match = prefix.match(/^BD-?(\d{2})[\s-/]?(\d{2,4})?$/);
+
+  if (!match) return null;
+
+  const [, month, year] = match;
+
+  const fullYear = year ? (year.length === 2 ? `20${year}` : year) : new Date().getFullYear().toString();
+
+  return {
+    month: month.padStart(2, '0'),
+    year: fullYear
+  };
+};
+
+/**
+ * Formats a month and year into a standard purchase order prefix
+ * @param {string} month - Month as string (1-12 or 01-12)
+ * @param {string} year - Year as string (2 or 4 digits)
+ * @returns {string} Formatted purchase order prefix (e.g., "BD-022025")
+ */
+export const formatPurchaseOrderPrefix = (month, year) => {
+  const formattedMonth = String(month).padStart(2, '0');
+  const formattedYear = year.length === 2 ? `20${year}` : year;
+  return `BD-${formattedMonth}${formattedYear}`;
 };

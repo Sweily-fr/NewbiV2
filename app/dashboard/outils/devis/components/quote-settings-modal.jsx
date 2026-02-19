@@ -8,6 +8,7 @@ import QuoteSettingsView from "./quote-settings-view";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import { toast } from "@/src/components/ui/sonner";
 import { updateOrganization, getActiveOrganization } from "@/src/lib/organization-client";
+import { generateQuotePrefix } from "@/src/utils/quoteUtils";
 
 // Données de démonstration pour la preview
 const getDemoQuoteData = (formData, organization) => {
@@ -23,10 +24,14 @@ const getDemoQuoteData = (formData, organization) => {
   const textColor = formData?.appearance?.textColor || "#000000";
   const clientPositionRight = formData?.clientPositionRight || false;
 
+  const prefix = formData?.prefix || "";
+  const number = formData?.number || "0001";
+  const quoteNumber = prefix ? `${prefix}-${number}` : number;
+
   return {
-    quoteNumber: "DEMO-2024-001",
-    prefix: "DEV",
-    number: "001",
+    quoteNumber,
+    prefix,
+    number,
     issueDate: new Date().toISOString(),
     validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
     status: "PENDING",
@@ -144,6 +149,9 @@ export function QuoteSettingsModal({ open, onOpenChange }) {
           
           // Préparer les valeurs initiales depuis l'organisation (même structure que l'éditeur)
           const formValues = {
+            // Numérotation - préfixe par défaut (le numéro sera auto-rempli par le hook useQuoteNumber)
+            prefix: generateQuotePrefix(),
+            number: "",
             // Informations de l'entreprise
             companyName: org?.companyName || "",
             companyEmail: org?.companyEmail || "",
@@ -202,6 +210,8 @@ export function QuoteSettingsModal({ open, onOpenChange }) {
   // Initialiser le formulaire avec les valeurs de l'organisation
   const form = useForm({
     defaultValues: initialValues || {
+      prefix: generateQuotePrefix(),
+      number: "",
       companyName: "",
       companyEmail: "",
       companyPhone: "",

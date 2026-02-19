@@ -15,7 +15,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/src/components/ui/tooltip";
-import { getCurrentMonthYear } from "@/src/utils/invoiceUtils";
+import { getCurrentMonthYear, generateInvoicePrefix } from "@/src/utils/invoiceUtils";
 import { documentSuggestions } from "@/src/utils/document-suggestions";
 import { SuggestionDropdown } from "@/src/components/ui/suggestion-dropdown";
 import {
@@ -101,6 +101,30 @@ export default function InvoiceSettingsView({
     hasExistingInvoices,
     getFormattedNextNumber,
   } = useInvoiceNumber();
+
+  // Auto-initialiser le préfixe et le numéro au montage uniquement (pas en continu)
+  const prefixInitializedRef = useRef(false);
+  const numberInitializedRef = useRef(false);
+
+  useEffect(() => {
+    if (!prefixInitializedRef.current && !data.prefix) {
+      const defaultPrefix = generateInvoicePrefix();
+      setValue("prefix", defaultPrefix, { shouldValidate: false });
+      prefixInitializedRef.current = true;
+    } else if (data.prefix) {
+      prefixInitializedRef.current = true;
+    }
+  }, [data.prefix, setValue]);
+
+  useEffect(() => {
+    if (!numberInitializedRef.current && !data.number && nextInvoiceNumber && !isLoadingInvoiceNumber) {
+      const defaultNumber = String(nextInvoiceNumber).padStart(4, "0");
+      setValue("number", defaultNumber, { shouldValidate: false });
+      numberInitializedRef.current = true;
+    } else if (data.number) {
+      numberInitializedRef.current = true;
+    }
+  }, [data.number, nextInvoiceNumber, isLoadingInvoiceNumber, setValue]);
 
   // Gérer le changement de préfixe avec auto-fill pour MM et AAAA
   const handlePrefixChange = (e) => {
@@ -501,90 +525,22 @@ export default function InvoiceSettingsView({
                   <div className="space-y-1">
                     <Input
                       id="invoice-number"
-                      {...register("number", {
-                        required: "Le numéro de facture est requis",
-                        validate: {
-                          isNumeric: (value) => {
-                            if (!/^\d+$/.test(value)) {
-                              return "Le numéro doit contenir uniquement des chiffres";
-                            }
-                            return true;
-                          },
-                          isValidSequence: (value) => {
-                            if (isLoadingInvoiceNumber) return true;
-                            const result = validateInvoiceNumber(
-                              parseInt(value, 10)
-                            );
-                            return result.isValid || result.message;
-                          },
-                        },
-                        minLength: {
-                          value: 1,
-                          message: "Le numéro est requis",
-                        },
-                        maxLength: {
-                          value: 6,
-                          message: "Le numéro ne peut pas dépasser 6 chiffres",
-                        },
-                      })}
                       value={
                         data.number ||
                         (nextInvoiceNumber
                           ? String(nextInvoiceNumber).padStart(4, "0")
                           : "")
                       }
-                      onChange={(e) => {
-                        const value = e.target.value.replace(/\D/g, "");
-                        setValue("number", value, { shouldValidate: true });
-                      }}
-                      onBlur={async (e) => {
-                        let finalNumber;
-                        if (e.target.value) {
-                          finalNumber = e.target.value.padStart(4, "0");
-                          setValue("number", finalNumber, {
-                            shouldValidate: true,
-                          });
-                        } else if (nextInvoiceNumber) {
-                          finalNumber = String(nextInvoiceNumber).padStart(
-                            4,
-                            "0"
-                          );
-                          setValue("number", finalNumber, {
-                            shouldValidate: true,
-                          });
-                        }
-
-                        // Vérifier si le numéro existe déjà (avec le préfixe)
-                        if (finalNumber && validateInvoiceNumberExists) {
-                          const currentPrefix = data.prefix;
-                          await validateInvoiceNumberExists(
-                            finalNumber,
-                            currentPrefix
-                          );
-                        }
-                      }}
-                      placeholder={
-                        nextInvoiceNumber
-                          ? String(nextInvoiceNumber).padStart(4, "0")
-                          : "000001"
-                      }
-                      disabled={!canEdit || isLoadingInvoiceNumber}
-                      className={
-                        errors?.number || validationErrors?.invoiceNumber
-                          ? "border-destructive focus-visible:ring-1 focus-visible:ring-destructive"
-                          : ""
-                      }
+                      disabled
+                      readOnly
+                      tabIndex={-1}
+                      onFocus={(e) => e.target.blur()}
+                      onChange={() => {}}
+                      className="bg-muted/50 cursor-not-allowed select-none"
                     />
-                    {errors?.number && (
-                      <p className="text-xs text-destructive">
-                        {errors.number.message}
-                      </p>
-                    )}
-                    {!errors?.number && validationErrors?.invoiceNumber && (
-                      <p className="text-xs text-destructive">
-                        {validationErrors.invoiceNumber.message}
-                      </p>
-                    )}
+                    <p className="text-xs text-muted-foreground">
+                      Numéro attribué automatiquement de manière séquentielle.
+                    </p>
                   </div>
                 </div>
               </div>
