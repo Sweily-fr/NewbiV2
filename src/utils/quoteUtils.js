@@ -121,24 +121,24 @@ export const parseFullQuoteNumber = (fullNumber) => {
 /**
  * Generates a purchase order prefix based on the current date
  * @param {Date} [date] - Optional date to use (defaults to current date)
- * @returns {string} Formatted purchase order prefix (e.g., "BD-022025" for February 2025)
+ * @returns {string} Formatted purchase order prefix (e.g., "BC-022025" for February 2025)
  */
 export const generatePurchaseOrderPrefix = (date = new Date()) => {
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const year = date.getFullYear();
-  return `BD-${month}${year}`;
+  return `BC-${month}${year}`;
 };
 
 /**
  * Extracts month and year from a purchase order prefix
- * @param {string} prefix - The purchase order prefix (e.g., "BD-022025")
+ * @param {string} prefix - The purchase order prefix (e.g., "BC-022025")
  * @returns {{month: string, year: string} | null} Object with month and year, or null if invalid format
  */
 export const parsePurchaseOrderPrefix = (prefix) => {
   if (!prefix) return null;
 
-  // Match BD-MMYYYY or BD-MM-YYYY or BD-MM/YYYY
-  const match = prefix.match(/^BD-?(\d{2})[\s-/]?(\d{2,4})?$/);
+  // Match BC-MMYYYY or BC-MM-YYYY or BC-MM/YYYY
+  const match = prefix.match(/^BC-?(\d{2})[\s-/]?(\d{2,4})?$/);
 
   if (!match) return null;
 
@@ -156,10 +156,10 @@ export const parsePurchaseOrderPrefix = (prefix) => {
  * Formats a month and year into a standard purchase order prefix
  * @param {string} month - Month as string (1-12 or 01-12)
  * @param {string} year - Year as string (2 or 4 digits)
- * @returns {string} Formatted purchase order prefix (e.g., "BD-022025")
+ * @returns {string} Formatted purchase order prefix (e.g., "BC-022025")
  */
 export const formatPurchaseOrderPrefix = (month, year) => {
   const formattedMonth = String(month).padStart(2, '0');
   const formattedYear = year.length === 2 ? `20${year}` : year;
-  return `BD-${formattedMonth}${formattedYear}`;
+  return `BC-${formattedMonth}${formattedYear}`;
 };
