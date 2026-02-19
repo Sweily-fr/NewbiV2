@@ -444,7 +444,7 @@ export function ChartAreaInteractive({
         <div className="relative" style={{ height }}>
           <ChartContainer
             config={config}
-            className="w-full"
+            className="aspect-auto w-full"
             style={{ height }}
           >
             <ComposedChart
