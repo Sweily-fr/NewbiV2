@@ -1817,6 +1817,7 @@ function transformQuoteToFormData(quote) {
     client: quote.client
       ? {
           id: quote.client.id,
+          name: quote.client.name,
           type: quote.client.type,
           email: quote.client.email,
           phone: quote.client.phone,
