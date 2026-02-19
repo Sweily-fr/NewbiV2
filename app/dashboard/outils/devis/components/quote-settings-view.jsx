@@ -322,7 +322,7 @@ export default function QuoteSettingsView({
                         if (!e.target.value) {
                           const { month, year } = getCurrentMonthYear();
                           e.target.placeholder = isPurchaseOrder
-                            ? `BD-${month}${year}`
+                            ? `BC-${month}${year}`
                             : `D-${month}${year}`;
                         }
                       }}
@@ -339,7 +339,7 @@ export default function QuoteSettingsView({
                           }
                         }
                       }}
-                      placeholder={isPurchaseOrder ? "BD-MMAAAA" : "D-MMAAAA"}
+                      placeholder={isPurchaseOrder ? "BC-MMAAAA" : "D-MMAAAA"}
                       disabled={!canEdit}
                     />
                     {errors?.prefix && (
@@ -407,7 +407,7 @@ export default function QuoteSettingsView({
                   <span className="font-medium">Note :</span> La numérotation
                   des {documentLabelPlural} doit être séquentielle et continue pour respecter
                   les obligations légales françaises. Le préfixe vous permet
-                  d'organiser vos {documentLabelPlural} par période (ex: {isPurchaseOrder ? "BD" : "D"}-122025 pour décembre
+                  d'organiser vos {documentLabelPlural} par période (ex: {isPurchaseOrder ? "BC" : "D"}-122025 pour décembre
                   2025). Le système vérifie automatiquement qu'il n'y a pas de
                   saut dans la numérotation.
                 </p>
