@@ -55,7 +55,6 @@ import { useIsMobile } from "@/src/hooks/use-mobile";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
 import {
-  ChartConfig,
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,

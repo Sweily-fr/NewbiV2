@@ -13,7 +13,6 @@ import {
   CardTitle,
 } from "@/src/components/ui/card";
 import {
-  ChartConfig,
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
