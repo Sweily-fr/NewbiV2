@@ -584,7 +584,7 @@ function transformFormDataToInput(formData, originalInvoiceId) {
     creditType: cleanedData.creditType,
     reason: reason,
     client: cleanClient,
-    companyInfo: cleanedData.companyInfo,
+    // companyInfo n'est plus envoyé au backend - le backend utilise originalInvoice.companyInfo ou l'organisation
     items: items,
     status: "CREATED", // Use CREATED status as per CreditNoteStatus enum
     issueDate: cleanedData.issueDate,

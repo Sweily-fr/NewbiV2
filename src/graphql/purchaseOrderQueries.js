@@ -506,7 +506,7 @@ export const useCreatePurchaseOrder = () => {
       const result = await createMutation({
         variables: { workspaceId, input },
       });
-      return result.data.createPurchaseOrder;
+      return result.data?.createPurchaseOrder;
     } catch (error) {
       throw error;
     }
@@ -542,7 +542,7 @@ export const useUpdatePurchaseOrder = () => {
       const result = await updateMutation({
         variables: { id, workspaceId, input },
       });
-      return result.data.updatePurchaseOrder;
+      return result.data?.updatePurchaseOrder;
     } catch (error) {
       throw error;
     }
@@ -607,7 +607,7 @@ export const useChangePurchaseOrderStatus = () => {
       const result = await changeStatusMutation({
         variables: { id, workspaceId, status },
       });
-      return result.data.changePurchaseOrderStatus;
+      return result.data?.changePurchaseOrderStatus;
     } catch (error) {
       throw error;
     }
@@ -649,7 +649,7 @@ export const useConvertQuoteToPurchaseOrder = () => {
       const result = await convertMutation({
         variables: { quoteId, workspaceId },
       });
-      return result.data.convertQuoteToPurchaseOrder;
+      return result.data?.convertQuoteToPurchaseOrder;
     } catch (error) {
       throw error;
     }
@@ -688,7 +688,7 @@ export const useConvertPurchaseOrderToInvoice = () => {
       const result = await convertMutation({
         variables: { id, workspaceId },
       });
-      return result.data.convertPurchaseOrderToInvoice;
+      return result.data?.convertPurchaseOrderToInvoice;
     } catch (error) {
       throw error;
     }

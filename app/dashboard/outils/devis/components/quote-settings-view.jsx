@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { useFormContext } from "react-hook-form";
-import { Tag, AlignLeft, AlignRight, Check, Info } from "lucide-react";
+import { AlignLeft, AlignRight, Check, Info } from "lucide-react";
 import { documentSuggestions } from "@/src/utils/document-suggestions";
 import { SuggestionDropdown } from "@/src/components/ui/suggestion-dropdown";
 import {
@@ -41,6 +41,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/src/components/ui/alert-dialog";
+import CompanyInfoSettingsSection from "@/src/components/settings/company-info-settings-section";
 
 export default function QuoteSettingsView({
   canEdit,
@@ -189,6 +190,10 @@ export default function QuoteSettingsView({
               </AlertDescription>
             </Alert>
           )}
+
+          {/* Section Informations de l'entreprise */}
+          <CompanyInfoSettingsSection />
+          <Separator />
 
           {/* Section Numérotation */}
           <Card className="shadow-none border-none bg-transparent">
@@ -512,7 +517,6 @@ export default function QuoteSettingsView({
           <Card className="shadow-none border-none bg-transparent">
             <CardHeader className="p-0">
               <CardTitle className="flex items-center gap-2 font-normal text-lg">
-                <Tag className="h-5 w-5" />
                 Notes et bas de page
               </CardTitle>
             </CardHeader>

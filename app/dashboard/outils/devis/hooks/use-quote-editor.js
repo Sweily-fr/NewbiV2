@@ -733,38 +733,36 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
             setValue("companyInfo.email", organization.companyEmail || "");
             setValue("companyInfo.phone", organization.companyPhone || "");
             setValue("companyInfo.website", organization.website || "");
+            setValue("companyInfo.logo", organization.logo || "");
             setValue("companyInfo.siret", organization.siret || "");
             setValue("companyInfo.vatNumber", organization.vatNumber || "");
             setValue("companyInfo.rcs", organization.rcs || "");
-            setValue("companyInfo.legalForm", organization.legalForm || "");
+            setValue("companyInfo.companyStatus", organization.legalForm || "");
             setValue("companyInfo.capitalSocial", organization.capitalSocial || "");
-            setValue("companyInfo.fiscalRegime", organization.fiscalRegime || "");
+            setValue("companyInfo.vatPaymentCondition", organization.fiscalRegime || "");
+            setValue("companyInfo.transactionCategory", organization.activityCategory || "");
 
             // Gérer l'adresse de l'entreprise à partir des champs séparés de l'organisation
-            const addressString = [
-              organization.addressStreet,
-              `${organization.addressZipCode || ""} ${organization.addressCity || ""}`.trim(),
-              organization.addressCountry,
-            ]
-              .filter(Boolean)
-              .join("\n");
-            
-            if (addressString) {
-              setValue("companyInfo.address", addressString);
-            }
+            setValue("companyInfo.address", {
+              street: organization.addressStreet || "",
+              city: organization.addressCity || "",
+              postalCode: organization.addressZipCode || "",
+              country: organization.addressCountry || "",
+            });
 
             // Mettre à jour les paramètres d'apparence
+            // Couleurs spécifiques aux devis avec fallback vers les couleurs globales
             setValue(
               "appearance.textColor",
-              organization.documentTextColor || "#000000"
+              organization.quoteTextColor || organization.documentTextColor || "#000000"
             );
             setValue(
               "appearance.headerTextColor",
-              organization.documentHeaderTextColor || "#ffffff"
+              organization.quoteHeaderTextColor || organization.documentHeaderTextColor || "#ffffff"
             );
             setValue(
               "appearance.headerBgColor",
-              organization.documentHeaderBgColor || "#5b50FF"
+              organization.quoteHeaderBgColor || organization.documentHeaderBgColor || "#5b50FF"
             );
 
             // Mettre à jour les notes et conditions
@@ -1582,6 +1580,14 @@ function getInitialFormData(mode, initialData, session) {
     // Position du client dans le PDF
     clientPositionRight: false,
 
+    // Livraison
+    shipping: {
+      billShipping: false,
+      shippingAddress: null,
+      shippingAmountHT: 0,
+      shippingVatRate: 20,
+    },
+
     // Paramètres d'organisation (pour les valeurs par défaut)
     organizationSettings: null,
   };
@@ -1765,6 +1771,8 @@ function transformQuoteToFormData(quote) {
           email: quote.client.email,
           phone: quote.client.phone,
           address: quote.client.address,
+          hasDifferentShippingAddress: quote.client.hasDifferentShippingAddress || false,
+          shippingAddress: quote.client.shippingAddress || null,
           ...(quote.client.type === "COMPANY"
             ? {
                 companyName: quote.client.companyName,
@@ -1785,8 +1793,14 @@ function transformQuoteToFormData(quote) {
       email: quote.companyInfo?.email || "",
       phone: quote.companyInfo?.phone || "",
       website: quote.companyInfo?.website || "",
+      logo: quote.companyInfo?.logo || "",
       siret: quote.companyInfo?.siret || "",
       vatNumber: quote.companyInfo?.vatNumber || "",
+      rcs: quote.companyInfo?.rcs || "",
+      companyStatus: quote.companyInfo?.companyStatus || "",
+      capitalSocial: quote.companyInfo?.capitalSocial || "",
+      vatPaymentCondition: quote.companyInfo?.vatPaymentCondition || "",
+      transactionCategory: quote.companyInfo?.transactionCategory || "",
       // Formatage cohérent de l'adresse pour l'affichage dans le PDF
       address: (() => {
         if (!quote.companyInfo?.address) return "";
@@ -1888,6 +1902,21 @@ function transformQuoteToFormData(quote) {
     
     // Position du client dans le PDF
     clientPositionRight: quote.clientPositionRight || false,
+
+    // Livraison
+    shipping: quote.shipping
+      ? {
+          billShipping: quote.shipping.billShipping || false,
+          shippingAddress: quote.shipping.shippingAddress || null,
+          shippingAmountHT: quote.shipping.shippingAmountHT || 0,
+          shippingVatRate: quote.shipping.shippingVatRate ?? 20,
+        }
+      : {
+          billShipping: false,
+          shippingAddress: null,
+          shippingAmountHT: 0,
+          shippingVatRate: 20,
+        },
   };
 }
 
@@ -2235,7 +2264,7 @@ function transformFormDataToInput(
     validUntil: finalValidUntil,
     status: formData.status || "DRAFT",
     client: cleanClient,
-    companyInfo: cleanCompanyInfo,
+    // companyInfo n'est plus envoyé au backend - résolu dynamiquement pour les DRAFTs, snapshot à la finalisation
     items:
       formData.items?.map((item) => {
         // Convertir vatRate en nombre et s'assurer qu'il est défini

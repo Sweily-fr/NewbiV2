@@ -556,7 +556,7 @@ export const useCreateQuote = () => {
       const result = await createQuoteMutation({
         variables: { workspaceId, input },
       });
-      return result.data.createQuote;
+      return result.data?.createQuote;
     } catch (error) {
       throw error;
     }
@@ -594,7 +594,7 @@ export const useUpdateQuote = () => {
       const result = await updateQuoteMutation({
         variables: { id, input },
       });
-      return result.data.updateQuote;
+      return result.data?.updateQuote;
     } catch (error) {
       throw error;
     }
@@ -692,7 +692,7 @@ export const useChangeQuoteStatus = () => {
       const result = await changeStatusMutation({
         variables: { id, status },
       });
-      return result.data.changeQuoteStatus;
+      return result.data?.changeQuoteStatus;
     } catch (error) {
       throw error;
     }
@@ -734,7 +734,7 @@ export const useConvertQuoteToInvoice = () => {
           skipValidation: options.skipValidation || false,
         },
       });
-      return result.data.convertQuoteToInvoice;
+      return result.data?.convertQuoteToInvoice;
     } catch (error) {
       throw error;
     }

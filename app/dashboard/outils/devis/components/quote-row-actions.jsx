@@ -268,7 +268,7 @@ export default function QuoteRowActions({ row, onRefetch }) {
               <Eye className="mr-2 h-4 w-4" />
               Voir
             </DropdownMenuItem>
-            {quote.status === QUOTE_STATUS.DRAFT && (
+            {(quote.status === QUOTE_STATUS.DRAFT || quote.status === QUOTE_STATUS.PENDING) && (
               <DropdownMenuItem onClick={handleEdit}>
                 <Pencil className="mr-2 h-4 w-4" />
                 Éditer

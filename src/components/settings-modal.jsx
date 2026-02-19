@@ -30,7 +30,7 @@ import {
 } from "@/src/components/ui/alert-dialog";
 import { Button } from "@/src/components/ui/button";
 import { useSession } from "@/src/lib/auth-client";
-import { useActiveOrganization } from "@/src/lib/organization-client";
+import { useActiveOrganization, getActiveOrganization } from "@/src/lib/organization-client";
 import { toast } from "@/src/components/ui/sonner";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import {
@@ -128,56 +128,76 @@ export function SettingsModal({
     watch,
   } = formMethods;
 
-  // Synchroniser activeTab avec initialTab quand le modal s'ouvre
+  // Fonction utilitaire pour construire les données du formulaire depuis un objet organisation
+  const buildFormData = (org) => ({
+    // Informations générales
+    name: org.companyName || "",
+    email: org.companyEmail || "",
+    phone: org.companyPhone || "",
+    website: org.website || "",
+    description: org.description || "",
+    logo: org.logo || "",
+    address: {
+      street: org.addressStreet || "",
+      city: org.addressCity || "",
+      postalCode: org.addressZipCode || "",
+      country: org.addressCountry || "France",
+    },
+    // Coordonnées bancaires
+    bankDetails: {
+      iban: org.bankIban || "",
+      bic: org.bankBic || "",
+      bankName: org.bankName || "",
+    },
+    // Informations légales
+    legal: {
+      siret: org.siret || "",
+      vatNumber: org.vatNumber || "",
+      rcs: org.rcs || "",
+      legalForm: org.legalForm || "",
+      capital: org.capitalSocial || "",
+      regime: org.fiscalRegime || "",
+      category: org.activityCategory || "",
+      isVatSubject: org.isVatSubject || false,
+      hasCommercialActivity: org.hasCommercialActivity || false,
+      vatRegime: org.vatRegime || "",
+      vatFrequency: org.vatFrequency || "",
+      vatMode: org.vatMode || "",
+      fiscalYearStartDate: org.fiscalYearStartDate || "",
+      fiscalYearEndDate: org.fiscalYearEndDate || "",
+    },
+  });
+
+  // Quand le modal s'ouvre : fetch les données fraîches depuis l'API (bypass le cache du hook)
+  // Cela garantit que les modifications faites depuis les paramètres de devis/facture/BC sont visibles
   useEffect(() => {
-    if (open && initialTab) {
-      setActiveTab(initialTab);
+    if (open) {
+      if (initialTab) {
+        setActiveTab(initialTab);
+      }
+      // Appel API direct pour avoir les données les plus récentes
+      const loadFreshData = async () => {
+        try {
+          const freshOrg = await getActiveOrganization();
+          if (freshOrg) {
+            reset(buildFormData(freshOrg));
+          }
+        } catch (e) {
+          console.error("Erreur lors du chargement des données fraîches:", e);
+        }
+        // Aussi refetch le hook pour synchroniser le cache
+        if (refetchOrg) {
+          refetchOrg();
+        }
+      };
+      loadFreshData();
     }
   }, [open, initialTab]);
 
-  // Initialiser le formulaire avec les données de l'organisation
+  // Initialiser le formulaire avec les données du hook (pour le cas initial et les updates en temps réel)
   useEffect(() => {
     if (organization) {
-      const initialData = {
-        // Informations générales
-        name: organization.companyName || "",
-        email: organization.companyEmail || "",
-        phone: organization.companyPhone || "",
-        website: organization.website || "",
-        description: organization.description || "",
-        logo: organization.logo || "",
-        address: {
-          street: organization.addressStreet || "",
-          city: organization.addressCity || "",
-          postalCode: organization.addressZipCode || "",
-          country: organization.addressCountry || "France",
-        },
-        // Coordonnées bancaires
-        bankDetails: {
-          iban: organization.bankIban || "",
-          bic: organization.bankBic || "",
-          bankName: organization.bankName || "",
-        },
-        // Informations légales
-        legal: {
-          siret: organization.siret || "",
-          vatNumber: organization.vatNumber || "",
-          rcs: organization.rcs || "",
-          legalForm: organization.legalForm || "",
-          capital: organization.capitalSocial || "",
-          regime: organization.fiscalRegime || "",
-          category: organization.activityCategory || "",
-          isVatSubject: organization.isVatSubject || false,
-          hasCommercialActivity: organization.hasCommercialActivity || false,
-          vatRegime: organization.vatRegime || "",
-          vatFrequency: organization.vatFrequency || "",
-          vatMode: organization.vatMode || "",
-          fiscalYearStartDate: organization.fiscalYearStartDate || "",
-          fiscalYearEndDate: organization.fiscalYearEndDate || "",
-        },
-      };
-
-      reset(initialData);
+      reset(buildFormData(organization));
     }
   }, [organization, reset]);
 

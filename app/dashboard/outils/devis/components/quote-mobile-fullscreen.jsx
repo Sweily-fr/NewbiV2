@@ -20,6 +20,7 @@ import {
   QUOTE_STATUS_COLORS,
 } from "@/src/graphql/quoteQueries";
 import { toast } from "@/src/components/ui/sonner";
+import { Pencil } from "lucide-react";
 import { useRouter } from "next/navigation";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import UniversalPDFDownloader from "@/src/components/pdf/UniversalPDFDownloader";
@@ -268,6 +269,21 @@ export default function QuoteMobileFullscreen({
 
         {/* Footer avec actions */}
         <div className="fixed bottom-0 left-0 right-0 bg-background border-t px-4 py-3 flex flex-col gap-1.5" style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}>
+          {(quote.status === QUOTE_STATUS.DRAFT || quote.status === QUOTE_STATUS.PENDING) && (
+            <Button
+              variant="outline"
+              onClick={() => {
+                router.push(`/dashboard/outils/devis/${quote.id}/editer`);
+                onClose();
+              }}
+              size="sm"
+              className="w-full font-normal"
+            >
+              <Pencil className="mr-2 h-4 w-4" />
+              Éditer
+            </Button>
+          )}
+
           {quote.status === QUOTE_STATUS.DRAFT && (
             <Button
               onClick={handleSendQuote}
