@@ -203,9 +203,10 @@ export function useDashboardData() {
     // États de chargement individuels pour le rendu progressif
     invoicesLoading,
     accountsLoading,
-    // Considérer "loading" tant que la query n'a pas retourné de données
+    // Considérer "loading" tant que la query n'a pas retourné de données réelles
     // (skip: !workspaceId fait que bankLoading=false avant auth, mais pas de data)
-    transactionsLoading: bankLoading || (!transactionsData && !transactionsError),
+    // On reste en loading tant que transactionsData n'existe pas, même s'il y a une erreur
+    transactionsLoading: bankLoading || !transactionsData,
 
     // Fonctions de gestion
     refreshData,

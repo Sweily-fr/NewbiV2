@@ -236,6 +236,10 @@ export function TreasuryChart({
     }).format(value);
   };
 
+  // Clé pour forcer le remontage de Recharts quand les données passent de vide à rempli
+  const hasNonZeroData = treasuryData.some((d) => d.income > 0 || d.expenses > 0);
+  const chartMountKey = hasNonZeroData ? "has-data" : "no-data";
+
   if (isLoading) {
     return (
       <Card className={className}>
@@ -389,6 +393,7 @@ export function TreasuryChart({
       </CardHeader>
       <CardContent className="px-2 pt-4 pb-2 sm:px-6 sm:pt-6 sm:pb-4">
         <ChartContainer
+          key={chartMountKey}
           config={chartConfig}
           className="aspect-auto h-[200px] w-full"
         >
