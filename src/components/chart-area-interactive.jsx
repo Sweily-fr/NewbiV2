@@ -288,6 +288,10 @@ export function ChartAreaInteractive({
 
   const hasNonZeroData = filteredData.some((item) => item.desktop > 0);
 
+  // Clé pour forcer le remontage de Recharts quand les données passent de vide à rempli
+  // Corrige un bug où Recharts ne re-render pas les Area/YAxis après initialisation avec données vides
+  const chartMountKey = hasNonZeroData ? "has-data" : "no-data";
+
   if (isLoading) {
     return (
       <Card className={`@container/card ${className}`} style={{ width }} {...props}>
@@ -442,6 +446,7 @@ export function ChartAreaInteractive({
       <CardContent className="px-2 pt-4 pb-2 sm:px-6 sm:pt-6 sm:pb-4">
         <div className="relative" style={{ height }}>
           <ChartContainer
+            key={chartMountKey}
             config={config}
             className="aspect-auto w-full"
             style={{ height }}
