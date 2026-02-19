@@ -8,6 +8,7 @@ import QuoteSettingsView from "@/app/dashboard/outils/devis/components/quote-set
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import { toast } from "@/src/components/ui/sonner";
 import { updateOrganization, getActiveOrganization } from "@/src/lib/organization-client";
+import { generatePurchaseOrderPrefix } from "@/src/utils/quoteUtils";
 
 // Données de démonstration pour la preview des bons de commande
 const getDemoPurchaseOrderData = (formData, organization) => {
@@ -22,10 +23,14 @@ const getDemoPurchaseOrderData = (formData, organization) => {
   const textColor = formData?.appearance?.textColor || "#000000";
   const clientPositionRight = formData?.clientPositionRight || false;
 
+  const prefix = formData?.prefix || "";
+  const number = formData?.number || "0001";
+  const quoteNumber = prefix ? `${prefix}-${number}` : number;
+
   return {
-    quoteNumber: "BD-DEMO-2024-001",
-    prefix: "BD",
-    number: "001",
+    quoteNumber,
+    prefix,
+    number,
     issueDate: new Date().toISOString(),
     validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
     status: "CONFIRMED",
@@ -126,6 +131,9 @@ export function PurchaseOrderSettingsModal({ open, onOpenChange }) {
 
           // Préparer les valeurs initiales depuis l'organisation (champs PO-spécifiques avec fallback)
           const formValues = {
+            // Numérotation - préfixe par défaut (le numéro sera auto-rempli par le hook usePurchaseOrderNumber)
+            prefix: generatePurchaseOrderPrefix(),
+            number: "",
             // Informations de l'entreprise
             companyName: org?.companyName || "",
             companyEmail: org?.companyEmail || "",
@@ -180,6 +188,8 @@ export function PurchaseOrderSettingsModal({ open, onOpenChange }) {
   // Initialiser le formulaire avec les valeurs de l'organisation
   const form = useForm({
     defaultValues: initialValues || {
+      prefix: generatePurchaseOrderPrefix(),
+      number: "",
       companyName: "",
       companyEmail: "",
       companyPhone: "",

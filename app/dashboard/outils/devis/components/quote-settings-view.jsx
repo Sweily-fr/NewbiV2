@@ -23,10 +23,15 @@ import {
   generateQuotePrefix,
   parseQuotePrefix,
   formatQuotePrefix,
+  generatePurchaseOrderPrefix,
+  parsePurchaseOrderPrefix,
+  formatPurchaseOrderPrefix,
   getCurrentMonthYear,
   validateQuoteNumber,
   formatQuoteNumber,
 } from "@/src/utils/quoteUtils";
+import { useQuoteNumber } from "../hooks/use-quote-number";
+import { usePurchaseOrderNumber } from "@/app/dashboard/outils/bons-commande/hooks/use-purchase-order-number";
 import { Separator } from "@/src/components/ui/separator";
 import { Alert, AlertDescription } from "@/src/components/ui/alert";
 import { Button } from "@/src/components/ui/button";
@@ -60,6 +65,40 @@ export default function QuoteSettingsView({
     formState: { errors, dirtyFields },
   } = useFormContext();
   const data = watch();
+
+  // Hooks pour la numérotation séquentielle
+  const quoteNumberHook = useQuoteNumber();
+  const purchaseOrderNumberHook = usePurchaseOrderNumber();
+
+  const numberHook = isPurchaseOrder ? purchaseOrderNumberHook : quoteNumberHook;
+  const nextNumber = isPurchaseOrder ? numberHook.nextNumber : numberHook.nextQuoteNumber;
+  const isLoadingNumber = numberHook.isLoading;
+
+  // Auto-initialiser le préfixe et le numéro au montage uniquement (pas en continu)
+  const prefixInitializedRef = useRef(false);
+  const numberInitializedRef = useRef(false);
+
+  useEffect(() => {
+    if (!prefixInitializedRef.current && !data.prefix) {
+      const defaultPrefix = isPurchaseOrder
+        ? generatePurchaseOrderPrefix()
+        : generateQuotePrefix();
+      setValue("prefix", defaultPrefix, { shouldValidate: false });
+      prefixInitializedRef.current = true;
+    } else if (data.prefix) {
+      prefixInitializedRef.current = true;
+    }
+  }, [data.prefix, isPurchaseOrder, setValue]);
+
+  useEffect(() => {
+    if (!numberInitializedRef.current && !data.number && nextNumber && !isLoadingNumber) {
+      const defaultNumber = String(nextNumber).padStart(4, "0");
+      setValue("number", defaultNumber, { shouldValidate: false });
+      numberInitializedRef.current = true;
+    } else if (data.number) {
+      numberInitializedRef.current = true;
+    }
+  }, [data.number, nextNumber, isLoadingNumber, setValue]);
 
   // Handle prefix changes with auto-fill for MM and AAAA
   const handlePrefixChange = (e) => {
@@ -267,17 +306,15 @@ export default function QuoteSettingsView({
                     <Input
                       id="quote-prefix"
                       {...register("prefix", {
-                        required: "Le préfixe est requis",
                         maxLength: {
                           value: 20,
                           message:
                             "Le préfixe ne doit pas dépasser 20 caractères",
                         },
                         pattern: {
-                          value: isPurchaseOrder ? /^BD-\d{6}$/ : /^D-\d{6}$/,
-                          message: isPurchaseOrder
-                            ? "Format attendu : BD-MMAAAA (ex: BD-022025)"
-                            : "Format attendu : D-MMAAAA (ex: D-022025)",
+                          value: /^[A-Za-z0-9-]*$/,
+                          message:
+                            "Le préfixe ne doit contenir que des lettres, chiffres et tirets",
                         },
                       })}
                       onChange={handlePrefixChange}
@@ -291,13 +328,14 @@ export default function QuoteSettingsView({
                       }}
                       onBlur={(e) => {
                         if (e.target.value) {
-                          const parsed = parseQuotePrefix(e.target.value);
+                          const parsed = isPurchaseOrder
+                            ? parsePurchaseOrderPrefix(e.target.value)
+                            : parseQuotePrefix(e.target.value);
                           if (parsed) {
-                            setValue(
-                              "prefix",
-                              formatQuotePrefix(parsed.month, parsed.year),
-                              { shouldValidate: true }
-                            );
+                            const formatted = isPurchaseOrder
+                              ? formatPurchaseOrderPrefix(parsed.month, parsed.year)
+                              : formatQuotePrefix(parsed.month, parsed.year);
+                            setValue("prefix", formatted, { shouldValidate: true });
                           }
                         }
                       }}
@@ -337,34 +375,22 @@ export default function QuoteSettingsView({
                   <div className="space-y-1">
                     <Input
                       id="quote-number"
-                      {...register("number", {
-                        required: `Le numéro de ${documentLabel} est requis`,
-                      })}
-                      value={data.number || ""}
-                      placeholder="000001"
-                      disabled={!canEdit}
-                      readOnly={data.number && data.number.startsWith("DRAFT-")}
-                      onBlur={(e) => {
-                        if (
-                          e.target.value &&
-                          !e.target.value.startsWith("DRAFT-")
-                        ) {
-                          if (validateQuoteNumber(e.target.value)) {
-                            const formattedNum = formatQuoteNumber(
-                              e.target.value
-                            );
-                            setValue("number", formattedNum, {
-                              shouldValidate: true,
-                            });
-                          }
-                        }
-                      }}
+                      value={
+                        data.number ||
+                        (nextNumber && !isLoadingNumber
+                          ? String(nextNumber).padStart(4, "0")
+                          : "")
+                      }
+                      disabled
+                      readOnly
+                      tabIndex={-1}
+                      onFocus={(e) => e.target.blur()}
+                      onChange={() => {}}
+                      className="bg-muted/50 cursor-not-allowed select-none"
                     />
-                    {errors?.number && (
-                      <p className="text-xs text-red-500">
-                        {errors.number.message}
-                      </p>
-                    )}
+                    <p className="text-xs text-muted-foreground">
+                      Numéro attribué automatiquement de manière séquentielle.
+                    </p>
                     {data.number && data.number.startsWith("DRAFT-") && (
                       <p className="text-xs text-blue-600">
                         Numéro de brouillon - sera remplacé lors de la

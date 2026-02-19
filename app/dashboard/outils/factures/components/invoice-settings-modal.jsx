@@ -11,6 +11,7 @@ import {
   updateOrganization,
   getActiveOrganization,
 } from "@/src/lib/organization-client";
+import { generateInvoicePrefix } from "@/src/utils/invoiceUtils";
 
 // Données de démonstration pour la preview
 const getDemoInvoiceData = (formData, organization) => {
@@ -27,8 +28,14 @@ const getDemoInvoiceData = (formData, organization) => {
     formData?.appearance?.headerBgColor || formData?.primaryColor || "#5b4fff";
   const clientPositionRight = formData?.clientPositionRight || false;
 
+  const prefix = formData?.prefix || "";
+  const number = formData?.number || "0001";
+  const invoiceNumber = prefix ? `${prefix}-${number}` : number;
+
   return {
-    invoiceNumber: "DEMO-2024-001",
+    invoiceNumber,
+    prefix,
+    number,
     issueDate: new Date().toISOString(),
     dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
     status: "PAID",
@@ -152,6 +159,9 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
 
           // Préparer les valeurs initiales depuis l'organisation (même structure que l'éditeur)
           const formValues = {
+            // Numérotation - préfixe par défaut (le numéro sera auto-rempli par le hook useInvoiceNumber)
+            prefix: generateInvoicePrefix(),
+            number: "",
             // Informations de l'entreprise
             companyName: org?.companyName || "",
             companyEmail: org?.companyEmail || "",
@@ -216,6 +226,8 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
   // Initialiser le formulaire avec les valeurs de l'organisation
   const form = useForm({
     defaultValues: initialValues || {
+      prefix: generateInvoicePrefix(),
+      number: "",
       companyName: "",
       companyEmail: "",
       companyPhone: "",
