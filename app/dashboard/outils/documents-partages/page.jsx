@@ -1316,7 +1316,7 @@ export default function DocumentsPartagesPage() {
         type="file"
         multiple
         onChange={handleFileInputChange}
-        accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.webm,.mov,.avi,.mkv,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv"
+        accept=".jpg,.jpeg,.png,.gif,.webp,.heic,.heif,.mp4,.webm,.mov,.avi,.mkv,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv"
         className="hidden"
       />
       <input
