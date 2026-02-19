@@ -144,6 +144,7 @@ export function ColorPicker({
   const [colorFormat, setColorFormat] = useState("HEX"); // HEX, RGB, HSL
   const colorInputRef = useRef(null);
   const pickerRef = useRef(null);
+  const isExternalSync = useRef(false);
 
   // Gérer le changement de couleur depuis l'input natif
   const handleNativeColorChange = (e) => {
@@ -348,6 +349,19 @@ export function ColorPicker({
     }
   };
 
+  // Synchroniser l'état interne quand la prop color change (ex: chargement depuis la BDD)
+  React.useEffect(() => {
+    const newHex = toHex(color);
+    if (newHex !== currentColor) {
+      isExternalSync.current = true;
+      setCurrentColor(newHex);
+      setHexInput(newHex);
+      const hsv = getInitialHsv(newHex);
+      setHue(hsv.h);
+      setCursorPosition({ x: hsv.s, y: 100 - hsv.v });
+    }
+  }, [color]);
+
   // Synchroniser hexInput quand currentColor change (depuis le picker ou le slider)
   React.useEffect(() => {
     if (colorFormat === "HEX") {
@@ -486,8 +500,15 @@ export function ColorPicker({
     }
   }, [isDragging, hue]);
 
-  // Recalculer la couleur quand la teinte change
+  // Recalculer la couleur quand la teinte change (seulement par interaction utilisateur)
   React.useEffect(() => {
+    // Ne pas recalculer si le changement vient d'une sync externe (prop color)
+    // pour éviter les dérives d'arrondi HSV -> HEX
+    if (isExternalSync.current) {
+      isExternalSync.current = false;
+      return;
+    }
+
     // Calculer saturation et value depuis la position actuelle du curseur
     const saturation = cursorPosition.x / 100;
     const value = 1 - cursorPosition.y / 100;
