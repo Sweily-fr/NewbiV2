@@ -8,6 +8,7 @@ import {
   LoaderCircle,
   FileCheck,
   Send,
+  ShoppingCart,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
@@ -19,6 +20,7 @@ import {
   QUOTE_STATUS_LABELS,
   QUOTE_STATUS_COLORS,
 } from "@/src/graphql/quoteQueries";
+import { useConvertQuoteToPurchaseOrder } from "@/src/graphql/purchaseOrderQueries";
 import { toast } from "@/src/components/ui/sonner";
 import { Pencil } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -34,6 +36,7 @@ export default function QuoteMobileFullscreen({
   const router = useRouter();
   const { changeStatus, loading: changingStatus } = useChangeQuoteStatus();
   const { convertToInvoice, loading: converting } = useConvertQuoteToInvoice();
+  const { convertToPurchaseOrder, loading: convertingToPO } = useConvertQuoteToPurchaseOrder();
 
   // Récupérer les données complètes du devis
   const {
@@ -123,7 +126,21 @@ export default function QuoteMobileFullscreen({
     }
   };
 
-  const isLoading = changingStatus || converting || loadingFullQuote;
+  const handleConvertToPurchaseOrder = async () => {
+    try {
+      const result = await convertToPurchaseOrder(quote.id);
+      toast.success("Bon de commande créé à partir du devis");
+      if (onRefetch) onRefetch();
+      onClose();
+      if (result?.id) {
+        router.push(`/dashboard/outils/bons-commande/${result.id}/editer`);
+      }
+    } catch (error) {
+      toast.error("Erreur lors de la création du bon de commande");
+    }
+  };
+
+  const isLoading = changingStatus || converting || convertingToPO || loadingFullQuote;
 
   const statusColor = QUOTE_STATUS_COLORS[quote.status] || "gray";
   const statusLabel = QUOTE_STATUS_LABELS[quote.status] || quote.status;
@@ -344,6 +361,23 @@ export default function QuoteMobileFullscreen({
                 Convertir en facture
               </Button>
             )}
+
+          {quote.status === QUOTE_STATUS.COMPLETED && (
+            <Button
+              variant="outline"
+              onClick={handleConvertToPurchaseOrder}
+              disabled={isLoading}
+              size="sm"
+              className="w-full font-normal"
+            >
+              {convertingToPO ? (
+                <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <ShoppingCart className="mr-2 h-4 w-4" />
+              )}
+              Convertir en bon de commande
+            </Button>
+          )}
 
           {quote.status === QUOTE_STATUS.DRAFT && (
             <UniversalPDFDownloader

@@ -446,12 +446,12 @@ export function ChartAreaInteractive({
       <CardContent className="px-2 pt-4 pb-2 sm:px-6 sm:pt-6 sm:pb-4">
         <div className="relative" style={{ height }}>
           <ChartContainer
-            key={chartMountKey}
             config={config}
             className="aspect-auto w-full"
             style={{ height }}
           >
             <ComposedChart
+              key={chartMountKey}
               data={aggregatedData}
               margin={{
                 left: -20,

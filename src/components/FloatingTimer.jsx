@@ -32,6 +32,7 @@ export function FloatingTimer() {
     skip: !workspaceId,
     pollInterval: 30000,
     fetchPolicy: "cache-and-network",
+    context: { isBackgroundPoll: true },
   });
 
   // Mutation pour arrêter le timer

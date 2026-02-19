@@ -263,11 +263,12 @@ const authLink = setContext(async (_, { headers }) => {
 
     // 1. Vérifier d'abord le JWT stocké dans localStorage
     const storedToken = localStorage.getItem("bearer_token");
-    if (storedToken && !isTokenExpired(storedToken)) {
+    const tokenExpired = storedToken ? isTokenExpired(storedToken) : true;
+    if (storedToken && !tokenExpired) {
       jwtToken = storedToken;
-    } else if (storedToken) {
-      localStorage.removeItem("bearer_token");
     }
+    // NB: On ne supprime PAS le token expiré ici — on le garde en fallback
+    // Le serveur a une clockTolerance de 60s, donc un token récemment expiré reste valide
 
     // 2. Si pas de JWT valide OU si on doit rafraîchir la session, appeler getSession()
     // ✅ FIX CRITIQUE : Utilise ActivityTracker pour décider quand rafraîchir
@@ -301,8 +302,10 @@ const authLink = setContext(async (_, { headers }) => {
         });
       }
 
-      // Si on avait déjà un JWT valide mais qu'on a fait un refresh, garder le JWT existant
-      if (!jwtToken && storedToken && !isTokenExpired(storedToken)) {
+      // Fallback: si le refresh n'a pas retourné de nouveau JWT,
+      // utiliser l'ancien token (même expiré côté client) car le serveur
+      // a une clockTolerance de 60s et le token peut encore être valide
+      if (!jwtToken && storedToken) {
         jwtToken = storedToken;
       }
     }
@@ -376,8 +379,17 @@ const errorLink = onError(({ graphQLErrors, networkError, operation }) => {
       if (isCriticalError(errorWithCode)) {
         // Ne pas afficher de toast si c'est une erreur au chargement initial
         const isInitialLoad = operation.getContext().isInitialLoad;
+        // Ne pas rediriger pour les requêtes en arrière-plan (polling)
+        // Ces erreurs sont souvent transitoires (race condition pendant le refresh du token)
+        const isBackgroundPoll = operation.getContext().isBackgroundPoll;
 
-        if (!isInitialLoad) {
+        if (isBackgroundPoll) {
+          // Log silencieux pour les polls en arrière-plan
+          console.warn(
+            "⚠️ [Apollo] Erreur auth transitoire sur poll background:",
+            message
+          );
+        } else if (!isInitialLoad) {
           // Utiliser la garde pour éviter les logs multiples, mais toujours rediriger
           if (canHandleAuthError()) {
             console.log("🔒 [Apollo] Session expirée détectée, redirection...");
