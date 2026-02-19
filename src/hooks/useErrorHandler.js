@@ -32,7 +32,8 @@ export function useErrorHandler() {
 
     // Logger l'erreur pour le debug (seulement en développement)
     if (logError && process.env.NODE_ENV === 'development') {
-      console.error(`[${context.toUpperCase()}] Erreur:`, error);
+      const errorMsg = typeof error === 'string' ? error : error?.message || 'Erreur inconnue';
+      console.warn(`[${context.toUpperCase()}] Erreur: ${errorMsg}`);
     }
 
     // Obtenir le message utilisateur approprié

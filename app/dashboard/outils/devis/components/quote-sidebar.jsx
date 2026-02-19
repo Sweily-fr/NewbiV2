@@ -479,7 +479,7 @@ export default function QuoteSidebar({
           <div className="border-t p-6 space-y-3">
             {/* Primary Actions */}
             <div className="flex gap-2">
-              {quote.status === QUOTE_STATUS.DRAFT && (
+              {(quote.status === QUOTE_STATUS.DRAFT || quote.status === QUOTE_STATUS.PENDING) && (
                 <Button
                   variant="outline"
                   size="sm"

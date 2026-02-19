@@ -431,6 +431,7 @@ export default function ItemsSection({
                                 <option value="litre">Litre</option>
                                 <option value="forfait">Forfait</option>
                                 <option value="ensemble">Ensemble</option>
+                                <option value="personne(s)">Personne(s)</option>
                               </SelectNative>
                             )}
                           />

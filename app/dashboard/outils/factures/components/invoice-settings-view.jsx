@@ -3,7 +3,6 @@
 import { useFormContext } from "react-hook-form";
 import React, { useEffect, useState, useRef } from "react";
 import {
-  Tag,
   Settings,
   AlignLeft,
   AlignRight,
@@ -44,7 +43,7 @@ import {
   AlertDialogTitle,
 } from "@/src/components/ui/alert-dialog";
 import { BankDetailsDialog } from "@/src/components/bank-details-dialog";
-import { authClient } from "@/src/lib/auth-client";
+import CompanyInfoSettingsSection from "@/src/components/settings/company-info-settings-section";
 
 // Fonction de validation de l'IBAN
 const validateIBAN = (value) => {
@@ -84,6 +83,7 @@ export default function InvoiceSettingsView({
   validateInvoiceNumberExists,
   validationErrors = {},
   setValidationErrors,
+  organization,
 }) {
   const {
     watch,
@@ -143,8 +143,6 @@ export default function InvoiceSettingsView({
       headerBgColor: data.appearance?.headerBgColor,
     });
   }, [data.appearance]);
-
-  const { data: organization } = authClient.useActiveOrganization();
 
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -393,6 +391,10 @@ export default function InvoiceSettingsView({
               </AlertDescription>
             </Alert>
           )}
+
+          {/* Section Informations de l'entreprise */}
+          <CompanyInfoSettingsSection />
+          <Separator />
 
           {/* Section Numérotation */}
           <Card className="shadow-none border-none bg-transparent">

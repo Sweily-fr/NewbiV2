@@ -45,19 +45,18 @@ const getDemoQuoteData = (formData, organization) => {
       type: "company",
     },
     companyInfo: {
-      name: organization?.name || "Votre Entreprise",
-      email: organization?.email || "contact@entreprise.fr",
-      phone: organization?.phone || "+33 1 23 45 67 89",
-      address: organization?.address || {
-        street: "1 Rue de la République",
-        postalCode: "75001",
-        city: "Paris",
-        country: "France",
+      name: formData?.companyName || organization?.companyName || "Votre Entreprise",
+      email: formData?.companyEmail || organization?.companyEmail || "contact@entreprise.fr",
+      phone: formData?.companyPhone || organization?.companyPhone || "+33 1 23 45 67 89",
+      address: {
+        street: formData?.addressStreet || organization?.addressStreet || "1 Rue de la République",
+        postalCode: formData?.addressZipCode || organization?.addressZipCode || "75001",
+        city: formData?.addressCity || organization?.addressCity || "Paris",
+        country: formData?.addressCountry || organization?.addressCountry || "France",
       },
       siret: organization?.siret || "98765432109876",
       vatNumber: organization?.vatNumber || "FR98765432109",
       logo: organization?.logo || null,
-      // Appliquer les coordonnées bancaires du formulaire
       bankDetails: {
         iban: bankDetails?.iban || "",
         bic: bankDetails?.bic || "",
@@ -145,6 +144,16 @@ export function QuoteSettingsModal({ open, onOpenChange }) {
           
           // Préparer les valeurs initiales depuis l'organisation (même structure que l'éditeur)
           const formValues = {
+            // Informations de l'entreprise
+            companyName: org?.companyName || "",
+            companyEmail: org?.companyEmail || "",
+            companyPhone: org?.companyPhone || "",
+            website: org?.website || "",
+            addressStreet: org?.addressStreet || "",
+            addressCity: org?.addressCity || "",
+            addressZipCode: org?.addressZipCode || "",
+            addressCountry: org?.addressCountry || "France",
+            // Paramètres spécifiques aux devis
             quoteSettings: {},
             bankDetails: {
               iban: org?.bankIban || "",
@@ -161,11 +170,11 @@ export function QuoteSettingsModal({ open, onOpenChange }) {
             footerNotes: org?.quoteFooterNotes || org?.documentFooterNotes || "",
             termsAndConditions: org?.quoteTermsAndConditions || org?.documentTermsAndConditions || "",
             showBankDetails: org?.showBankDetails || false,
-            primaryColor: org?.documentHeaderBgColor || "#5b4fff",
+            primaryColor: org?.quoteHeaderBgColor || org?.documentHeaderBgColor || "#5b4fff",
             appearance: {
-              textColor: org?.documentTextColor || "#000000",
-              headerTextColor: org?.documentHeaderTextColor || "#ffffff",
-              headerBgColor: org?.documentHeaderBgColor || "#5b4fff",
+              textColor: org?.quoteTextColor || org?.documentTextColor || "#000000",
+              headerTextColor: org?.quoteHeaderTextColor || org?.documentHeaderTextColor || "#ffffff",
+              headerBgColor: org?.quoteHeaderBgColor || org?.documentHeaderBgColor || "#5b4fff",
             },
             clientPositionRight: org?.quoteClientPositionRight || false,
           };
@@ -193,6 +202,14 @@ export function QuoteSettingsModal({ open, onOpenChange }) {
   // Initialiser le formulaire avec les valeurs de l'organisation
   const form = useForm({
     defaultValues: initialValues || {
+      companyName: "",
+      companyEmail: "",
+      companyPhone: "",
+      website: "",
+      addressStreet: "",
+      addressCity: "",
+      addressZipCode: "",
+      addressCountry: "France",
       quoteSettings: {},
       bankDetails: {},
       userBankDetails: {},
@@ -242,17 +259,27 @@ export function QuoteSettingsModal({ open, onOpenChange }) {
         return;
       }
       
-      // Préparer les données pour la mise à jour (même structure que l'éditeur)
+      // Préparer les données pour la mise à jour
       const updateData = {
+        // Informations de l'entreprise
+        companyName: formValues.companyName || "",
+        companyEmail: formValues.companyEmail || "",
+        companyPhone: formValues.companyPhone || "",
+        website: formValues.website || "",
+        addressStreet: formValues.addressStreet || "",
+        addressCity: formValues.addressCity || "",
+        addressZipCode: formValues.addressZipCode || "",
+        addressCountry: formValues.addressCountry || "France",
+
         // Notes et conditions spécifiques aux devis
         quoteHeaderNotes: formValues.headerNotes,
         quoteFooterNotes: formValues.footerNotes,
         quoteTermsAndConditions: formValues.termsAndConditions,
 
-        // Couleurs du document (lues depuis appearance.*)
-        documentHeaderBgColor: formValues.appearance?.headerBgColor || formValues.primaryColor || "#5b4fff",
-        documentHeaderTextColor: formValues.appearance?.headerTextColor || "#ffffff",
-        documentTextColor: formValues.appearance?.textColor || "#000000",
+        // Couleurs spécifiques aux devis
+        quoteHeaderBgColor: formValues.appearance?.headerBgColor || formValues.primaryColor || "#5b4fff",
+        quoteHeaderTextColor: formValues.appearance?.headerTextColor || "#ffffff",
+        quoteTextColor: formValues.appearance?.textColor || "#000000",
 
         // Position du client dans le PDF (devis)
         quoteClientPositionRight: formValues.clientPositionRight || false,
@@ -273,7 +300,7 @@ export function QuoteSettingsModal({ open, onOpenChange }) {
       onOpenChange(false);
     } catch (error) {
       console.error("❌ Erreur lors de l'enregistrement:", error);
-      toast.error("Erreur lors de l'enregistrement des paramètres");
+      toast.error(error.message || "Erreur lors de l'enregistrement des paramètres");
     } finally {
       setIsSaving(false);
     }
@@ -291,7 +318,7 @@ export function QuoteSettingsModal({ open, onOpenChange }) {
           <div className="max-w-2xl mx-auto flex flex-col w-full h-full">
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold">Paramètres des devis</h2>
+              <h2 className="text-lg font-normal">Paramètres des devis</h2>
               <Button
                 variant="ghost"
                 size="sm"

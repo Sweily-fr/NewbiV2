@@ -845,6 +845,11 @@ export function useInvoiceEditor({
         phone: organization?.companyPhone || "",
         siret: organization?.siret || "",
         vatNumber: organization?.vatNumber || "",
+        rcs: organization?.rcs || "",
+        companyStatus: organization?.legalForm || "",
+        capitalSocial: organization?.capitalSocial || "",
+        vatPaymentCondition: organization?.fiscalRegime || "",
+        transactionCategory: organization?.activityCategory || "",
         website: organization?.website || "",
         logo: organization?.logo || "",
         bankDetails: {
@@ -861,18 +866,18 @@ export function useInvoiceEditor({
   // Charger les données d'organisation pour les nouvelles factures
   useEffect(() => {
     if (mode === "create" && organization) {
-      // Utiliser directement les couleurs de l'organisation pour l'apparence par défaut
+      // Utiliser les couleurs spécifiques aux factures avec fallback vers les couleurs globales
       setValue(
         "appearance.textColor",
-        organization.documentTextColor || "#000000"
+        organization.invoiceTextColor || organization.documentTextColor || "#000000"
       );
       setValue(
         "appearance.headerTextColor",
-        organization.documentHeaderTextColor || "#ffffff"
+        organization.invoiceHeaderTextColor || organization.documentHeaderTextColor || "#ffffff"
       );
       setValue(
         "appearance.headerBgColor",
-        organization.documentHeaderBgColor || "#5b50FF"
+        organization.invoiceHeaderBgColor || organization.documentHeaderBgColor || "#5b50FF"
       );
 
       // Utiliser les notes et conditions spécifiques aux factures
@@ -1406,9 +1411,9 @@ export function useInvoiceEditor({
         shippingErrors.push("nom complet invalide");
       }
 
-      if (!shipping.address || shipping.address.trim() === "") {
+      if (!shipping.street || shipping.street.trim() === "") {
         shippingErrors.push("adresse manquante");
-      } else if (shipping.address.trim().length < 5) {
+      } else if (shipping.street.trim().length < 5) {
         shippingErrors.push("adresse trop courte");
       }
 
@@ -1428,12 +1433,13 @@ export function useInvoiceEditor({
         shippingErrors.push("pays manquant");
       }
 
+      const shippingCost = currentFormData.shipping?.shippingAmountHT;
       if (
-        shipping.cost === undefined ||
-        shipping.cost === null ||
-        shipping.cost === "" ||
-        isNaN(parseFloat(shipping.cost)) ||
-        parseFloat(shipping.cost) < 0
+        shippingCost === undefined ||
+        shippingCost === null ||
+        shippingCost === "" ||
+        isNaN(parseFloat(shippingCost)) ||
+        parseFloat(shippingCost) < 0
       ) {
         shippingErrors.push("coût de livraison invalide");
       }
@@ -1905,6 +1911,13 @@ function getInitialFormData(mode, initialData, session, organization) {
       headerBgColor: "#5b50FF",
     },
     clientPositionRight: organization?.invoiceClientPositionRight || false, // Position du client dans le PDF (false = centre, true = droite)
+    // Livraison
+    shipping: {
+      billShipping: false,
+      shippingAddress: null,
+      shippingAmountHT: 0,
+      shippingVatRate: 20,
+    },
   };
 
   // Utiliser les paramètres par défaut de l'organisation si disponibles
@@ -2016,9 +2029,10 @@ function transformInvoiceToFormData(invoice) {
           siret: invoice.companyInfo.siret || "",
           vatNumber: invoice.companyInfo.vatNumber || "",
           rcs: invoice.companyInfo.rcs || "",
-          legalForm: invoice.companyInfo.legalForm || "",
+          companyStatus: invoice.companyInfo.companyStatus || "",
           capitalSocial: invoice.companyInfo.capitalSocial || "",
-          fiscalRegime: invoice.companyInfo.fiscalRegime || "",
+          vatPaymentCondition: invoice.companyInfo.vatPaymentCondition || "",
+          transactionCategory: invoice.companyInfo.transactionCategory || "",
           website: invoice.companyInfo.website || "",
           logo: invoice.companyInfo.logo || "",
           // Nettoyer les métadonnées GraphQL des coordonnées bancaires
@@ -2098,6 +2112,21 @@ function transformInvoiceToFormData(invoice) {
       headerBgColor: invoice.appearance?.headerBgColor || "#5b50FF",
     },
     clientPositionRight: invoice.clientPositionRight || false,
+
+    // Livraison
+    shipping: invoice.shipping
+      ? {
+          billShipping: invoice.shipping.billShipping || false,
+          shippingAddress: invoice.shipping.shippingAddress || null,
+          shippingAmountHT: invoice.shipping.shippingAmountHT || 0,
+          shippingVatRate: invoice.shipping.shippingVatRate ?? 20,
+        }
+      : {
+          billShipping: false,
+          shippingAddress: null,
+          shippingAmountHT: 0,
+          shippingVatRate: 20,
+        },
   };
 
   return transformedData;
@@ -2266,7 +2295,7 @@ function transformFormDataToInput(formData, previousStatus = null) {
     dueDate: ensureValidDate(formData.dueDate, "dueDate"),
     status: formData.status || "DRAFT",
     client: cleanClient,
-    companyInfo: cleanCompanyInfo,
+    // companyInfo n'est plus envoyé au backend - résolu dynamiquement pour les DRAFTs, snapshot à la finalisation
     items:
       formData.items?.map((item) => {
         const vatRate = parseFloat(item.vatRate || item.taxRate) || 0;

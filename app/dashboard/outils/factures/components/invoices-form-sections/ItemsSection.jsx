@@ -649,6 +649,9 @@ export default function ItemsSection({
                                       <SelectItem value="ensemble">
                                         Ensemble
                                       </SelectItem>
+                                      <SelectItem value="personne(s)">
+                                        Personne(s)
+                                      </SelectItem>
                                     </SelectContent>
                                   </Select>
                                 )}

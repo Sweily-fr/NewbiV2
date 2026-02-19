@@ -1749,7 +1749,7 @@ export const organizationPlugin = organization({
           input: true,
           required: false,
         },
-        // Document appearance settings
+        // Document appearance settings (global defaults)
         documentTextColor: {
           type: "string",
           input: true,
@@ -1761,6 +1761,52 @@ export const organizationPlugin = organization({
           required: false,
         },
         documentHeaderBgColor: {
+          type: "string",
+          input: true,
+          required: false,
+        },
+        // Per-document-type appearance settings
+        quoteTextColor: {
+          type: "string",
+          input: true,
+          required: false,
+        },
+        quoteHeaderTextColor: {
+          type: "string",
+          input: true,
+          required: false,
+        },
+        quoteHeaderBgColor: {
+          type: "string",
+          input: true,
+          required: false,
+        },
+        invoiceTextColor: {
+          type: "string",
+          input: true,
+          required: false,
+        },
+        invoiceHeaderTextColor: {
+          type: "string",
+          input: true,
+          required: false,
+        },
+        invoiceHeaderBgColor: {
+          type: "string",
+          input: true,
+          required: false,
+        },
+        purchaseOrderTextColor: {
+          type: "string",
+          input: true,
+          required: false,
+        },
+        purchaseOrderHeaderTextColor: {
+          type: "string",
+          input: true,
+          required: false,
+        },
+        purchaseOrderHeaderBgColor: {
           type: "string",
           input: true,
           required: false,
@@ -1813,6 +1859,22 @@ export const organizationPlugin = organization({
           input: true,
           required: false,
         },
+        // Notes séparées pour les bons de commande
+        purchaseOrderHeaderNotes: {
+          type: "string",
+          input: true,
+          required: false,
+        },
+        purchaseOrderFooterNotes: {
+          type: "string",
+          input: true,
+          required: false,
+        },
+        purchaseOrderTermsAndConditions: {
+          type: "string",
+          input: true,
+          required: false,
+        },
         // Bank details display setting
         showBankDetails: {
           type: "boolean",
@@ -1826,6 +1888,11 @@ export const organizationPlugin = organization({
           required: false,
         },
         quoteClientPositionRight: {
+          type: "boolean",
+          input: true,
+          required: false,
+        },
+        purchaseOrderClientPositionRight: {
           type: "boolean",
           input: true,
           required: false,
