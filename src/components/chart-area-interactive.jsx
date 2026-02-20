@@ -447,14 +447,6 @@ export function ChartAreaInteractive({
         >
           {renderChart()}
         </ChartContainer>
-        {!hasNonZeroData && (
-          <div
-            className="flex items-center justify-center text-muted-foreground text-sm"
-            style={{ height }}
-          >
-            Aucune donnée pour cette période
-          </div>
-        )}
       </CardContent>
     </Card>
   );
