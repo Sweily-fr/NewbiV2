@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import Link from "next/link";
+import { Turnstile } from "@marsidev/react-turnstile";
 import { NewHeroNavbar } from "@/app/(main)/new/lp-home/NewHeroNavbar";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
@@ -60,6 +61,9 @@ export default function GuideFacturationElectroniquePage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState("");
+  const [honeypot, setHoneypot] = useState("");
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const turnstileRef = useRef(null);
 
   const handleChange = (e) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -86,6 +90,8 @@ export default function GuideFacturationElectroniquePage() {
         body: JSON.stringify({
           ...formData,
           acceptedTerms: true,
+          website: honeypot,
+          turnstileToken,
         }),
       });
 
@@ -95,6 +101,8 @@ export default function GuideFacturationElectroniquePage() {
 
       if (!res.ok || !data.success) {
         setError(data.error || "Une erreur est survenue. Veuillez réessayer.");
+        turnstileRef.current?.reset();
+        setTurnstileToken("");
         return;
       }
 
@@ -108,6 +116,8 @@ export default function GuideFacturationElectroniquePage() {
     } catch (err) {
       console.error("[Guide] Erreur fetch:", err);
       setError("Impossible de contacter le serveur. Veuillez réessayer.");
+      turnstileRef.current?.reset();
+      setTurnstileToken("");
     } finally {
       setIsSubmitting(false);
     }
@@ -281,6 +291,29 @@ export default function GuideFacturationElectroniquePage() {
                       de Newbi. *
                     </Label>
                   </div>
+
+                  {/* Honeypot — invisible pour les utilisateurs */}
+                  <div style={{ position: "absolute", left: "-9999px", top: "-9999px" }} aria-hidden="true">
+                    <label htmlFor="website">Website</label>
+                    <input
+                      type="text"
+                      id="website"
+                      name="website"
+                      autoComplete="off"
+                      tabIndex={-1}
+                      value={honeypot}
+                      onChange={(e) => setHoneypot(e.target.value)}
+                    />
+                  </div>
+
+                  {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && (
+                    <Turnstile
+                      ref={turnstileRef}
+                      siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
+                      onSuccess={setTurnstileToken}
+                      onExpire={() => setTurnstileToken("")}
+                    />
+                  )}
 
                   {error && (
                     <p className="text-sm text-red-600">{error}</p>
