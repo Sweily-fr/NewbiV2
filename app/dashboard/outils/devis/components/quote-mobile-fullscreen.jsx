@@ -22,7 +22,7 @@ import {
 import { toast } from "@/src/components/ui/sonner";
 import { useRouter } from "next/navigation";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
-import UniversalPDFDownloader from "@/src/components/pdf/UniversalPDFDownloader";
+import UniversalPDFDownloaderWithFacturX from "@/src/components/pdf/UniversalPDFDownloaderWithFacturX";
 
 export default function QuoteMobileFullscreen({
   isOpen,
@@ -169,7 +169,8 @@ export default function QuoteMobileFullscreen({
             </div>
             <div className="flex items-center gap-2">
               {quote.status !== QUOTE_STATUS.DRAFT && (
-                <UniversalPDFDownloader
+                <UniversalPDFDownloaderWithFacturX
+                  enableFacturX={false}
                   data={quote}
                   type="quote"
                   variant="ghost"
@@ -177,7 +178,7 @@ export default function QuoteMobileFullscreen({
                   className="h-8"
                 >
                   Télécharger
-                </UniversalPDFDownloader>
+                </UniversalPDFDownloaderWithFacturX>
               )}
               <Button
                 variant="ghost"
@@ -330,14 +331,15 @@ export default function QuoteMobileFullscreen({
             )}
 
           {quote.status === QUOTE_STATUS.DRAFT && (
-            <UniversalPDFDownloader
+            <UniversalPDFDownloaderWithFacturX
+              enableFacturX={false}
               data={quote}
               type="quote"
               variant="outline"
               size="sm"
             >
               Télécharger
-            </UniversalPDFDownloader>
+            </UniversalPDFDownloaderWithFacturX>
           )}
         </div>
       </div>
