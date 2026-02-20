@@ -514,7 +514,7 @@ export function SecuritySection({
   return (
     <div className="space-y-20">
       <div>
-        <h2 className="text-lg font-medium mb-1">Sécurité</h2>
+        <h2 className="text-lg font-medium mb-1 hidden md:block">Sécurité</h2>
         <Separator className="hidden md:block" />
         {!canManageOrgSettings && (
           <div className="mt-4">
@@ -528,7 +528,7 @@ export function SecuritySection({
           </div>
         )}
 
-        <div className="space-y-6 mt-8">
+        <div className="space-y-6 mt-4 md:mt-8">
           {/* Titre section Identité */}
           <div>
             <h3 className="text-sm font-medium mb-2">Identité</h3>

@@ -426,9 +426,9 @@ export function NotificationsSection() {
     <div className="space-y-6">
       {/* Titre avec bouton "Tout marquer comme lu" */}
       <div className="flex items-center justify-between">
-        <div className="flex-1">
+        <div className="flex-1 hidden md:block">
           <h2 className="text-lg font-medium mb-1">Notifications</h2>
-          <Separator className="hidden md:block" />
+          <Separator />
         </div>
         {(unreadInvitationsCount > 0 || unreadSentInvitationsCount > 0) && (
           <Button
