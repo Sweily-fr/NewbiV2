@@ -22,6 +22,7 @@ import {
   ChevronRightIcon,
   ChevronUpIcon,
   CircleAlertIcon,
+  CircleXIcon,
   EllipsisIcon,
   ListFilterIcon,
   Search,
@@ -43,6 +44,7 @@ import {
 } from "@/src/components/ui/alert-dialog";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
+import { Input } from "@/src/components/ui/input";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import {
   DropdownMenu,
@@ -59,7 +61,6 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
-import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import {
   Pagination,
@@ -440,22 +441,43 @@ export default function TableProduct({ handleAddProduct, hideHeaderButtons = fal
       <div className="hidden md:flex md:flex-col h-full overflow-hidden">
         {/* Filters - Structure comme page factures */}
         <div className="flex items-center justify-between gap-3 flex-shrink-0 px-4 sm:px-6 py-4">
-          {/* Search - à gauche */}
-          <div className="relative max-w-md">
-            <Input
-              id={`${id}-input`}
-              ref={inputRef}
-              placeholder="Recherchez par nom ou par référence..."
-              value={globalFilter}
-              onChange={(e) => {
-                setGlobalFilter(e.target.value);
-                table.getColumn("name")?.setFilterValue(e.target.value);
-              }}
-              className="w-full sm:w-[400px] lg:w-[400px] ps-9"
-            />
-            <div className="text-muted-foreground/80 pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3">
-              <Search size={16} aria-hidden="true" />
+          {/* Search + Filtres à gauche */}
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 h-8 w-full sm:w-[400px] rounded-[9px] border border-[#E6E7EA] hover:border-[#D1D3D8] dark:border-[#2E2E32] dark:hover:border-[#44444A] bg-transparent px-3 transition-[color,box-shadow] focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]">
+              <Search size={16} className="text-muted-foreground/80 shrink-0" aria-hidden="true" />
+              <Input
+                variant="ghost"
+                id={`${id}-input`}
+                ref={inputRef}
+                value={globalFilter}
+                onChange={(e) => {
+                  setGlobalFilter(e.target.value);
+                  table.getColumn("name")?.setFilterValue(e.target.value);
+                }}
+                placeholder="Recherchez par nom ou par référence..."
+              />
+              {Boolean(globalFilter) && (
+                <button
+                  onClick={() => {
+                    setGlobalFilter("");
+                    table.getColumn("name")?.setFilterValue("");
+                    inputRef.current?.focus();
+                  }}
+                  className="text-muted-foreground/80 hover:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 flex items-center justify-center rounded focus-visible:ring-[3px] focus-visible:outline-none cursor-pointer"
+                  aria-label="Effacer la recherche"
+                >
+                  <CircleXIcon size={16} strokeWidth={2} aria-hidden="true" />
+                </button>
+              )}
             </div>
+
+            {/* Filters Button - move to left side */}
+            <ProductFilters
+              selectedCategories={selectedCategories}
+              setSelectedCategories={setSelectedCategories}
+              uniqueCategories={uniqueCategoryValues}
+              table={table}
+            />
           </div>
 
           {/* Actions à droite */}
@@ -504,14 +526,6 @@ export default function TableProduct({ handleAddProduct, hideHeaderButtons = fal
               </AlertDialogContent>
             </AlertDialog>
           )}
-
-            {/* Filters Button - Icône 3 points */}
-            <ProductFilters
-              selectedCategories={selectedCategories}
-              setSelectedCategories={setSelectedCategories}
-              uniqueCategories={uniqueCategoryValues}
-              table={table}
-            />
           </div>
         </div>
 

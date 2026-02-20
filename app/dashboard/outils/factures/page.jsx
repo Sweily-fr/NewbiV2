@@ -2,10 +2,6 @@
 
 import { Suspense, useState, useEffect, useMemo } from "react";
 import { Button } from "@/src/components/ui/button";
-import {
-  ButtonGroup,
-  ButtonGroupSeparator,
-} from "@/src/components/ui/button-group";
 import { PermissionButton } from "@/src/components/rbac";
 import {
   Plus,
@@ -14,6 +10,7 @@ import {
   Bell,
   ArrowRightFromLine,
   Download,
+  FileText,
   Info,
 } from "lucide-react";
 import { Badge } from "@/src/components/ui/badge";
@@ -207,94 +204,36 @@ function InvoicesContent() {
             </p> */}
           </div>
           <div className="flex gap-2">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="secondary"
-                    size="icon"
-                    onClick={() => setTriggerImport(true)}
-                  >
-                    <Download className="h-4 w-4" strokeWidth={1.5} />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent
-                  side="bottom"
-                  className="bg-[#202020] text-white border-0"
-                >
-                  <p>Importer des factures</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span>
-                    <InvoiceExportButton invoices={invoices} iconOnly />
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent
-                  side="bottom"
-                  className="bg-[#202020] text-white border-0"
-                >
-                  <p>Exporter des factures</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="secondary"
-                    size="icon"
-                    onClick={() => setIsAutoReminderOpen(true)}
-                  >
-                    <MailCheck className="h-4 w-4" strokeWidth={1.5} />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent
-                  side="bottom"
-                  className="bg-[#202020] text-white border-0"
-                >
-                  <p>Relance automatique</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="secondary"
-                    size="icon"
-                    onClick={() => setIsSettingsOpen(true)}
-                  >
-                    <Settings className="h-4 w-4" strokeWidth={1.5} />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent
-                  side="bottom"
-                  className="bg-[#202020] text-white border-0"
-                >
-                  <p>Paramètres</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            <ButtonGroup>
-              <Button
-                onClick={handleNewInvoice}
-                className="cursor-pointer font-normal bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
-              >
-                Nouvelle facture
-              </Button>
-              <ButtonGroupSeparator />
-              <Button
-                onClick={handleNewInvoice}
-                size="icon"
-                className="cursor-pointer bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
-              >
-                <Plus size={16} aria-hidden="true" />
-              </Button>
-            </ButtonGroup>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setIsAutoReminderOpen(true)}
+            >
+              <MailCheck size={14} strokeWidth={1.5} aria-hidden="true" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setIsSettingsOpen(true)}
+            >
+              <Settings size={14} strokeWidth={1.5} aria-hidden="true" />
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setTriggerImport(true)}
+            >
+              <Download size={14} strokeWidth={1.5} aria-hidden="true" />
+              Importer
+            </Button>
+            <InvoiceExportButton invoices={invoices} iconOnly={false} />
+            <Button
+              variant="primary"
+              onClick={handleNewInvoice}
+              className="cursor-pointer"
+            >
+              <Plus size={14} strokeWidth={2} aria-hidden="true" />
+              Nouvelle facture
+            </Button>
           </div>
         </div>
 

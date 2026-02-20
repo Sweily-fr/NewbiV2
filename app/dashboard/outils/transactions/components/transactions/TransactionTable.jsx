@@ -91,6 +91,7 @@ import {
   ChevronLastIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  CircleXIcon,
   Settings2,
   Filter,
   Plus,
@@ -983,68 +984,43 @@ export default function TransactionTable({
     <div className="flex flex-col flex-1 min-h-0">
       {/* Filters and Actions - Fixe en haut */}
       <div className="flex items-center justify-between gap-3 hidden md:flex px-4 sm:px-6 py-4 flex-shrink-0">
-        {/* Search */}
-        <div className="relative max-w-md">
-          <Input
-            ref={inputRef}
-            placeholder="Recherchez par description, fournisseur ou montant..."
-            value={globalFilter ?? ""}
-            onChange={(event) => setGlobalFilter(event.target.value)}
-            className="w-full sm:w-[490px] lg:w-[490px] ps-9"
-          />
-          <div className="text-muted-foreground/80 pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3">
-            <Search size={16} aria-hidden="true" />
-          </div>
-        </div>
-
-        {/* Actions à droite */}
+        {/* Search + Colonnes + Filtres — côté gauche */}
         <div className="flex items-center gap-2">
-          {/* Bulk delete - visible quand des rows sont sélectionnées */}
-          {tableWithFilteredData.getSelectedRowModel().rows.length > 0 && (
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  variant="destructive"
-                  disabled={deleteMultipleLoading}
-                  data-mobile-delete-trigger
-                >
-                  <TrashIcon className="mr-2 h-4 w-4" />
-                  Supprimer (
-                  {tableWithFilteredData.getSelectedRowModel().rows.length})
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Êtes-vous sûr de vouloir supprimer{" "}
-                    {tableWithFilteredData.getSelectedRowModel().rows.length}{" "}
-                    transaction(s) sélectionnée(s) ? Cette action ne peut pas
-                    être annulée.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Annuler</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={handleDeleteRows}
-                    className="bg-destructive text-white hover:bg-destructive/90"
-                  >
-                    Supprimer
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          )}
+          <div className="flex items-center gap-2 h-8 w-full sm:w-[300px] rounded-[9px] border border-[#E6E7EA] hover:border-[#D1D3D8] dark:border-[#2E2E32] dark:hover:border-[#44444A] bg-transparent px-3 transition-[color,box-shadow] focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]">
+            <Search size={16} className="text-muted-foreground/80 shrink-0" aria-hidden="true" />
+            <Input
+              variant="ghost"
+              ref={inputRef}
+              value={globalFilter ?? ""}
+              onChange={(event) => setGlobalFilter(event.target.value)}
+              placeholder="Recherchez par description, fournisseur ou montant..."
+              aria-label="Filter transactions"
+            />
+            {Boolean(globalFilter) && (
+              <button
+                className="text-muted-foreground/80 hover:text-foreground cursor-pointer shrink-0 transition-colors outline-none"
+                aria-label="Clear filter"
+                onClick={() => {
+                  setGlobalFilter("");
+                  if (inputRef.current) {
+                    inputRef.current.focus();
+                  }
+                }}
+              >
+                <CircleXIcon size={16} aria-hidden="true" />
+              </button>
+            )}
+          </div>
 
           {/* Gérer les colonnes Button */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="font-normal">
-                <Settings2 className="mr-2 h-4 w-4" />
+              <Button variant="outline">
+                <Settings2 size={14} aria-hidden="true" />
                 Gérer les colonnes
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="start">
               <DropdownMenuLabel>Afficher les colonnes</DropdownMenuLabel>
               {tableWithFilteredData
                 .getAllColumns()
@@ -1075,10 +1051,9 @@ export default function TransactionTable({
           <Popover open={isFiltersOpen} onOpenChange={setIsFiltersOpen}>
             <PopoverTrigger asChild>
               <Button
-                variant={advancedFilters.length > 0 ? "default" : "outline"}
-                className="font-normal"
+                variant={advancedFilters.length > 0 ? "primary" : "filter"}
               >
-                <Filter className="mr-2 h-4 w-4" />
+                <Filter size={14} aria-hidden="true" />
                 Filtres
                 {advancedFilters.length > 0 && (
                   <span className="ml-2 rounded-full bg-white/20 px-2 py-0.5 text-xs">
@@ -1087,7 +1062,7 @@ export default function TransactionTable({
                 )}
               </Button>
             </PopoverTrigger>
-            <PopoverContent align="end" className="w-[500px] p-0">
+            <PopoverContent align="start" className="w-[500px] p-0">
               <div className="p-4 border-b">
                 <div className="flex items-center justify-between">
                   <h4 className="font-medium">Filtres</h4>
@@ -1230,36 +1205,78 @@ export default function TransactionTable({
             </PopoverContent>
           </Popover>
         </div>
+
+        {/* Actions à droite — bulk delete */}
+        {tableWithFilteredData.getSelectedRowModel().rows.length > 0 && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="destructive"
+                disabled={deleteMultipleLoading}
+                data-mobile-delete-trigger
+              >
+                <TrashIcon className="mr-2 h-4 w-4" />
+                Supprimer (
+                {tableWithFilteredData.getSelectedRowModel().rows.length})
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Êtes-vous sûr de vouloir supprimer{" "}
+                  {tableWithFilteredData.getSelectedRowModel().rows.length}{" "}
+                  transaction(s) sélectionnée(s) ? Cette action ne peut pas
+                  être annulée.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Annuler</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDeleteRows}
+                  className="bg-destructive text-white hover:bg-destructive/90"
+                >
+                  Supprimer
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
       </div>
 
       {/* Tabs de filtre rapide - Desktop */}
-      <div className="hidden md:block flex-shrink-0 border-b border-gray-200 dark:border-gray-800">
+      <div className="hidden md:block flex-shrink-0 border-b border-[#eeeff1] dark:border-[#232323] pt-2 pb-[9px] transaction-tabs">
+        <style>{`
+          .transaction-tabs [data-slot="tabs-trigger"][data-state="active"] {
+            text-shadow: 0.015em 0 currentColor, -0.015em 0 currentColor;
+          }
+        `}</style>
         <Tabs value={activeTab} onValueChange={handleTabChange}>
-          <TabsList className="h-auto rounded-none bg-transparent p-0 w-full justify-start px-4 sm:px-6">
+          <TabsList className="h-auto rounded-none bg-transparent p-0 w-full justify-start px-4 sm:px-6 gap-1.5">
             <TabsTrigger
               value="all"
-              className="data-[state=active]:after:bg-primary relative rounded-none py-2 px-4 after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 data-[state=active]:bg-transparent data-[state=active]:shadow-none text-sm font-normal"
+              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground hover:shadow-[inset_0_0_0_1px_#EEEFF1] dark:hover:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
             >
               Toutes
-              <span className="ml-2 text-xs text-muted-foreground">
+              <span className="text-[10px] leading-none bg-gray-100 dark:bg-gray-800 text-muted-foreground rounded px-1 py-0.5">
                 {transactionCounts.all}
               </span>
             </TabsTrigger>
             <TabsTrigger
               value="lastMonth"
-              className="data-[state=active]:after:bg-primary relative rounded-none py-2 px-4 after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 data-[state=active]:bg-transparent data-[state=active]:shadow-none text-sm font-normal"
+              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground hover:shadow-[inset_0_0_0_1px_#EEEFF1] dark:hover:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
             >
               Régler le dernier mois
-              <span className="ml-2 text-xs text-muted-foreground">
+              <span className="text-[10px] leading-none bg-gray-100 dark:bg-gray-800 text-muted-foreground rounded px-1 py-0.5">
                 {transactionCounts.lastMonth}
               </span>
             </TabsTrigger>
             <TabsTrigger
               value="missingReceipt"
-              className="data-[state=active]:after:bg-primary relative rounded-none py-2 px-4 after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 data-[state=active]:bg-transparent data-[state=active]:shadow-none text-sm font-normal"
+              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground hover:shadow-[inset_0_0_0_1px_#EEEFF1] dark:hover:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
             >
               Justificatif manquant
-              <span className="ml-2 text-xs text-muted-foreground">
+              <span className="text-[10px] leading-none bg-gray-100 dark:bg-gray-800 text-muted-foreground rounded px-1 py-0.5">
                 {transactionCounts.missingReceipt}
               </span>
             </TabsTrigger>

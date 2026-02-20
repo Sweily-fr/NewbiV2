@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { usePermissions } from "@/src/hooks/usePermissions";
 import {
   flexRender,
@@ -16,6 +16,7 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   CircleAlertIcon,
+  CircleXIcon,
   ListFilterIcon,
   Search,
   TrashIcon,
@@ -35,8 +36,8 @@ import {
 } from "@/src/components/ui/alert-dialog";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
-import { Checkbox } from "@/src/components/ui/checkbox";
 import { Input } from "@/src/components/ui/input";
+import { Checkbox } from "@/src/components/ui/checkbox";
 import { Label } from "@/src/components/ui/label";
 import {
   Pagination,
@@ -78,6 +79,7 @@ import { Skeleton } from "@/src/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
 
 export default function PurchaseOrderTable({ handleNewPurchaseOrder, poIdToOpen, triggerImport, onImportTriggered }) {
+  const inputRef = useRef(null);
   const { purchaseOrders, loading, error, refetch } = usePurchaseOrders();
   const { workspaceId } = useRequiredWorkspace();
   const { canCreate } = usePermissions();
@@ -185,18 +187,33 @@ export default function PurchaseOrderTable({ handleNewPurchaseOrder, poIdToOpen,
     <div className="flex flex-col flex-1 min-h-0">
       {/* Filters - Desktop */}
       <div className="flex items-center justify-between gap-3 hidden md:flex px-4 sm:px-6 py-4 flex-shrink-0">
-        <div className="relative max-w-md">
-          <Input
-            placeholder="Recherchez par numéro, client ou montant..."
-            value={globalFilter ?? ""}
-            onChange={(event) => setGlobalFilter(event.target.value)}
-            className="w-full sm:w-[490px] lg:w-[490px] ps-9"
-          />
-          <div className="text-muted-foreground/80 pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3">
-            <Search size={16} aria-hidden="true" />
+        {/* Search + Filtres à gauche */}
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 h-8 w-full sm:w-[400px] rounded-[9px] border border-[#E6E7EA] hover:border-[#D1D3D8] dark:border-[#2E2E32] dark:hover:border-[#44444A] bg-transparent px-3 transition-[color,box-shadow] focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]">
+            <Search size={16} className="text-muted-foreground/80 shrink-0" aria-hidden="true" />
+            <Input
+              variant="ghost"
+              ref={inputRef}
+              value={globalFilter ?? ""}
+              onChange={(event) => setGlobalFilter(event.target.value)}
+              placeholder="Recherchez par numéro, client ou montant..."
+            />
+            {Boolean(globalFilter) && (
+              <button
+                onClick={() => {
+                  setGlobalFilter("");
+                  inputRef.current?.focus();
+                }}
+                className="text-muted-foreground/80 hover:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 flex items-center justify-center rounded focus-visible:ring-[3px] focus-visible:outline-none cursor-pointer"
+                aria-label="Effacer la recherche"
+              >
+                <CircleXIcon size={16} strokeWidth={2} aria-hidden="true" />
+              </button>
+            )}
           </div>
         </div>
 
+        {/* Actions à droite */}
         <div className="flex items-center gap-2">
           {selectedRows.length > 0 && (
             <AlertDialog>
@@ -241,49 +258,49 @@ export default function PurchaseOrderTable({ handleNewPurchaseOrder, poIdToOpen,
       {/* Tabs de filtre rapide - Desktop */}
       <div className="hidden md:block flex-shrink-0 border-b border-gray-200 dark:border-gray-800">
         <Tabs value={activeTab} onValueChange={handleTabChange}>
-          <TabsList className="h-auto rounded-none bg-transparent p-0 w-full justify-start px-4 sm:px-6">
+          <TabsList className="h-auto rounded-none bg-transparent p-0 pb-2 w-full justify-start px-4 sm:px-6">
             <TabsTrigger
               value="all"
-              className="data-[state=active]:after:bg-primary relative rounded-none py-2 px-4 after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 data-[state=active]:bg-transparent data-[state=active]:shadow-none text-sm font-normal"
+              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground hover:shadow-[inset_0_0_0_1px_#EEEFF1] dark:hover:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
             >
-              Tous
-              <span className="ml-2 text-xs text-muted-foreground">
+              <span>Tous</span>
+              <span className="text-xs text-muted-foreground">
                 {poCounts.all}
               </span>
             </TabsTrigger>
             <TabsTrigger
               value="draft"
-              className="data-[state=active]:after:bg-primary relative rounded-none py-2 px-4 after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 data-[state=active]:bg-transparent data-[state=active]:shadow-none text-sm font-normal"
+              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground hover:shadow-[inset_0_0_0_1px_#EEEFF1] dark:hover:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
             >
-              Brouillons
-              <span className="ml-2 text-xs text-muted-foreground">
+              <span>Brouillons</span>
+              <span className="text-xs text-muted-foreground">
                 {poCounts.draft}
               </span>
             </TabsTrigger>
             <TabsTrigger
               value="confirmed"
-              className="data-[state=active]:after:bg-primary relative rounded-none py-2 px-4 after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 data-[state=active]:bg-transparent data-[state=active]:shadow-none text-sm font-normal"
+              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground hover:shadow-[inset_0_0_0_1px_#EEEFF1] dark:hover:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
             >
-              Confirmés
-              <span className="ml-2 text-xs text-muted-foreground">
+              <span>Confirmés</span>
+              <span className="text-xs text-muted-foreground">
                 {poCounts.confirmed}
               </span>
             </TabsTrigger>
             <TabsTrigger
               value="inProgress"
-              className="data-[state=active]:after:bg-primary relative rounded-none py-2 px-4 after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 data-[state=active]:bg-transparent data-[state=active]:shadow-none text-sm font-normal"
+              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground hover:shadow-[inset_0_0_0_1px_#EEEFF1] dark:hover:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
             >
-              En cours
-              <span className="ml-2 text-xs text-muted-foreground">
+              <span>En cours</span>
+              <span className="text-xs text-muted-foreground">
                 {poCounts.inProgress}
               </span>
             </TabsTrigger>
             <TabsTrigger
               value="delivered"
-              className="data-[state=active]:after:bg-primary relative rounded-none py-2 px-4 after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 data-[state=active]:bg-transparent data-[state=active]:shadow-none text-sm font-normal"
+              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground hover:shadow-[inset_0_0_0_1px_#EEEFF1] dark:hover:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
             >
-              Livrés
-              <span className="ml-2 text-xs text-muted-foreground">
+              <span>Livrés</span>
+              <span className="text-xs text-muted-foreground">
                 {poCounts.delivered}
               </span>
             </TabsTrigger>

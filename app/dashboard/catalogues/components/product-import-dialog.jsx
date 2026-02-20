@@ -145,8 +145,8 @@ export default function ProductImportDialog({ onImportComplete, iconOnly = false
             <ArrowRightFromLine className="h-4 w-4" strokeWidth={1.5} />
           </Button>
         ) : (
-          <Button variant="outline" className="font-normal cursor-pointer">
-            <Upload className="mr-2 h-4 w-4" />
+          <Button variant="outline" className="cursor-pointer">
+            <Upload size={14} strokeWidth={1.5} />
             Importer
           </Button>
         )}

@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from "@/src/components/ui/card";
 import { Label } from "@/src/components/ui/label";
-import { Textarea } from "@/src/components/ui/textarea";
+import { TextareaNew } from "@/src/components/ui/textarea-new";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
@@ -78,10 +78,9 @@ export default function NotesAndFooterSection({ canEdit }) {
   ]);
 
   return (
-    <Card className="shadow-none border-none p-2 bg-transparent">
+    <Card className="shadow-none border-none p-0 bg-transparent">
       <CardHeader className="p-0">
-        <CardTitle className="flex items-center gap-2 font-normal text-lg">
-          {/* <Tag className="h-5 w-5" /> */}
+        <CardTitle className="flex items-center gap-2 font-medium text-lg">
           Notes et conditions
         </CardTitle>
       </CardHeader>
@@ -93,7 +92,7 @@ export default function NotesAndFooterSection({ canEdit }) {
             <span className="h-4 w-4" aria-hidden="true"></span>
           </div>
           <div className="space-y-1">
-            <Textarea
+            <TextareaNew
               id="header-notes"
               className={`mt-2 ${errors?.headerNotes ? "border-red-500" : ""}`}
               {...register("headerNotes", {
@@ -127,7 +126,7 @@ export default function NotesAndFooterSection({ canEdit }) {
             <span className="h-4 w-4" aria-hidden="true"></span>
           </div>
           <div className="space-y-1">
-            <Textarea
+            <TextareaNew
               id="footer-notes"
               className={`mt-2 ${errors?.footerNotes ? "border-red-500" : ""}`}
               {...register("footerNotes", {
@@ -163,7 +162,7 @@ export default function NotesAndFooterSection({ canEdit }) {
             <span className="h-4 w-4" aria-hidden="true"></span>
           </div>
           <div className="space-y-1">
-            <Textarea
+            <TextareaNew
               id="terms"
               className={`mt-2 ${errors?.terms ? "border-red-500" : ""}`}
               {...register("terms", {
@@ -259,7 +258,7 @@ export default function NotesAndFooterSection({ canEdit }) {
                     </span>
                   </div>
                   <Link href="/dashboard">
-                    <Button variant="outline" size="sm" className="gap-2">
+                    <Button variant="outline" size="sm">
                       <Settings className="h-4 w-4" />
                       Modifier
                     </Button>

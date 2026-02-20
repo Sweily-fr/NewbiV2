@@ -89,8 +89,7 @@ export default function ClientInvoicesTab({ invoices = [], clientId }) {
           </EmptyHeader>
           <Button
             variant="outline"
-            size="sm"
-            className="gap-2 cursor-pointer font-normal mt-4"
+            className="mt-4"
             onClick={() => router.push(`/dashboard/outils/factures/new?clientId=${clientId}`)}
           >
             <Plus className="h-3.5 w-3.5" />
@@ -107,8 +106,6 @@ export default function ClientInvoicesTab({ invoices = [], clientId }) {
         <h3 className="text-base font-medium text-[#242529] dark:text-foreground">Factures</h3>
         <Button
           variant="outline"
-          size="sm"
-          className="gap-2 cursor-pointer font-normal"
           onClick={() => router.push(`/dashboard/outils/factures/new?clientId=${clientId}`)}
         >
           <Plus className="h-3.5 w-3.5" />

@@ -461,31 +461,31 @@ export function useInvoiceTable({
                   return {
                     icon: <Clock className="w-3 h-3" />,
                     className:
-                      "bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400",
+                      "bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400",
                   };
                 case "VALIDATED":
                   return {
                     icon: <CheckCircle className="w-3 h-3" />,
                     className:
-                      "bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400",
+                      "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400",
                   };
                 case "REJECTED":
                   return {
                     icon: <XCircle className="w-3 h-3" />,
                     className:
-                      "bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400",
+                      "bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400",
                   };
                 case "ARCHIVED":
                   return {
                     icon: <Archive className="w-3 h-3" />,
                     className:
-                      "bg-gray-50 text-gray-600 dark:bg-gray-900/20 dark:text-gray-400",
+                      "bg-gray-100 text-gray-700 dark:bg-gray-900/20 dark:text-gray-400",
                   };
                 default:
                   return {
                     icon: <FileText className="w-3 h-3" />,
                     className:
-                      "bg-gray-50 text-gray-600 dark:bg-gray-900/20 dark:text-gray-400",
+                      "bg-gray-100 text-gray-700 dark:bg-gray-900/20 dark:text-gray-400",
                   };
               }
             } else {
@@ -494,32 +494,32 @@ export function useInvoiceTable({
                   return {
                     icon: <FileText className="w-3 h-3" />,
                     className:
-                      "bg-gray-50 text-gray-600 dark:bg-gray-900/20 dark:text-gray-400",
+                      "bg-gray-100 text-gray-700 dark:bg-gray-900/20 dark:text-gray-400",
                   };
                 case "SENT":
                   return {
                     icon: <Send className="w-3 h-3" />,
                     className:
-                      "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400",
+                      "bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400",
                   };
                 case "PENDING":
                   return {
                     icon: <Clock className="w-3 h-3" />,
                     className:
-                      "bg-[#5a50ff]/10 text-[#5a50ff] dark:bg-[#5a50ff]/20 dark:text-[#5a50ff]",
+                      "bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400",
                   };
                 case "PAID":
                 case "COMPLETED":
                   return {
                     icon: <CheckCircle className="w-3 h-3" />,
                     className:
-                      "bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400",
+                      "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400",
                   };
                 case "CANCELLED":
                   return {
                     icon: <XCircle className="w-3 h-3" />,
                     className:
-                      "bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400",
+                      "bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400",
                   };
                 default:
                   return {

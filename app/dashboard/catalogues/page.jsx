@@ -2,17 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/src/components/ui/button";
-import {
-  ButtonGroup,
-  ButtonGroupSeparator,
-} from "@/src/components/ui/button-group";
 import { Plus } from "lucide-react";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/src/components/ui/tooltip";
 import TableProduct from "./components/table-product";
 import ProductModal from "./components/product-modal";
 import ProductImportDialog from "./components/product-import-dialog";
@@ -41,55 +31,19 @@ function CataloguesContent() {
             <h1 className="text-2xl font-medium mb-2">Gestion du Catalogue</h1>
           </div>
           <div className="flex gap-2">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span>
-                    <ProductImportDialog
-                      onImportComplete={refetch}
-                      iconOnly
-                    />
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent
-                  side="bottom"
-                  className="bg-[#202020] text-white border-0"
-                >
-                  <p>Importer des produits</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span>
-                    <ProductExportButton products={allProducts} iconOnly />
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent
-                  side="bottom"
-                  className="bg-[#202020] text-white border-0"
-                >
-                  <p>Exporter des produits</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            <ButtonGroup>
-              <Button
-                onClick={handleOpenProductDialog}
-                className="cursor-pointer font-normal bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
-              >
-                Ajouter un produit
-              </Button>
-              <ButtonGroupSeparator />
-              <Button
-                onClick={handleOpenProductDialog}
-                size="icon"
-                className="cursor-pointer bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
-              >
-                <Plus size={16} aria-hidden="true" />
-              </Button>
-            </ButtonGroup>
+            <ProductImportDialog
+              onImportComplete={refetch}
+              iconOnly={false}
+            />
+            <ProductExportButton products={allProducts} iconOnly={false} />
+            <Button
+              variant="primary"
+              onClick={handleOpenProductDialog}
+              className="cursor-pointer"
+            >
+              <Plus size={14} strokeWidth={2} aria-hidden="true" />
+              Ajouter un produit
+            </Button>
           </div>
         </div>
 

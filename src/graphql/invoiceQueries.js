@@ -1217,10 +1217,10 @@ export const CLIENT_TYPE_LABELS = {
 
 // Couleurs pour les statuts
 export const INVOICE_STATUS_COLORS = {
-  [INVOICE_STATUS.DRAFT]: "bg-gray-100 text-gray-800 border-gray-200",
-  [INVOICE_STATUS.PENDING]: "bg-orange-100 text-orange-800 border-orange-200",
-  [INVOICE_STATUS.COMPLETED]: "bg-green-50 text-green-600 border-green-200",
-  [INVOICE_STATUS.CANCELED]: "bg-red-100 text-red-800 border-red-200",
+  [INVOICE_STATUS.DRAFT]: "bg-gray-100 text-gray-700 border-gray-200",
+  [INVOICE_STATUS.PENDING]: "bg-amber-100 text-amber-700 border-amber-200",
+  [INVOICE_STATUS.COMPLETED]: "bg-emerald-100 text-emerald-700 border-emerald-200",
+  [INVOICE_STATUS.CANCELED]: "bg-red-100 text-red-700 border-red-200",
 };
 
 // Hook pour vérifier si un numéro de facture existe déjà

@@ -678,9 +678,9 @@ export default function InvoiceInfoSection({
   return (
     <>
       {/* Section Informations de la facture */}
-      <Card className="shadow-none p-2 border-none bg-transparent">
+      <Card className="shadow-none p-0 border-none bg-transparent mt-8">
         <CardHeader className="p-0">
-          <CardTitle className="flex items-center gap-2 font-normal text-lg">
+          <CardTitle className="flex items-center gap-2 font-medium text-lg">
             Informations de la facture
           </CardTitle>
         </CardHeader>
@@ -710,7 +710,7 @@ export default function InvoiceInfoSection({
             {/* Date d'émission */}
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <Label className="text-sm font-light">
+                <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
                   Date d'émission <span className="text-red-500">*</span>
                 </Label>
                 <Tooltip>
@@ -790,7 +790,7 @@ export default function InvoiceInfoSection({
             {/* Date d'échéance */}
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <Label className="text-sm font-light">Date d'échéance</Label>
+                <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">Date d'échéance</Label>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Info className="h-4 w-4 text-muted-foreground cursor-help" />
@@ -899,9 +899,9 @@ export default function InvoiceInfoSection({
       </Card>
 
       {/* Section Type de facture - Séparée */}
-      <Card className="shadow-none p-2 mb-2 border-none bg-transparent">
+      <Card className="shadow-none p-0 mb-8 border-none bg-transparent mt-8">
         <CardHeader className="p-0">
-          <CardTitle className="flex items-center gap-2 font-normal text-lg">
+          <CardTitle className="flex items-center gap-2 font-medium text-lg">
             Type de facture
           </CardTitle>
         </CardHeader>
@@ -977,7 +977,7 @@ export default function InvoiceInfoSection({
                 <div className="flex items-center gap-2">
                   <Label
                     htmlFor="situation-reference"
-                    className="text-sm font-light"
+                    className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
                   >
                     Référence de situation{" "}
                     <span className="text-red-500">*</span>
@@ -1360,7 +1360,7 @@ export default function InvoiceInfoSection({
           {/* {data.invoiceType === "situation" && !quoteData?.quoteByNumber && (
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <Label htmlFor="contract-total" className="text-sm font-light">
+                <Label htmlFor="contract-total" className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
                   Montant total du contrat (€)
                 </Label>
                 <Tooltip>
@@ -1414,7 +1414,7 @@ export default function InvoiceInfoSection({
                 <div className="flex items-center gap-2">
                   <Label
                     htmlFor="purchase-order-number"
-                    className="text-sm font-light"
+                    className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
                   >
                     Référence devis
                   </Label>

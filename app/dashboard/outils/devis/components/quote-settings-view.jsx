@@ -13,7 +13,7 @@ import {
 } from "@/src/components/ui/card";
 import { Label } from "@/src/components/ui/label";
 import { Input } from "@/src/components/ui/input";
-import { Textarea } from "@/src/components/ui/textarea";
+import { TextareaNew } from "@/src/components/ui/textarea-new";
 import {
   Tooltip,
   TooltipContent,
@@ -33,8 +33,6 @@ import { Button } from "@/src/components/ui/button";
 import { ColorPicker } from "@/src/components/ui/color-picker";
 import {
   AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
@@ -189,7 +187,7 @@ export default function QuoteSettingsView({
           {/* Section Numérotation */}
           <Card className="shadow-none border-none bg-transparent">
             <CardHeader className="p-0">
-              <CardTitle className="flex items-center gap-2 font-normal text-lg">
+              <CardTitle className="flex items-center gap-2 font-medium text-lg">
                 Numérotation
               </CardTitle>
             </CardHeader>
@@ -346,7 +344,7 @@ export default function QuoteSettingsView({
           {/* Section Apparence */}
           <Card className="shadow-none border-none bg-transparent">
             <CardHeader className="p-0">
-              <CardTitle className="flex items-center gap-2 font-normal text-lg">
+              <CardTitle className="flex items-center gap-2 font-medium text-lg">
                 Apparence
               </CardTitle>
             </CardHeader>
@@ -411,7 +409,7 @@ export default function QuoteSettingsView({
           {/* Position du client */}
           <Card className="shadow-none border-none bg-transparent">
             <CardHeader className="p-0">
-              <CardTitle className="flex items-center gap-2 font-normal text-lg">
+              <CardTitle className="flex items-center gap-2 font-medium text-lg">
                 Position du client dans le PDF
               </CardTitle>
             </CardHeader>
@@ -503,7 +501,7 @@ export default function QuoteSettingsView({
           {/* Notes et bas de page */}
           <Card className="shadow-none border-none bg-transparent">
             <CardHeader className="p-0">
-              <CardTitle className="flex items-center gap-2 font-normal text-lg">
+              <CardTitle className="flex items-center gap-2 font-medium text-lg">
                 <Tag className="h-5 w-5" />
                 Notes et bas de page
               </CardTitle>
@@ -524,7 +522,7 @@ export default function QuoteSettingsView({
                   />
                 </div>
                 <div className="space-y-1">
-                  <Textarea
+                  <TextareaNew
                     id="header-notes"
                     className={`mt-2 ${errors?.headerNotes ? "border-red-500" : ""}`}
                     {...register("headerNotes", {
@@ -562,7 +560,7 @@ export default function QuoteSettingsView({
                   />
                 </div>
                 <div className="space-y-1">
-                  <Textarea
+                  <TextareaNew
                     id="footer-notes"
                     className={`mt-2 ${errors?.footerNotes ? "border-red-500" : ""}`}
                     {...register("footerNotes", {
@@ -602,7 +600,7 @@ export default function QuoteSettingsView({
                   />
                 </div>
                 <div className="space-y-1">
-                  <Textarea
+                  <TextareaNew
                     id="terms-conditions"
                     className={`mt-2 ${errors?.termsAndConditions ? "border-red-500" : ""}`}
                     {...register("termsAndConditions", {
@@ -636,14 +634,13 @@ export default function QuoteSettingsView({
             variant="outline"
             onClick={handleCancelClick}
             disabled={!canEdit}
-            className="font-normal"
           >
             Annuler
           </Button>
           <Button
+            variant="primary"
             onClick={handleSaveClick}
             disabled={!canEdit}
-            className="font-normal"
           >
             Enregistrer les modifications
           </Button>
@@ -661,12 +658,18 @@ export default function QuoteSettingsView({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setShowConfirmDialog(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setShowConfirmDialog(false)}
+            >
               Continuer l'édition
-            </AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmCancel}>
+            </Button>
+            <Button
+              variant="danger"
+              onClick={handleConfirmCancel}
+            >
               Quitter sans sauvegarder
-            </AlertDialogAction>
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

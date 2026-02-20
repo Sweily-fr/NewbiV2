@@ -1,21 +1,9 @@
 "use client";
 
-import { useState, useEffect, useCallback, useId } from "react";
-import { useFormContext, useFieldArray } from "react-hook-form";
+import { useState, useEffect, useId } from "react";
+import { useFormContext } from "react-hook-form";
 import {
-  Plus,
-  Trash2,
-  Calculator,
-  Building,
-  Percent,
-  Clock,
-  Tag,
-  Search,
-  Zap,
-  Package,
-  CheckIcon,
   ChevronDownIcon,
-  Download,
   ChevronRight,
   ChevronLeft,
 } from "lucide-react";
@@ -26,8 +14,6 @@ import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { Button } from "@/src/components/ui/button";
 import {
   AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
@@ -35,55 +21,21 @@ import {
   AlertDialogTitle,
 } from "@/src/components/ui/alert-dialog";
 import {
-  Timeline,
-  TimelineHeader,
-  TimelineItem,
-  TimelineIndicator,
-  TimelineSeparator,
-  TimelineTitle,
-} from "@/src/components/ui/timeline";
-import { Input } from "@/src/components/ui/input";
-import { Label } from "@/src/components/ui/label";
-import { Textarea } from "@/src/components/ui/textarea";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/src/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/src/components/ui/select";
-import { Badge } from "@/src/components/ui/badge";
-import { Separator } from "@/src/components/ui/separator";
-
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/src/components/ui/collapsible";
+import PercentageSliderInput from "@/src/components/percentage-slider-input";
+import CustomFieldsSection from "./quote-form-sections/CustomFieldsSection";
 import QuoteInfoSection from "./quote-form-sections/QuoteInfoSection";
 import ItemsSection from "./quote-form-sections/ItemsSection";
 import DiscountAndTotalsSection from "./quote-form-sections/DiscountsAndTotalsSection";
 import ShippingSection from "./quote-form-sections/ShippingSection";
-import { Checkbox } from "@/src/components/ui/checkbox";
-import { Calendar } from "@/src/components/ui/calendar";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/src/components/ui/popover";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/src/components/ui/tooltip";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/src/components/ui/accordion";
 import {
   Command,
   CommandEmpty,
@@ -92,12 +44,8 @@ import {
   CommandItem,
   CommandList,
 } from "@/src/components/ui/command";
-import { format } from "date-fns";
-import { fr } from "date-fns/locale";
-import { CalendarIcon } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import ClientSelector from "./quote-form-sections/client-selector";
-import { toast } from "@/src/components/ui/sonner";
 
 // Composant de recherche de produits basé sur Origin UI
 function ProductSearchCombobox({
@@ -192,7 +140,7 @@ function ProductSearchCombobox({
           aria-expanded={open}
           disabled={disabled}
           className={cn(
-            "w-full justify-between font-normal",
+            "w-full justify-between",
             !value && "text-muted-foreground",
             className
           )}
@@ -288,6 +236,24 @@ export default function EnhancedQuoteForm({
   const data = watch();
   const [internalCurrentStep, setInternalCurrentStep] = useState(1);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [advancedOpen, setAdvancedOpen] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("quote-advanced-options-open") === "true";
+  });
+
+  // Auto-open si options avancées déjà utilisées
+  useEffect(() => {
+    const hasAdvanced =
+      data.retenueGarantie > 0 ||
+      data.escompte > 0 ||
+      data.shipping?.billShipping;
+    if (hasAdvanced) setAdvancedOpen(true);
+  }, [data.retenueGarantie, data.escompte, data.shipping?.billShipping]);
+
+  const handleAdvancedToggle = (open) => {
+    setAdvancedOpen(open);
+    localStorage.setItem("quote-advanced-options-open", String(open));
+  };
 
   // Utiliser l'état externe si fourni, sinon utiliser l'état interne
   const currentStep =
@@ -412,21 +378,27 @@ export default function EnhancedQuoteForm({
           {currentStep === 1 && (
             <>
               {/* Section 1: Sélection d'un client (en premier comme pour les factures) */}
-              <div className="pl-2 pr-2 pt-2">
-                <h3 className="font-normal text-lg">
+              <div>
+                <h3 className="font-medium text-lg">
                   Sélection d'un client
                 </h3>
                 <ClientSelector
                   selectedClient={data.client}
                   onSelect={(client) => updateField("client", client)}
                   disabled={!canEdit}
+                  className="p-0"
+                  error={
+                    validationErrors?.client && !validationErrors.client.canEdit
+                      ? validationErrors.client.message ||
+                        validationErrors.client
+                      : null
+                  }
                   setValidationErrors={setValidationErrors}
-                  onEditClient={onEditClient}
-                  validationErrors={validationErrors}
                   clientPositionRight={data.clientPositionRight || false}
                   onClientPositionChange={(checked) =>
                     updateField("clientPositionRight", checked)
                   }
+                  onEditClient={onEditClient}
                 />
               </div>
 
@@ -452,14 +424,81 @@ export default function EnhancedQuoteForm({
                 validationErrors={validationErrors}
               />
 
-              {/* Section 2: Facturation de livraison */}
-              <ShippingSection
+              {/* Section 2: Remises */}
+              <DiscountAndTotalsSection
                 canEdit={canEdit}
                 validationErrors={validationErrors}
               />
 
-              {/* Section 3: Remises et totaux */}
-              <DiscountAndTotalsSection
+              {/* Options avancées (retenue, escompte, livraison) */}
+              <Collapsible open={advancedOpen} onOpenChange={handleAdvancedToggle}>
+                <CollapsibleTrigger asChild>
+                  <button
+                    type="button"
+                    className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer py-3"
+                  >
+                    <ChevronRight
+                      className={cn(
+                        "size-3.5 transition-transform duration-200",
+                        advancedOpen && "rotate-90"
+                      )}
+                    />
+                    Options avancées
+                  </button>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="space-y-6 pt-2">
+                    {/* Retenue de garantie + Escompte */}
+                    <div className="flex gap-4">
+                      <div className="w-1/2">
+                        <PercentageSliderInput
+                          label="Retenue de garantie"
+                          value={data.retenueGarantie || 0}
+                          onChange={(value) => {
+                            setValue("retenueGarantie", value, {
+                              shouldDirty: true,
+                              shouldValidate: true,
+                            });
+                          }}
+                          disabled={!canEdit}
+                          minValue={0}
+                          maxValue={100}
+                          step={1}
+                          gaugeColor="#5b50FF"
+                          id="retenue-garantie"
+                        />
+                      </div>
+                      <div className="w-1/2">
+                        <PercentageSliderInput
+                          label="Escompte"
+                          value={data.escompte || 0}
+                          onChange={(value) => {
+                            setValue("escompte", value, {
+                              shouldDirty: true,
+                              shouldValidate: true,
+                            });
+                          }}
+                          disabled={!canEdit}
+                          minValue={0}
+                          maxValue={100}
+                          step={1}
+                          gaugeColor="#5b50FF"
+                          id="escompte"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Livraison */}
+                    <ShippingSection
+                      canEdit={canEdit}
+                      validationErrors={validationErrors}
+                    />
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+
+              {/* Champs personnalisés */}
+              <CustomFieldsSection
                 canEdit={canEdit}
                 validationErrors={validationErrors}
               />
@@ -470,8 +509,7 @@ export default function EnhancedQuoteForm({
 
       {/* Footer avec boutons d'action - Positionné en dehors du flux normal */}
       <div
-        className="pt-4 z-50 border-t lg:relative lg:bottom-auto lg:pt-4 fixed bottom-0 left-0 right-0 bg-background lg:bg-transparent p-4 lg:p-0"
-        style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}
+        className="pt-4 z-50 border-t lg:relative lg:bottom-auto lg:pt-4 fixed bottom-0 left-0 right-0 bg-background lg:bg-transparent px-4 lg:p-0"
       >
         <div className="max-w-2xl mx-auto px-2 md:px-6 lg:px-0">
           <div className="flex justify-between items-center">
@@ -480,7 +518,7 @@ export default function EnhancedQuoteForm({
                 variant="outline"
                 onClick={() => setShowCancelDialog(true)}
                 disabled={loading || saving}
-                className="text-sm font-normal hidden md:flex"
+                className="hidden md:flex"
               >
                 Annuler
               </Button>
@@ -489,7 +527,6 @@ export default function EnhancedQuoteForm({
                 variant="outline"
                 onClick={handleSaveDraft}
                 disabled={!canEdit || saving}
-                className="text-sm font-normal"
               >
                 {saving ? "Sauvegarde..." : "Brouillon"}
               </Button>
@@ -497,38 +534,20 @@ export default function EnhancedQuoteForm({
 
             <div className="flex gap-3">
               {currentStep === 1 && (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span>
-                        <Button
-                          onClick={handleNextStep}
-                          disabled={!isStep1Valid() || !canEdit}
-                          className="px-6 text-sm font-normal"
-                        >
-                          <span className="hidden sm:inline">Suivant</span>
-                          <ChevronRight className="h-4 w-4 sm:ml-2" />
-                        </Button>
-                      </span>
-                    </TooltipTrigger>
-                    {!isStep1Valid() && (
-                      <TooltipContent>
-                        <p className="text-xs">
-                          {validationErrors &&
-                          Object.keys(validationErrors).length > 0
-                            ? "Corrigez les erreurs avant de continuer"
-                            : "Remplissez tous les champs obligatoires"}
-                        </p>
-                      </TooltipContent>
-                    )}
-                  </Tooltip>
-                </TooltipProvider>
+                <Button
+                  variant="primary"
+                  onClick={handleNextStep}
+                  disabled={!isStep1Valid() || !canEdit}
+                  className="px-6"
+                >
+                  <span className="hidden sm:inline">Suivant</span>
+                  <ChevronRight className="h-4 w-4 sm:ml-2" />
+                </Button>
               )}
 
               {currentStep === 2 && (
                 <>
                   <Button
-                    className="text-sm font-normal"
                     variant="outline"
                     size="icon"
                     onClick={handlePreviousStep}
@@ -537,9 +556,10 @@ export default function EnhancedQuoteForm({
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
                   <Button
+                    variant="primary"
                     onClick={handleCreateQuote}
                     disabled={!isStep2Valid() || !canEdit || saving}
-                    className="px-6 text-sm font-normal"
+                    className="px-6"
                   >
                     {saving ? "Création..." : documentType === "purchaseOrder" ? "Créer le bon de commande" : "Créer le devis"}
                   </Button>
@@ -560,10 +580,21 @@ export default function EnhancedQuoteForm({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Rester</AlertDialogCancel>
-            <AlertDialogAction onClick={() => window.history.back()}>
+            <Button
+              variant="outline"
+              onClick={() => setShowCancelDialog(false)}
+            >
+              Rester
+            </Button>
+            <Button
+              variant="danger"
+              onClick={() => {
+                setShowCancelDialog(false);
+                window.history.back();
+              }}
+            >
               Quitter
-            </AlertDialogAction>
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

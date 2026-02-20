@@ -317,7 +317,7 @@ export function NavMain({
               >
                 <ChevronRight
                   className={cn(
-                    "h-4 w-4 transition-transform",
+                    "h-4 w-4 transition-transform duration-200",
                     isVentesOpen && "rotate-90"
                   )}
                 />
@@ -724,7 +724,7 @@ export function NavMain({
               >
                 <ChevronRight
                   className={cn(
-                    "h-4 w-4 transition-transform",
+                    "h-4 w-4 transition-transform duration-200",
                     isOpen && "rotate-90"
                   )}
                 />

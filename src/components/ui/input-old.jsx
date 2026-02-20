@@ -1,54 +1,32 @@
-import * as React from "react";
-import { useState, useId, useEffect } from "react";
-import { cva } from "class-variance-authority";
+import React, { useId, useState, useEffect } from "react";
 import {
   EyeIcon,
   EyeOffIcon,
   PhoneIcon,
   AtSignIcon,
   LoaderCircle,
+  MicIcon,
   SearchIcon,
 } from "lucide-react";
 
 import { cn } from "@/src/lib/utils";
 import { Label } from "@/src/components/ui/label";
 
-const inputVariants = cva(
-  "outline-none bg-transparent m-0 flex w-full tracking-[-0.01em] font-medium text-[#242529] placeholder:text-[rgba(0,0,0,0.35)] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 dark:text-white dark:placeholder:text-[rgba(255,255,255,0.35)]",
-  {
-    variants: {
-      variant: {
-        default:
-          "border border-[#e6e7ea] hover:border-[#D1D3D8] dark:border-[#2E2E32] dark:hover:border-[#44444A] h-8 rounded-[9px] px-2.5 transition-[border] duration-[80ms] ease-in-out",
-        ghost: "border-none p-0 flex-1 h-full",
-      },
-      size: {
-        default: "text-sm leading-5",
-        sm: "text-xs leading-4",
-        lg: "text-base leading-6",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
-      size: "default",
-    },
-  }
-);
-
-const Input = React.forwardRef(
-  ({ className, variant, size, type = "text", ...props }, ref) => {
-    return (
-      <input
-        ref={ref}
-        type={type}
-        data-slot="input"
-        className={cn(inputVariants({ variant, size, className }))}
-        {...props}
-      />
-    );
-  }
-);
-Input.displayName = "Input";
+function Input({ className, type, ...props }) {
+  return (
+    <input
+      type={type}
+      data-slot="input"
+      className={cn(
+        "file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+        "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
+        "aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
+        className
+      )}
+      {...props}
+    />
+  );
+}
 
 function InputPassword({ className, label, placeholder, ...props }) {
   const id = useId();
@@ -68,7 +46,7 @@ function InputPassword({ className, label, placeholder, ...props }) {
           {...props}
         />
         <button
-          className="text-[rgba(0,0,0,0.35)] hover:text-[#242529] dark:text-[rgba(255,255,255,0.35)] dark:hover:text-white absolute inset-y-0 end-0 flex h-full w-9 items-center justify-center rounded-e-[9px] transition-colors outline-none focus:z-10 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
+          className="text-muted-foreground/80 hover:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 absolute inset-y-0 end-0 flex h-full w-9 items-center justify-center rounded-e-md transition-[color,box-shadow] outline-none focus:z-10 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
           type="button"
           onClick={toggleVisibility}
           aria-label={
@@ -101,7 +79,7 @@ function InputEmail({ className, label, placeholder, ...props }) {
           type="email"
           {...props}
         />
-        <div className="text-[rgba(0,0,0,0.35)] dark:text-[rgba(255,255,255,0.35)] pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3 peer-disabled:opacity-50">
+        <div className="text-muted-foreground/80 pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3 peer-disabled:opacity-50">
           <AtSignIcon size={16} aria-hidden="true" />
         </div>
       </div>
@@ -128,7 +106,7 @@ function InputPhone({
           type="tel"
           {...props}
         />
-        <div className="text-[rgba(0,0,0,0.35)] dark:text-[rgba(255,255,255,0.35)] pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3 peer-disabled:opacity-50">
+        <div className="text-muted-foreground/80 pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3 peer-disabled:opacity-50">
           <PhoneIcon size={16} aria-hidden="true" />
         </div>
       </div>
@@ -141,13 +119,13 @@ function InputEndAddOn({ className, label, placeholder, ...props }) {
   return (
     <div className="*:not-first:mt-2">
       {label && <Label htmlFor={id}>{label}</Label>}
-      <div className="flex">
-        <span className="border border-[#e6e7ea] dark:border-[#2E2E32] bg-transparent text-[#242529] dark:text-white -z-10 inline-flex items-center rounded-s-[9px] border-e-0 px-3 text-sm font-medium">
+      <div className="flex rounded-md shadow-xs">
+        <span className="border-input bg-background text-[#222] -z-10 inline-flex items-center rounded-s-md border px-3 text-sm">
           https://
         </span>
         <Input
           id={id}
-          className={cn("rounded-s-none border-s-0", className)}
+          className={cn("-ms-px rounded-s-none shadow-none", className)}
           placeholder={placeholder}
           type="text"
           {...props}
@@ -179,13 +157,13 @@ function InputLoader({ className, label, placeholder, ...props }) {
       <div className="relative">
         <Input
           id={id}
-          className={cn("peer ps-9", className)}
+          className={cn("peer ps-9 pe-9", className)}
           placeholder={placeholder}
           type="search"
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
         />
-        <div className="text-[rgba(0,0,0,0.35)] dark:text-[rgba(255,255,255,0.35)] pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3 peer-disabled:opacity-50">
+        <div className="text-muted-foreground/80 pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3 peer-disabled:opacity-50">
           {isLoading ? (
             <LoaderCircle
               className="animate-spin"
@@ -197,6 +175,13 @@ function InputLoader({ className, label, placeholder, ...props }) {
             <SearchIcon size={16} aria-hidden="true" />
           )}
         </div>
+        {/* <button
+          className="text-muted-foreground/80 hover:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 absolute inset-y-0 end-0 flex h-full w-9 items-center justify-center rounded-e-md transition-[color,box-shadow] outline-none focus:z-10 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
+          aria-label="Press to speak"
+          type="submit"
+        >
+          <MicIcon size={16} aria-hidden="true" />
+        </button> */}
       </div>
     </div>
   );
@@ -209,5 +194,4 @@ export {
   InputPhone,
   InputEndAddOn,
   InputLoader,
-  inputVariants,
 };

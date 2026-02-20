@@ -336,18 +336,22 @@ export function showErrorToast(error, context = 'generic', toastFunction) {
  */
 export function isCriticalError(error) {
   if (!error) return false;
-  
+
   const errorMessage = typeof error === 'string' ? error : error.message || '';
   const errorCode = typeof error === 'object' ? error.code : null;
-  
-  // Erreurs critiques qui nécessitent une déconnexion/redirection
+
+  // ✅ FIX: Seuls les codes d'expiration de session/token sont critiques
+  // UNAUTHENTICATED = pas de session valide (token absent ou expiré)
+  // TOKEN_EXPIRED / SESSION_EXPIRED = session explicitement expirée
+  // ❌ RETIRÉ: AUTH_UNAUTHORIZED qui matchait "unauthorized|access denied|forbidden"
+  // car ces erreurs de PERMISSION (RBAC) ne sont PAS des expirations de session
   const criticalCodes = ['UNAUTHENTICATED', 'TOKEN_EXPIRED', 'SESSION_EXPIRED'];
   const criticalPatterns = [
-    ERROR_PATTERNS.AUTH_EXPIRED,
-    ERROR_PATTERNS.AUTH_UNAUTHORIZED
+    ERROR_PATTERNS.AUTH_EXPIRED, // "token expired|session expired|jwt expired"
+    // AUTH_UNAUTHORIZED retiré : les erreurs de permission ne doivent pas déconnecter
   ];
-  
-  return criticalCodes.includes(errorCode) || 
+
+  return criticalCodes.includes(errorCode) ||
          criticalPatterns.some(pattern => pattern.test(errorMessage));
 }
 

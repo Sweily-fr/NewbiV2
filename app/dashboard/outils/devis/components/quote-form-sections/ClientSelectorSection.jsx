@@ -25,9 +25,9 @@ export default function ClientSelectorSection({ canEdit }) {
   };
 
   return (
-    <Card className="shadow-none border-none p-2 bg-transparent">
+    <Card className="shadow-none border-none p-0 bg-transparent">
       <CardHeader className="p-0 pb-2">
-        <CardTitle className="flex items-center gap-2 font-normal text-lg">
+        <CardTitle className="flex items-center gap-2 font-medium text-lg">
           Sélection d'un client
         </CardTitle>
       </CardHeader>

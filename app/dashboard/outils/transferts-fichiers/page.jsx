@@ -4,11 +4,6 @@ import { Suspense, useState, useEffect, useMemo } from "react";
 import { RoleRouteGuard } from "@/src/components/rbac/RBACRouteGuard";
 import { Button } from "@/src/components/ui/button";
 import {
-  ButtonGroup,
-  ButtonGroupSeparator,
-} from "@/src/components/ui/button-group";
-import { Input } from "@/src/components/ui/input";
-import {
   Plus,
   Settings,
   Download,
@@ -195,22 +190,14 @@ function TransfertsContent() {
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider> */}
-            <ButtonGroup>
-              <Button
-                onClick={() => setShowUploadModal(true)}
-                className="cursor-pointer font-normal bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
-              >
-                Nouveau transfert
-              </Button>
-              <ButtonGroupSeparator />
-              <Button
-                onClick={() => setShowUploadModal(true)}
-                size="icon"
-                className="cursor-pointer bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
-              >
-                <Plus size={16} aria-hidden="true" />
-              </Button>
-            </ButtonGroup>
+            <Button
+              variant="primary"
+              onClick={() => setShowUploadModal(true)}
+              className="cursor-pointer"
+            >
+              <Plus size={14} strokeWidth={2} aria-hidden="true" />
+              Nouveau transfert
+            </Button>
           </div>
         </div>
 

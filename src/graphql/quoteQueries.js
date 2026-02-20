@@ -845,8 +845,8 @@ export const CLIENT_TYPE_LABELS = {
 
 // Couleurs pour les statuts
 export const QUOTE_STATUS_COLORS = {
-  [QUOTE_STATUS.DRAFT]: "bg-gray-100 text-gray-800 border-gray-200",
-  [QUOTE_STATUS.PENDING]: "bg-blue-100 text-blue-800 border-blue-200",
-  [QUOTE_STATUS.COMPLETED]: "bg-green-50 text-green-600 border-green-200",
-  [QUOTE_STATUS.CANCELED]: "bg-red-100 text-red-800 border-red-200",
+  [QUOTE_STATUS.DRAFT]: "bg-gray-100 text-gray-700 border-gray-200",
+  [QUOTE_STATUS.PENDING]: "bg-amber-100 text-amber-700 border-amber-200",
+  [QUOTE_STATUS.COMPLETED]: "bg-emerald-100 text-emerald-700 border-emerald-200",
+  [QUOTE_STATUS.CANCELED]: "bg-red-100 text-red-700 border-red-200",
 };

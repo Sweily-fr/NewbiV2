@@ -194,7 +194,7 @@ export default function ProgressSection({ canEdit = true }) {
   return (
     <Card className="border-0 shadow-none bg-transparent mb-0 mt-8 p-0">
       <CardHeader className="p-0">
-        <CardTitle className="flex items-center gap-2 font-normal text-lg">
+        <CardTitle className="flex items-center gap-2 font-medium text-lg">
           Facturation partielle
         </CardTitle>
         <p className="text-sm text-muted-foreground mt-1">
@@ -296,7 +296,7 @@ export default function ProgressSection({ canEdit = true }) {
                   value={globalProgress}
                   onChange={(e) => applyGlobalProgress(e.target.value)}
                   disabled={!canEdit}
-                  className={`-me-px rounded-e-none shadow-none h-10 text-sm w-full ${isOverLimit ? "border-amber-300 focus:border-amber-400" : ""}`}
+                  className={`rounded-e-none border-e-0 w-full ${isOverLimit ? "border-amber-300 focus:border-amber-400" : ""}`}
                 />
                 <span className="-z-10 inline-flex items-center rounded-e-md border border-input bg-background px-3 text-sm text-muted-foreground">
                   %
@@ -343,7 +343,7 @@ export default function ProgressSection({ canEdit = true }) {
                           applyItemProgress(index, e.target.value)
                         }
                         disabled={!canEdit}
-                        className="-me-px rounded-e-none shadow-none h-10 text-sm w-full"
+                        className="rounded-e-none border-e-0 w-full"
                       />
                       <span className="-z-10 inline-flex items-center rounded-e-md border border-input bg-background px-3 text-sm text-muted-foreground">
                         %

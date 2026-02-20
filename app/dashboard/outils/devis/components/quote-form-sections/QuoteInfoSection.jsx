@@ -224,9 +224,9 @@ export default function QuoteInfoSection({
   return (
     <>
       {/* Section Informations du devis */}
-      <Card className="shadow-none p-2 border-none bg-transparent">
+      <Card className="shadow-none p-0 border-none bg-transparent mt-8">
         <CardHeader className="p-0">
-          <CardTitle className="flex items-center gap-2 font-normal text-lg">
+          <CardTitle className="flex items-center gap-2 font-medium text-lg">
             Informations du devis
           </CardTitle>
         </CardHeader>

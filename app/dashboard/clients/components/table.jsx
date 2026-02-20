@@ -37,8 +37,6 @@ import {
   PlusIcon,
   Search,
   TrashIcon,
-  Building2,
-  User,
 } from "lucide-react";
 
 import { useRouter } from "next/navigation";
@@ -112,7 +110,6 @@ import { useInvoices } from "@/src/graphql/invoiceQueries";
 import { toast } from "@/src/components/ui/sonner";
 import ClientsModal from "./clients-modal";
 import ClientFilters from "./client-filters";
-import { FileText } from "lucide-react";
 // Custom filter function for multi-column searching
 const multiColumnFilterFn = (row, columnId, filterValue) => {
   const searchableRowContent =
@@ -168,10 +165,13 @@ const columns = (
     accessorKey: "name",
     cell: ({ row }) => {
       const client = row.original;
-      const displayName =
+      const rawName =
         client.type === "INDIVIDUAL" && (client.firstName || client.lastName)
           ? `${client.firstName || ""} ${client.lastName || ""}`.trim()
           : client.name;
+      const displayName = rawName
+        ? rawName.charAt(0).toUpperCase() + rawName.slice(1).toLowerCase()
+        : "";
       return (
         <div className="flex items-center gap-3">
           <UserAvatar name={displayName} colorKey={client.email} size="xs" className="rounded-md" fallbackClassName="bg-gray-100 text-gray-600 rounded-md" />
@@ -204,18 +204,16 @@ const columns = (
         switch (type) {
           case "COMPANY":
             return {
-              icon: <Building2 className="w-3 h-3" />,
               label: "Entreprise",
               className:
-                "bg-[#5a50ff]/10 text-[#5a50ff] dark:bg-[#5a50ff]/20 dark:text-[#5a50ff]",
+                "bg-indigo-100 text-indigo-700 border-indigo-200 dark:bg-indigo-900/20 dark:text-indigo-400 dark:border-indigo-800",
             };
           case "INDIVIDUAL":
           default:
             return {
-              icon: <User className="w-3 h-3" />,
               label: "Particulier",
               className:
-                "bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400",
+                "bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800",
             };
         }
       };
@@ -225,11 +223,10 @@ const columns = (
       return (
         <span
           className={cn(
-            "inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium",
+            "inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border",
             config.className
           )}
         >
-          {config.icon}
           {config.label}
         </span>
       );
@@ -245,15 +242,7 @@ const columns = (
       const count = invoiceCountByClient[clientId] || 0;
 
       return (
-        <span
-          className={cn(
-            "inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium",
-            count > 0
-              ? "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400"
-              : "bg-gray-50 text-gray-500 dark:bg-gray-900/20 dark:text-gray-400"
-          )}
-        >
-          <FileText className="w-3 h-3" />
+        <span className="text-sm text-muted-foreground">
           {count}
         </span>
       );
@@ -265,13 +254,10 @@ const columns = (
     accessorKey: "address",
     cell: ({ row }) => {
       const address = row.original.address;
-      if (!address || (!address.city && !address.country)) return "-";
+      if (!address || !address.city) return "-";
       return (
         <div className="text-sm">
-          {address.city && <div>{address.city}</div>}
-          {address.country && (
-            <div className="text-muted-foreground">{address.country}</div>
-          )}
+          {address.city}
         </div>
       );
     },
@@ -610,7 +596,7 @@ export default function TableClients({
         {/* Table - Desktop style avec header fixe et body scrollable */}
         <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
           {/* Header fixe */}
-          <div className="flex-shrink-0 border-b border-gray-200 dark:border-gray-800">
+          <div className="flex-shrink-0 border-t border-b border-border">
             <table className="w-full table-fixed">
               <thead>
                 {table.getHeaderGroups().map((headerGroup) => (
@@ -703,10 +689,7 @@ export default function TableClients({
                           <Skeleton className="h-5 w-12 rounded-full" />
                         </td>
                         <td style={{ width: 150 }} className="p-2">
-                          <div className="space-y-1">
-                            <Skeleton className="h-3 w-24" />
-                            <Skeleton className="h-3 w-16" />
-                          </div>
+                          <Skeleton className="h-3 w-24" />
                         </td>
                         <td style={{ width: 140 }} className="p-2">
                           <Skeleton className="h-4 w-28" />
@@ -741,7 +724,7 @@ export default function TableClients({
                         <td
                           key={cell.id}
                           style={{ width: cell.column.getSize() }}
-                          className={`p-2 align-middle text-sm ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
+                          className={`p-2 align-middle text-sm font-normal ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
                         >
                           {flexRender(
                             cell.column.columnDef.cell,

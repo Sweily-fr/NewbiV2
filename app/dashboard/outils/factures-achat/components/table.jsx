@@ -63,7 +63,8 @@ import {
   ChevronLastIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
-  X,
+  CircleXIcon,
+  ListFilterIcon,
   CheckCircle2,
   Archive,
   Tag,
@@ -76,6 +77,13 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/src/components/ui/popover";
+import { Checkbox } from "@/src/components/ui/checkbox";
+import { Tabs, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
 
 const STATUS_LABELS = {
   TO_PROCESS: "À traiter",
@@ -131,6 +139,8 @@ export default function PurchaseInvoiceTable({
   const [rowSelection, setRowSelection] = useState({});
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 25 });
   const [activeTab, setActiveTab] = useState("all");
+  const [statusFilters, setStatusFilters] = useState([]);
+  const [categoryFilters, setCategoryFilters] = useState([]);
 
   const { deleteInvoice } = useDeletePurchaseInvoice();
   const { bulkDelete } = useBulkDelete();
@@ -149,11 +159,39 @@ export default function PurchaseInvoiceTable({
     return counts;
   }, [invoices]);
 
-  // Filter by tab
+  const activeFiltersCount = statusFilters.length + categoryFilters.length;
+
+  const toggleStatusFilter = (status) => {
+    setStatusFilters((prev) =>
+      prev.includes(status) ? prev.filter((s) => s !== status) : [...prev, status]
+    );
+  };
+
+  const toggleCategoryFilter = (category) => {
+    setCategoryFilters((prev) =>
+      prev.includes(category) ? prev.filter((c) => c !== category) : [...prev, category]
+    );
+  };
+
+  const clearAllFilters = () => {
+    setStatusFilters([]);
+    setCategoryFilters([]);
+  };
+
+  // Filter by tab + advanced filters
   const filteredInvoices = useMemo(() => {
-    if (activeTab === "all") return invoices;
-    return invoices.filter((inv) => inv.status === activeTab);
-  }, [invoices, activeTab]);
+    let result = invoices;
+    if (activeTab !== "all") {
+      result = result.filter((inv) => inv.status === activeTab);
+    }
+    if (statusFilters.length > 0) {
+      result = result.filter((inv) => statusFilters.includes(inv.status));
+    }
+    if (categoryFilters.length > 0) {
+      result = result.filter((inv) => categoryFilters.includes(inv.category));
+    }
+    return result;
+  }, [invoices, activeTab, statusFilters, categoryFilters]);
 
   const table = useReactTable({
     data: filteredInvoices,
@@ -214,16 +252,84 @@ export default function PurchaseInvoiceTable({
       <div className="hidden md:flex md:flex-col flex-1 min-h-0">
         {/* Toolbar: Search + Bulk Actions */}
         <div className="flex items-center justify-between gap-3 hidden md:flex px-4 sm:px-6 py-4 flex-shrink-0">
-          <div className="relative max-w-md">
-            <Input
-              placeholder="Recherchez par fournisseur, n° facture ou montant..."
-              value={globalFilter}
-              onChange={(e) => setGlobalFilter(e.target.value)}
-              className="w-full sm:w-[490px] lg:w-[490px] ps-9"
-            />
-            <div className="text-muted-foreground/80 pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3">
-              <Search size={16} aria-hidden="true" />
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 h-8 w-full sm:w-[400px] rounded-[9px] border border-[#E6E7EA] hover:border-[#D1D3D8] dark:border-[#2E2E32] dark:hover:border-[#44444A] focus-within:ring-ring/50 focus-within:ring-[3px] transition-[border,box-shadow] duration-200 px-2.5">
+              <Search size={16} className="text-muted-foreground/80 shrink-0" aria-hidden="true" />
+              <Input
+                variant="ghost"
+                placeholder="Recherchez par fournisseur, n° facture ou montant..."
+                value={globalFilter}
+                onChange={(e) => setGlobalFilter(e.target.value)}
+              />
+              {Boolean(globalFilter) && (
+                <button
+                  onClick={() => setGlobalFilter("")}
+                  className="text-muted-foreground/80 hover:text-foreground shrink-0"
+                >
+                  <CircleXIcon size={16} strokeWidth={2} />
+                </button>
+              )}
             </div>
+
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant={activeFiltersCount > 0 ? "primary" : "filter"}
+                  className="cursor-pointer"
+                >
+                  <ListFilterIcon size={14} />
+                  Filtres
+                  {activeFiltersCount > 0 && (
+                    <span className="ml-0.5 rounded-full bg-white/20 px-1.5 py-0 text-[10px]">
+                      {activeFiltersCount}
+                    </span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="start" className="w-[280px] p-0">
+                <div className="flex items-center justify-between px-3 py-2 border-b">
+                  <span className="text-sm font-medium">Filtres</span>
+                  {activeFiltersCount > 0 && (
+                    <button
+                      onClick={clearAllFilters}
+                      className="text-xs text-muted-foreground hover:text-foreground"
+                    >
+                      Tout effacer
+                    </button>
+                  )}
+                </div>
+                {/* Status filters */}
+                <div className="px-3 py-2 border-b">
+                  <p className="text-xs text-muted-foreground font-medium mb-2">Statut</p>
+                  <div className="space-y-1.5">
+                    {Object.entries(STATUS_LABELS).map(([key, label]) => (
+                      <label key={key} className="flex items-center gap-2 cursor-pointer">
+                        <Checkbox
+                          checked={statusFilters.includes(key)}
+                          onCheckedChange={() => toggleStatusFilter(key)}
+                        />
+                        <span className="text-sm">{label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                {/* Category filters */}
+                <div className="px-3 py-2 max-h-[200px] overflow-y-auto">
+                  <p className="text-xs text-muted-foreground font-medium mb-2">Catégorie</p>
+                  <div className="space-y-1.5">
+                    {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
+                      <label key={key} className="flex items-center gap-2 cursor-pointer">
+                        <Checkbox
+                          checked={categoryFilters.includes(key)}
+                          onCheckedChange={() => toggleCategoryFilter(key)}
+                        />
+                        <span className="text-sm">{label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
 
           <div className="flex items-center gap-2">
@@ -235,26 +341,22 @@ export default function PurchaseInvoiceTable({
                 </span>
                 <Button
                   variant="outline"
-                  size="sm"
-                  className="h-8 text-xs"
                   onClick={() => handleBulkStatus("PAID")}
                 >
-                  <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+                  <CheckCircle2 size={14} />
                   Payées
                 </Button>
                 <Button
                   variant="outline"
-                  size="sm"
-                  className="h-8 text-xs"
                   onClick={() => handleBulkStatus("ARCHIVED")}
                 >
-                  <Archive className="h-3.5 w-3.5 mr-1" />
+                  <Archive size={14} />
                   Archiver
                 </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm" className="h-8 text-xs">
-                      <Tag className="h-3.5 w-3.5 mr-1" />
+                    <Button variant="outline">
+                      <Tag size={14} />
                       Catégoriser
                     </Button>
                   </DropdownMenuTrigger>
@@ -271,10 +373,8 @@ export default function PurchaseInvoiceTable({
                 </DropdownMenu>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <Button
-                      variant="destructive"
-                    >
-                      <TrashIcon className="mr-2 h-4 w-4" />
+                    <Button variant="danger">
+                      <TrashIcon size={14} />
                       Supprimer ({selectedRows.length})
                     </Button>
                   </AlertDialogTrigger>
@@ -302,33 +402,39 @@ export default function PurchaseInvoiceTable({
         </div>
 
         {/* Tabs */}
-        <div className="hidden md:block flex-shrink-0 border-b border-gray-200 dark:border-gray-800">
-          <div className="flex items-center px-4 sm:px-6">
-            {[
-              { key: "all", label: "Toutes", count: statusCounts.all },
-              { key: "TO_PAY", label: "À payer", count: statusCounts.TO_PAY },
-              { key: "OVERDUE", label: "En retard", count: statusCounts.OVERDUE },
-              { key: "PAID", label: "Payées", count: statusCounts.PAID },
-            ].map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => {
-                  setActiveTab(tab.key);
-                  setPagination((p) => ({ ...p, pageIndex: 0 }));
-                }}
-                className={`relative rounded-none py-2 px-4 text-sm font-normal after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 transition-colors ${
-                  activeTab === tab.key
-                    ? "after:bg-primary text-foreground"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {tab.label}
-                <span className="ml-2 text-xs text-muted-foreground">
-                  {tab.count}
-                </span>
-              </button>
-            ))}
-          </div>
+        <div className="hidden md:block flex-shrink-0 border-b border-[#eeeff1] dark:border-[#232323] pt-2 pb-[9px] purchase-tabs">
+          <style>{`
+            .purchase-tabs [data-slot="tabs-trigger"][data-state="active"] {
+              text-shadow: 0.015em 0 currentColor, -0.015em 0 currentColor;
+            }
+          `}</style>
+          <Tabs
+            value={activeTab}
+            onValueChange={(value) => {
+              setActiveTab(value);
+              setPagination((p) => ({ ...p, pageIndex: 0 }));
+            }}
+          >
+            <TabsList className="h-auto rounded-none bg-transparent p-0 w-full justify-start px-4 sm:px-6 gap-1.5">
+              {[
+                { key: "all", label: "Toutes", count: statusCounts.all },
+                { key: "TO_PAY", label: "À payer", count: statusCounts.TO_PAY },
+                { key: "OVERDUE", label: "En retard", count: statusCounts.OVERDUE },
+                { key: "PAID", label: "Payées", count: statusCounts.PAID },
+              ].map((tab) => (
+                <TabsTrigger
+                  key={tab.key}
+                  value={tab.key}
+                  className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground hover:shadow-[inset_0_0_0_1px_#EEEFF1] dark:hover:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
+                >
+                  {tab.label}
+                  <span className="text-[10px] leading-none bg-gray-100 dark:bg-gray-800 text-muted-foreground rounded px-1 py-0.5">
+                    {tab.count}
+                  </span>
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
         </div>
 
         {/* Table */}
@@ -518,14 +624,22 @@ export default function PurchaseInvoiceTable({
       <div className="md:hidden flex-1 overflow-hidden flex flex-col">
         {/* Mobile Search */}
         <div className="px-4 pb-2 flex-shrink-0">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <div className="flex items-center gap-2 h-9 rounded-[9px] border border-[#E6E7EA] dark:border-[#2E2E32] px-2.5">
+            <Search size={16} className="text-muted-foreground/80 shrink-0" aria-hidden="true" />
             <Input
+              variant="ghost"
               placeholder="Rechercher..."
               value={globalFilter}
               onChange={(e) => setGlobalFilter(e.target.value)}
-              className="pl-8 h-9"
             />
+            {Boolean(globalFilter) && (
+              <button
+                onClick={() => setGlobalFilter("")}
+                className="text-muted-foreground/80 hover:text-foreground shrink-0"
+              >
+                <CircleXIcon size={16} strokeWidth={2} />
+              </button>
+            )}
           </div>
         </div>
 

@@ -90,7 +90,7 @@ export function PreferencesSection() {
               size="sm"
               onValueChange={handleStartupPageChange}
             >
-              <SelectTrigger className="w-40 text-xs">
+              <SelectTrigger className="w-auto">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="text-xs">
@@ -127,7 +127,7 @@ export function PreferencesSection() {
               size="sm"
               onClick={resetTutorial}
               disabled={tutorialLoading}
-              className="ml-4 flex-shrink-0 font-normal cursor-pointer"
+              className="ml-4 flex-shrink-0 cursor-pointer"
             >
               {tutorialLoading ? "Chargement..." : "Relancer le tutoriel"}
             </Button>

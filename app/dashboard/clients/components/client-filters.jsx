@@ -103,13 +103,9 @@ export default function ClientFilters({
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
-        <Button
-          variant="outline"
-          size="sm"
-          className={cn("gap-2 font-normal", className)}
-        >
-          <Filter className="h-4 w-4" />
-          <span>Filtres</span>
+        <Button variant="filter" className={className}>
+          <Filter style={{ width: '14px', height: '14px' }} />
+          Filtres
           {activeFiltersCount > 0 && (
             <Badge variant="secondary" className="ml-1">
               {activeFiltersCount}
@@ -117,7 +113,7 @@ export default function ClientFilters({
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-[240px]">
+      <DropdownMenuContent align="start" className="w-[240px]">
         {/* Effacer tous les filtres */}
         <DropdownMenuItem
           onClick={() => {

@@ -624,13 +624,8 @@ export default function AutomationsPopover({ trigger }) {
       }}>
         <PopoverTrigger asChild>
           {trigger || (
-            <Button
-              variant={activeCount > 0 ? "default" : "outline"}
-              size="icon"
-              className="relative"
-              style={activeCount > 0 ? { backgroundColor: '#5b50ff' } : {}}
-            >
-              <Zap className="h-4 w-4" />
+            <Button variant="outline" size="icon" className="relative">
+              <Zap className={activeCount > 0 ? "text-[#5b50ff]" : ""} style={{ width: '14px', height: '14px' }} />
               {activeCount > 0 && (
                 <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-white text-[#5b50ff] text-[10px] font-semibold shadow-sm border">
                   {activeCount}

@@ -9,14 +9,15 @@ import { ForecastKpiTable } from "./components/forecast-kpi-table";
 import { ForecastPaymentsCard } from "./components/forecast-payments-card";
 import { ForecastExportDialog } from "./components/forecast-export-dialog";
 import { Button } from "@/src/components/ui/button";
-import { Download } from "lucide-react";
+import { Download, Landmark, ChevronDown, Check } from "lucide-react";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/src/components/ui/select";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/src/components/ui/dropdown-menu";
+import { cn } from "@/src/lib/utils";
 
 const PERIOD_OPTIONS = [
   { value: "6", label: "6 mois" },
@@ -71,6 +72,15 @@ export default function PrevisionPage() {
     });
   }, [bankData]);
 
+  const selectedAccountLabel = useMemo(() => {
+    if (accountFilter === "all") return "Tous les comptes";
+    const acc = bankAccounts.find((a) => a.id === accountFilter);
+    if (!acc) return "Tous les comptes";
+    const name = acc.name || acc.bankName || "Compte";
+    const lastIban = acc.iban ? ` ···${acc.iban.slice(-4)}` : "";
+    return `${name}${lastIban}`;
+  }, [accountFilter, bankAccounts]);
+
   const { forecastData, loading } = useTreasuryForecastData(
     startDate,
     endDate,
@@ -86,32 +96,74 @@ export default function PrevisionPage() {
           <Button
             variant="outline"
             size="icon"
-            className="h-9 w-9 border-gray-200"
             onClick={() => setExportOpen(true)}
           >
-            <Download className="h-4 w-4 text-gray-500" />
+            <Download size={14} strokeWidth={1.5} aria-hidden="true" />
           </Button>
 
-          {bankAccounts?.length > 1 && (
-            <Select value={accountFilter} onValueChange={setAccountFilter}>
-              <SelectTrigger className="w-[180px] h-8 text-xs">
-                <SelectValue placeholder="Tous les comptes" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tous les comptes</SelectItem>
-                {bankAccounts.map((acc) => (
-                  <SelectItem key={acc.id} value={acc.id}>
-                    {acc.name || acc.bankName || "Compte"}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="cursor-pointer">
+                <Landmark size={14} aria-hidden="true" />
+                {selectedAccountLabel}
+                <ChevronDown size={12} className="ml-0.5 opacity-70" aria-hidden="true" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+                Sélectionner un compte
+              </DropdownMenuLabel>
+              <DropdownMenuItem
+                onClick={() => setAccountFilter("all")}
+                className="flex items-center gap-2 cursor-pointer"
+              >
+                <Landmark size={14} className="text-muted-foreground" />
+                <span className="flex-1 text-xs truncate">Tous les comptes</span>
+                <Check
+                  className={cn(
+                    "h-4 w-4 text-[#5b4fff]",
+                    accountFilter === "all" ? "opacity-100" : "opacity-0"
+                  )}
+                />
+              </DropdownMenuItem>
+              {(bankAccounts || []).map((acc) => {
+                const accountName = acc.name || acc.bankName || "Compte";
+                const lastIban = acc.iban ? ` ···${acc.iban.slice(-4)}` : "";
+                const isSelected = accountFilter === acc.id;
+                return (
+                  <DropdownMenuItem
+                    key={acc.id}
+                    onClick={() => setAccountFilter(acc.id)}
+                    className="flex items-center gap-2 cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      {acc.institutionLogo ? (
+                        <img
+                          src={acc.institutionLogo}
+                          alt=""
+                          className="h-5 w-5 rounded-sm object-contain flex-shrink-0"
+                        />
+                      ) : (
+                        <Landmark className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                      )}
+                      <span className="truncate text-xs">{accountName}{lastIban}</span>
+                    </div>
+                    <Check
+                      className={cn(
+                        "h-4 w-4 text-[#5b4fff]",
+                        isSelected ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                  </DropdownMenuItem>
+                );
+              })}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
       {/* ─── Section 1: Payments Card (Chart) ─── */}
-      <div className="bg-white px-4 sm:px-6 pb-6 flex-1">
+      <div className="bg-background px-4 sm:px-6 pb-6 flex-1">
         <ForecastPaymentsCard
           months={forecastData?.months}
           kpi={forecastData?.kpi}
