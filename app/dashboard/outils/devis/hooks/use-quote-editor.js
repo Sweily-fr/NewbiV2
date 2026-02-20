@@ -34,13 +34,16 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
   // GraphQL hooks
   const { quote: existingQuote, loading: loadingQuote } = useQuote(quoteId);
 
+  // Prefix state pour le filtrage du numéro par préfixe
+  const [currentPrefix, setCurrentPrefix] = useState("");
+
   // Use the new quote numbering hook that mirrors invoice logic
   const {
     nextQuoteNumber,
     validateQuoteNumber,
     isLoading: numberLoading,
     hasExistingQuotes,
-  } = useQuoteNumber();
+  } = useQuoteNumber(currentPrefix);
 
   const { createQuote, loading: creating } = useCreateQuote();
   const { updateQuote, loading: updating } = useUpdateQuote();
@@ -90,6 +93,16 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
 
   const { watch, setValue, getValues, reset } = form;
   // const { isDirty } = formState; // DISABLED - Auto-save removed
+
+  // Synchroniser le préfixe du formulaire avec le state pour le filtrage du numéro
+  useEffect(() => {
+    const subscription = watch((value, { name }) => {
+      if (name === "prefix" && value.prefix !== undefined) {
+        setCurrentPrefix(value.prefix || "");
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [watch]);
 
   const [saving, setSaving] = useState(false);
   const [isFormInitialized, setIsFormInitialized] = useState(false); // Indique si le formulaire est complètement chargé
@@ -785,8 +798,8 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
                 ""
             );
 
-            // Ne pas activer showBankDetails par défaut, même si l'organisation a des coordonnées bancaires
-            setValue("showBankDetails", false);
+            // Charger showBankDetails depuis l'organisation
+            setValue("showBankDetails", organization.showBankDetails || false);
             setValue("companyInfo.bankDetails", {
               bankName: organization.bankName || "",
               iban: organization.bankIban || "",
@@ -1493,6 +1506,10 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
         quoteFooterNotes: currentFormData.footerNotes || "",
         quoteTermsAndConditions: currentFormData.termsAndConditions || "",
         showBankDetails: currentFormData.showBankDetails || false,
+        // Coordonnées bancaires
+        bankIban: currentFormData.bankDetails?.iban || currentFormData.companyInfo?.bankDetails?.iban || "",
+        bankBic: currentFormData.bankDetails?.bic || currentFormData.companyInfo?.bankDetails?.bic || "",
+        bankName: currentFormData.bankDetails?.bankName || currentFormData.companyInfo?.bankDetails?.bankName || "",
         quoteClientPositionRight: currentFormData.clientPositionRight || false,
         // Préfixe de numérotation
         quotePrefix: currentFormData.prefix || "",

@@ -91,16 +91,18 @@ export default function InvoiceSettingsView({
   } = useFormContext();
   const data = watch();
 
-  // Hook pour la numérotation séquentielle des factures
+  // Hook pour la numérotation séquentielle des factures (filtré par préfixe courant)
   const {
     nextInvoiceNumber,
     validateInvoiceNumber,
     isLoading: isLoadingInvoiceNumber,
     hasExistingInvoices,
+    hasDocumentsForPrefix,
     getFormattedNextNumber,
-  } = useInvoiceNumber();
+  } = useInvoiceNumber(data.prefix);
 
-  const isFirstInvoice = !hasExistingInvoices();
+  // Champ numéro éditable si aucune facture du tout OU nouveau préfixe (pas de factures avec ce préfixe)
+  const isFirstInvoice = !hasExistingInvoices() || !hasDocumentsForPrefix;
 
   // Auto-initialiser le préfixe et le numéro au montage uniquement (pas en continu)
   const prefixInitializedRef = useRef(false);
@@ -125,6 +127,14 @@ export default function InvoiceSettingsView({
       numberInitializedRef.current = true;
     }
   }, [data.number, nextInvoiceNumber, isLoadingInvoiceNumber, setValue]);
+
+  // Mettre à jour le numéro quand nextInvoiceNumber change (déclenché par changement de préfixe)
+  useEffect(() => {
+    if (numberInitializedRef.current && nextInvoiceNumber && !isLoadingInvoiceNumber) {
+      const formattedNumber = String(nextInvoiceNumber).padStart(4, "0");
+      setValue("number", formattedNumber, { shouldValidate: false });
+    }
+  }, [nextInvoiceNumber, isLoadingInvoiceNumber, setValue]);
 
   // Gérer le changement de préfixe avec auto-fill pour MM et AAAA
   const handlePrefixChange = (e) => {
