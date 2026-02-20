@@ -61,22 +61,23 @@ export default function RecentTransactionsCard({
           <CardTitle className="text-sm font-normal">
             Transactions récentes
           </CardTitle>
+          <div className="h-4 w-14 bg-accent rounded animate-pulse" />
         </CardHeader>
-        <CardContent className="flex flex-col flex-1">
+        <CardContent className="flex flex-col flex-1 animate-pulse">
           <div className="space-y-4 flex-1">
             {[1, 2, 3, 4, 5].map((i) => (
               <div
                 key={i}
-                className="flex items-center justify-between animate-pulse"
+                className="flex items-center justify-between"
               >
                 <div className="flex items-center space-x-3">
-                  <div className="h-8 w-8 bg-gray-200 rounded-full" />
-                  <div className="space-y-1">
-                    <div className="h-4 w-24 bg-gray-200 rounded" />
-                    <div className="h-3 w-16 bg-gray-100 rounded" />
+                  <div className="h-8 w-8 bg-accent rounded-full flex-shrink-0" />
+                  <div className="flex flex-col gap-1">
+                    <div className="h-4 w-28 bg-accent rounded" />
+                    <div className="h-3 w-14 bg-accent rounded" />
                   </div>
                 </div>
-                <div className="h-4 w-16 bg-gray-200 rounded" />
+                <div className="h-4 w-16 bg-accent rounded" />
               </div>
             ))}
           </div>

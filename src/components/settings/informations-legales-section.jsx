@@ -208,7 +208,7 @@ export function InformationsLegalesSection({
     <div className="space-y-8">
       {/* Titre */}
       <div>
-        <h2 className="text-lg font-medium mb-1">Informations légales</h2>
+        <h2 className="text-lg font-medium mb-1 hidden md:block">Informations légales</h2>
         <Separator className="hidden md:block" />
         {!canManageOrgSettings && (
           <div className="mt-4">
@@ -223,7 +223,7 @@ export function InformationsLegalesSection({
         )}
 
         {/* Switch activité commerciale - visible seulement pour EI et Auto-entrepreneur */}
-        <div className="space-y-6 mt-12">
+        <div className="space-y-6 mt-4 md:mt-12">
           {visibleFields.commercialActivityCheckbox && (
             <div className="flex items-start justify-between">
               <div className="flex-1">
