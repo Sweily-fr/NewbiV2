@@ -197,23 +197,19 @@ export default function LoginPage() {
         </div>
 
         {/* Mobile Layout */}
-        <div className="md:hidden min-h-screen bg-background flex items-center justify-center pb-8">
-          <div className="w-full max-w-sm px-6">
-            <img src="/ni2.png" alt="Newbi Logo" className="mb-2" width={30} />
-            <h3 className="text-xl font-medium text-foreground mb-2">
-              Connectez-vous
-            </h3>
-            <p className="text-sm text-muted-foreground mb-6">
-              Vous n'avez pas de compte ?{" "}
-              <Link
-                href="/auth/signup"
-                className="font-medium text-primary hover:text-primary/90 underline"
-              >
-                Inscription
-              </Link>
-            </p>
+        <div className="md:hidden min-h-screen bg-background flex flex-col">
+          {/* Logo en haut centré */}
+          <div className="pt-10 flex justify-center">
+            <img src="/newbiLetter.png" alt="Newbi" className="h-5 w-auto object-contain" />
+          </div>
 
-            <div className="mb-6">
+          {/* Contenu centré verticalement */}
+          <div className="flex-1 flex items-center justify-center px-6">
+            <div className="w-full max-w-sm">
+              <h3 className="text-2xl font-medium text-foreground text-center mb-8">
+                Connexion
+              </h3>
+
               <Button
                 variant="outline"
                 size="lg"
@@ -221,27 +217,47 @@ export default function LoginPage() {
                 onClick={() => signInWithProvider("google")}
               >
                 <GoogleIcon className="size-4" aria-hidden={true} />
-                Google
+                Connexion avec Google
               </Button>
-            </div>
 
-            <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center">
-                <Separator className="w-full" />
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <Separator className="w-full" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">ou</span>
+                </div>
               </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white px-2 text-muted-foreground">ou</span>
-              </div>
-            </div>
 
-            <LoginForm />
-            <p className="mt-4 text-sm text-muted-foreground text-center">
+              <LoginForm />
+
+              <p className="mt-4 text-sm text-muted-foreground text-center">
+                <Link
+                  href="/auth/forget-password"
+                  className="font-medium text-primary hover:text-primary/90"
+                >
+                  Mot de passe oublié ?
+                </Link>
+              </p>
+            </div>
+          </div>
+
+          {/* Footer en bas */}
+          <div className="pb-6 px-6 text-center space-y-3">
+            <p className="text-xs text-muted-foreground">
+              Vous n'avez pas de compte ?{" "}
               <Link
-                href="/auth/forget-password"
+                href="/auth/signup"
                 className="font-medium text-primary hover:text-primary/90"
               >
-                Mot de passe oublié ?
+                Inscription
               </Link>
+            </p>
+            <p className="text-[11px] text-muted-foreground/60">
+              En continuant, vous acceptez nos{" "}
+              <Link href="/mentions-legales" className="underline">Conditions générales</Link>
+              {" "}et{" "}
+              <Link href="/politique-confidentialite" className="underline">Politique de confidentialité</Link>
             </p>
           </div>
         </div>
