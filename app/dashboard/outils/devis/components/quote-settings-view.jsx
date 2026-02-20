@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { useFormContext } from "react-hook-form";
-import { AlignLeft, AlignRight, Check, Info } from "lucide-react";
+import { AlignLeft, AlignRight, Check, Info, Tag } from "lucide-react";
 import { documentSuggestions } from "@/src/utils/document-suggestions";
 import { SuggestionDropdown } from "@/src/components/ui/suggestion-dropdown";
 import {
@@ -21,11 +21,7 @@ import {
 } from "@/src/components/ui/tooltip";
 import {
   generateQuotePrefix,
-  parseQuotePrefix,
-  formatQuotePrefix,
   generatePurchaseOrderPrefix,
-  parsePurchaseOrderPrefix,
-  formatPurchaseOrderPrefix,
   getCurrentMonthYear,
   validateQuoteNumber,
   formatQuoteNumber,
@@ -328,19 +324,7 @@ export default function QuoteSettingsView({
                             : `D-${month}${year}`;
                         }
                       }}
-                      onBlur={(e) => {
-                        if (e.target.value) {
-                          const parsed = isPurchaseOrder
-                            ? parsePurchaseOrderPrefix(e.target.value)
-                            : parseQuotePrefix(e.target.value);
-                          if (parsed) {
-                            const formatted = isPurchaseOrder
-                              ? formatPurchaseOrderPrefix(parsed.month, parsed.year)
-                              : formatQuotePrefix(parsed.month, parsed.year);
-                            setValue("prefix", formatted, { shouldValidate: true });
-                          }
-                        }
-                      }}
+                      onBlur={() => {}}
                       placeholder={isPurchaseOrder ? "BC-MMAAAA" : "D-MMAAAA"}
                       disabled={!canEdit}
                     />
