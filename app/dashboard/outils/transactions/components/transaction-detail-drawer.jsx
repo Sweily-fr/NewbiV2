@@ -208,7 +208,7 @@ const categoryFormToApi = {
   autre: "OTHER",
 
   // Revenus
-  ventes: "SALES",
+  ventes: "SERVICES",
   services: "SERVICES",
   honoraires: "SERVICES",
   commissions: "SERVICES",
@@ -220,7 +220,7 @@ const categoryFormToApi = {
   interets: "OTHER",
   dividendes: "OTHER",
   plus_values: "OTHER",
-  subventions: "GRANTS",
+  subventions: "OTHER",
   remboursements_revenus: "OTHER",
   indemnites: "OTHER",
   cadeaux_recus: "OTHER",
@@ -271,9 +271,9 @@ const categoryApiToForm = {
   // Autres
   OTHER: "autre",
 
-  // Revenus (pour compatibilité)
+  // Revenus (pour compatibilité avec d'anciennes données)
   SALES: "ventes",
-  INVESTMENTS: "investissements",
+  INVESTMENTS: "autre_revenu",
   GRANTS: "subventions",
 };
 
@@ -399,12 +399,10 @@ export function TransactionDetailDrawer({
         } else if (formType === "INCOME") {
           // Catégorie large API pour un revenu
           const incomeCategoryMap = {
-            SALES: "ventes",
             SERVICES: "services",
             SUBSCRIPTIONS: "abonnements_revenus",
             SOFTWARE: "licences_revenus",
             RENT: "loyers_revenus",
-            GRANTS: "subventions",
             OTHER: "autre_revenu",
           };
           formCategory = incomeCategoryMap[transaction.category] || categoryApiToForm[transaction.category] || "";
