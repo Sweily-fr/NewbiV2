@@ -229,7 +229,7 @@ function GestionDepensesContent() {
       receiptFile: tx.receiptFile,
       receiptRequired: tx.amount < 0 && !tx.receiptFile?.url && !tx.linkedInvoice?.id,
       status: tx.status === "completed" ? "PAID" : tx.status?.toUpperCase(),
-      paymentMethod: tx.type === "debit" ? "CARD" : "BANK_TRANSFER",
+      paymentMethod: tx.metadata?.paymentMethod || (tx.type === "debit" ? "CARD" : "BANK_TRANSFER"),
       bankName: tx.metadata?.bankName || null,
       provider: tx.provider,
       originalTransaction: {
