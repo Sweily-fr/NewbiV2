@@ -378,17 +378,57 @@ export function TransactionDetailDrawer({
       };
       const formPaymentMethod = apiPaymentMethodToForm[transaction.paymentMethod] || "CARD";
 
+      // Mapper le type API vers EXPENSE/INCOME pour le formulaire
+      let formType = "EXPENSE";
+      if (
+        transaction.type === "INCOME" ||
+        transaction.type === "CREDIT" ||
+        (transaction.amount && transaction.amount > 0)
+      ) {
+        formType = "INCOME";
+      }
+
+      // Résoudre la catégorie du formulaire
+      // Si c'est déjà une sous-catégorie fine (ex: "parking"), l'utiliser directement
+      // Sinon c'est une catégorie large API (ex: "TRAVEL"), la mapper vers une sous-catégorie
+      let formCategory = "";
+      if (transaction.category) {
+        if (categoryFormToApi[transaction.category]) {
+          // Déjà une sous-catégorie fine (ex: "parking", "carburant")
+          formCategory = transaction.category;
+        } else if (formType === "INCOME") {
+          // Catégorie large API pour un revenu
+          const incomeCategoryMap = {
+            SALES: "ventes",
+            SERVICES: "services",
+            SUBSCRIPTIONS: "abonnements_revenus",
+            SOFTWARE: "licences_revenus",
+            RENT: "loyers_revenus",
+            GRANTS: "subventions",
+            OTHER: "autre_revenu",
+          };
+          formCategory = incomeCategoryMap[transaction.category] || categoryApiToForm[transaction.category] || "";
+        } else {
+          // Catégorie large API pour une dépense (rétro-compatibilité)
+          formCategory = categoryApiToForm[transaction.category] || "";
+        }
+      }
+
       setFormData({
-        type: transaction.type || "EXPENSE",
+        type: formType,
         amount: Math.abs(transaction.amount)?.toString() || "",
-        category: categoryApiToForm[transaction.category] || "",
+        category: formCategory,
         date: formattedDate,
         description: transaction.description || "",
         paymentMethod: formPaymentMethod,
         vendor: transaction.vendor || "",
         receiptImage: transaction.receiptImage || null,
       });
-      setIsEditMode(false);
+      // Les transactions bancaires s'ouvrent directement en mode édition
+      const txIsBankTransaction = transaction.source === "BANK" ||
+        transaction.source === "BANK_TRANSACTION" ||
+        transaction.type === "BANK_TRANSACTION";
+      setIsEditMode(txIsBankTransaction);
       setPreviewUrl(transaction.receiptFile?.url || transaction.receiptImage || null);
     }
   }, [open, transaction, isCreateMode]);
@@ -442,24 +482,27 @@ export function TransactionDetailDrawer({
   // Soumettre le formulaire
   const handleSubmit = () => {
     if (isCreateMode) {
-      // Mode création
+      // Mode création — envoyer la sous-catégorie fine (le backend fait le mapping)
       const submissionData = {
         ...formData,
-        category: categoryFormToApi[formData.category] || formData.category,
+        category: formData.category || "OTHER",
         amount: parseFloat(formData.amount) || 0,
       };
       onSubmit?.(submissionData);
       onOpenChange(false);
-    } else if (isManualTransaction && isEditMode) {
-      // Mode édition manuelle
+    } else if (isEditMode) {
+      // Mode édition (manuelle ou bancaire) — envoyer la sous-catégorie fine
+      const transactionId = transaction?.originalTransaction?.id || transaction?.id;
       const submissionData = {
         ...formData,
-        category: categoryFormToApi[formData.category] || formData.category,
+        category: formData.category || "OTHER",
         amount: parseFloat(formData.amount) || 0,
-        id: transaction.id,
+        id: transactionId,
       };
       onSubmit?.(submissionData);
-      setIsEditMode(false);
+      if (isManualTransaction) {
+        setIsEditMode(false);
+      }
     }
   };
 
@@ -583,7 +626,7 @@ export function TransactionDetailDrawer({
 
   // Récupérer les infos visuelles
   // L'icône doit être réactive aux changements de catégorie en mode création ET édition
-  const isEditingForm = isCreateMode || (isManualTransaction && isEditMode);
+  const isEditingForm = isCreateMode || isEditMode;
   const currentCategoryKey = isEditingForm
     ? (categoryFormToApi[formData.category] || "OTHER")
     : (transaction?.category || "OTHER");
@@ -635,7 +678,7 @@ export function TransactionDetailDrawer({
           <div className="p-6 space-y-6">
 
             {/* Mode création ou édition manuelle: Type de transaction */}
-            {(isCreateMode || (isManualTransaction && isEditMode)) && (
+            {isEditingForm && (
               <>
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-normal text-muted-foreground">Type</span>
@@ -664,7 +707,7 @@ export function TransactionDetailDrawer({
                 </div>
                 <div className="flex-1">
                   {/* Catégorie */}
-                  {(isCreateMode || (isManualTransaction && isEditMode)) ? (
+                  {isEditingForm ? (
                     <div className="mb-1">
                       <CategorySearchSelect
                         value={formData.category}
@@ -729,7 +772,7 @@ export function TransactionDetailDrawer({
                   )}
 
                   {/* Montant */}
-                  {(isCreateMode || (isManualTransaction && isEditMode)) ? (
+                  {isEditingForm ? (
                     <div className="flex items-center gap-2">
                       <Input
                         type="number"
@@ -757,7 +800,7 @@ export function TransactionDetailDrawer({
               <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
                 {formData.type === "INCOME" ? "Source du revenu" : "Fournisseur"}
               </p>
-              {(isCreateMode || (isManualTransaction && isEditMode)) ? (
+              {isEditingForm ? (
                 <Input
                   value={formData.vendor}
                   onChange={(e) => handleChange("vendor")(e.target.value)}
@@ -811,7 +854,7 @@ export function TransactionDetailDrawer({
                   <CalendarIcon className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm font-normal text-muted-foreground">Date</span>
                 </div>
-                {(isCreateMode || (isManualTransaction && isEditMode)) ? (
+                {isEditingForm ? (
                   <DatePicker
                     value={formData.date ? parseDate(formData.date) : null}
                     onChange={(date) => {
@@ -850,7 +893,7 @@ export function TransactionDetailDrawer({
                   <PaymentIcon className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm font-normal text-muted-foreground">Paiement</span>
                 </div>
-                {(isCreateMode || (isManualTransaction && isEditMode)) ? (
+                {isEditingForm ? (
                   <Select
                     value={formData.paymentMethod}
                     onValueChange={handleChange("paymentMethod")}
@@ -932,7 +975,7 @@ export function TransactionDetailDrawer({
             </div>
 
             {/* Description (mode création/édition) */}
-            {(isCreateMode || (isManualTransaction && isEditMode)) && (
+            {isEditingForm && (
               <>
                 <Separator />
                 <div className="space-y-3">
@@ -1345,9 +1388,9 @@ export function TransactionDetailDrawer({
                 Ajouter
               </Button>
             </div>
-          ) : isManualTransaction ? (
-            isEditMode ? (
-              <div className="flex gap-2">
+          ) : isEditMode ? (
+            <div className="flex gap-2">
+              {isManualTransaction && (
                 <Button
                   variant="outline"
                   className="flex-1 font-normal"
@@ -1355,39 +1398,33 @@ export function TransactionDetailDrawer({
                 >
                   Annuler
                 </Button>
-                <Button
-                  className="flex-1 font-normal bg-primary hover:bg-primary/90"
-                  onClick={handleSubmit}
-                >
-                  <Save className="h-4 w-4 mr-2" />
-                  Enregistrer
-                </Button>
-              </div>
-            ) : (
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  className="flex-1 font-normal"
-                  onClick={() => setIsEditMode(true)}
-                >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Modifier
-                </Button>
-                <Button
-                  variant="outline"
-                  className="flex-1 font-normal text-red-600 hover:text-red-700 hover:bg-red-50"
-                  onClick={() => onDelete?.(transaction)}
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Supprimer
-                </Button>
-              </div>
-            )
+              )}
+              <Button
+                className="flex-1 font-normal bg-primary hover:bg-primary/90"
+                onClick={handleSubmit}
+              >
+                <Save className="h-4 w-4 mr-2" />
+                Enregistrer
+              </Button>
+            </div>
           ) : (
-            <div className="text-center">
-              <p className="text-sm text-muted-foreground">
-                Cliquez sur la catégorie pour la modifier
-              </p>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="flex-1 font-normal"
+                onClick={() => setIsEditMode(true)}
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                Modifier
+              </Button>
+              <Button
+                variant="outline"
+                className="flex-1 font-normal text-red-600 hover:text-red-700 hover:bg-red-50"
+                onClick={() => onDelete?.(transaction)}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Supprimer
+              </Button>
             </div>
           )}
         </DrawerFooter>
