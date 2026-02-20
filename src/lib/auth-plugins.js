@@ -1897,6 +1897,22 @@ export const organizationPlugin = organization({
           input: true,
           required: false,
         },
+        // Préfixes de numérotation
+        invoicePrefix: {
+          type: "string",
+          input: true,
+          required: false,
+        },
+        quotePrefix: {
+          type: "string",
+          input: true,
+          required: false,
+        },
+        purchaseOrderPrefix: {
+          type: "string",
+          input: true,
+          required: false,
+        },
         // Organization type (business or accounting_firm)
         organizationType: {
           type: "string",

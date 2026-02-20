@@ -71,6 +71,10 @@ export default function QuoteSettingsView({
   const numberHook = isPurchaseOrder ? purchaseOrderNumberHook : quoteNumberHook;
   const nextNumber = isPurchaseOrder ? numberHook.nextNumber : numberHook.nextQuoteNumber;
   const isLoadingNumber = numberHook.isLoading;
+  const hasExistingDocuments = isPurchaseOrder
+    ? numberHook.hasExistingOrders?.()
+    : numberHook.hasExistingQuotes?.();
+  const isFirstDocument = !hasExistingDocuments;
 
   // Auto-initialiser le préfixe et le numéro au montage uniquement (pas en continu)
   const prefixInitializedRef = useRef(false);
@@ -379,15 +383,24 @@ export default function QuoteSettingsView({
                           ? String(nextNumber).padStart(4, "0")
                           : "")
                       }
-                      disabled
-                      readOnly
-                      tabIndex={-1}
-                      onFocus={(e) => e.target.blur()}
-                      onChange={() => {}}
-                      className="bg-muted/50 cursor-not-allowed select-none"
+                      disabled={!isFirstDocument}
+                      readOnly={!isFirstDocument}
+                      tabIndex={isFirstDocument ? 0 : -1}
+                      onFocus={isFirstDocument ? undefined : (e) => e.target.blur()}
+                      onChange={isFirstDocument ? (e) => {
+                        const val = e.target.value.replace(/[^0-9]/g, "");
+                        setValue("number", val, { shouldValidate: false });
+                      } : () => {}}
+                      className={isFirstDocument
+                        ? ""
+                        : "bg-muted/50 cursor-not-allowed select-none"
+                      }
                     />
                     <p className="text-xs text-muted-foreground">
-                      Numéro attribué automatiquement de manière séquentielle.
+                      {isFirstDocument
+                        ? `Premier ${documentLabel} — vous pouvez choisir le numéro de départ.`
+                        : "Numéro attribué automatiquement de manière séquentielle."
+                      }
                     </p>
                     {data.number && data.number.startsWith("DRAFT-") && (
                       <p className="text-xs text-blue-600">

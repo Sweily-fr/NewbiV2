@@ -150,7 +150,7 @@ export function QuoteSettingsModal({ open, onOpenChange }) {
           // Préparer les valeurs initiales depuis l'organisation (même structure que l'éditeur)
           const formValues = {
             // Numérotation - préfixe par défaut (le numéro sera auto-rempli par le hook useQuoteNumber)
-            prefix: generateQuotePrefix(),
+            prefix: org?.quotePrefix || generateQuotePrefix(),
             number: "",
             // Informations de l'entreprise
             companyName: org?.companyName || "",
@@ -290,6 +290,9 @@ export function QuoteSettingsModal({ open, onOpenChange }) {
         quoteHeaderBgColor: formValues.appearance?.headerBgColor || formValues.primaryColor || "#5b4fff",
         quoteHeaderTextColor: formValues.appearance?.headerTextColor || "#ffffff",
         quoteTextColor: formValues.appearance?.textColor || "#000000",
+
+        // Préfixe de numérotation
+        quotePrefix: formValues.prefix || "",
 
         // Position du client dans le PDF (devis)
         quoteClientPositionRight: formValues.clientPositionRight || false,

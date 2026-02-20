@@ -132,7 +132,7 @@ export function PurchaseOrderSettingsModal({ open, onOpenChange }) {
           // Préparer les valeurs initiales depuis l'organisation (champs PO-spécifiques avec fallback)
           const formValues = {
             // Numérotation - préfixe par défaut (le numéro sera auto-rempli par le hook usePurchaseOrderNumber)
-            prefix: generatePurchaseOrderPrefix(),
+            prefix: org?.purchaseOrderPrefix || generatePurchaseOrderPrefix(),
             number: "",
             // Informations de l'entreprise
             companyName: org?.companyName || "",
@@ -268,6 +268,9 @@ export function PurchaseOrderSettingsModal({ open, onOpenChange }) {
         purchaseOrderHeaderBgColor: formValues.appearance?.headerBgColor || formValues.primaryColor || "#5b4fff",
         purchaseOrderHeaderTextColor: formValues.appearance?.headerTextColor || "#ffffff",
         purchaseOrderTextColor: formValues.appearance?.textColor || "#000000",
+
+        // Préfixe de numérotation
+        purchaseOrderPrefix: formValues.prefix || "",
 
         // Position du client dans le PDF (bons de commande)
         purchaseOrderClientPositionRight: formValues.clientPositionRight || false,

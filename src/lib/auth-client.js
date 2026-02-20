@@ -102,6 +102,10 @@ export const authClient = createAuthClient({
             invoiceClientPositionRight: { type: "boolean" },
             quoteClientPositionRight: { type: "boolean" },
             purchaseOrderClientPositionRight: { type: "boolean" },
+            // Préfixes de numérotation
+            invoicePrefix: { type: "string" },
+            quotePrefix: { type: "string" },
+            purchaseOrderPrefix: { type: "string" },
             // Trial system fields (ISO date strings)
             trialStartDate: { type: "string" },
             trialEndDate: { type: "string" },
