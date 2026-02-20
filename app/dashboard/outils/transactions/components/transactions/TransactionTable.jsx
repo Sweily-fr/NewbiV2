@@ -687,11 +687,8 @@ export default function TransactionTable({
         ? Math.abs(parseFloat(transaction.amount))
         : -Math.abs(parseFloat(transaction.amount));
 
-      // Déterminer la catégorie : si déjà en format API (majuscules), l'utiliser directement
-      const API_CATEGORIES = ["OFFICE_SUPPLIES", "TRAVEL", "MEALS", "ACCOMMODATION", "SOFTWARE", "HARDWARE", "SERVICES", "MARKETING", "TAXES", "RENT", "UTILITIES", "SALARIES", "INSURANCE", "MAINTENANCE", "TRAINING", "SUBSCRIPTIONS", "OTHER"];
-      const category = API_CATEGORIES.includes(transaction.category)
-        ? transaction.category
-        : mapCategoryToEnum(transaction.category);
+      // Envoyer la sous-catégorie fine directement (le backend fait le mapping vers expenseCategory)
+      const category = transaction.category || "OTHER";
 
       // Mapper le moyen de paiement
       const paymentMethod = mapPaymentMethodToEnum(transaction.paymentMethod);
@@ -789,11 +786,8 @@ export default function TransactionTable({
         ? Math.abs(parseFloat(updatedTransaction.amount))
         : -Math.abs(parseFloat(updatedTransaction.amount));
 
-      // Déterminer la catégorie : si déjà en format API (majuscules), l'utiliser directement
-      const API_CATEGORIES = ["OFFICE_SUPPLIES", "TRAVEL", "MEALS", "ACCOMMODATION", "SOFTWARE", "HARDWARE", "SERVICES", "MARKETING", "TAXES", "RENT", "UTILITIES", "SALARIES", "INSURANCE", "MAINTENANCE", "TRAINING", "SUBSCRIPTIONS", "OTHER"];
-      const category = API_CATEGORIES.includes(updatedTransaction.category)
-        ? updatedTransaction.category
-        : mapCategoryToEnum(updatedTransaction.category);
+      // Envoyer la sous-catégorie fine directement (le backend fait le mapping vers expenseCategory)
+      const category = updatedTransaction.category || "OTHER";
 
       // Mapper le moyen de paiement
       const paymentMethod = mapPaymentMethodToEnum(updatedTransaction.paymentMethod);
