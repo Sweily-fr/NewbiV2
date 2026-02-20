@@ -114,14 +114,15 @@ export default function InvoiceInfoSection({
   const data = watch();
   const { workspaceId } = useRequiredWorkspace();
 
-  // Get the next invoice number and validation function
+  // Get the next invoice number and validation function (filtré par préfixe courant)
   const {
     nextInvoiceNumber,
     validateInvoiceNumber,
     isLoading: isLoadingInvoiceNumber,
     getFormattedNextNumber,
     hasExistingInvoices,
-  } = useInvoiceNumber();
+    hasDocumentsForPrefix,
+  } = useInvoiceNumber(data.prefix);
 
   // Get the last invoice prefix
   const { prefix: lastInvoicePrefix, loading: loadingLastPrefix } =
@@ -536,43 +537,25 @@ export default function InvoiceInfoSection({
     onPreviousSituationInvoicesChange,
   ]);
 
-  // Set default invoice number when nextInvoiceNumber is available
+  // Set default due date for new invoices
+  React.useEffect(() => {
+    if (!data.dueDate) {
+      const today = new Date();
+      const dueDate = new Date(today);
+      dueDate.setDate(today.getDate() + 30);
+      setValue("dueDate", dueDate.toISOString().split("T")[0], {
+        shouldValidate: true,
+      });
+    }
+  }, [data.dueDate, setValue]);
+
+  // Set invoice number based on nextInvoiceNumber (réactif au changement de préfixe)
   React.useEffect(() => {
     if (!isLoadingInvoiceNumber && nextInvoiceNumber) {
-      const formattedNumber = getFormattedNextNumber();
-
-      if (hasExistingInvoices()) {
-        // Case 1: Existing invoices - set next sequential number
-        if (!data.number || data.number === "") {
-          setValue("number", formattedNumber, { shouldValidate: true });
-        }
-      } else {
-        // Case 2: No existing invoices - set to 000001
-        if (!data.number || data.number === "" || data.number === "1") {
-          setValue("number", "000001", { shouldValidate: true });
-        }
-        // If user has already entered a number, don't override it
-      }
-
-      // Set default due date to today + 30 days for new invoices
-      if (!data.dueDate) {
-        const today = new Date();
-        const dueDate = new Date(today);
-        dueDate.setDate(today.getDate() + 30);
-        setValue("dueDate", dueDate.toISOString().split("T")[0], {
-          shouldValidate: true,
-        });
-      }
+      const formattedNumber = String(nextInvoiceNumber).padStart(4, '0');
+      setValue("number", formattedNumber, { shouldValidate: true });
     }
-  }, [
-    nextInvoiceNumber,
-    isLoadingInvoiceNumber,
-    data.number,
-    data.dueDate,
-    setValue,
-    getFormattedNextNumber,
-    hasExistingInvoices,
-  ]);
+  }, [nextInvoiceNumber, isLoadingInvoiceNumber, setValue]);
 
   // Handle prefix changes with auto-fill for MM and AAAA
   const handlePrefixChange = (e) => {
@@ -612,35 +595,18 @@ export default function InvoiceInfoSection({
   };
 
   // Set default prefix from last invoice only once on mount (only for new invoices)
+  // Fallback to generateInvoicePrefix() (F-MMAAAA) if no last invoice prefix
   React.useEffect(() => {
     const isNewInvoice = !data.id;
-
-    console.log(
-      "[InvoiceInfoSection] useEffect - Current prefix:",
-      data.prefix
-    );
-    console.log(
-      "[InvoiceInfoSection] useEffect - Last invoice prefix:",
-      lastInvoicePrefix
-    );
-    console.log(
-      "[InvoiceInfoSection] useEffect - Will set?",
-      !loadingLastPrefix &&
-        !prefixInitialized.current &&
-        !data.prefix &&
-        lastInvoicePrefix &&
-        isNewInvoice
-    );
 
     if (
       !loadingLastPrefix &&
       !prefixInitialized.current &&
       !data.prefix &&
-      lastInvoicePrefix &&
       isNewInvoice
     ) {
-      console.log("[InvoiceInfoSection] Setting prefix to:", lastInvoicePrefix);
-      setValue("prefix", lastInvoicePrefix, {
+      const defaultPrefix = lastInvoicePrefix || generateInvoicePrefix();
+      setValue("prefix", defaultPrefix, {
         shouldValidate: false,
         shouldDirty: false,
       });
@@ -678,9 +644,9 @@ export default function InvoiceInfoSection({
   return (
     <>
       {/* Section Informations de la facture */}
-      <Card className="shadow-none p-2 border-none bg-transparent">
+      <Card className="shadow-none p-0 border-none bg-transparent mt-8">
         <CardHeader className="p-0">
-          <CardTitle className="flex items-center gap-2 font-normal text-lg">
+          <CardTitle className="flex items-center gap-2 font-medium text-lg">
             Informations de la facture
           </CardTitle>
         </CardHeader>
@@ -710,7 +676,7 @@ export default function InvoiceInfoSection({
             {/* Date d'émission */}
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <Label className="text-sm font-light">
+                <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
                   Date d'émission <span className="text-red-500">*</span>
                 </Label>
                 <Tooltip>
@@ -790,7 +756,7 @@ export default function InvoiceInfoSection({
             {/* Date d'échéance */}
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <Label className="text-sm font-light">Date d'échéance</Label>
+                <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">Date d'échéance</Label>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Info className="h-4 w-4 text-muted-foreground cursor-help" />
@@ -899,9 +865,9 @@ export default function InvoiceInfoSection({
       </Card>
 
       {/* Section Type de facture - Séparée */}
-      <Card className="shadow-none p-2 mb-2 border-none bg-transparent">
+      <Card className="shadow-none p-0 mb-8 border-none bg-transparent mt-8">
         <CardHeader className="p-0">
-          <CardTitle className="flex items-center gap-2 font-normal text-lg">
+          <CardTitle className="flex items-center gap-2 font-medium text-lg">
             Type de facture
           </CardTitle>
         </CardHeader>
@@ -977,7 +943,7 @@ export default function InvoiceInfoSection({
                 <div className="flex items-center gap-2">
                   <Label
                     htmlFor="situation-reference"
-                    className="text-sm font-light"
+                    className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
                   >
                     Référence de situation{" "}
                     <span className="text-red-500">*</span>
@@ -1360,7 +1326,7 @@ export default function InvoiceInfoSection({
           {/* {data.invoiceType === "situation" && !quoteData?.quoteByNumber && (
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <Label htmlFor="contract-total" className="text-sm font-light">
+                <Label htmlFor="contract-total" className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
                   Montant total du contrat (€)
                 </Label>
                 <Tooltip>
@@ -1414,7 +1380,7 @@ export default function InvoiceInfoSection({
                 <div className="flex items-center gap-2">
                   <Label
                     htmlFor="purchase-order-number"
-                    className="text-sm font-light"
+                    className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
                   >
                     Référence devis
                   </Label>

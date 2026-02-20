@@ -56,6 +56,11 @@ export const authClient = createAuthClient({
             activityCategory: { type: "string" },
             isVatSubject: { type: "boolean" },
             hasCommercialActivity: { type: "boolean" },
+            vatRegime: { type: "string" },
+            vatFrequency: { type: "string" },
+            vatMode: { type: "string" },
+            fiscalYearStartDate: { type: "string" },
+            fiscalYearEndDate: { type: "string" },
             // Address information (flattened)
             addressStreet: { type: "string" },
             addressCity: { type: "string" },
@@ -65,10 +70,20 @@ export const authClient = createAuthClient({
             bankName: { type: "string" },
             bankIban: { type: "string" },
             bankBic: { type: "string" },
-            // Document appearance settings
+            // Document appearance settings (global defaults)
             documentTextColor: { type: "string" },
             documentHeaderTextColor: { type: "string" },
             documentHeaderBgColor: { type: "string" },
+            // Per-document-type appearance settings
+            quoteTextColor: { type: "string" },
+            quoteHeaderTextColor: { type: "string" },
+            quoteHeaderBgColor: { type: "string" },
+            invoiceTextColor: { type: "string" },
+            invoiceHeaderTextColor: { type: "string" },
+            invoiceHeaderBgColor: { type: "string" },
+            purchaseOrderTextColor: { type: "string" },
+            purchaseOrderHeaderTextColor: { type: "string" },
+            purchaseOrderHeaderBgColor: { type: "string" },
             // Document notes settings
             documentHeaderNotes: { type: "string" },
             documentFooterNotes: { type: "string" },
@@ -79,10 +94,18 @@ export const authClient = createAuthClient({
             invoiceHeaderNotes: { type: "string" },
             invoiceFooterNotes: { type: "string" },
             invoiceTermsAndConditions: { type: "string" },
+            purchaseOrderHeaderNotes: { type: "string" },
+            purchaseOrderFooterNotes: { type: "string" },
+            purchaseOrderTermsAndConditions: { type: "string" },
             showBankDetails: { type: "boolean" },
             // Client position in PDF
             invoiceClientPositionRight: { type: "boolean" },
             quoteClientPositionRight: { type: "boolean" },
+            purchaseOrderClientPositionRight: { type: "boolean" },
+            // Préfixes de numérotation
+            invoicePrefix: { type: "string" },
+            quotePrefix: { type: "string" },
+            purchaseOrderPrefix: { type: "string" },
             // Trial system fields (ISO date strings)
             trialStartDate: { type: "string" },
             trialEndDate: { type: "string" },

@@ -75,6 +75,7 @@ const UNITS = [
   { value: "wattheure", label: "wattheure" },
   { value: "semaine", label: "semaine" },
   { value: "année", label: "année" },
+  { value: "personne(s)", label: "personne(s)" },
 ];
 
 export default function ProductModal({ product, onSave, open, onOpenChange }) {

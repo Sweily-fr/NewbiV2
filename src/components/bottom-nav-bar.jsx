@@ -23,7 +23,7 @@ import {
   Search,
   ChevronRight,
   Users,
-  Receipt,
+  ReceiptText,
 } from "lucide-react";
 import { authClient, useSession } from "@/src/lib/auth-client";
 import { useActivityNotifications } from "@/src/hooks/useActivityNotifications";
@@ -65,6 +65,7 @@ const tabs = [
 const ventesQuickCreate = [
   { label: "Nouvelle facture", href: "/dashboard/outils/factures/new" },
   { label: "Nouveau devis", href: "/dashboard/outils/devis/new" },
+  { label: "Nouveau bon de commande", href: "/dashboard/outils/bons-commande/new" },
 ];
 
 const ventesNavigation = [
@@ -79,18 +80,18 @@ const moreMenuSections = [
   {
     title: "Gestion",
     items: [
-      { label: "Notifications", icon: Bell, action: "notifications", badge: true },
-      { label: "Factures d'achat", href: "/dashboard/outils/factures-achat", icon: Receipt },
+      { label: "Factures d'achat", href: "/dashboard/outils/factures-achat", icon: ReceiptText },
       { label: "Calendrier", href: "/dashboard/calendar", icon: Calendar },
       { label: "Tâches", href: "/dashboard/outils/kanban", icon: FolderKanban },
-      { label: "Transfert de fichiers", href: "/dashboard/outils/transferts-fichiers", icon: FileUp },
       { label: "Documents partagés", href: "/dashboard/outils/documents-partages", icon: FolderOpen },
+      { label: "Transfert de fichiers", href: "/dashboard/outils/transferts-fichiers", icon: FileUp },
       { label: "Signature de mail", href: "/dashboard/outils/signatures-mail", icon: MessageSquare },
     ],
   },
   {
     title: "Paramètres",
     items: [
+      { label: "Notifications", icon: Bell, action: "notifications", badge: true },
       { label: "Paramètres", action: "settings", icon: Settings },
       {
         label: "Aide & support",
@@ -446,9 +447,9 @@ export function BottomNavBar({ onOpenSettings, onOpenNotifications }) {
                 <div className="mx-4 mb-3 flex items-center gap-3 px-1">
                   <div className="relative shrink-0">
                     <div className="h-10 w-10 rounded-lg overflow-hidden">
-                      {user.image ? (
+                      {user.avatar ? (
                         <img
-                          src={user.image}
+                          src={user.avatar}
                           alt={user.name}
                           className="h-full w-full object-cover"
                         />

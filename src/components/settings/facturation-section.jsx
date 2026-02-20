@@ -88,8 +88,8 @@ export default function FacturationSection() {
     return (
       <div className="space-y-8">
         <div>
-          <h2 className="text-lg font-medium mb-1">Facturation</h2>
-          <Separator />
+          <h2 className="text-lg font-medium mb-1 hidden md:block">Facturation</h2>
+          <Separator className="hidden md:block" />
         </div>
 
         <div className="text-center py-12">
@@ -109,7 +109,7 @@ export default function FacturationSection() {
     <div className="space-y-8">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-medium">Facturation</h2>
+        <h2 className="text-lg font-medium hidden md:block">Facturation</h2>
 
         {/* Bouton de rafraîchissement */}
         <Button

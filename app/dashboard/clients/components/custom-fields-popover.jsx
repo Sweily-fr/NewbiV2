@@ -376,17 +376,13 @@ export default function CustomFieldsPopover({ trigger }) {
       }}>
         <PopoverTrigger asChild>
           {trigger || (
-            <Button
-              size="sm"
-              variant="outline"
-              className="font-normal"
-            >
-              <Settings2 className="mr-2 h-4 w-4" />
+            <Button variant="outline">
+              <Settings2 style={{ width: '14px', height: '14px' }} />
               Personnalisé
             </Button>
           )}
         </PopoverTrigger>
-        <PopoverContent align="end" className="w-[500px] p-0">
+        <PopoverContent align="start" className="w-[500px] p-0">
           <div className="p-4 border-b">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">

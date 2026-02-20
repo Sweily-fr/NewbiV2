@@ -262,7 +262,7 @@ export function ForecastChart({ months, loading, showForecast }) {
             <CartesianGrid
               vertical={false}
               strokeDasharray="0"
-              stroke="#f3f4f6"
+              className="stroke-border"
             />
 
             {/* Current month highlight */}
@@ -270,8 +270,8 @@ export function ForecastChart({ months, loading, showForecast }) {
               <ReferenceArea
                 x1={chartData[currentIdx]?.label}
                 x2={chartData[currentIdx]?.label}
-                fill="#f3f4f6"
-                fillOpacity={0.8}
+                className="fill-muted"
+                fillOpacity={0.5}
                 ifOverflow="extendDomain"
               />
             )}

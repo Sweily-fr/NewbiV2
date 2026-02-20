@@ -556,7 +556,7 @@ export const useCreateQuote = () => {
       const result = await createQuoteMutation({
         variables: { workspaceId, input },
       });
-      return result.data.createQuote;
+      return result.data?.createQuote;
     } catch (error) {
       throw error;
     }
@@ -594,7 +594,7 @@ export const useUpdateQuote = () => {
       const result = await updateQuoteMutation({
         variables: { id, input },
       });
-      return result.data.updateQuote;
+      return result.data?.updateQuote;
     } catch (error) {
       throw error;
     }
@@ -692,7 +692,7 @@ export const useChangeQuoteStatus = () => {
       const result = await changeStatusMutation({
         variables: { id, status },
       });
-      return result.data.changeQuoteStatus;
+      return result.data?.changeQuoteStatus;
     } catch (error) {
       throw error;
     }
@@ -734,7 +734,7 @@ export const useConvertQuoteToInvoice = () => {
           skipValidation: options.skipValidation || false,
         },
       });
-      return result.data.convertQuoteToInvoice;
+      return result.data?.convertQuoteToInvoice;
     } catch (error) {
       throw error;
     }
@@ -845,8 +845,8 @@ export const CLIENT_TYPE_LABELS = {
 
 // Couleurs pour les statuts
 export const QUOTE_STATUS_COLORS = {
-  [QUOTE_STATUS.DRAFT]: "bg-gray-100 text-gray-800 border-gray-200",
-  [QUOTE_STATUS.PENDING]: "bg-blue-100 text-blue-800 border-blue-200",
-  [QUOTE_STATUS.COMPLETED]: "bg-green-50 text-green-600 border-green-200",
-  [QUOTE_STATUS.CANCELED]: "bg-red-100 text-red-800 border-red-200",
+  [QUOTE_STATUS.DRAFT]: "bg-gray-100 text-gray-700 border-gray-200",
+  [QUOTE_STATUS.PENDING]: "bg-amber-100 text-amber-700 border-amber-200",
+  [QUOTE_STATUS.COMPLETED]: "bg-emerald-100 text-emerald-700 border-emerald-200",
+  [QUOTE_STATUS.CANCELED]: "bg-red-100 text-red-700 border-red-200",
 };

@@ -23,22 +23,64 @@ function useChart() {
 function ChartContainer({ id, className, children, config, ...props }) {
   const uniqueId = React.useId();
   const chartId = `chart-${id || uniqueId.replace(/:/g, "")}`;
+  const containerRef = React.useRef(null);
+  const [size, setSize] = React.useState({ width: 0, height: 0 });
+
+  React.useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const update = () => {
+      const { width, height } = el.getBoundingClientRect();
+      const w = Math.round(width);
+      const h = Math.round(height);
+      setSize((prev) =>
+        prev.width === w && prev.height === h
+          ? prev
+          : { width: w, height: h }
+      );
+    };
+
+    update();
+
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+
+    return () => observer.disconnect();
+  }, []);
+
+  const chartContent = React.useMemo(() => {
+    if (size.width <= 0 || size.height <= 0) return null;
+    return React.Children.map(children, (child) => {
+      if (!React.isValidElement(child)) return child;
+      return React.cloneElement(child, {
+        width: size.width,
+        height: size.height,
+        style: {
+          width: size.width,
+          height: size.height,
+          ...child.props.style,
+        },
+      });
+    });
+  }, [children, size]);
 
   return (
     <ChartContext.Provider value={{ config }}>
       <div
+        ref={containerRef}
         data-slot="chart"
         data-chart={chartId}
         className={cn(
-          "[&_.recharts-cartesian-axis-tick_text]:fill-muted-foreground [&_.recharts-cartesian-grid_line[stroke='#ccc']]:stroke-border/50 [&_.recharts-curve.recharts-tooltip-cursor]:stroke-border [&_.recharts-polar-grid_[stroke='#ccc']]:stroke-border [&_.recharts-radial-bar-background-sector]:fill-muted [&_.recharts-rectangle.recharts-tooltip-cursor]:fill-muted [&_.recharts-reference-line_[stroke='#ccc']]:stroke-border flex aspect-video justify-center text-xs [&_.recharts-dot[stroke='#fff']]:stroke-transparent [&_.recharts-layer]:outline-hidden [&_.recharts-sector]:outline-hidden [&_.recharts-sector[stroke='#fff']]:stroke-transparent [&_.recharts-surface]:outline-hidden",
+          "[&_.recharts-cartesian-axis-tick_text]:fill-muted-foreground [&_.recharts-cartesian-grid_line[stroke='#ccc']]:stroke-border/50 [&_.recharts-curve.recharts-tooltip-cursor]:stroke-border [&_.recharts-polar-grid_[stroke='#ccc']]:stroke-border [&_.recharts-radial-bar-background-sector]:fill-muted [&_.recharts-rectangle.recharts-tooltip-cursor]:fill-muted [&_.recharts-reference-line_[stroke='#ccc']]:stroke-border relative aspect-video justify-center text-xs [&_.recharts-dot[stroke='#fff']]:stroke-transparent [&_.recharts-layer]:outline-hidden [&_.recharts-sector]:outline-hidden [&_.recharts-sector[stroke='#fff']]:stroke-transparent [&_.recharts-surface]:outline-hidden",
           className
         )}
         {...props}
       >
         <ChartStyle id={chartId} config={config} />
-        <RechartsPrimitive.ResponsiveContainer>
-          {children}
-        </RechartsPrimitive.ResponsiveContainer>
+        <div style={{ position: "absolute", inset: 0 }}>
+          {chartContent}
+        </div>
       </div>
     </ChartContext.Provider>
   );
@@ -145,68 +187,70 @@ function ChartTooltipContent({
     >
       {!nestLabel ? tooltipLabel : null}
       <div className="grid gap-1.5">
-        {payload.map((item, index) => {
-          const key = `${nameKey || item.name || item.dataKey || "value"}`;
-          const itemConfig = getPayloadConfigFromPayload(config, item, key);
-          const indicatorColor = color || item.payload.fill || item.color;
+        {payload
+          .filter((item) => item.type !== "none")
+          .map((item, index) => {
+            const key = `${nameKey || item.name || item.dataKey || "value"}`;
+            const itemConfig = getPayloadConfigFromPayload(config, item, key);
+            const indicatorColor = color || item.payload.fill || item.color;
 
-          return (
-            <div
-              key={item.dataKey}
-              className={cn(
-                "[&>svg]:text-muted-foreground flex w-full flex-wrap items-stretch gap-2 [&>svg]:h-2.5 [&>svg]:w-2.5",
-                indicator === "dot" && "items-center"
-              )}
-            >
-              {formatter && item?.value !== undefined && item.name ? (
-                formatter(item.value, item.name, item, index, item.payload)
-              ) : (
-                <>
-                  {itemConfig?.icon ? (
-                    <itemConfig.icon />
-                  ) : (
-                    !hideIndicator && (
-                      <div
-                        className={cn(
-                          "shrink-0 rounded-[2px] border-(--color-border) bg-(--color-bg)",
-                          {
-                            "h-2.5 w-2.5": indicator === "dot",
-                            "w-1": indicator === "line",
-                            "w-0 border-[1.5px] border-dashed bg-transparent":
-                              indicator === "dashed",
-                            "my-0.5": nestLabel && indicator === "dashed",
-                          }
-                        )}
-                        style={{
-                          "--color-bg": indicatorColor,
-                          "--color-border": indicatorColor,
-                        }}
-                      />
-                    )
-                  )}
-                  <div
-                    className={cn(
-                      "flex flex-1 justify-between leading-none",
-                      nestLabel ? "items-end" : "items-center"
+            return (
+              <div
+                key={item.dataKey}
+                className={cn(
+                  "[&>svg]:text-muted-foreground flex w-full flex-wrap items-stretch gap-2 [&>svg]:h-2.5 [&>svg]:w-2.5",
+                  indicator === "dot" && "items-center"
+                )}
+              >
+                {formatter && item?.value !== undefined && item.name ? (
+                  formatter(item.value, item.name, item, index, item.payload)
+                ) : (
+                  <>
+                    {itemConfig?.icon ? (
+                      <itemConfig.icon />
+                    ) : (
+                      !hideIndicator && (
+                        <div
+                          className={cn(
+                            "shrink-0 rounded-[2px] border-(--color-border) bg-(--color-bg)",
+                            {
+                              "h-2.5 w-2.5": indicator === "dot",
+                              "w-1": indicator === "line",
+                              "w-0 border-[1.5px] border-dashed bg-transparent":
+                                indicator === "dashed",
+                              "my-0.5": nestLabel && indicator === "dashed",
+                            }
+                          )}
+                          style={{
+                            "--color-bg": indicatorColor,
+                            "--color-border": indicatorColor,
+                          }}
+                        />
+                      )
                     )}
-                  >
-                    <div className="grid gap-1.5">
-                      {nestLabel ? tooltipLabel : null}
-                      <span className="text-muted-foreground">
-                        {itemConfig?.label || item.name}
-                      </span>
+                    <div
+                      className={cn(
+                        "flex flex-1 justify-between leading-none",
+                        nestLabel ? "items-end" : "items-center"
+                      )}
+                    >
+                      <div className="grid gap-1.5">
+                        {nestLabel ? tooltipLabel : null}
+                        <span className="text-muted-foreground">
+                          {itemConfig?.label || item.name}
+                        </span>
+                      </div>
+                      {item.value && (
+                        <span className="text-foreground font-mono font-medium tabular-nums">
+                          {item.value.toLocaleString()}
+                        </span>
+                      )}
                     </div>
-                    {item.value && (
-                      <span className="text-foreground font-mono font-medium tabular-nums">
-                        {item.value.toLocaleString()}
-                      </span>
-                    )}
-                  </div>
-                </>
-              )}
-            </div>
-          );
-        })}
+                  </>
+                )}
+              </div>
+            );
+          })}
       </div>
     </div>
   );
@@ -235,31 +279,33 @@ function ChartLegendContent({
         className
       )}
     >
-      {payload.map((item) => {
-        const key = `${nameKey || item.dataKey || "value"}`;
-        const itemConfig = getPayloadConfigFromPayload(config, item, key);
+      {payload
+        .filter((item) => item.type !== "none")
+        .map((item) => {
+          const key = `${nameKey || item.dataKey || "value"}`;
+          const itemConfig = getPayloadConfigFromPayload(config, item, key);
 
-        return (
-          <div
-            key={item.value}
-            className={cn(
-              "[&>svg]:text-muted-foreground flex items-center gap-1.5 [&>svg]:h-3 [&>svg]:w-3"
-            )}
-          >
-            {itemConfig?.icon && !hideIcon ? (
-              <itemConfig.icon />
-            ) : (
-              <div
-                className="h-2 w-2 shrink-0 rounded-[2px]"
-                style={{
-                  backgroundColor: item.color,
-                }}
-              />
-            )}
-            {itemConfig?.label}
-          </div>
-        );
-      })}
+          return (
+            <div
+              key={item.value}
+              className={cn(
+                "[&>svg]:text-muted-foreground flex items-center gap-1.5 [&>svg]:h-3 [&>svg]:w-3"
+              )}
+            >
+              {itemConfig?.icon && !hideIcon ? (
+                <itemConfig.icon />
+              ) : (
+                <div
+                  className="h-2 w-2 shrink-0 rounded-[2px]"
+                  style={{
+                    backgroundColor: item.color,
+                  }}
+                />
+              )}
+              {itemConfig?.label}
+            </div>
+          );
+        })}
     </div>
   );
 }

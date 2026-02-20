@@ -308,17 +308,36 @@ export default function BankBalanceCard({
 
   if (finalLoading) {
     return (
-      <Card className={className}>
-        <CardContent className="px-6">
-          <h3 className="text-lg font-normal text-gray-700 mb-4">Solde</h3>
-          <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded mb-6"></div>
-            <div className="space-y-4 mb-6">
-              <div className="h-4 bg-gray-200 rounded"></div>
-              <div className="h-4 bg-gray-200 rounded"></div>
-            </div>
-            <div className="h-10 bg-gray-200 rounded"></div>
+      <Card className={`${className} flex flex-col`}>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <div className="flex items-center gap-2">
+            <CardTitle className="text-sm font-normal">Soldes</CardTitle>
           </div>
+          {/* Avatar banques placeholder */}
+          <div className="-space-x-2 flex">
+            <div className="h-9 w-9 rounded-full bg-accent animate-pulse ring-2 ring-background" />
+          </div>
+        </CardHeader>
+        <CardContent className="flex flex-col flex-1 animate-pulse">
+          {/* Solde principal */}
+          <div className="mb-6">
+            <div className="h-8 w-36 bg-accent rounded mb-2" />
+            <div className="h-3 w-28 bg-accent rounded" />
+          </div>
+          {/* Liste des comptes */}
+          <div className="space-y-4 flex-1">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="h-4 w-4 bg-accent rounded" />
+                  <div className="h-4 w-28 bg-accent rounded" />
+                </div>
+                <div className="h-4 w-16 bg-accent rounded" />
+              </div>
+            ))}
+          </div>
+          {/* Bouton connecter */}
+          <div className="h-9 w-full bg-accent rounded-md mt-4" />
         </CardContent>
       </Card>
     );

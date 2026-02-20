@@ -35,8 +35,7 @@ export function SuggestionDropdown({ suggestions = [], onSelect, label = "Sugges
       <DropdownMenuTrigger asChild>
         <Button
           variant="outline"
-          size="sm"
-          className="h-8 gap-2 text-xs font-normal"
+          className="gap-2"
         >
           <Lightbulb className="h-3.5 w-3.5" />
           {label}

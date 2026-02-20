@@ -9,9 +9,9 @@ import {
   useCreateInvoice,
   useUpdateInvoice,
   useInvoice,
-  useNextInvoiceNumber,
   useCheckInvoiceNumber,
 } from "@/src/graphql/invoiceQueries";
+import { useInvoiceNumber } from "./use-invoice-number";
 import { useUser } from "@/src/lib/auth/hooks";
 import {
   updateOrganization,
@@ -40,13 +40,14 @@ export function useInvoiceEditor({
   const { invoice: existingInvoice, loading: loadingInvoice } =
     useInvoice(invoiceId);
 
-  const { data: nextNumberData } = useNextInvoiceNumber(
-    null, // On passe null comme préfixe pour utiliser la valeur par défaut
-    {
-      skip: mode !== "create",
-      isDraft: true, // Toujours true pour la création car on commence toujours par un brouillon
-    }
-  );
+  // Prefix state pour le filtrage du numéro par préfixe
+  const [currentPrefix, setCurrentPrefix] = useState(organization?.invoicePrefix || "");
+
+  // Use the invoice numbering hook with prefix filtering
+  const {
+    nextInvoiceNumber,
+    isLoading: numberLoading,
+  } = useInvoiceNumber(currentPrefix);
 
   const { createInvoice, loading: creating } = useCreateInvoice();
   const { updateInvoice, loading: updating } = useUpdateInvoice();
@@ -102,6 +103,16 @@ export function useInvoiceEditor({
 
   const { watch, setValue, getValues, formState, reset, trigger } = form;
   const { isDirty, errors } = formState;
+
+  // Synchroniser le préfixe du formulaire avec le state pour le filtrage du numéro
+  useEffect(() => {
+    const subscription = watch((value, { name }) => {
+      if (name === "prefix" && value.prefix !== undefined) {
+        setCurrentPrefix(value.prefix || "");
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [watch]);
 
   const [saving, setSaving] = useState(false);
   const [editingFields, setEditingFields] = useState(new Set());
@@ -821,14 +832,12 @@ export function useInvoiceEditor({
   }, [existingInvoice, mode, reset, getValues]);
 
   // Set next invoice number for new invoices
-  // Note: Le prefix est maintenant géré dans InvoiceInfoSection avec le préfixe de la dernière facture
   useEffect(() => {
-    if (mode === "create" && nextNumberData?.nextInvoiceNumber) {
-      // Ne plus définir le prefix ici, il est géré dans InvoiceInfoSection
-      // setValue("prefix", nextNumberData.nextInvoiceNumber.prefix);
-      setValue("number", nextNumberData.nextInvoiceNumber.number);
+    if (mode === "create" && nextInvoiceNumber && !numberLoading) {
+      const formattedNumber = String(nextInvoiceNumber).padStart(4, '0');
+      setValue("number", formattedNumber, { shouldValidate: false, shouldDirty: false });
     }
-  }, [mode, nextNumberData, setValue]);
+  }, [mode, nextInvoiceNumber, numberLoading, setValue]);
 
   // Auto-remplir companyInfo avec les données de l'organisation
   useEffect(() => {
@@ -845,6 +854,11 @@ export function useInvoiceEditor({
         phone: organization?.companyPhone || "",
         siret: organization?.siret || "",
         vatNumber: organization?.vatNumber || "",
+        rcs: organization?.rcs || "",
+        companyStatus: organization?.legalForm || "",
+        capitalSocial: organization?.capitalSocial || "",
+        vatPaymentCondition: organization?.fiscalRegime || "",
+        transactionCategory: organization?.activityCategory || "",
         website: organization?.website || "",
         logo: organization?.logo || "",
         bankDetails: {
@@ -861,18 +875,18 @@ export function useInvoiceEditor({
   // Charger les données d'organisation pour les nouvelles factures
   useEffect(() => {
     if (mode === "create" && organization) {
-      // Utiliser directement les couleurs de l'organisation pour l'apparence par défaut
+      // Utiliser les couleurs spécifiques aux factures avec fallback vers les couleurs globales
       setValue(
         "appearance.textColor",
-        organization.documentTextColor || "#000000"
+        organization.invoiceTextColor || organization.documentTextColor || "#000000"
       );
       setValue(
         "appearance.headerTextColor",
-        organization.documentHeaderTextColor || "#ffffff"
+        organization.invoiceHeaderTextColor || organization.documentHeaderTextColor || "#ffffff"
       );
       setValue(
         "appearance.headerBgColor",
-        organization.documentHeaderBgColor || "#5b50FF"
+        organization.invoiceHeaderBgColor || organization.documentHeaderBgColor || "#5b50FF"
       );
 
       // Utiliser les notes et conditions spécifiques aux factures
@@ -899,6 +913,11 @@ export function useInvoiceEditor({
         "clientPositionRight",
         organization.invoiceClientPositionRight || false
       );
+
+      // Charger le préfixe depuis l'organisation
+      if (organization.invoicePrefix) {
+        setValue("prefix", organization.invoicePrefix, { shouldDirty: false });
+      }
 
       // Marquer le formulaire comme initialisé après un court délai pour s'assurer que tous les setValue sont terminés
       setTimeout(() => {
@@ -935,6 +954,25 @@ export function useInvoiceEditor({
       }
     }
   }, [organization, setValue, getValues]);
+
+  // Synchroniser les champs plats pour CompanyInfoSettingsSection dans la vue paramètres
+  useEffect(() => {
+    if (isFormInitialized) {
+      const companyInfo = getValues("companyInfo");
+      if (companyInfo) {
+        setValue("companyName", companyInfo.name || "", { shouldDirty: false });
+        setValue("companyEmail", companyInfo.email || "", { shouldDirty: false });
+        setValue("companyPhone", companyInfo.phone || "", { shouldDirty: false });
+        setValue("website", companyInfo.website || "", { shouldDirty: false });
+        if (typeof companyInfo.address === "object" && companyInfo.address) {
+          setValue("addressStreet", companyInfo.address.street || "", { shouldDirty: false });
+          setValue("addressCity", companyInfo.address.city || "", { shouldDirty: false });
+          setValue("addressZipCode", companyInfo.address.postalCode || "", { shouldDirty: false });
+          setValue("addressCountry", companyInfo.address.country || "France", { shouldDirty: false });
+        }
+      }
+    }
+  }, [isFormInitialized, setValue, getValues]);
 
   // Pre-fill items from Kanban conversion (via sessionStorage)
   useEffect(() => {
@@ -1406,9 +1444,9 @@ export function useInvoiceEditor({
         shippingErrors.push("nom complet invalide");
       }
 
-      if (!shipping.address || shipping.address.trim() === "") {
+      if (!shipping.street || shipping.street.trim() === "") {
         shippingErrors.push("adresse manquante");
-      } else if (shipping.address.trim().length < 5) {
+      } else if (shipping.street.trim().length < 5) {
         shippingErrors.push("adresse trop courte");
       }
 
@@ -1428,12 +1466,13 @@ export function useInvoiceEditor({
         shippingErrors.push("pays manquant");
       }
 
+      const shippingCost = currentFormData.shipping?.shippingAmountHT;
       if (
-        shipping.cost === undefined ||
-        shipping.cost === null ||
-        shipping.cost === "" ||
-        isNaN(parseFloat(shipping.cost)) ||
-        parseFloat(shipping.cost) < 0
+        shippingCost === undefined ||
+        shippingCost === null ||
+        shippingCost === "" ||
+        isNaN(parseFloat(shippingCost)) ||
+        parseFloat(shippingCost) < 0
       ) {
         shippingErrors.push("coût de livraison invalide");
       }
@@ -1697,24 +1736,51 @@ export function useInvoiceEditor({
       const activeOrganization = await getActiveOrganization();
 
       const organizationData = {
-        documentTextColor: currentFormData.appearance?.textColor || "#000000",
-        documentHeaderTextColor:
+        invoiceTextColor: currentFormData.appearance?.textColor || "#000000",
+        invoiceHeaderTextColor:
           currentFormData.appearance?.headerTextColor || "#ffffff",
-        documentHeaderBgColor:
+        invoiceHeaderBgColor:
           currentFormData.appearance?.headerBgColor || "#5b50FF",
         invoiceHeaderNotes: currentFormData.headerNotes || "",
         invoiceFooterNotes: currentFormData.footerNotes || "",
         invoiceTermsAndConditions: currentFormData.termsAndConditions || "",
         showBankDetails: currentFormData.showBankDetails || false,
+        // Coordonnées bancaires
+        bankIban: currentFormData.bankDetails?.iban || currentFormData.companyInfo?.bankIban || "",
+        bankBic: currentFormData.bankDetails?.bic || currentFormData.companyInfo?.bankBic || "",
+        bankName: currentFormData.bankDetails?.bankName || currentFormData.companyInfo?.bankName || "",
         invoiceClientPositionRight:
           currentFormData.clientPositionRight || false,
+        // Préfixe de numérotation
+        invoicePrefix: currentFormData.prefix || "",
+        // Informations de l'entreprise
+        companyName: currentFormData.companyName || "",
+        companyEmail: currentFormData.companyEmail || "",
+        companyPhone: currentFormData.companyPhone || "",
+        website: currentFormData.website || "",
+        addressStreet: currentFormData.addressStreet || "",
+        addressCity: currentFormData.addressCity || "",
+        addressZipCode: currentFormData.addressZipCode || "",
+        addressCountry: currentFormData.addressCountry || "France",
       };
 
       await updateOrganization(activeOrganization.id, organizationData);
+
+      // Synchroniser les champs companyInfo du formulaire avec les valeurs sauvegardées
+      setValue("companyInfo.name", currentFormData.companyName || "");
+      setValue("companyInfo.email", currentFormData.companyEmail || "");
+      setValue("companyInfo.phone", currentFormData.companyPhone || "");
+      setValue("companyInfo.website", currentFormData.website || "");
+      setValue("companyInfo.address", {
+        street: currentFormData.addressStreet || "",
+        city: currentFormData.addressCity || "",
+        postalCode: currentFormData.addressZipCode || "",
+        country: currentFormData.addressCountry || "France",
+      });
     } catch (error) {
       throw error;
     }
-  }, [getValues]);
+  }, [getValues, setValue]);
 
   // Fonction pour valider le numéro de facture en temps réel
   const validateInvoiceNumber = useCallback(
@@ -1866,7 +1932,7 @@ function getInitialFormData(mode, initialData, session, organization) {
   };
 
   const defaultData = {
-    prefix: "",
+    prefix: organization?.invoicePrefix || "",
     number: "",
     issueDate: new Date().toISOString().split("T")[0],
     dueDate: null,
@@ -1905,6 +1971,13 @@ function getInitialFormData(mode, initialData, session, organization) {
       headerBgColor: "#5b50FF",
     },
     clientPositionRight: organization?.invoiceClientPositionRight || false, // Position du client dans le PDF (false = centre, true = droite)
+    // Livraison
+    shipping: {
+      billShipping: false,
+      shippingAddress: null,
+      shippingAmountHT: 0,
+      shippingVatRate: 20,
+    },
   };
 
   // Utiliser les paramètres par défaut de l'organisation si disponibles
@@ -2016,9 +2089,10 @@ function transformInvoiceToFormData(invoice) {
           siret: invoice.companyInfo.siret || "",
           vatNumber: invoice.companyInfo.vatNumber || "",
           rcs: invoice.companyInfo.rcs || "",
-          legalForm: invoice.companyInfo.legalForm || "",
+          companyStatus: invoice.companyInfo.companyStatus || "",
           capitalSocial: invoice.companyInfo.capitalSocial || "",
-          fiscalRegime: invoice.companyInfo.fiscalRegime || "",
+          vatPaymentCondition: invoice.companyInfo.vatPaymentCondition || "",
+          transactionCategory: invoice.companyInfo.transactionCategory || "",
           website: invoice.companyInfo.website || "",
           logo: invoice.companyInfo.logo || "",
           // Nettoyer les métadonnées GraphQL des coordonnées bancaires
@@ -2098,6 +2172,21 @@ function transformInvoiceToFormData(invoice) {
       headerBgColor: invoice.appearance?.headerBgColor || "#5b50FF",
     },
     clientPositionRight: invoice.clientPositionRight || false,
+
+    // Livraison
+    shipping: invoice.shipping
+      ? {
+          billShipping: invoice.shipping.billShipping || false,
+          shippingAddress: invoice.shipping.shippingAddress || null,
+          shippingAmountHT: invoice.shipping.shippingAmountHT || 0,
+          shippingVatRate: invoice.shipping.shippingVatRate ?? 20,
+        }
+      : {
+          billShipping: false,
+          shippingAddress: null,
+          shippingAmountHT: 0,
+          shippingVatRate: 20,
+        },
   };
 
   return transformedData;
@@ -2266,7 +2355,7 @@ function transformFormDataToInput(formData, previousStatus = null) {
     dueDate: ensureValidDate(formData.dueDate, "dueDate"),
     status: formData.status || "DRAFT",
     client: cleanClient,
-    companyInfo: cleanCompanyInfo,
+    // companyInfo n'est plus envoyé au backend - résolu dynamiquement pour les DRAFTs, snapshot à la finalisation
     items:
       formData.items?.map((item) => {
         const vatRate = parseFloat(item.vatRate || item.taxRate) || 0;

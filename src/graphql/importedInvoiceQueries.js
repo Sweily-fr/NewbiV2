@@ -313,10 +313,10 @@ export const IMPORTED_INVOICE_STATUS_LABELS = {
 };
 
 export const IMPORTED_INVOICE_STATUS_COLORS = {
-  PENDING_REVIEW: "bg-amber-100 text-amber-800 border-amber-200",
-  VALIDATED: "bg-green-50 text-green-600 border-green-200",
-  REJECTED: "bg-red-100 text-red-800 border-red-200",
-  ARCHIVED: "bg-gray-100 text-gray-800 border-gray-200",
+  PENDING_REVIEW: "bg-amber-100 text-amber-700 border-amber-200",
+  VALIDATED: "bg-emerald-100 text-emerald-700 border-emerald-200",
+  REJECTED: "bg-red-100 text-red-700 border-red-200",
+  ARCHIVED: "bg-gray-100 text-gray-700 border-gray-200",
 };
 
 export const EXPENSE_CATEGORY_LABELS = {

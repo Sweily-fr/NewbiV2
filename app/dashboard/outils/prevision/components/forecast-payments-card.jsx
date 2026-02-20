@@ -114,15 +114,15 @@ function CustomTooltip({ active, payload }) {
   const expensePct = forecastExpense > 0 ? Math.round((actualExpense / forecastExpense) * 100) : null;
 
   return (
-    <div className="bg-white rounded-xl shadow-lg border p-4 min-w-[240px]">
-      <div className="text-sm font-medium text-[#111827] border-b border-gray-100 pb-2 mb-3">
+    <div className="bg-background rounded-xl shadow-lg border border-border p-4 min-w-[240px]">
+      <div className="text-sm font-medium text-foreground border-b border-border pb-2 mb-3">
         {capitalizedLabel}
       </div>
 
       {/* Entrées */}
       {(forecastIncome > 0 || actualIncome > 0) && (
         <div className="mb-3">
-          <div className="text-xs font-medium text-[#111827] mb-1.5">Entrées</div>
+          <div className="text-xs font-medium text-foreground mb-1.5">Entrées</div>
           {forecastIncome > 0 && (
             <div className="flex items-center justify-between gap-3 mb-1">
               <div className="flex items-center gap-2">
@@ -133,24 +133,24 @@ function CustomTooltip({ active, payload }) {
                     backgroundColor: "rgba(34,197,94,0.15)",
                   }}
                 />
-                <span className="text-xs text-[#6B7280]">Prévision</span>
+                <span className="text-xs text-muted-foreground">Prévision</span>
               </div>
-              <span className="text-xs font-medium text-[#111827]">{formatCurrency(forecastIncome)}</span>
+              <span className="text-xs font-medium text-foreground">{formatCurrency(forecastIncome)}</span>
             </div>
           )}
           {actualIncome > 0 && (
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <span className="inline-block w-3 h-3 rounded-sm bg-green-500" />
-                <span className="text-xs text-[#6B7280]">Réelles</span>
+                <span className="text-xs text-muted-foreground">Réelles</span>
               </div>
               <div className="flex items-center gap-2">
                 {incomePct !== null && (
-                  <span className="text-[10px] text-[#6B7280] bg-gray-100 px-1.5 py-0.5 rounded tabular-nums">
+                  <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded tabular-nums">
                     {incomePct}%
                   </span>
                 )}
-                <span className="text-xs font-medium text-[#111827]">{formatCurrency(actualIncome)}</span>
+                <span className="text-xs font-medium text-foreground">{formatCurrency(actualIncome)}</span>
               </div>
             </div>
           )}
@@ -160,7 +160,7 @@ function CustomTooltip({ active, payload }) {
       {/* Sorties */}
       {(forecastExpense > 0 || actualExpense > 0) && (
         <div>
-          <div className="text-xs font-medium text-[#111827] mb-1.5">Sorties</div>
+          <div className="text-xs font-medium text-foreground mb-1.5">Sorties</div>
           {forecastExpense > 0 && (
             <div className="flex items-center justify-between gap-3 mb-1">
               <div className="flex items-center gap-2">
@@ -171,24 +171,24 @@ function CustomTooltip({ active, payload }) {
                     backgroundColor: "rgba(248,113,113,0.15)",
                   }}
                 />
-                <span className="text-xs text-[#6B7280]">Prévision</span>
+                <span className="text-xs text-muted-foreground">Prévision</span>
               </div>
-              <span className="text-xs font-medium text-[#111827]">{formatCurrency(forecastExpense)}</span>
+              <span className="text-xs font-medium text-foreground">{formatCurrency(forecastExpense)}</span>
             </div>
           )}
           {actualExpense > 0 && (
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <span className="inline-block w-3 h-3 rounded-sm bg-red-400" />
-                <span className="text-xs text-[#6B7280]">Réelles</span>
+                <span className="text-xs text-muted-foreground">Réelles</span>
               </div>
               <div className="flex items-center gap-2">
                 {expensePct !== null && (
-                  <span className="text-[10px] text-[#6B7280] bg-gray-100 px-1.5 py-0.5 rounded tabular-nums">
+                  <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded tabular-nums">
                     {expensePct}%
                   </span>
                 )}
-                <span className="text-xs font-medium text-[#111827]">{formatCurrency(actualExpense)}</span>
+                <span className="text-xs font-medium text-foreground">{formatCurrency(actualExpense)}</span>
               </div>
             </div>
           )}
@@ -296,7 +296,7 @@ export function ForecastPaymentsCard({ months, kpi, loading }) {
 
   if (loading) {
     return (
-      <Card className="border-gray-200">
+      <Card className="border-border">
         <CardContent className="p-6">
           <div className="flex items-center gap-4 mb-6">
             <Skeleton className="h-14 w-14 rounded-lg" />
@@ -312,48 +312,48 @@ export function ForecastPaymentsCard({ months, kpi, loading }) {
   }
 
   return (
-    <Card className="border-gray-200 bg-white shadow-none">
+    <Card className="border-border bg-background shadow-none">
       <CardContent className="p-0">
         {/* ─── Top row ─── */}
         <div className="flex items-center justify-between px-8 pt-3 pb-6">
           <div className="flex items-center gap-4">
             <HatchedIcon />
             <div>
-              <p className="text-sm text-[#6B7280] mb-1">Paiements en attente</p>
-              <p className="text-[32px] font-medium text-[#111827] leading-tight tracking-tight">
+              <p className="text-sm text-muted-foreground mb-1">Paiements en attente</p>
+              <p className="text-[32px] font-medium text-foreground leading-tight tracking-tight">
                 {formatCurrencyShort(totalAmount)}
               </p>
             </div>
           </div>
           <div className="flex items-start gap-12">
             <div className="text-center">
-              <p className="text-xs text-[#6B7280] font-normal mb-1.5">Encaissements</p>
-              <p className="text-xl font-medium text-[#111827]">{formatCurrencyShort(kpi?.pendingReceivables || 0)}</p>
+              <p className="text-xs text-muted-foreground font-normal mb-1.5">Encaissements</p>
+              <p className="text-xl font-medium text-foreground">{formatCurrencyShort(kpi?.pendingReceivables || 0)}</p>
             </div>
             <div className="text-center">
-              <p className="text-xs text-[#6B7280] font-normal mb-1.5">Décaissements</p>
-              <p className="text-xl font-medium text-[#111827]">{formatCurrencyShort(kpi?.pendingPayables || 0)}</p>
+              <p className="text-xs text-muted-foreground font-normal mb-1.5">Décaissements</p>
+              <p className="text-xl font-medium text-foreground">{formatCurrencyShort(kpi?.pendingPayables || 0)}</p>
             </div>
             <div className="text-right">
               <p className="text-xs">
-                <span className="text-[#9CA3AF]">Aujourd&apos;hui </span>
-                <span className="text-[#374151] font-medium">{todayDate}</span>
+                <span className="text-muted-foreground">Aujourd&apos;hui </span>
+                <span className="text-foreground font-medium">{todayDate}</span>
               </p>
-              <p className="text-xs text-[#9CA3AF] mt-0.5">{timeStr}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{timeStr}</p>
             </div>
           </div>
         </div>
 
         {/* ─── Bottom: legend + chart ─── */}
-        <div className="border-t border-[#E5E7EB]">
+        <div className="border-t border-border">
           <div className="flex">
             {/* Left: legend split by income / expense */}
-            <div className="w-[280px] shrink-0 border-r border-[#E5E7EB] px-8 pt-6 pb-8">
+            <div className="w-[280px] shrink-0 border-r border-border px-8 pt-6 pb-8">
               {/* ── Entrées ── */}
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-[13px] font-medium text-emerald-600">Entrées</p>
-                  <p className="text-[13px] font-medium text-[#111827]">{formatCurrencyShort(totalIncome)}</p>
+                  <p className="text-[13px] font-medium text-foreground">{formatCurrencyShort(totalIncome)}</p>
                 </div>
                 {topIncome.length > 0 ? (
                   <div className="flex flex-col gap-3">
@@ -361,22 +361,22 @@ export function ForecastPaymentsCard({ months, kpi, loading }) {
                       <div key={cat.category} className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <span className="w-2 h-2 rounded-full shrink-0 bg-emerald-500" />
-                          <span className="text-sm text-[#374151]">{cat.label}</span>
+                          <span className="text-sm text-foreground">{cat.label}</span>
                         </div>
-                        <span className="text-sm tabular-nums text-[#111827]">{formatCurrencyShort(cat.amount)}</span>
+                        <span className="text-sm tabular-nums text-foreground">{formatCurrencyShort(cat.amount)}</span>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-[#9CA3AF]">Aucune entrée</p>
+                  <p className="text-sm text-muted-foreground">Aucune entrée</p>
                 )}
               </div>
 
               {/* ── Sorties ── */}
-              <div className="pt-6 border-t border-[#E5E7EB]">
+              <div className="pt-6 border-t border-border">
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-[13px] font-medium text-red-400">Sorties</p>
-                  <p className="text-[13px] font-medium text-[#111827]">{formatCurrencyShort(totalExpense)}</p>
+                  <p className="text-[13px] font-medium text-foreground">{formatCurrencyShort(totalExpense)}</p>
                 </div>
                 {topExpense.length > 0 ? (
                   <div className="flex flex-col gap-3">
@@ -384,21 +384,21 @@ export function ForecastPaymentsCard({ months, kpi, loading }) {
                       <div key={cat.category} className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <span className="w-2 h-2 rounded-full shrink-0 bg-red-400" />
-                          <span className="text-sm text-[#374151]">{cat.label}</span>
+                          <span className="text-sm text-foreground">{cat.label}</span>
                         </div>
-                        <span className="text-sm tabular-nums text-[#111827]">{formatCurrencyShort(cat.amount)}</span>
+                        <span className="text-sm tabular-nums text-foreground">{formatCurrencyShort(cat.amount)}</span>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-[#9CA3AF]">Aucune sortie</p>
+                  <p className="text-sm text-muted-foreground">Aucune sortie</p>
                 )}
               </div>
             </div>
 
             {/* Right: chart */}
             <div className="flex-1 min-w-0 px-8 pt-6 pb-8">
-              <p className="text-sm font-medium text-[#374151] mb-4">Flux mensuels</p>
+              <p className="text-sm font-medium text-foreground mb-4">Flux mensuels</p>
 
               {chartData.length > 0 ? (
                 <ChartContainer config={chartConfig} className="aspect-auto h-[400px] w-full">
@@ -436,15 +436,15 @@ export function ForecastPaymentsCard({ months, kpi, loading }) {
                       </linearGradient>
                     </defs>
 
-                    <CartesianGrid vertical={false} strokeDasharray="0" stroke="#f3f4f6" />
+                    <CartesianGrid vertical={false} strokeDasharray="0" className="stroke-border" />
 
                     {/* Current month highlight */}
                     {currentIdx >= 0 && (
                       <ReferenceArea
                         x1={chartData[currentIdx]?.label}
                         x2={chartData[currentIdx]?.label}
-                        fill="#eff6ff"
-                        fillOpacity={0.8}
+                        className="fill-muted"
+                        fillOpacity={0.5}
                         ifOverflow="extendDomain"
                       />
                     )}
@@ -515,7 +515,7 @@ export function ForecastPaymentsCard({ months, kpi, loading }) {
                   </ComposedChart>
                 </ChartContainer>
               ) : (
-                <div className="h-[400px] flex items-center justify-center text-sm text-gray-400">
+                <div className="h-[400px] flex items-center justify-center text-sm text-muted-foreground">
                   Aucune donnée disponible
                 </div>
               )}

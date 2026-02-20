@@ -29,30 +29,36 @@ export async function getActiveOrganization() {
  */
 export async function updateOrganization(organizationId, data, options = {}) {
   try {
-    // Vérifier la session utilisateur
-    const { data: session } = await authClient.getSession();
-    console.log("👤 Utilisateur actuel:", session?.user?.email);
-    console.log("🔄 Mise à jour de l'organisation:", organizationId);
-    console.log("🔄 Données à envoyer:", data);
-
-    const result = await authClient.organization.update({
+    const { data: resultData, error } = await authClient.organization.update({
       organizationId,
       data,
     });
 
-    console.log("✅ Résultat de la mise à jour:", result);
-    console.log("✅ Données dans result.data:", result.data);
-
-    if (options.onSuccess) {
-      await options.onSuccess(result);
+    if (error) {
+      console.error("❌ Erreur Better Auth:", error);
+      if (options.onError) {
+        options.onError(error);
+      }
+      throw new Error(error.message || "Erreur lors de la mise à jour");
     }
 
-    return result;
-  } catch (error) {
-    console.error("❌ Erreur lors de la mise à jour de l'organisation:", error);
-    console.error("❌ Détails de l'erreur:", error.message, error.stack);
+    // Rafraîchir la session active pour que les hooks réactifs (useActiveOrganization)
+    // reçoivent les données mises à jour
+    try {
+      await authClient.organization.setActive({ organizationId });
+    } catch (e) {
+      // Non critique : juste pour invalider le cache de la session
+    }
 
-    if (options.onError) {
+    if (options.onSuccess) {
+      await options.onSuccess(resultData);
+    }
+
+    return resultData;
+  } catch (error) {
+    console.error("❌ Erreur mise à jour organisation:", error);
+
+    if (options.onError && error.message !== "Erreur lors de la mise à jour") {
       options.onError(error);
     }
 
@@ -130,6 +136,8 @@ export function useActiveOrganization() {
       setLoading(true);
       setError(null);
       await betterAuthRefetch();
+      // Forcer la mise à jour du useMemo pour refléter les nouvelles données
+      setForceUpdateCounter(prev => prev + 1);
       console.log("✅ Organisation refetch depuis Better Auth");
     } catch (err) {
       setError(err);

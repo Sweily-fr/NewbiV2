@@ -2,18 +2,8 @@
 
 import { Suspense, useState, useEffect, useMemo } from "react";
 import { Button } from "@/src/components/ui/button";
-import {
-  ButtonGroup,
-  ButtonGroupSeparator,
-} from "@/src/components/ui/button-group";
 import { PermissionButton } from "@/src/components/rbac";
 import { Plus, Settings, Bell, ArrowRightFromLine, Download } from "lucide-react";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/src/components/ui/tooltip";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import QuoteTable from "./components/quote-table";
 import { QuoteSettingsModal } from "./components/quote-settings-modal";
@@ -147,75 +137,29 @@ function QuotesContent() {
             <h1 className="text-2xl font-medium mb-2">Devis clients</h1>
           </div>
           <div className="flex gap-2">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="secondary"
-                    size="icon"
-                    onClick={() => setTriggerImport(true)}
-                  >
-                    <Download className="h-4 w-4" strokeWidth={1.5} />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent
-                  side="bottom"
-                  className="bg-[#202020] text-white border-0"
-                >
-                  <p>Importer des devis</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span>
-                    <QuoteExportButton quotes={quotes} iconOnly />
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent
-                  side="bottom"
-                  className="bg-[#202020] text-white border-0"
-                >
-                  <p>Exporter des devis</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="secondary"
-                    size="icon"
-                    onClick={() => setIsSettingsOpen(true)}
-                  >
-                    <Settings className="h-4 w-4" strokeWidth={1.5} />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent
-                  side="bottom"
-                  className="bg-[#202020] text-white border-0"
-                >
-                  <p>Paramètres</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            <ButtonGroup>
-              <Button
-                onClick={handleNewQuote}
-                className="cursor-pointer font-normal bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
-              >
-                Nouveau devis
-              </Button>
-              <ButtonGroupSeparator />
-              <Button
-                onClick={handleNewQuote}
-                size="icon"
-                className="cursor-pointer bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
-              >
-                <Plus size={16} aria-hidden="true" />
-              </Button>
-            </ButtonGroup>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setIsSettingsOpen(true)}
+            >
+              <Settings size={14} strokeWidth={1.5} aria-hidden="true" />
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setTriggerImport(true)}
+            >
+              <Download size={14} strokeWidth={1.5} aria-hidden="true" />
+              Importer
+            </Button>
+            <QuoteExportButton quotes={quotes} iconOnly={false} />
+            <Button
+              variant="primary"
+              onClick={handleNewQuote}
+              className="cursor-pointer"
+            >
+              <Plus size={14} strokeWidth={2} aria-hidden="true" />
+              Nouveau devis
+            </Button>
           </div>
         </div>
 
@@ -295,16 +239,13 @@ function QuotesContent() {
         </Suspense>
       </div>
 
-      {/* Mobile Layout - Style Notion */}
-      <div className="md:hidden">
-        {/* Header - Style Notion sur mobile */}
-        <div className="px-4 py-6">
+      {/* Mobile Layout */}
+      <div className="md:hidden flex flex-col h-[calc(100vh-64px)] overflow-hidden">
+        {/* Header */}
+        <div className="px-4 py-6 flex-shrink-0">
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-2xl font-medium mb-2">Devis</h1>
-              <p className="text-muted-foreground text-sm">
-                Gérez vos devis et suivez vos propositions
-              </p>
+              <h1 className="text-2xl font-medium mb-1">Devis</h1>
             </div>
             <div className="flex gap-2">
               <Button
@@ -315,6 +256,17 @@ function QuotesContent() {
               >
                 <Settings className="h-4 w-4" />
               </Button>
+              <PermissionButton
+                resource="quotes"
+                action="create"
+                onClick={handleNewQuote}
+                size="icon"
+                className="cursor-pointer rounded-full bg-[#0A0A0A] text-white hover:bg-[#0A0A0A]/90"
+                hideIfNoAccess={true}
+                tooltipNoAccess="Vous n'avez pas la permission de créer des devis"
+              >
+                <Plus className="h-5 w-5" />
+              </PermissionButton>
             </div>
           </div>
         </div>
@@ -327,19 +279,6 @@ function QuotesContent() {
             onImportTriggered={() => setTriggerImport(false)}
           />
         </Suspense>
-
-        {/* Bouton flottant mobile avec protection RBAC */}
-        <PermissionButton
-          resource="quotes"
-          action="create"
-          onClick={handleNewQuote}
-          className="fixed bottom-6 bg-[#5a50ff] right-6 h-14 w-14 rounded-full shadow-lg z-50 md:hidden"
-          size="icon"
-          hideIfNoAccess={true}
-          tooltipNoAccess="Vous n'avez pas la permission de créer des devis"
-        >
-          <Plus className="h-6 w-6" />
-        </PermissionButton>
       </div>
 
       {/* Modal des paramètres */}

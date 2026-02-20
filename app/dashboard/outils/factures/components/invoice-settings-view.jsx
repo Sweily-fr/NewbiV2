@@ -3,7 +3,6 @@
 import { useFormContext } from "react-hook-form";
 import React, { useEffect, useState, useRef } from "react";
 import {
-  Tag,
   Settings,
   AlignLeft,
   AlignRight,
@@ -16,7 +15,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/src/components/ui/tooltip";
-import { getCurrentMonthYear } from "@/src/utils/invoiceUtils";
+import { getCurrentMonthYear, generateInvoicePrefix } from "@/src/utils/invoiceUtils";
 import { documentSuggestions } from "@/src/utils/document-suggestions";
 import { SuggestionDropdown } from "@/src/components/ui/suggestion-dropdown";
 import {
@@ -26,7 +25,7 @@ import {
   CardTitle,
 } from "@/src/components/ui/card";
 import { Label } from "@/src/components/ui/label";
-import { Textarea } from "@/src/components/ui/textarea";
+import { TextareaNew } from "@/src/components/ui/textarea-new";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import { Input } from "@/src/components/ui/input";
 import { Separator } from "@/src/components/ui/separator";
@@ -35,8 +34,6 @@ import { Button } from "@/src/components/ui/button";
 import { ColorPicker } from "@/src/components/ui/color-picker";
 import {
   AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
@@ -44,7 +41,7 @@ import {
   AlertDialogTitle,
 } from "@/src/components/ui/alert-dialog";
 import { BankDetailsDialog } from "@/src/components/bank-details-dialog";
-import { authClient } from "@/src/lib/auth-client";
+import CompanyInfoSettingsSection from "@/src/components/settings/company-info-settings-section";
 
 // Fonction de validation de l'IBAN
 const validateIBAN = (value) => {
@@ -84,6 +81,7 @@ export default function InvoiceSettingsView({
   validateInvoiceNumberExists,
   validationErrors = {},
   setValidationErrors,
+  organization,
 }) {
   const {
     watch,
@@ -93,14 +91,50 @@ export default function InvoiceSettingsView({
   } = useFormContext();
   const data = watch();
 
-  // Hook pour la numérotation séquentielle des factures
+  // Hook pour la numérotation séquentielle des factures (filtré par préfixe courant)
   const {
     nextInvoiceNumber,
     validateInvoiceNumber,
     isLoading: isLoadingInvoiceNumber,
     hasExistingInvoices,
+    hasDocumentsForPrefix,
     getFormattedNextNumber,
-  } = useInvoiceNumber();
+  } = useInvoiceNumber(data.prefix);
+
+  // Champ numéro éditable si aucune facture du tout OU nouveau préfixe (pas de factures avec ce préfixe)
+  const isFirstInvoice = !hasExistingInvoices() || !hasDocumentsForPrefix;
+
+  // Auto-initialiser le préfixe et le numéro au montage uniquement (pas en continu)
+  const prefixInitializedRef = useRef(false);
+  const numberInitializedRef = useRef(false);
+
+  useEffect(() => {
+    if (!prefixInitializedRef.current && !data.prefix) {
+      const defaultPrefix = generateInvoicePrefix();
+      setValue("prefix", defaultPrefix, { shouldValidate: false });
+      prefixInitializedRef.current = true;
+    } else if (data.prefix) {
+      prefixInitializedRef.current = true;
+    }
+  }, [data.prefix, setValue]);
+
+  useEffect(() => {
+    if (!numberInitializedRef.current && !data.number && nextInvoiceNumber && !isLoadingInvoiceNumber) {
+      const defaultNumber = String(nextInvoiceNumber).padStart(4, "0");
+      setValue("number", defaultNumber, { shouldValidate: false });
+      numberInitializedRef.current = true;
+    } else if (data.number) {
+      numberInitializedRef.current = true;
+    }
+  }, [data.number, nextInvoiceNumber, isLoadingInvoiceNumber, setValue]);
+
+  // Mettre à jour le numéro quand nextInvoiceNumber change (déclenché par changement de préfixe)
+  useEffect(() => {
+    if (numberInitializedRef.current && nextInvoiceNumber && !isLoadingInvoiceNumber) {
+      const formattedNumber = String(nextInvoiceNumber).padStart(4, "0");
+      setValue("number", formattedNumber, { shouldValidate: false });
+    }
+  }, [nextInvoiceNumber, isLoadingInvoiceNumber, setValue]);
 
   // Gérer le changement de préfixe avec auto-fill pour MM et AAAA
   const handlePrefixChange = (e) => {
@@ -143,8 +177,6 @@ export default function InvoiceSettingsView({
       headerBgColor: data.appearance?.headerBgColor,
     });
   }, [data.appearance]);
-
-  const { data: organization } = authClient.useActiveOrganization();
 
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -394,10 +426,14 @@ export default function InvoiceSettingsView({
             </Alert>
           )}
 
+          {/* Section Informations de l'entreprise */}
+          <CompanyInfoSettingsSection />
+          <Separator />
+
           {/* Section Numérotation */}
           <Card className="shadow-none border-none bg-transparent">
             <CardHeader className="p-0">
-              <CardTitle className="flex items-center gap-2 font-normal text-lg">
+              <CardTitle className="flex items-center gap-2 font-medium text-lg">
                 Numérotation
               </CardTitle>
             </CardHeader>
@@ -455,7 +491,7 @@ export default function InvoiceSettingsView({
                           );
                         }
                       }}
-                      placeholder="F-MMYYYY"
+                      placeholder="F-MMAAAA"
                       disabled={!canEdit}
                       className={
                         errors?.prefix
@@ -499,90 +535,31 @@ export default function InvoiceSettingsView({
                   <div className="space-y-1">
                     <Input
                       id="invoice-number"
-                      {...register("number", {
-                        required: "Le numéro de facture est requis",
-                        validate: {
-                          isNumeric: (value) => {
-                            if (!/^\d+$/.test(value)) {
-                              return "Le numéro doit contenir uniquement des chiffres";
-                            }
-                            return true;
-                          },
-                          isValidSequence: (value) => {
-                            if (isLoadingInvoiceNumber) return true;
-                            const result = validateInvoiceNumber(
-                              parseInt(value, 10)
-                            );
-                            return result.isValid || result.message;
-                          },
-                        },
-                        minLength: {
-                          value: 1,
-                          message: "Le numéro est requis",
-                        },
-                        maxLength: {
-                          value: 6,
-                          message: "Le numéro ne peut pas dépasser 6 chiffres",
-                        },
-                      })}
                       value={
                         data.number ||
                         (nextInvoiceNumber
                           ? String(nextInvoiceNumber).padStart(4, "0")
                           : "")
                       }
-                      onChange={(e) => {
-                        const value = e.target.value.replace(/\D/g, "");
-                        setValue("number", value, { shouldValidate: true });
-                      }}
-                      onBlur={async (e) => {
-                        let finalNumber;
-                        if (e.target.value) {
-                          finalNumber = e.target.value.padStart(4, "0");
-                          setValue("number", finalNumber, {
-                            shouldValidate: true,
-                          });
-                        } else if (nextInvoiceNumber) {
-                          finalNumber = String(nextInvoiceNumber).padStart(
-                            4,
-                            "0"
-                          );
-                          setValue("number", finalNumber, {
-                            shouldValidate: true,
-                          });
-                        }
-
-                        // Vérifier si le numéro existe déjà (avec le préfixe)
-                        if (finalNumber && validateInvoiceNumberExists) {
-                          const currentPrefix = data.prefix;
-                          await validateInvoiceNumberExists(
-                            finalNumber,
-                            currentPrefix
-                          );
-                        }
-                      }}
-                      placeholder={
-                        nextInvoiceNumber
-                          ? String(nextInvoiceNumber).padStart(4, "0")
-                          : "000001"
-                      }
-                      disabled={!canEdit || isLoadingInvoiceNumber}
-                      className={
-                        errors?.number || validationErrors?.invoiceNumber
-                          ? "border-destructive focus-visible:ring-1 focus-visible:ring-destructive"
-                          : ""
+                      disabled={!isFirstInvoice}
+                      readOnly={!isFirstInvoice}
+                      tabIndex={isFirstInvoice ? 0 : -1}
+                      onFocus={isFirstInvoice ? undefined : (e) => e.target.blur()}
+                      onChange={isFirstInvoice ? (e) => {
+                        const val = e.target.value.replace(/[^0-9]/g, "");
+                        setValue("number", val, { shouldValidate: false });
+                      } : () => {}}
+                      className={isFirstInvoice
+                        ? ""
+                        : "bg-muted/50 cursor-not-allowed select-none"
                       }
                     />
-                    {errors?.number && (
-                      <p className="text-xs text-destructive">
-                        {errors.number.message}
-                      </p>
-                    )}
-                    {!errors?.number && validationErrors?.invoiceNumber && (
-                      <p className="text-xs text-destructive">
-                        {validationErrors.invoiceNumber.message}
-                      </p>
-                    )}
+                    <p className="text-xs text-muted-foreground">
+                      {isFirstInvoice
+                        ? "Première facture — vous pouvez choisir le numéro de départ."
+                        : "Numéro attribué automatiquement de manière séquentielle."
+                      }
+                    </p>
                   </div>
                 </div>
               </div>
@@ -605,7 +582,7 @@ export default function InvoiceSettingsView({
           {/* Coordonnées bancaires */}
           <Card className="shadow-none border-none bg-transparent">
             <CardHeader className="p-0">
-              <CardTitle className="flex items-center gap-2 font-normal text-lg">
+              <CardTitle className="flex items-center gap-2 font-medium text-lg">
                 Coordonnées bancaires
               </CardTitle>
             </CardHeader>
@@ -718,7 +695,7 @@ export default function InvoiceSettingsView({
           {/* Section Apparence */}
           <Card className="shadow-none border-none bg-transparent">
             <CardHeader className="p-0">
-              <CardTitle className="flex items-center gap-2 font-normal text-lg">
+              <CardTitle className="flex items-center gap-2 font-medium text-lg">
                 Apparence
               </CardTitle>
             </CardHeader>
@@ -780,7 +757,7 @@ export default function InvoiceSettingsView({
           {/* Position du client */}
           <Card className="shadow-none border-none bg-transparent">
             <CardHeader className="p-0">
-              <CardTitle className="flex items-center gap-2 font-normal text-lg">
+              <CardTitle className="flex items-center gap-2 font-medium text-lg">
                 Position du client dans le PDF
               </CardTitle>
             </CardHeader>
@@ -873,7 +850,7 @@ export default function InvoiceSettingsView({
           {/* Notes et bas de page */}
           <Card className="shadow-none border-none bg-transparent">
             <CardHeader className="p-0">
-              <CardTitle className="flex items-center gap-2 font-normal text-lg">
+              <CardTitle className="flex items-center gap-2 font-medium text-lg">
                 Notes et bas de page
               </CardTitle>
             </CardHeader>
@@ -893,7 +870,7 @@ export default function InvoiceSettingsView({
                   />
                 </div>
                 <div className="space-y-1">
-                  <Textarea
+                  <TextareaNew
                     id="header-notes"
                     className={`mt-2 ${errors?.headerNotes ? "border-red-500" : ""}`}
                     {...register("headerNotes", {
@@ -931,7 +908,7 @@ export default function InvoiceSettingsView({
                   />
                 </div>
                 <div className="space-y-1">
-                  <Textarea
+                  <TextareaNew
                     id="footer-notes"
                     className={`mt-2 ${errors?.footerNotes ? "border-red-500" : ""}`}
                     {...register("footerNotes", {
@@ -970,7 +947,7 @@ export default function InvoiceSettingsView({
                   />
                 </div>
                 <div className="space-y-1">
-                  <Textarea
+                  <TextareaNew
                     id="terms-conditions"
                     className={`mt-2 ${errors?.termsAndConditions ? "border-red-500" : ""}`}
                     {...register("termsAndConditions", {
@@ -1004,14 +981,13 @@ export default function InvoiceSettingsView({
             variant="outline"
             onClick={handleCancelClick}
             disabled={!canEdit}
-            className="font-normal"
           >
             Annuler
           </Button>
           <Button
+            variant="primary"
             onClick={handleSaveClick}
             disabled={!canEdit}
-            className="font-normal"
           >
             Enregistrer les modifications
           </Button>
@@ -1029,12 +1005,18 @@ export default function InvoiceSettingsView({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setShowConfirmDialog(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setShowConfirmDialog(false)}
+            >
               Continuer l'édition
-            </AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmCancel}>
+            </Button>
+            <Button
+              variant="danger"
+              onClick={handleConfirmCancel}
+            >
               Quitter sans sauvegarder
-            </AlertDialogAction>
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

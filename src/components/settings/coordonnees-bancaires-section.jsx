@@ -98,7 +98,7 @@ export function CoordonneesBancairesSection({
     <div className="space-y-8">
       {/* Titre */}
       <div>
-        <h2 className="text-lg font-medium mb-1">Coordonnées bancaires</h2>
+        <h2 className="text-lg font-medium mb-1 hidden md:block">Coordonnées bancaires</h2>
         <Separator className="hidden md:block" />
         {!canManageOrgSettings && (
           <div className="mt-4">
@@ -113,7 +113,7 @@ export function CoordonneesBancairesSection({
         )}
 
         {/* Information sur la validation conditionnelle */}
-        <div className="mb-8 mt-12">
+        <div className="mb-8 mt-4 md:mt-12">
           <Callout type="neutral" noMargin>
             <p>
               <span className="font-medium">

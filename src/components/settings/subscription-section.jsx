@@ -361,9 +361,9 @@ export function SubscriptionSection({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col gap-1">
+      <div className="hidden md:flex flex-col gap-1">
         <h3 className="text-lg font-medium">Abonnement</h3>
-        <Separator className="hidden md:block" />
+        <Separator />
       </div>
 
       {/* Message de permission */}

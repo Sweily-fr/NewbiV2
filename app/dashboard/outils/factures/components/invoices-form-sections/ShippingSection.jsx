@@ -118,7 +118,7 @@ export default function ShippingSection({ canEdit, validationErrors = {} }) {
   return (
     <Card className="border-0 shadow-none bg-transparent mb-0 mt-8 p-0">
       <CardHeader className="p-0">
-        <CardTitle className="flex items-center gap-2 font-normal text-lg">
+        <CardTitle className="flex items-center gap-2 font-medium text-lg">
           Facturer la livraison
         </CardTitle>
       </CardHeader>
@@ -151,9 +151,8 @@ export default function ShippingSection({ canEdit, validationErrors = {} }) {
                   size="sm"
                   onClick={fillFromClientShipping}
                   disabled={!canEdit}
-                  className="text-xs"
                 >
-                  <MapPin className="h-3 w-3 mr-1" />
+                  <MapPin className="h-3 w-3" />
                   Utiliser l'adresse du client
                 </Button>
               </div>
@@ -161,12 +160,9 @@ export default function ShippingSection({ canEdit, validationErrors = {} }) {
 
             {/* Nom complet */}
             <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Label htmlFor="shippingFullName" className="font-normal">
-                  Nom complet *
-                </Label>
-                <span className="h-4 w-4" aria-hidden="true"></span>
-              </div>
+              <Label htmlFor="shippingFullName" className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
+                Nom complet <span className="text-red-500">*</span>
+              </Label>
               <Input
                 id="shippingFullName"
                 placeholder="Nom complet du destinataire"
@@ -174,7 +170,7 @@ export default function ShippingSection({ canEdit, validationErrors = {} }) {
                 {...register("shipping.shippingAddress.fullName")}
                 className={
                   hasValidationError("nom complet")
-                    ? "border-destructive focus-visible:ring-1 focus-visible:ring-destructive"
+                    ? "border-destructive"
                     : ""
                 }
               />
@@ -189,12 +185,9 @@ export default function ShippingSection({ canEdit, validationErrors = {} }) {
 
             {/* Adresse de livraison */}
             <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Label htmlFor="shippingStreet" className="font-normal">
-                  Adresse de livraison *
-                </Label>
-                <span className="h-4 w-4" aria-hidden="true"></span>
-              </div>
+              <Label htmlFor="shippingStreet" className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
+                Adresse de livraison <span className="text-red-500">*</span>
+              </Label>
               <Textarea
                 id="shippingStreet"
                 placeholder="Adresse complète de livraison"
@@ -224,12 +217,9 @@ export default function ShippingSection({ canEdit, validationErrors = {} }) {
             {/* Ville et Code postal */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Label htmlFor="shippingCity" className="font-normal">
-                    Ville *
-                  </Label>
-                  <span className="h-4 w-4" aria-hidden="true"></span>
-                </div>
+                <Label htmlFor="shippingCity" className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
+                  Ville <span className="text-red-500">*</span>
+                </Label>
                 <Input
                   id="shippingCity"
                   placeholder="Ville"
@@ -242,7 +232,7 @@ export default function ShippingSection({ canEdit, validationErrors = {} }) {
                   })}
                   className={
                     hasValidationError("ville")
-                      ? "border-destructive focus-visible:ring-1 focus-visible:ring-destructive"
+                      ? "border-destructive"
                       : ""
                   }
                 />
@@ -256,12 +246,9 @@ export default function ShippingSection({ canEdit, validationErrors = {} }) {
               </div>
 
               <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Label htmlFor="shippingPostalCode" className="font-normal">
-                    Code postal *
-                  </Label>
-                  <span className="h-4 w-4" aria-hidden="true"></span>
-                </div>
+                <Label htmlFor="shippingPostalCode" className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
+                  Code postal <span className="text-red-500">*</span>
+                </Label>
                 <Input
                   id="shippingPostalCode"
                   placeholder="Code postal"
@@ -274,7 +261,7 @@ export default function ShippingSection({ canEdit, validationErrors = {} }) {
                   })}
                   className={
                     hasValidationError("code postal")
-                      ? "border-destructive focus-visible:ring-1 focus-visible:ring-destructive"
+                      ? "border-destructive"
                       : ""
                   }
                 />
@@ -290,12 +277,9 @@ export default function ShippingSection({ canEdit, validationErrors = {} }) {
 
             {/* Pays */}
             <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Label htmlFor="shippingCountry" className="font-normal">
-                  Pays *
-                </Label>
-                <span className="h-4 w-4" aria-hidden="true"></span>
-              </div>
+              <Label htmlFor="shippingCountry" className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
+                Pays <span className="text-red-500">*</span>
+              </Label>
               <Input
                 id="shippingCountry"
                 placeholder="Pays"
@@ -308,7 +292,7 @@ export default function ShippingSection({ canEdit, validationErrors = {} }) {
                 })}
                 className={
                   hasValidationError("pays")
-                    ? "border-destructive focus-visible:ring-1 focus-visible:ring-destructive"
+                    ? "border-destructive"
                     : ""
                 }
               />
@@ -325,12 +309,9 @@ export default function ShippingSection({ canEdit, validationErrors = {} }) {
             <div className="grid grid-cols-2 gap-4">
               {/* Montant HT */}
               <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Label htmlFor="shippingAmountHT" className="font-normal">
-                    Montant HT (€) *
-                  </Label>
-                  <span className="h-4 w-4" aria-hidden="true"></span>
-                </div>
+                <Label htmlFor="shippingAmountHT" className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
+                  Montant HT (€) <span className="text-red-500">*</span>
+                </Label>
                 <CurrencyInput
                   id="shippingAmountHT"
                   disabled={!canEdit}
@@ -363,12 +344,9 @@ export default function ShippingSection({ canEdit, validationErrors = {} }) {
 
               {/* TVA */}
               <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Label htmlFor="shippingVatRate" className="font-normal">
-                    TVA (%)
-                  </Label>
-                  <span className="h-4 w-4" aria-hidden="true"></span>
-                </div>
+                <Label htmlFor="shippingVatRate" className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
+                  TVA (%)
+                </Label>
                 <Select
                   value={shipping.shippingVatRate?.toString() || "20"}
                   onValueChange={(value) =>

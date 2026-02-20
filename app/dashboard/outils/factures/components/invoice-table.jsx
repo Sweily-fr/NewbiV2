@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { usePermissions } from "@/src/hooks/usePermissions";
 import {
@@ -45,10 +45,7 @@ import {
 } from "@/src/components/ui/alert-dialog";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
-import {
-  ButtonGroup,
-  ButtonGroupSeparator,
-} from "@/src/components/ui/button-group";
+import { Input } from "@/src/components/ui/input";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import {
   DropdownMenu,
@@ -65,7 +62,6 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
-import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
 import {
   Pagination,
@@ -122,6 +118,7 @@ export default function InvoiceTable({
   onImportTriggered,
 }) {
   const router = useRouter();
+  const inputRef = useRef(null);
   const { invoices, loading, error, refetch } = useInvoices();
   const { canCreate } = usePermissions();
   const [canCreateInvoice, setCanCreateInvoice] = useState(false);
@@ -236,6 +233,73 @@ export default function InvoiceTable({
     return counts;
   }, [combinedInvoices]);
 
+  // --- Mobile responsive state ---
+  const [isMobileScrolled, setIsMobileScrolled] = useState(false);
+  const [visibleMobileCount, setVisibleMobileCount] = useState(20);
+  const [isLoadingMoreMobile, setIsLoadingMoreMobile] = useState(false);
+  const [isMobileTransitioning, setIsMobileTransitioning] = useState(false);
+  const mobileScrollRef = useRef(null);
+  const mobileSentinelRef = useRef(null);
+  const prevMobileTabRef = useRef(activeTab);
+
+  const mobileTabs = [
+    { id: "all", label: "Toutes" },
+    { id: "draft", label: "Brouillons" },
+    { id: "pending", label: "À encaisser" },
+    { id: "completed", label: "Terminées" },
+  ];
+
+  // All rows for mobile infinite scroll (bypasses pagination)
+  const allMobileRows = table.getPrePaginationRowModel().rows;
+  const visibleMobileRows = allMobileRows.slice(0, visibleMobileCount);
+  const hasMoreMobile = visibleMobileCount < allMobileRows.length;
+
+  // Reset visible count when filtered data changes
+  useEffect(() => {
+    setVisibleMobileCount(20);
+  }, [allMobileRows.length]);
+
+  // Tab change: scroll to top + fade transition
+  useEffect(() => {
+    if (prevMobileTabRef.current !== activeTab) {
+      prevMobileTabRef.current = activeTab;
+      setIsMobileTransitioning(true);
+      if (mobileScrollRef.current) {
+        mobileScrollRef.current.scrollTop = 0;
+        setIsMobileScrolled(false);
+      }
+      const timer = setTimeout(() => setIsMobileTransitioning(false), 150);
+      return () => clearTimeout(timer);
+    }
+  }, [activeTab]);
+
+  // Infinite scroll: load more rows
+  const loadMoreMobile = useCallback(() => {
+    if (!hasMoreMobile || isLoadingMoreMobile) return;
+    setIsLoadingMoreMobile(true);
+    setTimeout(() => {
+      setVisibleMobileCount((prev) => Math.min(prev + 20, allMobileRows.length));
+      setIsLoadingMoreMobile(false);
+    }, 300);
+  }, [hasMoreMobile, isLoadingMoreMobile, allMobileRows.length]);
+
+  // IntersectionObserver for infinite scroll sentinel
+  useEffect(() => {
+    const sentinel = mobileSentinelRef.current;
+    if (!sentinel) return;
+    const observer = new IntersectionObserver(
+      (entries) => { if (entries[0].isIntersecting) loadMoreMobile(); },
+      { rootMargin: "200px" }
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [loadMoreMobile]);
+
+  // Scroll detection for toolbar shadow
+  const handleMobileScroll = useCallback((e) => {
+    setIsMobileScrolled(e.target.scrollTop > 0);
+  }, []);
+
   // Vérifier les permissions de création
   useEffect(() => {
     const checkPermission = async () => {
@@ -278,17 +342,42 @@ export default function InvoiceTable({
     <div className="flex flex-col flex-1 min-h-0">
       {/* Filters and Add Invoice Button - Fixe en haut */}
       <div className="flex items-center justify-between gap-3 hidden md:flex px-4 sm:px-6 py-4 flex-shrink-0">
-        {/* Search */}
-        <div className="relative max-w-md">
-          <Input
-            placeholder="Recherchez par numéro de facture, par client ou par montant..."
-            value={globalFilter ?? ""}
-            onChange={(event) => setGlobalFilter(event.target.value)}
-            className="w-full sm:w-[490px] lg:w-[490px] ps-9"
-          />
-          <div className="text-muted-foreground/80 pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3">
-            <Search size={16} aria-hidden="true" />
+        {/* Search + Filtres à gauche */}
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 h-8 w-full sm:w-[400px] rounded-[9px] border border-[#E6E7EA] hover:border-[#D1D3D8] dark:border-[#2E2E32] dark:hover:border-[#44444A] bg-transparent px-3 transition-[color,box-shadow] focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]">
+            <Search size={16} className="text-muted-foreground/80 shrink-0" aria-hidden="true" />
+            <Input
+              variant="ghost"
+              ref={inputRef}
+              value={globalFilter ?? ""}
+              onChange={(event) => setGlobalFilter(event.target.value)}
+              placeholder="Recherchez par numéro, client ou montant..."
+            />
+            {Boolean(globalFilter) && (
+              <button
+                onClick={() => {
+                  setGlobalFilter("");
+                  inputRef.current?.focus();
+                }}
+                className="text-muted-foreground/80 hover:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 flex items-center justify-center rounded focus-visible:ring-[3px] focus-visible:outline-none cursor-pointer"
+                aria-label="Effacer la recherche"
+              >
+                <CircleXIcon size={16} strokeWidth={2} aria-hidden="true" />
+              </button>
+            )}
           </div>
+
+          {/* Filters Button */}
+          <InvoiceFilters
+            statusFilter={statusFilter}
+            setStatusFilter={setStatusFilter}
+            clientFilter={clientFilter}
+            setClientFilter={setClientFilter}
+            dateFilter={dateFilter}
+            setDateFilter={setDateFilter}
+            invoices={invoices || []}
+            table={table}
+          />
         </div>
 
         {/* Actions à droite */}
@@ -331,58 +420,46 @@ export default function InvoiceTable({
               </AlertDialogContent>
             </AlertDialog>
           )}
-
-          {/* Filters Button - Icône 3 points */}
-          <InvoiceFilters
-            statusFilter={statusFilter}
-            setStatusFilter={setStatusFilter}
-            clientFilter={clientFilter}
-            setClientFilter={setClientFilter}
-            dateFilter={dateFilter}
-            setDateFilter={setDateFilter}
-            invoices={invoices || []}
-            table={table}
-          />
         </div>
       </div>
 
       {/* Tabs de filtre rapide - Desktop */}
       <div className="hidden md:block flex-shrink-0 border-b border-gray-200 dark:border-gray-800">
         <Tabs value={activeTab} onValueChange={handleTabChange}>
-          <TabsList className="h-auto rounded-none bg-transparent p-0 w-full justify-start px-4 sm:px-6">
+          <TabsList className="h-auto rounded-none bg-transparent p-0 pb-2 w-full justify-start px-4 sm:px-6">
             <TabsTrigger
               value="all"
-              className="data-[state=active]:after:bg-primary relative rounded-none py-2 px-4 after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 data-[state=active]:bg-transparent data-[state=active]:shadow-none text-sm font-normal"
+              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground hover:shadow-[inset_0_0_0_1px_#EEEFF1] dark:hover:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
             >
-              Toutes les factures
-              <span className="ml-2 text-xs text-muted-foreground">
+              <span className="data-[state=active]:text-shadow-[0_0_0.01px_currentColor]">Toutes les factures</span>
+              <span className="text-xs text-muted-foreground">
                 {invoiceCounts.all}
               </span>
             </TabsTrigger>
             <TabsTrigger
               value="draft"
-              className="data-[state=active]:after:bg-primary relative rounded-none py-2 px-4 after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 data-[state=active]:bg-transparent data-[state=active]:shadow-none text-sm font-normal"
+              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground hover:shadow-[inset_0_0_0_1px_#EEEFF1] dark:hover:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
             >
-              Brouillons
-              <span className="ml-2 text-xs text-muted-foreground">
+              <span>Brouillons</span>
+              <span className="text-xs text-muted-foreground">
                 {invoiceCounts.draft}
               </span>
             </TabsTrigger>
             <TabsTrigger
               value="pending"
-              className="data-[state=active]:after:bg-primary relative rounded-none py-2 px-4 after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 data-[state=active]:bg-transparent data-[state=active]:shadow-none text-sm font-normal"
+              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground hover:shadow-[inset_0_0_0_1px_#EEEFF1] dark:hover:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
             >
-              À encaisser
-              <span className="ml-2 text-xs text-muted-foreground">
+              <span>À encaisser</span>
+              <span className="text-xs text-muted-foreground">
                 {invoiceCounts.pending}
               </span>
             </TabsTrigger>
             <TabsTrigger
               value="completed"
-              className="data-[state=active]:after:bg-primary relative rounded-none py-2 px-4 after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 data-[state=active]:bg-transparent data-[state=active]:shadow-none text-sm font-normal"
+              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground hover:shadow-[inset_0_0_0_1px_#EEEFF1] dark:hover:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
             >
-              Terminées
-              <span className="ml-2 text-xs text-muted-foreground">
+              <span>Terminées</span>
+              <span className="text-xs text-muted-foreground">
                 {invoiceCounts.completed}
               </span>
             </TabsTrigger>
@@ -498,192 +575,262 @@ export default function InvoiceTable({
         </div>
       </div>
 
-      {/* Mobile Toolbar - Style Notion */}
-      <div className="md:hidden px-4 py-3">
-        <div className="flex items-center gap-3">
-          {/* Search Input */}
-          <div className="flex-1 relative">
-            <Input
-              placeholder="Rechercher des factures..."
-              value={globalFilter ?? ""}
-              onChange={(event) => setGlobalFilter(event.target.value)}
-              className="h-9 pl-3 pr-3 bg-gray-50 dark:bg-gray-900 border-none rounded-md text-sm"
-            />
-          </div>
+      {/* Mobile Toolbar */}
+      <div className={cn("md:hidden flex-shrink-0 transition-shadow", isMobileScrolled && "shadow-xs")}>
+        {/* Search + Filter */}
+        <div className="px-4 pb-3">
+          <div className="flex items-center gap-2">
+            <div className="flex-1 relative">
+              <Input
+                ref={inputRef}
+                className={cn("peer w-full ps-9", Boolean(globalFilter) && "pe-9")}
+                value={globalFilter ?? ""}
+                onChange={(e) => setGlobalFilter(e.target.value)}
+                placeholder="Rechercher..."
+                type="text"
+                aria-label="Rechercher des factures"
+              />
+              <div className="text-muted-foreground/80 pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3 peer-disabled:opacity-50">
+                <Search size={16} aria-hidden="true" />
+              </div>
+              {Boolean(globalFilter) && (
+                <button
+                  className="text-muted-foreground/80 hover:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 absolute inset-y-0 end-0 flex h-full w-9 items-center justify-center rounded-e-md transition-[color,box-shadow] outline-none focus:z-10 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
+                  aria-label="Effacer la recherche"
+                  onClick={() => {
+                    setGlobalFilter("");
+                    inputRef.current?.focus();
+                  }}
+                >
+                  <CircleXIcon size={16} aria-hidden="true" />
+                </button>
+              )}
+            </div>
 
-          {/* Filter Button - Icon only */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-9 w-9 p-0 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer"
-              >
-                <ListFilterIcon className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent align="end">
-              <div className="p-4">
-                <h4 className="font-medium leading-none mb-3">
-                  Filtrer par statut
-                </h4>
-                <div className="space-y-2">
-                  {Object.entries(INVOICE_STATUS_LABELS).map(
-                    ([status, label]) => (
-                      <div key={status} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`mobile-invoice-${status}`}
-                          checked={statusFilter.includes(status)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setStatusFilter([...statusFilter, status]);
-                            } else {
-                              setStatusFilter(
-                                statusFilter.filter((s) => s !== status)
-                              );
-                            }
-                          }}
-                        />
-                        <Label
-                          htmlFor={`mobile-invoice-${status}`}
-                          className="text-sm font-normal"
-                        >
-                          {label}
-                        </Label>
-                      </div>
-                    )
+            {/* Filter Button */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  size="icon"
+                  variant="filter"
+                  aria-label="Filtrer"
+                  className="relative"
+                >
+                  <FilterIcon size={16} />
+                  {statusFilter.length > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-background text-muted-foreground/70 inline-flex h-4 w-4 items-center justify-center rounded border text-[0.5rem] font-medium">
+                      {statusFilter.length}
+                    </span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="end">
+                <div className="p-4">
+                  <h4 className="font-medium leading-none mb-3">Filtrer par statut</h4>
+                  <div className="space-y-2">
+                    {Object.entries(INVOICE_STATUS_LABELS).map(
+                      ([status, label]) => (
+                        <div key={status} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`mobile-invoice-${status}`}
+                            checked={statusFilter.includes(status)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setStatusFilter([...statusFilter, status]);
+                              } else {
+                                setStatusFilter(statusFilter.filter((s) => s !== status));
+                              }
+                            }}
+                          />
+                          <Label htmlFor={`mobile-invoice-${status}`} className="text-sm font-normal">
+                            {label}
+                          </Label>
+                        </div>
+                      )
+                    )}
+                  </div>
+                  {statusFilter.length > 0 && (
+                    <Button
+                      variant="ghost"
+                      onClick={() => setStatusFilter([])}
+                      className="w-full mt-3 h-8 px-2 lg:px-3"
+                    >
+                      Effacer les filtres
+                    </Button>
                   )}
                 </div>
-                {statusFilter.length > 0 && (
-                  <Button
-                    variant="ghost"
-                    onClick={() => setStatusFilter([])}
-                    className="w-full mt-3 h-8 px-2 lg:px-3"
-                  >
-                    Effacer les filtres
-                  </Button>
-                )}
-              </div>
-            </PopoverContent>
-          </Popover>
+              </PopoverContent>
+            </Popover>
+          </div>
+        </div>
 
-          {/* Delete button for mobile - shown when rows are selected */}
-          {selectedRows.length > 0 && (
-            <Button
-              variant="destructive"
-              size="sm"
-              className="h-9 px-3"
-              onClick={() => {
-                // Trigger the delete dialog
-                const deleteButton = document.querySelector(
-                  "[data-mobile-delete-trigger-invoice]"
-                );
-                if (deleteButton) deleteButton.click();
-              }}
-            >
-              <TrashIcon className="h-4 w-4 mr-1" />({selectedRows.length})
-            </Button>
-          )}
-
-          {/* Add Invoice Button - Icon only */}
-          {/* <Button
-            variant="default"
-            size="sm"
-            className="h-7 w-7 p-0 bg-[#5A50FF] hover:bg-[#5A50FF] text-white rounded-sm"
-            onClick={() => router.push("/dashboard/outils/factures/new")}
-          >
-            <PlusIcon className="h-4 w-4" />
-          </Button> */}
+        {/* Tabs */}
+        <div className="overflow-x-auto scrollbar-hide px-4 pb-3">
+          <div className="flex gap-2 w-max">
+            {mobileTabs.map((tab) => {
+              const count = invoiceCounts[tab.id];
+              return (
+                <Button
+                  key={tab.id}
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleTabChange(tab.id)}
+                  className={cn(
+                    "whitespace-nowrap text-xs h-8 px-3 transition-all duration-200",
+                    activeTab === tab.id
+                      ? "bg-gray-100 text-foreground dark:bg-gray-800"
+                      : "bg-gray-50 text-muted-foreground dark:bg-gray-900"
+                  )}
+                >
+                  {tab.label}
+                  {count != null && count > 0 && (
+                    <span className={cn(
+                      "ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-medium transition-colors duration-200",
+                      activeTab === tab.id
+                        ? "bg-foreground/10 text-foreground"
+                        : "bg-foreground/5 text-muted-foreground"
+                    )}>
+                      {count}
+                    </span>
+                  )}
+                </Button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
-      {/* Table - Mobile style (Notion-like) */}
-      <div className="md:hidden overflow-x-auto pb-20">
-        <Table className="w-full">
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow
-                key={headerGroup.id}
-                className="border-b border-gray-100 dark:border-gray-400"
-              >
-                {headerGroup.headers
-                  .filter(
-                    (header) =>
-                      header.column.id === "select" ||
-                      header.column.id === "client" ||
-                      header.column.id === "finalTotalTTC" ||
-                      header.column.id === "actions"
-                  )
-                  .map((header) => (
-                    <TableHead
-                      key={header.id}
-                      style={{ width: header.getSize() }}
-                      className="py-3 px-4 text-left font-medium text-gray-600 dark:text-gray-400"
-                    >
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                    </TableHead>
-                  ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {loading ? (
-              Array.from({ length: 6 }).map((_, i) => (
-                <TableRow key={`skeleton-${i}`} className="border-b border-gray-50 dark:border-gray-800">
-                  <TableCell className="py-3 px-4"><div className="h-4 w-4 rounded bg-muted animate-pulse" /></TableCell>
-                  <TableCell className="py-3 px-4">
-                    <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 rounded-full bg-muted animate-pulse flex-shrink-0" />
-                      <div className="h-4 w-[100px] rounded bg-muted animate-pulse" />
-                    </div>
-                  </TableCell>
-                  <TableCell className="py-3 px-4"><div className="h-4 w-[60px] rounded bg-muted animate-pulse" /></TableCell>
-                  <TableCell className="py-3 px-4"><div className="h-7 w-7 rounded bg-muted animate-pulse" /></TableCell>
-                </TableRow>
-              ))
-            ) : table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
+      {/* Mobile Table - Infinite scroll */}
+      <div
+        ref={mobileScrollRef}
+        onScroll={handleMobileScroll}
+        className="md:hidden overflow-y-auto overflow-x-auto flex-1 min-h-0 pb-20"
+      >
+        <div className={`transition-opacity duration-150 ${isMobileTransitioning ? "opacity-0" : "opacity-100"}`}>
+          <Table className="w-full">
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                  className="border-b border-gray-50 dark:border-gray-800 hover:bg-gray-25 dark:hover:bg-gray-900"
+                  key={headerGroup.id}
+                  className="border-b border-gray-100 dark:border-gray-400"
                 >
-                  {row
-                    .getVisibleCells()
+                  {headerGroup.headers
                     .filter(
-                      (cell) =>
-                        cell.column.id === "select" ||
-                        cell.column.id === "client" ||
-                        cell.column.id === "finalTotalTTC" ||
-                        cell.column.id === "actions"
+                      (header) =>
+                        header.column.id === "select" ||
+                        header.column.id === "client" ||
+                        header.column.id === "finalTotalTTC" ||
+                        header.column.id === "actions"
                     )
-                    .map((cell) => (
-                      <TableCell key={cell.id} className="py-3 px-4 text-sm">
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )}
-                      </TableCell>
+                    .map((header) => (
+                      <TableHead
+                        key={header.id}
+                        style={{ width: header.getSize() }}
+                        className="py-3 px-4 text-left font-medium text-gray-600 dark:text-gray-400"
+                      >
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                      </TableHead>
                     ))}
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={4}
-                  className="h-24 text-center text-gray-500 dark:text-gray-400"
-                >
-                  Aucune facture trouvée.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {visibleMobileRows.length > 0 ? (
+                <>
+                  {visibleMobileRows.map((row) => (
+                    <TableRow
+                      key={row.id}
+                      data-state={row.getIsSelected() && "selected"}
+                      className="border-b border-gray-50 dark:border-gray-800 hover:bg-gray-25 dark:hover:bg-gray-900 cursor-pointer"
+                      onClick={(e) => {
+                        if (
+                          e.target.closest('[role="checkbox"]') ||
+                          e.target.closest("[data-actions-cell]") ||
+                          e.target.closest('[role="menu"]')
+                        ) return;
+                        const invoice = row.original;
+                        if (invoice._type === "imported") {
+                          setSelectedImportedInvoice(invoice);
+                        } else {
+                          setInvoiceToOpen(invoice);
+                        }
+                      }}
+                    >
+                      {row
+                        .getVisibleCells()
+                        .filter(
+                          (cell) =>
+                            cell.column.id === "select" ||
+                            cell.column.id === "client" ||
+                            cell.column.id === "finalTotalTTC" ||
+                            cell.column.id === "actions"
+                        )
+                        .map((cell) => (
+                          <TableCell key={cell.id} className="py-3 px-4 text-sm">
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext()
+                            )}
+                          </TableCell>
+                        ))}
+                    </TableRow>
+                  ))}
+                  {isLoadingMoreMobile && (
+                    Array.from({ length: 3 }).map((_, i) => (
+                      <TableRow key={`mobile-skeleton-${i}`} className="border-b border-gray-50 dark:border-gray-800">
+                        <TableCell className="py-3 px-4"><Skeleton className="h-4 w-4" /></TableCell>
+                        <TableCell className="py-3 px-4">
+                          <div className="flex items-center gap-3">
+                            <Skeleton className="h-8 w-8 rounded-full" />
+                            <Skeleton className="h-4 w-[100px]" />
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-3 px-4"><Skeleton className="h-4 w-[60px]" /></TableCell>
+                        <TableCell className="py-3 px-4"><Skeleton className="h-7 w-7" /></TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                  {hasMoreMobile && (
+                    <TableRow>
+                      <TableCell colSpan={4} className="p-0">
+                        <div ref={mobileSentinelRef} className="h-1" />
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </>
+              ) : loading ? (
+                Array.from({ length: 6 }).map((_, i) => (
+                  <TableRow key={`skeleton-${i}`} className="border-b border-gray-50 dark:border-gray-800">
+                    <TableCell className="py-3 px-4"><Skeleton className="h-4 w-4" /></TableCell>
+                    <TableCell className="py-3 px-4">
+                      <div className="flex items-center gap-3">
+                        <Skeleton className="h-8 w-8 rounded-full" />
+                        <Skeleton className="h-4 w-[100px]" />
+                      </div>
+                    </TableCell>
+                    <TableCell className="py-3 px-4"><Skeleton className="h-4 w-[60px]" /></TableCell>
+                    <TableCell className="py-3 px-4"><Skeleton className="h-7 w-7" /></TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={4} className="h-40 text-center">
+                    <div className="flex flex-col items-center gap-2">
+                      <p className="text-sm text-muted-foreground">
+                        Aucune facture trouvée.
+                      </p>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
       {/* Pagination - Fixe en bas sur desktop */}

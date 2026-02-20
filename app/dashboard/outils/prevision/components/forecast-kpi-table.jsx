@@ -72,11 +72,11 @@ function MonthCell({ m, actualKey, forecastKey, currentMonth }) {
     const pct = forecast > 0 ? Math.round((actual / forecast) * 100) : null;
     return (
       <span className="inline-flex items-center gap-1.5">
-        <span className="font-medium text-[#111827]">{formatCompact(actual)}</span>
+        <span className="font-medium text-foreground">{formatCompact(actual)}</span>
         {pct !== null && (
           <span className={cn(
             "text-[11px] tabular-nums",
-            pct >= 100 ? "text-emerald-600" : "text-[#9CA3AF]"
+            pct >= 100 ? "text-emerald-600" : "text-muted-foreground"
           )}>
             {pct}%
           </span>
@@ -88,11 +88,11 @@ function MonthCell({ m, actualKey, forecastKey, currentMonth }) {
   if (isCurrent) {
     return (
       <span className="inline-flex items-center gap-1.5">
-        <span className="font-medium text-[#111827]">{formatCompact(actual)}</span>
+        <span className="font-medium text-foreground">{formatCompact(actual)}</span>
         {forecast > 0 && (
           <>
             <span className="w-1.5 h-1.5 rounded-full bg-[#3B82F6] shrink-0" />
-            <span className="text-[#9CA3AF]">{formatCompact(forecast)}</span>
+            <span className="text-muted-foreground">{formatCompact(forecast)}</span>
           </>
         )}
       </span>
@@ -101,7 +101,7 @@ function MonthCell({ m, actualKey, forecastKey, currentMonth }) {
 
   // Future
   return (
-    <span className="text-[#6B7280]">{forecast > 0 ? formatCompact(forecast) : "-"}</span>
+    <span className="text-muted-foreground">{forecast > 0 ? formatCompact(forecast) : "-"}</span>
   );
 }
 
@@ -117,9 +117,9 @@ function CategoryCell({ m, category, type, currentMonth }) {
     const pct = forecast > 0 ? Math.round((actual / forecast) * 100) : null;
     return (
       <span className="inline-flex items-center gap-1.5">
-        <span className="text-[#374151]">{formatCompact(actual)}</span>
+        <span className="text-foreground">{formatCompact(actual)}</span>
         {pct !== null && (
-          <span className="text-[11px] text-[#9CA3AF] tabular-nums">{pct}%</span>
+          <span className="text-[11px] text-muted-foreground tabular-nums">{pct}%</span>
         )}
       </span>
     );
@@ -128,11 +128,11 @@ function CategoryCell({ m, category, type, currentMonth }) {
   if (isCurrent) {
     return (
       <span className="inline-flex items-center gap-1.5">
-        <span className="text-[#374151]">{formatCompact(actual)}</span>
+        <span className="text-foreground">{formatCompact(actual)}</span>
         {forecast > 0 && (
           <>
             <span className="w-1 h-1 rounded-full bg-[#9CA3AF] shrink-0" />
-            <span className="text-[#9CA3AF]">{formatCompact(forecast)}</span>
+            <span className="text-muted-foreground">{formatCompact(forecast)}</span>
           </>
         )}
       </span>
@@ -140,7 +140,7 @@ function CategoryCell({ m, category, type, currentMonth }) {
   }
 
   return (
-    <span className="text-[#9CA3AF]">{forecast > 0 ? formatCompact(forecast) : "-"}</span>
+    <span className="text-muted-foreground">{forecast > 0 ? formatCompact(forecast) : "-"}</span>
   );
 }
 
@@ -209,34 +209,34 @@ export function ForecastKpiTable({ months, kpi, loading }) {
 
   if (!safeMonths.length) {
     return (
-      <div className="text-center py-12 text-sm text-gray-400">
+      <div className="text-center py-12 text-sm text-muted-foreground">
         Aucune donnée disponible pour cette période.
       </div>
     );
   }
 
   const cellBase = "py-3 px-3 text-right text-sm whitespace-nowrap tabular-nums";
-  const headerCell = "py-2.5 px-3 text-right text-xs font-normal text-[#9CA3AF] whitespace-nowrap";
+  const headerCell = "py-2.5 px-3 text-right text-xs font-normal text-muted-foreground whitespace-nowrap";
 
   return (
     <div>
       {/* Two-column layout: hero KPIs left, monthly table right */}
-      <div className="flex border-t border-b border-gray-200 pl-4 sm:pl-6">
+      <div className="flex border-t border-b border-border pl-4 sm:pl-6">
         {/* ─ Left column: Hero KPIs ─ */}
-        <div className="w-[240px] shrink-0 pr-6 pt-6 pb-8 border-r border-gray-200 flex flex-col">
+        <div className="w-[240px] shrink-0 pr-6 pt-6 pb-8 border-r border-border flex flex-col">
           {/* Solde actuel */}
           <div className="mb-6">
-            <p className="text-xs text-[#6B7280] font-normal mb-1.5">Solde actuel</p>
-            <p className="text-[28px] font-medium text-[#111827] leading-tight tracking-tight tabular-nums">
+            <p className="text-xs text-muted-foreground font-normal mb-1.5">Solde actuel</p>
+            <p className="text-[28px] font-medium text-foreground leading-tight tracking-tight tabular-nums">
               {formatCurrency(kpi?.currentBalance)}
             </p>
           </div>
 
           {/* Solde projeté 3 mois */}
-          <div className="mb-6 pb-6 border-b border-gray-200">
-            <p className="text-xs text-[#6B7280] font-normal mb-1.5">Solde projeté (3 mois)</p>
+          <div className="mb-6 pb-6 border-b border-border">
+            <p className="text-xs text-muted-foreground font-normal mb-1.5">Solde projeté (3 mois)</p>
             <div className="flex items-center gap-2">
-              <p className="text-xl font-medium text-[#111827] tabular-nums">
+              <p className="text-xl font-medium text-foreground tabular-nums">
                 {formatCurrency(kpi?.projectedBalance3Months)}
               </p>
               {balanceTrend !== null && (
@@ -258,7 +258,7 @@ export function ForecastKpiTable({ months, kpi, loading }) {
 
           {/* Flux net du mois */}
           <div>
-            <p className="text-xs text-[#6B7280] font-normal mb-1.5">Flux net ce mois</p>
+            <p className="text-xs text-muted-foreground font-normal mb-1.5">Flux net ce mois</p>
             <p className={cn(
               "text-xl font-medium tabular-nums",
               currentMonthNet !== null && currentMonthNet >= 0 ? "text-emerald-600" : "text-red-500"
@@ -277,13 +277,13 @@ export function ForecastKpiTable({ months, kpi, loading }) {
             {/* Month headers */}
             <thead>
               <tr>
-                <th className="sticky left-0 bg-[#fafbfc] z-10 py-2.5 pl-4 pr-3 text-left text-xs font-normal text-[#9CA3AF] whitespace-nowrap min-w-[140px]" />
+                <th className="sticky left-0 bg-muted z-10 py-2.5 pl-4 pr-3 text-left text-xs font-normal text-muted-foreground whitespace-nowrap min-w-[140px]" />
                 {safeMonths.map((m) => (
                   <th
                     key={m.month}
                     className={cn(
                       headerCell,
-                      m.month === currentMonth && "bg-blue-50/60 font-medium text-[#3B82F6]"
+                      m.month === currentMonth && "bg-blue-500/10 font-medium text-blue-500"
                     )}
                   >
                     {formatMonthHeader(m.month)}
@@ -293,14 +293,14 @@ export function ForecastKpiTable({ months, kpi, loading }) {
             </thead>
             <tbody>
               {/* ── Début du mois ── */}
-              <tr className="border-t border-gray-100">
-                <td className="sticky left-0 bg-white z-10 py-3 pl-4 pr-3 text-sm font-medium text-[#6B7280] whitespace-nowrap">
+              <tr className="border-t border-border">
+                <td className="sticky left-0 bg-background z-10 py-3 pl-4 pr-3 text-sm font-medium text-muted-foreground whitespace-nowrap">
                   Début du mois
                 </td>
                 {safeMonths.map((m) => (
                   <td
                     key={m.month}
-                    className={cn(cellBase, "font-medium text-[#111827]", m.month === currentMonth && "bg-blue-50/40")}
+                    className={cn(cellBase, "font-medium text-foreground", m.month === currentMonth && "bg-blue-500/10")}
                   >
                     {formatCompact(m.openingBalance)}
                   </td>
@@ -309,14 +309,14 @@ export function ForecastKpiTable({ months, kpi, loading }) {
 
               {/* ── Entrées (expandable) ── */}
               <tr
-                className="border-t border-gray-200 cursor-pointer hover:bg-gray-50/50 transition-colors"
+                className="border-t border-border cursor-pointer hover:bg-muted/50 transition-colors"
                 onClick={() => setExpandedIncome(!expandedIncome)}
               >
-                <td className="sticky left-0 bg-white z-10 py-3 pl-4 pr-3 text-sm font-medium text-[#111827] whitespace-nowrap">
+                <td className="sticky left-0 bg-background z-10 py-3 pl-4 pr-3 text-sm font-medium text-foreground whitespace-nowrap">
                   <span className="inline-flex items-center gap-1.5">
                     {expandedIncome
-                      ? <ChevronDown className="h-3.5 w-3.5 text-[#9CA3AF]" />
-                      : <ChevronRight className="h-3.5 w-3.5 text-[#9CA3AF]" />
+                      ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                      : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
                     }
                     Entrées
                   </span>
@@ -324,7 +324,7 @@ export function ForecastKpiTable({ months, kpi, loading }) {
                 {safeMonths.map((m) => (
                   <td
                     key={m.month}
-                    className={cn(cellBase, "text-emerald-600", m.month === currentMonth && "bg-blue-50/40")}
+                    className={cn(cellBase, "text-emerald-600", m.month === currentMonth && "bg-blue-500/10")}
                   >
                     <MonthCell
                       m={m}
@@ -338,14 +338,14 @@ export function ForecastKpiTable({ months, kpi, loading }) {
 
               {/* Income category sub-rows */}
               {expandedIncome && incomeCategories.map((cat) => (
-                <tr key={cat} className="border-t border-gray-100">
-                  <td className="sticky left-0 bg-white z-10 py-2.5 pl-10 pr-3 text-[13px] text-[#6B7280] whitespace-nowrap">
+                <tr key={cat} className="border-t border-border">
+                  <td className="sticky left-0 bg-background z-10 py-2.5 pl-10 pr-3 text-[13px] text-muted-foreground whitespace-nowrap">
                     {CATEGORY_LABELS[cat] || cat}
                   </td>
                   {safeMonths.map((m) => (
                     <td
                       key={m.month}
-                      className={cn("py-2.5 px-3 text-right text-[13px] whitespace-nowrap tabular-nums", m.month === currentMonth && "bg-blue-50/40")}
+                      className={cn("py-2.5 px-3 text-right text-[13px] whitespace-nowrap tabular-nums", m.month === currentMonth && "bg-blue-500/10")}
                     >
                       <CategoryCell m={m} category={cat} type="INCOME" currentMonth={currentMonth} />
                     </td>
@@ -355,14 +355,14 @@ export function ForecastKpiTable({ months, kpi, loading }) {
 
               {/* ── Sorties (expandable) ── */}
               <tr
-                className="border-t border-gray-200 cursor-pointer hover:bg-gray-50/50 transition-colors"
+                className="border-t border-border cursor-pointer hover:bg-muted/50 transition-colors"
                 onClick={() => setExpandedExpense(!expandedExpense)}
               >
-                <td className="sticky left-0 bg-white z-10 py-3 pl-4 pr-3 text-sm font-medium text-[#111827] whitespace-nowrap">
+                <td className="sticky left-0 bg-background z-10 py-3 pl-4 pr-3 text-sm font-medium text-foreground whitespace-nowrap">
                   <span className="inline-flex items-center gap-1.5">
                     {expandedExpense
-                      ? <ChevronDown className="h-3.5 w-3.5 text-[#9CA3AF]" />
-                      : <ChevronRight className="h-3.5 w-3.5 text-[#9CA3AF]" />
+                      ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                      : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
                     }
                     Sorties
                   </span>
@@ -370,7 +370,7 @@ export function ForecastKpiTable({ months, kpi, loading }) {
                 {safeMonths.map((m) => (
                   <td
                     key={m.month}
-                    className={cn(cellBase, "text-red-500", m.month === currentMonth && "bg-blue-50/40")}
+                    className={cn(cellBase, "text-red-500", m.month === currentMonth && "bg-blue-500/10")}
                   >
                     <MonthCell
                       m={m}
@@ -384,14 +384,14 @@ export function ForecastKpiTable({ months, kpi, loading }) {
 
               {/* Expense category sub-rows */}
               {expandedExpense && expenseCategories.map((cat) => (
-                <tr key={cat} className="border-t border-gray-100">
-                  <td className="sticky left-0 bg-white z-10 py-2.5 pl-10 pr-3 text-[13px] text-[#6B7280] whitespace-nowrap">
+                <tr key={cat} className="border-t border-border">
+                  <td className="sticky left-0 bg-background z-10 py-2.5 pl-10 pr-3 text-[13px] text-muted-foreground whitespace-nowrap">
                     {CATEGORY_LABELS[cat] || cat}
                   </td>
                   {safeMonths.map((m) => (
                     <td
                       key={m.month}
-                      className={cn("py-2.5 px-3 text-right text-[13px] whitespace-nowrap tabular-nums", m.month === currentMonth && "bg-blue-50/40")}
+                      className={cn("py-2.5 px-3 text-right text-[13px] whitespace-nowrap tabular-nums", m.month === currentMonth && "bg-blue-500/10")}
                     >
                       <CategoryCell m={m} category={cat} type="EXPENSE" currentMonth={currentMonth} />
                     </td>
@@ -400,14 +400,14 @@ export function ForecastKpiTable({ months, kpi, loading }) {
               ))}
 
               {/* ── Fin du mois ── */}
-              <tr className="border-t border-gray-200">
-                <td className="sticky left-0 bg-white z-10 py-3 pl-4 pr-3 text-sm font-medium text-[#6B7280] whitespace-nowrap">
+              <tr className="border-t border-border">
+                <td className="sticky left-0 bg-background z-10 py-3 pl-4 pr-3 text-sm font-medium text-muted-foreground whitespace-nowrap">
                   Fin du mois
                 </td>
                 {safeMonths.map((m) => (
                   <td
                     key={m.month}
-                    className={cn(cellBase, "font-medium text-[#111827]", m.month === currentMonth && "bg-blue-50/40")}
+                    className={cn(cellBase, "font-medium text-foreground", m.month === currentMonth && "bg-blue-500/10")}
                   >
                     {formatCompact(m.closingBalance)}
                   </td>

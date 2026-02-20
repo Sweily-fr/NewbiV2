@@ -135,6 +135,8 @@ export async function refreshSession() {
       "🔄 [ActivityTracker] Rafraîchissement de la session Better Auth...",
     );
 
+    let jwtObtained = false;
+
     const session = await authClient.getSession({
       fetchOptions: {
         onSuccess: (ctx) => {
@@ -145,7 +147,8 @@ export async function refreshSession() {
 
           if (jwt) {
             localStorage.setItem("bearer_token", jwt);
-            console.log("✅ [ActivityTracker] Nouveau JWT stocké");
+            jwtObtained = true;
+            console.log("✅ [ActivityTracker] Nouveau JWT stocké via getSession");
           }
 
           lastSessionRefreshTimestamp = Date.now();
@@ -162,6 +165,26 @@ export async function refreshSession() {
 
     if (session?.data?.user) {
       lastSessionRefreshTimestamp = Date.now();
+
+      // Si getSession n'a pas retourné de JWT (cookieCache actif),
+      // utiliser l'endpoint dédié /api/auth/token du plugin JWT
+      if (!jwtObtained && !localStorage.getItem("bearer_token")) {
+        try {
+          const tokenResponse = await fetch("/api/auth/token", {
+            credentials: "include",
+          });
+          if (tokenResponse.ok) {
+            const tokenData = await tokenResponse.json();
+            if (tokenData.token) {
+              localStorage.setItem("bearer_token", tokenData.token);
+              console.log("✅ [ActivityTracker] JWT stocké via /api/auth/token");
+            }
+          }
+        } catch (err) {
+          console.warn("⚠️ [ActivityTracker] Erreur /api/auth/token:", err.message);
+        }
+      }
+
       return true;
     }
 
@@ -284,7 +307,10 @@ export function initializeActivityTracker() {
 
   isInitialized = true;
   lastActivityTimestamp = Date.now();
-  lastSessionRefreshTimestamp = Date.now();
+  // ✅ FIX: Ne PAS initialiser à Date.now() — cela retardait le premier refresh de 25 min.
+  // En initialisant à 0, le premier refresh se fait dès la première activité,
+  // garantissant un JWT frais rapidement après le chargement de la page.
+  lastSessionRefreshTimestamp = 0;
 
   console.log("✅ [ActivityTracker] Initialisé avec succès");
   console.log(

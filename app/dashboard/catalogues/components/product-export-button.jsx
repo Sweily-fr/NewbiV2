@@ -77,8 +77,8 @@ export default function ProductExportButton({ products, selectedRows = [], iconO
               <Download className="h-4 w-4" strokeWidth={1.5} />
             </Button>
           ) : (
-            <Button variant="outline" className="font-normal cursor-pointer">
-              <Download className="mr-2 h-4 w-4" />
+            <Button variant="outline" className="cursor-pointer">
+              <Download size={14} strokeWidth={1.5} />
               Exporter
               {hasSelection && (
                 <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-xs text-white dark:text-black">

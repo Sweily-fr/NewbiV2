@@ -197,7 +197,7 @@ export default function ClientActivityTab({ client }) {
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="gap-2 font-normal cursor-pointer text-sm">
+            <Button variant="outline">
               <SlidersHorizontal className="h-3.5 w-3.5" />
               {activeFilterLabel}
             </Button>

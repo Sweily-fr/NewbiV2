@@ -7,6 +7,7 @@ export const PURCHASE_ORDER_FRAGMENT = gql`
     id
     number
     prefix
+    purchaseOrderNumber
     status
     issueDate
     validUntil
@@ -190,6 +191,16 @@ export const PURCHASE_ORDER_LIST_FRAGMENT = gql`
 
 // ==================== QUERIES ====================
 
+export const GET_LAST_PURCHASE_ORDER_PREFIX = gql`
+  query GetLastPurchaseOrderPrefix($workspaceId: ID!) {
+    purchaseOrders(workspaceId: $workspaceId, limit: 1, page: 1) {
+      purchaseOrders {
+        prefix
+      }
+    }
+  }
+`;
+
 export const GET_PURCHASE_ORDERS = gql`
   query GetPurchaseOrders(
     $workspaceId: ID!
@@ -318,6 +329,27 @@ import { useState, useMemo, useCallback } from "react";
 import { toast } from "@/src/components/ui/sonner";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { useErrorHandler } from "@/src/hooks/useErrorHandler";
+
+// Hook pour récupérer le dernier préfixe de bon de commande
+export const useLastPurchaseOrderPrefix = () => {
+  const { workspaceId } = useRequiredWorkspace();
+
+  const { data, loading, error } = useQuery(GET_LAST_PURCHASE_ORDER_PREFIX, {
+    variables: { workspaceId },
+    skip: !workspaceId,
+    fetchPolicy: "network-only",
+    errorPolicy: "all",
+  });
+
+  return useMemo(
+    () => ({
+      prefix: data?.purchaseOrders?.purchaseOrders?.[0]?.prefix || null,
+      loading,
+      error,
+    }),
+    [data, loading, error]
+  );
+};
 
 // Hook pour récupérer la liste des bons de commande
 export const usePurchaseOrders = (filters = {}) => {
@@ -474,7 +506,7 @@ export const useCreatePurchaseOrder = () => {
       const result = await createMutation({
         variables: { workspaceId, input },
       });
-      return result.data.createPurchaseOrder;
+      return result.data?.createPurchaseOrder;
     } catch (error) {
       throw error;
     }
@@ -510,7 +542,7 @@ export const useUpdatePurchaseOrder = () => {
       const result = await updateMutation({
         variables: { id, workspaceId, input },
       });
-      return result.data.updatePurchaseOrder;
+      return result.data?.updatePurchaseOrder;
     } catch (error) {
       throw error;
     }
@@ -575,7 +607,7 @@ export const useChangePurchaseOrderStatus = () => {
       const result = await changeStatusMutation({
         variables: { id, workspaceId, status },
       });
-      return result.data.changePurchaseOrderStatus;
+      return result.data?.changePurchaseOrderStatus;
     } catch (error) {
       throw error;
     }
@@ -602,16 +634,22 @@ export const useConvertQuoteToPurchaseOrder = () => {
     },
     onError: (error) => {
       console.error("Erreur lors de la conversion:", error);
+      console.error("Détails networkError:", error.networkError?.result);
+      console.error("Détails graphQLErrors:", error.graphQLErrors);
       toast.error(error.message || "Erreur lors de la conversion en bon de commande");
     },
   });
 
   const convertToPurchaseOrder = async (quoteId) => {
+    if (!workspaceId) {
+      throw new Error("Aucun workspace sélectionné");
+    }
+    console.log("DEBUG convertToPurchaseOrder - quoteId:", quoteId, "workspaceId:", workspaceId);
     try {
       const result = await convertMutation({
         variables: { quoteId, workspaceId },
       });
-      return result.data.convertQuoteToPurchaseOrder;
+      return result.data?.convertQuoteToPurchaseOrder;
     } catch (error) {
       throw error;
     }
@@ -643,11 +681,14 @@ export const useConvertPurchaseOrderToInvoice = () => {
   });
 
   const convertToInvoice = async (id) => {
+    if (!workspaceId) {
+      throw new Error("Aucun workspace sélectionné");
+    }
     try {
       const result = await convertMutation({
         variables: { id, workspaceId },
       });
-      return result.data.convertPurchaseOrderToInvoice;
+      return result.data?.convertPurchaseOrderToInvoice;
     } catch (error) {
       throw error;
     }
@@ -705,9 +746,9 @@ export const PURCHASE_ORDER_STATUS_LABELS = {
 
 // Couleurs pour les statuts
 export const PURCHASE_ORDER_STATUS_COLORS = {
-  [PURCHASE_ORDER_STATUS.DRAFT]: "bg-gray-100 text-gray-800 border-gray-200",
-  [PURCHASE_ORDER_STATUS.CONFIRMED]: "bg-blue-100 text-blue-800 border-blue-200",
-  [PURCHASE_ORDER_STATUS.IN_PROGRESS]: "bg-orange-100 text-orange-800 border-orange-200",
-  [PURCHASE_ORDER_STATUS.DELIVERED]: "bg-green-50 text-green-600 border-green-200",
-  [PURCHASE_ORDER_STATUS.CANCELED]: "bg-red-100 text-red-800 border-red-200",
+  [PURCHASE_ORDER_STATUS.DRAFT]: "bg-gray-100 text-gray-700 border-gray-200",
+  [PURCHASE_ORDER_STATUS.CONFIRMED]: "bg-blue-100 text-blue-700 border-blue-200",
+  [PURCHASE_ORDER_STATUS.IN_PROGRESS]: "bg-amber-100 text-amber-700 border-amber-200",
+  [PURCHASE_ORDER_STATUS.DELIVERED]: "bg-emerald-100 text-emerald-700 border-emerald-200",
+  [PURCHASE_ORDER_STATUS.CANCELED]: "bg-red-100 text-red-700 border-red-200",
 };

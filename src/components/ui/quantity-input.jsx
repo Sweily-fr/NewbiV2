@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { MinusIcon, PlusIcon } from "lucide-react";
-import { Button } from "@/src/components/ui/button";
 
 export const QuantityInput = React.forwardRef(
-  ({ value, onChange, onBlur, disabled = false, min = 0.5, max, name, step = 0.5, ...props }, ref) => {
+  ({ value, onChange, onBlur, disabled = false, min = 0.5, max, name, step = 0.5, className, ...props }, ref) => {
     const [displayValue, setDisplayValue] = useState('0.5');
 
     useEffect(() => {
@@ -19,7 +18,6 @@ export const QuantityInput = React.forwardRef(
     const handleDecrement = () => {
       const current = parseFloat(displayValue) || 0.5;
       const newValue = Math.max(0.5, current - step);
-      // Arrondir à 2 décimales pour éviter les problèmes de précision
       const roundedValue = Math.round(newValue * 100) / 100;
       setDisplayValue(roundedValue.toString());
       if (onChange) {
@@ -30,7 +28,6 @@ export const QuantityInput = React.forwardRef(
     const handleIncrement = () => {
       const current = parseFloat(displayValue) || 0.5;
       const newValue = max ? Math.min(max, current + step) : current + step;
-      // Arrondir à 2 décimales pour éviter les problèmes de précision
       const roundedValue = Math.round(newValue * 100) / 100;
       setDisplayValue(roundedValue.toString());
       if (onChange) {
@@ -40,12 +37,9 @@ export const QuantityInput = React.forwardRef(
 
     const handleInputChange = (e) => {
       const inputValue = e.target.value;
-      // Accepter les nombres décimaux avec point ou virgule
       if (inputValue === '' || /^\d*[.,]?\d*$/.test(inputValue)) {
-        // Remplacer la virgule par un point pour la cohérence
         const normalizedValue = inputValue.replace(',', '.');
         const numValue = normalizedValue === '' ? 0.5 : parseFloat(normalizedValue);
-        // Minimum 0.5
         if (numValue >= 0.5 || inputValue === '' || normalizedValue.endsWith('.')) {
           setDisplayValue(normalizedValue === '' ? '0.5' : normalizedValue);
           if (onChange && normalizedValue !== '' && !normalizedValue.endsWith('.')) {
@@ -56,16 +50,15 @@ export const QuantityInput = React.forwardRef(
     };
 
     return (
-      <div className="relative inline-flex h-10 w-full items-center overflow-hidden rounded-md border border-input text-sm whitespace-nowrap shadow-xs transition-[color,box-shadow] outline-none disabled:opacity-50 focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/50">
-        <Button
+      <div className={`relative inline-flex h-8 w-full items-center overflow-hidden rounded-[9px] border border-[#e6e7ea] hover:border-[#D1D3D8] dark:border-[#2E2E32] dark:hover:border-[#44444A] text-sm whitespace-nowrap transition-[border] duration-[80ms] ease-in-out ${disabled ? 'opacity-50 pointer-events-none' : ''} ${className || ''}`}>
+        <button
           type="button"
           onClick={handleDecrement}
           disabled={disabled || (parseFloat(displayValue) || min) <= min}
-          className="-ms-px flex aspect-square h-[inherit] items-center justify-center rounded-none border border-input bg-background text-sm text-muted-foreground/80 transition-[color,box-shadow] hover:bg-accent hover:text-foreground disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
-          size="sm"
+          className="flex aspect-square h-full items-center justify-center border-r border-[#e6e7ea] dark:border-[#2E2E32] bg-transparent text-[rgba(0,0,0,0.45)] dark:text-[rgba(255,255,255,0.45)] transition-colors hover:bg-[rgba(0,0,0,0.04)] hover:text-[#242529] dark:hover:bg-[rgba(255,255,255,0.06)] dark:hover:text-white disabled:pointer-events-none disabled:opacity-50 cursor-pointer"
         >
-          <MinusIcon size={16} aria-hidden="true" />
-        </Button>
+          <MinusIcon size={14} aria-hidden="true" />
+        </button>
         <input
           ref={ref}
           type="text"
@@ -75,19 +68,17 @@ export const QuantityInput = React.forwardRef(
           onChange={handleInputChange}
           onBlur={onBlur}
           disabled={disabled}
-          className="w-full grow bg-background px-3 py-2 text-center text-foreground tabular-nums border-0 shadow-none focus-visible:ring-0 outline-none text-base"
-          style={{ textAlign: 'center' }}
+          className="w-full grow bg-transparent px-2 py-1 text-center text-[#242529] dark:text-white tabular-nums font-medium tracking-[-0.01em] text-sm leading-5 outline-none"
           {...props}
         />
-        <Button
+        <button
           type="button"
           onClick={handleIncrement}
           disabled={disabled || (max && (parseInt(displayValue) || 1) >= max)}
-          className="-me-px flex aspect-square h-[inherit] items-center justify-center rounded-none border border-input bg-background text-sm text-muted-foreground/80 transition-[color,box-shadow] hover:bg-accent hover:text-foreground disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
-          size="sm"
+          className="flex aspect-square h-full items-center justify-center border-l border-[#e6e7ea] dark:border-[#2E2E32] bg-transparent text-[rgba(0,0,0,0.45)] dark:text-[rgba(255,255,255,0.45)] transition-colors hover:bg-[rgba(0,0,0,0.04)] hover:text-[#242529] dark:hover:bg-[rgba(255,255,255,0.06)] dark:hover:text-white disabled:pointer-events-none disabled:opacity-50 cursor-pointer"
         >
-          <PlusIcon size={16} aria-hidden="true" />
-        </Button>
+          <PlusIcon size={14} aria-hidden="true" />
+        </button>
       </div>
     );
   }

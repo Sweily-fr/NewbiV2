@@ -59,6 +59,12 @@ export function MobileSettingsModal({
 
   const currentTab = tabs.find((tab) => tab.id === activeTab);
 
+  const hasSaveFooter = [
+    "generale",
+    "coordonnees-bancaires",
+    "informations-legales",
+  ].includes(activeTab);
+
   const handleTabChange = (newTab) => {
     setActiveTab(newTab);
     setShowNavigation(false);
@@ -184,23 +190,6 @@ export function MobileSettingsModal({
             {showNavigation ? "Paramètres" : currentTab?.label}
           </h1>
 
-          {/* Bouton de sauvegarde (si applicable) */}
-          {!showNavigation &&
-            [
-              "generale",
-              "coordonnees-bancaires",
-              "informations-legales",
-            ].includes(activeTab) && (
-              <Button
-                type="submit"
-                disabled={formIsSubmitting || !isDirty}
-                onClick={onSubmit}
-                className="absolute right-4 bg-[#5b4eff] hover:bg-[#5b4eff] text-white px-4 py-2 rounded-md font-medium"
-                size="sm"
-              >
-                {formIsSubmitting ? "Sauvegarde..." : "Sauvegarder"}
-              </Button>
-            )}
         </div>
       </div>
 
@@ -230,10 +219,30 @@ export function MobileSettingsModal({
           }`}
         >
           <div className="h-full overflow-y-auto">
-            <div className="px-4 pt-4 pb-8">{renderContent()}</div>
+            <div className={`px-4 pt-4 ${hasSaveFooter ? "pb-24" : "pb-8"}`}>{renderContent()}</div>
           </div>
         </div>
       </div>
+
+      {/* Footer fixe avec boutons Annuler / Valider */}
+      {hasSaveFooter && !showNavigation && (
+        <div className="flex-shrink-0 border-t bg-background px-4 py-3 flex gap-3">
+          <Button
+            variant="outline"
+            className="flex-1"
+            onClick={() => setShowNavigation(true)}
+          >
+            Annuler
+          </Button>
+          <Button
+            className="flex-1 bg-[#5b4eff] hover:bg-[#4a3fdf] text-white"
+            disabled={formIsSubmitting || !isDirty}
+            onClick={onSubmit}
+          >
+            {formIsSubmitting ? "Sauvegarde..." : "Valider"}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

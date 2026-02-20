@@ -77,6 +77,7 @@ export async function GET(req) {
       hasReachedLimit,
       sessionCount: activeSessions.length,
       maxSessions,
+      currentSessionToken: session.session?.token || null,
       sessions: activeSessions.map(s => ({
         id: s._id.toString(),
         token: s.token,

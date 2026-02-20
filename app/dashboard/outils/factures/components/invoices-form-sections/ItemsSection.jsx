@@ -160,7 +160,7 @@ export default function ItemsSection({
   return (
     <Card className="shadow-none border-none bg-transparent mb-0 p-0">
       <CardHeader className="p-0">
-        <CardTitle className="flex items-center gap-2 font-normal text-lg">
+        <CardTitle className="flex items-center gap-2 font-medium text-lg">
           Articles et produits
         </CardTitle>
       </CardHeader>
@@ -203,25 +203,21 @@ export default function ItemsSection({
 
         {/* Bouton ajouter article - Masqué pour les factures de situation liées à un devis */}
         {!(isLinkedToQuote && invoiceType === "situation") && (
-          <div className="flex flex-col md:flex-row gap-3 items-stretch">
+          <div className="flex flex-col md:flex-row gap-3 md:items-center">
             {ProductSearchCombobox ? (
               <>
-                <div className="flex-1 min-w-0 order-1 md:order-1">
-                  <div className="h-full">
-                    <ProductSearchCombobox
-                      onSelect={addItem}
-                      placeholder="Rechercher un produit..."
-                      disabled={!canEdit}
-                      className="h-full"
-                    />
-                  </div>
+                <div className="flex-1 min-w-0">
+                  <ProductSearchCombobox
+                    onSelect={addItem}
+                    placeholder="Rechercher un produit..."
+                    disabled={!canEdit}
+                  />
                 </div>
-                <div className="flex-shrink-0 order-2 md:order-2 md:w-auto">
+                <div className="flex-shrink-0">
                   <Button
                     onClick={() => addItem()}
                     disabled={!canEdit}
-                    className="gap-2 w-full h-full min-h-10 font-normal"
-                    size="lg"
+                    className="gap-2 w-full md:w-auto"
                   >
                     <Plus className="h-4 w-4" />
                     <span className="md:inline">Ajouter un article</span>
@@ -233,8 +229,7 @@ export default function ItemsSection({
                 <Button
                   onClick={() => addItem()}
                   disabled={!canEdit}
-                  className="gap-2 w-full h-full min-h-10 font-normal"
-                  size="lg"
+                  className="gap-2 w-full"
                 >
                   <Plus className="h-4 w-4" />
                   Ajouter un article
@@ -298,7 +293,7 @@ export default function ItemsSection({
                   <AccordionItem
                     key={index}
                     value={`item-${index}`}
-                    className="rounded-lg px-4 py-1 overflow-visible border last:border-b-1"
+                    className="rounded-xl px-4 py-1 overflow-visible border last:border-b-1"
                   >
                     <AccordionTrigger className="w-full justify-start gap-3 text-[15px] leading-6 hover:no-underline focus-visible:ring-0 py-3 [&[data-state=open]>svg]:rotate-180">
                       <div className="flex items-center justify-between w-full gap-3">
@@ -434,10 +429,10 @@ export default function ItemsSection({
                               onBlur={() =>
                                 unmarkFieldAsEditing?.(index, "description")
                               }
-                              className={`h-10 rounded-lg text-sm w-full ${
+                              className={`w-full ${
                                 errors?.items?.[index]?.description ||
                                 hasFieldError(index, "description")
-                                  ? "border-destructive focus-visible:ring-1 focus-visible:ring-destructive"
+                                  ? "border-destructive"
                                   : ""
                               }`}
                             />
@@ -563,10 +558,10 @@ export default function ItemsSection({
                                     onFocus={() =>
                                       markFieldAsEditing?.(index, "quantity")
                                     }
-                                    className={`h-10 text-sm w-full ${
+                                    className={`w-full ${
                                       errors?.items?.[index]?.quantity ||
                                       hasFieldError(index, "quantity")
-                                        ? "border-destructive focus-visible:ring-1 focus-visible:ring-destructive"
+                                        ? "border-destructive"
                                         : ""
                                     }`}
                                   />
@@ -609,10 +604,7 @@ export default function ItemsSection({
                                     }
                                     disabled={!canEdit || isItemFieldLocked}
                                   >
-                                    <SelectTrigger
-                                      className="w-full text-sm"
-                                      style={{ height: "40px" }}
-                                    >
+                                    <SelectTrigger className="w-full">
                                       <SelectValue placeholder="Aucune unité" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -648,6 +640,9 @@ export default function ItemsSection({
                                       </SelectItem>
                                       <SelectItem value="ensemble">
                                         Ensemble
+                                      </SelectItem>
+                                      <SelectItem value="personne(s)">
+                                        Personne(s)
                                       </SelectItem>
                                     </SelectContent>
                                   </Select>
@@ -718,10 +713,10 @@ export default function ItemsSection({
                                 onBlur={() =>
                                   unmarkFieldAsEditing?.(index, "unitPrice")
                                 }
-                                className={`h-10 text-sm w-full ${
+                                className={`w-full ${
                                   errors?.items?.[index]?.unitPrice ||
                                   hasFieldError(index, "unitPrice")
-                                    ? "border-destructive focus-visible:ring-1 focus-visible:ring-destructive"
+                                    ? "border-destructive"
                                     : ""
                                 }`}
                               />
@@ -760,10 +755,7 @@ export default function ItemsSection({
                                     }
                                     disabled={!canEdit || isItemFieldLocked}
                                   >
-                                    <SelectTrigger
-                                      className="w-full text-sm"
-                                      style={{ height: "40px" }}
-                                    >
+                                    <SelectTrigger className="w-full">
                                       <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -813,12 +805,12 @@ export default function ItemsSection({
                                       disabled={!canEdit || isItemFieldLocked}
                                     >
                                       <SelectTrigger
-                                        className={`w-full text-sm ${
+                                        className={`w-full ${
                                           hasFieldError(
                                             index,
                                             "vatExemptionText"
                                           )
-                                            ? "border-destructive focus-visible:ring-1 focus-visible:ring-destructive"
+                                            ? "border-destructive"
                                             : ""
                                         }`}
                                       >
@@ -1041,9 +1033,9 @@ export default function ItemsSection({
                                     });
                                   }}
                                   disabled={!canEdit}
-                                  className={`-me-px rounded-e-none shadow-none h-10 text-sm w-full ${
+                                  className={`rounded-e-none border-e-0 w-full ${
                                     errors?.items?.[index]?.discount
-                                      ? "border-destructive focus-visible:ring-1 focus-visible:ring-destructive"
+                                      ? "border-destructive"
                                       : ""
                                   }`}
                                 />
@@ -1105,8 +1097,7 @@ export default function ItemsSection({
                                       disabled={!canEdit}
                                     >
                                       <SelectTrigger
-                                        className="w-auto min-w-[60px] rounded-s-none rounded-e-md border border-input border-s-0 text-sm text-muted-foreground bg-background px-3"
-                                        style={{ height: "40px" }}
+                                        className="w-auto min-w-[60px] rounded-s-none border-s-0"
                                       >
                                         <SelectValue />
                                       </SelectTrigger>
@@ -1144,7 +1135,7 @@ export default function ItemsSection({
               onClick={() => addItem()}
               disabled={!canEdit}
               variant="outline"
-              className="gap-2 font-normal"
+              className="gap-2"
             >
               Ajouter un article
             </Button>

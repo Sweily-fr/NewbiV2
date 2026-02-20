@@ -34,13 +34,16 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
   // GraphQL hooks
   const { quote: existingQuote, loading: loadingQuote } = useQuote(quoteId);
 
+  // Prefix state pour le filtrage du numéro par préfixe
+  const [currentPrefix, setCurrentPrefix] = useState("");
+
   // Use the new quote numbering hook that mirrors invoice logic
   const {
     nextQuoteNumber,
     validateQuoteNumber,
     isLoading: numberLoading,
     hasExistingQuotes,
-  } = useQuoteNumber();
+  } = useQuoteNumber(currentPrefix);
 
   const { createQuote, loading: creating } = useCreateQuote();
   const { updateQuote, loading: updating } = useUpdateQuote();
@@ -90,6 +93,16 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
 
   const { watch, setValue, getValues, reset } = form;
   // const { isDirty } = formState; // DISABLED - Auto-save removed
+
+  // Synchroniser le préfixe du formulaire avec le state pour le filtrage du numéro
+  useEffect(() => {
+    const subscription = watch((value, { name }) => {
+      if (name === "prefix" && value.prefix !== undefined) {
+        setCurrentPrefix(value.prefix || "");
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [watch]);
 
   const [saving, setSaving] = useState(false);
   const [isFormInitialized, setIsFormInitialized] = useState(false); // Indique si le formulaire est complètement chargé
@@ -733,38 +746,36 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
             setValue("companyInfo.email", organization.companyEmail || "");
             setValue("companyInfo.phone", organization.companyPhone || "");
             setValue("companyInfo.website", organization.website || "");
+            setValue("companyInfo.logo", organization.logo || "");
             setValue("companyInfo.siret", organization.siret || "");
             setValue("companyInfo.vatNumber", organization.vatNumber || "");
             setValue("companyInfo.rcs", organization.rcs || "");
-            setValue("companyInfo.legalForm", organization.legalForm || "");
+            setValue("companyInfo.companyStatus", organization.legalForm || "");
             setValue("companyInfo.capitalSocial", organization.capitalSocial || "");
-            setValue("companyInfo.fiscalRegime", organization.fiscalRegime || "");
+            setValue("companyInfo.vatPaymentCondition", organization.fiscalRegime || "");
+            setValue("companyInfo.transactionCategory", organization.activityCategory || "");
 
             // Gérer l'adresse de l'entreprise à partir des champs séparés de l'organisation
-            const addressString = [
-              organization.addressStreet,
-              `${organization.addressZipCode || ""} ${organization.addressCity || ""}`.trim(),
-              organization.addressCountry,
-            ]
-              .filter(Boolean)
-              .join("\n");
-            
-            if (addressString) {
-              setValue("companyInfo.address", addressString);
-            }
+            setValue("companyInfo.address", {
+              street: organization.addressStreet || "",
+              city: organization.addressCity || "",
+              postalCode: organization.addressZipCode || "",
+              country: organization.addressCountry || "",
+            });
 
             // Mettre à jour les paramètres d'apparence
+            // Couleurs spécifiques aux devis avec fallback vers les couleurs globales
             setValue(
               "appearance.textColor",
-              organization.documentTextColor || "#000000"
+              organization.quoteTextColor || organization.documentTextColor || "#000000"
             );
             setValue(
               "appearance.headerTextColor",
-              organization.documentHeaderTextColor || "#ffffff"
+              organization.quoteHeaderTextColor || organization.documentHeaderTextColor || "#ffffff"
             );
             setValue(
               "appearance.headerBgColor",
-              organization.documentHeaderBgColor || "#5b50FF"
+              organization.quoteHeaderBgColor || organization.documentHeaderBgColor || "#5b50FF"
             );
 
             // Mettre à jour les notes et conditions
@@ -787,8 +798,8 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
                 ""
             );
 
-            // Ne pas activer showBankDetails par défaut, même si l'organisation a des coordonnées bancaires
-            setValue("showBankDetails", false);
+            // Charger showBankDetails depuis l'organisation
+            setValue("showBankDetails", organization.showBankDetails || false);
             setValue("companyInfo.bankDetails", {
               bankName: organization.bankName || "",
               iban: organization.bankIban || "",
@@ -797,7 +808,22 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
 
             // Charger la position du client depuis l'organisation
             setValue("clientPositionRight", organization.quoteClientPositionRight || false);
-            
+
+            // Charger le préfixe depuis l'organisation
+            if (organization.quotePrefix) {
+              setValue("prefix", organization.quotePrefix, { shouldDirty: false });
+            }
+
+            // Synchroniser les champs plats pour CompanyInfoSettingsSection dans la vue paramètres
+            setValue("companyName", organization.companyName || "", { shouldDirty: false });
+            setValue("companyEmail", organization.companyEmail || "", { shouldDirty: false });
+            setValue("companyPhone", organization.companyPhone || "", { shouldDirty: false });
+            setValue("website", organization.website || "", { shouldDirty: false });
+            setValue("addressStreet", organization.addressStreet || "", { shouldDirty: false });
+            setValue("addressCity", organization.addressCity || "", { shouldDirty: false });
+            setValue("addressZipCode", organization.addressZipCode || "", { shouldDirty: false });
+            setValue("addressCountry", organization.addressCountry || "France", { shouldDirty: false });
+
             // Marquer le formulaire comme initialisé après un court délai pour s'assurer que tous les setValue sont terminés
             setTimeout(() => {
               setIsFormInitialized(true);
@@ -811,6 +837,25 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
       loadOrganizationData();
     }
   }, [mode, setValue]);
+
+  // Synchroniser les champs plats pour CompanyInfoSettingsSection en mode édition
+  useEffect(() => {
+    if (isFormInitialized && mode !== "create") {
+      const companyInfo = getValues("companyInfo");
+      if (companyInfo) {
+        setValue("companyName", companyInfo.name || "", { shouldDirty: false });
+        setValue("companyEmail", companyInfo.email || "", { shouldDirty: false });
+        setValue("companyPhone", companyInfo.phone || "", { shouldDirty: false });
+        setValue("website", companyInfo.website || "", { shouldDirty: false });
+        if (typeof companyInfo.address === "object" && companyInfo.address) {
+          setValue("addressStreet", companyInfo.address.street || "", { shouldDirty: false });
+          setValue("addressCity", companyInfo.address.city || "", { shouldDirty: false });
+          setValue("addressZipCode", companyInfo.address.postalCode || "", { shouldDirty: false });
+          setValue("addressCountry", companyInfo.address.country || "France", { shouldDirty: false });
+        }
+      }
+    }
+  }, [isFormInitialized, mode, setValue, getValues]);
 
   // Ne plus utiliser les données de la session utilisateur pour les informations de l'entreprise
   // car elles sont maintenant gérées par la récupération des données de l'organisation active
@@ -1452,23 +1497,50 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
       const activeOrganization = await getActiveOrganization();
 
       const organizationData = {
-        documentTextColor: currentFormData.appearance?.textColor || "#000000",
-        documentHeaderTextColor:
+        quoteTextColor: currentFormData.appearance?.textColor || "#000000",
+        quoteHeaderTextColor:
           currentFormData.appearance?.headerTextColor || "#ffffff",
-        documentHeaderBgColor:
+        quoteHeaderBgColor:
           currentFormData.appearance?.headerBgColor || "#5b50FF",
         quoteHeaderNotes: currentFormData.headerNotes || "",
         quoteFooterNotes: currentFormData.footerNotes || "",
         quoteTermsAndConditions: currentFormData.termsAndConditions || "",
         showBankDetails: currentFormData.showBankDetails || false,
+        // Coordonnées bancaires
+        bankIban: currentFormData.bankDetails?.iban || currentFormData.companyInfo?.bankDetails?.iban || "",
+        bankBic: currentFormData.bankDetails?.bic || currentFormData.companyInfo?.bankDetails?.bic || "",
+        bankName: currentFormData.bankDetails?.bankName || currentFormData.companyInfo?.bankDetails?.bankName || "",
         quoteClientPositionRight: currentFormData.clientPositionRight || false,
+        // Préfixe de numérotation
+        quotePrefix: currentFormData.prefix || "",
+        // Informations de l'entreprise
+        companyName: currentFormData.companyName || "",
+        companyEmail: currentFormData.companyEmail || "",
+        companyPhone: currentFormData.companyPhone || "",
+        website: currentFormData.website || "",
+        addressStreet: currentFormData.addressStreet || "",
+        addressCity: currentFormData.addressCity || "",
+        addressZipCode: currentFormData.addressZipCode || "",
+        addressCountry: currentFormData.addressCountry || "France",
       };
 
       await updateOrganization(activeOrganization.id, organizationData);
+
+      // Synchroniser les champs companyInfo du formulaire avec les valeurs sauvegardées
+      setValue("companyInfo.name", currentFormData.companyName || "");
+      setValue("companyInfo.email", currentFormData.companyEmail || "");
+      setValue("companyInfo.phone", currentFormData.companyPhone || "");
+      setValue("companyInfo.website", currentFormData.website || "");
+      setValue("companyInfo.address", {
+        street: currentFormData.addressStreet || "",
+        city: currentFormData.addressCity || "",
+        postalCode: currentFormData.addressZipCode || "",
+        country: currentFormData.addressCountry || "France",
+      });
     } catch (error) {
       throw error;
     }
-  }, [getValues]);
+  }, [getValues, setValue]);
 
   return {
     // Form methods
@@ -1581,6 +1653,14 @@ function getInitialFormData(mode, initialData, session) {
 
     // Position du client dans le PDF
     clientPositionRight: false,
+
+    // Livraison
+    shipping: {
+      billShipping: false,
+      shippingAddress: null,
+      shippingAmountHT: 0,
+      shippingVatRate: 20,
+    },
 
     // Paramètres d'organisation (pour les valeurs par défaut)
     organizationSettings: null,
@@ -1761,10 +1841,13 @@ function transformQuoteToFormData(quote) {
     client: quote.client
       ? {
           id: quote.client.id,
+          name: quote.client.name,
           type: quote.client.type,
           email: quote.client.email,
           phone: quote.client.phone,
           address: quote.client.address,
+          hasDifferentShippingAddress: quote.client.hasDifferentShippingAddress || false,
+          shippingAddress: quote.client.shippingAddress || null,
           ...(quote.client.type === "COMPANY"
             ? {
                 companyName: quote.client.companyName,
@@ -1785,8 +1868,14 @@ function transformQuoteToFormData(quote) {
       email: quote.companyInfo?.email || "",
       phone: quote.companyInfo?.phone || "",
       website: quote.companyInfo?.website || "",
+      logo: quote.companyInfo?.logo || "",
       siret: quote.companyInfo?.siret || "",
       vatNumber: quote.companyInfo?.vatNumber || "",
+      rcs: quote.companyInfo?.rcs || "",
+      companyStatus: quote.companyInfo?.companyStatus || "",
+      capitalSocial: quote.companyInfo?.capitalSocial || "",
+      vatPaymentCondition: quote.companyInfo?.vatPaymentCondition || "",
+      transactionCategory: quote.companyInfo?.transactionCategory || "",
       // Formatage cohérent de l'adresse pour l'affichage dans le PDF
       address: (() => {
         if (!quote.companyInfo?.address) return "";
@@ -1888,6 +1977,21 @@ function transformQuoteToFormData(quote) {
     
     // Position du client dans le PDF
     clientPositionRight: quote.clientPositionRight || false,
+
+    // Livraison
+    shipping: quote.shipping
+      ? {
+          billShipping: quote.shipping.billShipping || false,
+          shippingAddress: quote.shipping.shippingAddress || null,
+          shippingAmountHT: quote.shipping.shippingAmountHT || 0,
+          shippingVatRate: quote.shipping.shippingVatRate ?? 20,
+        }
+      : {
+          billShipping: false,
+          shippingAddress: null,
+          shippingAmountHT: 0,
+          shippingVatRate: 20,
+        },
   };
 }
 
@@ -2235,7 +2339,7 @@ function transformFormDataToInput(
     validUntil: finalValidUntil,
     status: formData.status || "DRAFT",
     client: cleanClient,
-    companyInfo: cleanCompanyInfo,
+    // companyInfo n'est plus envoyé au backend - résolu dynamiquement pour les DRAFTs, snapshot à la finalisation
     items:
       formData.items?.map((item) => {
         // Convertir vatRate en nombre et s'assurer qu'il est défini

@@ -387,8 +387,8 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
           )}
         >
           {/* Header */}
-          <div className="flex flex-col gap-1 mb-6">
-            <h3 className="text-lg font-medium">Gestion des espaces</h3>
+          <div className="flex flex-col gap-1 mb-0 md:mb-6">
+            <h3 className="text-lg font-medium hidden md:block">Gestion des espaces</h3>
             <Separator className="hidden md:block" />
           </div>
 

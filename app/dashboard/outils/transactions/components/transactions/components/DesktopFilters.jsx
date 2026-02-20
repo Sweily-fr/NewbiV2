@@ -125,7 +125,7 @@ export function DesktopFilters({
                       }
                     }}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="w-full">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -149,7 +149,7 @@ export function DesktopFilters({
                         setAssignedMemberFilter(value === "all" ? null : value);
                       }}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="w-full">
                         {assignedMemberFilter ? (
                           <div className="flex items-center gap-2">
                             <Avatar className="h-5 w-5">

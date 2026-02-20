@@ -241,6 +241,16 @@ export function NavMain({
                       <Plus className="h-4 w-4" />
                     </Link>
                   </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link
+                      href="/dashboard/outils/bons-commande/new"
+                      onClick={handleLinkClick}
+                      className="cursor-pointer flex justify-between w-full"
+                    >
+                      <span>Nouveau bon de commande</span>
+                      <Plus className="h-4 w-4" />
+                    </Link>
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                 </>
               )}
@@ -317,7 +327,7 @@ export function NavMain({
               >
                 <ChevronRight
                   className={cn(
-                    "h-4 w-4 transition-transform",
+                    "h-4 w-4 transition-transform duration-200",
                     isVentesOpen && "rotate-90"
                   )}
                 />
@@ -724,7 +734,7 @@ export function NavMain({
               >
                 <ChevronRight
                   className={cn(
-                    "h-4 w-4 transition-transform",
+                    "h-4 w-4 transition-transform duration-200",
                     isOpen && "rotate-90"
                   )}
                 />

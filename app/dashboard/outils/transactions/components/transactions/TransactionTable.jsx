@@ -91,11 +91,13 @@ import {
   ChevronLastIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  CircleXIcon,
   Settings2,
   Filter,
   Plus,
   X,
   Trash2,
+  CalendarIcon,
 } from "lucide-react";
 import {
   Popover,
@@ -103,6 +105,9 @@ import {
   PopoverTrigger,
 } from "@/src/components/ui/popover";
 import { Label } from "@/src/components/ui/label";
+import { Calendar } from "@/src/components/ui/calendar";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 
 // Fonction utilitaire pour récupérer le token JWT
 const getAuthToken = () => {
@@ -196,9 +201,25 @@ export default function TransactionTable({
   // Mettre à jour un filtre
   const updateFilter = (filterId, key, value) => {
     setAdvancedFilters(
-      advancedFilters.map((f) =>
-        f.id === filterId ? { ...f, [key]: value } : f
-      )
+      advancedFilters.map((f) => {
+        if (f.id !== filterId) return f;
+        const updated = { ...f, [key]: value };
+        // Passage vers un filtre date → initialiser startDate/endDate
+        if (key === "field" && value === "date") {
+          updated.operator = "between";
+          updated.value = "";
+          updated.startDate = "";
+          updated.endDate = "";
+        }
+        // Passage depuis un filtre date vers autre chose → nettoyer
+        if (key === "field" && f.field === "date" && value !== "date") {
+          delete updated.startDate;
+          delete updated.endDate;
+          updated.operator = "includes";
+          updated.value = "";
+        }
+        return updated;
+      })
     );
   };
 
@@ -590,9 +611,11 @@ export default function TransactionTable({
     setIsDetailDrawerOpen(true);
   };
 
-  const handleCloseDetailDrawer = () => {
-    setIsDetailDrawerOpen(false);
-    setSelectedTransaction(null);
+  const handleCloseDetailDrawer = (isOpen) => {
+    if (isOpen === false || isOpen === undefined) {
+      setIsDetailDrawerOpen(false);
+      setSelectedTransaction(null);
+    }
   };
 
   const handleEditFromDrawer = (transaction) => {
@@ -621,9 +644,7 @@ export default function TransactionTable({
     try {
       const result = await deleteTransaction(transaction.id);
       if (result.success) {
-        setTimeout(() => {
-          refetchExpenses();
-        }, 300);
+        await refetchExpenses();
       }
     } catch (error) {
       console.error("Error deleting transaction:", error);
@@ -667,6 +688,12 @@ export default function TransactionTable({
         ? Math.abs(parseFloat(transaction.amount))
         : -Math.abs(parseFloat(transaction.amount));
 
+      // Envoyer la sous-catégorie fine directement (le backend fait le mapping vers expenseCategory)
+      const category = transaction.category || "OTHER";
+
+      // Mapper le moyen de paiement
+      const paymentMethod = mapPaymentMethodToEnum(transaction.paymentMethod);
+
       // Construire l'input pour createTransaction
       const transactionInput = {
         workspaceId,
@@ -675,8 +702,9 @@ export default function TransactionTable({
         description: transaction.description || (isIncome ? "Revenu manuel" : "Dépense manuelle"),
         type: transactionType,
         date: transaction.date,
-        category: mapCategoryToEnum(transaction.category),
+        category: category,
         vendor: transaction.vendor || "",
+        paymentMethod: paymentMethod,
         notes: transaction.description || "",
       };
 
@@ -684,11 +712,7 @@ export default function TransactionTable({
 
       if (result.success) {
         setIsAddTransactionDrawerOpen(false);
-        // Le refetch est géré automatiquement par le hook via refetchQueries
-        // Mais on peut aussi forcer un refresh pour s'assurer
-        setTimeout(() => {
-          refetchExpenses();
-        }, 300);
+        await refetchExpenses();
       }
     } catch (error) {
       console.error("Erreur lors de l'ajout de la transaction:", error);
@@ -749,7 +773,9 @@ export default function TransactionTable({
   };
 
   const handleSaveTransaction = async (updatedTransaction) => {
-    if (!editingTransaction) return;
+    // Support pour l'édition depuis le detail drawer (selectedTransaction) ou le edit drawer (editingTransaction)
+    const transactionId = updatedTransaction.id || editingTransaction?.id || selectedTransaction?.id;
+    if (!transactionId) return;
 
     try {
       // Déterminer le type de transaction
@@ -761,25 +787,30 @@ export default function TransactionTable({
         ? Math.abs(parseFloat(updatedTransaction.amount))
         : -Math.abs(parseFloat(updatedTransaction.amount));
 
+      // Envoyer la sous-catégorie fine directement (le backend fait le mapping vers expenseCategory)
+      const category = updatedTransaction.category || "OTHER";
+
+      // Mapper le moyen de paiement
+      const paymentMethod = mapPaymentMethodToEnum(updatedTransaction.paymentMethod);
+
       const updateInput = {
         description: updatedTransaction.description || "Transaction modifiée",
         amount: amount,
         currency: "EUR",
-        category: mapCategoryToEnum(updatedTransaction.category),
+        category: category,
         date: updatedTransaction.date,
         type: transactionType,
         vendor: updatedTransaction.vendor,
+        paymentMethod: paymentMethod,
         notes: updatedTransaction.description,
       };
 
-      const result = await updateTransaction(editingTransaction.id, updateInput);
+      const result = await updateTransaction(transactionId, updateInput);
 
       if (result.success) {
         handleCloseEditModal();
-        // Le refetch est géré automatiquement par le hook via refetchQueries
-        setTimeout(() => {
-          refetchExpenses();
-        }, 300);
+        handleCloseDetailDrawer();
+        await refetchExpenses();
       }
     } catch (error) {
       console.error("Erreur lors de la modification de la transaction:", error);
@@ -916,6 +947,23 @@ export default function TransactionTable({
     if (advancedFilters.length > 0) {
       result = result.filter((transaction) => {
         return advancedFilters.every((filter) => {
+          // Filtre par plage de dates
+          if (filter.field === "date") {
+            if (!filter.startDate && !filter.endDate) return true;
+            const transactionDate = new Date(transaction.date);
+            if (filter.startDate) {
+              const start = new Date(filter.startDate);
+              start.setHours(0, 0, 0, 0);
+              if (transactionDate < start) return false;
+            }
+            if (filter.endDate) {
+              const end = new Date(filter.endDate);
+              end.setHours(23, 59, 59, 999);
+              if (transactionDate > end) return false;
+            }
+            return true;
+          }
+
           if (!filter.value) return true; // Ignorer les filtres sans valeur
 
           const fieldValue = transaction[filter.field];
@@ -983,68 +1031,43 @@ export default function TransactionTable({
     <div className="flex flex-col flex-1 min-h-0">
       {/* Filters and Actions - Fixe en haut */}
       <div className="flex items-center justify-between gap-3 hidden md:flex px-4 sm:px-6 py-4 flex-shrink-0">
-        {/* Search */}
-        <div className="relative max-w-md">
-          <Input
-            ref={inputRef}
-            placeholder="Recherchez par description, fournisseur ou montant..."
-            value={globalFilter ?? ""}
-            onChange={(event) => setGlobalFilter(event.target.value)}
-            className="w-full sm:w-[490px] lg:w-[490px] ps-9"
-          />
-          <div className="text-muted-foreground/80 pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3">
-            <Search size={16} aria-hidden="true" />
-          </div>
-        </div>
-
-        {/* Actions à droite */}
+        {/* Search + Colonnes + Filtres — côté gauche */}
         <div className="flex items-center gap-2">
-          {/* Bulk delete - visible quand des rows sont sélectionnées */}
-          {tableWithFilteredData.getSelectedRowModel().rows.length > 0 && (
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  variant="destructive"
-                  disabled={deleteMultipleLoading}
-                  data-mobile-delete-trigger
-                >
-                  <TrashIcon className="mr-2 h-4 w-4" />
-                  Supprimer (
-                  {tableWithFilteredData.getSelectedRowModel().rows.length})
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Êtes-vous sûr de vouloir supprimer{" "}
-                    {tableWithFilteredData.getSelectedRowModel().rows.length}{" "}
-                    transaction(s) sélectionnée(s) ? Cette action ne peut pas
-                    être annulée.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Annuler</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={handleDeleteRows}
-                    className="bg-destructive text-white hover:bg-destructive/90"
-                  >
-                    Supprimer
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          )}
+          <div className="flex items-center gap-2 h-8 w-full sm:w-[300px] rounded-[9px] border border-[#E6E7EA] hover:border-[#D1D3D8] dark:border-[#2E2E32] dark:hover:border-[#44444A] bg-transparent px-3 transition-[color,box-shadow] focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]">
+            <Search size={16} className="text-muted-foreground/80 shrink-0" aria-hidden="true" />
+            <Input
+              variant="ghost"
+              ref={inputRef}
+              value={globalFilter ?? ""}
+              onChange={(event) => setGlobalFilter(event.target.value)}
+              placeholder="Recherchez par description, fournisseur ou montant..."
+              aria-label="Filter transactions"
+            />
+            {Boolean(globalFilter) && (
+              <button
+                className="text-muted-foreground/80 hover:text-foreground cursor-pointer shrink-0 transition-colors outline-none"
+                aria-label="Clear filter"
+                onClick={() => {
+                  setGlobalFilter("");
+                  if (inputRef.current) {
+                    inputRef.current.focus();
+                  }
+                }}
+              >
+                <CircleXIcon size={16} aria-hidden="true" />
+              </button>
+            )}
+          </div>
 
           {/* Gérer les colonnes Button */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="font-normal">
-                <Settings2 className="mr-2 h-4 w-4" />
+              <Button variant="outline">
+                <Settings2 size={14} aria-hidden="true" />
                 Gérer les colonnes
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="start">
               <DropdownMenuLabel>Afficher les colonnes</DropdownMenuLabel>
               {tableWithFilteredData
                 .getAllColumns()
@@ -1075,10 +1098,9 @@ export default function TransactionTable({
           <Popover open={isFiltersOpen} onOpenChange={setIsFiltersOpen}>
             <PopoverTrigger asChild>
               <Button
-                variant={advancedFilters.length > 0 ? "default" : "outline"}
-                className="font-normal"
+                variant={advancedFilters.length > 0 ? "primary" : "filter"}
               >
-                <Filter className="mr-2 h-4 w-4" />
+                <Filter size={14} aria-hidden="true" />
                 Filtres
                 {advancedFilters.length > 0 && (
                   <span className="ml-2 rounded-full bg-white/20 px-2 py-0.5 text-xs">
@@ -1087,7 +1109,7 @@ export default function TransactionTable({
                 )}
               </Button>
             </PopoverTrigger>
-            <PopoverContent align="end" className="w-[500px] p-0">
+            <PopoverContent align="start" className="w-[500px] p-0">
               <div className="p-4 border-b">
                 <div className="flex items-center justify-between">
                   <h4 className="font-medium">Filtres</h4>
@@ -1136,25 +1158,85 @@ export default function TransactionTable({
                         </SelectContent>
                       </Select>
 
-                      {/* Opérateur */}
-                      <Select
-                        value={filter.operator}
-                        onValueChange={(value) =>
-                          updateFilter(filter.id, "operator", value)
-                        }
-                      >
-                        <SelectTrigger className="w-[100px]">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="z-[9999]">
-                          <SelectItem value="includes">inclut</SelectItem>
-                          <SelectItem value="excludes">exclut</SelectItem>
-                          <SelectItem value="equals">égal à</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      {/* Opérateur (masqué pour les filtres date) */}
+                      {filter.field !== "date" && (
+                        <Select
+                          value={filter.operator}
+                          onValueChange={(value) =>
+                            updateFilter(filter.id, "operator", value)
+                          }
+                        >
+                          <SelectTrigger className="w-[100px]">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="z-[9999]">
+                            <SelectItem value="includes">inclut</SelectItem>
+                            <SelectItem value="excludes">exclut</SelectItem>
+                            <SelectItem value="equals">égal à</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
 
                       {/* Valeur */}
-                      {filterValues[filter.field] ? (
+                      {filter.field === "date" ? (
+                        <div className="flex-1 flex items-center gap-2">
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex-1 justify-start text-left font-normal h-9"
+                              >
+                                <CalendarIcon className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
+                                <span className={filter.startDate ? "text-foreground" : "text-muted-foreground"}>
+                                  {filter.startDate
+                                    ? format(new Date(filter.startDate), "dd MMM yyyy", { locale: fr })
+                                    : "Date début"}
+                                </span>
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" style={{ zIndex: 9999 }} align="start">
+                              <Calendar
+                                mode="single"
+                                selected={filter.startDate ? new Date(filter.startDate) : undefined}
+                                onSelect={(date) =>
+                                  updateFilter(filter.id, "startDate", date ? date.toISOString() : "")
+                                }
+                                locale={fr}
+                              />
+                            </PopoverContent>
+                          </Popover>
+
+                          <span className="text-muted-foreground text-xs">→</span>
+
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex-1 justify-start text-left font-normal h-9"
+                              >
+                                <CalendarIcon className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
+                                <span className={filter.endDate ? "text-foreground" : "text-muted-foreground"}>
+                                  {filter.endDate
+                                    ? format(new Date(filter.endDate), "dd MMM yyyy", { locale: fr })
+                                    : "Date fin"}
+                                </span>
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" style={{ zIndex: 9999 }} align="start">
+                              <Calendar
+                                mode="single"
+                                selected={filter.endDate ? new Date(filter.endDate) : undefined}
+                                onSelect={(date) =>
+                                  updateFilter(filter.id, "endDate", date ? date.toISOString() : "")
+                                }
+                                locale={fr}
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                      ) : filterValues[filter.field] ? (
                         <Select
                           value={filter.value}
                           onValueChange={(value) =>
@@ -1230,36 +1312,78 @@ export default function TransactionTable({
             </PopoverContent>
           </Popover>
         </div>
+
+        {/* Actions à droite — bulk delete */}
+        {tableWithFilteredData.getSelectedRowModel().rows.length > 0 && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="destructive"
+                disabled={deleteMultipleLoading}
+                data-mobile-delete-trigger
+              >
+                <TrashIcon className="mr-2 h-4 w-4" />
+                Supprimer (
+                {tableWithFilteredData.getSelectedRowModel().rows.length})
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Êtes-vous sûr de vouloir supprimer{" "}
+                  {tableWithFilteredData.getSelectedRowModel().rows.length}{" "}
+                  transaction(s) sélectionnée(s) ? Cette action ne peut pas
+                  être annulée.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Annuler</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDeleteRows}
+                  className="bg-destructive text-white hover:bg-destructive/90"
+                >
+                  Supprimer
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
       </div>
 
       {/* Tabs de filtre rapide - Desktop */}
-      <div className="hidden md:block flex-shrink-0 border-b border-gray-200 dark:border-gray-800">
+      <div className="hidden md:block flex-shrink-0 border-b border-[#eeeff1] dark:border-[#232323] pt-2 pb-[9px] transaction-tabs">
+        <style>{`
+          .transaction-tabs [data-slot="tabs-trigger"][data-state="active"] {
+            text-shadow: 0.015em 0 currentColor, -0.015em 0 currentColor;
+          }
+        `}</style>
         <Tabs value={activeTab} onValueChange={handleTabChange}>
-          <TabsList className="h-auto rounded-none bg-transparent p-0 w-full justify-start px-4 sm:px-6">
+          <TabsList className="h-auto rounded-none bg-transparent p-0 w-full justify-start px-4 sm:px-6 gap-1.5">
             <TabsTrigger
               value="all"
-              className="data-[state=active]:after:bg-primary relative rounded-none py-2 px-4 after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 data-[state=active]:bg-transparent data-[state=active]:shadow-none text-sm font-normal"
+              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground hover:shadow-[inset_0_0_0_1px_#EEEFF1] dark:hover:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
             >
               Toutes
-              <span className="ml-2 text-xs text-muted-foreground">
+              <span className="text-[10px] leading-none bg-gray-100 dark:bg-gray-800 text-muted-foreground rounded px-1 py-0.5">
                 {transactionCounts.all}
               </span>
             </TabsTrigger>
             <TabsTrigger
               value="lastMonth"
-              className="data-[state=active]:after:bg-primary relative rounded-none py-2 px-4 after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 data-[state=active]:bg-transparent data-[state=active]:shadow-none text-sm font-normal"
+              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground hover:shadow-[inset_0_0_0_1px_#EEEFF1] dark:hover:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
             >
               Régler le dernier mois
-              <span className="ml-2 text-xs text-muted-foreground">
+              <span className="text-[10px] leading-none bg-gray-100 dark:bg-gray-800 text-muted-foreground rounded px-1 py-0.5">
                 {transactionCounts.lastMonth}
               </span>
             </TabsTrigger>
             <TabsTrigger
               value="missingReceipt"
-              className="data-[state=active]:after:bg-primary relative rounded-none py-2 px-4 after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 data-[state=active]:bg-transparent data-[state=active]:shadow-none text-sm font-normal"
+              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground hover:shadow-[inset_0_0_0_1px_#EEEFF1] dark:hover:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
             >
               Justificatif manquant
-              <span className="ml-2 text-xs text-muted-foreground">
+              <span className="text-[10px] leading-none bg-gray-100 dark:bg-gray-800 text-muted-foreground rounded px-1 py-0.5">
                 {transactionCounts.missingReceipt}
               </span>
             </TabsTrigger>

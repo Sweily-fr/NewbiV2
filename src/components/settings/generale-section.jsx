@@ -93,7 +93,7 @@ export function GeneraleSection({
     <div className="space-y-8">
       {/* Titre */}
       <div>
-        <h2 className="text-lg font-medium mb-1">Générale</h2>
+        <h2 className="text-lg font-medium mb-1 hidden md:block">Générale</h2>
         <Separator className="hidden md:block" />
         
         {/* Message d'information si pas de permissions */}
@@ -109,7 +109,7 @@ export function GeneraleSection({
         )}
 
         {/* Logo de l'entreprise */}
-        <div className="mb-8 mt-12">
+        <div className="mb-8 mt-4 md:mt-12">
           <Callout type="neutral" noMargin noIcon>
             <div className="flex items-start gap-4">
               <CompanyLogoUpload

@@ -3,12 +3,11 @@
 import { use, useState, useEffect, useMemo, Suspense } from "react";
 import * as React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, Plus, LoaderCircle, Search, Trash2, AlignLeft, Filter, Users, ZoomIn, ZoomOut, FileText, Euro } from "lucide-react";
+import { ArrowLeft, Plus, LoaderCircle, Search, Trash2, AlignLeft, Filter, Users, ZoomIn, ZoomOut, FileText, Euro, CircleXIcon } from "lucide-react";
 import { toast } from "@/src/components/ui/sonner";
 
 // UI Components
 import { Button } from "@/src/components/ui/button";
-import { ButtonGroup, ButtonGroupSeparator } from "@/src/components/ui/button-group";
 import {
   Card,
   CardContent,
@@ -544,29 +543,34 @@ function KanbanBoardPageContent({ params }) {
           )}
         </div>
         
-        <div className="flex items-center justify-between gap-3 py-3 border-b px-4 sm:px-6">
+        <div className="flex items-center justify-between gap-3 border-b border-[#eeeff1] dark:border-[#232323] pt-2 pb-[9px] px-4 sm:px-6 kanban-tabs">
+          <style>{`
+            .kanban-tabs [data-slot="tabs-trigger"][data-state="active"] {
+              text-shadow: 0.015em 0 currentColor, -0.015em 0 currentColor;
+            }
+          `}</style>
           <Tabs value={viewMode} onValueChange={setViewMode} className="w-auto items-center">
-            <TabsList className="h-auto rounded-none bg-transparent p-0">
+            <TabsList className="h-auto rounded-none bg-transparent p-0 gap-1.5">
               <TabsTrigger
                 value="board"
-                className="data-[state=active]:after:bg-primary cursor-pointer relative rounded-none py-2 px-3 md:px-4 after:absolute after:inset-x-0 after:-bottom-3 after:h-0.5 data-[state=active]:bg-transparent data-[state=active]:shadow-none font-normal text-xs md:text-sm gap-2 hidden md:inline-flex hover:bg-[#5b50ff]/10 hover:text-[#5b50ff] rounded-md transition-colors"
+                className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground hover:shadow-[inset_0_0_0_1px_#EEEFF1] dark:hover:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323] hidden md:inline-flex"
               >
                 <LayoutGrid className="h-4 w-4" />
-                <span>Board</span>
+                Board
               </TabsTrigger>
               <TabsTrigger
                 value="list"
-                className="data-[state=active]:after:bg-primary cursor-pointer relative rounded-none py-2 px-3 md:px-4 after:absolute after:inset-x-0 after:-bottom-3 after:h-0.5 data-[state=active]:bg-transparent data-[state=active]:shadow-none font-normal text-xs md:text-sm gap-2 hover:bg-[#5b50ff]/10 hover:text-[#5b50ff] rounded-md transition-colors"
+                className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground hover:shadow-[inset_0_0_0_1px_#EEEFF1] dark:hover:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
               >
                 <List className="h-4 w-4 md:inline hidden" />
-                <span>List</span>
+                List
               </TabsTrigger>
               <TabsTrigger
                 value="gantt"
-                className="data-[state=active]:after:bg-primary cursor-pointer relative rounded-none py-2 px-3 md:px-4 after:absolute after:inset-x-0 after:-bottom-3 after:h-0.5 data-[state=active]:bg-transparent data-[state=active]:shadow-none font-normal text-xs md:text-sm gap-2 hidden md:inline-flex hover:bg-[#5b50ff]/10 hover:text-[#5b50ff] rounded-md transition-colors"
+                className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground hover:shadow-[inset_0_0_0_1px_#EEEFF1] dark:hover:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323] hidden md:inline-flex"
               >
                 <GanttChart className="h-4 w-4" />
-                <span>Gantt</span>
+                Gantt
               </TabsTrigger>
             </TabsList>
           </Tabs>
@@ -608,22 +612,14 @@ function KanbanBoardPageContent({ params }) {
               workspaceId={workspaceId}
             />
             
-            <ButtonGroup>
-              <Button
-                onClick={openAddModal}
-                className="cursor-pointer font-normal bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
-              >
-                {isBoard ? "Ajouter une colonne" : "Nouveau status"}
-              </Button>
-              <ButtonGroupSeparator />
-              <Button
-                onClick={openAddModal}
-                size="icon"
-                className="cursor-pointer bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
-            </ButtonGroup>
+            <Button
+              variant="primary"
+              className="cursor-pointer"
+              onClick={openAddModal}
+            >
+              <Plus size={14} strokeWidth={2} aria-hidden="true" />
+              {isBoard ? "Ajouter une colonne" : "Nouveau status"}
+            </Button>
           </div>
         </div>
       </div>
@@ -641,34 +637,41 @@ function KanbanBoardPageContent({ params }) {
             </button>
           )}
 
-          {/* ButtonGroup: Recherche + Filtres */}
-          <ButtonGroup>
+          {/* Recherche + Filtres */}
+          <div className="flex items-center gap-2">
             {/* Barre de recherche */}
-            <div className="relative flex-1">
+            <div className="flex items-center gap-2 h-8 w-full sm:w-[300px] rounded-[9px] border border-[#E6E7EA] hover:border-[#D1D3D8] dark:border-[#2E2E32] dark:hover:border-[#44444A] bg-transparent px-3 transition-[color,box-shadow] focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]">
+              <Search size={16} className="text-muted-foreground/80 shrink-0" aria-hidden="true" />
               <Input
-                placeholder="Rechercher des tâches..."
+                variant="ghost"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full sm:w-[150px] lg:w-[250px] ps-9 rounded-r-none"
+                placeholder="Rechercher des tâches..."
+                aria-label="Filter tasks"
               />
-              <div className="text-muted-foreground/80 pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3">
-                <Search size={16} aria-hidden="true" />
-              </div>
+              {Boolean(searchQuery) && (
+                <button
+                  className="text-muted-foreground/80 hover:text-foreground cursor-pointer shrink-0 transition-colors outline-none"
+                  aria-label="Clear filter"
+                  onClick={() => setSearchQuery("")}
+                >
+                  <CircleXIcon size={16} aria-hidden="true" />
+                </button>
+              )}
             </div>
 
             {/* Bouton Filtres avec dropdown utilisateur */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
-                  variant="outline"
-                  className="h-9 gap-2 font-normal rounded-l-none"
+                  variant={selectedMemberId ? "primary" : "filter"}
                 >
-                  <Filter className="h-4 w-4" />
-                  <span>Filtres</span>
+                  <Filter size={14} aria-hidden="true" />
+                  Filtres
                   {selectedMemberId && (
-                    <Badge variant="secondary" className="ml-1">
+                    <span className="ml-2 rounded-full bg-white/20 px-2 py-0.5 text-xs">
                       1
-                    </Badge>
+                    </span>
                   )}
                 </Button>
               </DropdownMenuTrigger>
@@ -719,7 +722,7 @@ function KanbanBoardPageContent({ params }) {
                                 {(member.name || member.email).charAt(0).toUpperCase()}
                               </div>
                             )}
-                            
+
                             {/* Nom et checkbox */}
                             <span className="flex-1">{member.name || member.email}</span>
                             <div
@@ -751,14 +754,14 @@ function KanbanBoardPageContent({ params }) {
               <Button
                 variant="outline"
                 size="sm"
-                className="gap-2 h-9"
+                className="gap-2"
                 onClick={() => setShowConvertModal(true)}
               >
                 <FileText className="h-4 w-4" />
                 <span className="hidden lg:inline">Convertir en facture</span>
               </Button>
             )}
-          </ButtonGroup>
+          </div>
 
           {/* Prix total */}
           {billableTasks.length > 0 && (
@@ -809,34 +812,41 @@ function KanbanBoardPageContent({ params }) {
             </button>
           )}
 
-          {/* ButtonGroup: Recherche + Filtres */}
-          <ButtonGroup>
+          {/* Recherche + Filtres */}
+          <div className="flex items-center gap-2">
             {/* Barre de recherche */}
-            <div className="relative flex-1">
+            <div className="flex items-center gap-2 h-8 w-full sm:w-[300px] rounded-[9px] border border-[#E6E7EA] hover:border-[#D1D3D8] dark:border-[#2E2E32] dark:hover:border-[#44444A] bg-transparent px-3 transition-[color,box-shadow] focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]">
+              <Search size={16} className="text-muted-foreground/80 shrink-0" aria-hidden="true" />
               <Input
-                placeholder="Rechercher des tâches..."
+                variant="ghost"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full sm:w-[150px] lg:w-[250px] ps-9 rounded-r-none"
+                placeholder="Rechercher des tâches..."
+                aria-label="Filter tasks"
               />
-              <div className="text-muted-foreground/80 pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3">
-                <Search size={16} aria-hidden="true" />
-              </div>
+              {Boolean(searchQuery) && (
+                <button
+                  className="text-muted-foreground/80 hover:text-foreground cursor-pointer shrink-0 transition-colors outline-none"
+                  aria-label="Clear filter"
+                  onClick={() => setSearchQuery("")}
+                >
+                  <CircleXIcon size={16} aria-hidden="true" />
+                </button>
+              )}
             </div>
 
             {/* Bouton Filtres avec dropdown utilisateur */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
-                  variant="outline"
-                  className="h-9 gap-2 font-normal rounded-l-none"
+                  variant={selectedMemberId ? "primary" : "filter"}
                 >
-                  <Filter className="h-4 w-4" />
-                  <span>Filtres</span>
+                  <Filter size={14} aria-hidden="true" />
+                  Filtres
                   {selectedMemberId && (
-                    <Badge variant="secondary" className="ml-1">
+                    <span className="ml-2 rounded-full bg-white/20 px-2 py-0.5 text-xs">
                       1
-                    </Badge>
+                    </span>
                   )}
                 </Button>
               </DropdownMenuTrigger>
@@ -887,7 +897,7 @@ function KanbanBoardPageContent({ params }) {
                                 {(member.name || member.email).charAt(0).toUpperCase()}
                               </div>
                             )}
-                            
+
                             {/* Nom et checkbox */}
                             <span className="flex-1">{member.name || member.email}</span>
                             <div
@@ -919,14 +929,14 @@ function KanbanBoardPageContent({ params }) {
               <Button
                 variant="outline"
                 size="sm"
-                className="gap-2 h-9"
+                className="gap-2"
                 onClick={() => setShowConvertModal(true)}
               >
                 <FileText className="h-4 w-4" />
                 <span className="hidden lg:inline">Convertir en facture</span>
               </Button>
             )}
-          </ButtonGroup>
+          </div>
 
           {/* Prix total */}
           {billableTasks.length > 0 && (

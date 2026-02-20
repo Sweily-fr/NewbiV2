@@ -1,5 +1,5 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { LoaderCircle, Trash2, X, CalendarIcon, Clock, FileText, MessageSquare, ChevronDown, Flag, Users, UserPlus, Columns, Tag, Send, Edit2, Paperclip } from 'lucide-react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import { LoaderCircle, Trash2, X, CalendarIcon, Clock, FileText, MessageSquare, ChevronDown, Flag, Users, UserPlus, Columns, Tag, Send, Edit2, Paperclip, Bold, Italic, Underline, List, ListOrdered, Quote, Code, Link } from 'lucide-react';
 import { Button } from '@/src/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/src/components/ui/dialog';
 import { Input } from '@/src/components/ui/input';
@@ -12,6 +12,7 @@ import { Badge } from '@/src/components/ui/badge';
 import { Calendar } from '@/src/components/ui/calendar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/src/components/ui/tabs';
 import { Checkbox } from '@/src/components/ui/checkbox';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/src/components/ui/tooltip';
 import { UserAvatar } from '@/src/components/ui/user-avatar';
 import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -208,6 +209,143 @@ function PendingCommentsView({ pendingComments, addPendingComment, removePending
 }
 
 /**
+ * Éditeur rich text pour la description (style NoteComposer des notes client)
+ */
+const descriptionToolbarItems = [
+  { icon: Bold, tooltip: "Gras", command: "bold" },
+  { icon: Italic, tooltip: "Italique", command: "italic" },
+  { icon: Underline, tooltip: "Souligné", command: "underline" },
+  { icon: List, tooltip: "Liste à puces", command: "insertUnorderedList" },
+  { icon: ListOrdered, tooltip: "Liste numérotée", command: "insertOrderedList" },
+  { icon: Quote, tooltip: "Citation", command: "formatBlock", value: "blockquote" },
+  { icon: Code, tooltip: "Code", command: "formatBlock", value: "pre" },
+  { icon: Link, tooltip: "Lien", command: "createLink" },
+];
+
+function DescriptionEditor({ value, onChange, placeholder = "Ajouter une description..." }) {
+  const editorRef = useRef(null);
+  const [isEmpty, setIsEmpty] = useState(!value);
+  const lastValueRef = useRef(null);
+
+  // Initialiser le contenu au montage + sync quand value change de l'extérieur
+  useEffect(() => {
+    if (editorRef.current && value !== lastValueRef.current) {
+      editorRef.current.innerHTML = value || "";
+      lastValueRef.current = value || "";
+      const text = editorRef.current.textContent || "";
+      setIsEmpty(text.trim().length === 0);
+    }
+  }, [value]);
+
+  const syncValue = useCallback(() => {
+    if (!editorRef.current) return;
+    const html = editorRef.current.innerHTML;
+    const text = editorRef.current.textContent || "";
+    const newValue = text.trim().length === 0 ? "" : html;
+    setIsEmpty(text.trim().length === 0);
+    if (newValue !== lastValueRef.current) {
+      lastValueRef.current = newValue;
+      onChange(newValue);
+    }
+  }, [onChange]);
+
+  const applyFormat = useCallback((item) => {
+    if (item.command === "createLink") {
+      const url = prompt("URL du lien :");
+      if (url) document.execCommand("createLink", false, url);
+    } else if (item.value) {
+      document.execCommand(item.command, false, item.value);
+    } else {
+      document.execCommand(item.command, false, null);
+    }
+    editorRef.current?.focus();
+    syncValue();
+  }, [syncValue]);
+
+  const handleInput = useCallback(() => {
+    syncValue();
+  }, [syncValue]);
+
+  const handleClear = useCallback(() => {
+    if (editorRef.current) {
+      editorRef.current.innerHTML = "";
+      setIsEmpty(true);
+      lastValueRef.current = "";
+      onChange("");
+      editorRef.current.focus();
+    }
+  }, [onChange]);
+
+  return (
+    <div
+      className="flex flex-col rounded-xl border border-[#eeeff1] dark:border-[#232323] bg-white dark:bg-[#1a1a1a] shadow-xs cursor-text overflow-hidden min-w-0"
+      onClick={() => editorRef.current?.focus()}
+    >
+      {/* Formatting toolbar */}
+      <div className="flex items-center justify-between px-2 py-1.5 border-b border-[#eeeff1] dark:border-[#232323]">
+        <div className="flex items-center gap-0.5">
+          {descriptionToolbarItems.map((item, index) => (
+            <Tooltip key={index}>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    applyFormat(item);
+                  }}
+                  className="flex h-7 w-7 items-center justify-center rounded-md text-[#606164] dark:text-muted-foreground hover:bg-[#f8f9fa] dark:hover:bg-[#232323] hover:text-[#242529] dark:hover:text-foreground transition-colors"
+                >
+                  <item.icon className="h-3.5 w-3.5" strokeWidth={1.75} />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                <p>{item.tooltip}</p>
+              </TooltipContent>
+            </Tooltip>
+          ))}
+        </div>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              className="flex h-7 w-7 items-center justify-center rounded-md text-[#606164] hover:bg-red-50 hover:text-red-500 transition-colors"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleClear();
+              }}
+            >
+              <Trash2 className="h-3.5 w-3.5" strokeWidth={1.75} />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">
+            <p>Effacer</p>
+          </TooltipContent>
+        </Tooltip>
+      </div>
+
+      {/* Rich text editor */}
+      <div className="relative px-4 py-3 min-h-[100px] max-h-[200px] overflow-y-auto overflow-x-hidden">
+        {isEmpty && (
+          <span className="absolute top-3 left-4 text-sm text-muted-foreground pointer-events-none">
+            {placeholder}
+          </span>
+        )}
+        <div
+          ref={editorRef}
+          contentEditable
+          onInput={handleInput}
+          onBlur={syncValue}
+          style={{ overflowWrap: "anywhere", wordBreak: "break-word" }}
+          className="w-full max-w-full text-sm text-foreground focus:outline-none min-h-[80px] whitespace-pre-wrap [&_b]:font-bold [&_i]:italic [&_u]:underline [&_blockquote]:border-l-2 [&_blockquote]:border-[#eeeff1] [&_blockquote]:pl-3 [&_blockquote]:text-muted-foreground [&_pre]:bg-[#f8f9fa] [&_pre]:rounded [&_pre]:px-2 [&_pre]:py-1 [&_pre]:font-mono [&_pre]:text-xs [&_pre]:whitespace-pre-wrap [&_pre]:overflow-x-auto [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:text-[#5a50ff] [&_a]:underline"
+        />
+      </div>
+    </div>
+  );
+}
+
+/**
  * Modal pour créer ou modifier une tâche
  */
 export function TaskModal({
@@ -232,10 +370,6 @@ export function TaskModal({
   // Optimisation: handlers mémorisés pour éviter les re-renders
   const handleTitleChange = useCallback((e) => {
     setTaskForm(prev => ({ ...prev, title: e.target.value }));
-  }, [setTaskForm]);
-
-  const handleDescriptionChange = useCallback((e) => {
-    setTaskForm(prev => ({ ...prev, description: e.target.value }));
   }, [setTaskForm]);
 
   const handleNewTagChange = useCallback((e) => {
@@ -458,7 +592,7 @@ export function TaskModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="!max-w-[calc(100vw-2rem)] !w-[calc(100vw-2rem)] h-[calc(100vh-2rem)] p-0 bg-card text-card-foreground overflow-hidden flex flex-col">
+      <DialogContent onOpenAutoFocus={(e) => e.preventDefault()} className="!max-w-[calc(100vw-2rem)] !w-[calc(100vw-2rem)] h-[calc(100vh-2rem)] p-0 bg-card text-card-foreground overflow-hidden flex flex-col">
         {/* Version Desktop : 2 colonnes */}
         <div className="hidden lg:flex h-full">
           {/* Partie gauche : Formulaire */}
@@ -498,16 +632,13 @@ export function TaskModal({
                 </button>
               ) : (
                 <>
-                  <Label htmlFor="task-description" className="text-sm font-normal">
+                  <Label className="text-sm font-normal">
                     Description
                   </Label>
-                  <Textarea
-                    id="task-description"
+                  <DescriptionEditor
                     value={taskForm.description}
-                    onChange={handleDescriptionChange}
-                    className="w-full min-h-[100px] resize-none bg-card text-foreground border-input focus:border-primary focus-visible:ring-1 focus-visible:ring-ring"
+                    onChange={(html) => setTaskForm(prev => ({ ...prev, description: html }))}
                     placeholder="Ajouter une description..."
-                    autoFocus
                   />
                 </>
               )}
@@ -1136,17 +1267,13 @@ export function TaskModal({
                     </button>
                   ) : (
                     <>
-                      <Label htmlFor="task-description-mobile" className="text-sm font-normal">
+                      <Label className="text-sm font-normal">
                         Description
                       </Label>
-                      <Textarea
-                        id="task-description-mobile"
+                      <DescriptionEditor
                         value={taskForm.description}
-                        onChange={handleDescriptionChange}
-                        className="w-full min-h-[80px] resize-none bg-card text-foreground border-input focus:border-primary focus-visible:ring-1 focus-visible:ring-ring"
+                        onChange={(html) => setTaskForm(prev => ({ ...prev, description: html }))}
                         placeholder="Ajouter une description..."
-                        rows={3}
-                        autoFocus
                       />
                     </>
                   )}

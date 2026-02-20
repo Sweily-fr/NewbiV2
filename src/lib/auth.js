@@ -235,6 +235,13 @@ export const auth = betterAuth({
         const { mongoDb } = await import("./mongodb.js");
         const { ObjectId } = await import("mongodb");
 
+        // Synchroniser isEmailVerified (champ Mongoose) avec emailVerified (champ Better Auth)
+        await mongoDb.collection("user").updateOne(
+          { _id: new ObjectId(user.id) },
+          { $set: { isEmailVerified: true } }
+        );
+        console.log(`✅ [EMAIL VERIFICATION] isEmailVerified synchronisé pour ${user.email}`);
+
         // 1. Vérifier que l'utilisateur a une organisation
         const member = await mongoDb.collection("member").findOne({
           userId: new ObjectId(user.id),
