@@ -23,6 +23,7 @@ import {
 } from "@/src/components/ui/popover";
 import {
   EllipsisVertical,
+  ListFilterIcon,
   Users,
   FileCheck,
   Calendar as CalendarIcon,
@@ -197,19 +198,19 @@ export default function InvoiceFilters({
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         <Button
-          variant="ghost"
-          size="icon"
-          className={cn("h-9 w-9 relative", className)}
+          variant={activeFiltersCount > 0 ? "primary" : "filter"}
+          className={cn("cursor-pointer", className)}
         >
-          <EllipsisVertical className="h-4 w-4" />
+          <ListFilterIcon className="h-3.5 w-3.5" />
+          Filtres
           {activeFiltersCount > 0 && (
-            <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-[10px] font-medium text-primary-foreground flex items-center justify-center">
+            <span className="ml-1 rounded-full bg-white/20 px-1.5 py-0 text-[10px] font-medium">
               {activeFiltersCount}
             </span>
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-[240px]">
+      <DropdownMenuContent align="start" className="w-[240px]">
         {/* Effacer tous les filtres */}
         <DropdownMenuItem
           onClick={() => {

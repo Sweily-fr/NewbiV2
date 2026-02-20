@@ -55,8 +55,7 @@ export default function ClientDetailHeader({
       <div className="flex items-center gap-2 flex-shrink-0">
         <Button
           variant="outline"
-          size="sm"
-          className="gap-2 cursor-pointer font-normal hidden sm:flex"
+          className="hidden sm:inline-flex"
           onClick={() =>
             router.push(`/dashboard/outils/factures/new?clientId=${client.id}`)
           }
@@ -69,7 +68,7 @@ export default function ClientDetailHeader({
             <Button
               variant="outline"
               size="icon"
-              className="h-8 w-8 cursor-pointer hidden sm:flex"
+              className="hidden sm:inline-flex"
               onClick={() =>
                 router.push(`/dashboard/outils/devis/new?clientId=${client.id}`)
               }
@@ -85,7 +84,7 @@ export default function ClientDetailHeader({
               <Button
                 variant="outline"
                 size="icon"
-                className="h-8 w-8 cursor-pointer hidden sm:flex"
+                className="hidden sm:inline-flex"
                 onClick={() => (window.location.href = `mailto:${client.email}`)}
               >
                 <Mail className="h-3.5 w-3.5" />
@@ -101,7 +100,6 @@ export default function ClientDetailHeader({
             <Button
               variant="outline"
               size="icon"
-              className="h-8 w-8 cursor-pointer"
             >
               <Settings2 className="h-3.5 w-3.5" />
             </Button>

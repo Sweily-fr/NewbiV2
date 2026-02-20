@@ -221,14 +221,34 @@ const LoginForm = () => {
         }
 
         // Connexion normale sans 2FA
-        // Vérifier les deux noms de headers possibles (Better Auth peut utiliser l'un ou l'autre)
-        const authToken = ctx.response.headers.get("set-auth-jwt") ||
-                         ctx.response.headers.get("set-auth-token");
+        // Le plugin JWT de Better Auth n'envoie le header set-auth-jwt que sur /get-session,
+        // pas sur /sign-in/email. On récupère donc le JWT via l'endpoint dédié /api/auth/token.
+        let authToken = ctx.response.headers.get("set-auth-jwt") ||
+                       ctx.response.headers.get("set-auth-token");
+
+        if (!authToken) {
+          // Récupérer le JWT via l'endpoint dédié du plugin JWT
+          try {
+            const tokenResponse = await fetch(
+              `${process.env.NEXT_PUBLIC_BETTER_AUTH_URL || ""}/api/auth/token`,
+              { credentials: "include" }
+            );
+            if (tokenResponse.ok) {
+              const tokenData = await tokenResponse.json();
+              if (tokenData.token) {
+                authToken = tokenData.token;
+              }
+            }
+          } catch (err) {
+            console.warn("⚠️ [LOGIN] Erreur récupération JWT via /api/auth/token:", err.message);
+          }
+        }
+
         if (authToken) {
           localStorage.setItem("bearer_token", authToken);
-          console.log("💾 [LOGIN] Token sauvegardé");
+          console.log("💾 [LOGIN] Token JWT sauvegardé");
         } else {
-          console.warn("⚠️ [LOGIN] Aucun token JWT trouvé dans les headers");
+          console.warn("⚠️ [LOGIN] Aucun token JWT récupéré après login");
         }
 
         // Ne pas afficher la notification si l'utilisateur n'a pas terminé l'onboarding
@@ -820,7 +840,8 @@ const LoginForm = () => {
       </div>
       <SubmitButton
         type="submit"
-        className="mt-4 w-full py-2 font-normal cursor-pointer"
+        size="lg"
+        className="mt-4 w-full cursor-pointer"
         isLoading={isSubmitting}
       >
         Se connecter

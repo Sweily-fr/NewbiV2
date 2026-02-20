@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from '@apollo/client';
-import { CREATE_CLIENT, UPDATE_CLIENT, DELETE_CLIENT } from '../graphql/mutations/clients';
+import { CREATE_CLIENT, UPDATE_CLIENT, DELETE_CLIENT, BLOCK_CLIENT, UNBLOCK_CLIENT } from '../graphql/mutations/clients';
 import { GET_CLIENTS, GET_CLIENT } from '../graphql/queries/clients';
 import { GET_CLIENT_LISTS } from '../graphql/queries/clientLists';
 import { toast } from '@/src/components/ui/sonner';
@@ -202,6 +202,54 @@ export const useDeleteClient = () => {
 
   return {
     deleteClient: (id) => deleteClient({ variables: { workspaceId, id } }),
+    loading,
+    error,
+  };
+};
+
+export const useBlockClient = () => {
+  const { workspaceId } = useWorkspace();
+  const { handleMutationError } = useErrorHandler();
+
+  const [blockClient, { loading, error }] = useMutation(BLOCK_CLIENT, {
+    refetchQueries: [
+      { query: GET_CLIENTS, variables: { workspaceId, page: 1, limit: 10, search: '' } },
+    ],
+    awaitRefetchQueries: false,
+    onCompleted: () => {
+      toast.success('Contact bloqué');
+    },
+    onError: (error) => {
+      handleMutationError(error, 'block', 'client');
+    },
+  });
+
+  return {
+    blockClient: (id, reason) => blockClient({ variables: { workspaceId, id, reason } }),
+    loading,
+    error,
+  };
+};
+
+export const useUnblockClient = () => {
+  const { workspaceId } = useWorkspace();
+  const { handleMutationError } = useErrorHandler();
+
+  const [unblockClient, { loading, error }] = useMutation(UNBLOCK_CLIENT, {
+    refetchQueries: [
+      { query: GET_CLIENTS, variables: { workspaceId, page: 1, limit: 10, search: '' } },
+    ],
+    awaitRefetchQueries: false,
+    onCompleted: () => {
+      toast.success('Contact débloqué');
+    },
+    onError: (error) => {
+      handleMutationError(error, 'unblock', 'client');
+    },
+  });
+
+  return {
+    unblockClient: (id) => unblockClient({ variables: { workspaceId, id } }),
     loading,
     error,
   };

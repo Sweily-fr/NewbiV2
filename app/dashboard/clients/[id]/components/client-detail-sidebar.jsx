@@ -159,8 +159,6 @@ export default function ClientDetailSidebar({ client, invoices = [], onEdit }) {
             <span className="text-sm font-medium text-[#242529] dark:text-foreground">Informations</span>
             <Button
               variant="outline"
-              size="sm"
-              className="gap-1.5 cursor-pointer font-normal text-xs h-7"
               onClick={onEdit}
             >
               <Pencil className="h-3 w-3" />

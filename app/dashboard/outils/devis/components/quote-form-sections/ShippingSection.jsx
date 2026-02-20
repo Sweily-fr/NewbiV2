@@ -6,7 +6,7 @@ import { Button } from "@/src/components/ui/button";
 import { Card, CardContent } from "@/src/components/ui/card";
 import { Label } from "@/src/components/ui/label";
 import { Input } from "@/src/components/ui/input";
-import { Textarea } from "@/src/components/ui/textarea";
+import { TextareaNew } from "@/src/components/ui/textarea-new";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import {
   Select,
@@ -15,7 +15,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
-import { Separator } from "@/src/components/ui/separator";
 
 // Fonctions de validation qui accèdent aux données du formulaire
 const createValidationFunction = (fieldName, errorMessage) => {
@@ -113,7 +112,7 @@ export default function ShippingSection({ canEdit, validationErrors = {} }) {
   return (
     <Card className="border-0 shadow-none bg-transparent mb-0 p-0">
       <CardContent className="space-y-6 p-0">
-        <h3 className="text-lg font-normal text-foreground mb-6 mt-8">
+        <h3 className="text-lg font-medium text-foreground">
           Facturer la livraison
         </h3>
 
@@ -145,9 +144,8 @@ export default function ShippingSection({ canEdit, validationErrors = {} }) {
                   size="sm"
                   onClick={fillFromClientShipping}
                   disabled={!canEdit}
-                  className="text-xs"
                 >
-                  <MapPin className="h-3 w-3 mr-1" />
+                  <MapPin className="h-3 w-3" />
                   Utiliser l'adresse du client
                 </Button>
               </div>
@@ -189,7 +187,7 @@ export default function ShippingSection({ canEdit, validationErrors = {} }) {
                 </Label>
                 <span className="h-4 w-4" aria-hidden="true"></span>
               </div>
-              <Textarea
+              <TextareaNew
                 id="shippingStreet"
                 placeholder="Adresse complète de livraison"
                 disabled={!canEdit}
@@ -366,7 +364,7 @@ export default function ShippingSection({ canEdit, validationErrors = {} }) {
                   }
                   disabled={!canEdit}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Taux de TVA" />
                   </SelectTrigger>
                   <SelectContent>

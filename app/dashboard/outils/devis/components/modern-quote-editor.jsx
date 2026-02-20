@@ -227,28 +227,14 @@ export default function ModernQuoteEditor({
                       <X className="h-4 w-4 text-muted-foreground" />
                     </Button>
 
-                    {/* Bouton Retour sur desktop - visible uniquement à l'étape 2 */}
-                    {currentStep === 2 && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setCurrentStep(1)}
-                        className="hidden md:flex gap-2 h-8 px-3"
-                      >
-                        <ArrowLeft className="h-4 w-4" />
-                        <span className="text-sm">Retour</span>
-                      </Button>
-                    )}
-
                     {/* Bouton Paramètres */}
                     {!isReadOnly && (
                       <Button
-                        variant="ghost"
-                        size="sm"
+                        variant="outline"
+                        size="icon"
                         onClick={handleSettingsClick}
-                        className="h-8 w-8 p-0"
                       >
-                        <Settings size={20} />
+                        <Settings className="w-4 h-4" />
                       </Button>
                     )}
                   </>

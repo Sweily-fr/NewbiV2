@@ -3,6 +3,7 @@ import { Suspense, useState } from "react";
 import PurchaseInvoiceTable from "./components/table";
 import { PurchaseInvoiceDetailDrawer } from "./components/detail-drawer";
 import { PurchaseInvoiceUploadDrawer } from "./components/upload-drawer";
+import { ExportDialog } from "./components/export-dialog";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
 import {
   usePurchaseInvoices,
@@ -21,12 +22,9 @@ import {
   ChevronDown,
   Edit3,
   Upload,
+  Download,
   Info,
 } from "lucide-react";
-import {
-  ButtonGroup,
-  ButtonGroupSeparator,
-} from "@/src/components/ui/button-group";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -84,6 +82,7 @@ function PurchaseInvoicesContent() {
   const [isDetailDrawerOpen, setIsDetailDrawerOpen] = useState(false);
   const [isCreateDrawerOpen, setIsCreateDrawerOpen] = useState(false);
   const [isUploadDrawerOpen, setIsUploadDrawerOpen] = useState(false);
+  const [isExportOpen, setIsExportOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
 
   const handleRowClick = (invoice) => {
@@ -110,25 +109,22 @@ function PurchaseInvoicesContent() {
             <h1 className="text-2xl font-medium mb-2">Factures d&apos;achat</h1>
           </div>
           <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsExportOpen(true)}
+            >
+              <Download size={14} strokeWidth={1.5} aria-hidden="true" />
+              Exporter
+            </Button>
             <DropdownMenu>
-              <ButtonGroup>
-                <Button
-                  onClick={handleAddManual}
-                  className="cursor-pointer font-normal bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
-                >
+              <DropdownMenuTrigger asChild>
+                <Button variant="primary">
+                  <Plus size={14} strokeWidth={2} aria-hidden="true" />
                   Nouvelle facture
+                  <ChevronDown size={12} aria-hidden="true" />
                 </Button>
-                <ButtonGroupSeparator />
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    size="icon"
-                    className="cursor-pointer bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
-                  >
-                    <ChevronDown size={16} aria-hidden="true" />
-                  </Button>
-                </DropdownMenuTrigger>
-              </ButtonGroup>
-              <DropdownMenuContent align="end" className="[--radius:1rem]">
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
                 <DropdownMenuGroup>
                   <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
                     Ajouter une facture
@@ -243,7 +239,7 @@ function PurchaseInvoicesContent() {
                 <DropdownMenuTrigger asChild>
                   <Button
                     size="icon"
-                    className="cursor-pointer rounded-full bg-[#0A0A0A] text-white hover:bg-[#0A0A0A]/90"
+                    className="rounded-full"
                   >
                     <Plus className="h-5 w-5" />
                   </Button>
@@ -330,6 +326,11 @@ function PurchaseInvoicesContent() {
           setIsUploadDrawerOpen(false);
           refetch?.();
         }}
+      />
+      <ExportDialog
+        open={isExportOpen}
+        onOpenChange={setIsExportOpen}
+        invoices={invoices}
       />
     </>
   );

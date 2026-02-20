@@ -9,7 +9,6 @@ import {
   TabsTrigger,
 } from "@/src/components/ui/tabs";
 import {
-  LayoutGrid,
   Activity,
   StickyNote,
   FileText,
@@ -23,7 +22,6 @@ import {
   EmptyTitle,
   EmptyDescription,
 } from "@/src/components/ui/empty";
-import ClientOverviewTab from "./client-overview-tab";
 import ClientActivityTab from "./client-activity-tab";
 import ClientNotesTab from "./client-notes-tab";
 import ClientInvoicesTab from "./client-invoices-tab";
@@ -43,13 +41,13 @@ export default function ClientDetailTabs({
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const validTabs = ["overview", "activity", "notes", "invoices", "quotes", "documents"];
+  const validTabs = ["activity", "notes", "invoices", "quotes", "documents"];
   const tabParam = searchParams.get("tab");
-  const activeTab = validTabs.includes(tabParam) ? tabParam : "overview";
+  const activeTab = validTabs.includes(tabParam) ? tabParam : "activity";
 
   const setActiveTab = (tab) => {
     const params = new URLSearchParams(searchParams.toString());
-    if (tab === "overview") {
+    if (tab === "activity") {
       params.delete("tab");
     } else {
       params.set("tab", tab);
@@ -79,11 +77,6 @@ export default function ClientDetailTabs({
       `}</style>
       <div className="flex-shrink-0 border-b border-[#eeeff1] dark:border-[#232323] pt-2 pb-[9px]">
         <TabsList className="h-auto rounded-none bg-transparent p-0 w-full justify-start px-4 sm:px-6 gap-1.5">
-          <TabsTrigger value="overview" className={tabTriggerClass}>
-            <LayoutGrid className="h-3.5 w-3.5" />
-            Vue d&apos;ensemble
-          </TabsTrigger>
-          <div className="w-px h-5 bg-[#eeeff1] mx-1 self-center flex-shrink-0" />
           <TabsTrigger value="activity" className={tabTriggerClass}>
             <Activity className="h-3.5 w-3.5" />
             Activité
@@ -121,18 +114,6 @@ export default function ClientDetailTabs({
           </TabsTrigger>
         </TabsList>
       </div>
-
-      <TabsContent
-        value="overview"
-        className="flex-1 min-h-0 mt-0 overflow-hidden data-[state=inactive]:hidden"
-      >
-        <ClientOverviewTab
-          client={client}
-          invoices={invoices}
-          quotes={quotes}
-          onSwitchTab={setActiveTab}
-        />
-      </TabsContent>
 
       <TabsContent
         value="activity"

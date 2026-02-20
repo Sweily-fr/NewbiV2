@@ -40,6 +40,9 @@ export const GET_CLIENTS = gql`
           fieldId
           value
         }
+        isBlocked
+        blockedAt
+        blockedReason
       }
       totalItems
       currentPage
@@ -88,6 +91,9 @@ export const GET_CLIENT = gql`
         fieldId
         value
       }
+      isBlocked
+      blockedAt
+      blockedReason
       notes {
         id
         content

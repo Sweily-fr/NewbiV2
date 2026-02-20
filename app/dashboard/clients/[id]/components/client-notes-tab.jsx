@@ -388,10 +388,9 @@ function NoteComposer({ onSubmit, disabled, initialContent = "", members = [] })
           Cmd/Ctrl + Entrée
         </span>
         <Button
-          size="sm"
+          variant="default"
           disabled={isEmpty || disabled}
           onClick={handleSubmit}
-          className="h-7 gap-1.5 text-xs cursor-pointer bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90 disabled:opacity-40"
         >
           Envoyer
           <CornerDownLeft className="h-3 w-3" />
@@ -501,9 +500,7 @@ export default function ClientNotesTab({ client, workspaceId, onClientUpdate }) 
                           members={members}
                         />
                         <Button
-                          size="sm"
                           variant="outline"
-                          className="text-xs"
                           onClick={() => setEditingNoteId(null)}
                         >
                           Annuler
@@ -521,9 +518,9 @@ export default function ClientNotesTab({ client, workspaceId, onClientUpdate }) 
                           {note.userId === session?.user?.id && (
                             <div className="flex gap-1 opacity-0 group-hover/note:opacity-100 transition-opacity">
                               <Button
-                                size="sm"
+                                size="icon"
                                 variant="ghost"
-                                className="h-7 w-7 p-0 text-muted-foreground hover:text-[#5a50ff]"
+                                className="!size-7 text-muted-foreground hover:text-[#5a50ff]"
                                 onClick={() => setEditingNoteId(note.id)}
                               >
                                 <Edit2 className="h-3.5 w-3.5" />
@@ -534,9 +531,9 @@ export default function ClientNotesTab({ client, workspaceId, onClientUpdate }) 
                               >
                                 <AlertDialogTrigger asChild>
                                   <Button
-                                    size="sm"
+                                    size="icon"
                                     variant="ghost"
-                                    className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+                                    className="!size-7 text-muted-foreground hover:text-destructive"
                                     onClick={() => setNoteToDelete(note.id)}
                                   >
                                     <Trash2 className="h-3.5 w-3.5" />

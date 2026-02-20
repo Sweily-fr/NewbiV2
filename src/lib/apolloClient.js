@@ -62,6 +62,10 @@ const canHandleAuthError = () => {
  * Utilise window.location.href pour une redirection immédiate et fiable
  */
 const forceSessionExpiredRedirect = (reason = "inactivity") => {
+  // ✅ FIX: Garde dev retirée — le mécanisme de retry (handleCriticalAuthError)
+  // protège déjà contre les faux positifs (hot-reload, erreurs transitoires).
+  // forceSessionExpiredRedirect n'est appelé qu'après un échec confirmé de refreshSession().
+
   // Éviter les redirections multiples
   if (isRedirecting) {
     return;
@@ -300,6 +304,26 @@ const authLink = setContext(async (_, { headers }) => {
             onError: () => {},
           },
         });
+
+        // Si getSession() n'a pas retourné de JWT (cookieCache actif),
+        // utiliser l'endpoint dédié /api/auth/token du plugin JWT
+        if (!jwtToken) {
+          console.log("⚠️ [Apollo] Pas de JWT après getSession, appel /api/auth/token...");
+          try {
+            const tokenResponse = await fetch("/api/auth/token", {
+              credentials: "include",
+            });
+            if (tokenResponse.ok) {
+              const tokenData = await tokenResponse.json();
+              if (tokenData.token && !isTokenExpired(tokenData.token)) {
+                jwtToken = tokenData.token;
+                localStorage.setItem("bearer_token", tokenData.token);
+              }
+            }
+          } catch (err) {
+            console.warn("⚠️ [Apollo] Erreur /api/auth/token:", err.message);
+          }
+        }
       }
 
       // Fallback: si le refresh n'a pas retourné de nouveau JWT,
@@ -354,6 +378,51 @@ const authLink = setContext(async (_, { headers }) => {
   };
 });
 
+// ✅ FIX: Tentative de rafraîchissement de session avant redirection
+// Évite les déconnexions sur des erreurs UNAUTHENTICATED transitoires
+// (JWT expiré temporairement, cookie cache, cold start Vercel, etc.)
+let isRetryingAuth = false;
+
+const handleCriticalAuthError = async (operation, message) => {
+  // Éviter les retries simultanés
+  if (isRetryingAuth || isRedirecting) {
+    return;
+  }
+
+  const isInitialLoad = operation.getContext().isInitialLoad;
+  if (isInitialLoad) {
+    console.warn("⚠️ [Apollo] Erreur auth au chargement initial:", message);
+    return;
+  }
+
+  isRetryingAuth = true;
+
+  try {
+    // 1. Tenter de rafraîchir la session avant de rediriger
+    console.log("🔄 [Apollo] Erreur auth détectée, tentative de refresh session...");
+    const refreshed = await refreshSession();
+
+    if (refreshed) {
+      console.log("✅ [Apollo] Session rafraîchie avec succès après erreur auth, pas de redirection");
+      // La session est valide, l'erreur était transitoire
+      // Les requêtes suivantes utiliseront le nouveau token
+      return;
+    }
+
+    // 2. Le refresh a échoué - la session est vraiment expirée
+    if (canHandleAuthError()) {
+      console.log("🔒 [Apollo] Session réellement expirée après retry, redirection...");
+    }
+    forceSessionExpiredRedirect("inactivity");
+  } catch (error) {
+    console.error("❌ [Apollo] Erreur lors du retry auth:", error);
+    // En cas d'erreur réseau lors du retry, ne PAS rediriger
+    // L'utilisateur pourra réessayer manuellement
+  } finally {
+    isRetryingAuth = false;
+  }
+};
+
 // Intercepteur d'erreurs pour gérer les erreurs d'authentification
 const errorLink = onError(({ graphQLErrors, networkError, operation }) => {
   if (graphQLErrors) {
@@ -362,9 +431,15 @@ const errorLink = onError(({ graphQLErrors, networkError, operation }) => {
 
     graphQLErrors.forEach((error) => {
       const { message, extensions } = error;
-      // Fallback: lire error.code si extensions.code n'existe pas
-      // (ancien format de formatError de l'API retournait code au niveau racine)
-      const errorWithCode = { message, code: extensions?.code || error.code };
+      // ✅ FIX: Extraire le code d'erreur avec fallback complet
+      // Le backend peut renvoyer le code à 3 endroits différents :
+      // 1. extensions.code (format standard après formatError)
+      // 2. extensions.exception.code (quand formatError n'attrape pas l'AppError)
+      // 3. error.code (ancien format)
+      const errorCode = extensions?.code !== "INTERNAL_SERVER_ERROR"
+        ? extensions?.code
+        : extensions?.exception?.code || error.code;
+      const errorWithCode = { message, code: errorCode };
 
       // Éviter de traiter le même message plusieurs fois
       if (processedMessages.has(message)) {
@@ -375,34 +450,10 @@ const errorLink = onError(({ graphQLErrors, networkError, operation }) => {
       // Utiliser notre système centralisé pour obtenir le message utilisateur
       const userMessage = getErrorMessage(errorWithCode, "generic");
 
-      // Si l'erreur est critique (authentification), gérer la redirection
+      // Si l'erreur est critique (authentification), tenter un refresh avant de rediriger
       if (isCriticalError(errorWithCode)) {
-        // Ne pas afficher de toast si c'est une erreur au chargement initial
-        const isInitialLoad = operation.getContext().isInitialLoad;
-        // Ne pas rediriger pour les requêtes en arrière-plan (polling)
-        // Ces erreurs sont souvent transitoires (race condition pendant le refresh du token)
-        const isBackgroundPoll = operation.getContext().isBackgroundPoll;
-
-        if (isBackgroundPoll) {
-          // Log silencieux pour les polls en arrière-plan
-          console.warn(
-            "⚠️ [Apollo] Erreur auth transitoire sur poll background:",
-            message
-          );
-        } else if (!isInitialLoad) {
-          // Utiliser la garde pour éviter les logs multiples, mais toujours rediriger
-          if (canHandleAuthError()) {
-            console.log("🔒 [Apollo] Session expirée détectée, redirection...");
-          }
-          // Forcer la redirection (la fonction gère déjà les appels multiples)
-          forceSessionExpiredRedirect("inactivity");
-        } else {
-          // Log silencieux pour le chargement initial
-          console.warn(
-            "⚠️ [Apollo] Erreur auth au chargement initial:",
-            message
-          );
-        }
+        // ✅ FIX: Ne plus rediriger immédiatement, d'abord tenter un refresh
+        handleCriticalAuthError(operation, message);
       } else {
         // Ne pas afficher de toast si skipErrorToast est activé (redirection en cours)
         const skipErrorToast = operation.getContext().skipErrorToast;

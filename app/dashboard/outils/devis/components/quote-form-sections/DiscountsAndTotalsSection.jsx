@@ -1,9 +1,12 @@
 "use client";
 
 import { useFormContext } from "react-hook-form";
-import { Percent, Plus, Trash2 } from "lucide-react";
-import { Button } from "@/src/components/ui/button";
-import { Card, CardContent } from "@/src/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/src/components/ui/card";
 import { Label } from "@/src/components/ui/label";
 import { Input } from "@/src/components/ui/input";
 import {
@@ -13,8 +16,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
-import { Separator } from "@/src/components/ui/separator";
-import PercentageSliderInput from "@/src/components/percentage-slider-input";
 
 export default function DiscountsAndTotalsSection({ canEdit, validationErrors = {} }) {
   const {
@@ -28,16 +29,14 @@ export default function DiscountsAndTotalsSection({ canEdit, validationErrors = 
   // Helper pour vérifier si la remise a une erreur
   const hasDiscountError = validationErrors?.discount;
 
-  // Helper pour vérifier si un champ personnalisé a une erreur
-  const getCustomFieldError = (index) => {
-    if (!validationErrors?.customFields?.details) return null;
-    return validationErrors.customFields.details.find(detail => detail.index === index);
-  };
-
   return (
-    <Card className="shadow-none border-none bg-transparent mb-0 p-0">
+    <Card className="border-0 shadow-none bg-transparent mb-0 mt-8 p-0">
+      <CardHeader className="p-0">
+        <CardTitle className="flex items-center gap-2 font-medium text-lg">
+          Remises et totaux
+        </CardTitle>
+      </CardHeader>
       <CardContent className="space-y-6 p-0">
-        <h3 className="text-lg font-normal text-foreground mb-6 mt-12">Remises et totaux</h3>
 
         {/* Configuration de la remise globale */}
         <div className="flex gap-4">
@@ -71,7 +70,7 @@ export default function DiscountsAndTotalsSection({ canEdit, validationErrors = 
                 </SelectContent>
               </Select>
               {errors?.discountType && (
-                <p className="text-xs text-red-500">
+                <p className="text-xs text-destructive">
                   {errors.discountType.message}
                 </p>
               )}
@@ -113,7 +112,7 @@ export default function DiscountsAndTotalsSection({ canEdit, validationErrors = 
                 placeholder={
                   data.discountType === "PERCENTAGE" ? "Ex: 10" : "Ex: 50.00"
                 }
-                className={hasDiscountError ? "border-destructive focus-visible:ring-destructive" : ""}
+                className={hasDiscountError ? "border-destructive" : ""}
               />
               {(errors?.discount || hasDiscountError) && (
                 <p className="text-xs text-destructive">
@@ -122,186 +121,6 @@ export default function DiscountsAndTotalsSection({ canEdit, validationErrors = 
               )}
             </div>
           </div>
-        </div>
-
-        {/* Retenue de garantie et Escompte */}
-        <div className="flex gap-4">
-          {/* Retenue de garantie - 50% de la largeur */}
-          <div className="w-1/2">
-            <PercentageSliderInput
-              label="Retenue de garantie"
-              value={data.retenueGarantie || 0}
-              onChange={(value) => {
-                setValue("retenueGarantie", value, {
-                  shouldDirty: true,
-                  shouldValidate: true,
-                });
-              }}
-              disabled={!canEdit}
-              minValue={0}
-              maxValue={100}
-              step={1}
-              gaugeColor="#5b50FF"
-              id="retenue-garantie"
-            />
-            {errors?.retenueGarantie && (
-              <p className="text-xs text-destructive mt-2">
-                {errors.retenueGarantie.message}
-              </p>
-            )}
-          </div>
-
-          {/* Escompte - 50% de la largeur */}
-          <div className="w-1/2">
-            <PercentageSliderInput
-              label="Escompte"
-              value={data.escompte || 0}
-              onChange={(value) => {
-                setValue("escompte", value, {
-                  shouldDirty: true,
-                  shouldValidate: true,
-                });
-              }}
-              disabled={!canEdit}
-              minValue={0}
-              maxValue={100}
-              step={1}
-              gaugeColor="#5b50FF"
-              id="escompte"
-            />
-            {errors?.escompte && (
-              <p className="text-xs text-destructive mt-2">
-                {errors.escompte.message}
-              </p>
-            )}
-          </div>
-        </div>
-
-        {/* Champs personnalisés */}
-        <div className="space-y-4 mb-6">
-          <h3 className="text-lg font-normal text-foreground mb-6 mt-12">Champs personnalisés</h3>
-
-          {data.customFields && data.customFields.length > 0 ? (
-            <div className="space-y-4">
-              {data.customFields.map((field, index) => {
-                const fieldError = getCustomFieldError(index);
-                const hasNameError = fieldError?.errors?.includes("nom du champ manquant");
-                const hasValueError = fieldError?.errors?.includes("valeur manquante");
-                
-                return (
-                <div
-                  key={index}
-                  className="flex flex-col md:flex-row gap-4 w-full items-center"
-                >
-                  <div className="w-full md:w-1/2">
-                    <div className="space-y-1">
-                      <Input
-                        value={field.name || ""}
-                        onChange={(e) => {
-                          const newFields = [...(data.customFields || [])];
-                          newFields[index] = {
-                            ...newFields[index],
-                            name: e.target.value,
-                          };
-                          setValue("customFields", newFields, {
-                            shouldDirty: true,
-                          });
-                        }}
-                        placeholder="Ex: Référence projet"
-                        disabled={!canEdit}
-                        className={`h-10 rounded-lg text-sm w-full ${
-                          hasNameError ? "border-destructive focus-visible:ring-destructive" : ""
-                        }`}
-                      />
-                      {hasNameError && (
-                        <p className="text-xs text-destructive">
-                          Le nom du champ est requis
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  <div className="w-full md:w-1/2 flex items-end gap-2">
-                    <div className="flex-1">
-                      <div className="space-y-1">
-                        <Input
-                          {...register(`customFields.${index}.value`, {
-                            required: "La valeur du champ est requise",
-                            maxLength: {
-                              value: 100,
-                              message:
-                                "La valeur ne doit pas dépasser 100 caractères",
-                            },
-                          })}
-                          defaultValue={field.value || ""}
-                          onChange={(e) => {
-                            const newFields = [...(data.customFields || [])];
-                            newFields[index] = {
-                              ...newFields[index],
-                              value: e.target.value,
-                            };
-                            setValue("customFields", newFields, {
-                              shouldDirty: true,
-                              shouldValidate: true,
-                            });
-                          }}
-                          placeholder="Ex: PROJ-2024-001"
-                          disabled={!canEdit}
-                          className={`h-10 rounded-lg text-sm w-full ${
-                            errors?.customFields?.[index]?.value || hasValueError
-                              ? "border-destructive focus-visible:ring-destructive"
-                              : ""
-                          }`}
-                        />
-                        {(errors?.customFields?.[index]?.value || hasValueError) && (
-                          <p className="text-xs text-destructive">
-                            {errors?.customFields?.[index]?.value?.message || "La valeur du champ est requise"}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        const newFields = data.customFields.filter(
-                          (_, i) => i !== index
-                        );
-                        setValue("customFields", newFields, {
-                          shouldDirty: true,
-                        });
-                      }}
-                      disabled={!canEdit}
-                      className="h-10 w-10 flex-shrink-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <p className="text-sm text-gray-500">
-                Aucun champ personnalisé ajouté
-              </p>
-            </div>
-          )}
-
-          <Button
-            variant="default"
-            onClick={() => {
-              const newFields = [
-                ...(data.customFields || []),
-                { name: "", value: "" },
-              ];
-              setValue("customFields", newFields, { shouldDirty: true });
-            }}
-            disabled={!canEdit}
-            className="w-full h-10 font-normal"
-          >
-            Ajouter un champ personnalisé
-          </Button>
         </div>
       </CardContent>
     </Card>

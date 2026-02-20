@@ -5,7 +5,13 @@ import { useFormContext, useFieldArray, Controller } from "react-hook-form";
 import { Package, Plus, Trash2, Percent } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Checkbox } from "@/src/components/ui/checkbox";
-import { SelectNative } from "@/src/components/ui/select-native";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/src/components/ui/select";
 import {
   Card,
   CardContent,
@@ -16,7 +22,7 @@ import { Label } from "@/src/components/ui/label";
 import { Input } from "@/src/components/ui/input";
 import { CurrencyInput } from "@/src/components/ui/currency-input";
 import { QuantityInput } from "@/src/components/ui/quantity-input";
-import { Textarea } from "@/src/components/ui/textarea";
+import { TextareaNew } from "@/src/components/ui/textarea-new";
 import { Separator } from "@/src/components/ui/separator";
 import {
   Accordion,
@@ -107,7 +113,7 @@ export default function ItemsSection({
   return (
     <Card className="shadow-none border-none bg-transparent mb-0 p-0">
       <CardHeader className="p-0">
-        <CardTitle className="flex items-center gap-2 font-normal text-lg">
+        <CardTitle className="flex items-center gap-2 font-medium text-lg">
           Articles et produits
         </CardTitle>
       </CardHeader>
@@ -164,7 +170,7 @@ export default function ItemsSection({
                 <Button
                   onClick={() => addItem()}
                   disabled={!canEdit}
-                  className="gap-2 w-full h-full min-h-10 font-normal"
+                  className="gap-2 w-full h-full"
                   size="lg"
                 >
                   <Plus className="h-4 w-4" />
@@ -177,7 +183,7 @@ export default function ItemsSection({
               <Button
                 onClick={() => addItem()}
                 disabled={!canEdit}
-                className="gap-2 w-full h-full min-h-10 font-normal"
+                className="gap-2 w-full h-full"
                 size="lg"
               >
                 <Plus className="h-4 w-4" />
@@ -221,7 +227,7 @@ export default function ItemsSection({
                 <AccordionItem
                   key={index}
                   value={`item-${index}`}
-                  className="rounded-lg px-4 py-1 overflow-visible border last:border-b-1"
+                  className="rounded-xl px-4 py-1 overflow-visible border last:border-b-1"
                 >
                   <AccordionTrigger className="w-full justify-start gap-3 text-[15px] leading-6 hover:no-underline focus-visible:ring-0 py-3 [&[data-state=open]>svg]:rotate-180">
                     <div className="flex items-center justify-between w-full gap-3">
@@ -309,11 +315,11 @@ export default function ItemsSection({
                             })}
                             placeholder="Décrivez votre produit ou service"
                             disabled={!canEdit}
-                            className={`h-10 rounded-lg text-sm w-full ${
+                            className={
                               errors?.items?.[index]?.description || getItemError(index, "description")
-                                ? "border-destructive focus-visible:ring-destructive"
+                                ? "border-destructive"
                                 : ""
-                            }`}
+                            }
                           />
                           {(errors?.items?.[index]?.description || getItemError(index, "description")) && (
                             <p className="text-xs text-destructive">
@@ -334,13 +340,12 @@ export default function ItemsSection({
                           </Label>
                           <span className="h-4 w-4" aria-hidden="true"></span>
                         </div>
-                        <Textarea
+                        <TextareaNew
                           id={`item-details-${index}`}
                           {...register(`items.${index}.details`)}
                           placeholder="Informations complémentaires sur l'article"
                           disabled={!canEdit}
                           rows={2}
-                          className="rounded-lg text-sm w-full"
                         />
                       </div>
 
@@ -390,11 +395,11 @@ export default function ItemsSection({
                                 },
                               })}
                               disabled={!canEdit}
-                              className={`h-10 text-sm w-full ${
+                              className={
                                 errors?.items?.[index]?.quantity || getItemError(index, "quantity")
-                                  ? "border-destructive focus-visible:ring-destructive"
+                                  ? "border-destructive"
                                   : ""
-                              }`}
+                              }
                             />
                             {(errors?.items?.[index]?.quantity || getItemError(index, "quantity")) && (
                               <p className="text-xs text-destructive">
@@ -410,29 +415,37 @@ export default function ItemsSection({
                           </div>
                           <Controller
                             name={`items.${index}.unit`}
-                            defaultValue=""
+                            defaultValue="none"
                             render={({ field }) => (
-                              <SelectNative
-                                value={field.value ?? ""}
-                                onChange={(e) => field.onChange(e.target.value)}
+                              <Select
+                                value={field.value || "none"}
+                                onValueChange={(value) =>
+                                  field.onChange(
+                                    value === "none" ? "" : value
+                                  )
+                                }
                                 disabled={!canEdit}
-                                className="w-full text-sm"
                               >
-                                <option value="">Aucune unité</option>
-                                <option value="unité">Unité</option>
-                                <option value="pièce">Pièce</option>
-                                <option value="heure">Heure</option>
-                                <option value="jour">Jour</option>
-                                <option value="mois">Mois</option>
-                                <option value="kg">Kilogramme</option>
-                                <option value="m">Mètre</option>
-                                <option value="m²">Mètre carré</option>
-                                <option value="m³">Mètre cube</option>
-                                <option value="litre">Litre</option>
-                                <option value="forfait">Forfait</option>
-                                <option value="ensemble">Ensemble</option>
-                                <option value="personne(s)">Personne(s)</option>
-                              </SelectNative>
+                                <SelectTrigger className="w-full">
+                                  <SelectValue placeholder="Aucune unité" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="none">Aucune unité</SelectItem>
+                                  <SelectItem value="unité">Unité</SelectItem>
+                                  <SelectItem value="pièce">Pièce</SelectItem>
+                                  <SelectItem value="heure">Heure</SelectItem>
+                                  <SelectItem value="jour">Jour</SelectItem>
+                                  <SelectItem value="mois">Mois</SelectItem>
+                                  <SelectItem value="kg">Kilogramme</SelectItem>
+                                  <SelectItem value="m">Mètre</SelectItem>
+                                  <SelectItem value="m²">Mètre carré</SelectItem>
+                                  <SelectItem value="m³">Mètre cube</SelectItem>
+                                  <SelectItem value="litre">Litre</SelectItem>
+                                  <SelectItem value="forfait">Forfait</SelectItem>
+                                  <SelectItem value="ensemble">Ensemble</SelectItem>
+                                  <SelectItem value="personne(s)">Personne(s)</SelectItem>
+                                </SelectContent>
+                              </Select>
                             )}
                           />
                         </div>
@@ -485,11 +498,11 @@ export default function ItemsSection({
                                 },
                               })}
                               disabled={!canEdit}
-                              className={`h-10 text-sm w-full ${
+                              className={
                                 errors?.items?.[index]?.unitPrice || getItemError(index, "unitPrice")
-                                  ? "border-destructive focus-visible:ring-destructive"
+                                  ? "border-destructive"
                                   : ""
-                              }`}
+                              }
                             />
                             {(errors?.items?.[index]?.unitPrice || getItemError(index, "unitPrice")) && (
                               <p className="text-xs text-destructive">
@@ -510,19 +523,23 @@ export default function ItemsSection({
                               name={`items.${index}.vatRate`}
                               defaultValue={20}
                               render={({ field }) => (
-                                <SelectNative
+                                <Select
                                   value={field.value?.toString() || "20"}
-                                  onChange={(e) =>
-                                    field.onChange(parseFloat(e.target.value))
+                                  onValueChange={(value) =>
+                                    field.onChange(parseFloat(value))
                                   }
                                   disabled={!canEdit}
-                                  className="w-full text-sm"
                                 >
-                                  <option value="0">0% - Exonéré</option>
-                                  <option value="5.5">5,5% - Taux réduit</option>
-                                  <option value="10">10% - Taux intermédiaire</option>
-                                  <option value="20">20% - Taux normal</option>
-                                </SelectNative>
+                                  <SelectTrigger className="w-full">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="0">0% - Exonéré</SelectItem>
+                                    <SelectItem value="5.5">5,5% - Taux réduit</SelectItem>
+                                    <SelectItem value="10">10% - Taux intermédiaire</SelectItem>
+                                    <SelectItem value="20">20% - Taux normal</SelectItem>
+                                  </SelectContent>
+                                </Select>
                               )}
                             />
                           </div>
@@ -555,37 +572,45 @@ export default function ItemsSection({
                                 return true;
                               }
                             }}
-                            render={({ field, fieldState: { error } }) => (
+                            render={({ field }) => (
                               <div className="space-y-1">
-                                <SelectNative
-                                  value={field.value || ''}
-                                  onChange={(e) => field.onChange(e.target.value)}
+                                <Select
+                                  value={field.value || "none"}
+                                  onValueChange={field.onChange}
                                   disabled={!canEdit}
-                                  className={`w-full text-sm ${
-                                    error || getItemError(index, "vatExemptionText") ? 'border-destructive focus-visible:ring-destructive' : ''
-                                  }`}
                                 >
-                                  <option value="">Sélectionner une mention</option>
-                                  <option value="Article 259-1 du CGI">Article 259-1 du CGI</option>
-                                  <option value="Article 259 B du CGI">Article 259 B du CGI</option>
-                                  <option value="Article 261 du CGI">Article 261 du CGI</option>
-                                  <option value="Article 261 D du CGI">Article 261 D du CGI</option>
-                                  <option value="Article 261 D-4° du CGI">Article 261 D-4° du CGI</option>
-                                  <option value="Article 261 2-4° du CGI">Article 261 2-4° du CGI</option>
-                                  <option value="Article 261-4 du CGI">Article 261-4 du CGI</option>
-                                  <option value="Article 261 4-4° du CGI">Article 261 4-4° du CGI</option>
-                                  <option value="Article 262 du CGI">Article 262 du CGI</option>
-                                  <option value="Article 262 ter-I du CGI">Article 262 ter-I du CGI</option>
-                                  <option value="Article 275 du CGI">Article 275 du CGI</option>
-                                  <option value="Article 283 du CGI">Article 283 du CGI</option>
-                                  <option value="Article 283-2 du CGI">Article 283-2 du CGI</option>
-                                  <option value="Article 293 B du CGI">Article 293 B du CGI</option>
-                                  <option value="Article 298 sexies du CGI">Article 298 sexies du CGI</option>
-                                  <option value="Article 44 de la Directive 2006/112/CE">Article 44 de la Directive 2006/112/CE</option>
-                                </SelectNative>
-                                {(error || getItemError(index, "vatExemptionText")) && (
+                                  <SelectTrigger
+                                    className={`w-full ${
+                                      getItemError(index, "vatExemptionText")
+                                        ? "border-destructive"
+                                        : ""
+                                    }`}
+                                  >
+                                    <SelectValue placeholder="Sélectionner une mention" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="none">Sélectionner une mention</SelectItem>
+                                    <SelectItem value="Article 259-1 du CGI">Article 259-1 du CGI</SelectItem>
+                                    <SelectItem value="Article 259 B du CGI">Article 259 B du CGI</SelectItem>
+                                    <SelectItem value="Article 261 du CGI">Article 261 du CGI</SelectItem>
+                                    <SelectItem value="Article 261 D du CGI">Article 261 D du CGI</SelectItem>
+                                    <SelectItem value="Article 261 D-4° du CGI">Article 261 D-4° du CGI</SelectItem>
+                                    <SelectItem value="Article 261 2-4° du CGI">Article 261 2-4° du CGI</SelectItem>
+                                    <SelectItem value="Article 261-4 du CGI">Article 261-4 du CGI</SelectItem>
+                                    <SelectItem value="Article 261 4-4° du CGI">Article 261 4-4° du CGI</SelectItem>
+                                    <SelectItem value="Article 262 du CGI">Article 262 du CGI</SelectItem>
+                                    <SelectItem value="Article 262 ter-I du CGI">Article 262 ter-I du CGI</SelectItem>
+                                    <SelectItem value="Article 275 du CGI">Article 275 du CGI</SelectItem>
+                                    <SelectItem value="Article 283 du CGI">Article 283 du CGI</SelectItem>
+                                    <SelectItem value="Article 283-2 du CGI">Article 283-2 du CGI</SelectItem>
+                                    <SelectItem value="Article 293 B du CGI">Article 293 B du CGI</SelectItem>
+                                    <SelectItem value="Article 298 sexies du CGI">Article 298 sexies du CGI</SelectItem>
+                                    <SelectItem value="Article 44 de la Directive 2006/112/CE">Article 44 de la Directive 2006/112/CE</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                {getItemError(index, "vatExemptionText") && (
                                   <p className="text-xs text-destructive">
-                                    {error?.message || "Le texte d'exonération de TVA est requis lorsque la TVA est à 0%"}
+                                    Le texte d'exonération de TVA est requis lorsque la TVA est à 0%
                                   </p>
                                 )}
                               </div>
@@ -648,15 +673,37 @@ export default function ItemsSection({
                                 name={`items.${index}.discountType`}
                                 defaultValue="PERCENTAGE"
                                 render={({ field }) => (
-                                  <SelectNative
+                                  <Select
                                     value={field.value || "PERCENTAGE"}
-                                    onChange={(e) => field.onChange(e.target.value)}
+                                    onValueChange={(value) => {
+                                      field.onChange(value);
+                                      // Recalculer le total
+                                      const discount =
+                                        parseFloat(watch(`items.${index}.discount`)) || 0;
+                                      const quantity =
+                                        parseFloat(watch(`items.${index}.quantity`)) || 1;
+                                      const unitPrice =
+                                        parseFloat(watch(`items.${index}.unitPrice`)) || 0;
+                                      const total = calculateItemTotal(
+                                        quantity,
+                                        unitPrice,
+                                        discount,
+                                        value
+                                      );
+                                      setValue(`items.${index}.total`, total, {
+                                        shouldDirty: true,
+                                      });
+                                    }}
                                     disabled={!canEdit}
-                                    className="w-full text-sm"
                                   >
-                                    <option value="PERCENTAGE">Pourcentage (%)</option>
-                                    <option value="FIXED">Montant fixe (€)</option>
-                                  </SelectNative>
+                                    <SelectTrigger className="w-full">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="PERCENTAGE">Pourcentage (%)</SelectItem>
+                                      <SelectItem value="FIXED">Montant fixe (€)</SelectItem>
+                                    </SelectContent>
+                                  </Select>
                                 )}
                               />
                             </div>
@@ -706,11 +753,11 @@ export default function ItemsSection({
                                       },
                                     })}
                                     disabled={!canEdit}
-                                    className={`h-10 text-sm w-full ${
+                                    className={
                                       errors?.items?.[index]?.discount
-                                        ? "border-red-500"
+                                        ? "border-destructive"
                                         : ""
-                                    }`}
+                                    }
                                   />
                                 ) : (
                                   <Input
@@ -753,11 +800,11 @@ export default function ItemsSection({
                                     max="100"
                                     step="0.01"
                                     disabled={!canEdit}
-                                    className={`h-10 rounded-lg text-sm w-full ${
+                                    className={
                                       errors?.items?.[index]?.discount
-                                        ? "border-red-500"
+                                        ? "border-destructive"
                                         : ""
-                                    }`}
+                                    }
                                   />
                                 )}
                                 {errors?.items?.[index]?.discount && (

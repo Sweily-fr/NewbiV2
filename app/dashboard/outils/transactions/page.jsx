@@ -7,30 +7,25 @@ import { useDashboardData } from "@/src/hooks/useDashboardData";
 import { Button } from "@/src/components/ui/button";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/src/components/ui/tooltip";
-import {
   Plus,
   Settings,
   Download,
   Eye,
   EyeOff,
-  ChevronDown,
   Edit3,
   Upload,
   Building2,
   Landmark,
   ChevronsUpDown,
   Check,
+  ChevronDown,
+  FileSpreadsheet,
+  FileText,
+  Repeat2,
 } from "lucide-react";
-import {
-  ButtonGroup,
-  ButtonGroupSeparator,
-} from "@/src/components/ui/button-group";
-import { ExportDialog } from "./components/export-dialog";
+import * as XLSX from "xlsx";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -166,7 +161,6 @@ function GestionDepensesContent() {
   const [isBalanceHidden, setIsBalanceHidden] = useState(false);
   const [triggerAddManual, setTriggerAddManual] = useState(false);
   const [triggerAddOcr, setTriggerAddOcr] = useState(false);
-  const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
   const [selectedAccountId, setSelectedAccountId] = useState("all");
   const [accountPopoverOpen, setAccountPopoverOpen] = useState(false);
 
@@ -255,6 +249,53 @@ function GestionDepensesContent() {
   const error = null;
   const refetchExpenses = refreshData;
 
+  // Export Excel
+  const exportToExcel = () => {
+    const data = expenses.map((t) => ({
+      Date: t.date ? (typeof t.date === "string" && t.date.match(/^\d{4}-\d{2}-\d{2}/) ? t.date.split("T")[0].split("-").reverse().join("/") : format(new Date(t.date), "dd/MM/yyyy", { locale: fr })) : "",
+      Description: t.description || t.title || "",
+      Catégorie: t.category || "",
+      Montant: t.amount,
+      Devise: t.currency || "EUR",
+      Type: t.amount > 0 ? "Revenu" : "Dépense",
+      Fournisseur: t.vendor || "",
+    }));
+    const ws = XLSX.utils.json_to_sheet(data);
+    ws["!cols"] = [{ wch: 12 }, { wch: 30 }, { wch: 15 }, { wch: 10 }, { wch: 8 }, { wch: 10 }, { wch: 20 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Transactions");
+    XLSX.writeFile(wb, `transactions_${format(new Date(), "yyyy-MM-dd_HH-mm")}.xlsx`);
+  };
+
+  // Export CSV
+  const exportToCSV = () => {
+    const data = expenses.map((t) => ({
+      Date: t.date ? (typeof t.date === "string" && t.date.match(/^\d{4}-\d{2}-\d{2}/) ? t.date.split("T")[0].split("-").reverse().join("/") : format(new Date(t.date), "dd/MM/yyyy", { locale: fr })) : "",
+      Description: t.description || t.title || "",
+      Catégorie: t.category || "",
+      Montant: t.amount,
+      Devise: t.currency || "EUR",
+      Type: t.amount > 0 ? "Revenu" : "Dépense",
+      Fournisseur: t.vendor || "",
+    }));
+    const headers = Object.keys(data[0] || {});
+    const csvContent = [
+      headers.join(";"),
+      ...data.map((row) => headers.map((h) => {
+        const v = row[h];
+        return typeof v === "string" && (v.includes(";") || v.includes('"') || v.includes("\n")) ? `"${v.replace(/"/g, '""')}"` : v;
+      }).join(";")),
+    ].join("\n");
+    const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `transactions_${format(new Date(), "yyyy-MM-dd_HH-mm")}.csv`;
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   // Formater les montants
   const formatAmount = (amount) => {
     return new Intl.NumberFormat("fr-FR", {
@@ -327,109 +368,94 @@ function GestionDepensesContent() {
                 )}
               </button>
             </div>
-            <div className="flex items-center gap-2 mt-2">
-              <Popover open={accountPopoverOpen} onOpenChange={setAccountPopoverOpen}>
-                <PopoverTrigger asChild>
-                  <div className="flex items-center gap-2 cursor-pointer">
-                    <Landmark className="size-3.5 text-[#707070]" />
-                    <span className="text-[13px] font-normal truncate max-w-[150px]">
-                      {selectedAccountLabel}
-                    </span>
-                    <button className="p-1 rounded-md hover:bg-accent transition-colors cursor-pointer outline-none">
-                      <ChevronsUpDown className="h-3.5 w-3.5 text-muted-foreground" />
-                    </button>
-                  </div>
-                </PopoverTrigger>
-                <PopoverContent className="w-80 rounded-lg p-0" align="start" sideOffset={8}>
-                  <Command>
-                    <CommandList>
-                      <CommandEmpty>Aucun compte trouvé.</CommandEmpty>
-                      <CommandGroup>
-                        <CommandItem
-                          value="all"
-                          onSelect={() => {
-                            setSelectedAccountId("all");
-                            setAccountPopoverOpen(false);
-                          }}
-                          className="flex items-center gap-2 px-2 py-2 cursor-pointer"
-                        >
-                          <span className="flex-1 text-xs truncate">Tous les comptes</span>
-                          <Check
-                            className={cn(
-                              "h-4 w-4 text-[#5b4fff]",
-                              selectedAccountId === "all" ? "opacity-100" : "opacity-0"
-                            )}
-                          />
-                        </CommandItem>
-                        {(bankAccounts || []).map((account) => {
-                          const accountName = account.name || account.institutionName || account.bankName || "Compte";
-                          const lastIban = account.iban ? ` ···${account.iban.slice(-4)}` : "";
-                          const isSelected = selectedAccountId === account.id || selectedAccountId === account.externalId;
-                          return (
-                            <CommandItem
-                              key={account.id}
-                              value={account.id}
-                              onSelect={() => {
-                                setSelectedAccountId(account.id);
-                                setAccountPopoverOpen(false);
-                              }}
-                              className="flex items-center gap-2 px-2 py-2 cursor-pointer"
-                            >
-                              <div className="flex items-center gap-2 flex-1 min-w-0">
-                                {account.institutionLogo ? (
-                                  <img
-                                    src={account.institutionLogo}
-                                    alt=""
-                                    className="h-5 w-5 rounded-sm object-contain flex-shrink-0"
-                                  />
-                                ) : (
-                                  <Landmark className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-                                )}
-                                <div className="flex flex-col min-w-0">
-                                  <span className="truncate text-xs">{accountName}{lastIban}</span>
-                                  {account.balance?.current != null && (
-                                    <span className="text-[10px] text-muted-foreground">
-                                      {formatAmount(account.balance.current)} €
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                              <Check
-                                className={cn(
-                                  "h-4 w-4 text-[#5b4fff]",
-                                  isSelected ? "opacity-100" : "opacity-0"
-                                )}
-                              />
-                            </CommandItem>
-                          );
-                        })}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-            </div>
           </div>
           <div className="flex gap-2">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="secondary"
-                    size="icon"
-                    onClick={() => setIsExportDialogOpen(true)}
-                  >
-                    <Download className="h-4 w-4" strokeWidth={1.5} />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent
-                  side="bottom"
-                  className="bg-[#202020] text-white border-0"
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="cursor-pointer">
+                  <Landmark size={14} aria-hidden="true" />
+                  {selectedAccountLabel}
+                  <ChevronDown size={12} className="ml-0.5 opacity-70" aria-hidden="true" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+                  Sélectionner un compte
+                </DropdownMenuLabel>
+                <DropdownMenuItem
+                  onClick={() => setSelectedAccountId("all")}
+                  className="flex items-center gap-2 cursor-pointer"
                 >
-                  <p>Exporter les transactions</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+                  <Landmark size={14} className="text-muted-foreground" />
+                  <span className="flex-1 text-xs truncate">Tous les comptes</span>
+                  <Check
+                    className={cn(
+                      "h-4 w-4 text-[#5b4fff]",
+                      selectedAccountId === "all" ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                </DropdownMenuItem>
+                {(bankAccounts || []).map((account) => {
+                  const accountName = account.name || account.institutionName || account.bankName || "Compte";
+                  const lastIban = account.iban ? ` ···${account.iban.slice(-4)}` : "";
+                  const isSelected = selectedAccountId === account.id || selectedAccountId === account.externalId;
+                  return (
+                    <DropdownMenuItem
+                      key={account.id}
+                      onClick={() => setSelectedAccountId(account.id)}
+                      className="flex items-center gap-2 cursor-pointer"
+                    >
+                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                        {account.institutionLogo ? (
+                          <img
+                            src={account.institutionLogo}
+                            alt=""
+                            className="h-5 w-5 rounded-sm object-contain flex-shrink-0"
+                          />
+                        ) : (
+                          <Landmark className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                        )}
+                        <div className="flex flex-col min-w-0">
+                          <span className="truncate text-xs">{accountName}{lastIban}</span>
+                          {account.balance?.current != null && (
+                            <span className="text-[10px] text-muted-foreground">
+                              {formatAmount(account.balance.current)} €
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <Check
+                        className={cn(
+                          "h-4 w-4 text-[#5b4fff]",
+                          isSelected ? "opacity-100" : "opacity-0"
+                        )}
+                      />
+                    </DropdownMenuItem>
+                  );
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="cursor-pointer">
+                  <Download size={14} strokeWidth={1.5} aria-hidden="true" />
+                  Exporter
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+                  Format d'export
+                </DropdownMenuLabel>
+                <DropdownMenuItem onClick={exportToExcel} className="cursor-pointer">
+                  <FileSpreadsheet size={16} className="text-green-600" />
+                  Excel (.xlsx)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={exportToCSV} className="cursor-pointer">
+                  <FileText size={16} className="text-blue-600" />
+                  CSV (.csv)
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             {/* <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -446,22 +472,16 @@ function GestionDepensesContent() {
               </Tooltip>
             </TooltipProvider> */}
             <DropdownMenu>
-              <ButtonGroup>
-                <DropdownMenuTrigger asChild>
-                  <Button className="cursor-pointer font-normal bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90">
-                    Nouvelle transaction
-                  </Button>
-                </DropdownMenuTrigger>
-                <ButtonGroupSeparator />
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    size="icon"
-                    className="cursor-pointer bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
-                  >
-                    <ChevronDown size={16} aria-hidden="true" />
-                  </Button>
-                </DropdownMenuTrigger>
-              </ButtonGroup>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="primary"
+                  className="self-start cursor-pointer"
+                >
+                  <Repeat2 size={14} strokeWidth={2} aria-hidden="true" />
+                  Nouvelle transaction
+                  <ChevronDown size={12} className="ml-0.5 opacity-70" aria-hidden="true" />
+                </Button>
+              </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="[--radius:1rem]">
                 <DropdownMenuGroup>
                   <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
@@ -643,12 +663,6 @@ function GestionDepensesContent() {
           />
         </Suspense>
 
-        {/* Dialog d'export */}
-        <ExportDialog
-          open={isExportDialogOpen}
-          onOpenChange={setIsExportDialogOpen}
-          transactions={expenses}
-        />
       </div>
     </>
   );

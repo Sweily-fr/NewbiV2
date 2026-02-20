@@ -149,3 +149,25 @@ export const DELETE_CLIENT = gql`
     deleteClient(workspaceId: $workspaceId, id: $id)
   }
 `;
+
+export const BLOCK_CLIENT = gql`
+  mutation BlockClient($workspaceId: String!, $id: ID!, $reason: String) {
+    blockClient(workspaceId: $workspaceId, id: $id, reason: $reason) {
+      id
+      isBlocked
+      blockedAt
+      blockedReason
+    }
+  }
+`;
+
+export const UNBLOCK_CLIENT = gql`
+  mutation UnblockClient($workspaceId: String!, $id: ID!) {
+    unblockClient(workspaceId: $workspaceId, id: $id) {
+      id
+      isBlocked
+      blockedAt
+      blockedReason
+    }
+  }
+`;

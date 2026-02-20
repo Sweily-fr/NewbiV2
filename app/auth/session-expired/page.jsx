@@ -3,17 +3,14 @@
 import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/src/components/ui/button";
-import { Shield, LogIn, LoaderCircle } from "lucide-react";
+import { Clock, LogIn, LoaderCircle } from "lucide-react";
 
-
-// Composant interne qui utilise useSearchParams
 function SessionExpiredContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const reason = searchParams.get("reason") || "inactivity";
   const [countdown, setCountdown] = useState(30);
 
-  // Countdown pour redirection automatique
   useEffect(() => {
     const timer = setInterval(() => {
       setCountdown((prev) => {
@@ -33,22 +30,22 @@ function SessionExpiredContent() {
     switch (reason) {
       case "security":
         return {
-          title: "Session terminée pour votre sécurité",
+          title: "Session terminée",
           description:
-            "Votre session a été fermée pour protéger votre compte. Cela peut arriver si une activité inhabituelle a été détectée.",
+            "Votre session a été fermée pour protéger votre compte. Vos données sont intactes, reconnectez-vous pour continuer.",
         };
       case "revoked":
         return {
           title: "Session révoquée",
           description:
-            "Votre session a été révoquée depuis un autre appareil ou par un administrateur.",
+            "Votre session a été révoquée depuis un autre appareil. Vos données sont intactes, reconnectez-vous pour continuer.",
         };
       case "inactivity":
       default:
         return {
-          title: "Session expirée pour inactivité",
+          title: "Session expirée",
           description:
-            "Pour des raisons de sécurité, votre session a expiré après une période d'inactivité. Reconnectez-vous pour continuer.",
+            "Votre session a expiré après une période d'inactivité. Vos données sont intactes, reconnectez-vous pour continuer.",
         };
     }
   };
@@ -56,153 +53,51 @@ function SessionExpiredContent() {
   const content = getReasonContent();
 
   return (
-    <>
-      {/* Desktop Layout */}
-      <div className="hidden md:flex h-screen">
-        <div className="w-1/2 flex items-center justify-center p-8">
-          <div className="mx-auto sm:max-w-md w-full -mt-16">
-            {/* Logo */}
-            <img
-              src="/newbiLetter.png"
-              alt="Newbi Logo"
-              className="h-5 w-auto mb-8"
-            />
+    <div className="min-h-screen flex items-center justify-center px-6">
+      <div className="w-full max-w-[400px]">
+        <img
+          src="/newbiLetter.png"
+          alt="Newbi"
+          className="h-5 w-auto mx-auto mb-8"
+        />
 
-            {/* Titre et description */}
-            <h3 className="text-3xl font-medium text-foreground dark:text-foreground">
-              {content.title}
-            </h3>
-            <p className="mt-3 text-sm text-muted-foreground dark:text-muted-foreground leading-relaxed">
-              {content.description}
-            </p>
+        <Clock className="w-12 h-12 text-gray-300 mx-auto mb-6" strokeWidth={1.5} />
 
-            {/* Informations de sécurité */}
-            <div className="mt-6 bg-slate-50 dark:bg-slate-800 rounded-xl p-4 space-y-2">
-              <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
-                <Shield className="w-4 h-4 text-green-500" />
-                <span>Vos données sont protégées</span>
-              </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Aucune donnée n'a été perdue. Vous retrouverez votre espace
-                exactement comme vous l'avez laissé.
-              </p>
-            </div>
+        <h1 className="text-xl font-semibold text-gray-900 text-center mb-2">
+          {content.title}
+        </h1>
 
-            {/* Bouton de connexion */}
-            <Button
-              onClick={() => router.push("/auth/login")}
-              className="w-full h-12 mt-8 text-base font-medium bg-primary hover:bg-primary/90 text-white rounded-md transition-all duration-200 hover:shadow-lg cursor-pointer"
-            >
-              <LogIn className="w-5 h-5 mr-2" />
-              Se reconnecter
-            </Button>
+        <p className="text-sm text-gray-500 text-center leading-relaxed mb-8">
+          {content.description}
+        </p>
 
-            {/* Countdown */}
-            <p className="mt-4 text-center text-xs text-slate-400 dark:text-slate-500">
-              Redirection automatique dans{" "}
-              <span className="font-medium text-slate-600 dark:text-slate-300">
-                {countdown}s
-              </span>
-            </p>
+        <Button
+          onClick={() => router.push("/auth/login")}
+          className="w-full py-2.5 text-sm font-medium rounded-lg cursor-pointer"
+        >
+          <LogIn className="w-4 h-4 mr-2" />
+          Se reconnecter
+        </Button>
 
-            {/* Footer info */}
-            <p className="mt-6 text-xs text-muted-foreground dark:text-muted-foreground">
-              Pour votre sécurité, les sessions expirent après 1 heure
-              d'inactivité.
-            </p>
+        <p className="mt-3 text-xs text-gray-400 text-center">
+          Redirection automatique dans{" "}
+          <span className="font-medium text-gray-500">{countdown}s</span>
+        </p>
 
-            {/* Lien support */}
-            <p className="mt-4 text-sm text-muted-foreground dark:text-muted-foreground">
-              Un problème ?{" "}
-              <a
-                href="mailto:contact@newbi.fr"
-                className="font-medium text-primary hover:text-primary/90 dark:text-primary hover:dark:text-primary/90"
-              >
-                Contactez le support
-              </a>
-            </p>
-          </div>
-        </div>
-        <div className="w-1/2 p-2 flex items-center min-h-screen justify-center">
-          <div className="flex p-5 items-center justify-center w-full h-full rounded-lg relative">
-            <img
-              src="/undraw_security_0ubl.svg"
-              alt="Security illustration"
-              className="w-[60%] h-auto max-w-sm"
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Mobile Layout */}
-      <div className="md:hidden min-h-screen bg-background flex items-center justify-center pb-8">
-        <div className="w-full max-w-sm px-6">
-          {/* Logo */}
-          <img
-            src="/newbiLetter.png"
-            alt="Newbi Logo"
-            className="mb-6 h-4 w-auto"
-          />
-
-          {/* Titre et description */}
-          <h3 className="text-xl font-medium text-foreground mb-2">
-            {content.title}
-          </h3>
-          <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
-            {content.description}
-          </p>
-
-          {/* Informations de sécurité */}
-          <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-4 space-y-2 mb-6">
-            <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
-              <Shield className="w-4 h-4 text-green-500" />
-              <span>Vos données sont protégées</span>
-            </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Aucune donnée n'a été perdue. Vous retrouverez votre espace
-              exactement comme vous l'avez laissé.
-            </p>
-          </div>
-
-          {/* Bouton de connexion */}
-          <Button
-            onClick={() => router.push("/auth/login")}
-            className="w-full h-12 text-base font-medium bg-primary hover:bg-primary/90 text-white rounded-md transition-all duration-200 cursor-pointer"
+        <p className="mt-8 text-xs text-gray-400 text-center">
+          Un problème ?{" "}
+          <a
+            href="mailto:contact@newbi.fr"
+            className="text-gray-500 hover:text-gray-700 underline"
           >
-            <LogIn className="w-5 h-5 mr-2" />
-            Se reconnecter
-          </Button>
-
-          {/* Countdown */}
-          <p className="mt-4 text-center text-xs text-slate-400 dark:text-slate-500">
-            Redirection automatique dans{" "}
-            <span className="font-medium text-slate-600 dark:text-slate-300">
-              {countdown}s
-            </span>
-          </p>
-
-          {/* Footer info */}
-          <p className="mt-6 text-center text-xs text-muted-foreground">
-            Pour votre sécurité, les sessions expirent après 1 heure
-            d'inactivité.
-          </p>
-
-          {/* Lien support */}
-          <p className="mt-4 text-center text-sm text-muted-foreground">
-            <a
-              href="mailto:contact@newbi.fr"
-              className="font-medium text-primary hover:text-primary/90"
-            >
-              Contactez le support
-            </a>
-          </p>
-        </div>
+            Contactez le support
+          </a>
+        </p>
       </div>
-    </>
+    </div>
   );
 }
 
-// Fallback de chargement
 function LoadingFallback() {
   return (
     <div className="min-h-screen flex items-center justify-center">
@@ -211,7 +106,6 @@ function LoadingFallback() {
   );
 }
 
-// Page principale avec Suspense boundary
 export default function SessionExpiredPage() {
   return (
     <main>

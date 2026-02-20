@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Filter, Users, FileCheck, Calendar as CalendarIcon } from "lucide-react";
+import { Filter, ListFilterIcon, Users, FileCheck, Calendar as CalendarIcon } from "lucide-react";
 import { Badge } from "@/src/components/ui/badge";
 import { cn } from "@/src/lib/utils";
 import { Button } from "@/src/components/ui/button";
@@ -146,19 +146,19 @@ export default function QuoteFilters({
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         <Button
-          variant="outline"
-          className={cn("h-9 gap-2 font-normal", className)}
+          variant={activeFiltersCount > 0 ? "primary" : "filter"}
+          className={cn("cursor-pointer", className)}
         >
-          <Filter className="h-4 w-4" />
-          <span>Filtres</span>
+          <ListFilterIcon className="h-3.5 w-3.5" />
+          Filtres
           {activeFiltersCount > 0 && (
-            <Badge variant="secondary" className="ml-1">
+            <span className="ml-1 rounded-full bg-white/20 px-1.5 py-0 text-[10px] font-medium">
               {activeFiltersCount}
-            </Badge>
+            </span>
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-[240px]">
+      <DropdownMenuContent align="start" className="w-[240px]">
         {/* Effacer tous les filtres */}
         <DropdownMenuItem
           onClick={() => {

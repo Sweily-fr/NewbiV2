@@ -66,22 +66,27 @@ function DashboardContent({ children }) {
   // Hook pour vérifier le statut de l'abonnement
   const { isActive, subscription, isLoading: subscriptionLoading } = useDashboardLayoutContext();
 
-  // Hook pour valider la session et détecter les révocations
-  useSessionValidator();
+  const isDev = process.env.NODE_ENV === "development";
 
-  // ✅ NOTE: La vérification d'abonnement et d'authentification est maintenant faite
-  // côté serveur dans layout.jsx (Server Component) pour une protection garantie.
-  // Les vérifications côté client ont été supprimées car redondantes.
-
-  // Initialiser ActivityTracker au montage (une seule fois)
+  // ✅ IMPORTANT: Initialiser ActivityTracker EN PREMIER pour que les event listeners
+  // d'activité (visibilitychange, focus) soient enregistrés AVANT ceux de useSessionValidator.
+  // Cela garantit que lastActivityTimestamp est mis à jour AVANT la validation de session
+  // quand l'utilisateur revient sur l'onglet.
   useEffect(() => {
-    initializeActivityTracker();
-  }, []);
+    if (!isDev) {
+      initializeActivityTracker();
+    }
+  }, [isDev]);
+
+  // Hook pour valider la session et détecter les révocations
+  // Désactivé en développement pour éviter les redirections lors du hot-reload
+  useSessionValidator(!isDev);
 
   // Hook pour gérer la déconnexion automatique après inactivité
   // Le timeout est maintenant géré par ActivityTracker (60 min = 1 heure)
   // qui prend en compte les appels API + les événements DOM
-  useInactivityTimer(60, true);
+  // Désactivé en développement
+  useInactivityTimer(60, !isDev);
 
   // Protection contre l'erreur d'hydratation
   useEffect(() => {

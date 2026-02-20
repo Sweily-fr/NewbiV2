@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -28,11 +28,12 @@ import {
   ChevronLastIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  CircleXIcon,
   TrashIcon,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
-import { Checkbox } from "@/src/components/ui/checkbox";
 import { Input } from "@/src/components/ui/input";
+import { Checkbox } from "@/src/components/ui/checkbox";
 import { Label } from "@/src/components/ui/label";
 import {
   DropdownMenu,
@@ -123,6 +124,7 @@ export default function TransferTable({
   onShowDeleteDialog,
   isMobile = false,
 }) {
+  const inputRef = useRef(null);
   const { deleteTransfer, formatFileSize } = useFileTransfer();
   const { session } = useUser();
 
@@ -249,17 +251,17 @@ export default function TransferTable({
           return (
             <div className="flex items-center gap-2">
               {isExpired ? (
-                <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-red-50 text-red-600 text-xs font-medium dark:bg-red-900/20 dark:text-red-400">
+                <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-red-100 text-red-700 text-xs font-medium dark:bg-red-900/20 dark:text-red-400">
                   <Clock className="w-3 h-3" />
                   Expiré
                 </span>
               ) : isDownloaded ? (
-                <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-green-50 text-green-600 text-xs font-medium dark:bg-green-900/20 dark:text-green-400">
+                <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-emerald-100 text-emerald-700 text-xs font-medium dark:bg-emerald-900/20 dark:text-emerald-400">
                   <Download className="w-3 h-3" />
                   Téléchargé
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-[#5a50ff]/10 text-[#5a50ff]/600 text-xs font-medium dark:bg-[#5a50ff]/20 dark:text-[#5a50ff]/400">
+                <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-amber-100 text-amber-700 text-xs font-medium dark:bg-amber-900/20 dark:text-amber-400">
                   <Clock className="w-3 h-3" />
                   En attente
                 </span>
@@ -516,15 +518,28 @@ export default function TransferTable({
       {/* Filters and Search - Desktop */}
       <div className="flex items-center justify-between gap-3 hidden md:flex px-4 sm:px-6 py-4 flex-shrink-0">
         {/* Search */}
-        <div className="relative max-w-md">
-          <Input
-            placeholder="Recherchez par nom de fichier..."
-            value={searchQuery ?? ""}
-            onChange={(event) => setSearchQuery?.(event.target.value)}
-            className="w-full sm:w-[490px] lg:w-[490px] ps-9"
-          />
-          <div className="text-muted-foreground/80 pointer-events-none absolute inset-y-0 start-0 flex items-center justify-center ps-3">
-            <Search size={16} aria-hidden="true" />
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 h-8 w-full sm:w-[400px] rounded-[9px] border border-[#E6E7EA] hover:border-[#D1D3D8] dark:border-[#2E2E32] dark:hover:border-[#44444A] bg-transparent px-3 transition-[color,box-shadow] focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]">
+            <Search size={16} className="text-muted-foreground/80 shrink-0" aria-hidden="true" />
+            <Input
+              variant="ghost"
+              ref={inputRef}
+              value={searchQuery ?? ""}
+              onChange={(event) => setSearchQuery?.(event.target.value)}
+              placeholder="Recherchez par nom de fichier..."
+            />
+            {Boolean(searchQuery) && (
+              <button
+                onClick={() => {
+                  setSearchQuery?.("");
+                  inputRef.current?.focus();
+                }}
+                className="text-muted-foreground/80 hover:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 flex items-center justify-center rounded focus-visible:ring-[3px] focus-visible:outline-none cursor-pointer"
+                aria-label="Effacer la recherche"
+              >
+                <CircleXIcon size={16} strokeWidth={2} aria-hidden="true" />
+              </button>
+            )}
           </div>
         </div>
 
@@ -548,40 +563,40 @@ export default function TransferTable({
       {/* Tabs de filtre rapide - Desktop */}
       <div className="hidden md:block flex-shrink-0 border-b border-gray-200 dark:border-gray-800">
         <Tabs value={activeTab} onValueChange={onTabChange}>
-          <TabsList className="h-auto rounded-none bg-transparent p-0 w-full justify-start px-4 sm:px-6">
+          <TabsList className="h-auto rounded-none bg-transparent p-0 pb-2 w-full justify-start px-4 sm:px-6">
             <TabsTrigger
               value="all"
-              className="data-[state=active]:after:bg-primary relative rounded-none py-2 px-4 after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 data-[state=active]:bg-transparent data-[state=active]:shadow-none text-sm font-normal"
+              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground hover:shadow-[inset_0_0_0_1px_#EEEFF1] dark:hover:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
             >
-              Tous les transferts
-              <span className="ml-2 text-xs text-muted-foreground">
+              <span>Tous</span>
+              <span className="text-xs text-muted-foreground">
                 {transferCounts.all}
               </span>
             </TabsTrigger>
             <TabsTrigger
               value="active"
-              className="data-[state=active]:after:bg-primary relative rounded-none py-2 px-4 after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 data-[state=active]:bg-transparent data-[state=active]:shadow-none text-sm font-normal"
+              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground hover:shadow-[inset_0_0_0_1px_#EEEFF1] dark:hover:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
             >
-              En attente
-              <span className="ml-2 text-xs text-muted-foreground">
+              <span>En attente</span>
+              <span className="text-xs text-muted-foreground">
                 {transferCounts.active}
               </span>
             </TabsTrigger>
             <TabsTrigger
               value="downloaded"
-              className="data-[state=active]:after:bg-primary relative rounded-none py-2 px-4 after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 data-[state=active]:bg-transparent data-[state=active]:shadow-none text-sm font-normal"
+              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground hover:shadow-[inset_0_0_0_1px_#EEEFF1] dark:hover:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
             >
-              Téléchargés
-              <span className="ml-2 text-xs text-muted-foreground">
+              <span>Téléchargés</span>
+              <span className="text-xs text-muted-foreground">
                 {transferCounts.downloaded}
               </span>
             </TabsTrigger>
             <TabsTrigger
               value="expired"
-              className="data-[state=active]:after:bg-primary relative rounded-none py-2 px-4 after:absolute after:inset-x-0 after:bottom-0 after:h-0.5 data-[state=active]:bg-transparent data-[state=active]:shadow-none text-sm font-normal"
+              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground hover:shadow-[inset_0_0_0_1px_#EEEFF1] dark:hover:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
             >
-              Expirés
-              <span className="ml-2 text-xs text-muted-foreground">
+              <span>Expirés</span>
+              <span className="text-xs text-muted-foreground">
                 {transferCounts.expired}
               </span>
             </TabsTrigger>

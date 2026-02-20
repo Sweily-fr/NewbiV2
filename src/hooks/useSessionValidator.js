@@ -8,6 +8,7 @@ import {
   notifySessionExpired,
   onSessionExpired,
   refreshSession,
+  recordActivity,
 } from "@/src/lib/activityTracker";
 
 // Garde globale pour éviter les toasts multiples de session expirée
@@ -32,7 +33,7 @@ const resetSessionErrorGuard = () => {
  * - Intégré avec le système centralisé de gestion d'activité
  * - Rafraîchit automatiquement la session si l'utilisateur est actif
  */
-export function useSessionValidator() {
+export function useSessionValidator(enabled = true) {
   const checkingRef = useRef(false);
   const lastCheckRef = useRef(Date.now());
   const mountedRef = useRef(true);
@@ -146,6 +147,8 @@ export function useSessionValidator() {
   }, [handleSessionExpired, ACTIVITY_THRESHOLD]);
 
   useEffect(() => {
+    if (!enabled) return;
+
     mountedRef.current = true;
 
     // S'abonner aux événements d'expiration de session de ActivityTracker
@@ -153,15 +156,20 @@ export function useSessionValidator() {
       handleSessionExpired(reason);
     });
 
-    // Vérifier au focus de la fenêtre (throttlé par lastCheckRef)
+    // ✅ FIX: Enregistrer l'activité AVANT de vérifier la session au retour
+    // Cela garantit que lastActivityTimestamp est à jour et évite des validations
+    // inutiles quand l'utilisateur revient simplement sur l'onglet
     const handleFocus = () => {
-      checkSession();
+      recordActivity("focus-return");
+      // Petit délai pour laisser ActivityTracker traiter l'activité
+      setTimeout(() => checkSession(), 500);
     };
 
-    // Vérifier au retour de visibilité (throttlé par lastCheckRef)
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
-        checkSession();
+        recordActivity("visibility-return");
+        // Petit délai pour laisser ActivityTracker traiter l'activité
+        setTimeout(() => checkSession(), 500);
       }
     };
 
@@ -189,7 +197,7 @@ export function useSessionValidator() {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
       unsubscribeExpired();
     };
-  }, [checkSession, handleSessionExpired]);
+  }, [enabled, checkSession, handleSessionExpired]);
 
   return { checkSession };
 }

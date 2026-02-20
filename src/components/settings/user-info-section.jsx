@@ -264,7 +264,7 @@ export default function UserInfoSection({ onTabChange }) {
             <Button
               variant="outline"
               size="sm"
-              className="font-normal ml-4 flex-shrink-0"
+              className="ml-4 flex-shrink-0"
               onClick={() => setIsChangeEmailModalOpen(true)}
             >
               Changer d'adresse e-mail
@@ -282,7 +282,7 @@ export default function UserInfoSection({ onTabChange }) {
             <Button
               variant="outline"
               size="sm"
-              className="font-normal ml-4 flex-shrink-0"
+              className="ml-4 flex-shrink-0"
               type="button"
               onClick={() => setIsChangePhoneModalOpen(true)}
             >
@@ -301,7 +301,7 @@ export default function UserInfoSection({ onTabChange }) {
             <Button
               variant="outline"
               size="sm"
-              className="font-normal ml-4 flex-shrink-0"
+              className="ml-4 flex-shrink-0"
               onClick={() => setIsChangePasswordModalOpen(true)}
             >
               Modifier le mot de passe
@@ -365,7 +365,7 @@ export default function UserInfoSection({ onTabChange }) {
                         setIsStripeOnboardingModalOpen(true);
                       }}
                       disabled={!canManageStripeConnect}
-                      className="bg-[#635BFF] hover:bg-[#5A54E5] text-white font-normal"
+                      className="bg-[#635BFF] hover:bg-[#5A54E5] text-white"
                       title={
                         !canManageStripeConnect
                           ? "Réservé aux owners et admins"
@@ -381,7 +381,6 @@ export default function UserInfoSection({ onTabChange }) {
                       size="sm"
                       onClick={openStripeDashboard}
                       disabled={!canManageStripeConnect}
-                      className="font-normal"
                       title={
                         !canManageStripeConnect
                           ? "Réservé aux owners et admins"
@@ -397,7 +396,6 @@ export default function UserInfoSection({ onTabChange }) {
                     size="sm"
                     onClick={handleStripeDisconnect}
                     disabled={isStripeLoading || !canManageStripeConnect}
-                    className="font-normal"
                     title={
                       !canManageStripeConnect
                         ? "Réservé aux owners et admins"
@@ -419,7 +417,7 @@ export default function UserInfoSection({ onTabChange }) {
                     !canManageStripeConnect
                   }
                   size="sm"
-                  className="bg-[#635BFF] hover:bg-[#5A54E5] text-white font-normal disabled:opacity-50"
+                  className="bg-[#635BFF] hover:bg-[#5A54E5] text-white disabled:opacity-50"
                   title={
                     !canManageStripeConnect
                       ? "Réservé aux owners et admins"
@@ -478,7 +476,7 @@ export default function UserInfoSection({ onTabChange }) {
             <Button
               variant="outline"
               size="sm"
-              className="font-normal text-destructive border-destructive hover:text-destructive-foreground ml-4 flex-shrink-0"
+              className="text-destructive border-destructive hover:text-destructive-foreground ml-4 flex-shrink-0"
               onClick={() => setIsDeactivateAccountModalOpen(true)}
               disabled={isPremium()}
             >
