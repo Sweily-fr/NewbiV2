@@ -297,6 +297,8 @@ export function TransactionDetailDrawer({
   const [previewUrl, setPreviewUrl] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [isUnlinking, setIsUnlinking] = useState(false);
+  const [calendarContainer, setCalendarContainer] = useState(null);
+  const prevOpenRef = useRef(false);
   const fileInputRef = useRef(null);
 
   // Hook pour délier une transaction d'une facture
@@ -323,55 +325,71 @@ export function TransactionDetailDrawer({
   );
   const isManualTransaction = transaction && !isBankTransaction;
 
-  // Initialiser le formulaire
+  // Initialiser le formulaire uniquement quand le drawer s'ouvre (transition false → true)
   useEffect(() => {
-    if (open) {
-      if (isCreateMode) {
-        // Mode création: réinitialiser le formulaire
-        setFormData({
-          type: "EXPENSE",
-          amount: "",
-          category: "",
-          date: new Date().toISOString().split("T")[0],
-          description: "",
-          paymentMethod: "CARD",
-          vendor: "",
-          receiptImage: null,
-        });
-        setIsEditMode(true);
-        setPreviewUrl(null);
-        setSelectedFile(null);
-      } else if (transaction) {
-        // Mode visualisation/édition: pré-remplir avec les données
-        let formattedDate = new Date().toISOString().split("T")[0];
-        if (transaction.date) {
-          if (typeof transaction.date === "object" && transaction.date.$date) {
-            formattedDate = new Date(transaction.date.$date).toISOString().split("T")[0];
-          } else if (typeof transaction.date === "string") {
-            if (transaction.date.match(/^\d{4}-\d{2}-\d{2}$/)) {
-              formattedDate = transaction.date;
-            } else {
-              const parsedDate = new Date(transaction.date);
-              if (!isNaN(parsedDate.getTime())) {
-                formattedDate = parsedDate.toISOString().split("T")[0];
-              }
+    const justOpened = open && !prevOpenRef.current;
+    prevOpenRef.current = open;
+
+    if (!justOpened) return;
+
+    if (isCreateMode) {
+      // Mode création: réinitialiser le formulaire
+      setFormData({
+        type: "EXPENSE",
+        amount: "",
+        category: "",
+        date: new Date().toISOString().split("T")[0],
+        description: "",
+        paymentMethod: "CARD",
+        vendor: "",
+        receiptImage: null,
+      });
+      setIsEditMode(true);
+      setPreviewUrl(null);
+      setSelectedFile(null);
+    } else if (transaction) {
+      // Mode visualisation/édition: pré-remplir avec les données
+      let formattedDate = new Date().toISOString().split("T")[0];
+      if (transaction.date) {
+        if (typeof transaction.date === "object" && transaction.date.$date) {
+          formattedDate = new Date(transaction.date.$date).toISOString().split("T")[0];
+        } else if (typeof transaction.date === "string") {
+          if (transaction.date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            formattedDate = transaction.date;
+          } else {
+            const parsedDate = new Date(transaction.date);
+            if (!isNaN(parsedDate.getTime())) {
+              formattedDate = parsedDate.toISOString().split("T")[0];
             }
           }
         }
-
-        setFormData({
-          type: transaction.type || "EXPENSE",
-          amount: Math.abs(transaction.amount)?.toString() || "",
-          category: categoryApiToForm[transaction.category] || "",
-          date: formattedDate,
-          description: transaction.description || "",
-          paymentMethod: transaction.paymentMethod || "CARD",
-          vendor: transaction.vendor || "",
-          receiptImage: transaction.receiptImage || null,
-        });
-        setIsEditMode(false);
-        setPreviewUrl(transaction.receiptFile?.url || transaction.receiptImage || null);
       }
+
+      // Mapper le paymentMethod de l'API vers le format du formulaire
+      const apiPaymentMethodToForm = {
+        CREDIT_CARD: "CARD",
+        BANK_TRANSFER: "TRANSFER",
+        CASH: "CASH",
+        CHECK: "CHECK",
+        CARD: "CARD",
+        TRANSFER: "TRANSFER",
+        DIRECT_DEBIT: "TRANSFER",
+        SEPA_DEBIT: "TRANSFER",
+      };
+      const formPaymentMethod = apiPaymentMethodToForm[transaction.paymentMethod] || "CARD";
+
+      setFormData({
+        type: transaction.type || "EXPENSE",
+        amount: Math.abs(transaction.amount)?.toString() || "",
+        category: categoryApiToForm[transaction.category] || "",
+        date: formattedDate,
+        description: transaction.description || "",
+        paymentMethod: formPaymentMethod,
+        vendor: transaction.vendor || "",
+        receiptImage: transaction.receiptImage || null,
+      });
+      setIsEditMode(false);
+      setPreviewUrl(transaction.receiptFile?.url || transaction.receiptImage || null);
     }
   }, [open, transaction, isCreateMode]);
 
@@ -584,6 +602,9 @@ export function TransactionDetailDrawer({
         className="w-full h-full md:w-[500px] md:max-w-[500px] md:min-w-[500px] md:h-auto"
         style={{ width: "100vw", height: "100vh" }}
       >
+        {/* Portal container for calendar popover (must render inside drawer to avoid vaul dismiss layer) */}
+        <div ref={setCalendarContainer} />
+
         {/* Header */}
         <DrawerHeader className="flex flex-row items-center justify-between px-6 py-4 border-b space-y-0">
           <div className="flex items-center gap-2">
@@ -807,8 +828,9 @@ export function TransactionDetailDrawer({
                       </RACButton>
                     </div>
                     <RACPopover
-                      className="z-50 rounded-lg border bg-background text-popover-foreground shadow-lg outline-hidden"
+                      className="z-[100] rounded-lg border bg-background text-popover-foreground shadow-lg outline-hidden"
                       offset={4}
+                      UNSTABLE_portalContainer={calendarContainer}
                     >
                       <Dialog className="max-h-[inherit] overflow-auto p-2">
                         <Calendar />
@@ -850,8 +872,8 @@ export function TransactionDetailDrawer({
                 )}
               </div>
 
-              {/* Statut (seulement en mode visualisation) */}
-              {!isCreateMode && (
+              {/* Statut (seulement en mode visualisation pour les transactions bancaires) */}
+              {!isCreateMode && isBankTransaction && (
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Receipt className="h-4 w-4 text-muted-foreground" />
