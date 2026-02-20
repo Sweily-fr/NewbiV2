@@ -1316,7 +1316,7 @@ export default function DocumentsPartagesPage() {
         type="file"
         multiple
         onChange={handleFileInputChange}
-        accept=".jpg,.jpeg,.png,.gif,.webp,.mp4,.webm,.mov,.avi,.mkv,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv"
+        accept=".jpg,.jpeg,.png,.gif,.webp,.heic,.heif,.mp4,.webm,.mov,.avi,.mkv,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv"
         className="hidden"
       />
       <input
@@ -2128,7 +2128,7 @@ export default function DocumentsPartagesPage() {
                           >
                             <Copy className="h-4 w-4" strokeWidth={1.5} />
                             {allDuplicateCount > 0 && (
-                              <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-amber-500 text-white text-[10px] font-semibold shadow-sm">
+                              <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-[#5a50ff] text-white text-[10px] font-semibold shadow-sm">
                                 {allDuplicateCount}
                               </span>
                             )}
@@ -2777,13 +2777,13 @@ export default function DocumentsPartagesPage() {
                 )}
 
                 {showDuplicateBanner && duplicateGroups.length > 0 && !showTrash && (
-                  <div className="mx-2 sm:mx-4 mt-2 p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg flex items-center gap-3">
-                    <AlertTriangle className="h-4 w-4 text-amber-500 flex-shrink-0" />
+                  <div className="mx-2 sm:mx-4 mt-2 p-3 bg-[#5a50ff]/5 dark:bg-[#5a50ff]/10 border border-[#5a50ff]/20 dark:border-[#5a50ff]/30 rounded-lg flex items-center gap-3">
+                    <AlertTriangle className="h-4 w-4 text-[#5a50ff] flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                      <p className="text-sm font-medium text-[#5a50ff] dark:text-[#8b83ff]">
                         {duplicateCount} doublon{duplicateCount > 1 ? "s" : ""} détecté{duplicateCount > 1 ? "s" : ""}
                       </p>
-                      <p className="text-xs text-amber-600 dark:text-amber-400 mt-0.5">
+                      <p className="text-xs text-[#5a50ff]/70 dark:text-[#8b83ff]/70 mt-0.5">
                         {duplicateGroups.length} groupe{duplicateGroups.length > 1 ? "s" : ""} de fichiers identiques (même taille et type).
                         Sélectionnez les doublons à supprimer.
                       </p>
@@ -2791,7 +2791,7 @@ export default function DocumentsPartagesPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="flex-shrink-0 border-amber-300 text-amber-700 hover:bg-amber-100 dark:border-amber-700 dark:text-amber-300 dark:hover:bg-amber-900/50"
+                      className="flex-shrink-0 border-[#5a50ff]/30 text-[#5a50ff] hover:bg-[#5a50ff]/10 dark:border-[#5a50ff]/40 dark:text-[#8b83ff] dark:hover:bg-[#5a50ff]/20"
                       onClick={() => {
                         const idsToSelect = [];
                         duplicateGroups.forEach((group) => {
@@ -2807,7 +2807,7 @@ export default function DocumentsPartagesPage() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-6 w-6 text-amber-500 hover:text-amber-700 flex-shrink-0"
+                      className="h-6 w-6 text-[#5a50ff] hover:text-[#4a40ef] flex-shrink-0"
                       onClick={() => setShowDuplicateBanner(false)}
                     >
                       <X className="h-3.5 w-3.5" />
@@ -2904,7 +2904,7 @@ export default function DocumentsPartagesPage() {
                                 </p>
                                 {/* Badge doublon */}
                                 {duplicateDocIds.has(doc.id) && (
-                                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 flex-shrink-0">
+                                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-[#5a50ff]/10 text-[#5a50ff] dark:bg-[#5a50ff]/20 dark:text-[#8b83ff] flex-shrink-0">
                                     <Copy className="h-2.5 w-2.5" />
                                     Doublon
                                   </span>
@@ -3158,7 +3158,7 @@ export default function DocumentsPartagesPage() {
                               {doc.name}
                             </p>
                             {duplicateDocIds.has(doc.id) && (
-                              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 mt-1">
+                              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-[#5a50ff]/10 text-[#5a50ff] dark:bg-[#5a50ff]/20 dark:text-[#8b83ff] mt-1">
                                 <Copy className="h-2.5 w-2.5" />
                                 Doublon
                               </span>
@@ -3443,7 +3443,7 @@ export default function DocumentsPartagesPage() {
               Sélectionnez le dossier de destination
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4 space-y-2">
+          <div className="py-4 space-y-1">
             <button
               onClick={() => handleMoveDocuments(null)}
               disabled={moveLoading}
@@ -3452,17 +3452,58 @@ export default function DocumentsPartagesPage() {
               <Inbox className="h-4 w-4" />
               <span>Documents à classer</span>
             </button>
-            {folders.map((folder) => (
-              <button
-                key={folder.id}
-                onClick={() => handleMoveDocuments(folder.id)}
-                disabled={moveLoading}
-                className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-accent transition-colors"
-              >
-                <Folder className="h-4 w-4" style={{ color: folder.color }} />
-                <span>{folder.name}</span>
-              </button>
-            ))}
+            {(() => {
+              // Filtrer les dossiers supprimés (sécurité côté frontend)
+              const activeFolders = folders.filter(f => !f.trashedAt);
+              // Construire l'arbre de dossiers
+              const childrenMap = {};
+              activeFolders.forEach((f) => {
+                const pid = f.parentId || 'root';
+                if (!childrenMap[pid]) childrenMap[pid] = [];
+                childrenMap[pid].push(f);
+              });
+              Object.values(childrenMap).forEach((children) => {
+                children.sort((a, b) => (a.order || 0) - (b.order || 0));
+              });
+              const treeItems = [];
+              function traverse(parentId, depth, ancestorHasMore) {
+                const children = childrenMap[parentId] || [];
+                children.forEach((folder, index) => {
+                  const isLast = index === children.length - 1;
+                  treeItems.push({ ...folder, depth, isLast, guides: [...ancestorHasMore] });
+                  traverse(folder.id, depth + 1, [...ancestorHasMore, !isLast]);
+                });
+              }
+              traverse('root', 0, []);
+
+              return treeItems.map((folder) => {
+                // Générer le préfixe arborescence
+                let prefix = '';
+                for (let i = 0; i < folder.guides.length; i++) {
+                  if (i === folder.guides.length - 1) {
+                    prefix += folder.isLast ? '└─ ' : '├─ ';
+                  } else {
+                    prefix += folder.guides[i] ? '│  ' : '   ';
+                  }
+                }
+                return (
+                  <button
+                    key={folder.id}
+                    onClick={() => handleMoveDocuments(folder.id)}
+                    disabled={moveLoading}
+                    className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-accent transition-colors"
+                  >
+                    {folder.depth > 0 && (
+                      <span className="text-muted-foreground font-mono text-xs whitespace-pre flex-shrink-0">
+                        {prefix}
+                      </span>
+                    )}
+                    <Folder className="h-4 w-4 flex-shrink-0" style={{ color: folder.color }} />
+                    <span className="truncate">{folder.name}</span>
+                  </button>
+                );
+              });
+            })()}
           </div>
         </DialogContent>
       </Dialog>
@@ -4405,13 +4446,13 @@ export default function DocumentsPartagesPage() {
 
     {/* Modale des doublons */}
     <Dialog open={showDuplicatesModal} onOpenChange={setShowDuplicatesModal}>
-      <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
+      <DialogContent className="max-w-4xl sm:max-w-4xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Copy className="h-5 w-5 text-amber-500" />
+            <Copy className="h-5 w-5 text-[#5a50ff]" />
             Doublons détectés
             {allDuplicateCount > 0 && (
-              <Badge variant="secondary" className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+              <Badge variant="secondary" className="bg-[#5a50ff]/10 text-[#5a50ff] dark:bg-[#5a50ff]/20 dark:text-[#8b83ff]">
                 {allDuplicateCount} doublon{allDuplicateCount > 1 ? "s" : ""}
               </Badge>
             )}
@@ -4449,7 +4490,7 @@ export default function DocumentsPartagesPage() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-7 text-xs text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-900/20"
+                      className="h-7 text-xs text-[#5a50ff] hover:text-[#4a40ef] hover:bg-[#5a50ff]/5 dark:text-[#8b83ff] dark:hover:bg-[#5a50ff]/10"
                       onClick={() => {
                         const sorted = [...group].sort(
                           (a, b) => new Date(a.createdAt) - new Date(b.createdAt),
@@ -4509,7 +4550,7 @@ export default function DocumentsPartagesPage() {
             </Button>
             <Button
               variant="default"
-              className="bg-amber-500 hover:bg-amber-600 text-white font-normal"
+              className="bg-[#5a50ff] hover:bg-[#4a40ef] text-white font-normal"
               onClick={() => {
                 const allDuplicateIds = [];
                 allDuplicateGroups.forEach((group) => {

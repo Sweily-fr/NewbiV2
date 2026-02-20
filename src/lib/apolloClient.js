@@ -72,8 +72,9 @@ const forceSessionExpiredRedirect = (reason = "inactivity") => {
   }
   isRedirecting = true;
 
-  // Nettoyer le token
+  // Nettoyer le token et l'org ID
   localStorage.removeItem("bearer_token");
+  resetOrganizationIdForApollo();
 
   // Réinitialiser la garde après 3 secondes au cas où la redirection échoue
   setTimeout(() => {
@@ -84,6 +85,30 @@ const forceSessionExpiredRedirect = (reason = "inactivity") => {
   console.log(`🔒 [Apollo] Redirection forcée vers /auth/session-expired (${reason})`);
   window.location.href = `/auth/session-expired?reason=${reason}`;
 };
+
+// ==================== SYNCHRONISATION ORG ID AVEC useWorkspace ====================
+// Module-level variable pour éviter d'envoyer un x-organization-id périmé
+// depuis localStorage avant que useWorkspace ne confirme l'org du user courant.
+// Le RBAC fallback côté API gère le cas où aucun org ID n'est envoyé.
+let _workspaceReady = false;
+let _confirmedOrgId = null;
+
+/**
+ * Appelée par useWorkspace quand l'organisation active est confirmée.
+ * Met à jour la variable module-level ET localStorage.
+ */
+export function setOrganizationIdForApollo(orgId) {
+  _workspaceReady = true;
+  _confirmedOrgId = orgId || null;
+}
+
+/**
+ * Réinitialise l'état (utile au logout ou changement de session).
+ */
+export function resetOrganizationIdForApollo() {
+  _workspaceReady = false;
+  _confirmedOrgId = null;
+}
 
 // Configuration Upload Link avec support des uploads de fichiers
 const uploadLink = createUploadLink({
@@ -242,11 +267,12 @@ const authLink = setContext(async (_, { headers }) => {
 
     // 1. Vérifier d'abord le JWT stocké dans localStorage
     const storedToken = localStorage.getItem("bearer_token");
-    if (storedToken && !isTokenExpired(storedToken)) {
+    const tokenExpired = storedToken ? isTokenExpired(storedToken) : true;
+    if (storedToken && !tokenExpired) {
       jwtToken = storedToken;
-    } else if (storedToken) {
-      localStorage.removeItem("bearer_token");
     }
+    // NB: On ne supprime PAS le token expiré ici — on le garde en fallback
+    // Le serveur a une clockTolerance de 60s, donc un token récemment expiré reste valide
 
     // 2. Si pas de JWT valide OU si on doit rafraîchir la session, appeler getSession()
     // ✅ FIX CRITIQUE : Utilise ActivityTracker pour décider quand rafraîchir
@@ -300,15 +326,25 @@ const authLink = setContext(async (_, { headers }) => {
         }
       }
 
-      // Si on avait déjà un JWT valide mais qu'on a fait un refresh, garder le JWT existant
-      if (!jwtToken && storedToken && !isTokenExpired(storedToken)) {
+      // Fallback: si le refresh n'a pas retourné de nouveau JWT,
+      // utiliser l'ancien token (même expiré côté client) car le serveur
+      // a une clockTolerance de 60s et le token peut encore être valide
+      if (!jwtToken && storedToken) {
         jwtToken = storedToken;
       }
     }
 
-    // 3. Récupérer l'organization ID et le rôle depuis localStorage (définis par le frontend)
-    const organizationId = localStorage.getItem("active_organization_id");
-    const userRole = localStorage.getItem("user_role");
+    // 3. Récupérer l'organization ID et le rôle
+    // ✅ Utiliser la variable module-level confirmée par useWorkspace si disponible.
+    // Si useWorkspace n'a pas encore chargé, ne pas envoyer de header org ID
+    // pour éviter les org ID périmés dans localStorage. Le RBAC API a un fallback
+    // qui retrouve l'org via la collection member.
+    const organizationId = _workspaceReady
+      ? _confirmedOrgId
+      : null;
+    const userRole = _workspaceReady
+      ? localStorage.getItem("user_role")
+      : null;
 
     // 4. Construire les headers avec JWT + organization + role
     const requestHeaders = {

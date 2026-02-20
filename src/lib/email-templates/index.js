@@ -29,6 +29,9 @@ import { invoicePaymentReceived } from "./invoice/payment-received.js";
 import { seatLimitWarning } from "./seats/limit-warning.js";
 import { additionalSeatAdded } from "./seats/additional-added.js";
 
+// Leads templates
+import { guideLeadNotification } from "./leads/guide-notification.js";
+
 // Export all templates as a single object for backward compatibility
 export const emailTemplates = {
   // Auth
@@ -61,6 +64,9 @@ export const emailTemplates = {
   // Seats
   seatLimitWarning,
   additionalSeatAdded,
+
+  // Leads
+  guideLeadNotification,
 };
 
 export default emailTemplates;

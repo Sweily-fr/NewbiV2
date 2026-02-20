@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/src/lib/auth";
 import { mongoDb } from "@/src/lib/mongodb";
+import { ObjectId } from "mongodb";
 
 /**
  * GET /api/check-siret?siret=xxx
  * Vérifie si un SIRET est déjà utilisé par une organisation existante
+ * Si l'utilisateur est déjà membre de l'organisation, on autorise (reprise d'onboarding)
  */
 export async function GET(request) {
   try {
@@ -45,6 +47,36 @@ export async function GET(request) {
 
     if (existingOrg) {
       console.log(`⚠️ [CHECK-SIRET] SIRET déjà utilisé par l'organisation: ${existingOrg.name}`);
+
+      // Vérifier si l'utilisateur actuel est déjà membre de cette organisation
+      // (cas d'un onboarding interrompu : l'org a été créée par le webhook mais l'abonnement a échoué)
+      const userId = session.user.id;
+      const orgId = existingOrg._id;
+
+      let isMember = false;
+      try {
+        const userObjectId = new ObjectId(userId);
+        isMember = await mongoDb.collection("member").findOne({
+          $or: [
+            { userId: userObjectId, organizationId: orgId },
+            { userId: userObjectId, organizationId: orgId.toString() },
+            { userId: userId, organizationId: orgId },
+            { userId: userId, organizationId: orgId.toString() },
+          ],
+        });
+      } catch (e) {
+        console.warn(`⚠️ [CHECK-SIRET] Erreur recherche membre:`, e.message);
+      }
+
+      if (isMember) {
+        // L'utilisateur est déjà membre de cette org → autoriser la reprise d'onboarding
+        console.log(`✅ [CHECK-SIRET] L'utilisateur ${userId} est déjà membre de l'org ${orgId}, reprise autorisée`);
+        return NextResponse.json({
+          available: true,
+          message: "SIRET disponible (reprise d'onboarding)",
+          existingOrganizationId: orgId.toString(),
+        });
+      }
 
       return NextResponse.json({
         available: false,

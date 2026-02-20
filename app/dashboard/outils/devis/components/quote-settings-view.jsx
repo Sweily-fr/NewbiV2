@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { useFormContext } from "react-hook-form";
-import { Tag, AlignLeft, AlignRight, Check, Info } from "lucide-react";
+import { AlignLeft, AlignRight, Check, Info } from "lucide-react";
 import { documentSuggestions } from "@/src/utils/document-suggestions";
 import { SuggestionDropdown } from "@/src/components/ui/suggestion-dropdown";
 import {
@@ -23,10 +23,15 @@ import {
   generateQuotePrefix,
   parseQuotePrefix,
   formatQuotePrefix,
+  generatePurchaseOrderPrefix,
+  parsePurchaseOrderPrefix,
+  formatPurchaseOrderPrefix,
   getCurrentMonthYear,
   validateQuoteNumber,
   formatQuoteNumber,
 } from "@/src/utils/quoteUtils";
+import { useQuoteNumber } from "../hooks/use-quote-number";
+import { usePurchaseOrderNumber } from "@/app/dashboard/outils/bons-commande/hooks/use-purchase-order-number";
 import { Separator } from "@/src/components/ui/separator";
 import { Alert, AlertDescription } from "@/src/components/ui/alert";
 import { Button } from "@/src/components/ui/button";
@@ -39,13 +44,18 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/src/components/ui/alert-dialog";
+import CompanyInfoSettingsSection from "@/src/components/settings/company-info-settings-section";
 
 export default function QuoteSettingsView({
   canEdit,
   onCancel,
   onSave,
   onCloseAttempt,
+  documentType = "quote",
 }) {
+  const isPurchaseOrder = documentType === "purchaseOrder";
+  const documentLabel = isPurchaseOrder ? "bon de commande" : "devis";
+  const documentLabelPlural = isPurchaseOrder ? "bons de commande" : "devis";
   const {
     watch,
     setValue,
@@ -53,6 +63,73 @@ export default function QuoteSettingsView({
     formState: { errors, dirtyFields },
   } = useFormContext();
   const data = watch();
+
+  // Hooks pour la numérotation séquentielle
+  const quoteNumberHook = useQuoteNumber();
+  const purchaseOrderNumberHook = usePurchaseOrderNumber();
+
+  const numberHook = isPurchaseOrder ? purchaseOrderNumberHook : quoteNumberHook;
+  const nextNumber = isPurchaseOrder ? numberHook.nextNumber : numberHook.nextQuoteNumber;
+  const isLoadingNumber = numberHook.isLoading;
+
+  // Auto-initialiser le préfixe et le numéro au montage uniquement (pas en continu)
+  const prefixInitializedRef = useRef(false);
+  const numberInitializedRef = useRef(false);
+
+  useEffect(() => {
+    if (!prefixInitializedRef.current && !data.prefix) {
+      const defaultPrefix = isPurchaseOrder
+        ? generatePurchaseOrderPrefix()
+        : generateQuotePrefix();
+      setValue("prefix", defaultPrefix, { shouldValidate: false });
+      prefixInitializedRef.current = true;
+    } else if (data.prefix) {
+      prefixInitializedRef.current = true;
+    }
+  }, [data.prefix, isPurchaseOrder, setValue]);
+
+  useEffect(() => {
+    if (!numberInitializedRef.current && !data.number && nextNumber && !isLoadingNumber) {
+      const defaultNumber = String(nextNumber).padStart(4, "0");
+      setValue("number", defaultNumber, { shouldValidate: false });
+      numberInitializedRef.current = true;
+    } else if (data.number) {
+      numberInitializedRef.current = true;
+    }
+  }, [data.number, nextNumber, isLoadingNumber, setValue]);
+
+  // Handle prefix changes with auto-fill for MM and AAAA
+  const handlePrefixChange = (e) => {
+    const value = e.target.value;
+    const cursorPosition = e.target.selectionStart;
+
+    // Auto-fill MM (month)
+    if (value.includes("MM")) {
+      const { month } = getCurrentMonthYear();
+      const newValue = value.replace("MM", month);
+      setValue("prefix", newValue, { shouldValidate: true });
+      const newPosition = cursorPosition + month.length - 2;
+      setTimeout(() => {
+        e.target.setSelectionRange(newPosition, newPosition);
+      }, 0);
+      return;
+    }
+
+    // Auto-fill AAAA (year)
+    if (value.includes("AAAA")) {
+      const { year } = getCurrentMonthYear();
+      const newValue = value.replace("AAAA", year);
+      setValue("prefix", newValue, { shouldValidate: true });
+      const newPosition = cursorPosition + year.length - 4;
+      setTimeout(() => {
+        e.target.setSelectionRange(newPosition, newPosition);
+      }, 0);
+      return;
+    }
+
+    // Default behavior
+    setValue("prefix", value, { shouldValidate: true });
+  };
 
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -184,6 +261,10 @@ export default function QuoteSettingsView({
             </Alert>
           )}
 
+          {/* Section Informations de l'entreprise */}
+          <CompanyInfoSettingsSection />
+          <Separator />
+
           {/* Section Numérotation */}
           <Card className="shadow-none border-none bg-transparent">
             <CardHeader className="p-0">
@@ -192,7 +273,7 @@ export default function QuoteSettingsView({
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 p-0">
-              {/* Préfixe et numéro de devis */}
+              {/* Préfixe et numéro */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
@@ -200,7 +281,7 @@ export default function QuoteSettingsView({
                       htmlFor="quote-prefix"
                       className="text-sm font-light"
                     >
-                      Préfixe de devis
+                      Préfixe de {documentLabel}
                     </Label>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -211,7 +292,7 @@ export default function QuoteSettingsView({
                         className="max-w-[280px] sm:max-w-xs"
                       >
                         <p>
-                          Préfixe personnalisable pour identifier vos devis.
+                          Préfixe personnalisable pour identifier vos {documentLabelPlural}.
                           Tapez <span className="font-mono">MM</span> pour
                           insérer le mois actuel ou{" "}
                           <span className="font-mono">AAAA</span> pour l'année.
@@ -223,36 +304,40 @@ export default function QuoteSettingsView({
                     <Input
                       id="quote-prefix"
                       {...register("prefix", {
-                        required: "Le préfixe est requis",
                         maxLength: {
                           value: 20,
                           message:
                             "Le préfixe ne doit pas dépasser 20 caractères",
                         },
                         pattern: {
-                          value: /^D-\d{6}$/,
-                          message: "Format attendu : D-MMAAAA (ex: D-022025)",
+                          value: /^[A-Za-z0-9-]*$/,
+                          message:
+                            "Le préfixe ne doit contenir que des lettres, chiffres et tirets",
                         },
                       })}
+                      onChange={handlePrefixChange}
                       onFocus={(e) => {
                         if (!e.target.value) {
                           const { month, year } = getCurrentMonthYear();
-                          e.target.placeholder = `D-${month}${year}`;
+                          e.target.placeholder = isPurchaseOrder
+                            ? `BC-${month}${year}`
+                            : `D-${month}${year}`;
                         }
                       }}
                       onBlur={(e) => {
                         if (e.target.value) {
-                          const parsed = parseQuotePrefix(e.target.value);
+                          const parsed = isPurchaseOrder
+                            ? parsePurchaseOrderPrefix(e.target.value)
+                            : parseQuotePrefix(e.target.value);
                           if (parsed) {
-                            setValue(
-                              "prefix",
-                              formatQuotePrefix(parsed.month, parsed.year),
-                              { shouldValidate: true }
-                            );
+                            const formatted = isPurchaseOrder
+                              ? formatPurchaseOrderPrefix(parsed.month, parsed.year)
+                              : formatQuotePrefix(parsed.month, parsed.year);
+                            setValue("prefix", formatted, { shouldValidate: true });
                           }
                         }
                       }}
-                      placeholder="D-MMAAAA"
+                      placeholder={isPurchaseOrder ? "BC-MMAAAA" : "D-MMAAAA"}
                       disabled={!canEdit}
                     />
                     {errors?.prefix && (
@@ -268,7 +353,7 @@ export default function QuoteSettingsView({
                       htmlFor="quote-number"
                       className="text-sm font-light"
                     >
-                      Numéro de devis
+                      Numéro de {documentLabel}
                     </Label>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -279,7 +364,7 @@ export default function QuoteSettingsView({
                         className="max-w-[280px] sm:max-w-xs"
                       >
                         <p>
-                          Numéro unique et séquentiel de votre devis. Il sera
+                          Numéro unique et séquentiel de votre {documentLabel}. Il sera
                           automatiquement formaté avec des zéros (ex: 000001).
                         </p>
                       </TooltipContent>
@@ -288,34 +373,22 @@ export default function QuoteSettingsView({
                   <div className="space-y-1">
                     <Input
                       id="quote-number"
-                      {...register("number", {
-                        required: "Le numéro de devis est requis",
-                      })}
-                      value={data.number || ""}
-                      placeholder="000001"
-                      disabled={!canEdit}
-                      readOnly={data.number && data.number.startsWith("DRAFT-")}
-                      onBlur={(e) => {
-                        if (
-                          e.target.value &&
-                          !e.target.value.startsWith("DRAFT-")
-                        ) {
-                          if (validateQuoteNumber(e.target.value)) {
-                            const formattedNum = formatQuoteNumber(
-                              e.target.value
-                            );
-                            setValue("number", formattedNum, {
-                              shouldValidate: true,
-                            });
-                          }
-                        }
-                      }}
+                      value={
+                        data.number ||
+                        (nextNumber && !isLoadingNumber
+                          ? String(nextNumber).padStart(4, "0")
+                          : "")
+                      }
+                      disabled
+                      readOnly
+                      tabIndex={-1}
+                      onFocus={(e) => e.target.blur()}
+                      onChange={() => {}}
+                      className="bg-muted/50 cursor-not-allowed select-none"
                     />
-                    {errors?.number && (
-                      <p className="text-xs text-red-500">
-                        {errors.number.message}
-                      </p>
-                    )}
+                    <p className="text-xs text-muted-foreground">
+                      Numéro attribué automatiquement de manière séquentielle.
+                    </p>
                     {data.number && data.number.startsWith("DRAFT-") && (
                       <p className="text-xs text-blue-600">
                         Numéro de brouillon - sera remplacé lors de la
@@ -330,9 +403,9 @@ export default function QuoteSettingsView({
               <div className="mt-4 p-3 bg-muted/30 rounded-lg border border-muted">
                 <p className="text-xs text-muted-foreground leading-relaxed">
                   <span className="font-medium">Note :</span> La numérotation
-                  des devis doit être séquentielle et continue pour respecter
+                  des {documentLabelPlural} doit être séquentielle et continue pour respecter
                   les obligations légales françaises. Le préfixe vous permet
-                  d'organiser vos devis par période (ex: D-122025 pour décembre
+                  d'organiser vos {documentLabelPlural} par période (ex: {isPurchaseOrder ? "BC" : "D"}-122025 pour décembre
                   2025). Le système vérifie automatiquement qu'il n'y a pas de
                   saut dans la numérotation.
                 </p>
@@ -415,7 +488,7 @@ export default function QuoteSettingsView({
             </CardHeader>
             <CardContent className="space-y-4 p-0">
               <p className="text-sm text-muted-foreground">
-                Choisissez où afficher les informations du client dans vos devis
+                Choisissez où afficher les informations du client dans vos {documentLabelPlural}
               </p>
               <div className="grid grid-cols-2 gap-3">
                 {/* Option Centre */}
@@ -533,7 +606,7 @@ export default function QuoteSettingsView({
                       },
                     })}
                     defaultValue={data.headerNotes || ""}
-                    placeholder="Notes qui apparaîtront en haut du devis..."
+                    placeholder={`Notes qui apparaîtront en haut du ${documentLabel}...`}
                     rows={3}
                     disabled={!canEdit}
                   />
@@ -571,7 +644,7 @@ export default function QuoteSettingsView({
                       },
                     })}
                     defaultValue={data.footerNotes || ""}
-                    placeholder="Notes qui apparaîtront en bas du devis..."
+                    placeholder={`Notes qui apparaîtront en bas du ${documentLabel}...`}
                     rows={3}
                     disabled={!canEdit}
                   />

@@ -139,7 +139,7 @@ export default function CreateLinkedInvoicePopover({
               Créer une facture liée au devis
             </h4>
             <p className="text-sm text-muted-foreground">
-              Créez une facture partielle à partir de ce devis
+              Créez une facture à partir de ce devis
             </p>
           </div>
 

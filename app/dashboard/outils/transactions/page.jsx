@@ -134,11 +134,15 @@ const SPECIFIC_CATEGORY_KEYS = [
 ];
 
 // Fonction pour obtenir la catégorie compatible avec category-icons-config
+// Supporte les catégories larges API (TRAVEL) ET les sous-catégories fines (parking, carburant, etc.)
 const getSmartCategory = (transaction) => {
-  // Vérifier si on a une catégorie SPÉCIFIQUE (pas "OTHER")
-  if (transaction.category && SPECIFIC_CATEGORY_KEYS.includes(transaction.category)) {
+  // Si la catégorie est une valeur spécifique (pas "OTHER"/"other"/null)
+  // getCategoryConfig supporte les deux formats (large et fine)
+  if (transaction.category && transaction.category !== "OTHER" && transaction.category !== "other") {
     return transaction.category;
   }
+
+  // Fallback: utiliser expenseCategory si spécifique
   if (transaction.expenseCategory && SPECIFIC_CATEGORY_KEYS.includes(transaction.expenseCategory)) {
     return transaction.expenseCategory;
   }
@@ -223,7 +227,7 @@ function GestionDepensesContent() {
       receiptFile: tx.receiptFile,
       receiptRequired: tx.amount < 0 && !tx.receiptFile?.url && !tx.linkedInvoice?.id,
       status: tx.status === "completed" ? "PAID" : tx.status?.toUpperCase(),
-      paymentMethod: tx.type === "debit" ? "CARD" : "BANK_TRANSFER",
+      paymentMethod: tx.metadata?.paymentMethod || (tx.type === "debit" ? "CARD" : "BANK_TRANSFER"),
       bankName: tx.metadata?.bankName || null,
       provider: tx.provider,
       originalTransaction: {

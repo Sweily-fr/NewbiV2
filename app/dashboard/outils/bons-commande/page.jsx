@@ -7,6 +7,7 @@ import { Plus, Settings, Download, ArrowRightFromLine } from "lucide-react";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import PurchaseOrderTable from "./components/purchase-order-table";
 import PurchaseOrderExportButton from "./components/purchase-order-export-button";
+import { PurchaseOrderSettingsModal } from "./components/purchase-order-settings-modal";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
 import { CompanyInfoGuard } from "@/src/components/company-info-guard";
@@ -21,6 +22,7 @@ function PurchaseOrdersContent() {
 
   // Ref pour déclencher l'import depuis le header
   const [triggerImport, setTriggerImport] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   // Toast manager et modal d'envoi
   const toastManager = useToastManager();
@@ -265,6 +267,12 @@ function PurchaseOrdersContent() {
           onClose={() => setShowSendEmailModal(false)}
         />
       )}
+
+      {/* Modal des paramètres */}
+      <PurchaseOrderSettingsModal
+        open={isSettingsOpen}
+        onOpenChange={setIsSettingsOpen}
+      />
     </>
   );
 }

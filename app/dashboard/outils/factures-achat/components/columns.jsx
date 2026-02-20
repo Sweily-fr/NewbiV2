@@ -29,6 +29,28 @@ const STATUS_CONFIG = {
   ARCHIVED: { label: "Archivée", className: "bg-gray-50 text-gray-500 dark:bg-gray-900 dark:text-gray-500" },
 };
 
+function parseDate(value) {
+  if (!value) return null;
+  try {
+    let d;
+    if (typeof value === "string") {
+      if (/^\d+$/.test(value)) {
+        d = new Date(parseInt(value, 10));
+      } else {
+        d = new Date(value);
+      }
+    } else if (typeof value === "number") {
+      d = new Date(value);
+    } else if (value instanceof Date) {
+      d = value;
+    }
+    if (!d || isNaN(d.getTime())) return null;
+    return d;
+  } catch {
+    return null;
+  }
+}
+
 function SortableHeader({ column, children }) {
   const sorted = column.getIsSorted();
   return (
@@ -136,9 +158,10 @@ export const columns = [
     ),
     cell: ({ row }) => {
       const date = row.getValue("issueDate");
+      const parsed = parseDate(date);
       return (
         <div className="font-normal">
-          {date ? new Date(date).toLocaleDateString("fr-FR") : "—"}
+          {parsed ? parsed.toLocaleDateString("fr-FR") : "—"}
         </div>
       );
     },
@@ -152,12 +175,13 @@ export const columns = [
     ),
     cell: ({ row }) => {
       const date = row.original.dueDate;
-      if (!date) return <div className="font-normal text-muted-foreground">—</div>;
+      const parsed = parseDate(date);
+      if (!parsed) return <div className="font-normal text-muted-foreground">—</div>;
 
-      const isOverdue = new Date(date) < new Date() && row.original.status !== "PAID";
+      const isOverdue = parsed < new Date() && row.original.status !== "PAID";
       return (
         <div className={`font-normal ${isOverdue ? "text-red-600" : ""}`}>
-          {new Date(date).toLocaleDateString("fr-FR")}
+          {parsed.toLocaleDateString("fr-FR")}
         </div>
       );
     },

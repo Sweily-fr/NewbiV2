@@ -65,6 +65,7 @@ const tabs = [
 const ventesQuickCreate = [
   { label: "Nouvelle facture", href: "/dashboard/outils/factures/new" },
   { label: "Nouveau devis", href: "/dashboard/outils/devis/new" },
+  { label: "Nouveau bon de commande", href: "/dashboard/outils/bons-commande/new" },
 ];
 
 const ventesNavigation = [

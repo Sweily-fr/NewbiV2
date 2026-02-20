@@ -8,7 +8,8 @@ import React, {
   useRef,
 } from "react";
 import { useFormContext } from "react-hook-form";
-import { Calendar as CalendarIcon, Clock, Info } from "lucide-react";
+import { useQuery } from "@apollo/client";
+import { Calendar as CalendarIcon, Clock, Info, Search, FileText, ChevronDown } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Calendar } from "@/src/components/ui/calendar";
@@ -34,6 +35,15 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  CommandSeparator,
+} from "@/src/components/ui/command";
+import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -48,7 +58,19 @@ import {
   formatQuoteNumber,
   getQuoteDisplayNumber,
 } from "@/src/utils/quoteUtils";
-import { useLastQuotePrefix } from "@/src/graphql/quoteQueries";
+import { useLastQuotePrefix, SEARCH_QUOTES_FOR_REFERENCE } from "@/src/graphql/quoteQueries";
+import { useLastPurchaseOrderPrefix } from "@/src/graphql/purchaseOrderQueries";
+import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
+
+// Fonction utilitaire pour formater les montants
+const formatCurrency = (amount) => {
+  return new Intl.NumberFormat("fr-FR", {
+    style: "currency",
+    currency: "EUR",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amount || 0);
+};
 
 const VALIDITY_PERIOD_SUGGESTIONS = [
   { value: 15, label: "15 jours" },
@@ -64,13 +86,17 @@ export default function QuoteInfoSection({
   validateQuoteNumber: validateQuoteNumberProp = null,
   hasExistingQuotes = false,
   validationErrors = {},
+  documentType = "quote",
 }) {
+  const isPurchaseOrder = documentType === "purchaseOrder";
+  const documentLabel = isPurchaseOrder ? "bon de commande" : "devis";
   const {
     setValue,
     register,
     formState: { errors },
     getValues,
   } = useFormContext();
+  const { workspaceId } = useRequiredWorkspace();
 
   // Helper pour vérifier si les dates ont une erreur
   const hasQuoteInfoError = validationErrors?.quoteInfo;
@@ -78,6 +104,33 @@ export default function QuoteInfoSection({
   // Use getValues instead of watch to prevent re-renders
   const [, forceUpdate] = useState({});
   const data = getValues();
+
+  // State pour la recherche de référence devis (bons de commande uniquement)
+  const [referenceSearchOpen, setReferenceSearchOpen] = useState(false);
+  const [referenceSearchTerm, setReferenceSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+
+  // Debounce pour la recherche
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(referenceSearchTerm);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [referenceSearchTerm]);
+
+  // Query pour rechercher les devis acceptés (uniquement pour les bons de commande)
+  const { data: quotesData, loading: loadingQuotes } = useQuery(
+    SEARCH_QUOTES_FOR_REFERENCE,
+    {
+      variables: {
+        workspaceId,
+        search: debouncedSearchTerm || undefined,
+        limit: 10,
+      },
+      skip: !isPurchaseOrder || !referenceSearchOpen || !workspaceId,
+      fetchPolicy: "network-only",
+    }
+  );
 
   // Simple state for selected period without complex calculations
   const [selectedPeriod, setSelectedPeriod] = useState(null);
@@ -128,9 +181,14 @@ export default function QuoteInfoSection({
     setValue("prefix", value, { shouldValidate: true });
   };
 
-  // Get the last quote prefix
-  const { prefix: lastQuotePrefix, loading: loadingLastPrefix } =
+  // Get the last prefix (quote or purchase order depending on documentType)
+  const { prefix: lastQuotePrefix, loading: loadingLastQuotePrefix } =
     useLastQuotePrefix();
+  const { prefix: lastPurchaseOrderPrefix, loading: loadingLastPOPrefix } =
+    useLastPurchaseOrderPrefix();
+
+  const lastPrefix = isPurchaseOrder ? lastPurchaseOrderPrefix : lastQuotePrefix;
+  const loadingLastPrefix = isPurchaseOrder ? loadingLastPOPrefix : loadingLastQuotePrefix;
 
   // Flag pour savoir si le préfixe a déjà été initialisé
   const prefixInitialized = useRef(false);
@@ -155,30 +213,30 @@ export default function QuoteInfoSection({
     }
   }, []);
 
-  // Set default prefix from last quote only once on mount (only for new quotes)
+  // Set default prefix from last document only once on mount (only for new documents)
   useEffect(() => {
     // Ne pré-remplir que si :
     // 1. Les données sont chargées
     // 2. Pas encore initialisé
     // 3. Le champ prefix est vide
-    // 4. Il existe un préfixe de dernier devis
-    // 5. C'est un nouveau devis (pas d'ID)
-    const isNewQuote = !data.id;
+    // 4. Il existe un préfixe du dernier document
+    // 5. C'est un nouveau document (pas d'ID)
+    const isNewDocument = !data.id;
 
     if (
       !loadingLastPrefix &&
       !prefixInitialized.current &&
       !data.prefix &&
-      lastQuotePrefix &&
-      isNewQuote
+      lastPrefix &&
+      isNewDocument
     ) {
-      setValue("prefix", lastQuotePrefix, {
+      setValue("prefix", lastPrefix, {
         shouldValidate: false,
         shouldDirty: false,
       });
       prefixInitialized.current = true;
     }
-  }, [lastQuotePrefix, loadingLastPrefix, data.id]);
+  }, [lastPrefix, loadingLastPrefix, data.id]);
 
   // Fonction utilitaire pour créer une date sans l'heure
   const createDateWithoutTime = (dateString) => {
@@ -215,7 +273,7 @@ export default function QuoteInfoSection({
     return true;
   };
 
-  // Calculer le numéro complet du devis pour l'affichage
+  // Calculer le numéro complet du document pour l'affichage
   const fullQuoteNumber =
     data.prefix && data.number
       ? `${data.prefix}-${data.number}`
@@ -223,18 +281,18 @@ export default function QuoteInfoSection({
 
   return (
     <>
-      {/* Section Informations du devis */}
+      {/* Section Informations du document */}
       <Card className="shadow-none p-0 border-none bg-transparent mt-8">
         <CardHeader className="p-0">
           <CardTitle className="flex items-center gap-2 font-medium text-lg">
-            Informations du devis
+            Informations du {documentLabel}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4 p-0">
-          {/* Numéro automatique de devis - Affiché en premier (comme pour les factures) */}
+          {/* Numéro automatique - Affiché en premier (comme pour les factures) */}
           <div className="flex items-center gap-2 text-sm">
             <span className="text-muted-foreground">
-              Numéro automatique de devis :
+              Numéro automatique de {documentLabel} :
             </span>
             <span className="font-medium">{fullQuoteNumber}</span>
             <Tooltip>
@@ -268,9 +326,9 @@ export default function QuoteInfoSection({
                     className="max-w-[280px] sm:max-w-xs"
                   >
                     <p>
-                      Date à laquelle le devis est créé et envoyé au client. Par
+                      Date à laquelle le {documentLabel} est créé et envoyé au client. Par
                       défaut, c'est la date du jour. Cette date sert de
-                      référence pour calculer la validité du devis.
+                      référence pour calculer la validité du {documentLabel}.
                     </p>
                   </TooltipContent>
                 </Tooltip>
@@ -351,7 +409,7 @@ export default function QuoteInfoSection({
                     className="max-w-[280px] sm:max-w-xs"
                   >
                     <p>
-                      Date limite de validité du devis. Après cette date, les
+                      Date limite de validité du {documentLabel}. Après cette date, les
                       conditions et tarifs proposés ne seront plus garantis.
                       Utilisez le sélecteur pour ajouter automatiquement 15, 30,
                       45, 60 ou 90 jours.
@@ -549,39 +607,217 @@ export default function QuoteInfoSection({
             </div>
           </div>
 
-          {/* Référence projet */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Label htmlFor="project-reference" className="text-sm font-light">
-                Référence projet
-              </Label>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                </TooltipTrigger>
-                <TooltipContent
-                  side="top"
-                  className="max-w-[280px] sm:max-w-xs"
-                >
-                  <p>
-                    Référence du projet associé à ce devis (optionnel). Utile
-                    pour organiser et retrouver facilement vos devis par projet.
-                  </p>
-                </TooltipContent>
-              </Tooltip>
+          {/* Référence - masqué pour les bons de commande (utilise "Référence devis" à la place) */}
+          {!isPurchaseOrder && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Label htmlFor="project-reference" className="text-sm font-light">
+                  Référence
+                </Label>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="top"
+                    className="max-w-[280px] sm:max-w-xs"
+                  >
+                    <p>
+                      {`Référence du projet associé à ce ${documentLabel} (optionnel). Utile pour organiser et retrouver facilement vos devis par projet.`}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+              <Input
+                id="project-reference"
+                value={data.projectReference || ""}
+                onChange={(e) =>
+                  setValue("projectReference", e.target.value, {
+                    shouldDirty: true,
+                  })
+                }
+                placeholder="PROJ-2025-001"
+                disabled={!canEdit}
+              />
             </div>
-            <Input
-              id="project-reference"
-              value={data.projectReference || ""}
-              onChange={(e) =>
-                setValue("projectReference", e.target.value, {
-                  shouldDirty: true,
-                })
-              }
-              placeholder="PROJ-2025-001"
-              disabled={!canEdit}
-            />
-          </div>
+          )}
+
+          {/* Référence devis - uniquement pour les bons de commande */}
+          {isPurchaseOrder && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <Label
+                    htmlFor="quote-reference"
+                    className="text-sm font-light"
+                  >
+                    Référence devis
+                  </Label>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent
+                      side="top"
+                      className="max-w-[280px] sm:max-w-xs"
+                    >
+                      <p>
+                        Référence du devis accepté lié à ce bon de commande
+                        (optionnel). Permet de faire le lien entre devis et bon
+                        de commande.
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+              </div>
+              <Popover
+                open={referenceSearchOpen}
+                onOpenChange={setReferenceSearchOpen}
+              >
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={referenceSearchOpen}
+                    className="w-full justify-between font-normal"
+                    disabled={!canEdit}
+                  >
+                    {data.purchaseOrderNumber || (
+                      <span className="text-muted-foreground">
+                        Rechercher un devis...
+                      </span>
+                    )}
+                    <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[490px] p-0" align="start">
+                  <Command shouldFilter={false}>
+                    <CommandInput
+                      placeholder="Rechercher un devis..."
+                      value={referenceSearchTerm}
+                      onValueChange={setReferenceSearchTerm}
+                    />
+                    <CommandList className="max-h-[280px]">
+                      <CommandEmpty>
+                        {loadingQuotes ? (
+                          <span className="text-muted-foreground">
+                            Recherche en cours...
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">
+                            Aucun devis trouvé
+                          </span>
+                        )}
+                      </CommandEmpty>
+
+                      {/* Devis acceptés */}
+                      {quotesData?.quotes?.quotes?.length > 0 &&
+                        (() => {
+                          const availableQuotes = quotesData.quotes.quotes;
+
+                          if (availableQuotes.length === 0) return null;
+
+                          return (
+                            <CommandGroup
+                              heading={`Devis acceptés (${availableQuotes.length})`}
+                            >
+                              {[...availableQuotes]
+                                .sort((a, b) => {
+                                  const numA = parseInt(a.number) || 0;
+                                  const numB = parseInt(b.number) || 0;
+                                  return numB - numA;
+                                })
+                                .map((quote) => {
+                                  const fullRef = quote.prefix
+                                    ? `${quote.prefix}-${quote.number}`
+                                    : quote.number;
+
+                                  return (
+                                    <CommandItem
+                                      key={quote.id}
+                                      value={fullRef}
+                                      onSelect={() => {
+                                        setValue(
+                                          "purchaseOrderNumber",
+                                          fullRef,
+                                          {
+                                            shouldDirty: true,
+                                          }
+                                        );
+                                        setReferenceSearchOpen(false);
+                                        setReferenceSearchTerm("");
+                                      }}
+                                      className="flex items-center gap-2 cursor-pointer"
+                                    >
+                                      <FileText className="h-4 w-4 text-blue-500 shrink-0" />
+                                      <div className="flex-1 min-w-0">
+                                        <div className="font-normal truncate">
+                                          {fullRef}
+                                        </div>
+                                        <div className="text-xs text-muted-foreground truncate">
+                                          {quote.client?.name} •{" "}
+                                          {formatCurrency(quote.finalTotalTTC)}
+                                        </div>
+                                      </div>
+                                    </CommandItem>
+                                  );
+                                })}
+                            </CommandGroup>
+                          );
+                        })()}
+
+                      {/* Option pour saisir manuellement */}
+                      {referenceSearchTerm && (
+                        <>
+                          <CommandSeparator />
+                          <CommandGroup heading="Saisie manuelle">
+                            <CommandItem
+                              value={referenceSearchTerm}
+                              onSelect={() => {
+                                setValue(
+                                  "purchaseOrderNumber",
+                                  referenceSearchTerm,
+                                  { shouldDirty: true }
+                                );
+                                setReferenceSearchOpen(false);
+                                setReferenceSearchTerm("");
+                              }}
+                              className="flex items-center gap-2 cursor-pointer"
+                            >
+                              <Search className="h-4 w-4 text-gray-500 shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <div className="font-medium truncate">
+                                  Utiliser &quot;{referenceSearchTerm}&quot;
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  Saisir cette référence manuellement
+                                </div>
+                              </div>
+                            </CommandItem>
+                          </CommandGroup>
+                        </>
+                      )}
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+
+              {/* Bouton pour effacer la référence */}
+              {data.purchaseOrderNumber && canEdit && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="mt-1 h-auto p-0 text-xs text-muted-foreground hover:text-foreground"
+                  onClick={() =>
+                    setValue("purchaseOrderNumber", "", { shouldDirty: true })
+                  }
+                >
+                  Effacer la référence
+                </Button>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
     </>

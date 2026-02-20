@@ -715,27 +715,25 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
   // Mettre à jour companyInfo quand organization est chargée
   useEffect(() => {
     if (mode === "create" && organization) {
-      // Construire l'adresse à partir des champs séparés de l'organisation
-      const addressString = [
-        organization.addressStreet,
-        `${organization.addressZipCode || ""} ${organization.addressCity || ""}`.trim(),
-        organization.addressCountry,
-      ]
-        .filter(Boolean)
-        .join("\n");
-
       const updatedCompanyInfo = {
         name: organization.companyName || organization.name || "",
         email: organization.companyEmail || "",
         phone: organization.companyPhone || "",
         website: organization.website || "",
+        logo: organization.logo || "",
         siret: organization.siret || "",
         vatNumber: organization.vatNumber || "",
         rcs: organization.rcs || "",
-        legalForm: organization.legalForm || "",
+        companyStatus: organization.legalForm || "",
         capitalSocial: organization.capitalSocial || "",
-        fiscalRegime: organization.fiscalRegime || "",
-        address: addressString || "",
+        vatPaymentCondition: organization.fiscalRegime || "",
+        transactionCategory: organization.activityCategory || "",
+        address: {
+          street: organization.addressStreet || "",
+          city: organization.addressCity || "",
+          postalCode: organization.addressZipCode || "",
+          country: organization.addressCountry || "",
+        },
         bankDetails: {
           bankName: organization.bankName || "",
           iban: organization.bankIban || "",
@@ -745,11 +743,11 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
 
       setValue("companyInfo", updatedCompanyInfo, { shouldDirty: false });
 
-      // Mettre à jour les paramètres d'apparence
+      // Mettre à jour les paramètres d'apparence (couleurs spécifiques aux bons de commande avec fallback)
       setValue("appearance", {
-        textColor: organization.documentTextColor || "#000000",
-        headerTextColor: organization.documentHeaderTextColor || "#ffffff",
-        headerBgColor: organization.documentHeaderBgColor || "#5b50FF",
+        textColor: organization.purchaseOrderTextColor || organization.documentTextColor || "#000000",
+        headerTextColor: organization.purchaseOrderHeaderTextColor || organization.documentHeaderTextColor || "#ffffff",
+        headerBgColor: organization.purchaseOrderHeaderBgColor || organization.documentHeaderBgColor || "#5b50FF",
       }, { shouldDirty: false });
 
       // Mettre à jour les notes et conditions
@@ -781,6 +779,16 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
       // Charger la position du client depuis l'organisation
       setValue("clientPositionRight", organization.purchaseOrderClientPositionRight || false, { shouldDirty: false });
 
+      // Synchroniser les champs plats pour CompanyInfoSettingsSection dans la vue paramètres
+      setValue("companyName", organization.companyName || organization.name || "", { shouldDirty: false });
+      setValue("companyEmail", organization.companyEmail || "", { shouldDirty: false });
+      setValue("companyPhone", organization.companyPhone || "", { shouldDirty: false });
+      setValue("website", organization.website || "", { shouldDirty: false });
+      setValue("addressStreet", organization.addressStreet || "", { shouldDirty: false });
+      setValue("addressCity", organization.addressCity || "", { shouldDirty: false });
+      setValue("addressZipCode", organization.addressZipCode || "", { shouldDirty: false });
+      setValue("addressCountry", organization.addressCountry || "France", { shouldDirty: false });
+
       // Marquer le formulaire comme initialisé
       setTimeout(() => {
         setIsFormInitialized(true);
@@ -790,6 +798,25 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
 
   // Les informations de l'entreprise sont gérées par l'organisation active
   // passée en prop depuis le composant parent
+
+  // Synchroniser les champs plats pour CompanyInfoSettingsSection en mode édition
+  useEffect(() => {
+    if (isFormInitialized && mode !== "create") {
+      const companyInfo = getValues("companyInfo");
+      if (companyInfo) {
+        setValue("companyName", companyInfo.name || "", { shouldDirty: false });
+        setValue("companyEmail", companyInfo.email || "", { shouldDirty: false });
+        setValue("companyPhone", companyInfo.phone || "", { shouldDirty: false });
+        setValue("website", companyInfo.website || "", { shouldDirty: false });
+        if (typeof companyInfo.address === "object" && companyInfo.address) {
+          setValue("addressStreet", companyInfo.address.street || "", { shouldDirty: false });
+          setValue("addressCity", companyInfo.address.city || "", { shouldDirty: false });
+          setValue("addressZipCode", companyInfo.address.postalCode || "", { shouldDirty: false });
+          setValue("addressCountry", companyInfo.address.country || "France", { shouldDirty: false });
+        }
+      }
+    }
+  }, [isFormInitialized, mode, setValue, getValues]);
 
   // Validation functions
   const validateStep1 = useCallback(() => {
@@ -1076,7 +1103,7 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
           session,
           existingPurchaseOrder
         );
-        input.status = "DRAFT";
+        input.status = "CONFIRMED";
 
         let result;
         if (mode === "create" || !purchaseOrderId) {
@@ -1089,7 +1116,7 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
             }
 
             if (!isAutoSave) {
-              toast.success("Brouillon sauvegardé");
+              toast.success("Bon de commande sauvegardé");
               router.push("/dashboard/outils/bons-commande");
             }
           }
@@ -1097,7 +1124,7 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
           result = await updatePurchaseOrder(purchaseOrderId, input);
 
           if (!isAutoSave) {
-            toast.success("Brouillon sauvegardé");
+            toast.success("Bon de commande sauvegardé");
             router.push("/dashboard/outils/bons-commande");
           }
         }
@@ -1425,23 +1452,44 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
       const activeOrganization = await getActiveOrganization();
 
       const organizationData = {
-        documentTextColor: currentFormData.appearance?.textColor || "#000000",
-        documentHeaderTextColor:
+        purchaseOrderTextColor: currentFormData.appearance?.textColor || "#000000",
+        purchaseOrderHeaderTextColor:
           currentFormData.appearance?.headerTextColor || "#ffffff",
-        documentHeaderBgColor:
+        purchaseOrderHeaderBgColor:
           currentFormData.appearance?.headerBgColor || "#5b50FF",
         purchaseOrderHeaderNotes: currentFormData.headerNotes || "",
         purchaseOrderFooterNotes: currentFormData.footerNotes || "",
         purchaseOrderTermsAndConditions: currentFormData.termsAndConditions || "",
         showBankDetails: currentFormData.showBankDetails || false,
         purchaseOrderClientPositionRight: currentFormData.clientPositionRight || false,
+        // Informations de l'entreprise
+        companyName: currentFormData.companyName || "",
+        companyEmail: currentFormData.companyEmail || "",
+        companyPhone: currentFormData.companyPhone || "",
+        website: currentFormData.website || "",
+        addressStreet: currentFormData.addressStreet || "",
+        addressCity: currentFormData.addressCity || "",
+        addressZipCode: currentFormData.addressZipCode || "",
+        addressCountry: currentFormData.addressCountry || "France",
       };
 
       await updateOrganization(activeOrganization.id, organizationData);
+
+      // Synchroniser les champs companyInfo du formulaire avec les valeurs sauvegardées
+      setValue("companyInfo.name", currentFormData.companyName || "");
+      setValue("companyInfo.email", currentFormData.companyEmail || "");
+      setValue("companyInfo.phone", currentFormData.companyPhone || "");
+      setValue("companyInfo.website", currentFormData.website || "");
+      setValue("companyInfo.address", {
+        street: currentFormData.addressStreet || "",
+        city: currentFormData.addressCity || "",
+        postalCode: currentFormData.addressZipCode || "",
+        country: currentFormData.addressCountry || "France",
+      });
     } catch (error) {
       throw error;
     }
-  }, [getValues]);
+  }, [getValues, setValue]);
 
   return {
     // Form methods
@@ -1476,7 +1524,7 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
     validatePurchaseOrderNumber,
     hasExistingOrders,
     canEdit:
-      !loadingPurchaseOrder && (mode === "create" || existingPurchaseOrder?.status === "DRAFT"),
+      !loadingPurchaseOrder && (mode === "create" || !["DELIVERED", "CANCELED"].includes(existingPurchaseOrder?.status)),
 
     // Organization settings
     saveSettingsToOrganization,
@@ -1526,7 +1574,7 @@ function getInitialFormData(mode, initialData, session, organization) {
     // Informations du bon de commande
     prefix: "",
     number: "",
-    reference: "",
+    purchaseOrderNumber: "",
     issueDate: today,
     validUntil: initialData?.validUntil || defaultValidUntil,
     deliveryDate: "",
@@ -1576,6 +1624,14 @@ function getInitialFormData(mode, initialData, session, organization) {
 
     // Position du client dans le PDF
     clientPositionRight: organization?.purchaseOrderClientPositionRight || false,
+
+    // Livraison
+    shipping: {
+      billShipping: false,
+      shippingAddress: null,
+      shippingAmountHT: 0,
+      shippingVatRate: 20,
+    },
 
     // Paramètres d'organisation (pour les valeurs par défaut)
     organizationSettings: null,
@@ -1699,7 +1755,13 @@ function transformPurchaseOrderToFormData(purchaseOrder) {
   return {
     prefix: purchaseOrder.prefix || "",
     number: purchaseOrder.number || "",
-    reference: purchaseOrder.reference || "",
+    purchaseOrderNumber: purchaseOrder.purchaseOrderNumber || (
+      purchaseOrder.sourceQuote
+        ? (purchaseOrder.sourceQuote.prefix
+          ? `${purchaseOrder.sourceQuote.prefix}-${purchaseOrder.sourceQuote.number}`
+          : purchaseOrder.sourceQuote.number)
+        : ""
+    ),
     issueDate: issueDate,
     validUntil: purchaseOrder.validUntil
       ? transformDate(purchaseOrder.validUntil, "validUntil")
@@ -1720,6 +1782,8 @@ function transformPurchaseOrderToFormData(purchaseOrder) {
           email: purchaseOrder.client.email,
           phone: purchaseOrder.client.phone,
           address: purchaseOrder.client.address,
+          hasDifferentShippingAddress: purchaseOrder.client.hasDifferentShippingAddress || false,
+          shippingAddress: purchaseOrder.client.shippingAddress || null,
           ...(purchaseOrder.client.type === "COMPANY"
             ? {
                 companyName: purchaseOrder.client.companyName,
@@ -1740,8 +1804,14 @@ function transformPurchaseOrderToFormData(purchaseOrder) {
       email: purchaseOrder.companyInfo?.email || "",
       phone: purchaseOrder.companyInfo?.phone || "",
       website: purchaseOrder.companyInfo?.website || "",
+      logo: purchaseOrder.companyInfo?.logo || "",
       siret: purchaseOrder.companyInfo?.siret || "",
       vatNumber: purchaseOrder.companyInfo?.vatNumber || "",
+      rcs: purchaseOrder.companyInfo?.rcs || "",
+      companyStatus: purchaseOrder.companyInfo?.companyStatus || "",
+      capitalSocial: purchaseOrder.companyInfo?.capitalSocial || "",
+      vatPaymentCondition: purchaseOrder.companyInfo?.vatPaymentCondition || "",
+      transactionCategory: purchaseOrder.companyInfo?.transactionCategory || "",
       // Formatage cohérent de l'adresse pour l'affichage dans le PDF
       address: (() => {
         if (!purchaseOrder.companyInfo?.address) return "";
@@ -1843,6 +1913,21 @@ function transformPurchaseOrderToFormData(purchaseOrder) {
 
     // Position du client dans le PDF
     clientPositionRight: purchaseOrder.clientPositionRight || false,
+
+    // Livraison
+    shipping: purchaseOrder.shipping
+      ? {
+          billShipping: purchaseOrder.shipping.billShipping || false,
+          shippingAddress: purchaseOrder.shipping.shippingAddress || null,
+          shippingAmountHT: purchaseOrder.shipping.shippingAmountHT || 0,
+          shippingVatRate: purchaseOrder.shipping.shippingVatRate ?? 20,
+        }
+      : {
+          billShipping: false,
+          shippingAddress: null,
+          shippingAmountHT: 0,
+          shippingVatRate: 20,
+        },
   };
 }
 
@@ -1862,8 +1947,8 @@ function transformFormDataToInput(
             ? formData.client.companyName || "Entreprise"
             : `${formData.client.firstName || ""} ${formData.client.lastName || ""}`.trim() ||
               "Client"),
-        email: formData.client.email,
-        type: formData.client.type,
+        email: formData.client.email || "",
+        type: formData.client.type || "INDIVIDUAL",
         firstName: formData.client.firstName,
         lastName: formData.client.lastName,
         siret: formData.client.siret,
@@ -1872,7 +1957,7 @@ function transformFormDataToInput(
           formData.client.hasDifferentShippingAddress,
         address: formData.client.address
           ? typeof formData.client.address === "string"
-            ? parseAddressString(formData.client.address)
+            ? parseAddressString(formData.client.address) || { street: "", city: "", postalCode: "", country: "France" }
             : (() => {
                 const addr = formData.client.address;
                 // Supprimer __typename si présent (pollution GraphQL)
@@ -1883,7 +1968,7 @@ function transformFormDataToInput(
                 }
                 return addr;
               })()
-          : null,
+          : { street: "", city: "", postalCode: "", country: "France" },
         shippingAddress: formData.client.shippingAddress
           ? {
               fullName: formData.client.shippingAddress.fullName,
@@ -2044,13 +2129,14 @@ function transformFormDataToInput(
   return {
     ...(shouldSendPrefix && { prefix: prefixToSend }),
     ...(numberToSend !== undefined && { number: numberToSend }),
+    purchaseOrderNumber: formData.purchaseOrderNumber || "",
     // Utiliser les dates formatées avec des valeurs par défaut sécurisées
     issueDate: finalIssueDate,
     ...(formData.validUntil && { validUntil: formatFinalDate(formData.validUntil) }),
     ...(finalDeliveryDate && { deliveryDate: finalDeliveryDate }),
     status: formData.status || "DRAFT",
     client: cleanClient,
-    companyInfo: cleanCompanyInfo,
+    // companyInfo n'est plus envoyé au backend - résolu dynamiquement pour les DRAFTs, snapshot à la finalisation
     items:
       formData.items?.map((item) => {
         // Convertir vatRate en nombre et s'assurer qu'il est défini
@@ -2062,7 +2148,7 @@ function transformFormDataToInput(
           quantity: parseFloat(item.quantity) || 0,
           unitPrice: parseFloat(item.unitPrice) || 0,
           vatRate: itemVatRate,
-          unit: item.unit !== undefined ? item.unit : "",
+          unit: item.unit != null ? item.unit : "",
           discount: parseFloat(item.discount) || 0,
           discountType: (item.discountType || "PERCENTAGE").toUpperCase(),
           details: item.details || "",
@@ -2087,8 +2173,8 @@ function transformFormDataToInput(
     termsAndConditions: formData.terms || formData.termsAndConditions || "",
     customFields:
       formData.customFields?.map((field) => ({
-        key: field.name,
-        value: field.value,
+        key: field.name || "",
+        value: field.value || "",
       })) || [],
     // Inclure les paramètres d'apparence
     appearance: {

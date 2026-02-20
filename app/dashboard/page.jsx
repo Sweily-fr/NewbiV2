@@ -296,6 +296,24 @@ function DashboardContent() {
     [filteredPaidExpenses, filteredTransactions]
   );
 
+  // Debug: vérifier les données des graphiques entrées/sorties
+  console.warn("📊 [DASHBOARD] Chart data debug:", {
+    filteredTransactionsCount: filteredTransactions.length,
+    incomeDataPoints: incomeChartData.length,
+    incomeNonZero: incomeChartData.filter(d => d.desktop > 0).length,
+    incomeTotalDesktop: incomeChartData.reduce((sum, d) => sum + (d.desktop || 0), 0),
+    expenseDataPoints: expenseChartData.length,
+    expenseNonZero: expenseChartData.filter(d => d.desktop > 0).length,
+    expenseTotalDesktop: expenseChartData.reduce((sum, d) => sum + (d.desktop || 0), 0),
+    sampleIncomeData: incomeChartData.filter(d => d.desktop > 0).slice(0, 3),
+    sampleExpenseData: expenseChartData.filter(d => d.desktop > 0).slice(0, 3),
+    sampleTransactions: filteredTransactions.slice(0, 3).map(t => ({
+      amount: t.amount,
+      date: t.date,
+      description: t.description?.substring(0, 30),
+    })),
+  });
+
   // Utiliser les configurations importées
   const incomeChartConfig = getIncomeChartConfig();
   const expenseChartConfig = getExpenseChartConfig();
@@ -542,7 +560,9 @@ function DashboardContent() {
         <div className="flex flex-col md:flex-row gap-4 md:gap-6 w-full">
           <ChartAreaInteractive
             title="Entrées"
-            description={formatCurrency(filteredTotalIncome)}
+            computeDescription={(filtered) =>
+              formatCurrency(filtered.reduce((sum, d) => sum + (d.desktop || 0), 0))
+            }
             height="200px"
             className="shadow-xs w-full md:w-1/2"
             config={incomeChartConfig}
@@ -552,7 +572,9 @@ function DashboardContent() {
           />
           <ChartAreaInteractive
             title="Sorties"
-            description={formatCurrency(filteredTotalExpenses)}
+            computeDescription={(filtered) =>
+              formatCurrency(filtered.reduce((sum, d) => sum + (d.desktop || 0), 0))
+            }
             height="200px"
             className="shadow-xs w-full md:w-1/2"
             config={expenseChartConfig}

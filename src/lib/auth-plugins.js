@@ -409,64 +409,130 @@ export const stripePlugin = stripe({
 
               // Créer l'organisation via Better Auth
               const { mongoDb } = await import("./mongodb.js");
+              const { ObjectId } = require("mongodb");
 
-              // ✅ Vérifier que le SIRET n'est pas déjà utilisé (double sécurité)
-              if (siret) {
+              // ✅ Vérifier si l'utilisateur a déjà une organisation (reprise d'onboarding après échec)
+              let organizationObjectId = null;
+              let orgAlreadyExists = false;
+
+              // D'abord, vérifier si l'utilisateur est déjà membre d'une organisation
+              const existingMember = await mongoDb.collection("member").findOne({
+                userId: new ObjectId(userId),
+              });
+
+              if (existingMember) {
+                // L'utilisateur a déjà une org (onboarding précédent a partiellement fonctionné)
+                organizationObjectId = existingMember.organizationId instanceof ObjectId
+                  ? existingMember.organizationId
+                  : new ObjectId(existingMember.organizationId.toString());
+                orgAlreadyExists = true;
+                console.log(
+                  `♻️ [STRIPE WEBHOOK] Organisation existante trouvée pour userId ${userId}: ${organizationObjectId}`
+                );
+
+                // Mettre à jour l'organisation existante avec les nouvelles données
+                await mongoDb.collection("organization").updateOne(
+                  { _id: organizationObjectId },
+                  {
+                    $set: {
+                      companyName: companyName,
+                      siret: siret || "",
+                      siren: siren || "",
+                      employeeCount: employeeCount || "",
+                      organizationType: orgType || "business",
+                      legalForm: legalForm || "",
+                      addressStreet: addressStreet || "",
+                      addressCity: addressCity || "",
+                      addressZipCode: addressZipCode || "",
+                      addressCountry: addressCountry || "France",
+                      activitySector: activitySector || "",
+                      activityCategory: activityCategory || "",
+                      onboardingCompleted: true,
+                      updatedAt: new Date(),
+                    },
+                  }
+                );
+              } else if (siret) {
+                // Pas de membre, mais vérifier si une org avec ce SIRET existe déjà
                 const existingOrg = await mongoDb.collection("organization").findOne({
                   siret: siret,
                 });
 
                 if (existingOrg) {
-                  console.error(
-                    `❌ [STRIPE WEBHOOK] SIRET ${siret} déjà utilisé par l'organisation: ${existingOrg.name}`
+                  // L'org existe (créée par un précédent webhook) mais l'utilisateur n'est pas membre
+                  // → Le rattacher comme owner
+                  organizationObjectId = existingOrg._id;
+                  orgAlreadyExists = true;
+                  console.log(
+                    `♻️ [STRIPE WEBHOOK] Organisation existante par SIRET ${siret}, rattachement de l'utilisateur ${userId}`
                   );
-                  // TODO: Annuler l'abonnement Stripe et notifier l'utilisateur
-                  break;
+
+                  // Créer le membre owner
+                  await mongoDb.collection("member").insertOne({
+                    userId: new ObjectId(userId),
+                    organizationId: organizationObjectId,
+                    role: "owner",
+                    createdAt: new Date(),
+                  });
+
+                  // Mettre à jour l'organisation
+                  await mongoDb.collection("organization").updateOne(
+                    { _id: organizationObjectId },
+                    {
+                      $set: {
+                        onboardingCompleted: true,
+                        updatedAt: new Date(),
+                      },
+                    }
+                  );
                 }
               }
-              const { ObjectId } = require("mongodb");
-              const orgSlug = `org-${userId.slice(-8)}-${Date.now().toString(36)}`;
 
-              const newOrg = {
-                name: orgName,
-                slug: orgSlug,
-                createdAt: new Date(),
-                // ✅ Ajouter les données entreprise directement sur l'organisation
-                companyName: companyName,
-                siret: siret || "",
-                siren: siren || "",
-                employeeCount: employeeCount || "",
-                organizationType: orgType || "business",
-                legalForm: legalForm || "",
-                addressStreet: addressStreet || "",
-                addressCity: addressCity || "",
-                addressZipCode: addressZipCode || "",
-                addressCountry: addressCountry || "France",
-                activitySector: activitySector || "",
-                activityCategory: activityCategory || "",
-                onboardingCompleted: true, // ✅ Marquer directement comme complété
-                metadata: JSON.stringify({
-                  type: orgType,
-                  invitedEmails: orgInvitedEmails,
-                  createdAt: new Date().toISOString(),
-                  createdAfterPayment: true,
-                }),
-              };
+              // Si aucune org existante, en créer une nouvelle
+              if (!orgAlreadyExists) {
+                const orgSlug = `org-${userId.slice(-8)}-${Date.now().toString(36)}`;
 
-              const orgResult = await mongoDb
-                .collection("organization")
-                .insertOne(newOrg);
+                const newOrg = {
+                  name: orgName,
+                  slug: orgSlug,
+                  createdAt: new Date(),
+                  companyName: companyName,
+                  siret: siret || "",
+                  siren: siren || "",
+                  employeeCount: employeeCount || "",
+                  organizationType: orgType || "business",
+                  legalForm: legalForm || "",
+                  addressStreet: addressStreet || "",
+                  addressCity: addressCity || "",
+                  addressZipCode: addressZipCode || "",
+                  addressCountry: addressCountry || "France",
+                  activitySector: activitySector || "",
+                  activityCategory: activityCategory || "",
+                  onboardingCompleted: true,
+                  metadata: JSON.stringify({
+                    type: orgType,
+                    invitedEmails: orgInvitedEmails,
+                    createdAt: new Date().toISOString(),
+                    createdAfterPayment: true,
+                  }),
+                };
 
-              const organizationObjectId = orgResult.insertedId; // Garder comme ObjectId
-              referenceId = organizationObjectId.toString(); // String pour l'abonnement
+                const orgResult = await mongoDb
+                  .collection("organization")
+                  .insertOne(newOrg);
 
-              // Créer le membre owner avec ObjectId
-              await mongoDb.collection("member").insertOne({
-                userId: new ObjectId(userId), // ✅ Convertir en ObjectId
-                organizationId: organizationObjectId, // ✅ Utiliser ObjectId
-                role: "owner",
-                createdAt: new Date(),
-              });
+                organizationObjectId = orgResult.insertedId;
+
+                // Créer le membre owner
+                await mongoDb.collection("member").insertOne({
+                  userId: new ObjectId(userId),
+                  organizationId: organizationObjectId,
+                  role: "owner",
+                  createdAt: new Date(),
+                });
+              }
+
+              referenceId = organizationObjectId.toString();
 
               // Définir comme organisation active
               // ✅ FIX : Mettre à jour toutes les sessions de l'utilisateur
@@ -1621,6 +1687,31 @@ export const organizationPlugin = organization({
           input: true,
           required: false,
         },
+        vatRegime: {
+          type: "string",
+          input: true,
+          required: false,
+        },
+        vatFrequency: {
+          type: "string",
+          input: true,
+          required: false,
+        },
+        vatMode: {
+          type: "string",
+          input: true,
+          required: false,
+        },
+        fiscalYearStartDate: {
+          type: "string",
+          input: true,
+          required: false,
+        },
+        fiscalYearEndDate: {
+          type: "string",
+          input: true,
+          required: false,
+        },
         // Address information (flattened)
         addressStreet: {
           type: "string",
@@ -1658,7 +1749,7 @@ export const organizationPlugin = organization({
           input: true,
           required: false,
         },
-        // Document appearance settings
+        // Document appearance settings (global defaults)
         documentTextColor: {
           type: "string",
           input: true,
@@ -1670,6 +1761,52 @@ export const organizationPlugin = organization({
           required: false,
         },
         documentHeaderBgColor: {
+          type: "string",
+          input: true,
+          required: false,
+        },
+        // Per-document-type appearance settings
+        quoteTextColor: {
+          type: "string",
+          input: true,
+          required: false,
+        },
+        quoteHeaderTextColor: {
+          type: "string",
+          input: true,
+          required: false,
+        },
+        quoteHeaderBgColor: {
+          type: "string",
+          input: true,
+          required: false,
+        },
+        invoiceTextColor: {
+          type: "string",
+          input: true,
+          required: false,
+        },
+        invoiceHeaderTextColor: {
+          type: "string",
+          input: true,
+          required: false,
+        },
+        invoiceHeaderBgColor: {
+          type: "string",
+          input: true,
+          required: false,
+        },
+        purchaseOrderTextColor: {
+          type: "string",
+          input: true,
+          required: false,
+        },
+        purchaseOrderHeaderTextColor: {
+          type: "string",
+          input: true,
+          required: false,
+        },
+        purchaseOrderHeaderBgColor: {
           type: "string",
           input: true,
           required: false,
@@ -1722,6 +1859,22 @@ export const organizationPlugin = organization({
           input: true,
           required: false,
         },
+        // Notes séparées pour les bons de commande
+        purchaseOrderHeaderNotes: {
+          type: "string",
+          input: true,
+          required: false,
+        },
+        purchaseOrderFooterNotes: {
+          type: "string",
+          input: true,
+          required: false,
+        },
+        purchaseOrderTermsAndConditions: {
+          type: "string",
+          input: true,
+          required: false,
+        },
         // Bank details display setting
         showBankDetails: {
           type: "boolean",
@@ -1735,6 +1888,11 @@ export const organizationPlugin = organization({
           required: false,
         },
         quoteClientPositionRight: {
+          type: "boolean",
+          input: true,
+          required: false,
+        },
+        purchaseOrderClientPositionRight: {
           type: "boolean",
           input: true,
           required: false,

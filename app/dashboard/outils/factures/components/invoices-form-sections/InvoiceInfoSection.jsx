@@ -612,35 +612,18 @@ export default function InvoiceInfoSection({
   };
 
   // Set default prefix from last invoice only once on mount (only for new invoices)
+  // Fallback to generateInvoicePrefix() (F-MMAAAA) if no last invoice prefix
   React.useEffect(() => {
     const isNewInvoice = !data.id;
-
-    console.log(
-      "[InvoiceInfoSection] useEffect - Current prefix:",
-      data.prefix
-    );
-    console.log(
-      "[InvoiceInfoSection] useEffect - Last invoice prefix:",
-      lastInvoicePrefix
-    );
-    console.log(
-      "[InvoiceInfoSection] useEffect - Will set?",
-      !loadingLastPrefix &&
-        !prefixInitialized.current &&
-        !data.prefix &&
-        lastInvoicePrefix &&
-        isNewInvoice
-    );
 
     if (
       !loadingLastPrefix &&
       !prefixInitialized.current &&
       !data.prefix &&
-      lastInvoicePrefix &&
       isNewInvoice
     ) {
-      console.log("[InvoiceInfoSection] Setting prefix to:", lastInvoicePrefix);
-      setValue("prefix", lastInvoicePrefix, {
+      const defaultPrefix = lastInvoicePrefix || generateInvoicePrefix();
+      setValue("prefix", defaultPrefix, {
         shouldValidate: false,
         shouldDirty: false,
       });

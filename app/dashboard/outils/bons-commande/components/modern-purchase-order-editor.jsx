@@ -287,6 +287,7 @@ export default function ModernPurchaseOrderEditor({
                         }
                       }}
                       canEdit={!isReadOnly}
+                      documentType="purchaseOrder"
                     />
                   ) : (
                     <EnhancedQuoteForm

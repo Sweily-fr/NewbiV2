@@ -718,7 +718,12 @@ export default function PurchaseInvoiceTable({
                       </div>
                       <div className="text-xs text-muted-foreground mt-0.5">
                         {inv.invoiceNumber && `${inv.invoiceNumber} · `}
-                        {new Date(inv.issueDate).toLocaleDateString("fr-FR")}
+                        {(() => {
+                          try {
+                            const d = new Date(inv.issueDate);
+                            return isNaN(d.getTime()) ? "—" : d.toLocaleDateString("fr-FR");
+                          } catch { return "—"; }
+                        })()}
                       </div>
                     </div>
                     <div className="text-right ml-3">

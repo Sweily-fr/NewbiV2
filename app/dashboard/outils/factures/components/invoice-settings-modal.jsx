@@ -11,6 +11,7 @@ import {
   updateOrganization,
   getActiveOrganization,
 } from "@/src/lib/organization-client";
+import { generateInvoicePrefix } from "@/src/utils/invoiceUtils";
 
 // Données de démonstration pour la preview
 const getDemoInvoiceData = (formData, organization) => {
@@ -27,8 +28,14 @@ const getDemoInvoiceData = (formData, organization) => {
     formData?.appearance?.headerBgColor || formData?.primaryColor || "#5b4fff";
   const clientPositionRight = formData?.clientPositionRight || false;
 
+  const prefix = formData?.prefix || "";
+  const number = formData?.number || "0001";
+  const invoiceNumber = prefix ? `${prefix}-${number}` : number;
+
   return {
-    invoiceNumber: "DEMO-2024-001",
+    invoiceNumber,
+    prefix,
+    number,
     issueDate: new Date().toISOString(),
     dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
     status: "PAID",
@@ -47,19 +54,18 @@ const getDemoInvoiceData = (formData, organization) => {
       type: "company",
     },
     companyInfo: {
-      name: organization?.name || "Votre Entreprise",
-      email: organization?.email || "contact@entreprise.fr",
-      phone: organization?.phone || "+33 1 23 45 67 89",
-      address: organization?.address || {
-        street: "1 Rue de la République",
-        postalCode: "75001",
-        city: "Paris",
-        country: "France",
+      name: formData?.companyName || organization?.companyName || "Votre Entreprise",
+      email: formData?.companyEmail || organization?.companyEmail || "contact@entreprise.fr",
+      phone: formData?.companyPhone || organization?.companyPhone || "+33 1 23 45 67 89",
+      address: {
+        street: formData?.addressStreet || organization?.addressStreet || "1 Rue de la République",
+        postalCode: formData?.addressZipCode || organization?.addressZipCode || "75001",
+        city: formData?.addressCity || organization?.addressCity || "Paris",
+        country: formData?.addressCountry || organization?.addressCountry || "France",
       },
       siret: organization?.siret || "98765432109876",
       vatNumber: organization?.vatNumber || "FR98765432109",
       logo: organization?.logo || null,
-      // Appliquer les coordonnées bancaires du formulaire
       bankDetails: {
         iban: bankDetails?.iban || "",
         bic: bankDetails?.bic || "",
@@ -153,6 +159,19 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
 
           // Préparer les valeurs initiales depuis l'organisation (même structure que l'éditeur)
           const formValues = {
+            // Numérotation - préfixe par défaut (le numéro sera auto-rempli par le hook useInvoiceNumber)
+            prefix: generateInvoicePrefix(),
+            number: "",
+            // Informations de l'entreprise
+            companyName: org?.companyName || "",
+            companyEmail: org?.companyEmail || "",
+            companyPhone: org?.companyPhone || "",
+            website: org?.website || "",
+            addressStreet: org?.addressStreet || "",
+            addressCity: org?.addressCity || "",
+            addressZipCode: org?.addressZipCode || "",
+            addressCountry: org?.addressCountry || "France",
+            // Paramètres spécifiques aux factures
             invoiceSettings: {},
             bankDetails: {
               iban: org?.bankIban || "",
@@ -174,13 +193,13 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
               org?.documentTermsAndConditions ||
               "",
             showBankDetails: org?.showBankDetails || false,
-            primaryColor: org?.documentHeaderBgColor || "#5b4fff",
+            primaryColor: org?.invoiceHeaderBgColor || org?.documentHeaderBgColor || "#5b4fff",
             clientPositionRight: org?.invoiceClientPositionRight || false,
             // IMPORTANT: Initialiser appearance pour que InvoiceSettingsView puisse modifier les couleurs
             appearance: {
-              textColor: org?.documentTextColor || "#000000",
-              headerTextColor: org?.documentHeaderTextColor || "#FFFFFF",
-              headerBgColor: org?.documentHeaderBgColor || "#5b4fff",
+              textColor: org?.invoiceTextColor || org?.documentTextColor || "#000000",
+              headerTextColor: org?.invoiceHeaderTextColor || org?.documentHeaderTextColor || "#FFFFFF",
+              headerBgColor: org?.invoiceHeaderBgColor || org?.documentHeaderBgColor || "#5b4fff",
             },
           };
 
@@ -207,6 +226,16 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
   // Initialiser le formulaire avec les valeurs de l'organisation
   const form = useForm({
     defaultValues: initialValues || {
+      prefix: generateInvoicePrefix(),
+      number: "",
+      companyName: "",
+      companyEmail: "",
+      companyPhone: "",
+      website: "",
+      addressStreet: "",
+      addressCity: "",
+      addressZipCode: "",
+      addressCountry: "France",
       invoiceSettings: {},
       bankDetails: {},
       userBankDetails: {},
@@ -257,18 +286,28 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
         return;
       }
 
-      // Préparer les données pour la mise à jour (même structure que l'éditeur)
+      // Préparer les données pour la mise à jour
       const updateData = {
+        // Informations de l'entreprise
+        companyName: formValues.companyName || "",
+        companyEmail: formValues.companyEmail || "",
+        companyPhone: formValues.companyPhone || "",
+        website: formValues.website || "",
+        addressStreet: formValues.addressStreet || "",
+        addressCity: formValues.addressCity || "",
+        addressZipCode: formValues.addressZipCode || "",
+        addressCountry: formValues.addressCountry || "France",
+
         // Notes et conditions spécifiques aux factures
         invoiceHeaderNotes: formValues.headerNotes,
         invoiceFooterNotes: formValues.footerNotes,
         invoiceTermsAndConditions: formValues.termsAndConditions,
 
-        // Couleurs du document (sauvegarder toutes les couleurs)
-        documentTextColor: formValues.appearance?.textColor || "#000000",
-        documentHeaderTextColor:
+        // Couleurs spécifiques aux factures
+        invoiceTextColor: formValues.appearance?.textColor || "#000000",
+        invoiceHeaderTextColor:
           formValues.appearance?.headerTextColor || "#FFFFFF",
-        documentHeaderBgColor:
+        invoiceHeaderBgColor:
           formValues.appearance?.headerBgColor ||
           formValues.primaryColor ||
           "#5b4fff",
@@ -295,7 +334,7 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
       onOpenChange(false);
     } catch (error) {
       console.error("❌ Erreur lors de l'enregistrement:", error);
-      toast.error("Erreur lors de l'enregistrement des paramètres");
+      toast.error(error.message || "Erreur lors de l'enregistrement des paramètres");
     } finally {
       setIsSaving(false);
     }
@@ -334,6 +373,7 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
                     canEdit={true}
                     onCancel={() => onOpenChange(false)}
                     onSave={handleSave}
+                    organization={organization}
                   />
                 </FormProvider>
               </div>
