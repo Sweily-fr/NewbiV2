@@ -100,6 +100,8 @@ export default function InvoiceSettingsView({
     getFormattedNextNumber,
   } = useInvoiceNumber();
 
+  const isFirstInvoice = !hasExistingInvoices();
+
   // Auto-initialiser le préfixe et le numéro au montage uniquement (pas en continu)
   const prefixInitializedRef = useRef(false);
   const numberInitializedRef = useRef(false);
@@ -529,15 +531,24 @@ export default function InvoiceSettingsView({
                           ? String(nextInvoiceNumber).padStart(4, "0")
                           : "")
                       }
-                      disabled
-                      readOnly
-                      tabIndex={-1}
-                      onFocus={(e) => e.target.blur()}
-                      onChange={() => {}}
-                      className="bg-muted/50 cursor-not-allowed select-none"
+                      disabled={!isFirstInvoice}
+                      readOnly={!isFirstInvoice}
+                      tabIndex={isFirstInvoice ? 0 : -1}
+                      onFocus={isFirstInvoice ? undefined : (e) => e.target.blur()}
+                      onChange={isFirstInvoice ? (e) => {
+                        const val = e.target.value.replace(/[^0-9]/g, "");
+                        setValue("number", val, { shouldValidate: false });
+                      } : () => {}}
+                      className={isFirstInvoice
+                        ? ""
+                        : "bg-muted/50 cursor-not-allowed select-none"
+                      }
                     />
                     <p className="text-xs text-muted-foreground">
-                      Numéro attribué automatiquement de manière séquentielle.
+                      {isFirstInvoice
+                        ? "Première facture — vous pouvez choisir le numéro de départ."
+                        : "Numéro attribué automatiquement de manière séquentielle."
+                      }
                     </p>
                   </div>
                 </div>

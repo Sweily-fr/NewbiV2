@@ -160,7 +160,7 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
           // Préparer les valeurs initiales depuis l'organisation (même structure que l'éditeur)
           const formValues = {
             // Numérotation - préfixe par défaut (le numéro sera auto-rempli par le hook useInvoiceNumber)
-            prefix: generateInvoicePrefix(),
+            prefix: org?.invoicePrefix || generateInvoicePrefix(),
             number: "",
             // Informations de l'entreprise
             companyName: org?.companyName || "",
@@ -311,6 +311,9 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
           formValues.appearance?.headerBgColor ||
           formValues.primaryColor ||
           "#5b4fff",
+
+        // Préfixe de numérotation
+        invoicePrefix: formValues.prefix || "",
 
         // Position du client dans le PDF (factures)
         invoiceClientPositionRight: formValues.clientPositionRight || false,
