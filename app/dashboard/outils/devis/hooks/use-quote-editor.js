@@ -796,6 +796,11 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
             // Charger la position du client depuis l'organisation
             setValue("clientPositionRight", organization.quoteClientPositionRight || false);
 
+            // Charger le préfixe depuis l'organisation
+            if (organization.quotePrefix) {
+              setValue("prefix", organization.quotePrefix, { shouldDirty: false });
+            }
+
             // Synchroniser les champs plats pour CompanyInfoSettingsSection dans la vue paramètres
             setValue("companyName", organization.companyName || "", { shouldDirty: false });
             setValue("companyEmail", organization.companyEmail || "", { shouldDirty: false });
@@ -1489,6 +1494,8 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
         quoteTermsAndConditions: currentFormData.termsAndConditions || "",
         showBankDetails: currentFormData.showBankDetails || false,
         quoteClientPositionRight: currentFormData.clientPositionRight || false,
+        // Préfixe de numérotation
+        quotePrefix: currentFormData.prefix || "",
         // Informations de l'entreprise
         companyName: currentFormData.companyName || "",
         companyEmail: currentFormData.companyEmail || "",

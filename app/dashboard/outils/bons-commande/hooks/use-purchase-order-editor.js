@@ -779,6 +779,11 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
       // Charger la position du client depuis l'organisation
       setValue("clientPositionRight", organization.purchaseOrderClientPositionRight || false, { shouldDirty: false });
 
+      // Charger le préfixe depuis l'organisation
+      if (organization.purchaseOrderPrefix) {
+        setValue("prefix", organization.purchaseOrderPrefix, { shouldDirty: false });
+      }
+
       // Synchroniser les champs plats pour CompanyInfoSettingsSection dans la vue paramètres
       setValue("companyName", organization.companyName || organization.name || "", { shouldDirty: false });
       setValue("companyEmail", organization.companyEmail || "", { shouldDirty: false });
@@ -1462,6 +1467,8 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
         purchaseOrderTermsAndConditions: currentFormData.termsAndConditions || "",
         showBankDetails: currentFormData.showBankDetails || false,
         purchaseOrderClientPositionRight: currentFormData.clientPositionRight || false,
+        // Préfixe de numérotation
+        purchaseOrderPrefix: currentFormData.prefix || "",
         // Informations de l'entreprise
         companyName: currentFormData.companyName || "",
         companyEmail: currentFormData.companyEmail || "",
@@ -1572,7 +1579,7 @@ function getInitialFormData(mode, initialData, session, organization) {
 
   const baseData = {
     // Informations du bon de commande
-    prefix: "",
+    prefix: organization?.purchaseOrderPrefix || "",
     number: "",
     purchaseOrderNumber: "",
     issueDate: today,

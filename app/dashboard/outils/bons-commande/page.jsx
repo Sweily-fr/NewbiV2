@@ -132,6 +132,13 @@ function PurchaseOrdersContent() {
           <div className="flex gap-2">
             <Button
               variant="outline"
+              size="icon"
+              onClick={() => setIsSettingsOpen(true)}
+            >
+              <Settings size={14} strokeWidth={1.5} aria-hidden="true" />
+            </Button>
+            <Button
+              variant="outline"
               onClick={() => setTriggerImport(true)}
             >
               <Download size={14} strokeWidth={1.5} aria-hidden="true" />

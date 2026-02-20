@@ -905,6 +905,11 @@ export function useInvoiceEditor({
         organization.invoiceClientPositionRight || false
       );
 
+      // Charger le préfixe depuis l'organisation
+      if (organization.invoicePrefix) {
+        setValue("prefix", organization.invoicePrefix, { shouldDirty: false });
+      }
+
       // Marquer le formulaire comme initialisé après un court délai pour s'assurer que tous les setValue sont terminés
       setTimeout(() => {
         setIsFormInitialized(true);
@@ -1733,6 +1738,8 @@ export function useInvoiceEditor({
         showBankDetails: currentFormData.showBankDetails || false,
         invoiceClientPositionRight:
           currentFormData.clientPositionRight || false,
+        // Préfixe de numérotation
+        invoicePrefix: currentFormData.prefix || "",
         // Informations de l'entreprise
         companyName: currentFormData.companyName || "",
         companyEmail: currentFormData.companyEmail || "",
@@ -1912,7 +1919,7 @@ function getInitialFormData(mode, initialData, session, organization) {
   };
 
   const defaultData = {
-    prefix: "",
+    prefix: organization?.invoicePrefix || "",
     number: "",
     issueDate: new Date().toISOString().split("T")[0],
     dueDate: null,
