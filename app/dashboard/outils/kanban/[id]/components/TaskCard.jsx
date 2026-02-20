@@ -201,9 +201,16 @@ const TaskCard = memo(function TaskCard({ task, onEdit, onDelete, index, isDragg
                 <PopoverContent className="w-80" side="top">
                   <div className="space-y-2">
                     <h4 className="font-medium text-sm">Description</h4>
-                    <p className="text-sm text-muted-foreground whitespace-pre-wrap break-words">
-                      {task.description}
-                    </p>
+                    {/<[a-z][\s\S]*>/i.test(task.description) ? (
+                      <div
+                        className="text-sm text-muted-foreground break-words [&_b]:font-bold [&_i]:italic [&_u]:underline [&_blockquote]:border-l-2 [&_blockquote]:border-[#eeeff1] [&_blockquote]:pl-3 [&_pre]:bg-[#f8f9fa] [&_pre]:rounded [&_pre]:px-2 [&_pre]:py-1 [&_pre]:font-mono [&_pre]:text-xs [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:text-[#5a50ff] [&_a]:underline"
+                        dangerouslySetInnerHTML={{ __html: task.description }}
+                      />
+                    ) : (
+                      <p className="text-sm text-muted-foreground whitespace-pre-wrap break-words">
+                        {task.description}
+                      </p>
+                    )}
                   </div>
                 </PopoverContent>
               </Popover>
