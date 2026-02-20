@@ -60,9 +60,9 @@ export default function QuoteSettingsView({
   } = useFormContext();
   const data = watch();
 
-  // Hooks pour la numérotation séquentielle
-  const quoteNumberHook = useQuoteNumber();
-  const purchaseOrderNumberHook = usePurchaseOrderNumber();
+  // Hooks pour la numérotation séquentielle (filtrés par préfixe courant)
+  const quoteNumberHook = useQuoteNumber(isPurchaseOrder ? undefined : data.prefix);
+  const purchaseOrderNumberHook = usePurchaseOrderNumber(isPurchaseOrder ? data.prefix : undefined);
 
   const numberHook = isPurchaseOrder ? purchaseOrderNumberHook : quoteNumberHook;
   const nextNumber = isPurchaseOrder ? numberHook.nextNumber : numberHook.nextQuoteNumber;
@@ -70,7 +70,8 @@ export default function QuoteSettingsView({
   const hasExistingDocuments = isPurchaseOrder
     ? numberHook.hasExistingOrders?.()
     : numberHook.hasExistingQuotes?.();
-  const isFirstDocument = !hasExistingDocuments;
+  // Champ numéro éditable si aucun document du tout OU nouveau préfixe (pas de documents avec ce préfixe)
+  const isFirstDocument = !hasExistingDocuments || !numberHook.hasDocumentsForPrefix;
 
   // Auto-initialiser le préfixe et le numéro au montage uniquement (pas en continu)
   const prefixInitializedRef = useRef(false);
@@ -97,6 +98,14 @@ export default function QuoteSettingsView({
       numberInitializedRef.current = true;
     }
   }, [data.number, nextNumber, isLoadingNumber, setValue]);
+
+  // Mettre à jour le numéro quand nextNumber change (déclenché par changement de préfixe)
+  useEffect(() => {
+    if (numberInitializedRef.current && nextNumber && !isLoadingNumber) {
+      const formattedNumber = String(nextNumber).padStart(4, "0");
+      setValue("number", formattedNumber, { shouldValidate: false });
+    }
+  }, [nextNumber, isLoadingNumber, setValue]);
 
   // Handle prefix changes with auto-fill for MM and AAAA
   const handlePrefixChange = (e) => {

@@ -114,14 +114,15 @@ export default function InvoiceInfoSection({
   const data = watch();
   const { workspaceId } = useRequiredWorkspace();
 
-  // Get the next invoice number and validation function
+  // Get the next invoice number and validation function (filtré par préfixe courant)
   const {
     nextInvoiceNumber,
     validateInvoiceNumber,
     isLoading: isLoadingInvoiceNumber,
     getFormattedNextNumber,
     hasExistingInvoices,
-  } = useInvoiceNumber();
+    hasDocumentsForPrefix,
+  } = useInvoiceNumber(data.prefix);
 
   // Get the last invoice prefix
   const { prefix: lastInvoicePrefix, loading: loadingLastPrefix } =
@@ -536,43 +537,25 @@ export default function InvoiceInfoSection({
     onPreviousSituationInvoicesChange,
   ]);
 
-  // Set default invoice number when nextInvoiceNumber is available
+  // Set default due date for new invoices
+  React.useEffect(() => {
+    if (!data.dueDate) {
+      const today = new Date();
+      const dueDate = new Date(today);
+      dueDate.setDate(today.getDate() + 30);
+      setValue("dueDate", dueDate.toISOString().split("T")[0], {
+        shouldValidate: true,
+      });
+    }
+  }, [data.dueDate, setValue]);
+
+  // Set invoice number based on nextInvoiceNumber (réactif au changement de préfixe)
   React.useEffect(() => {
     if (!isLoadingInvoiceNumber && nextInvoiceNumber) {
-      const formattedNumber = getFormattedNextNumber();
-
-      if (hasExistingInvoices()) {
-        // Case 1: Existing invoices - set next sequential number
-        if (!data.number || data.number === "") {
-          setValue("number", formattedNumber, { shouldValidate: true });
-        }
-      } else {
-        // Case 2: No existing invoices - set to 000001
-        if (!data.number || data.number === "" || data.number === "1") {
-          setValue("number", "000001", { shouldValidate: true });
-        }
-        // If user has already entered a number, don't override it
-      }
-
-      // Set default due date to today + 30 days for new invoices
-      if (!data.dueDate) {
-        const today = new Date();
-        const dueDate = new Date(today);
-        dueDate.setDate(today.getDate() + 30);
-        setValue("dueDate", dueDate.toISOString().split("T")[0], {
-          shouldValidate: true,
-        });
-      }
+      const formattedNumber = String(nextInvoiceNumber).padStart(4, '0');
+      setValue("number", formattedNumber, { shouldValidate: true });
     }
-  }, [
-    nextInvoiceNumber,
-    isLoadingInvoiceNumber,
-    data.number,
-    data.dueDate,
-    setValue,
-    getFormattedNextNumber,
-    hasExistingInvoices,
-  ]);
+  }, [nextInvoiceNumber, isLoadingInvoiceNumber, setValue]);
 
   // Handle prefix changes with auto-fill for MM and AAAA
   const handlePrefixChange = (e) => {

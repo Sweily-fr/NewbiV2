@@ -33,13 +33,16 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
   // GraphQL hooks
   const { purchaseOrder: existingPurchaseOrder, loading: loadingPurchaseOrder } = usePurchaseOrder(purchaseOrderId);
 
+  // Prefix state pour le filtrage du numéro par préfixe
+  const [currentPrefix, setCurrentPrefix] = useState(organization?.purchaseOrderPrefix || "");
+
   // Use the purchase order numbering hook
   const {
     nextNumber: nextPurchaseOrderNumber,
     validateNumber: validatePurchaseOrderNumber,
     isLoading: numberLoading,
     hasExistingOrders,
-  } = usePurchaseOrderNumber();
+  } = usePurchaseOrderNumber(currentPrefix);
 
   const { createPurchaseOrder, loading: creating } = useCreatePurchaseOrder();
   const { updatePurchaseOrder, loading: updating } = useUpdatePurchaseOrder();
@@ -88,6 +91,16 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
 
   const { watch, setValue, getValues, reset } = form;
   // const { isDirty } = formState; // DISABLED - Auto-save removed
+
+  // Synchroniser le préfixe du formulaire avec le state pour le filtrage du numéro
+  useEffect(() => {
+    const subscription = watch((value, { name }) => {
+      if (name === "prefix" && value.prefix !== undefined) {
+        setCurrentPrefix(value.prefix || "");
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [watch]);
 
   const [saving, setSaving] = useState(false);
   const [isFormInitialized, setIsFormInitialized] = useState(false); // Indique si le formulaire est complètement chargé
@@ -773,8 +786,8 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
         { shouldDirty: false }
       );
 
-      // Ne pas activer showBankDetails par défaut
-      setValue("showBankDetails", false, { shouldDirty: false });
+      // Charger showBankDetails depuis l'organisation
+      setValue("showBankDetails", organization.showBankDetails || false, { shouldDirty: false });
 
       // Charger la position du client depuis l'organisation
       setValue("clientPositionRight", organization.purchaseOrderClientPositionRight || false, { shouldDirty: false });
@@ -1466,6 +1479,10 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
         purchaseOrderFooterNotes: currentFormData.footerNotes || "",
         purchaseOrderTermsAndConditions: currentFormData.termsAndConditions || "",
         showBankDetails: currentFormData.showBankDetails || false,
+        // Coordonnées bancaires
+        bankIban: currentFormData.bankDetails?.iban || currentFormData.companyInfo?.bankDetails?.iban || "",
+        bankBic: currentFormData.bankDetails?.bic || currentFormData.companyInfo?.bankDetails?.bic || "",
+        bankName: currentFormData.bankDetails?.bankName || currentFormData.companyInfo?.bankDetails?.bankName || "",
         purchaseOrderClientPositionRight: currentFormData.clientPositionRight || false,
         // Préfixe de numérotation
         purchaseOrderPrefix: currentFormData.prefix || "",

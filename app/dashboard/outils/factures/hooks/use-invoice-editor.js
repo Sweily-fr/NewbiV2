@@ -9,9 +9,9 @@ import {
   useCreateInvoice,
   useUpdateInvoice,
   useInvoice,
-  useNextInvoiceNumber,
   useCheckInvoiceNumber,
 } from "@/src/graphql/invoiceQueries";
+import { useInvoiceNumber } from "./use-invoice-number";
 import { useUser } from "@/src/lib/auth/hooks";
 import {
   updateOrganization,
@@ -40,13 +40,14 @@ export function useInvoiceEditor({
   const { invoice: existingInvoice, loading: loadingInvoice } =
     useInvoice(invoiceId);
 
-  const { data: nextNumberData } = useNextInvoiceNumber(
-    null, // On passe null comme préfixe pour utiliser la valeur par défaut
-    {
-      skip: mode !== "create",
-      isDraft: true, // Toujours true pour la création car on commence toujours par un brouillon
-    }
-  );
+  // Prefix state pour le filtrage du numéro par préfixe
+  const [currentPrefix, setCurrentPrefix] = useState(organization?.invoicePrefix || "");
+
+  // Use the invoice numbering hook with prefix filtering
+  const {
+    nextInvoiceNumber,
+    isLoading: numberLoading,
+  } = useInvoiceNumber(currentPrefix);
 
   const { createInvoice, loading: creating } = useCreateInvoice();
   const { updateInvoice, loading: updating } = useUpdateInvoice();
@@ -102,6 +103,16 @@ export function useInvoiceEditor({
 
   const { watch, setValue, getValues, formState, reset, trigger } = form;
   const { isDirty, errors } = formState;
+
+  // Synchroniser le préfixe du formulaire avec le state pour le filtrage du numéro
+  useEffect(() => {
+    const subscription = watch((value, { name }) => {
+      if (name === "prefix" && value.prefix !== undefined) {
+        setCurrentPrefix(value.prefix || "");
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [watch]);
 
   const [saving, setSaving] = useState(false);
   const [editingFields, setEditingFields] = useState(new Set());
@@ -821,14 +832,12 @@ export function useInvoiceEditor({
   }, [existingInvoice, mode, reset, getValues]);
 
   // Set next invoice number for new invoices
-  // Note: Le prefix est maintenant géré dans InvoiceInfoSection avec le préfixe de la dernière facture
   useEffect(() => {
-    if (mode === "create" && nextNumberData?.nextInvoiceNumber) {
-      // Ne plus définir le prefix ici, il est géré dans InvoiceInfoSection
-      // setValue("prefix", nextNumberData.nextInvoiceNumber.prefix);
-      setValue("number", nextNumberData.nextInvoiceNumber.number);
+    if (mode === "create" && nextInvoiceNumber && !numberLoading) {
+      const formattedNumber = String(nextInvoiceNumber).padStart(4, '0');
+      setValue("number", formattedNumber, { shouldValidate: false, shouldDirty: false });
     }
-  }, [mode, nextNumberData, setValue]);
+  }, [mode, nextInvoiceNumber, numberLoading, setValue]);
 
   // Auto-remplir companyInfo avec les données de l'organisation
   useEffect(() => {
@@ -1736,6 +1745,10 @@ export function useInvoiceEditor({
         invoiceFooterNotes: currentFormData.footerNotes || "",
         invoiceTermsAndConditions: currentFormData.termsAndConditions || "",
         showBankDetails: currentFormData.showBankDetails || false,
+        // Coordonnées bancaires
+        bankIban: currentFormData.bankDetails?.iban || currentFormData.companyInfo?.bankIban || "",
+        bankBic: currentFormData.bankDetails?.bic || currentFormData.companyInfo?.bankBic || "",
+        bankName: currentFormData.bankDetails?.bankName || currentFormData.companyInfo?.bankName || "",
         invoiceClientPositionRight:
           currentFormData.clientPositionRight || false,
         // Préfixe de numérotation
