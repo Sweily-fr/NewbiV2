@@ -225,8 +225,9 @@ const descriptionToolbarItems = [
 function DescriptionEditor({ value, onChange, placeholder = "Ajouter une description..." }) {
   const editorRef = useRef(null);
   const [isEmpty, setIsEmpty] = useState(!value);
-  const lastValueRef = useRef(value || "");
+  const lastValueRef = useRef(null);
 
+  // Initialiser le contenu au montage + sync quand value change de l'extérieur
   useEffect(() => {
     if (editorRef.current && value !== lastValueRef.current) {
       editorRef.current.innerHTML = value || "";
@@ -236,11 +237,17 @@ function DescriptionEditor({ value, onChange, placeholder = "Ajouter une descrip
     }
   }, [value]);
 
-  const checkEmpty = useCallback(() => {
+  const syncValue = useCallback(() => {
     if (!editorRef.current) return;
+    const html = editorRef.current.innerHTML;
     const text = editorRef.current.textContent || "";
+    const newValue = text.trim().length === 0 ? "" : html;
     setIsEmpty(text.trim().length === 0);
-  }, []);
+    if (newValue !== lastValueRef.current) {
+      lastValueRef.current = newValue;
+      onChange(newValue);
+    }
+  }, [onChange]);
 
   const applyFormat = useCallback((item) => {
     if (item.command === "createLink") {
@@ -252,18 +259,12 @@ function DescriptionEditor({ value, onChange, placeholder = "Ajouter une descrip
       document.execCommand(item.command, false, null);
     }
     editorRef.current?.focus();
-  }, []);
+    syncValue();
+  }, [syncValue]);
 
   const handleInput = useCallback(() => {
-    checkEmpty();
-    if (editorRef.current) {
-      const html = editorRef.current.innerHTML;
-      const text = editorRef.current.textContent || "";
-      const newValue = text.trim().length === 0 ? "" : html;
-      lastValueRef.current = newValue;
-      onChange(newValue);
-    }
-  }, [checkEmpty, onChange]);
+    syncValue();
+  }, [syncValue]);
 
   const handleClear = useCallback(() => {
     if (editorRef.current) {
@@ -277,7 +278,7 @@ function DescriptionEditor({ value, onChange, placeholder = "Ajouter une descrip
 
   return (
     <div
-      className="flex flex-col rounded-xl border border-[#eeeff1] dark:border-[#232323] bg-white dark:bg-[#1a1a1a] shadow-xs cursor-text"
+      className="flex flex-col rounded-xl border border-[#eeeff1] dark:border-[#232323] bg-white dark:bg-[#1a1a1a] shadow-xs cursor-text overflow-hidden min-w-0"
       onClick={() => editorRef.current?.focus()}
     >
       {/* Formatting toolbar */}
@@ -325,7 +326,7 @@ function DescriptionEditor({ value, onChange, placeholder = "Ajouter une descrip
       </div>
 
       {/* Rich text editor */}
-      <div className="relative px-4 py-3 min-h-[100px]">
+      <div className="relative px-4 py-3 min-h-[100px] max-h-[200px] overflow-y-auto overflow-x-hidden">
         {isEmpty && (
           <span className="absolute top-3 left-4 text-sm text-muted-foreground pointer-events-none">
             {placeholder}
@@ -335,8 +336,9 @@ function DescriptionEditor({ value, onChange, placeholder = "Ajouter une descrip
           ref={editorRef}
           contentEditable
           onInput={handleInput}
-          onBlur={checkEmpty}
-          className="w-full text-sm text-foreground focus:outline-none min-h-[80px] [&_b]:font-bold [&_i]:italic [&_u]:underline [&_blockquote]:border-l-2 [&_blockquote]:border-[#eeeff1] [&_blockquote]:pl-3 [&_blockquote]:text-muted-foreground [&_pre]:bg-[#f8f9fa] [&_pre]:rounded [&_pre]:px-2 [&_pre]:py-1 [&_pre]:font-mono [&_pre]:text-xs [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:text-[#5a50ff] [&_a]:underline"
+          onBlur={syncValue}
+          style={{ overflowWrap: "anywhere", wordBreak: "break-word" }}
+          className="w-full max-w-full text-sm text-foreground focus:outline-none min-h-[80px] whitespace-pre-wrap [&_b]:font-bold [&_i]:italic [&_u]:underline [&_blockquote]:border-l-2 [&_blockquote]:border-[#eeeff1] [&_blockquote]:pl-3 [&_blockquote]:text-muted-foreground [&_pre]:bg-[#f8f9fa] [&_pre]:rounded [&_pre]:px-2 [&_pre]:py-1 [&_pre]:font-mono [&_pre]:text-xs [&_pre]:whitespace-pre-wrap [&_pre]:overflow-x-auto [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:text-[#5a50ff] [&_a]:underline"
         />
       </div>
     </div>
@@ -590,7 +592,7 @@ export function TaskModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="!max-w-[calc(100vw-2rem)] !w-[calc(100vw-2rem)] h-[calc(100vh-2rem)] p-0 bg-card text-card-foreground overflow-hidden flex flex-col">
+      <DialogContent onOpenAutoFocus={(e) => e.preventDefault()} className="!max-w-[calc(100vw-2rem)] !w-[calc(100vw-2rem)] h-[calc(100vh-2rem)] p-0 bg-card text-card-foreground overflow-hidden flex flex-col">
         {/* Version Desktop : 2 colonnes */}
         <div className="hidden lg:flex h-full">
           {/* Partie gauche : Formulaire */}
