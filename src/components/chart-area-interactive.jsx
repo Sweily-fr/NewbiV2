@@ -195,6 +195,98 @@ export function ChartAreaInteractive({
   // Corrige un bug où Recharts ne re-render pas les Area/YAxis après initialisation avec données vides
   const chartMountKey = hasNonZeroData ? "has-data" : "no-data";
 
+  // Construire les enfants du ComposedChart sans fragments ni conditionnels
+  // Recharts utilise React.Children pour détecter ses enfants (Area, YAxis, etc.)
+  // Les fragments <></> et ternaires cassent cette détection en production
+  const renderChart = () => {
+    const children = [
+      <CartesianGrid key="grid" vertical={false} />,
+      <XAxis
+        key="xaxis"
+        dataKey="date"
+        tickLine={false}
+        axisLine={false}
+        tickMargin={8}
+        minTickGap={32}
+        tickFormatter={(value) => {
+          const date = new Date(value);
+          return date.toLocaleDateString("fr-FR", {
+            month: "short",
+            year: "numeric",
+          });
+        }}
+      />,
+      <YAxis
+        key="yaxis"
+        tickLine={false}
+        axisLine={false}
+        tickMargin={8}
+        tickFormatter={(value) => {
+          if (Math.abs(value) >= 1000) {
+            return `${(value / 1000).toFixed(0)}k`;
+          }
+          return `${value}`;
+        }}
+      />,
+      <ChartTooltip
+        key="tooltip"
+        cursor={false}
+        content={
+          <ChartTooltipContent
+            labelFormatter={(value) => {
+              return new Date(value).toLocaleDateString("fr-FR", {
+                month: "short",
+                year: "numeric",
+              });
+            }}
+            indicator="none"
+            className="min-w-[200px]"
+          />
+        }
+      />,
+    ];
+
+    // Ajouter les Area comme enfants directs (pas de fragment)
+    if (showMobile && !hideMobileCurve && !singleCurve) {
+      children.push(
+        <Area
+          key="mobile"
+          dataKey="mobile"
+          type="monotone"
+          fill="var(--color-mobile)"
+          fillOpacity={0.15}
+          stroke="var(--color-mobile)"
+          strokeWidth={2}
+          stackId="a"
+          connectNulls
+        />
+      );
+    }
+
+    children.push(
+      <Area
+        key="desktop"
+        dataKey="desktop"
+        type="monotone"
+        fill="var(--color-desktop)"
+        fillOpacity={0.15}
+        stroke="var(--color-desktop)"
+        strokeWidth={2}
+        stackId={!singleCurve && !hideMobileCurve ? "a" : undefined}
+        connectNulls
+      />
+    );
+
+    return (
+      <ComposedChart
+        data={aggregatedData}
+        margin={{ left: 12, right: 12, top: 12, bottom: 12 }}
+      >
+        {children}
+      </ComposedChart>
+    );
+  };
+
   if (isLoading) {
     return (
       <Card className={`@container/card ${className}`} style={{ width }} {...props}>
@@ -353,98 +445,7 @@ export function ChartAreaInteractive({
           className="aspect-auto w-full"
           style={{ height }}
         >
-          <ComposedChart
-            data={aggregatedData}
-            margin={{
-              left: 12,
-              right: 12,
-              top: 12,
-              bottom: 12,
-            }}
-          >
-            <CartesianGrid vertical={false} />
-            <XAxis
-              dataKey="date"
-              tickLine={false}
-              axisLine={false}
-              tickMargin={8}
-              minTickGap={32}
-              tickFormatter={(value) => {
-                const date = new Date(value);
-                return date.toLocaleDateString("fr-FR", {
-                  month: "short",
-                  year: "numeric",
-                });
-              }}
-            />
-            <YAxis
-              tickLine={false}
-              axisLine={false}
-              tickMargin={8}
-              tickFormatter={(value) => {
-                if (Math.abs(value) >= 1000) {
-                  return `${(value / 1000).toFixed(0)}k`;
-                }
-                return value.toString();
-              }}
-            />
-            {showTooltip && (
-              <ChartTooltip
-                cursor={false}
-                defaultIndex={isMobile ? -1 : 10}
-                content={
-                  <ChartTooltipContent
-                    labelFormatter={(value) => {
-                      return new Date(value).toLocaleDateString("fr-FR", {
-                        month: "short",
-                        year: "numeric",
-                      });
-                    }}
-                    indicator="none"
-                    className={isMobile ? "hidden" : "min-w-[200px]"}
-                  />
-                }
-              />
-            )}
-            {singleCurve ? (
-              <Area
-                dataKey="desktop"
-                type="monotone"
-                fill="var(--color-desktop)"
-                fillOpacity={0.15}
-                stroke="var(--color-desktop)"
-                strokeWidth={2}
-                connectNulls
-              />
-            ) : (
-              <>
-                {showMobile && !hideMobileCurve && (
-                  <Area
-                    dataKey="mobile"
-                    type="monotone"
-                    fill="var(--color-mobile)"
-                    fillOpacity={0.15}
-                    stroke="var(--color-mobile)"
-                    strokeWidth={2}
-                    stackId="a"
-                    connectNulls
-                  />
-                )}
-                {showDesktop && (
-                  <Area
-                    dataKey="desktop"
-                    type="monotone"
-                    fill="var(--color-desktop)"
-                    fillOpacity={0.15}
-                    stroke="var(--color-desktop)"
-                    strokeWidth={2}
-                    stackId={hideMobileCurve ? undefined : "a"}
-                    connectNulls
-                  />
-                )}
-              </>
-            )}
-          </ComposedChart>
+          {renderChart()}
         </ChartContainer>
         {!hasNonZeroData && (
           <div
