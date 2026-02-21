@@ -101,8 +101,8 @@ export default function InvoiceSettingsView({
     getFormattedNextNumber,
   } = useInvoiceNumber(data.prefix);
 
-  // Champ numéro éditable si aucune facture du tout OU nouveau préfixe (pas de factures avec ce préfixe)
-  const isFirstInvoice = !hasExistingInvoices() || !hasDocumentsForPrefix;
+  // Champ numéro éditable uniquement si aucune facture finalisée n'existe pour ce préfixe
+  const isFirstInvoice = !hasDocumentsForPrefix;
 
   // Auto-initialiser le préfixe et le numéro au montage uniquement (pas en continu)
   const prefixInitializedRef = useRef(false);
@@ -204,6 +204,7 @@ export default function InvoiceSettingsView({
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showBankDetailsDialog, setShowBankDetailsDialog] = useState(false);
   const [organizationRefreshKey, setOrganizationRefreshKey] = useState(0);
+  const [numberDuplicateError, setNumberDuplicateError] = useState(null);
   const initialValuesRef = useRef(null);
 
   // Fonction pour rafraîchir les données de l'organisation après mise à jour
@@ -571,12 +572,35 @@ export default function InvoiceSettingsView({
                         const val = e.target.value.replace(/[^0-9]/g, "");
                         userEditedNumberRef.current = true;
                         setValue("number", val, { shouldValidate: false });
+                        if (numberDuplicateError) setNumberDuplicateError(null);
                       } : () => {}}
+                      onBlur={isFirstInvoice ? async (e) => {
+                        if (validateInvoiceNumberExists && e.target.value) {
+                          const result = await validateInvoiceNumberExists(
+                            e.target.value,
+                            data.prefix
+                          );
+                          if (result?.exists) {
+                            setNumberDuplicateError(
+                              `Le numéro ${data.prefix}${e.target.value} existe déjà.`
+                            );
+                          } else {
+                            setNumberDuplicateError(null);
+                          }
+                        }
+                      } : undefined}
                       className={isFirstInvoice
-                        ? ""
+                        ? numberDuplicateError
+                          ? "border-destructive focus-visible:ring-1 focus-visible:ring-destructive"
+                          : ""
                         : "bg-muted/50 cursor-not-allowed select-none"
                       }
                     />
+                    {numberDuplicateError && (
+                      <p className="text-xs text-destructive">
+                        {numberDuplicateError}
+                      </p>
+                    )}
                     <p className="text-xs text-muted-foreground">
                       {isFirstInvoice
                         ? "Première facture — vous pouvez choisir le numéro de départ."

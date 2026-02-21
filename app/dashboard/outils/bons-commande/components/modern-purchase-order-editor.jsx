@@ -27,6 +27,7 @@ import { useClient } from "@/src/graphql/clientQueries";
 import { ValidationCallout } from "@/app/dashboard/outils/factures/components/validation-callout";
 import ClientsModal from "@/app/dashboard/clients/components/clients-modal";
 import { SendDocumentModal } from "@/app/dashboard/outils/factures/components/send-document-modal";
+import { useCheckPurchaseOrderNumber } from "@/src/graphql/purchaseOrderQueries";
 
 export default function ModernPurchaseOrderEditor({
   mode = "create",
@@ -84,6 +85,8 @@ export default function ModernPurchaseOrderEditor({
     initialData,
     organization,
   });
+
+  const { checkPurchaseOrderNumber } = useCheckPurchaseOrderNumber();
 
   // Pré-remplir le client si clientId est dans l'URL
   useEffect(() => {
@@ -299,6 +302,7 @@ export default function ModernPurchaseOrderEditor({
                       }}
                       canEdit={!isReadOnly}
                       documentType="purchaseOrder"
+                      validateNumberExists={checkPurchaseOrderNumber}
                     />
                   ) : (
                     <EnhancedQuoteForm

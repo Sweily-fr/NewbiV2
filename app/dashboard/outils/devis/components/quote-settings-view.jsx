@@ -48,6 +48,7 @@ export default function QuoteSettingsView({
   onSave,
   onCloseAttempt,
   documentType = "quote",
+  validateNumberExists,
 }) {
   const isPurchaseOrder = documentType === "purchaseOrder";
   const documentLabel = isPurchaseOrder ? "bon de commande" : "devis";
@@ -67,11 +68,8 @@ export default function QuoteSettingsView({
   const numberHook = isPurchaseOrder ? purchaseOrderNumberHook : quoteNumberHook;
   const nextNumber = isPurchaseOrder ? numberHook.nextNumber : numberHook.nextQuoteNumber;
   const isLoadingNumber = numberHook.isLoading;
-  const hasExistingDocuments = isPurchaseOrder
-    ? numberHook.hasExistingOrders?.()
-    : numberHook.hasExistingQuotes?.();
-  // Champ numéro éditable si aucun document du tout OU nouveau préfixe (pas de documents avec ce préfixe)
-  const isFirstDocument = !hasExistingDocuments || !numberHook.hasDocumentsForPrefix;
+  // Champ numéro éditable uniquement si aucun document finalisé n'existe pour ce préfixe
+  const isFirstDocument = !numberHook.hasDocumentsForPrefix;
 
   // Auto-initialiser le préfixe et le numéro au montage uniquement (pas en continu)
   const prefixInitializedRef = useRef(false);
@@ -164,6 +162,7 @@ export default function QuoteSettingsView({
 
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [numberDuplicateError, setNumberDuplicateError] = useState(null);
   const initialValuesRef = useRef(null);
 
   // Exposer la fonction de gestion de fermeture au parent
@@ -406,12 +405,35 @@ export default function QuoteSettingsView({
                         const val = e.target.value.replace(/[^0-9]/g, "");
                         userEditedNumberRef.current = true;
                         setValue("number", val, { shouldValidate: false });
+                        if (numberDuplicateError) setNumberDuplicateError(null);
                       } : () => {}}
+                      onBlur={isFirstDocument ? async (e) => {
+                        if (validateNumberExists && e.target.value) {
+                          const result = await validateNumberExists(
+                            e.target.value,
+                            data.prefix
+                          );
+                          if (result?.exists) {
+                            setNumberDuplicateError(
+                              `Le numéro ${data.prefix}${e.target.value} existe déjà.`
+                            );
+                          } else {
+                            setNumberDuplicateError(null);
+                          }
+                        }
+                      } : undefined}
                       className={isFirstDocument
-                        ? ""
+                        ? numberDuplicateError
+                          ? "border-destructive focus-visible:ring-1 focus-visible:ring-destructive"
+                          : ""
                         : "bg-muted/50 cursor-not-allowed select-none"
                       }
                     />
+                    {numberDuplicateError && (
+                      <p className="text-xs text-destructive">
+                        {numberDuplicateError}
+                      </p>
+                    )}
                     <p className="text-xs text-muted-foreground">
                       {isFirstDocument
                         ? `Premier ${documentLabel} — vous pouvez choisir le numéro de départ.`

@@ -32,6 +32,7 @@ import { ResourceNotFound } from "@/src/components/resource-not-found";
 import { ValidationCallout } from "@/app/dashboard/outils/factures/components/validation-callout";
 import ClientsModal from "@/app/dashboard/clients/components/clients-modal";
 import { SendDocumentModal } from "@/app/dashboard/outils/factures/components/send-document-modal";
+import { useCheckQuoteNumber } from "@/src/graphql/quoteQueries";
 
 export default function ModernQuoteEditor({
   mode = "create",
@@ -74,6 +75,8 @@ export default function ModernQuoteEditor({
     quoteId,
     initialData,
   });
+
+  const { checkQuoteNumber } = useCheckQuoteNumber();
 
   // Pré-remplir le client si clientId est dans l'URL
   useEffect(() => {
@@ -305,6 +308,7 @@ export default function ModernQuoteEditor({
                         }
                       }}
                       canEdit={!isReadOnly}
+                      validateNumberExists={checkQuoteNumber}
                     />
                   ) : (
                     <EnhancedQuoteForm
