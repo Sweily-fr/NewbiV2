@@ -29,7 +29,6 @@ import { useRouter } from "next/navigation";
 import {
   useChangeQuoteStatus,
   useQuote,
-  useConvertQuoteToInvoice,
   QUOTE_STATUS,
   QUOTE_STATUS_LABELS,
   QUOTE_STATUS_COLORS,
@@ -52,7 +51,6 @@ export default function QuoteSidebar({
 }) {
   const router = useRouter();
   const { changeStatus, loading: changingStatus } = useChangeQuoteStatus();
-  const { convertToInvoice, loading: converting } = useConvertQuoteToInvoice();
   const { createLinkedInvoice, loading: creatingLinkedInvoice } =
     useCreateLinkedInvoice();
   const { convertToPurchaseOrder, loading: convertingToPO } =
@@ -169,20 +167,22 @@ export default function QuoteSidebar({
     }
   };
 
-  const handleConvertToInvoice = async () => {
-    try {
-      const result = await convertToInvoice(quote.id);
-      toast.success("Devis converti en facture avec succès");
-      if (result?.id) {
-        router.push(`/dashboard/outils/factures/${result.id}/editer`);
-      } else {
-        router.push("/dashboard/outils/factures");
-      }
-      if (onRefetch) onRefetch();
-      onClose(); // Fermer la sidebar après la conversion
-    } catch (error) {
-      toast.error("Erreur lors de la conversion en facture");
-    }
+  const handleConvertToInvoice = () => {
+    sessionStorage.setItem('quoteInvoiceData', JSON.stringify({
+      sourceQuoteId: quote.id,
+      purchaseOrderNumber: `${quote.prefix || ''}${quote.number || ''}`,
+      client: quote.client,
+      items: quote.items,
+      discount: quote.discount,
+      discountType: quote.discountType,
+      customFields: quote.customFields,
+      shipping: quote.shipping,
+      isReverseCharge: quote.isReverseCharge,
+      retenueGarantie: quote.retenueGarantie,
+      escompte: quote.escompte,
+    }));
+    router.push('/dashboard/outils/factures/new');
+    onClose();
   };
 
   const handleCreateLinkedInvoice = async ({ quoteId, amount, isDeposit }) => {
@@ -202,7 +202,7 @@ export default function QuoteSidebar({
     }
   };
 
-  const isLoading = changingStatus || converting || creatingLinkedInvoice || convertingToPO;
+  const isLoading = changingStatus || creatingLinkedInvoice || convertingToPO;
 
   return (
     <>

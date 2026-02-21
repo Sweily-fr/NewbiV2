@@ -33,10 +33,12 @@ import { SendDocumentModal } from "../../factures/components/send-document-modal
 import {
   useChangeQuoteStatus,
   useDeleteQuote,
-  useConvertQuoteToInvoice,
   QUOTE_STATUS,
+  GET_QUOTE,
 } from "@/src/graphql/quoteQueries";
 import { useConvertQuoteToPurchaseOrder } from "@/src/graphql/purchaseOrderQueries";
+import { useApolloClient } from "@apollo/client";
+import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { toast } from "@/src/components/ui/sonner";
 import QuoteSidebar from "./quote-sidebar";
 import QuoteMobileFullscreen from "./quote-mobile-fullscreen";
@@ -88,9 +90,10 @@ export default function QuoteRowActions({ row, onRefetch }) {
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
+  const apolloClient = useApolloClient();
+  const { workspaceId } = useRequiredWorkspace();
   const { changeStatus, loading: changingStatus } = useChangeQuoteStatus();
   const { deleteQuote, loading: isDeleting } = useDeleteQuote();
-  const { convertToInvoice, loading: converting } = useConvertQuoteToInvoice();
   const { convertToPurchaseOrder, loading: convertingToPO } = useConvertQuoteToPurchaseOrder();
 
   const handleView = () => {
@@ -147,15 +150,30 @@ export default function QuoteRowActions({ row, onRefetch }) {
 
   const handleConvertToInvoice = async () => {
     try {
-      const result = await convertToInvoice(quote.id);
-      toast.success("Devis converti en facture avec succès");
-      if (onRefetch) onRefetch();
-      // Rediriger vers l'éditeur de la facture créée
-      if (result?.id) {
-        router.push(
-          `/dashboard/outils/factures/${result.id}/editer`
-        );
+      const { data } = await apolloClient.query({
+        query: GET_QUOTE,
+        variables: { workspaceId, id: quote.id },
+        fetchPolicy: "network-only",
+      });
+      const fullQuote = data?.quote;
+      if (!fullQuote) {
+        toast.error("Impossible de récupérer le devis");
+        return;
       }
+      sessionStorage.setItem('quoteInvoiceData', JSON.stringify({
+        sourceQuoteId: fullQuote.id,
+        purchaseOrderNumber: `${fullQuote.prefix || ''}${fullQuote.number || ''}`,
+        client: fullQuote.client,
+        items: fullQuote.items,
+        discount: fullQuote.discount,
+        discountType: fullQuote.discountType,
+        customFields: fullQuote.customFields,
+        shipping: fullQuote.shipping,
+        isReverseCharge: fullQuote.isReverseCharge,
+        retenueGarantie: fullQuote.retenueGarantie,
+        escompte: fullQuote.escompte,
+      }));
+      router.push('/dashboard/outils/factures/new');
     } catch (error) {
       toast.error("Erreur lors de la conversion en facture");
     }
@@ -174,7 +192,7 @@ export default function QuoteRowActions({ row, onRefetch }) {
     }
   };
 
-  const isLoading = changingStatus || isDeleting || converting || convertingToPO;
+  const isLoading = changingStatus || isDeleting || convertingToPO;
 
   // Logique pour déterminer quelles actions sont disponibles
   const canConvertToPO = quote.status === QUOTE_STATUS.COMPLETED;
