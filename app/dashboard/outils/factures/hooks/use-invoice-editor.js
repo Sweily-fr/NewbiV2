@@ -915,6 +915,14 @@ export function useInvoiceEditor({
           ""
       );
       setValue("showBankDetails", organization.showBankDetails || false);
+      // Synchroniser les bankDetails au niveau top-level (utilisé par la preview)
+      if (organization.bankIban || organization.bankBic || organization.bankName) {
+        setValue("bankDetails", {
+          iban: organization.bankIban || "",
+          bic: organization.bankBic || "",
+          bankName: organization.bankName || "",
+        });
+      }
       setValue(
         "clientPositionRight",
         organization.invoiceClientPositionRight || false

@@ -1844,9 +1844,9 @@ const UniversalPreviewPDF = ({
             )}
 
           {/* CONDITIONS GÉNÉRALES - masquées pour les avoirs */}
-          {data.termsAndConditions && !isCreditNote && (
+          {(data.termsAndConditions || data.terms) && !isCreditNote && (
             <div className="mb-4 text-[10px] pt-4" data-pdf-section="terms">
-              {data.termsAndConditions.split("\n").map((line, index) =>
+              {(data.termsAndConditions || data.terms).split("\n").map((line, index) =>
                 line.trim() ? (
                   <div
                     key={index}
