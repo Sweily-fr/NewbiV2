@@ -810,6 +810,14 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
               iban: organization.bankIban || "",
               bic: organization.bankBic || "",
             });
+            // Synchroniser les bankDetails au niveau top-level (utilisé par la preview)
+            if (organization.bankIban || organization.bankBic || organization.bankName) {
+              setValue("bankDetails", {
+                iban: organization.bankIban || "",
+                bic: organization.bankBic || "",
+                bankName: organization.bankName || "",
+              });
+            }
 
             // Charger la position du client depuis l'organisation
             setValue("clientPositionRight", organization.quoteClientPositionRight || false);

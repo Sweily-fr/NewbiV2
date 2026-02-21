@@ -793,6 +793,14 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
 
       // Charger showBankDetails depuis l'organisation
       setValue("showBankDetails", organization.showBankDetails || false, { shouldDirty: false });
+      // Synchroniser les bankDetails au niveau top-level (utilisé par la preview)
+      if (organization.bankIban || organization.bankBic || organization.bankName) {
+        setValue("bankDetails", {
+          iban: organization.bankIban || "",
+          bic: organization.bankBic || "",
+          bankName: organization.bankName || "",
+        }, { shouldDirty: false });
+      }
 
       // Charger la position du client depuis l'organisation
       setValue("clientPositionRight", organization.purchaseOrderClientPositionRight || false, { shouldDirty: false });
