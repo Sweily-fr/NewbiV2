@@ -40,7 +40,6 @@ export const GET_CLIENTS = gql`
           fieldId
           value
         }
-        assignedMembers
         isBlocked
         blockedAt
         blockedReason
@@ -92,7 +91,6 @@ export const GET_CLIENT = gql`
         fieldId
         value
       }
-      assignedMembers
       isBlocked
       blockedAt
       blockedReason

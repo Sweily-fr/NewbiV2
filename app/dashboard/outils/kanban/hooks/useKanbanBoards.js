@@ -26,7 +26,7 @@ export const useKanbanBoards = () => {
   const [boardToEdit, setBoardToEdit] = useState(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [formData, setFormData] = useState({ title: "", description: "", clientId: null });
+  const [formData, setFormData] = useState({ title: "", description: "" });
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [selectedTemplateId, setSelectedTemplateId] = useState(null);
 
@@ -130,7 +130,7 @@ export const useKanbanBoards = () => {
   const [createBoard, { loading: creating }] = useMutation(CREATE_BOARD, {
     onCompleted: () => {
       setIsCreateDialogOpen(false);
-      setFormData({ title: "", description: "", clientId: null });
+      setFormData({ title: "", description: "" });
       // La subscription s'occupe de mettre à jour le cache et d'afficher le toast
     },
     onError: (error) => {
@@ -144,7 +144,7 @@ export const useKanbanBoards = () => {
       toast.success("Tableau modifié avec succès");
       setIsEditDialogOpen(false);
       setBoardToEdit(null);
-      setFormData({ title: "", description: "", clientId: null });
+      setFormData({ title: "", description: "" });
       // La subscription s'occupe de mettre à jour le cache
     },
     onError: (error) => {
@@ -252,7 +252,6 @@ export const useKanbanBoards = () => {
           input: {
             title: formData.title.trim(),
             description: formData.description.trim() || null,
-            clientId: formData.clientId || null,
           },
           workspaceId,
         },
@@ -273,7 +272,6 @@ export const useKanbanBoards = () => {
           id: boardToEdit.id,
           title: formData.title.trim(),
           description: formData.description.trim() || null,
-          clientId: formData.clientId || null,
         },
         workspaceId,
       },
@@ -293,7 +291,6 @@ export const useKanbanBoards = () => {
     setFormData({
       title: board.title,
       description: board.description || "",
-      clientId: board.clientId || null,
     });
     setIsEditDialogOpen(true);
   };

@@ -27,7 +27,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
-import { VatRateSelect } from "@/src/components/vat-rate-select";
 import {
   Upload,
   FileText,
@@ -536,11 +535,20 @@ export function PurchaseInvoiceUploadDrawer({
                       <span className="text-sm font-normal text-muted-foreground">
                         Taux TVA
                       </span>
-                      <VatRateSelect
+                      <Select
                         value={editableData.vatRate}
-                        onChange={(v) => handleEditChange("vatRate", String(v))}
-                        className="w-32 h-8 text-sm"
-                      />
+                        onValueChange={(v) => handleEditChange("vatRate", v)}
+                      >
+                        <SelectTrigger className="w-32 h-8 text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="0">0%</SelectItem>
+                          <SelectItem value="5.5">5,5%</SelectItem>
+                          <SelectItem value="10">10%</SelectItem>
+                          <SelectItem value="20">20%</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-normal text-muted-foreground">

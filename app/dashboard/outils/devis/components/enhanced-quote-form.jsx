@@ -364,7 +364,7 @@ export default function EnhancedQuoteForm({
       data.items &&
       data.items.length > 0 &&
       data.items.every(
-        (item) => item.description && item.quantity && item.unitPrice != null && item.unitPrice !== ""
+        (item) => item.description && item.quantity && item.unitPrice
       )
     );
   };
@@ -372,8 +372,8 @@ export default function EnhancedQuoteForm({
   return (
     <div className="flex flex-col h-full w-full">
       {/* Form Content */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0">
-        <div className="space-y-4 pb-20 px-2">
+      <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent min-h-0">
+        <div className="space-y-4 pb-20">
           {/* Étape 1: Détails du document */}
           {currentStep === 1 && (
             <>

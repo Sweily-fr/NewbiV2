@@ -164,7 +164,7 @@ export async function POST(request) {
     <rdf:Description rdf:about="" xmlns:fx="urn:factur-x:pdfa:CrossIndustryDocument:invoice:1p0#">
       <fx:DocumentType>INVOICE</fx:DocumentType>
       <fx:DocumentFileName>${attachmentName}</fx:DocumentFileName>
-      <fx:Version>1.0.07</fx:Version>
+      <fx:Version>1.0</fx:Version>
       <fx:ConformanceLevel>EN16931</fx:ConformanceLevel>
     </rdf:Description>
   </rdf:RDF>

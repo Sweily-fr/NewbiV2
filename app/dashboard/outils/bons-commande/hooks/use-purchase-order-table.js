@@ -289,7 +289,7 @@ export function usePurchaseOrderTable({ data = [], onRefetch }) {
         size: 120,
       },
       {
-        accessorKey: "validUntil",
+        accessorKey: "deliveryDate",
         header: ({ column }) => (
           <div className="flex items-center font-normal px-0 py-2">
             <div
@@ -298,16 +298,18 @@ export function usePurchaseOrderTable({ data = [], onRefetch }) {
                 column.toggleSorting(column.getIsSorted() === "asc")
               }
             >
-              Date de validité
+              Date de livraison
               <ArrowUpDown className="ml-2 h-4 w-4" />
             </div>
           </div>
         ),
         meta: {
-          label: "Date de validité",
+          label: "Date de livraison",
         },
         cell: ({ row }) => {
-          const dateValue = row.original.validUntil;
+          const dateValue = row.original.deliveryDate;
+          const purchaseOrderId = row.original.id;
+          const purchaseOrderNumber = row.original.number;
 
           if (
             dateValue === null ||
@@ -315,21 +317,53 @@ export function usePurchaseOrderTable({ data = [], onRefetch }) {
             dateValue === ""
           ) {
             return (
-              <div className="text-muted-foreground text-sm">Non définie</div>
+              <div className="text-muted-foreground text-sm">Non definie</div>
             );
           }
 
-          const formattedDate = formatDate(dateValue);
-          const isExpired = isDateExpired(dateValue);
+          try {
+            const formattedDate = formatDate(dateValue);
 
-          return (
-            <div className={cn("text-sm", isExpired && "text-red-600")}>
-              {formattedDate}
-              {isExpired && (
-                <div className="text-xs text-red-500">Expirée</div>
-              )}
-            </div>
-          );
+            if (formattedDate === "-") {
+              throw new Error(
+                `Format de date non supporte: ${dateValue} (${typeof dateValue})`
+              );
+            }
+
+            const isExpired = isDateExpired(dateValue);
+
+            return (
+              <div className={cn("text-sm", isExpired && "text-red-600")}>
+                {formattedDate}
+                {isExpired && (
+                  <div className="text-xs text-red-500">Expire</div>
+                )}
+              </div>
+            );
+          } catch (error) {
+            console.error(
+              `[BON DE COMMANDE ${purchaseOrderNumber || purchaseOrderId}] Erreur lors du formatage de la date:`,
+              {
+                error: error.message,
+                value: dateValue,
+                type: typeof dateValue,
+                isString: typeof dateValue === "string",
+                isNumber: typeof dateValue === "number",
+                isDate: dateValue instanceof Date,
+                timestamp:
+                  typeof dateValue === "number" || /^\d+$/.test(dateValue)
+                    ? parseInt(dateValue, 10)
+                    : "N/A",
+              }
+            );
+
+            return (
+              <div className="text-amber-600 text-sm">
+                Format invalide
+                <div className="text-xs">ID: {purchaseOrderNumber || purchaseOrderId}</div>
+              </div>
+            );
+          }
         },
         size: 130,
       },

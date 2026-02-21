@@ -25,8 +25,14 @@ import { Textarea } from "@/src/components/ui/textarea";
 import { useCreateProduct, useUpdateProduct } from "@/src/hooks/useProducts";
 import { toast } from "@/src/components/ui/sonner";
 import { PackagePlusIcon } from "lucide-react";
-import { VatRateSelect } from "@/src/components/vat-rate-select";
 
+// Options prédéfinies pour les champs select
+const VAT_RATES = [
+  { value: "0", label: "0%" },
+  { value: "5.5", label: "5.5%" },
+  { value: "10", label: "10%" },
+  { value: "20", label: "20%" },
+];
 
 // Unités utilisées dans les devis
 const UNITS = [
@@ -299,11 +305,18 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
                         control={control}
                         rules={{ required: "Le taux de TVA est requis" }}
                         render={({ field }) => (
-                          <VatRateSelect
-                            value={field.value}
-                            onChange={field.onChange}
-                            className={errors.vatRate ? "w-full border-red-500" : "w-full"}
-                          />
+                          <Select value={field.value} onValueChange={field.onChange}>
+                            <SelectTrigger className={errors.vatRate ? "w-full border-red-500" : "w-full"}>
+                              <SelectValue placeholder="TVA" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {VAT_RATES.map((rate) => (
+                                <SelectItem key={rate.value} value={rate.value}>
+                                  {rate.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         )}
                       />
                       {errors.vatRate && (

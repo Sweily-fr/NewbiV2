@@ -12,7 +12,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
-import { VatRateSelect } from "@/src/components/vat-rate-select";
 import {
   Card,
   CardContent,
@@ -507,7 +506,7 @@ export default function ItemsSection({
                             />
                             {(errors?.items?.[index]?.unitPrice || getItemError(index, "unitPrice")) && (
                               <p className="text-xs text-destructive">
-                                {errors?.items?.[index]?.unitPrice?.message || "Le prix unitaire doit être positif ou nul"}
+                                {errors?.items?.[index]?.unitPrice?.message || "Le prix unitaire doit être > 0€"}
                               </p>
                             )}
                           </div>
@@ -524,11 +523,23 @@ export default function ItemsSection({
                               name={`items.${index}.vatRate`}
                               defaultValue={20}
                               render={({ field }) => (
-                                <VatRateSelect
-                                  value={field.value}
-                                  onChange={field.onChange}
+                                <Select
+                                  value={field.value?.toString() || "20"}
+                                  onValueChange={(value) =>
+                                    field.onChange(parseFloat(value))
+                                  }
                                   disabled={!canEdit}
-                                />
+                                >
+                                  <SelectTrigger className="w-full">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="0">0% - Exonéré</SelectItem>
+                                    <SelectItem value="5.5">5,5% - Taux réduit</SelectItem>
+                                    <SelectItem value="10">10% - Taux intermédiaire</SelectItem>
+                                    <SelectItem value="20">20% - Taux normal</SelectItem>
+                                  </SelectContent>
+                                </Select>
                               )}
                             />
                           </div>

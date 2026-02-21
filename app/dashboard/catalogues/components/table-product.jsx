@@ -129,7 +129,7 @@ const columns = [
         aria-label="Select row"
       />
     ),
-    size: 40,
+    size: 28,
     enableSorting: false,
     enableHiding: false,
   },

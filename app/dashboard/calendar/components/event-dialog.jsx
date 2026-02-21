@@ -14,15 +14,10 @@ import {
   AlignLeft,
   Send,
   Tag,
-  Plus,
-  Pencil,
-  Trash2,
-  Loader2,
 } from "lucide-react";
 import { format, isBefore } from "date-fns";
 import { fr } from "date-fns/locale";
 import { sanitizeInput, detectInjectionAttempt } from "@/src/lib/validation";
-import { useCalendarColorLabels } from "@/src/hooks/useCalendarColorLabels";
 
 import {
   DefaultEndHour,
@@ -57,17 +52,8 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import { Textarea } from "@/src/components/ui/textarea";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/src/components/ui/dialog";
 import { EmailReminderToggle } from "@/src/components/email-reminder-toggle";
 import { Separator } from "@/src/components/ui/separator";
-import { ColorPicker } from "@/src/components/ui/color-picker";
 import {
   useCalendarConnections,
   usePushEventToCalendar,
@@ -100,15 +86,53 @@ const providerLabels = {
   apple: "Apple Calendar",
 };
 
-export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
-  const { labels, getLabelForColor, updateLabels, updateLoading } = useCalendarColorLabels();
-  const isReadOnly = event?.isReadOnly || false;
+const colorOptions = [
+  {
+    value: "sky",
+    label: "Ciel",
+    bg: "bg-sky-400",
+    ring: "ring-sky-400/30",
+    dot: "bg-sky-400",
+  },
+  {
+    value: "amber",
+    label: "Ambre",
+    bg: "bg-amber-400",
+    ring: "ring-amber-400/30",
+    dot: "bg-amber-400",
+  },
+  {
+    value: "violet",
+    label: "Violet",
+    bg: "bg-violet-400",
+    ring: "ring-violet-400/30",
+    dot: "bg-violet-400",
+  },
+  {
+    value: "rose",
+    label: "Rose",
+    bg: "bg-rose-400",
+    ring: "ring-rose-400/30",
+    dot: "bg-rose-400",
+  },
+  {
+    value: "emerald",
+    label: "Vert",
+    bg: "bg-emerald-400",
+    ring: "ring-emerald-400/30",
+    dot: "bg-emerald-400",
+  },
+  {
+    value: "orange",
+    label: "Orange",
+    bg: "bg-orange-400",
+    ring: "ring-orange-400/30",
+    dot: "bg-orange-400",
+  },
+];
 
-  // State pour la modal d'édition/ajout d'étiquette
-  const [labelDialogOpen, setLabelDialogOpen] = useState(false);
-  const [labelEditIndex, setLabelEditIndex] = useState(null); // null = ajout, number = édition
-  const [labelDialogColor, setLabelDialogColor] = useState("#3B82F6");
-  const [labelDialogText, setLabelDialogText] = useState("");
+export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
+  const isReadOnly = event?.isReadOnly || false;
   const eventSource = event?.source || "newbi";
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -118,7 +142,7 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
   const [endTime, setEndTime] = useState(`${DefaultEndHour}:00`);
   const [allDay, setAllDay] = useState(false);
   const [location, setLocation] = useState("");
-  const [color, setColor] = useState("#3B82F6");
+  const [color, setColor] = useState("sky");
   const [emailReminder, setEmailReminder] = useState({
     enabled: false,
     anticipation: null,
@@ -170,7 +194,7 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
       setEndTime(formatTimeForInput(end));
       setAllDay(event.allDay || false);
       setLocation(event.location || "");
-      setColor(event.color || "#3B82F6");
+      setColor(event.color || "sky");
       setEmailReminder(
         event.emailReminder || { enabled: false, anticipation: null }
       );
@@ -190,7 +214,7 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
     setEndTime(`${DefaultEndHour}:00`);
     setAllDay(false);
     setLocation("");
-    setColor("#3B82F6");
+    setColor("sky");
     setEmailReminder({ enabled: false, anticipation: null });
     setError(null);
     setFieldErrors({});
@@ -332,15 +356,23 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
   };
 
   return (
-    <>
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <SheetContent className="w-full sm:w-[460px] sm:max-w-[460px] flex flex-col p-0">
         {/* Header */}
         <SheetHeader className="px-6 pt-6 pb-0">
           <div className="flex items-center gap-3">
             <CalendarDays
-              className="h-5 w-5 shrink-0"
-              style={{ color }}
+              className={cn(
+                "h-5 w-5 shrink-0",
+                {
+                  "text-sky-400": color === "sky",
+                  "text-amber-400": color === "amber",
+                  "text-violet-400": color === "violet",
+                  "text-rose-400": color === "rose",
+                  "text-emerald-400": color === "emerald",
+                  "text-orange-400": color === "orange",
+                }
+              )}
             />
             <div>
               <SheetTitle className="text-base">
@@ -614,68 +646,23 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
                 <Tag className="h-4 w-4" />
                 <span className="text-sm font-medium">Etiquette</span>
               </div>
-              <div className="flex flex-wrap items-start gap-2">
-                {labels.map((entry, index) => (
-                  <div key={index} className="flex flex-col items-center gap-1">
-                    <button
-                      type="button"
-                      onClick={() => setColor(entry.color)}
-                      className={cn(
-                        "flex flex-col items-center gap-1 rounded-lg px-1.5 py-1.5 transition-all",
-                        color === entry.color ? "bg-muted" : "hover:bg-muted/50"
-                      )}
-                    >
-                      <span
-                        className={cn(
-                          "h-7 w-7 rounded-full transition-all",
-                          color === entry.color
-                            ? "ring-2 ring-offset-2 ring-offset-background"
-                            : "hover:scale-110"
-                        )}
-                        style={{
-                          backgroundColor: entry.color,
-                          ...(color === entry.color ? { '--tw-ring-color': entry.color + '4D' } : {}),
-                        }}
-                      />
-                      <span className={cn(
-                        "text-[10px] leading-tight max-w-[4.5rem] truncate",
-                        color === entry.color ? "text-foreground font-medium" : "text-muted-foreground"
-                      )}>
-                        {entry.label}
-                      </span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setLabelEditIndex(index);
-                        setLabelDialogColor(entry.color);
-                        setLabelDialogText(entry.label);
-                        setLabelDialogOpen(true);
-                      }}
-                      className="p-0.5 rounded hover:bg-muted text-muted-foreground/40 hover:text-foreground transition-colors"
-                    >
-                      <Pencil className="h-3 w-3" />
-                    </button>
-                  </div>
-                ))}
-                {/* Bouton ajouter */}
-                {labels.length < 20 && (
+              <div className="flex items-center gap-2">
+                {colorOptions.map((colorOption) => (
                   <button
+                    key={colorOption.value}
                     type="button"
-                    onClick={() => {
-                      setLabelEditIndex(null);
-                      setLabelDialogColor("#3B82F6");
-                      setLabelDialogText("");
-                      setLabelDialogOpen(true);
-                    }}
-                    className="flex flex-col items-center gap-1 rounded-lg px-1.5 py-1.5 hover:bg-muted/50 transition-all"
-                  >
-                    <span className="h-7 w-7 rounded-full border-2 border-dashed border-muted-foreground/30 flex items-center justify-center">
-                      <Plus className="h-4 w-4 text-muted-foreground/50" />
-                    </span>
-                    <span className="text-[10px] text-muted-foreground">Ajouter</span>
-                  </button>
-                )}
+                    onClick={() => setColor(colorOption.value)}
+                    className={cn(
+                      "h-7 w-7 rounded-full transition-all",
+                      colorOption.dot,
+                      color === colorOption.value
+                        ? "ring-2 ring-offset-2 ring-offset-background " +
+                            colorOption.ring
+                        : "hover:scale-110"
+                    )}
+                    aria-label={colorOption.label}
+                  />
+                ))}
               </div>
             </div>
           )}
@@ -796,95 +783,5 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
         </SheetFooter>
       </SheetContent>
     </Sheet>
-
-    {/* Modal d'ajout / édition d'étiquette */}
-    <Dialog open={labelDialogOpen} onOpenChange={setLabelDialogOpen}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>
-            {labelEditIndex !== null ? "Modifier l'étiquette" : "Nouvelle étiquette"}
-          </DialogTitle>
-          <DialogDescription>
-            {labelEditIndex !== null
-              ? "Modifiez le nom ou la couleur de cette étiquette."
-              : "Choisissez une couleur et donnez un nom à cette étiquette."}
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-4 py-2">
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">Couleur</label>
-            <ColorPicker
-              color={labelDialogColor}
-              onChange={setLabelDialogColor}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">Nom</label>
-            <Input
-              value={labelDialogText}
-              onChange={(e) => setLabelDialogText(e.target.value)}
-              placeholder="Ex: Rendez-vous, Deadline, Personnel..."
-              maxLength={30}
-              autoFocus
-            />
-          </div>
-        </div>
-
-        <DialogFooter className="flex-row justify-between sm:justify-between">
-          {labelEditIndex !== null && labels.length > 1 ? (
-            <Button
-              variant="ghost"
-              onClick={async () => {
-                const newLabels = labels
-                  .filter((_, i) => i !== labelEditIndex)
-                  .map(({ color, label }) => ({ color, label }));
-                await updateLabels(newLabels);
-                setLabelDialogOpen(false);
-              }}
-              disabled={updateLoading}
-              className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20"
-            >
-              <Trash2 className="h-4 w-4 mr-1" />
-              Supprimer
-            </Button>
-          ) : (
-            <div />
-          )}
-          <div className="flex gap-2">
-            <Button variant="ghost" onClick={() => setLabelDialogOpen(false)} disabled={updateLoading}>
-              Annuler
-            </Button>
-            <Button
-              disabled={updateLoading || !labelDialogText.trim()}
-              onClick={async () => {
-                const trimmed = labelDialogText.trim();
-                if (!trimmed) return;
-                let newLabels;
-                if (labelEditIndex !== null) {
-                  newLabels = labels.map((entry, i) =>
-                    i === labelEditIndex
-                      ? { color: labelDialogColor, label: trimmed }
-                      : { color: entry.color, label: entry.label }
-                  );
-                } else {
-                  newLabels = [
-                    ...labels.map(({ color, label }) => ({ color, label })),
-                    { color: labelDialogColor, label: trimmed },
-                  ];
-                }
-                await updateLabels(newLabels);
-                setLabelDialogOpen(false);
-              }}
-            >
-              {updateLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-              {labelEditIndex !== null ? "Enregistrer" : "Ajouter"}
-            </Button>
-          </div>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-    </>
   );
 }

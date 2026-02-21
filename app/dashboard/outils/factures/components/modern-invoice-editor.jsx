@@ -16,9 +16,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useInvoiceEditor } from "../hooks/use-invoice-editor";
-import { useClient } from "@/src/graphql/clientQueries";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import EnhancedInvoiceForm from "./enhanced-invoice-form";
 import InvoiceSettingsView from "./invoice-settings-view";
@@ -39,9 +38,6 @@ export default function ModernInvoiceEditor({
   initialData = null,
 }) {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const clientIdFromUrl = mode === "create" ? searchParams.get("clientId") : null;
-  const { client: preselectedClient } = useClient(clientIdFromUrl);
   const [showSettings, setShowSettings] = useState(false);
   const [organization, setOrganization] = useState(null);
   const [showEditClient, setShowEditClient] = useState(false);
@@ -94,13 +90,6 @@ export default function ModernInvoiceEditor({
     initialData,
     organization,
   });
-
-  // Pré-remplir le client si clientId est dans l'URL
-  useEffect(() => {
-    if (preselectedClient && mode === "create" && !formData?.client) {
-      form.setValue("client", preselectedClient, { shouldDirty: true });
-    }
-  }, [preselectedClient, mode, form]);
 
   // Déterminer si la facture est en lecture seule
   const readOnly =

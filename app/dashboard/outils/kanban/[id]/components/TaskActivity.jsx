@@ -2,8 +2,7 @@ import { useState, useCallback, useRef } from 'react';
 import * as React from 'react';
 import { Button } from '@/src/components/ui/button';
 import { Textarea } from '@/src/components/ui/textarea';
-import { Edit2, Trash2, ImagePlus, X, ZoomIn, Loader2, Flag, Check, Square, Plus } from 'lucide-react';
-import { MentionCommentInput, CommentContent } from '@/src/components/ui/mention-input';
+import { Send, Edit2, Trash2, ImagePlus, ImageMinus, X, ZoomIn, Loader2, Flag, Check, Square, Plus } from 'lucide-react';
 import { Dialog, DialogContent, DialogTrigger, DialogTitle } from '@/src/components/ui/dialog';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/src/components/ui/tabs';
@@ -26,6 +25,7 @@ import { useAssignedMembersInfo } from '@/src/hooks/useAssignedMembersInfo';
 
 const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, boardMembers = [], columns = [], onTaskUpdate }) => {
   const [task, setTask] = useState(initialTask);
+  const [newComment, setNewComment] = useState('');
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editingContent, setEditingContent] = useState('');
   const [commentToDelete, setCommentToDelete] = useState(null);
@@ -33,6 +33,7 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef(null);
+  const textareaRef = useRef(null);
   const scrollContainerRef = useRef(null);
   const { data: session } = useSession();
 
@@ -199,10 +200,9 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
     }
   });
 
-  const handleAddComment = async (contentOverride, mentionedUserIds = [], htmlContent) => {
-    const commentText = contentOverride !== undefined ? contentOverride : '';
+  const handleAddComment = async () => {
     // Permettre l'envoi si texte OU images
-    if (!commentText.trim() && pendingImages.length === 0) return;
+    if (!newComment.trim() && pendingImages.length === 0) return;
 
     const taskId = task.id || task._id;
 
@@ -221,21 +221,11 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
         skipCommentUpdateRef.current = true;
       }
 
-      // Utiliser le HTML si des mentions sont présentes, sinon le texte brut
-      const contentToSend = mentionedUserIds.length > 0 && htmlContent ? htmlContent : commentText.trim() || '';
-
       // 1. Créer le commentaire (contenu vide autorisé si images présentes)
-      const commentInput = { content: contentToSend };
-      if (mentionedUserIds.length > 0) {
-        commentInput.mentionedUserIds = mentionedUserIds;
-      }
-
-      console.log('[Mention Debug] commentInput envoyé:', JSON.stringify(commentInput, null, 2));
-
       const result = await addComment({
         variables: {
           taskId,
-          input: commentInput,
+          input: { content: newComment.trim() || '' },
           workspaceId
         },
       });
@@ -284,6 +274,7 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
       }
 
       // 3. Nettoyer
+      setNewComment('');
       setPendingImages([]);
     } catch (error) {
       console.error('Error adding comment:', error);
@@ -511,40 +502,32 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
       // Peut contenir plusieurs parties séparées par " et "
       const clParts = desc.split(/\s+et\s+a\s+/i);
       const items = [];
-      // Split conditionnel : si ";;" présent → nouveau format, sinon fallback sur "," (rétro-compatibilité)
-      const splitChecklistItems = (str) => {
-        if (str.includes(';;')) {
-          return str.split(';;').map(s => s.trim()).filter(Boolean);
-        }
-        return str.split(',').map(s => s.trim()).filter(Boolean);
-      };
-
       const parseChecklistPart = (part) => {
         // IMPORTANT : décoché AVANT coché, sinon "coché" matche aussi dans "décoché"
         const uncheckMatch = part.match(/^a?\s*décoché\s+(?:les?\s+éléments?|l'élément)\s*:\s*(.+)/i);
         if (uncheckMatch) {
-          splitChecklistItems(uncheckMatch[1]).forEach(name => {
+          uncheckMatch[1].split(',').map(s => s.trim()).filter(Boolean).forEach(name => {
             items.push({ name, type: 'unchecked' });
           });
           return;
         }
         const checkMatch = part.match(/^a?\s*coché\s+(?:les?\s+éléments?|l'élément)\s*:\s*(.+)/i);
         if (checkMatch) {
-          splitChecklistItems(checkMatch[1]).forEach(name => {
+          checkMatch[1].split(',').map(s => s.trim()).filter(Boolean).forEach(name => {
             items.push({ name, type: 'checked' });
           });
           return;
         }
         const addMatch = part.match(/^a?\s*ajouté\s+(?:les?\s+éléments?|l'élément)\s*:\s*(.+)/i);
         if (addMatch) {
-          splitChecklistItems(addMatch[1]).forEach(name => {
+          addMatch[1].split(',').map(s => s.trim()).filter(Boolean).forEach(name => {
             items.push({ name, type: 'added' });
           });
           return;
         }
         const removeMatch = part.match(/^a?\s*supprimé\s+(?:les?\s+éléments?|l'élément)\s*:\s*(.+)/i);
         if (removeMatch) {
-          splitChecklistItems(removeMatch[1]).forEach(name => {
+          removeMatch[1].split(',').map(s => s.trim()).filter(Boolean).forEach(name => {
             items.push({ name, type: 'removed' });
           });
         }
@@ -763,7 +746,7 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
                                     </AlertDialog>
                                   </div>
                                 </div>
-                                {item.content && <CommentContent content={item.content} />}
+                                {item.content && <p className="text-[14px] whitespace-pre-wrap">{item.content}</p>}
                                 {/* Affichage des images du commentaire dans le fil "Tout" */}
                                 {item.images && item.images.length > 0 && (
                                   <div className="grid grid-cols-2 gap-2 mt-2">
@@ -1022,7 +1005,7 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
                               </AlertDialog>
                             </div>
                           </div>
-                          {comment.content && <CommentContent content={comment.content} />}
+                          {comment.content && <p className="text-[14px] whitespace-pre-wrap">{comment.content}</p>}
                           {/* Affichage des images du commentaire */}
                           {comment.images && comment.images.length > 0 && (
                             <div className="grid grid-cols-2 gap-2 mt-2">
@@ -1193,21 +1176,70 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
         </TabsList>
 
         {/* Zone de saisie de commentaire - Sticky en bas */}
-        <div className="pb-3 pl-3 pr-3 pt-1 flex-shrink-0">
-          <MentionCommentInput
-            members={membersData?.organizationMembers || []}
-            onSubmit={handleAddComment}
-            placeholder="Ajouter un commentaire..."
-            disabled={isUploadingImage || addingComment}
-            loading={addingComment || isUploadingImage}
+        <div className="pb-3 pl-3 pr-3 pt-1 space-y-2 flex-shrink-0">
+          <div
+            className={`relative transition-all ${isDragOver ? 'ring-2 ring-primary ring-offset-2 rounded-md' : ''}`}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
-            onPaste={handlePaste}
-            isDragOver={isDragOver}
           >
-            {/* Images en attente + bouton image — rendus dans le children slot */}
-            <div className="flex items-center gap-2 mt-2">
+            <Textarea
+              ref={textareaRef}
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              onPaste={handlePaste}
+              disabled={isUploadingImage || addingComment}
+              placeholder={isDragOver ? "Déposez vos images ici..." : "Ajouter un commentaire... (glissez-déposez des images)"}
+              className={`min-h-[80px] text-sm bg-background border-border ${isDragOver ? 'border-primary' : ''}`}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                  e.preventDefault();
+                  handleAddComment();
+                }
+              }}
+            />
+            {isDragOver && (
+              <div className="absolute inset-0 bg-primary/10 rounded-md flex items-center justify-center pointer-events-none">
+                <div className="text-primary font-medium text-sm flex items-center gap-2">
+                  <ImagePlus className="h-5 w-5" />
+                  Déposez vos images ici
+                </div>
+              </div>
+            )}
+          </div>
+          
+          {/* Images en attente */}
+          {pendingImages.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {pendingImages.map((img, index) => (
+                <div key={index} className="relative group">
+                  <img
+                    src={img.preview}
+                    alt={img.file.name}
+                    className={`w-16 h-16 object-cover rounded-md border border-border ${isUploadingImage ? 'opacity-50' : ''}`}
+                  />
+                  {isUploadingImage ? (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        setPendingImages(prev => prev.filter((_, i) => i !== index));
+                        URL.revokeObjectURL(img.preview);
+                      }}
+                      className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-white text-black border border-gray-200 shadow-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-100"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+          
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-2">
               <input
                 ref={fileInputRef}
                 type="file"
@@ -1238,32 +1270,28 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
                   <ImagePlus className="h-4 w-4" />
                 )}
               </Button>
-              {pendingImages.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {pendingImages.map((img, index) => (
-                    <div key={index} className="relative group">
-                      <img
-                        src={img.preview}
-                        alt={img.file.name}
-                        className={`w-12 h-12 object-cover rounded-md border border-border ${isUploadingImage ? 'opacity-50' : ''}`}
-                      />
-                      {!isUploadingImage && (
-                        <button
-                          onClick={() => {
-                            setPendingImages(prev => prev.filter((_, i) => i !== index));
-                            URL.revokeObjectURL(img.preview);
-                          }}
-                          className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-white text-black border border-gray-200 shadow-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-gray-100"
-                        >
-                          <X className="h-2.5 w-2.5" />
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
+              <span className="text-xs text-muted-foreground">
+                Cmd/Ctrl + Entrée pour envoyer
+              </span>
             </div>
-          </MentionCommentInput>
+            <Button
+              size="sm"
+              onClick={handleAddComment}
+              disabled={(!newComment.trim() && pendingImages.length === 0) || addingComment || isUploadingImage}
+            >
+              {(addingComment || isUploadingImage) ? (
+                <>
+                  <Loader2 className="h-3 w-3 mr-2 animate-spin" />
+                  Envoi...
+                </>
+              ) : (
+                <>
+                  <Send className="h-3 w-3 mr-2" />
+                  Envoyer
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </Tabs>
     </div>

@@ -49,7 +49,7 @@ export const useClientsInList = (workspaceId, listId, page = 1, limit = 10, sear
   const { data, loading, error, refetch } = useQuery(GET_CLIENTS_IN_LIST, {
     variables: { workspaceId, listId, page, limit, search },
     skip: !workspaceId || !listId,
-    fetchPolicy: 'network-only'
+    refetchPolicy: 'network-only'
   });
 
   return {
@@ -268,7 +268,7 @@ export const useClientListsByClient = (workspaceId, clientId) => {
   const { data, loading, error, refetch } = useQuery(GET_CLIENT_LISTS_BY_CLIENT, {
     variables: { workspaceId, clientId },
     skip: !workspaceId || !clientId,
-    fetchPolicy: 'network-only'
+    refetchPolicy: 'network-only'
   });
 
   return {

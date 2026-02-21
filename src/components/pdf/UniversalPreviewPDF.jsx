@@ -413,25 +413,6 @@ const UniversalPreviewPDF = ({
 
   const isInvoice = type === "invoice";
 
-  // Déterminer si une adresse de livraison existe (pour positionner le client au milieu)
-  const hasDeliveryAddress = (() => {
-    const shippingData = isCreditNote
-      ? data.originalInvoice?.shipping
-      : data.shipping;
-    if (
-      shippingData?.shippingAddress &&
-      (isCreditNote || shippingData?.billShipping)
-    )
-      return true;
-    if (
-      !isCreditNote &&
-      data.client?.hasDifferentShippingAddress &&
-      data.client?.shippingAddress
-    )
-      return true;
-    return false;
-  })();
-
   // Fonction utilitaire pour convertir hex en rgba avec opacité
   const hexToRgba = (hex, opacity) => {
     const r = parseInt(hex.slice(1, 3), 16);
@@ -804,7 +785,7 @@ const UniversalPreviewPDF = ({
               </div>
             </div>
 
-            {/* Informations client - Position conditionnelle : milieu si livraison existe, droite si clientPositionRight */}
+            {/* Informations client - Position conditionnelle selon clientPositionRight */}
             {(data.client?.name ||
               data.client?.firstName ||
               data.client?.lastName ||
@@ -815,11 +796,7 @@ const UniversalPreviewPDF = ({
               data.client?.vatNumber) && (
               <div
                 className={
-                  hasDeliveryAddress
-                    ? "col-start-2"
-                    : data.clientPositionRight
-                      ? "col-start-3 text-right"
-                      : ""
+                  data.clientPositionRight ? "col-start-3 text-right" : ""
                 }
               >
                 <div
@@ -872,7 +849,7 @@ const UniversalPreviewPDF = ({
                 (isCreditNote || shippingData?.billShipping)
               ) {
                 return (
-                  <div className="col-start-3 text-right">
+                  <div>
                     <div
                       className="font-medium mb-2 dark:text-[#0A0A0A]"
                       style={{ fontSize: "10px" }}
@@ -906,7 +883,7 @@ const UniversalPreviewPDF = ({
                 data.client?.shippingAddress
               ) {
                 return (
-                  <div className="col-start-3 text-right">
+                  <div>
                     <div
                       className="font-medium mb-2 dark:text-[#0A0A0A]"
                       style={{ fontSize: "10px" }}
@@ -1867,9 +1844,9 @@ const UniversalPreviewPDF = ({
             )}
 
           {/* CONDITIONS GÉNÉRALES - masquées pour les avoirs */}
-          {(data.termsAndConditions || data.terms) && !isCreditNote && (
+          {data.termsAndConditions && !isCreditNote && (
             <div className="mb-4 text-[10px] pt-4" data-pdf-section="terms">
-              {(data.termsAndConditions || data.terms).split("\n").map((line, index) =>
+              {data.termsAndConditions.split("\n").map((line, index) =>
                 line.trim() ? (
                   <div
                     key={index}

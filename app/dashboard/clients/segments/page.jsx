@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
@@ -47,7 +47,6 @@ import {
   EmptyContent,
 } from "@/src/components/ui/empty";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
-import { useOrganizationInvitations } from "@/src/hooks/useOrganizationInvitations";
 import {
   useClientSegments,
   useCreateClientSegment,
@@ -67,10 +66,6 @@ import {
   Building2,
   User,
   ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
-  Search,
 } from "lucide-react";
 
 // Field definitions for the rule builder
@@ -84,7 +79,6 @@ const RULE_FIELDS = [
   { value: "address.city", label: "Ville", type: "text" },
   { value: "address.country", label: "Pays", type: "text" },
   { value: "address.postalCode", label: "Code postal", type: "text" },
-  { value: "assignedMembers", label: "Assigné à", type: "members" },
   { value: "isBlocked", label: "Bloqué", type: "boolean" },
   { value: "isInternational", label: "International", type: "boolean" },
   { value: "createdAt", label: "Date de création", type: "date" },
@@ -113,12 +107,6 @@ const OPERATORS_BY_TYPE = {
     { value: "after", label: "après" },
     { value: "in_last_days", label: "dans les derniers jours" },
   ],
-  members: [
-    { value: "assigned_to", label: "inclut" },
-    { value: "not_assigned_to", label: "n'inclut pas" },
-    { value: "is_empty", label: "aucun assigné" },
-    { value: "is_not_empty", label: "au moins un assigné" },
-  ],
 };
 
 const NO_VALUE_OPERATORS = ["is_true", "is_false", "is_empty", "is_not_empty"];
@@ -134,7 +122,7 @@ function getOperatorsForField(fieldValue) {
 }
 
 // ==================== Rule Row ====================
-function RuleRow({ rule, index, onChange, onRemove, canRemove, members }) {
+function RuleRow({ rule, index, onChange, onRemove, canRemove }) {
   const fieldDef = getFieldDef(rule.field);
   const operators = getOperatorsForField(rule.field);
   const needsValue = !NO_VALUE_OPERATORS.includes(rule.operator);
@@ -180,23 +168,7 @@ function RuleRow({ rule, index, onChange, onRemove, canRemove, members }) {
       </Select>
 
       {/* Value */}
-      {needsValue && fieldDef?.type === "members" ? (
-        <Select
-          value={rule.value || ""}
-          onValueChange={(val) => onChange(index, { ...rule, value: val })}
-        >
-          <SelectTrigger className="w-[200px] h-8 text-xs">
-            <SelectValue placeholder="Sélectionner un membre" />
-          </SelectTrigger>
-          <SelectContent>
-            {members.map((m) => (
-              <SelectItem key={m.id} value={m.id} className="text-xs">
-                {m.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      ) : needsValue && fieldDef?.type === "select" ? (
+      {needsValue && fieldDef?.type === "select" ? (
         <Select
           value={rule.value || ""}
           onValueChange={(val) => onChange(index, { ...rule, value: val })}
@@ -216,7 +188,7 @@ function RuleRow({ rule, index, onChange, onRemove, canRemove, members }) {
         <Input
           value={rule.value || ""}
           onChange={(e) => onChange(index, { ...rule, value: e.target.value })}
-          placeholder={rule.operator === "in_last_days" ? "Nombre de jours" : fieldDef?.type === "date" ? "YYYY-MM-DD" : "Valeur"}
+          placeholder={fieldDef?.type === "date" ? "YYYY-MM-DD" : fieldDef?.type === "date" ? "Nombre de jours" : "Valeur"}
           className="w-[150px] h-8 text-xs"
         />
       ) : null}
@@ -237,8 +209,6 @@ function RuleRow({ rule, index, onChange, onRemove, canRemove, members }) {
 // ==================== Create/Edit Dialog ====================
 function SegmentDialog({ open, onOpenChange, segment, onSubmit, loading }) {
   const isEdit = !!segment;
-  const { getAllCollaborators } = useOrganizationInvitations();
-  const [members, setMembers] = useState([]);
   const [name, setName] = useState(segment?.name || "");
   const [description, setDescription] = useState(segment?.description || "");
   const [matchType, setMatchType] = useState(segment?.matchType || "all");
@@ -248,23 +218,6 @@ function SegmentDialog({ open, onOpenChange, segment, onSubmit, loading }) {
       ? segment.rules.map((r) => ({ field: r.field, operator: r.operator, value: r.value }))
       : [{ field: "type", operator: "equals", value: "COMPANY" }]
   );
-
-  useEffect(() => {
-    if (open) {
-      getAllCollaborators().then((result) => {
-        if (result.success) {
-          setMembers(
-            result.data
-              .filter((c) => c.type === "member")
-              .map((m) => ({
-                id: m.userId || m.id,
-                name: m.user?.name || m.name || m.email,
-              }))
-          );
-        }
-      });
-    }
-  }, [open, getAllCollaborators]);
 
   const handleRuleChange = (index, newRule) => {
     setRules((prev) => prev.map((r, i) => (i === index ? newRule : r)));
@@ -369,7 +322,6 @@ function SegmentDialog({ open, onOpenChange, segment, onSubmit, loading }) {
                   onChange={handleRuleChange}
                   onRemove={handleRuleRemove}
                   canRemove={rules.length > 1}
-                  members={members}
                 />
               ))}
             </div>
@@ -403,22 +355,7 @@ function SegmentDialog({ open, onOpenChange, segment, onSubmit, loading }) {
 
 // ==================== Segment Detail View ====================
 function SegmentDetailView({ segment, onBack }) {
-  const [page, setPage] = useState(1);
-  const [search, setSearch] = useState("");
-  const [searchInput, setSearchInput] = useState("");
-  const limit = 25;
-  const { clients, totalItems, totalPages, loading } = useClientsInSegment(segment.id, page, limit, search);
-
-  const searchTimeoutRef = useRef(null);
-
-  const handleSearchChange = useCallback((value) => {
-    setSearchInput(value);
-    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
-    searchTimeoutRef.current = setTimeout(() => {
-      setSearch(value);
-      setPage(1);
-    }, 300);
-  }, []);
+  const { clients, totalItems, loading } = useClientsInSegment(segment.id, 1, 100);
 
   return (
     <div className="flex flex-col h-[calc(100vh-64px)] overflow-hidden">
@@ -446,8 +383,8 @@ function SegmentDetailView({ segment, onBack }) {
         </Badge>
       </div>
 
-      {/* Rules display + Search */}
-      <div className="px-4 sm:px-6 pb-4 flex-shrink-0 space-y-3">
+      {/* Rules display */}
+      <div className="px-4 sm:px-6 pb-4 flex-shrink-0">
         <div className="flex flex-wrap gap-1.5">
           {segment.rules.map((rule, i) => (
             <Badge key={i} variant="outline" className="text-xs font-normal py-1">
@@ -461,15 +398,6 @@ function SegmentDetailView({ segment, onBack }) {
           <Badge variant="outline" className="text-xs font-normal py-1 bg-muted">
             {segment.matchType === "all" ? "Toutes (ET)" : "Au moins une (OU)"}
           </Badge>
-        </div>
-        <div className="relative max-w-xs">
-          <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            value={searchInput}
-            onChange={(e) => handleSearchChange(e.target.value)}
-            placeholder="Rechercher un contact..."
-            className="h-8 text-sm pl-8"
-          />
         </div>
       </div>
 
@@ -490,9 +418,7 @@ function SegmentDetailView({ segment, onBack }) {
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <Users className="h-10 w-10 text-muted-foreground/40 mx-auto mb-3" />
-            <p className="text-sm text-muted-foreground">
-              {search ? "Aucun contact trouvé pour cette recherche" : "Aucun contact ne correspond à ce segment"}
-            </p>
+            <p className="text-sm text-muted-foreground">Aucun contact ne correspond à ce segment</p>
           </div>
         </div>
       ) : (
@@ -538,53 +464,10 @@ function SegmentDetailView({ segment, onBack }) {
               </tbody>
             </table>
           </div>
-          <div className="flex items-center justify-between px-4 sm:px-6 py-2 border-t border-gray-200 dark:border-gray-800 bg-background flex-shrink-0">
+          <div className="flex items-center px-4 sm:px-6 py-2 border-t border-gray-200 dark:border-gray-800 bg-background flex-shrink-0">
             <p className="text-xs text-muted-foreground">
               {totalItems} contact{totalItems !== 1 ? "s" : ""} dans ce segment
             </p>
-            {totalPages > 1 && (
-              <div className="flex items-center gap-1">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={() => setPage(1)}
-                  disabled={page === 1}
-                >
-                  <ChevronsLeft size={14} />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                >
-                  <ChevronLeft size={14} />
-                </Button>
-                <span className="text-xs text-muted-foreground px-2">
-                  Page {page} sur {totalPages}
-                </span>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={page === totalPages}
-                >
-                  <ChevronRight size={14} />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={() => setPage(totalPages)}
-                  disabled={page === totalPages}
-                >
-                  <ChevronsRight size={14} />
-                </Button>
-              </div>
-            )}
           </div>
         </div>
       )}
@@ -737,7 +620,7 @@ function SegmentsContent() {
                           setDeleteTarget(segment);
                         }}
                       >
-                        <Trash2 className="w-3.5 h-3.5 text-red-600" />
+                        <Trash2 className="w-3.5 h-3.5" />
                         Supprimer
                       </DropdownMenuItem>
                     </DropdownMenuContent>

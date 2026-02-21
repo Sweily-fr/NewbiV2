@@ -55,7 +55,7 @@ import {
   flexRender,
 } from '@tanstack/react-table';
 
-export default function ClientListsView({ workspaceId, lists, onListsUpdated, selectedList: initialSelectedList, onSelectListChange, globalFilter = '', onCreateList, onViewingListChange }) {
+export default function ClientListsView({ workspaceId, lists, onListsUpdated, selectedList: initialSelectedList, onSelectListChange, globalFilter = '', onCreateList }) {
   const router = useRouter();
   const [selectedList, setSelectedList] = useState(initialSelectedList || null);
   const [editingList, setEditingList] = useState(null);
@@ -68,11 +68,6 @@ export default function ClientListsView({ workspaceId, lists, onListsUpdated, se
       setSelectedList(initialSelectedList);
     }
   }, [initialSelectedList]);
-
-  // Notifier le parent quand on entre/sort de la vue détail
-  useEffect(() => {
-    onViewingListChange?.(!!selectedList);
-  }, [selectedList, onViewingListChange]);
 
   const handleDeleteList = async (listId) => {
     try {
@@ -373,8 +368,7 @@ export default function ClientListsView({ workspaceId, lists, onListsUpdated, se
                           return;
                         }
                         
-                        // Afficher les clients de la liste
-                        setSelectedList(row.original);
+                        // Appeler le callback pour changer d'onglet
                         if (onSelectListChange) {
                           onSelectListChange(row.original);
                         }

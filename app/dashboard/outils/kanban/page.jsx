@@ -61,15 +61,12 @@ import {
 } from "@/src/components/ui/popover";
 import { useKanbanBoards } from "./hooks/useKanbanBoards";
 import { useKanbanBoardsTable } from "./hooks/useKanbanBoardsTable";
-import { useClients } from "@/src/graphql/clientQueries";
 
 function KanbanPageContent() {
   const router = useRouter();
   const [boardPreview, setBoardPreview] = React.useState(null);
   const [isDeleteMultipleOpen, setIsDeleteMultipleOpen] = React.useState(false);
   const [isDeletingMultiple, setIsDeletingMultiple] = React.useState(false);
-
-  const { clients } = useClients({ limit: 200 });
 
   const {
     // State
@@ -246,34 +243,6 @@ function KanbanPageContent() {
                     placeholder="Description de la liste (optionnel)"
                     rows={3}
                   />
-                </div>
-                <div className="grid gap-2">
-                  <Label className="text-foreground">
-                    Client (optionnel)
-                  </Label>
-                  <Select
-                    value={formData.clientId || "none"}
-                    onValueChange={(value) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        clientId: value === "none" ? null : value,
-                      }))
-                    }
-                  >
-                    <SelectTrigger className="w-full min-w-0">
-                      <SelectValue placeholder="Aucun client" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Aucun client</SelectItem>
-                      {clients.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.type === "INDIVIDUAL"
-                            ? `${c.firstName || ""} ${c.lastName || ""}`.trim()
-                            : c.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
                 </div>
               </div>
               <DialogFooter>
@@ -608,34 +577,6 @@ function KanbanPageContent() {
                   rows={4}
                   className="rounded-lg resize-none"
                 />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-sm font-semibold text-foreground">
-                  Client (optionnel)
-                </Label>
-                <Select
-                  value={formData.clientId || "none"}
-                  onValueChange={(value) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      clientId: value === "none" ? null : value,
-                    }))
-                  }
-                >
-                  <SelectTrigger className="w-full min-w-0 rounded-lg">
-                    <SelectValue placeholder="Aucun client" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Aucun client</SelectItem>
-                    {clients.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.type === "INDIVIDUAL"
-                          ? `${c.firstName || ""} ${c.lastName || ""}`.trim()
-                          : c.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
               </div>
             </div>
             <DialogFooter className="mt-8 pt-6 border-t">

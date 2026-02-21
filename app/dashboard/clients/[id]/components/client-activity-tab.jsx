@@ -25,15 +25,9 @@ function getActionText(activity) {
   const meta = activity.metadata || {};
   const docNum = meta.documentNumber ? ` ${meta.documentNumber}` : "";
 
-  // Pour "updated", utiliser la description directement comme texte d'action
-  // La description contient déjà "a modifié le nom, l'email..."
-  if (activity.type === "updated" && activity.description) {
-    return activity.description;
-  }
-
   const actions = {
-    created: "a créé le client",
-    updated: "a mis à jour la fiche",
+    created: "a été créé par le système",
+    updated: "a été mis à jour",
     invoice_created: `a créé la facture${docNum}`,
     invoice_status_changed: `a modifié le statut de la facture${docNum}`,
     quote_created: `a créé le devis${docNum}`,
@@ -45,9 +39,6 @@ function getActionText(activity) {
     document_email_sent: `a envoyé un email${docNum ? ` pour${docNum}` : ""}`,
     invoice_reminder_sent: `a envoyé une relance${docNum ? ` pour${docNum}` : ""}`,
     reminder_created: "a créé un rappel",
-    crm_email_sent: `a reçu un email automatique${meta.automationName ? ` "${meta.automationName}"` : ""}`,
-    blocked: "a été bloqué",
-    unblocked: "a été débloqué",
   };
   return actions[activity.type] || "a effectué une action";
 }
@@ -96,8 +87,7 @@ function formatRelativeDate(dateString) {
   return `il y a ${Math.floor(diffD / 365)} an${Math.floor(diffD / 365) > 1 ? "s" : ""}`;
 }
 
-const isSystemType = (type) =>
-  type === "crm_email_sent" || type === "blocked" || type === "unblocked";
+const isSystemType = (type) => type === "created" || type === "updated";
 
 const FILTER_TYPES = [
   { label: "Tout", value: null },
@@ -141,7 +131,7 @@ export default function ClientActivityTab({ client }) {
         if (filterType === "invoice")
           return item.type.startsWith("invoice") || item.type === "credit_note_created";
         if (filterType === "quote") return item.type.startsWith("quote");
-        if (filterType === "email") return item.type === "document_email_sent" || item.type === "crm_email_sent";
+        if (filterType === "email") return item.type === "document_email_sent";
         if (filterType === "note") return item.type.startsWith("note");
         if (filterType === "reminder")
           return item.type === "reminder_created" || item.type === "invoice_reminder_sent";
@@ -280,14 +270,6 @@ export default function ClientActivityTab({ client }) {
                             const meta = item.metadata || {};
                             const actionText = getActionText(item);
                             const isSystem = isSystemType(item.type);
-                            // Pour les types système, afficher le nom du client (c'est le sujet de l'action)
-                            // Pour les actions utilisateur, afficher le nom de l'utilisateur qui a fait l'action
-                            const displayName = isSystem
-                              ? client?.name || "Client"
-                              : item.userName || "Système";
-                            // Ne pas afficher la description séparément quand elle est déjà dans le texte d'action
-                            const hideDescription =
-                              item.type === "updated" || item.type === "crm_email_sent";
 
                             return (
                               <div
@@ -317,7 +299,7 @@ export default function ClientActivityTab({ client }) {
                                   <div className="flex items-baseline justify-between gap-4">
                                     <p className="text-sm">
                                       <span className="font-medium text-[#242529] dark:text-foreground">
-                                        {displayName}
+                                        {item.userName || "Système"}
                                       </span>{" "}
                                       <span className="text-[#737373] dark:text-muted-foreground">
                                         {actionText}
@@ -344,8 +326,8 @@ export default function ClientActivityTab({ client }) {
                                     </div>
                                   )}
 
-                                  {/* Description for non-note types (sauf quand déjà dans le texte d'action) */}
-                                  {item.type !== "note_added" && !hideDescription && item.description && (
+                                  {/* Description for non-note types */}
+                                  {item.type !== "note_added" && item.description && (
                                     <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
                                       {item.description}
                                     </p>

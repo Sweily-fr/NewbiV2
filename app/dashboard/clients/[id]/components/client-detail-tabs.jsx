@@ -13,13 +13,19 @@ import {
   StickyNote,
   FileText,
   ClipboardList,
-  Package,
+  FolderOpen,
 } from "lucide-react";
+import {
+  Empty,
+  EmptyMedia,
+  EmptyHeader,
+  EmptyTitle,
+  EmptyDescription,
+} from "@/src/components/ui/empty";
 import ClientActivityTab from "./client-activity-tab";
 import ClientNotesTab from "./client-notes-tab";
 import ClientInvoicesTab from "./client-invoices-tab";
 import ClientQuotesTab from "./client-quotes-tab";
-import ClientPurchaseOrdersTab from "./client-purchase-orders-tab";
 
 const tabTriggerClass =
   "relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground hover:shadow-[inset_0_0_0_1px_#EEEFF1] dark:hover:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]";
@@ -29,14 +35,13 @@ export default function ClientDetailTabs({
   client,
   invoices = [],
   quotes = [],
-  purchaseOrders = [],
   workspaceId,
   onClientUpdate,
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const validTabs = ["activity", "notes", "invoices", "quotes", "purchaseorders"];
+  const validTabs = ["activity", "notes", "invoices", "quotes", "documents"];
   const tabParam = searchParams.get("tab");
   const activeTab = validTabs.includes(tabParam) ? tabParam : "activity";
 
@@ -59,11 +64,6 @@ export default function ClientDetailTabs({
   const clientQuotesCount = useMemo(
     () => quotes.filter((q) => q.client?.id === client.id).length,
     [quotes, client.id]
-  );
-
-  const clientPurchaseOrdersCount = useMemo(
-    () => purchaseOrders.filter((po) => po.client?.id === client.id).length,
-    [purchaseOrders, client.id]
   );
 
   const notesCount = client?.notes?.length || 0;
@@ -108,14 +108,9 @@ export default function ClientDetailTabs({
               </span>
             )}
           </TabsTrigger>
-          <TabsTrigger value="purchaseorders" className={tabTriggerClass}>
-            <Package className="h-3.5 w-3.5" />
-            Bons de commande
-            {clientPurchaseOrdersCount > 0 && (
-              <span className="text-[10px] leading-none bg-gray-100 dark:bg-gray-800 text-muted-foreground rounded px-1 py-0.5">
-                {clientPurchaseOrdersCount}
-              </span>
-            )}
+          <TabsTrigger value="documents" className={tabTriggerClass}>
+            <FolderOpen className="h-3.5 w-3.5" />
+            Documents
           </TabsTrigger>
         </TabsList>
       </div>
@@ -153,10 +148,22 @@ export default function ClientDetailTabs({
       </TabsContent>
 
       <TabsContent
-        value="purchaseorders"
+        value="documents"
         className="flex-1 min-h-0 mt-0 overflow-auto data-[state=inactive]:hidden"
       >
-        <ClientPurchaseOrdersTab purchaseOrders={purchaseOrders} clientId={client.id} />
+        <div className="flex items-center justify-center py-16">
+          <Empty>
+            <EmptyMedia variant="icon">
+              <FolderOpen />
+            </EmptyMedia>
+            <EmptyHeader>
+              <EmptyTitle>Aucun document</EmptyTitle>
+              <EmptyDescription>
+                Ce client n'a pas encore de document.
+              </EmptyDescription>
+            </EmptyHeader>
+          </Empty>
+        </div>
       </TabsContent>
     </Tabs>
   );

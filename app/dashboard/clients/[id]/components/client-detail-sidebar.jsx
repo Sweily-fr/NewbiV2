@@ -4,12 +4,20 @@ import { useState, useMemo } from "react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/src/components/ui/tabs";
+import {
   Collapsible,
   CollapsibleTrigger,
   CollapsibleContent,
 } from "@/src/components/ui/collapsible";
 import {
   ChevronDown,
+  LayoutGrid,
+  MessageCircle,
   User,
   Phone,
   Mail,
@@ -25,16 +33,12 @@ import {
   List,
   Tags,
   Pencil,
-  Type,
-  AlignLeft,
-  Calendar,
-  CheckSquare,
-  CheckCircle,
-  Link,
 } from "lucide-react";
 import { Badge } from "@/src/components/ui/badge";
 import { Button } from "@/src/components/ui/button";
-import { useClientCustomFields } from "@/src/hooks/useClientCustomFields";
+
+const tabTriggerClass =
+  "relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground hover:shadow-[inset_0_0_0_1px_#EEEFF1] dark:hover:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]";
 
 function SidebarSection({ title, defaultOpen = true, children }) {
   return (
@@ -65,68 +69,8 @@ function InfoRow({ icon: Icon, label, value, valueClassName }) {
   );
 }
 
-const CUSTOM_FIELD_ICONS = {
-  TEXT: Type,
-  TEXTAREA: AlignLeft,
-  NUMBER: Hash,
-  DATE: Calendar,
-  SELECT: ChevronDown,
-  MULTISELECT: CheckSquare,
-  CHECKBOX: CheckCircle,
-  URL: Link,
-  EMAIL: Mail,
-  PHONE: Phone,
-};
-
-function formatCustomFieldValue(field, value) {
-  if (value === null || value === undefined || value === "") return null;
-
-  switch (field.fieldType) {
-    case "CHECKBOX":
-      return value === true || value === "true" ? "Oui" : "Non";
-    case "DATE": {
-      try {
-        const [year, month, day] = String(value).split("-").map(Number);
-        if (!year || !month || !day) return String(value);
-        return format(new Date(year, month - 1, day), "d MMM yyyy", { locale: fr });
-      } catch {
-        return String(value);
-      }
-    }
-    case "SELECT": {
-      const option = field.options?.find((o) => o.value === value);
-      return option?.label || String(value);
-    }
-    case "MULTISELECT": {
-      let values = value;
-      if (typeof value === "string") {
-        try { values = JSON.parse(value); } catch { values = [value]; }
-      }
-      if (!Array.isArray(values) || values.length === 0) return null;
-      return values;
-    }
-    default:
-      return String(value);
-  }
-}
-
-export default function ClientDetailSidebar({ client, invoices = [], workspaceId, onEdit }) {
+export default function ClientDetailSidebar({ client, invoices = [], onEdit }) {
   const [showMore, setShowMore] = useState(false);
-  const { fields: customFieldDefs } = useClientCustomFields(workspaceId);
-
-  const customFieldsDisplay = useMemo(() => {
-    if (!client?.customFields?.length || !customFieldDefs?.length) return [];
-    return client.customFields
-      .map((cf) => {
-        const fieldDef = customFieldDefs.find((f) => f.id === cf.fieldId);
-        if (!fieldDef || !fieldDef.isActive) return null;
-        const formatted = formatCustomFieldValue(fieldDef, cf.value);
-        if (formatted === null) return null;
-        return { fieldDef, value: formatted };
-      })
-      .filter(Boolean)
-      .sort((a, b) => (a.fieldDef.order ?? 0) - (b.fieldDef.order ?? 0));
-  }, [client?.customFields, customFieldDefs]);
 
   const displayName =
     client.type === "INDIVIDUAL" && (client.firstName || client.lastName)
@@ -178,12 +122,41 @@ export default function ClientDetailSidebar({ client, invoices = [], workspaceId
     }
   }, [client.createdAt]);
 
+  const commentsCount = client?.comments?.length || 0;
+
   return (
-    <div className="w-[460px] border-l border-[#eeeff1] dark:border-[#232323] hidden lg:flex flex-col flex-shrink-0 overflow-hidden">
-      <div className="flex-1 min-h-0 overflow-y-auto">
+    <div className="w-[460px] border-l border-[#eeeff1] dark:border-[#232323] hidden lg:flex flex-col flex-shrink-0 overflow-hidden sidebar-tabs">
+      <style>{`
+        .sidebar-tabs [data-slot="tabs-trigger"][data-state="active"] {
+          text-shadow: 0.015em 0 currentColor, -0.015em 0 currentColor;
+        }
+      `}</style>
+      <Tabs defaultValue="details" className="flex flex-col flex-1 min-h-0">
+        <div className="flex-shrink-0 border-b border-[#eeeff1] dark:border-[#232323] pt-2 pb-[9px]">
+          <TabsList className="h-auto rounded-none bg-transparent p-0 w-full justify-start px-4 gap-1.5">
+            <TabsTrigger value="details" className={tabTriggerClass}>
+              <LayoutGrid className="h-3.5 w-3.5" />
+              Détails
+            </TabsTrigger>
+            <TabsTrigger value="comments" className={tabTriggerClass}>
+              <MessageCircle className="h-3.5 w-3.5" />
+              Commentaires
+              {commentsCount > 0 && (
+                <span className="text-[10px] leading-none bg-gray-100 dark:bg-gray-800 text-muted-foreground rounded px-1 py-0.5">
+                  {commentsCount}
+                </span>
+              )}
+            </TabsTrigger>
+          </TabsList>
+        </div>
+
+        <TabsContent
+          value="details"
+          className="flex-1 min-h-0 mt-0 overflow-y-auto data-[state=inactive]:hidden"
+        >
           {/* Contact information */}
           <div className="flex items-center justify-between px-5 pt-3">
-            <span className="text-sm font-medium text-[#242529] dark:text-foreground">Détails</span>
+            <span className="text-sm font-medium text-[#242529] dark:text-foreground">Informations</span>
             <Button
               variant="outline"
               onClick={onEdit}
@@ -225,44 +198,6 @@ export default function ClientDetailSidebar({ client, invoices = [], workspaceId
                   <InfoRow icon={MapPin} label="Adresse" value={formattedAddress} />
                   <InfoRow icon={Hash} label="SIRET" value={client.siret} />
                   <InfoRow icon={Receipt} label="N° TVA" value={client.vatNumber} />
-                  {customFieldsDisplay.map(({ fieldDef, value }) => {
-                    const FieldIcon = CUSTOM_FIELD_ICONS[fieldDef.fieldType] || Type;
-                    return fieldDef.fieldType === "MULTISELECT" && Array.isArray(value) ? (
-                      <div key={fieldDef.id} className="flex items-center justify-between py-[7px]">
-                        <div className="flex items-center gap-2.5 flex-shrink-0">
-                          <FieldIcon className="h-3.5 w-3.5 text-[#505154] dark:text-muted-foreground" />
-                          <span className="text-[13px] text-[#505154] dark:text-muted-foreground">{fieldDef.name}</span>
-                        </div>
-                        <div className="flex flex-wrap gap-1 justify-end max-w-[200px]">
-                          {value.map((val) => {
-                            const option = fieldDef.options?.find((o) => o.value === val);
-                            return (
-                              <Badge key={val} variant="outline" className="text-xs font-normal">
-                                {option?.label || val}
-                              </Badge>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    ) : fieldDef.fieldType === "URL" ? (
-                      <div key={fieldDef.id} className="flex items-center justify-between py-[7px]">
-                        <div className="flex items-center gap-2.5 flex-shrink-0">
-                          <FieldIcon className="h-3.5 w-3.5 text-[#505154] dark:text-muted-foreground" />
-                          <span className="text-[13px] text-[#505154] dark:text-muted-foreground">{fieldDef.name}</span>
-                        </div>
-                        <a
-                          href={String(value).startsWith("http") ? value : `https://${value}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-[13px] text-[#5a50ff] hover:underline text-right max-w-[200px] truncate"
-                        >
-                          {value}
-                        </a>
-                      </div>
-                    ) : (
-                      <InfoRow key={fieldDef.id} icon={FieldIcon} label={fieldDef.name} value={value} />
-                    );
-                  })}
                 </>
               )}
             </div>
@@ -335,8 +270,17 @@ export default function ClientDetailSidebar({ client, invoices = [], workspaceId
               )}
             </div>
           </SidebarSection>
+        </TabsContent>
 
-      </div>
+        <TabsContent
+          value="comments"
+          className="flex-1 min-h-0 mt-0 overflow-y-auto data-[state=inactive]:hidden"
+        >
+          <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
+            Aucun commentaire pour le moment
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

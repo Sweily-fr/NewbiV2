@@ -28,14 +28,6 @@ export const GET_BOARDS = gql`
       id
       title
       description
-      clientId
-      client {
-        id
-        name
-        firstName
-        lastName
-        type
-      }
       totalBillableAmount
       createdAt
       updatedAt
@@ -49,14 +41,6 @@ export const GET_BOARD = gql`
       id
       title
       description
-      clientId
-      client {
-        id
-        name
-        firstName
-        lastName
-        type
-      }
       members {
         id
         userId
@@ -201,14 +185,6 @@ export const CREATE_BOARD = gql`
       id
       title
       description
-      clientId
-      client {
-        id
-        name
-        firstName
-        lastName
-        type
-      }
       totalBillableAmount
       createdAt
       updatedAt
@@ -222,14 +198,6 @@ export const UPDATE_BOARD = gql`
       id
       title
       description
-      clientId
-      client {
-        id
-        name
-        firstName
-        lastName
-        type
-      }
       totalBillableAmount
       createdAt
       updatedAt
@@ -539,7 +507,6 @@ export const TASK_FRAGMENT = gql`
       userName
       userImage
       content
-      mentions
       images {
         id
         key
@@ -610,14 +577,6 @@ export const BOARD_FRAGMENT = gql`
     id
     title
     description
-    clientId
-    client {
-      id
-      name
-      firstName
-      lastName
-      type
-    }
     totalBillableAmount
     createdAt
     updatedAt
@@ -1517,14 +1476,6 @@ export const CREATE_BOARD_FROM_TEMPLATE = gql`
       id
       title
       description
-      clientId
-      client {
-        id
-        name
-        firstName
-        lastName
-        type
-      }
       totalBillableAmount
       createdAt
       updatedAt

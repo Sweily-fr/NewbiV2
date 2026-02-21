@@ -328,30 +328,6 @@ export default function TableClients({
 
   const debouncedGlobalFilter = useDebouncedValue(globalFilter, 300);
 
-  // Appliquer le filtre externe au filtre de colonne quand useProvidedClients est true
-  useEffect(() => {
-    if (useProvidedClients && externalGlobalFilter !== undefined) {
-      setColumnFilters((prev) => {
-        const otherFilters = prev.filter((f) => f.id !== "name");
-        if (externalGlobalFilter) {
-          return [...otherFilters, { id: "name", value: externalGlobalFilter }];
-        }
-        return otherFilters;
-      });
-    }
-  }, [useProvidedClients, externalGlobalFilter]);
-
-  // Appliquer le filtre de type externe (depuis la page parente)
-  useEffect(() => {
-    setColumnFilters((prev) => {
-      const otherFilters = prev.filter((f) => f.id !== "type");
-      if (externalSelectedTypes.length > 0) {
-        return [...otherFilters, { id: "type", value: externalSelectedTypes }];
-      }
-      return otherFilters;
-    });
-  }, [externalSelectedTypes]);
-
   // Utilisation du hook pour récupérer les clients ou utilisation des clients passés en props
   const hookResult = useClients(
     pagination.pageIndex + 1,
@@ -493,9 +469,8 @@ export default function TableClients({
     getSortedRowModel: getSortedRowModel(),
     onSortingChange: setSorting,
     enableSortingRemoval: false,
-    ...(useProvidedClients
-      ? { getPaginationRowModel: getPaginationRowModel() }
-      : { manualPagination: true, pageCount: totalPages }),
+    manualPagination: true,
+    pageCount: totalPages,
     onPaginationChange: setPagination,
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
@@ -791,17 +766,12 @@ export default function TableClients({
         {/* Pagination - Fixe en bas sur desktop */}
         <div className="flex items-center justify-between px-4 sm:px-6 py-2 border-t border-gray-200 dark:border-gray-800 bg-background flex-shrink-0">
           <div className="flex-1 text-xs font-normal text-muted-foreground">
-            {(() => {
-              const displayTotal = useProvidedClients
-                ? table.getFilteredRowModel().rows.length
-                : totalItems || 0;
-              const start = pagination.pageIndex * pagination.pageSize + 1;
-              const end = Math.min(
-                (pagination.pageIndex + 1) * pagination.pageSize,
-                displayTotal
-              );
-              return `${start}-${end} sur ${displayTotal}`;
-            })()}
+            {pagination.pageIndex * pagination.pageSize + 1}-
+            {Math.min(
+              (pagination.pageIndex + 1) * pagination.pageSize,
+              totalItems || 0
+            )}{" "}
+            sur {totalItems || 0}
           </div>
           <div className="flex items-center space-x-4 lg:space-x-6">
             <div className="flex items-center gap-1.5">
@@ -827,7 +797,7 @@ export default function TableClients({
               </Select>
             </div>
             <div className="flex items-center whitespace-nowrap text-xs font-normal">
-              Page {pagination.pageIndex + 1} sur {useProvidedClients ? (table.getPageCount() || 1) : (totalPages || 1)}
+              Page {pagination.pageIndex + 1} sur {totalPages || 1}
             </div>
             <Pagination>
               <PaginationContent>
@@ -1125,7 +1095,6 @@ export default function TableClients({
 
 function RowActions({ row, onEdit, onSelectList, workspaceId }) {
   const client = row.original;
-  const router = useRouter();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const { deleteClient } = useDeleteClient();
   const { lists } = useClientListsByClient(workspaceId || "", client.id);
@@ -1237,13 +1206,7 @@ function RowActions({ row, onEdit, onSelectList, workspaceId }) {
                   {lists.map((list) => (
                     <DropdownMenuItem
                       key={list.id}
-                      onClick={() => {
-                        if (onSelectList) {
-                          onSelectList(list);
-                        } else {
-                          router.push(`/dashboard/clients/listes?listId=${list.id}`);
-                        }
-                      }}
+                      onClick={() => onSelectList?.(list)}
                       className="flex items-center gap-2"
                     >
                       <div

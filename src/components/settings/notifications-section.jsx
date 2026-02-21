@@ -608,7 +608,7 @@ export function NotificationsSection() {
             <div className="text-center py-8 text-sm text-muted-foreground">
               <ClipboardList className="w-12 h-12 mx-auto mb-3 text-muted-foreground/50" />
               <p>Aucune notification d&apos;activité</p>
-              <p className="text-xs mt-1">Les assignations et mentions apparaîtront ici</p>
+              <p className="text-xs mt-1">Les assignations de tâches apparaîtront ici</p>
             </div>
           ) : (
             <div className="space-y-0 divide-y divide-border/50">
@@ -655,39 +655,22 @@ export function NotificationsSection() {
                             <span className="font-medium">
                               {notification.data?.actorName || "Quelqu'un"}
                             </span>{" "}
-                            {notification.type === "MENTION" ? (
-                              <>
-                                <span className="font-normal">
-                                  vous a mentionné dans un commentaire sur
-                                </span>{" "}
-                                <span className="font-medium">
-                                  {notification.data?.taskTitle || "une tâche"}
-                                </span>
-                              </>
-                            ) : (
-                              <>
-                                <span className="font-normal">
-                                  vous a assigné à
-                                </span>{" "}
-                                <span className="font-medium">
-                                  {notification.data?.taskTitle || "une tâche"}
-                                </span>
-                              </>
-                            )}
+                            <span className="font-normal">
+                              vous a assigné à
+                            </span>{" "}
+                            <span className="font-medium">
+                              {notification.data?.taskTitle || "une tâche"}
+                            </span>
                           </p>
                         </div>
                         <div className="flex items-center gap-2 mt-1 flex-wrap">
                           <p className="text-xs text-muted-foreground">
                             📋 {notification.data?.boardName || "Tableau"}
                           </p>
-                          {notification.data?.columnName && (
-                            <>
-                              <span className="text-xs text-muted-foreground">•</span>
-                              <p className="text-xs text-muted-foreground">
-                                📁 {notification.data?.columnName}
-                              </p>
-                            </>
-                          )}
+                          <span className="text-xs text-muted-foreground">•</span>
+                          <p className="text-xs text-muted-foreground">
+                            📁 {notification.data?.columnName || "Colonne"}
+                          </p>
                         </div>
                       </div>
 

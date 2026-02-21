@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback, useState, useMemo, useRef } from "react";
+import { useEffect, useCallback, useState, useMemo } from "react";
 import { useForm, FormProvider, useWatch } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "@/src/components/ui/sonner";
@@ -35,10 +35,6 @@ export function useInvoiceEditor({
   // Error handler
   const { handleError } = useErrorHandler();
   const [validationErrors, setValidationErrors] = useState({});
-
-  // Refs pour lier la facture au BC/devis source lors de la création
-  const sourcePurchaseOrderIdRef = useRef(null);
-  const sourceQuoteIdRef = useRef(null);
 
   // GraphQL hooks
   const { invoice: existingInvoice, loading: loadingInvoice } =
@@ -549,7 +545,8 @@ export function useInvoiceEditor({
               (item.description && item.description.trim() !== "") ||
               (item.unitPrice !== undefined &&
                 item.unitPrice !== null &&
-                item.unitPrice !== "") ||
+                item.unitPrice !== "" &&
+                item.unitPrice !== 0) ||
               (item.quantity !== undefined &&
                 item.quantity !== null &&
                 item.quantity !== "" &&
@@ -604,10 +601,10 @@ export function useInvoiceEditor({
                 priceValue === null ||
                 priceValue === "" ||
                 isNaN(parseFloat(priceValue)) ||
-                parseFloat(priceValue) < 0;
+                parseFloat(priceValue) <= 0;
 
               if (isInvalid) {
-                itemErrors.push("prix unitaire invalide");
+                itemErrors.push("prix unitaire doit être > 0€");
                 fields.push("unitPrice");
               }
             }
@@ -835,16 +832,10 @@ export function useInvoiceEditor({
   }, [existingInvoice, mode, reset, getValues]);
 
   // Set next invoice number for new invoices
-  // Utiliser un ref pour ne pas écraser le numéro quand loading toggle
-  const prevNextInvoiceNumberRef = useRef(null);
   useEffect(() => {
     if (mode === "create" && nextInvoiceNumber && !numberLoading) {
-      // Seulement si nextInvoiceNumber a réellement changé
-      if (prevNextInvoiceNumberRef.current !== nextInvoiceNumber) {
-        const formattedNumber = String(nextInvoiceNumber).padStart(4, '0');
-        setValue("number", formattedNumber, { shouldValidate: false, shouldDirty: false });
-        prevNextInvoiceNumberRef.current = nextInvoiceNumber;
-      }
+      const formattedNumber = String(nextInvoiceNumber).padStart(4, '0');
+      setValue("number", formattedNumber, { shouldValidate: false, shouldDirty: false });
     }
   }, [mode, nextInvoiceNumber, numberLoading, setValue]);
 
@@ -918,14 +909,6 @@ export function useInvoiceEditor({
           ""
       );
       setValue("showBankDetails", organization.showBankDetails || false);
-      // Synchroniser les bankDetails au niveau top-level (utilisé par la preview)
-      if (organization.bankIban || organization.bankBic || organization.bankName) {
-        setValue("bankDetails", {
-          iban: organization.bankIban || "",
-          bic: organization.bankBic || "",
-          bankName: organization.bankName || "",
-        });
-      }
       setValue(
         "clientPositionRight",
         organization.invoiceClientPositionRight || false
@@ -935,9 +918,6 @@ export function useInvoiceEditor({
       if (organization.invoicePrefix) {
         setValue("prefix", organization.invoicePrefix, { shouldDirty: false });
       }
-
-      // Note: le numéro séquentiel est géré par l'effet nextInvoiceNumber
-      // Le startNumber de l'org est uniquement utilisé dans la vue paramètres (invoice-settings-view)
 
       // Marquer le formulaire comme initialisé après un court délai pour s'assurer que tous les setValue sont terminés
       setTimeout(() => {
@@ -1005,94 +985,6 @@ export function useInvoiceEditor({
           sessionStorage.removeItem('kanbanInvoiceItems');
         } catch (e) {
           sessionStorage.removeItem('kanbanInvoiceItems');
-        }
-      }
-    }
-  }, [mode, isFormInitialized, setValue]);
-
-  // Pre-fill from Purchase Order conversion (via sessionStorage)
-  useEffect(() => {
-    if (mode === 'create' && isFormInitialized) {
-      const poData = sessionStorage.getItem('purchaseOrderInvoiceData');
-      if (poData) {
-        try {
-          const po = JSON.parse(poData);
-          sessionStorage.removeItem('purchaseOrderInvoiceData');
-          sourcePurchaseOrderIdRef.current = po.sourcePurchaseOrderId;
-
-          if (po.client) setValue('client', po.client);
-          if (po.items?.length > 0) {
-            setValue('items', po.items.map(item => ({
-              description: item.description || '',
-              quantity: item.quantity || 1,
-              unitPrice: item.unitPrice || 0,
-              vatRate: item.vatRate ?? 0,
-              unit: item.unit || '',
-              discount: item.discount || 0,
-              discountType: item.discountType || 'PERCENTAGE',
-              details: item.details || '',
-              vatExemptionText: item.vatExemptionText || '',
-              progressPercentage: item.progressPercentage ?? 100,
-            })));
-          }
-          if (po.discount != null) setValue('discount', po.discount);
-          if (po.discountType) setValue('discountType', po.discountType);
-          if (po.customFields?.length > 0) {
-            setValue('customFields', po.customFields.map(cf => ({
-              name: cf.key || cf.name || '', value: cf.value || '',
-            })));
-          }
-          if (po.shipping) setValue('shipping', po.shipping);
-          if (po.purchaseOrderNumber) setValue('purchaseOrderNumber', po.purchaseOrderNumber);
-          if (po.isReverseCharge != null) setValue('isReverseCharge', po.isReverseCharge);
-          if (po.retenueGarantie != null) setValue('retenueGarantie', po.retenueGarantie);
-          if (po.escompte != null) setValue('escompte', po.escompte);
-        } catch (e) {
-          sessionStorage.removeItem('purchaseOrderInvoiceData');
-        }
-      }
-    }
-  }, [mode, isFormInitialized, setValue]);
-
-  // Pre-fill from Quote conversion (via sessionStorage)
-  useEffect(() => {
-    if (mode === 'create' && isFormInitialized) {
-      const quoteData = sessionStorage.getItem('quoteInvoiceData');
-      if (quoteData) {
-        try {
-          const q = JSON.parse(quoteData);
-          sessionStorage.removeItem('quoteInvoiceData');
-          sourceQuoteIdRef.current = q.sourceQuoteId;
-
-          if (q.client) setValue('client', q.client);
-          if (q.items?.length > 0) {
-            setValue('items', q.items.map(item => ({
-              description: item.description || '',
-              quantity: item.quantity || 1,
-              unitPrice: item.unitPrice || 0,
-              vatRate: item.vatRate ?? 0,
-              unit: item.unit || '',
-              discount: item.discount || 0,
-              discountType: item.discountType || 'PERCENTAGE',
-              details: item.details || '',
-              vatExemptionText: item.vatExemptionText || '',
-              progressPercentage: item.progressPercentage ?? 100,
-            })));
-          }
-          if (q.discount != null) setValue('discount', q.discount);
-          if (q.discountType) setValue('discountType', q.discountType);
-          if (q.customFields?.length > 0) {
-            setValue('customFields', q.customFields.map(cf => ({
-              name: cf.key || cf.name || '', value: cf.value || '',
-            })));
-          }
-          if (q.shipping) setValue('shipping', q.shipping);
-          if (q.purchaseOrderNumber) setValue('purchaseOrderNumber', q.purchaseOrderNumber);
-          if (q.isReverseCharge != null) setValue('isReverseCharge', q.isReverseCharge);
-          if (q.retenueGarantie != null) setValue('retenueGarantie', q.retenueGarantie);
-          if (q.escompte != null) setValue('escompte', q.escompte);
-        } catch (e) {
-          sessionStorage.removeItem('quoteInvoiceData');
         }
       }
     }
@@ -1342,10 +1234,10 @@ export function useInvoiceEditor({
           priceValue === null ||
           priceValue === "" ||
           isNaN(parseFloat(priceValue)) ||
-          parseFloat(priceValue) < 0;
+          parseFloat(priceValue) <= 0;
 
         if (isInvalid) {
-          itemErrors.push("prix unitaire invalide");
+          itemErrors.push("prix unitaire doit être > 0€");
           fields.push("unitPrice");
         }
 
@@ -1393,15 +1285,9 @@ export function useInvoiceEditor({
       setSaving(true);
 
       // Pas de changement de statut dans handleSave, donc pas besoin du statut précédent
-      let input = transformFormDataToInput(currentFormData);
+      const input = transformFormDataToInput(currentFormData);
 
       if (mode === "create") {
-        if (sourcePurchaseOrderIdRef.current) {
-          input = { ...input, sourcePurchaseOrderId: sourcePurchaseOrderIdRef.current };
-        }
-        if (sourceQuoteIdRef.current) {
-          input = { ...input, sourceQuoteId: sourceQuoteIdRef.current };
-        }
         await createInvoice(input);
         toast.success("Facture créée avec succès");
         router.push("/dashboard/outils/factures");
@@ -1423,17 +1309,22 @@ export function useInvoiceEditor({
         errorMessage.includes("already exists") ||
         errorMessage.includes("duplicate")
       ) {
-        // Construire le numéro complet depuis le formulaire
-        const fullNumber = [currentFormData.prefix, currentFormData.number].filter(Boolean).join("-") || "inconnu";
+        // Extraire le numéro de facture du message d'erreur si possible
+        const invoiceNumberMatch = errorMessage.match(
+          /([A-Z0-9-]+)\s+existe déjà/i
+        );
+        const invoiceNumber = invoiceNumberMatch
+          ? invoiceNumberMatch[1]
+          : currentFormData.invoiceNumber;
 
         setValidationErrors({
           invoiceNumber: {
-            message: `Le numéro de facture ${fullNumber} existe déjà. Veuillez en choisir un autre.`,
+            message: `Le numéro de facture ${invoiceNumber} existe déjà. Veuillez en choisir un autre.`,
             canEdit: true,
           },
         });
 
-        toast.error(`Le numéro de facture ${fullNumber} existe déjà`);
+        toast.error(`Le numéro de facture ${invoiceNumber} existe déjà`);
       } else if (
         errorMessage.includes("dépasserait le montant du contrat") ||
         errorMessage.includes("situationTotal")
@@ -1449,20 +1340,6 @@ export function useInvoiceEditor({
         toast.error(
           "Le montant total des factures de situation dépasserait le montant du contrat"
         );
-      } else if (
-        errorMessage.includes("erreurs de validation")
-      ) {
-        // Erreur de validation Mongoose - afficher les détails
-        const details = error.validationDetails || error.graphQLErrors?.[0]?.extensions?.details;
-        if (details) {
-          console.error("Détails de validation Mongoose (brouillon):", details);
-          const fieldErrors = Object.entries(details)
-            .map(([field, msg]) => `${field}: ${msg}`)
-            .join("\n");
-          toast.error(`Erreur de validation:\n${fieldErrors}`, { duration: 10000 });
-        } else {
-          toast.error(errorMessage);
-        }
       } else {
         handleError(error, "invoice", {
           preventDuplicates: true,
@@ -1671,10 +1548,10 @@ export function useInvoiceEditor({
           priceValue === null ||
           priceValue === "" ||
           isNaN(parseFloat(priceValue)) ||
-          parseFloat(priceValue) < 0;
+          parseFloat(priceValue) <= 0;
 
         if (isInvalid) {
-          itemErrors.push("prix unitaire invalide");
+          itemErrors.push("prix unitaire doit être > 0€");
           fields.push("unitPrice");
         }
 
@@ -1749,15 +1626,9 @@ export function useInvoiceEditor({
       // Passer le statut précédent pour gérer automatiquement la date d'émission
       // IMPORTANT: Ne pas définir previousStatus lors de la création pour éviter de vider le préfixe
       const previousStatus = mode === "edit" ? existingInvoice?.status : null;
-      let input = transformFormDataToInput(dataToTransform, previousStatus);
+      const input = transformFormDataToInput(dataToTransform, previousStatus);
 
       if (mode === "create") {
-        if (sourcePurchaseOrderIdRef.current) {
-          input = { ...input, sourcePurchaseOrderId: sourcePurchaseOrderIdRef.current };
-        }
-        if (sourceQuoteIdRef.current) {
-          input = { ...input, sourceQuoteId: sourceQuoteIdRef.current };
-        }
         const result = await createInvoice(input);
         toast.success("Facture créée avec succès");
         // Retourner les données de la facture pour permettre l'envoi par email
@@ -1795,17 +1666,22 @@ export function useInvoiceEditor({
         errorMessage.includes("already exists") ||
         errorMessage.includes("duplicate")
       ) {
-        // Construire le numéro complet depuis le formulaire
-        const fullNumber = [currentFormData.prefix, currentFormData.number].filter(Boolean).join("-") || "inconnu";
+        // Extraire le numéro de facture du message d'erreur si possible
+        const invoiceNumberMatch = errorMessage.match(
+          /([A-Z0-9-]+)\s+existe déjà/i
+        );
+        const invoiceNumber = invoiceNumberMatch
+          ? invoiceNumberMatch[1]
+          : currentFormData.invoiceNumber;
 
         setValidationErrors({
           invoiceNumber: {
-            message: `Le numéro de facture ${fullNumber} existe déjà. Veuillez en choisir un autre.`,
+            message: `Le numéro de facture ${invoiceNumber} existe déjà. Veuillez en choisir un autre.`,
             canEdit: true,
           },
         });
 
-        toast.error(`Le numéro de facture ${fullNumber} existe déjà`);
+        toast.error(`Le numéro de facture ${invoiceNumber} existe déjà`);
       } else if (
         errorMessage.includes("dépasserait le montant du contrat") ||
         errorMessage.includes("situationTotal")
@@ -1821,20 +1697,6 @@ export function useInvoiceEditor({
         toast.error(
           "Le montant total des factures de situation dépasserait le montant du contrat"
         );
-      } else if (
-        errorMessage.includes("erreurs de validation")
-      ) {
-        // Erreur de validation Mongoose - afficher les détails des champs qui ont échoué
-        const details = error.validationDetails || error.graphQLErrors?.[0]?.extensions?.details;
-        if (details) {
-          const fieldErrors = Object.entries(details)
-            .map(([field, msg]) => `${field}: ${msg}`)
-            .join("\n");
-          console.error("Détails de validation Mongoose:", details);
-          toast.error(`Erreur de validation:\n${fieldErrors}`, { duration: 10000 });
-        } else {
-          toast.error(errorMessage);
-        }
       } else {
         // Vérifier si l'erreur est vide et la remplacer par un message par défaut
         const errorToHandle =
@@ -1889,9 +1751,8 @@ export function useInvoiceEditor({
         bankName: currentFormData.bankDetails?.bankName || currentFormData.companyInfo?.bankName || "",
         invoiceClientPositionRight:
           currentFormData.clientPositionRight || false,
-        // Préfixe et numéro de départ
+        // Préfixe de numérotation
         invoicePrefix: currentFormData.prefix || "",
-        invoiceStartNumber: currentFormData.number || "",
         // Informations de l'entreprise
         companyName: currentFormData.companyName || "",
         companyEmail: currentFormData.companyEmail || "",
@@ -2451,12 +2312,41 @@ function transformFormDataToInput(formData, previousStatus = null) {
     }
   }
 
-  // Envoyer le numéro et le préfixe du formulaire (le backend gère la validation)
+  // Gérer la numérotation automatique lors de la transition DRAFT -> PENDING
   let numberToSend = formData.number || "";
   let prefixToSend = formData.prefix || "";
 
+  console.log("[transformFormDataToInput] Prefix from form:", formData.prefix);
+  console.log("[transformFormDataToInput] Prefix to send:", prefixToSend);
+  console.log("[transformFormDataToInput] previousStatus:", previousStatus);
+  console.log("[transformFormDataToInput] formData.status:", formData.status);
+
+  // Si on passe de DRAFT à PENDING, ne pas envoyer le numéro pour permettre la génération automatique
+  // IMPORTANT: Seulement si previousStatus existe ET est différent du statut actuel (vrai changement de statut)
+  const isStatusTransition =
+    previousStatus && previousStatus !== formData.status;
+  if (
+    isStatusTransition &&
+    previousStatus === "DRAFT" &&
+    formData.status === "PENDING"
+  ) {
+    console.log(
+      "[transformFormDataToInput] ⚠️ DRAFT->PENDING transition detected, clearing prefix"
+    );
+    numberToSend = undefined; // Ne pas envoyer le numéro
+    prefixToSend = undefined; // Ne pas envoyer le préfixe
+  }
+
   // Ne pas envoyer le prefix s'il est vide (pour laisser le backend utiliser le dernier)
-  const shouldSendPrefix = prefixToSend !== "";
+  // Mais l'envoyer s'il a une valeur (même si c'est une modification)
+  const shouldSendPrefix = prefixToSend !== undefined && prefixToSend !== "";
+
+  console.log(
+    "[transformFormDataToInput] Should send prefix:",
+    shouldSendPrefix,
+    "Value:",
+    prefixToSend
+  );
 
   return {
     ...(shouldSendPrefix && { prefix: prefixToSend }),
@@ -2470,13 +2360,10 @@ function transformFormDataToInput(formData, previousStatus = null) {
       formData.items?.map((item) => {
         const vatRate = parseFloat(item.vatRate || item.taxRate) || 0;
         // Auto-liquidation : si isReverseCharge = true et TVA = 0, utiliser "Auto-liquidation" comme texte d'exonération
-        // IMPORTANT: Si vatRate > 0, vatExemptionText DOIT être vide (validation Mongoose)
         const vatExemptionText =
-          vatRate === 0
-            ? (formData.isReverseCharge
-                ? "Auto-liquidation"
-                : item.vatExemptionText || "")
-            : "";
+          formData.isReverseCharge && vatRate === 0
+            ? "Auto-liquidation"
+            : item.vatExemptionText || "";
 
         return {
           description: item.description || "",
@@ -2538,7 +2425,6 @@ function transformFormDataToInput(formData, previousStatus = null) {
       : null,
     isReverseCharge: formData.isReverseCharge || false,
     clientPositionRight: formData.clientPositionRight || false,
-    ...(formData.operationType && { operationType: formData.operationType }),
   };
 }
 

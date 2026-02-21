@@ -11,7 +11,7 @@ import {
   LoaderCircle,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { usePurchaseOrderEditor } from "../hooks/use-purchase-order-editor";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import EnhancedQuoteForm from "@/app/dashboard/outils/devis/components/enhanced-quote-form";
@@ -23,11 +23,9 @@ import {
 } from "@/src/lib/organization-client";
 import { useOrganizationChange } from "@/src/hooks/useOrganizationChange";
 import { ResourceNotFound } from "@/src/components/resource-not-found";
-import { useClient } from "@/src/graphql/clientQueries";
 import { ValidationCallout } from "@/app/dashboard/outils/factures/components/validation-callout";
 import ClientsModal from "@/app/dashboard/clients/components/clients-modal";
 import { SendDocumentModal } from "@/app/dashboard/outils/factures/components/send-document-modal";
-import { useCheckPurchaseOrderNumber } from "@/src/graphql/purchaseOrderQueries";
 
 export default function ModernPurchaseOrderEditor({
   mode = "create",
@@ -35,9 +33,6 @@ export default function ModernPurchaseOrderEditor({
   initialData = null,
 }) {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const clientIdFromUrl = mode === "create" ? searchParams.get("clientId") : null;
-  const { client: preselectedClient } = useClient(clientIdFromUrl);
   const [showSettings, setShowSettings] = useState(false);
   const [showEditClient, setShowEditClient] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
@@ -85,15 +80,6 @@ export default function ModernPurchaseOrderEditor({
     initialData,
     organization,
   });
-
-  const { checkPurchaseOrderNumber } = useCheckPurchaseOrderNumber();
-
-  // Pré-remplir le client si clientId est dans l'URL
-  useEffect(() => {
-    if (preselectedClient && mode === "create" && !formData?.client) {
-      form.setValue("client", preselectedClient, { shouldDirty: true });
-    }
-  }, [preselectedClient, mode, form]);
 
   // Debounce pour la preview
   useEffect(() => {
@@ -302,7 +288,6 @@ export default function ModernPurchaseOrderEditor({
                       }}
                       canEdit={!isReadOnly}
                       documentType="purchaseOrder"
-                      validateNumberExists={checkPurchaseOrderNumber}
                     />
                   ) : (
                     <EnhancedQuoteForm

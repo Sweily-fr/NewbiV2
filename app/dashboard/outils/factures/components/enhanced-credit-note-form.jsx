@@ -339,8 +339,8 @@ export default function EnhancedCreditNoteForm({
   return (
     <div className="flex flex-col h-full w-full">
       {/* Form Content */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0">
-        <div className="space-y-6 px-2">
+      <div className="flex-1 overflow-y-auto pr-2 scrollbar-auto-hide min-h-0">
+        <div className="space-y-6">
           {/* Étape 1: Informations de l'avoir */}
           {currentStep === 1 && (
             <>

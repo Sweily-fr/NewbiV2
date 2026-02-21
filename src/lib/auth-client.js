@@ -106,10 +106,6 @@ export const authClient = createAuthClient({
             invoicePrefix: { type: "string" },
             quotePrefix: { type: "string" },
             purchaseOrderPrefix: { type: "string" },
-            // Numéros de départ personnalisés
-            invoiceStartNumber: { type: "string" },
-            quoteStartNumber: { type: "string" },
-            purchaseOrderStartNumber: { type: "string" },
             // Trial system fields (ISO date strings)
             trialStartDate: { type: "string" },
             trialEndDate: { type: "string" },

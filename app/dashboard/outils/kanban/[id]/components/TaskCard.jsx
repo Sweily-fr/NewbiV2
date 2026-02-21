@@ -8,7 +8,6 @@ import {
   CheckCircle,
   AlignLeft,
   Paperclip,
-  ZoomIn,
 } from "lucide-react";
 import { TimerDisplay } from "./TimerDisplay";
 import { Button } from "@/src/components/ui/button";
@@ -30,10 +29,6 @@ import {
   AlertDialogTitle,
 } from "@/src/components/ui/alert-dialog";
 import {
-  Dialog,
-  DialogContent,
-} from "@/src/components/ui/dialog";
-import {
   Tooltip,
   TooltipTrigger,
   TooltipContent,
@@ -54,7 +49,6 @@ import { useAssignedMembersInfo } from "@/src/hooks/useAssignedMembersInfo";
 const TaskCard = memo(function TaskCard({ task, onEdit, onDelete, index, isDragging }) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showDescriptionPopover, setShowDescriptionPopover] = useState(false);
-  const [showImagePreview, setShowImagePreview] = useState(false);
 
   // Récupérer les infos des membres assignés
   const { members: assignedMembersInfo } = useAssignedMembersInfo(task.assignedMembers || []);
@@ -108,23 +102,14 @@ const TaskCard = memo(function TaskCard({ task, onEdit, onDelete, index, isDragg
       >
         {/* Image de couverture - première image épinglée */}
         {task.images && task.images.length > 0 && (
-          <div
-            className="relative w-full h-32 overflow-hidden group/cover cursor-pointer"
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowImagePreview(true);
-            }}
-          >
+          <div className="w-full h-32 overflow-hidden">
             <img
               src={task.images[0].url}
               alt={task.images[0].fileName || "Image de la tâche"}
-              className="w-full h-full object-cover select-none"
+              className="w-full h-full object-cover pointer-events-none select-none"
               loading="lazy"
               draggable="false"
             />
-            <div className="absolute inset-0 bg-black/0 group-hover/cover:bg-black/20 transition-colors flex items-center justify-center">
-              <ZoomIn className="h-6 w-6 text-white opacity-0 group-hover/cover:opacity-100 transition-opacity drop-shadow-md" />
-            </div>
           </div>
         )}
 
@@ -320,19 +305,6 @@ const TaskCard = memo(function TaskCard({ task, onEdit, onDelete, index, isDragg
         </div>
         </div>
       </div>
-
-      {/* Dialog de prévisualisation d'image */}
-      <Dialog open={showImagePreview} onOpenChange={setShowImagePreview}>
-        <DialogContent className="max-w-[90vw] max-h-[90vh] p-2 sm:p-4" onClick={(e) => e.stopPropagation()}>
-          {task.images && task.images.length > 0 && (
-            <img
-              src={task.images[0].url}
-              alt={task.images[0].fileName || "Image de la tâche"}
-              className="w-full h-full max-h-[85vh] object-contain rounded-md"
-            />
-          )}
-        </DialogContent>
-      </Dialog>
 
       {/* Dialog de confirmation */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

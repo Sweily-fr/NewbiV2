@@ -161,7 +161,7 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
           const formValues = {
             // Numérotation - préfixe par défaut (le numéro sera auto-rempli par le hook useInvoiceNumber)
             prefix: org?.invoicePrefix || generateInvoicePrefix(),
-            number: org?.invoiceStartNumber || "",
+            number: "",
             // Informations de l'entreprise
             companyName: org?.companyName || "",
             companyEmail: org?.companyEmail || "",
@@ -314,7 +314,6 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
 
         // Préfixe de numérotation
         invoicePrefix: formValues.prefix || "",
-        invoiceStartNumber: formValues.number || "",
 
         // Position du client dans le PDF (factures)
         invoiceClientPositionRight: formValues.clientPositionRight || false,

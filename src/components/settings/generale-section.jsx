@@ -4,6 +4,7 @@ import React, { useEffect } from "react";
 import { Label } from "@/src/components/ui/label";
 import { Input } from "@/src/components/ui/input";
 import { Separator } from "@/src/components/ui/separator";
+import { Building, Mail, Phone, Globe, MapPin } from "lucide-react";
 import { CompanyLogoUpload } from "@/src/components/profile/CompanyLogoUpload";
 import {
   Select,
@@ -133,17 +134,21 @@ export function GeneraleSection({
         <Separator />
 
         {/* Informations générales */}
-        <div className="space-y-5 md:space-y-6 mt-0 md:mt-8">
+        <div className="space-y-6 mt-8">
           {/* Nom de l'entreprise et Email */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
-            <div>
-              <Label htmlFor="name">
-                Nom de l'entreprise <span className="text-red-500">*</span>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label
+                htmlFor="name"
+                className="flex items-center gap-2 text-sm font-normal"
+              >
+                <Building className="h-4 w-4 text-gray-500" />
+                Nom de l'entreprise *
               </Label>
               <Input
                 id="name"
                 placeholder="Nom de votre entreprise"
-                className="w-full mt-1.5"
+                className="w-full"
                 disabled={!canManageOrgSettings}
                 {...register("name", {
                   required: "Le nom est requis",
@@ -160,19 +165,23 @@ export function GeneraleSection({
                 })}
               />
               {errors.name && (
-                <p className="text-sm text-red-500 mt-1">{errors.name.message}</p>
+                <p className="text-sm text-red-500">{errors.name.message}</p>
               )}
             </div>
 
-            <div>
-              <Label htmlFor="email">
-                Email professionnel <span className="text-red-500">*</span>
+            <div className="space-y-2">
+              <Label
+                htmlFor="email"
+                className="flex items-center gap-2 text-sm font-normal"
+              >
+                <Mail className="h-4 w-4 text-gray-500" />
+                Email professionnel *
               </Label>
               <Input
                 id="email"
                 type="email"
                 placeholder="contact@entreprise.com"
-                className="w-full mt-1.5"
+                className="w-full"
                 disabled={!canManageOrgSettings}
                 {...register("email", {
                   required: "L'email est requis",
@@ -189,21 +198,25 @@ export function GeneraleSection({
                 })}
               />
               {errors.email && (
-                <p className="text-sm text-red-500 mt-1">{errors.email.message}</p>
+                <p className="text-sm text-red-500">{errors.email.message}</p>
               )}
             </div>
           </div>
 
           {/* Téléphone et Site web */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
-            <div>
-              <Label htmlFor="phone">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label
+                htmlFor="phone"
+                className="flex items-center gap-2 text-sm font-normal"
+              >
+                <Phone className="h-4 w-4 text-gray-500" />
                 Téléphone
               </Label>
               <Input
                 id="phone"
                 placeholder="+33 1 23 45 67 89"
-                className="w-full mt-1.5"
+                className="w-full"
                 disabled={!canManageOrgSettings}
                 {...register("phone", {
                   pattern: {
@@ -219,18 +232,22 @@ export function GeneraleSection({
                 })}
               />
               {errors.phone && (
-                <p className="text-sm text-red-500 mt-1">{errors.phone.message}</p>
+                <p className="text-sm text-red-500">{errors.phone.message}</p>
               )}
             </div>
 
-            <div>
-              <Label htmlFor="website">
+            <div className="space-y-2">
+              <Label
+                htmlFor="website"
+                className="flex items-center gap-2 text-sm font-normal"
+              >
+                <Globe className="h-4 w-4 text-gray-500" />
                 Site web
               </Label>
               <Input
                 id="website"
                 placeholder="https://www.entreprise.com"
-                className="w-full mt-1.5"
+                className="w-full"
                 disabled={!canManageOrgSettings}
                 {...register("website", {
                   pattern: {
@@ -246,7 +263,7 @@ export function GeneraleSection({
                 })}
               />
               {errors.website && (
-                <p className="text-sm text-red-500 mt-1">{errors.website.message}</p>
+                <p className="text-sm text-red-500">{errors.website.message}</p>
               )}
             </div>
           </div>
@@ -254,16 +271,23 @@ export function GeneraleSection({
           <Separator />
 
           {/* Section Adresse */}
-          <div className="space-y-5 md:space-y-6">
+          <div className="space-y-6">
+            {/* <div className="flex items-center gap-2">
+              <MapPin className="h-4 w-4 text-gray-500 dark;text-gray-200" />
+              <h3 className="text-sm font-medium text-gray-900 dark:text-gray-200">
+                Adresse
+              </h3>
+            </div> */}
+
             {/* Adresse complète */}
-            <div>
-              <Label htmlFor="address">
-                Adresse <span className="text-red-500">*</span>
+            <div className="space-y-2">
+              <Label className="text-sm font-normal" htmlFor="address">
+                Adresse *
               </Label>
               <Input
                 id="address"
                 placeholder="123 Rue de la République"
-                className="w-full mt-1.5"
+                className="w-full"
                 disabled={!canManageOrgSettings}
                 {...register("address.street", {
                   required: "L'adresse est requise",
@@ -280,22 +304,22 @@ export function GeneraleSection({
                 })}
               />
               {errors.address?.street && (
-                <p className="text-sm text-red-500 mt-1">
+                <p className="text-sm text-red-500">
                   {errors.address.street.message}
                 </p>
               )}
             </div>
 
             {/* Ville et Code postal */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
-              <div>
-                <Label htmlFor="city">
-                  Ville <span className="text-red-500">*</span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label className="text-sm font-normal" htmlFor="city">
+                  Ville *
                 </Label>
                 <Input
                   id="city"
                   placeholder="Paris"
-                  className="w-full mt-1.5"
+                  className="w-full"
                   disabled={!canManageOrgSettings}
                   {...register("address.city", {
                     required: "La ville est requise",
@@ -312,20 +336,20 @@ export function GeneraleSection({
                   })}
                 />
                 {errors.address?.city && (
-                  <p className="text-sm text-red-500 mt-1">
+                  <p className="text-sm text-red-500">
                     {errors.address.city.message}
                   </p>
                 )}
               </div>
 
-              <div>
-                <Label htmlFor="postalCode">
-                  Code postal <span className="text-red-500">*</span>
+              <div className="space-y-2">
+                <Label className="text-sm font-normal" htmlFor="postalCode">
+                  Code postal *
                 </Label>
                 <Input
                   id="postalCode"
                   placeholder="75001"
-                  className="w-full mt-1.5"
+                  className="w-full"
                   disabled={!canManageOrgSettings}
                   {...register("address.postalCode", {
                     required: "Le code postal est requis",
@@ -342,7 +366,7 @@ export function GeneraleSection({
                   })}
                 />
                 {errors.address?.postalCode && (
-                  <p className="text-sm text-red-500 mt-1">
+                  <p className="text-sm text-red-500">
                     {errors.address.postalCode.message}
                   </p>
                 )}
@@ -350,16 +374,16 @@ export function GeneraleSection({
             </div>
 
             {/* Pays */}
-            <div>
-              <Label htmlFor="country">
-                Pays <span className="text-red-500">*</span>
+            <div className="space-y-2">
+              <Label className="text-sm font-normal" htmlFor="country">
+                Pays *
               </Label>
               <Select
                 value={selectedCountry}
                 onValueChange={handleCountryChange}
                 disabled={!canManageOrgSettings}
               >
-                <SelectTrigger className="w-full mt-1.5">
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="Sélectionnez un pays" />
                 </SelectTrigger>
                 <SelectContent>
@@ -371,7 +395,7 @@ export function GeneraleSection({
                 </SelectContent>
               </Select>
               {errors.address?.country && (
-                <p className="text-sm text-red-500 mt-1">
+                <p className="text-sm text-red-500">
                   {errors.address.country.message}
                 </p>
               )}

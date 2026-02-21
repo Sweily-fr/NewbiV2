@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback, useState, useMemo, useRef } from "react";
+import { useEffect, useCallback, useState, useMemo } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "@/src/components/ui/sonner";
@@ -478,7 +478,7 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
             itemErrors.push("quantity");
             fields.push("quantity");
           }
-          if (item.unitPrice === undefined || item.unitPrice === null || item.unitPrice < 0) {
+          if (item.unitPrice === undefined || item.unitPrice === null || item.unitPrice <= 0) {
             itemErrors.push("unitPrice");
             fields.push("unitPrice");
           }
@@ -725,16 +725,11 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
   }, [existingQuote, mode, reset, getValues]);
 
   // Set next quote number for new quotes
-  // Utiliser un ref pour ne pas écraser le numéro quand loading toggle
-  const prevNextQuoteNumberRef = useRef(null);
   useEffect(() => {
     if (mode === "create" && nextQuoteNumber && !numberLoading) {
-      // Seulement si nextQuoteNumber a réellement changé
-      if (prevNextQuoteNumberRef.current !== nextQuoteNumber) {
-        const formattedNumber = String(nextQuoteNumber).padStart(4, '0');
-        setValue("number", formattedNumber, { shouldValidate: false, shouldDirty: false });
-        prevNextQuoteNumberRef.current = nextQuoteNumber;
-      }
+      // Initialiser avec le prochain numéro séquentiel calculé
+      const formattedNumber = String(nextQuoteNumber).padStart(4, '0');
+      setValue("number", formattedNumber, { shouldValidate: false, shouldDirty: false });
     }
   }, [mode, nextQuoteNumber, numberLoading, setValue]);
 
@@ -810,14 +805,6 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
               iban: organization.bankIban || "",
               bic: organization.bankBic || "",
             });
-            // Synchroniser les bankDetails au niveau top-level (utilisé par la preview)
-            if (organization.bankIban || organization.bankBic || organization.bankName) {
-              setValue("bankDetails", {
-                iban: organization.bankIban || "",
-                bic: organization.bankBic || "",
-                bankName: organization.bankName || "",
-              });
-            }
 
             // Charger la position du client depuis l'organisation
             setValue("clientPositionRight", organization.quoteClientPositionRight || false);
@@ -826,9 +813,6 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
             if (organization.quotePrefix) {
               setValue("prefix", organization.quotePrefix, { shouldDirty: false });
             }
-
-            // Note: le numéro séquentiel est géré par l'effet nextQuoteNumber
-            // Le startNumber de l'org est uniquement utilisé dans la vue paramètres (quote-settings-view)
 
             // Synchroniser les champs plats pour CompanyInfoSettingsSection dans la vue paramètres
             setValue("companyName", organization.companyName || "", { shouldDirty: false });
@@ -1027,10 +1011,10 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
                              priceValue === null || 
                              priceValue === "" || 
                              isNaN(parseFloat(priceValue)) ||
-                             parseFloat(priceValue) < 0;
-
+                             parseFloat(priceValue) <= 0;
+            
             if (isInvalid) {
-              itemErrors.push("prix unitaire invalide");
+              itemErrors.push("prix unitaire doit être > 0€");
               fields.push("unitPrice");
             }
             
@@ -1300,10 +1284,10 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
                              priceValue === null || 
                              priceValue === "" || 
                              isNaN(parseFloat(priceValue)) ||
-                             parseFloat(priceValue) < 0;
-
+                             parseFloat(priceValue) <= 0;
+            
             if (isInvalid) {
-              itemErrors.push("prix unitaire invalide");
+              itemErrors.push("prix unitaire doit être > 0€");
               fields.push("unitPrice");
             }
             
@@ -1499,19 +1483,11 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
   // Helper function to set form data programmatically
   const setFormData = useCallback(
     (newData) => {
-      if (typeof newData === "function") {
-        const currentData = getValues();
-        const updatedData = newData(currentData);
-        Object.keys(updatedData).forEach((key) => {
-          setValue(key, updatedData[key], { shouldDirty: true });
-        });
-      } else {
-        Object.keys(newData).forEach((key) => {
-          setValue(key, newData[key], { shouldDirty: true });
-        });
-      }
+      Object.keys(newData).forEach((key) => {
+        setValue(key, newData[key], { shouldDirty: true });
+      });
     },
-    [setValue, getValues]
+    [setValue]
   );
 
   // Fonction pour sauvegarder les paramètres dans l'organisation
@@ -1535,9 +1511,8 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
         bankBic: currentFormData.bankDetails?.bic || currentFormData.companyInfo?.bankDetails?.bic || "",
         bankName: currentFormData.bankDetails?.bankName || currentFormData.companyInfo?.bankDetails?.bankName || "",
         quoteClientPositionRight: currentFormData.clientPositionRight || false,
-        // Préfixe et numéro de départ
+        // Préfixe de numérotation
         quotePrefix: currentFormData.prefix || "",
-        quoteStartNumber: currentFormData.number || "",
         // Informations de l'entreprise
         companyName: currentFormData.companyName || "",
         companyEmail: currentFormData.companyEmail || "",
@@ -2332,12 +2307,29 @@ function transformFormDataToInput(
     finalValidUntil = formatFinalDate(adjustedDate) || defaultIssueDate;
   }
 
-  // Envoyer le numéro et le préfixe du formulaire (le backend gère la validation)
+  // Gérer la numérotation automatique lors de la transition DRAFT -> PENDING
   let numberToSend = formData.number || "";
   let prefixToSend = formData.prefix || "";
 
+  console.log('[transformFormDataToInput] Prefix from form:', formData.prefix);
+  console.log('[transformFormDataToInput] Prefix to send:', prefixToSend);
+  console.log('[transformFormDataToInput] previousStatus:', previousStatus);
+  console.log('[transformFormDataToInput] formData.status:', formData.status);
+
+  // Si on passe de DRAFT à PENDING, ne pas envoyer le numéro pour permettre la génération automatique
+  // IMPORTANT: Seulement si previousStatus existe ET est différent du statut actuel (vrai changement de statut)
+  const isStatusTransition = previousStatus && previousStatus !== formData.status;
+  if (isStatusTransition && previousStatus === "DRAFT" && formData.status === "PENDING") {
+    console.log('[transformFormDataToInput] ⚠️ DRAFT->PENDING transition detected, clearing number and prefix');
+    numberToSend = undefined; // Ne pas envoyer le numéro
+    prefixToSend = undefined; // Ne pas envoyer le préfixe
+  }
+
   // Ne pas envoyer le prefix s'il est vide (pour laisser le backend utiliser le dernier)
-  const shouldSendPrefix = prefixToSend !== "";
+  // Mais l'envoyer s'il a une valeur (même si c'est une modification)
+  const shouldSendPrefix = prefixToSend !== undefined && prefixToSend !== "";
+  
+  console.log('[transformFormDataToInput] Should send prefix:', shouldSendPrefix, 'Value:', prefixToSend);
 
   return {
     ...(shouldSendPrefix && { prefix: prefixToSend }),
