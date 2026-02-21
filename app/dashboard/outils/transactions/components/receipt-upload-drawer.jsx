@@ -44,6 +44,7 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [editedFinancialAnalysis, setEditedFinancialAnalysis] = useState(null);
 
   // Hook pour récupérer le workspace
   const { workspaceId } = useRequiredWorkspace();
@@ -143,6 +144,8 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
   const handleClose = useCallback(() => {
     handleRemoveFile();
     resetOcr();
+    setEditedFinancialAnalysis(null);
+    setIsEditing(false);
     onOpenChange(false);
   }, [handleRemoveFile, resetOcr, onOpenChange]);
 
@@ -459,6 +462,7 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
                 imageUrl={selectedFile ? URL.createObjectURL(selectedFile) : null}
                 isEditing={isEditing}
                 setIsEditing={setIsEditing}
+                onEditedDataChange={setEditedFinancialAnalysis}
               />
 
               {/* Section Rapprochement Automatique */}
@@ -630,7 +634,7 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
                   </Button>
                   <Button
                     onClick={() =>
-                      handleValidateOcr(ocrResult?.financialAnalysis)
+                      handleValidateOcr(editedFinancialAnalysis || ocrResult?.financialAnalysis)
                     }
                     disabled={isCreatingExpense}
                     className="bg-primary hover:bg-primary/90 cursor-pointer font-normal"
@@ -664,7 +668,7 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
                   </div>
                   <Button
                     onClick={() =>
-                      handleValidateOcr(ocrResult?.financialAnalysis)
+                      handleValidateOcr(editedFinancialAnalysis || ocrResult?.financialAnalysis)
                     }
                     disabled={isCreatingExpense || isReconciling}
                     className="cursor-pointer font-normal bg-black text-white hover:bg-black/90 dark:bg-popover dark:text-popover-foreground dark:hover:bg-popover/90"
