@@ -1861,27 +1861,27 @@ function transformPurchaseOrderToFormData(purchaseOrder) {
       capitalSocial: purchaseOrder.companyInfo?.capitalSocial || "",
       vatPaymentCondition: purchaseOrder.companyInfo?.vatPaymentCondition || "",
       transactionCategory: purchaseOrder.companyInfo?.transactionCategory || "",
-      // Formatage cohérent de l'adresse pour l'affichage dans le PDF
+      // Conserver l'adresse sous forme d'objet pour la synchronisation avec les champs plats
       address: (() => {
-        if (!purchaseOrder.companyInfo?.address) return "";
+        if (!purchaseOrder.companyInfo?.address) return { street: "", city: "", postalCode: "", country: "France" };
 
         if (typeof purchaseOrder.companyInfo.address === "string") {
-          return purchaseOrder.companyInfo.address;
+          // Parser la chaîne pour reconstituer l'objet
+          const parts = purchaseOrder.companyInfo.address.split("\n").map(p => p.trim());
+          return {
+            street: parts[0] || "",
+            city: parts.length >= 2 ? (parts[1].replace(/^\d{5}\s*/, "") || "") : "",
+            postalCode: parts.length >= 2 ? (parts[1].match(/^(\d{5})/)?.[1] || "") : "",
+            country: parts[2] || "France",
+          };
         }
 
-        // Créer un tableau avec les parties de l'adresse et filtrer les vides
-        const addressParts = [
-          purchaseOrder.companyInfo.address.street,
-          purchaseOrder.companyInfo.address.additional,
-          purchaseOrder.companyInfo.address.postalCode
-            ? purchaseOrder.companyInfo.address.postalCode +
-              " " +
-              (purchaseOrder.companyInfo.address.city || "")
-            : purchaseOrder.companyInfo.address.city,
-          purchaseOrder.companyInfo.address.country,
-        ].filter(Boolean); // Enlève les valeurs vides du tableau
-
-        return addressParts.join("\n");
+        return {
+          street: purchaseOrder.companyInfo.address.street || "",
+          city: purchaseOrder.companyInfo.address.city || "",
+          postalCode: purchaseOrder.companyInfo.address.postalCode || "",
+          country: purchaseOrder.companyInfo.address.country || "France",
+        };
       })(),
       // Assurer que bankDetails a toujours la même structure
       bankDetails: purchaseOrder.companyInfo?.bankDetails
