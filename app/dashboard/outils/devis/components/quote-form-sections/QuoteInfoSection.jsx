@@ -9,7 +9,7 @@ import React, {
 } from "react";
 import { useFormContext } from "react-hook-form";
 import { useQuery } from "@apollo/client";
-import { Calendar as CalendarIcon, Clock, Info, Search, FileText, ChevronDown } from "lucide-react";
+import { Calendar as CalendarIcon, Info, Search, FileText, ChevronDown } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Calendar } from "@/src/components/ui/calendar";
@@ -49,15 +49,6 @@ import {
   TooltipTrigger,
 } from "@/src/components/ui/tooltip";
 import { cn } from "@/src/lib/utils";
-import {
-  generateQuotePrefix,
-  parseQuotePrefix,
-  formatQuotePrefix,
-  getCurrentMonthYear,
-  validateQuoteNumber,
-  formatQuoteNumber,
-  getQuoteDisplayNumber,
-} from "@/src/utils/quoteUtils";
 import { useLastQuotePrefix, SEARCH_QUOTES_FOR_REFERENCE } from "@/src/graphql/quoteQueries";
 import { useLastPurchaseOrderPrefix } from "@/src/graphql/purchaseOrderQueries";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
@@ -134,52 +125,6 @@ export default function QuoteInfoSection({
 
   // Simple state for selected period without complex calculations
   const [selectedPeriod, setSelectedPeriod] = useState(null);
-
-  // Flag pour éviter la validation au premier montage
-  const isInitialMount = React.useRef(true);
-
-  // Marquer que le montage initial est terminé après le premier rendu
-  React.useEffect(() => {
-    isInitialMount.current = false;
-  }, []);
-
-  // Handle prefix changes with auto-fill for MM and AAAA
-  const handlePrefixChange = (e) => {
-    const { value } = e.target;
-    const cursorPosition = e.target.selectionStart;
-
-    // Check if user is typing MM or AAAA
-    if (value.includes("MM")) {
-      const { month } = getCurrentMonthYear();
-      const newValue = value.replace("MM", month);
-      setValue("prefix", newValue, { shouldValidate: true });
-      // Move cursor after the inserted month
-      setTimeout(() => {
-        e.target.setSelectionRange(
-          cursorPosition + month.length - 2,
-          cursorPosition + month.length - 2
-        );
-      }, 0);
-      return;
-    }
-
-    if (value.includes("AAAA")) {
-      const { year } = getCurrentMonthYear();
-      const newValue = value.replace("AAAA", year);
-      setValue("prefix", newValue, { shouldValidate: true });
-      // Move cursor after the inserted year
-      setTimeout(() => {
-        e.target.setSelectionRange(
-          cursorPosition + year.length - 4,
-          cursorPosition + year.length - 4
-        );
-      }, 0);
-      return;
-    }
-
-    // For normal typing, just update the value
-    setValue("prefix", value, { shouldValidate: true });
-  };
 
   // Get the last prefix (quote or purchase order depending on documentType)
   const { prefix: lastQuotePrefix, loading: loadingLastQuotePrefix } =

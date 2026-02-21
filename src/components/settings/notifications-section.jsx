@@ -426,9 +426,9 @@ export function NotificationsSection() {
     <div className="space-y-6">
       {/* Titre avec bouton "Tout marquer comme lu" */}
       <div className="flex items-center justify-between">
-        <div className="flex-1">
+        <div className="flex-1 hidden md:block">
           <h2 className="text-lg font-medium mb-1">Notifications</h2>
-          <Separator className="hidden md:block" />
+          <Separator />
         </div>
         {(unreadInvitationsCount > 0 || unreadSentInvitationsCount > 0) && (
           <Button
@@ -608,7 +608,7 @@ export function NotificationsSection() {
             <div className="text-center py-8 text-sm text-muted-foreground">
               <ClipboardList className="w-12 h-12 mx-auto mb-3 text-muted-foreground/50" />
               <p>Aucune notification d&apos;activité</p>
-              <p className="text-xs mt-1">Les assignations de tâches apparaîtront ici</p>
+              <p className="text-xs mt-1">Les assignations et mentions apparaîtront ici</p>
             </div>
           ) : (
             <div className="space-y-0 divide-y divide-border/50">
@@ -655,22 +655,39 @@ export function NotificationsSection() {
                             <span className="font-medium">
                               {notification.data?.actorName || "Quelqu'un"}
                             </span>{" "}
-                            <span className="font-normal">
-                              vous a assigné à
-                            </span>{" "}
-                            <span className="font-medium">
-                              {notification.data?.taskTitle || "une tâche"}
-                            </span>
+                            {notification.type === "MENTION" ? (
+                              <>
+                                <span className="font-normal">
+                                  vous a mentionné dans un commentaire sur
+                                </span>{" "}
+                                <span className="font-medium">
+                                  {notification.data?.taskTitle || "une tâche"}
+                                </span>
+                              </>
+                            ) : (
+                              <>
+                                <span className="font-normal">
+                                  vous a assigné à
+                                </span>{" "}
+                                <span className="font-medium">
+                                  {notification.data?.taskTitle || "une tâche"}
+                                </span>
+                              </>
+                            )}
                           </p>
                         </div>
                         <div className="flex items-center gap-2 mt-1 flex-wrap">
                           <p className="text-xs text-muted-foreground">
                             📋 {notification.data?.boardName || "Tableau"}
                           </p>
-                          <span className="text-xs text-muted-foreground">•</span>
-                          <p className="text-xs text-muted-foreground">
-                            📁 {notification.data?.columnName || "Colonne"}
-                          </p>
+                          {notification.data?.columnName && (
+                            <>
+                              <span className="text-xs text-muted-foreground">•</span>
+                              <p className="text-xs text-muted-foreground">
+                                📁 {notification.data?.columnName}
+                              </p>
+                            </>
+                          )}
                         </div>
                       </div>
 

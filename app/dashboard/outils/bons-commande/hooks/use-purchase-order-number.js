@@ -3,8 +3,10 @@ import { useQuery } from '@apollo/client';
 import { GET_PURCHASE_ORDERS, PURCHASE_ORDER_STATUS } from "@/src/graphql/purchaseOrderQueries";
 import { useRequiredWorkspace } from '@/src/hooks/useWorkspace';
 
-export const usePurchaseOrderNumber = () => {
+export const usePurchaseOrderNumber = (prefix) => {
   const [lastNumber, setLastNumber] = useState(null);
+  const [anyDocumentsExist, setAnyDocumentsExist] = useState(false);
+  const [hasDocumentsForPrefix, setHasDocumentsForPrefix] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -29,8 +31,20 @@ export const usePurchaseOrderNumber = () => {
           return isNotDraft && hasNumber;
         });
 
+      // Check if ANY finalized documents exist (regardless of prefix)
+      const allNumbers = finalizedOrders
+        .map(po => /^\d+$/.test(po.number) ? parseInt(po.number, 10) : null)
+        .filter(num => num !== null && num > 0);
+      setAnyDocumentsExist(allNumbers.length > 0);
+
+      // Filter by prefix for next number calculation
+      let filteredOrders = finalizedOrders;
+      if (prefix) {
+        filteredOrders = finalizedOrders.filter(po => po.prefix === prefix);
+      }
+
       // Extract numeric numbers only
-      const numbers = finalizedOrders
+      const numbers = filteredOrders
         .map(po => {
           if (/^\d+$/.test(po.number)) {
             return parseInt(po.number, 10);
@@ -41,6 +55,7 @@ export const usePurchaseOrderNumber = () => {
 
       const highestNumber = numbers.length > 0 ? Math.max(...numbers) : 0;
       setLastNumber(highestNumber);
+      setHasDocumentsForPrefix(prefix ? numbers.length > 0 : allNumbers.length > 0);
     }
 
     if (queryError) {
@@ -48,7 +63,7 @@ export const usePurchaseOrderNumber = () => {
     }
 
     setIsLoading(loading || workspaceLoading);
-  }, [data, loading, queryError, workspaceLoading]);
+  }, [data, loading, queryError, workspaceLoading, prefix]);
 
   const getNextNumber = () => {
     if (lastNumber === null || lastNumber === undefined) {
@@ -73,10 +88,12 @@ export const usePurchaseOrderNumber = () => {
       };
     }
 
-    if (!hasExistingOrders()) {
+    // If no existing orders at all, or new prefix, allow any number
+    if (!hasExistingOrders() || !hasDocumentsForPrefix) {
       return { isValid: true };
     }
 
+    // Sequential validation (based on prefix-filtered last number)
     const lastNum = typeof lastNumber === 'number' ? lastNumber : parseInt(lastNumber, 10);
 
     if (isNaN(lastNum)) {
@@ -100,8 +117,9 @@ export const usePurchaseOrderNumber = () => {
     return { isValid: true };
   };
 
+  // Check if there are existing orders (ANY prefix - for first-document check)
   const hasExistingOrders = () => {
-    return lastNumber !== null && lastNumber !== undefined && lastNumber > 0;
+    return anyDocumentsExist;
   };
 
   return {
@@ -111,6 +129,7 @@ export const usePurchaseOrderNumber = () => {
     isLoading,
     error,
     hasExistingOrders,
+    hasDocumentsForPrefix,
     getFormattedNextNumber: () => {
       const nextNum = getNextNumber();
       return String(nextNum).padStart(4, '0');

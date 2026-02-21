@@ -351,16 +351,13 @@ function InvoicesContent() {
         </Suspense>
       </div>
 
-      {/* Mobile Layout - Style Notion */}
-      <div className="md:hidden">
-        {/* Header - Style Notion sur mobile */}
-        <div className="px-4 py-6">
+      {/* Mobile Layout */}
+      <div className="md:hidden flex flex-col h-[calc(100vh-64px)] overflow-hidden">
+        {/* Header */}
+        <div className="px-4 py-6 flex-shrink-0">
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-2xl font-medium mb-2">Factures</h1>
-              <p className="text-muted-foreground text-sm">
-                Gérez vos factures et suivez vos paiements
-              </p>
+              <h1 className="text-2xl font-medium mb-1">Factures</h1>
             </div>
             <div className="flex gap-2">
               <Button
@@ -379,6 +376,17 @@ function InvoicesContent() {
               >
                 <Settings className="h-4 w-4" />
               </Button>
+              <PermissionButton
+                resource="invoices"
+                action="create"
+                onClick={handleNewInvoice}
+                size="icon"
+                className="cursor-pointer rounded-full bg-[#0A0A0A] text-white hover:bg-[#0A0A0A]/90"
+                hideIfNoAccess={true}
+                tooltipNoAccess="Vous n'avez pas la permission de créer des factures"
+              >
+                <Plus className="h-5 w-5" />
+              </PermissionButton>
             </div>
           </div>
         </div>
@@ -390,19 +398,6 @@ function InvoicesContent() {
             onOpenReminderSettings={() => setIsAutoReminderOpen(true)}
           />
         </Suspense>
-
-        {/* Bouton flottant mobile avec protection RBAC */}
-        <PermissionButton
-          resource="invoices"
-          action="create"
-          onClick={handleNewInvoice}
-          className="fixed bottom-6 bg-[#5a50ff] right-6 h-14 w-14 rounded-full shadow-lg z-50 md:hidden"
-          size="icon"
-          hideIfNoAccess={true}
-          tooltipNoAccess="Vous n'avez pas la permission de créer des factures"
-        >
-          <Plus className="h-6 w-6" />
-        </PermissionButton>
       </div>
 
       {/* Modal des paramètres */}

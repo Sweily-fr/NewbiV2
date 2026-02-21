@@ -507,6 +507,7 @@ export const TASK_FRAGMENT = gql`
       userName
       userImage
       content
+      mentions
       images {
         id
         key

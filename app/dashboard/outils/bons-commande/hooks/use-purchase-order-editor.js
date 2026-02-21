@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback, useState, useMemo } from "react";
+import { useEffect, useCallback, useState, useMemo, useRef } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "@/src/components/ui/sonner";
@@ -33,13 +33,16 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
   // GraphQL hooks
   const { purchaseOrder: existingPurchaseOrder, loading: loadingPurchaseOrder } = usePurchaseOrder(purchaseOrderId);
 
+  // Prefix state pour le filtrage du numéro par préfixe
+  const [currentPrefix, setCurrentPrefix] = useState(organization?.purchaseOrderPrefix || "");
+
   // Use the purchase order numbering hook
   const {
     nextNumber: nextPurchaseOrderNumber,
     validateNumber: validatePurchaseOrderNumber,
     isLoading: numberLoading,
     hasExistingOrders,
-  } = usePurchaseOrderNumber();
+  } = usePurchaseOrderNumber(currentPrefix);
 
   const { createPurchaseOrder, loading: creating } = useCreatePurchaseOrder();
   const { updatePurchaseOrder, loading: updating } = useUpdatePurchaseOrder();
@@ -88,6 +91,16 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
 
   const { watch, setValue, getValues, reset } = form;
   // const { isDirty } = formState; // DISABLED - Auto-save removed
+
+  // Synchroniser le préfixe du formulaire avec le state pour le filtrage du numéro
+  useEffect(() => {
+    const subscription = watch((value, { name }) => {
+      if (name === "prefix" && value.prefix !== undefined) {
+        setCurrentPrefix(value.prefix || "");
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [watch]);
 
   const [saving, setSaving] = useState(false);
   const [isFormInitialized, setIsFormInitialized] = useState(false); // Indique si le formulaire est complètement chargé
@@ -704,11 +717,16 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
   }, [existingPurchaseOrder, mode, reset, getValues]);
 
   // Set next purchase order number for new orders
+  // Utiliser un ref pour ne pas écraser le numéro quand loading toggle
+  const prevNextPONumberRef = useRef(null);
   useEffect(() => {
     if (mode === "create" && nextPurchaseOrderNumber && !numberLoading) {
-      // Initialiser avec le prochain numéro séquentiel calculé
-      const formattedNumber = String(nextPurchaseOrderNumber).padStart(4, '0');
-      setValue("number", formattedNumber, { shouldValidate: false, shouldDirty: false });
+      // Seulement si nextPurchaseOrderNumber a réellement changé
+      if (prevNextPONumberRef.current !== nextPurchaseOrderNumber) {
+        const formattedNumber = String(nextPurchaseOrderNumber).padStart(4, '0');
+        setValue("number", formattedNumber, { shouldValidate: false, shouldDirty: false });
+        prevNextPONumberRef.current = nextPurchaseOrderNumber;
+      }
     }
   }, [mode, nextPurchaseOrderNumber, numberLoading, setValue]);
 
@@ -773,11 +791,27 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
         { shouldDirty: false }
       );
 
-      // Ne pas activer showBankDetails par défaut
-      setValue("showBankDetails", false, { shouldDirty: false });
+      // Charger showBankDetails depuis l'organisation
+      setValue("showBankDetails", organization.showBankDetails || false, { shouldDirty: false });
+      // Synchroniser les bankDetails au niveau top-level (utilisé par la preview)
+      if (organization.bankIban || organization.bankBic || organization.bankName) {
+        setValue("bankDetails", {
+          iban: organization.bankIban || "",
+          bic: organization.bankBic || "",
+          bankName: organization.bankName || "",
+        }, { shouldDirty: false });
+      }
 
       // Charger la position du client depuis l'organisation
       setValue("clientPositionRight", organization.purchaseOrderClientPositionRight || false, { shouldDirty: false });
+
+      // Charger le préfixe depuis l'organisation
+      if (organization.purchaseOrderPrefix) {
+        setValue("prefix", organization.purchaseOrderPrefix, { shouldDirty: false });
+      }
+
+      // Note: le numéro séquentiel est géré par l'effet nextPurchaseOrderNumber
+      // Le startNumber de l'org est uniquement utilisé dans la vue paramètres (purchase-order-settings-view)
 
       // Synchroniser les champs plats pour CompanyInfoSettingsSection dans la vue paramètres
       setValue("companyName", organization.companyName || organization.name || "", { shouldDirty: false });
@@ -1461,7 +1495,14 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
         purchaseOrderFooterNotes: currentFormData.footerNotes || "",
         purchaseOrderTermsAndConditions: currentFormData.termsAndConditions || "",
         showBankDetails: currentFormData.showBankDetails || false,
+        // Coordonnées bancaires
+        bankIban: currentFormData.bankDetails?.iban || currentFormData.companyInfo?.bankDetails?.iban || "",
+        bankBic: currentFormData.bankDetails?.bic || currentFormData.companyInfo?.bankDetails?.bic || "",
+        bankName: currentFormData.bankDetails?.bankName || currentFormData.companyInfo?.bankDetails?.bankName || "",
         purchaseOrderClientPositionRight: currentFormData.clientPositionRight || false,
+        // Préfixe et numéro de départ
+        purchaseOrderPrefix: currentFormData.prefix || "",
+        purchaseOrderStartNumber: currentFormData.number || "",
         // Informations de l'entreprise
         companyName: currentFormData.companyName || "",
         companyEmail: currentFormData.companyEmail || "",
@@ -1572,7 +1613,7 @@ function getInitialFormData(mode, initialData, session, organization) {
 
   const baseData = {
     // Informations du bon de commande
-    prefix: "",
+    prefix: organization?.purchaseOrderPrefix || "",
     number: "",
     purchaseOrderNumber: "",
     issueDate: today,
@@ -2110,21 +2151,12 @@ function transformFormDataToInput(
     }
   }
 
-  // Gérer la numérotation automatique lors de la transition DRAFT -> CONFIRMED
+  // Envoyer le numéro et le préfixe du formulaire (le backend gère la validation)
   let numberToSend = formData.number || "";
   let prefixToSend = formData.prefix || "";
 
-  // Si on passe de DRAFT à CONFIRMED, ne pas envoyer le numéro pour permettre la génération automatique
-  // IMPORTANT: Seulement si previousStatus existe ET est différent du statut actuel (vrai changement de statut)
-  const isStatusTransition = previousStatus && previousStatus !== formData.status;
-  if (isStatusTransition && previousStatus === "DRAFT" && formData.status === "CONFIRMED") {
-    numberToSend = undefined; // Ne pas envoyer le numéro
-    prefixToSend = undefined; // Ne pas envoyer le préfixe
-  }
-
   // Ne pas envoyer le prefix s'il est vide (pour laisser le backend utiliser le dernier)
-  // Mais l'envoyer s'il a une valeur (même si c'est une modification)
-  const shouldSendPrefix = prefixToSend !== undefined && prefixToSend !== "";
+  const shouldSendPrefix = prefixToSend !== "";
 
   return {
     ...(shouldSendPrefix && { prefix: prefixToSend }),

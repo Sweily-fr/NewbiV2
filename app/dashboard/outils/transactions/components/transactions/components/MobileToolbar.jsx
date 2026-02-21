@@ -59,7 +59,7 @@ export function MobileToolbar({
           {/* Bouton Filtre */}
           <Button
             size="icon"
-            variant="outline"
+            variant="filter"
             onClick={onFilterPress}
             aria-label="Filtrer"
             className="relative"

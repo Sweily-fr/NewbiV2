@@ -728,7 +728,7 @@ export default function ItemsSection({
                               {!errors?.items?.[index]?.unitPrice &&
                                 hasFieldError(index, "unitPrice") && (
                                   <p className="text-xs text-destructive">
-                                    Le prix unitaire doit être supérieur à 0€
+                                    Le prix unitaire doit être positif ou nul
                                   </p>
                                 )}
                             </div>
