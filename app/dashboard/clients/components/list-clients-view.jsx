@@ -1,14 +1,12 @@
 'use client';
 
-import { useState } from 'react';
 import { Button } from '@/src/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/src/components/ui/card';
 import { ArrowLeft, Users, Loader2 } from 'lucide-react';
 import { useClientsInList } from '@/src/hooks/useClientLists';
 import ClientsTable from './clients-table';
 
-export default function ListClientsView({ workspaceId, list, onBack, onListUpdated }) {
-  const { clients, totalItems, loading } = useClientsInList(workspaceId, list.id, 1, 10);
+export default function ListClientsView({ workspaceId, list, onBack, onListUpdated, globalFilter = '' }) {
+  const { clients, totalItems, loading } = useClientsInList(workspaceId, list.id, 1, 1000);
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
@@ -41,7 +39,7 @@ export default function ListClientsView({ workspaceId, list, onBack, onListUpdat
       </div>
 
       {/* Tableau */}
-      <div className="flex-1 min-h-0">
+      <div className="flex flex-col flex-1 min-h-0">
         {loading ? (
           <div className="flex items-center justify-center h-96">
             <Loader2 className="w-8 h-8 animate-spin" />
@@ -59,6 +57,7 @@ export default function ListClientsView({ workspaceId, list, onBack, onListUpdat
             lists={[list]}
             onListsUpdated={onListUpdated}
             defaultListId={list.id}
+            globalFilter={globalFilter}
           />
         )}
       </div>

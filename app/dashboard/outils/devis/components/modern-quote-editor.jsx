@@ -16,8 +16,9 @@ import {
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useQuoteEditor } from "../hooks/use-quote-editor";
+import { useClient } from "@/src/graphql/clientQueries";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import EnhancedQuoteForm from "./enhanced-quote-form";
 import QuoteSettingsView from "./quote-settings-view";
@@ -38,6 +39,9 @@ export default function ModernQuoteEditor({
   initialData = null,
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const clientIdFromUrl = mode === "create" ? searchParams.get("clientId") : null;
+  const { client: preselectedClient } = useClient(clientIdFromUrl);
   const [showSettings, setShowSettings] = useState(false);
   const [showEditClient, setShowEditClient] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
@@ -70,6 +74,13 @@ export default function ModernQuoteEditor({
     quoteId,
     initialData,
   });
+
+  // Pré-remplir le client si clientId est dans l'URL
+  useEffect(() => {
+    if (preselectedClient && mode === "create" && !formData?.client) {
+      form.setValue("client", preselectedClient, { shouldDirty: true });
+    }
+  }, [preselectedClient, mode, form]);
 
   // Debounce pour la preview (évite les saccades)
   useEffect(() => {

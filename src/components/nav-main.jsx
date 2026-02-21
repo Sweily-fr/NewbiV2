@@ -256,9 +256,8 @@ export function NavMain({
               )}
               {/* Sous-menus */}
               {ventesItems.map((subItem) => {
-                const isSubItemActive =
-                  pathname === subItem.url ||
-                  pathname?.startsWith(subItem.url + "/");
+                const allUrls = ventesItems.map((i) => i.url);
+                const isSubItemActive = isNavItemActive(subItem.url, allUrls);
                 const hasSubAccess = !subItem.isPro || hasProAccess;
                 return (
                   <DropdownMenuItem
@@ -337,9 +336,8 @@ export function NavMain({
           <CollapsibleContent>
             <SidebarMenuSub>
               {ventesItems.map((subItem) => {
-                const isSubItemActive =
-                  pathname === subItem.url ||
-                  pathname?.startsWith(subItem.url + "/");
+                const allUrls = ventesItems.map((i) => i.url);
+                const isSubItemActive = isNavItemActive(subItem.url, allUrls);
                 const hasSubAccess = !subItem.isPro || hasProAccess;
                 return (
                   <SidebarMenuSubItem key={subItem.title}>
@@ -582,6 +580,34 @@ export function NavMain({
     );
   };
 
+  // Détermine si un item de navigation est actif en ne gardant que le match le plus spécifique
+  // Ex: pour pathname="/dashboard/clients/listes", seul "/dashboard/clients/listes" est actif,
+  // pas "/dashboard/clients"
+  const isNavItemActive = (itemUrl, allUrls) => {
+    const isExact = pathname === itemUrl;
+    if (isExact) return true;
+    const isPrefix = pathname?.startsWith(itemUrl + "/");
+    if (!isPrefix) return false;
+    // Vérifier qu'aucun autre URL du groupe ne matche de façon plus spécifique
+    const hasMoreSpecificMatch = allUrls.some(
+      (otherUrl) => otherUrl !== itemUrl && otherUrl.startsWith(itemUrl + "/") && (pathname === otherUrl || pathname?.startsWith(otherUrl + "/"))
+    );
+    return !hasMoreSpecificMatch;
+  };
+
+  // Collecte toutes les URLs d'un groupe de subItems (y compris les sections)
+  const getAllSubItemUrls = (subItems) => {
+    const urls = [];
+    subItems.forEach((item) => {
+      if (item.section && item.items) {
+        item.items.forEach((sub) => urls.push(sub.url));
+      } else if (item.url) {
+        urls.push(item.url);
+      }
+    });
+    return urls;
+  };
+
   // Fonction pour rendre un menu collapsible
   const renderCollapsibleMenu = (
     title,
@@ -630,9 +656,8 @@ export function NavMain({
                       </div>
                       {/* Items de la section */}
                       {subItem.items?.map((item) => {
-                        const isSubItemActive =
-                          pathname === item.url ||
-                          pathname?.startsWith(item.url + "/");
+                        const allUrls = getAllSubItemUrls(subItems);
+                        const isSubItemActive = isNavItemActive(item.url, allUrls);
                         const hasSubAccess = !item.isPro || hasProAccess;
                         return (
                           <DropdownMenuItem
@@ -668,9 +693,8 @@ export function NavMain({
                 }
 
                 // Sinon, c'est un item simple (ancien format)
-                const isSubItemActive =
-                  pathname === subItem.url ||
-                  pathname?.startsWith(subItem.url + "/");
+                const allUrls = getAllSubItemUrls(subItems);
+                const isSubItemActive = isNavItemActive(subItem.url, allUrls);
                 const hasSubAccess = !subItem.isPro || hasProAccess;
                 return (
                   <DropdownMenuItem
@@ -758,9 +782,8 @@ export function NavMain({
                       </div>
                       {/* Items de la section */}
                       {subItem.items?.map((item) => {
-                        const isSubItemActive =
-                          pathname === item.url ||
-                          pathname?.startsWith(item.url + "/");
+                        const allUrls = getAllSubItemUrls(subItems);
+                        const isSubItemActive = isNavItemActive(item.url, allUrls);
                         const hasSubAccess = !item.isPro || hasProAccess;
                         return (
                           <SidebarMenuSubItem key={item.title}>
@@ -797,9 +820,8 @@ export function NavMain({
                 }
 
                 // Sinon, c'est un item simple (ancien format)
-                const isSubItemActive =
-                  pathname === subItem.url ||
-                  pathname?.startsWith(subItem.url + "/");
+                const allUrls = getAllSubItemUrls(subItems);
+                const isSubItemActive = isNavItemActive(subItem.url, allUrls);
                 const hasSubAccess = !subItem.isPro || hasProAccess;
                 return (
                   <SidebarMenuSubItem key={subItem.title}>

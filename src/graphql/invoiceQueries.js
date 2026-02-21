@@ -36,6 +36,7 @@ export const INVOICE_FRAGMENT = gql`
     showBankDetails
     clientPositionRight
     isReverseCharge
+    operationType
     createdAt
     updatedAt
     client {

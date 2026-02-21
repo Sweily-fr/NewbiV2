@@ -25,6 +25,7 @@ export const CREATE_CLIENT = gql`
       }
       siret
       vatNumber
+      isInternational
       contacts {
         id
         position
@@ -39,6 +40,9 @@ export const CREATE_CLIENT = gql`
         fieldId
         value
       }
+      isBlocked
+      blockedAt
+      blockedReason
       notes {
         id
         content
@@ -64,6 +68,10 @@ export const CREATE_CLIENT = gql`
           documentId
           documentNumber
           status
+          originalInvoiceNumber
+          eventId
+          eventTitle
+          eventDate
         }
       }
       createdAt
@@ -97,6 +105,7 @@ export const UPDATE_CLIENT = gql`
       }
       siret
       vatNumber
+      isInternational
       contacts {
         id
         position
@@ -111,6 +120,9 @@ export const UPDATE_CLIENT = gql`
         fieldId
         value
       }
+      isBlocked
+      blockedAt
+      blockedReason
       notes {
         id
         content
@@ -136,6 +148,10 @@ export const UPDATE_CLIENT = gql`
           documentId
           documentNumber
           status
+          originalInvoiceNumber
+          eventId
+          eventTitle
+          eventDate
         }
       }
       createdAt
@@ -168,6 +184,15 @@ export const UNBLOCK_CLIENT = gql`
       isBlocked
       blockedAt
       blockedReason
+    }
+  }
+`;
+
+export const ASSIGN_CLIENT_MEMBERS = gql`
+  mutation AssignClientMembers($workspaceId: String!, $id: ID!, $memberIds: [String!]!) {
+    assignClientMembers(workspaceId: $workspaceId, id: $id, memberIds: $memberIds) {
+      id
+      assignedMembers
     }
   }
 `;

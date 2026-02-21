@@ -85,38 +85,8 @@ export const useCreateEvent = () => {
   const { workspaceId } = useWorkspace();
   
   const [createEventMutation, { loading, error }] = useMutation(CREATE_EVENT, {
-    update(cache, { data }) {
-      const result = data?.createEvent;
-      if (!result?.success || !result?.event) return;
-
-      cache.modify({
-        fields: {
-          getEvents(existing, { readField }) {
-            if (!existing?.events) return existing;
-
-            // Vérifier si l'événement est déjà dans le cache
-            if (existing.events.some(ref => readField('id', ref) === result.event.id)) {
-              return existing;
-            }
-
-            const newRef = cache.writeFragment({
-              data: result.event,
-              fragment: gql`
-                fragment NewEvent on Event {
-                  id
-                }
-              `,
-            });
-
-            return {
-              ...existing,
-              events: [...existing.events, newRef],
-              totalCount: (existing.totalCount || 0) + 1,
-            };
-          },
-        },
-      });
-    },
+    refetchQueries: ["GetEvents"],
+    awaitRefetchQueries: true,
   });
 
   const createEvent = async (input, customWorkspaceId) => {
@@ -155,7 +125,10 @@ export const useCreateEvent = () => {
 export const useUpdateEvent = () => {
   const { workspaceId } = useWorkspace();
   
-  const [updateEventMutation, { loading, error }] = useMutation(UPDATE_EVENT);
+  const [updateEventMutation, { loading, error }] = useMutation(UPDATE_EVENT, {
+    refetchQueries: ["GetEvents"],
+    awaitRefetchQueries: true,
+  });
 
   const updateEvent = async (input, customWorkspaceId) => {
     try {
@@ -194,30 +167,8 @@ export const useDeleteEvent = () => {
   const { workspaceId } = useWorkspace();
   
   const [deleteEventMutation, { loading, error }] = useMutation(DELETE_EVENT, {
-    update(cache, { data }) {
-      const result = data?.deleteEvent;
-      if (!result?.success || !result?.event) return;
-
-      const deletedId = result.event.id;
-
-      cache.modify({
-        fields: {
-          getEvents(existing, { readField }) {
-            if (!existing?.events) return existing;
-
-            return {
-              ...existing,
-              events: existing.events.filter(ref => readField('id', ref) !== deletedId),
-              totalCount: Math.max((existing.totalCount || 0) - 1, 0),
-            };
-          },
-        },
-      });
-
-      // Supprimer l'entité du cache
-      cache.evict({ id: cache.identify({ __typename: 'Event', id: deletedId }) });
-      cache.gc();
-    },
+    refetchQueries: ["GetEvents"],
+    awaitRefetchQueries: true,
   });
 
   const deleteEvent = async (id, customWorkspaceId) => {
@@ -260,6 +211,7 @@ export const useSyncInvoiceEvents = () => {
     SYNC_INVOICE_EVENTS,
     {
       refetchQueries: ["GetEvents"],
+      awaitRefetchQueries: true,
     }
   );
 
