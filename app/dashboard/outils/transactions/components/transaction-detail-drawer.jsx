@@ -69,6 +69,10 @@ import {
   Link2,
   Unlink,
   ExternalLink,
+  ZoomIn,
+  ZoomOut,
+  RotateCw,
+  Maximize2,
 } from "lucide-react";
 import {
   formatDateToFrench,
@@ -80,6 +84,12 @@ import { toast } from "@/src/components/ui/sonner";
 import { UPDATE_TRANSACTION } from "@/src/graphql/queries/banking";
 import { Calendar } from "@/src/components/ui/calendar-rac";
 import { DateInput } from "@/src/components/ui/datefield-rac";
+import {
+  Dialog as RadixDialog,
+  DialogContent as RadixDialogContent,
+  DialogTitle as RadixDialogTitle,
+} from "@/src/components/ui/dialog";
+import { VisuallyHidden } from "@/src/components/ui/visually-hidden";
 import CategorySearchSelect from "./category-search-select";
 import { useUnlinkTransactionFromInvoice } from "@/src/hooks/useReconciliationGraphQL";
 import { useRouter } from "next/navigation";
@@ -298,6 +308,11 @@ export function TransactionDetailDrawer({
   const [selectedFile, setSelectedFile] = useState(null);
   const [isUnlinking, setIsUnlinking] = useState(false);
   const [calendarContainer, setCalendarContainer] = useState(null);
+  const [receiptViewerOpen, setReceiptViewerOpen] = useState(false);
+  const [receiptViewerUrl, setReceiptViewerUrl] = useState(null);
+  const [receiptViewerMime, setReceiptViewerMime] = useState(null);
+  const [receiptZoom, setReceiptZoom] = useState(1);
+  const [receiptRotation, setReceiptRotation] = useState(0);
   const prevOpenRef = useRef(false);
   const fileInputRef = useRef(null);
 
@@ -576,6 +591,15 @@ export function TransactionDetailDrawer({
     }
   };
 
+  // Ouvrir le viewer de justificatif
+  const openReceiptViewer = (url, mimetype) => {
+    setReceiptViewerUrl(url);
+    setReceiptViewerMime(mimetype || "");
+    setReceiptZoom(1);
+    setReceiptRotation(0);
+    setReceiptViewerOpen(true);
+  };
+
   // Naviguer vers la facture liée
   const handleViewLinkedInvoice = () => {
     if (transaction?.linkedInvoice?.id) {
@@ -638,6 +662,7 @@ export function TransactionDetailDrawer({
   ) : null;
 
   return (
+    <>
     <Drawer open={open} onOpenChange={onOpenChange} direction="right">
       <DrawerContent
         className="w-full h-full md:w-[500px] md:max-w-[500px] md:min-w-[500px] md:h-auto"
@@ -1062,7 +1087,7 @@ export function TransactionDetailDrawer({
                 <div className="space-y-2">
                   <div
                     className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30 hover:bg-muted/50 transition-colors group cursor-pointer"
-                    onClick={() => window.open(previewUrl, "_blank")}
+                    onClick={() => openReceiptViewer(previewUrl, selectedFile?.type)}
                   >
                     <div className="w-10 h-10 rounded overflow-hidden bg-gray-100">
                       {selectedFile?.type === "application/pdf" ? (
@@ -1098,6 +1123,7 @@ export function TransactionDetailDrawer({
                   {(() => {
                     const file = transaction.receiptFile;
                     const isImage = file.mimetype?.startsWith("image/");
+                    const isPdf = file.mimetype === "application/pdf";
 
                     const formatFileSize = (bytes) => {
                       if (!bytes) return "";
@@ -1107,53 +1133,82 @@ export function TransactionDetailDrawer({
                     };
 
                     return (
-                      <div
-                        className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30 hover:bg-muted/50 transition-colors group cursor-pointer"
-                        onClick={() => window.open(file.url, "_blank")}
-                      >
-                        <div className="flex-shrink-0">
-                          {isImage ? (
-                            <div className="w-10 h-10 rounded overflow-hidden bg-gray-100">
-                              <img src={file.url} alt={file.filename || "Justificatif"} className="w-full h-full object-cover" />
-                            </div>
-                          ) : (
-                            <div className="w-10 h-10 rounded bg-gray-100 flex items-center justify-center">
-                              <FileText className="h-5 w-5 text-gray-600" />
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-normal truncate">{file.filename || "Justificatif"}</p>
-                          <span className="text-xs text-muted-foreground">{formatFileSize(file.size)}</span>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const link = document.createElement("a");
-                            link.href = file.url;
-                            link.download = file.filename || "justificatif";
-                            link.target = "_blank";
-                            document.body.appendChild(link);
-                            link.click();
-                            document.body.removeChild(link);
+                      <>
+                        {/* Preview large du justificatif */}
+                        <div
+                          className="relative flex h-48 w-full items-center justify-center overflow-hidden rounded-lg border bg-muted/30 cursor-pointer hover:border-primary transition-colors group"
+                          onClick={() => openReceiptViewer(file.url, file.mimetype)}
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              openReceiptViewer(file.url, file.mimetype);
+                            }
                           }}
                         >
-                          <Download className="h-4 w-4" />
-                        </Button>
-                      </div>
+                          {isPdf ? (
+                            <iframe
+                              src={file.url}
+                              className="h-full w-full pointer-events-none"
+                              title="Preview du justificatif"
+                            />
+                          ) : isImage ? (
+                            <img
+                              className="h-full w-full object-contain"
+                              src={file.url}
+                              alt={file.filename || "Justificatif"}
+                              loading="lazy"
+                            />
+                          ) : (
+                            <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                              <FileText className="h-10 w-10" />
+                              <span className="text-sm">{file.filename || "Justificatif"}</span>
+                            </div>
+                          )}
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                            <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-background rounded-full p-2 shadow-lg border">
+                              <Maximize2 className="h-5 w-5 text-foreground" />
+                            </div>
+                          </div>
+                        </div>
+                        {/* Info fichier + téléchargement */}
+                        <div className="flex items-center gap-3 px-1">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-normal truncate">{file.filename || "Justificatif"}</p>
+                            <span className="text-xs text-muted-foreground">{formatFileSize(file.size)}</span>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            title="Télécharger"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const link = document.createElement("a");
+                              link.href = file.url;
+                              link.download = file.filename || "justificatif";
+                              link.target = "_blank";
+                              document.body.appendChild(link);
+                              link.click();
+                              document.body.removeChild(link);
+                            }}
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </>
                     );
                   })()}
                 </div>
               )}
 
               {/* Fichiers existants (ancien système) */}
-              {!isCreateMode && transaction?.files && transaction.files.length > 0 && (
+              {!isCreateMode && transaction?.files && transaction.files.length > 0 && !transaction?.receiptFile?.url && (
                 <div className="space-y-2">
                   {transaction.files.map((file, index) => {
                     const isImage = file.mimetype?.startsWith("image/");
+                    const isPdf = file.mimetype === "application/pdf";
                     const formatFileSize = (bytes) => {
                       if (!bytes) return "";
                       if (bytes < 1024) return `${bytes} B`;
@@ -1162,45 +1217,69 @@ export function TransactionDetailDrawer({
                     };
 
                     return (
-                      <div
-                        key={file.id || index}
-                        className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30 hover:bg-muted/50 transition-colors group cursor-pointer"
-                        onClick={() => window.open(file.url, "_blank")}
-                      >
-                        <div className="flex-shrink-0">
-                          {isImage ? (
-                            <div className="w-10 h-10 rounded overflow-hidden bg-gray-100">
-                              <img src={file.url} alt={file.originalFilename || "Justificatif"} className="w-full h-full object-cover" />
+                      <div key={file.id || index} className="space-y-2">
+                        {/* Preview large */}
+                        {(isImage || isPdf) && (
+                          <div
+                            className="relative flex h-48 w-full items-center justify-center overflow-hidden rounded-lg border bg-muted/30 cursor-pointer hover:border-primary transition-colors group"
+                            onClick={() => openReceiptViewer(file.url, file.mimetype)}
+                            role="button"
+                            tabIndex={0}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault();
+                                openReceiptViewer(file.url, file.mimetype);
+                              }
+                            }}
+                          >
+                            {isPdf ? (
+                              <iframe
+                                src={file.url}
+                                className="h-full w-full pointer-events-none"
+                                title="Preview du justificatif"
+                              />
+                            ) : (
+                              <img
+                                className="h-full w-full object-contain"
+                                src={file.url}
+                                alt={file.originalFilename || "Justificatif"}
+                                loading="lazy"
+                              />
+                            )}
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                              <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-background rounded-full p-2 shadow-lg border">
+                                <Maximize2 className="h-5 w-5 text-foreground" />
+                              </div>
                             </div>
-                          ) : (
-                            <div className="w-10 h-10 rounded bg-gray-100 flex items-center justify-center">
-                              <FileText className="h-5 w-5 text-gray-600" />
-                            </div>
-                          )}
+                          </div>
+                        )}
+                        {/* Info fichier */}
+                        <div className="flex items-center gap-3 px-1">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-normal truncate">
+                              {file.originalFilename || file.filename || `Fichier ${index + 1}`}
+                            </p>
+                            <span className="text-xs text-muted-foreground">{formatFileSize(file.size)}</span>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            title="Télécharger"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const link = document.createElement("a");
+                              link.href = file.url;
+                              link.download = file.originalFilename || file.filename || `fichier-${index + 1}`;
+                              link.target = "_blank";
+                              document.body.appendChild(link);
+                              link.click();
+                              document.body.removeChild(link);
+                            }}
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-normal truncate">
-                            {file.originalFilename || file.filename || `Fichier ${index + 1}`}
-                          </p>
-                          <span className="text-xs text-muted-foreground">{formatFileSize(file.size)}</span>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const link = document.createElement("a");
-                            link.href = file.url;
-                            link.download = file.originalFilename || file.filename || `fichier-${index + 1}`;
-                            link.target = "_blank";
-                            document.body.appendChild(link);
-                            link.click();
-                            document.body.removeChild(link);
-                          }}
-                        >
-                          <Download className="h-4 w-4" />
-                        </Button>
                       </div>
                     );
                   })}
@@ -1428,5 +1507,86 @@ export function TransactionDetailDrawer({
         </DrawerFooter>
       </DrawerContent>
     </Drawer>
+
+    {/* Viewer plein écran pour le justificatif */}
+    <RadixDialog open={receiptViewerOpen} onOpenChange={setReceiptViewerOpen}>
+      <RadixDialogContent
+        className="max-w-[95vw] max-h-[95vh] w-full h-[90vh] p-0 overflow-hidden flex flex-col sm:max-w-[95vw]"
+        showCloseButton={false}
+      >
+        <VisuallyHidden>
+          <RadixDialogTitle>Justificatif</RadixDialogTitle>
+        </VisuallyHidden>
+        {/* Toolbar */}
+        <div className="flex items-center justify-between px-4 py-2 border-b bg-background/95 backdrop-blur-sm shrink-0">
+          <span className="text-sm font-medium">Justificatif</span>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setReceiptZoom((z) => Math.max(0.25, z - 0.25))}
+              className="inline-flex items-center justify-center h-8 w-8 rounded-md hover:bg-accent transition-colors"
+              title="Dézoomer"
+            >
+              <ZoomOut size={16} />
+            </button>
+            <span className="text-xs text-muted-foreground w-12 text-center">
+              {Math.round(receiptZoom * 100)}%
+            </span>
+            <button
+              type="button"
+              onClick={() => setReceiptZoom((z) => Math.min(4, z + 0.25))}
+              className="inline-flex items-center justify-center h-8 w-8 rounded-md hover:bg-accent transition-colors"
+              title="Zoomer"
+            >
+              <ZoomIn size={16} />
+            </button>
+            <div className="w-px h-5 bg-border mx-1" />
+            <button
+              type="button"
+              onClick={() => setReceiptRotation((r) => (r + 90) % 360)}
+              className="inline-flex items-center justify-center h-8 w-8 rounded-md hover:bg-accent transition-colors"
+              title="Pivoter"
+            >
+              <RotateCw size={16} />
+            </button>
+            <div className="w-px h-5 bg-border mx-1" />
+            <button
+              type="button"
+              onClick={() => setReceiptViewerOpen(false)}
+              className="inline-flex items-center justify-center h-8 w-8 rounded-md hover:bg-accent transition-colors"
+              title="Fermer"
+            >
+              <X size={16} />
+            </button>
+          </div>
+        </div>
+        {/* Document viewer */}
+        <div className="flex-1 overflow-auto bg-muted/30 flex items-center justify-center">
+          {receiptViewerMime === "application/pdf" ? (
+            <iframe
+              src={receiptViewerUrl}
+              className="w-full h-full"
+              title="Justificatif"
+              style={{
+                transform: `scale(${receiptZoom}) rotate(${receiptRotation}deg)`,
+                transformOrigin: "center center",
+              }}
+            />
+          ) : (
+            <img
+              src={receiptViewerUrl}
+              alt="Justificatif"
+              className="max-w-none transition-transform duration-200"
+              style={{
+                transform: `scale(${receiptZoom}) rotate(${receiptRotation}deg)`,
+                transformOrigin: "center center",
+              }}
+              draggable={false}
+            />
+          )}
+        </div>
+      </RadixDialogContent>
+    </RadixDialog>
+    </>
   );
 }
