@@ -478,7 +478,7 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
             itemErrors.push("quantity");
             fields.push("quantity");
           }
-          if (item.unitPrice === undefined || item.unitPrice === null || item.unitPrice <= 0) {
+          if (item.unitPrice === undefined || item.unitPrice === null || item.unitPrice < 0) {
             itemErrors.push("unitPrice");
             fields.push("unitPrice");
           }
@@ -1027,10 +1027,10 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
                              priceValue === null || 
                              priceValue === "" || 
                              isNaN(parseFloat(priceValue)) ||
-                             parseFloat(priceValue) <= 0;
-            
+                             parseFloat(priceValue) < 0;
+
             if (isInvalid) {
-              itemErrors.push("prix unitaire doit être > 0€");
+              itemErrors.push("prix unitaire invalide");
               fields.push("unitPrice");
             }
             
@@ -1300,10 +1300,10 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
                              priceValue === null || 
                              priceValue === "" || 
                              isNaN(parseFloat(priceValue)) ||
-                             parseFloat(priceValue) <= 0;
-            
+                             parseFloat(priceValue) < 0;
+
             if (isInvalid) {
-              itemErrors.push("prix unitaire doit être > 0€");
+              itemErrors.push("prix unitaire invalide");
               fields.push("unitPrice");
             }
             

@@ -1,27 +1,40 @@
 import { isSameDay } from "date-fns"
 
 /**
- * Get CSS classes for event colors
+ * Map legacy named colors to hex values
+ */
+export const NAMED_TO_HEX = {
+  sky: '#38BDF8', amber: '#FBBF24', violet: '#8B5CF6', rose: '#FB7185',
+  emerald: '#34D399', orange: '#FB923C', blue: '#3B82F6', green: '#22C55E',
+  red: '#EF4444', purple: '#A855F7', pink: '#EC4899', yellow: '#EAB308',
+}
+
+/**
+ * Normalize a color value: convert legacy named colors to hex, pass hex through
+ */
+export function normalizeColor(color) {
+  if (!color) return '#3B82F6'
+  if (color.startsWith('#')) return color
+  return NAMED_TO_HEX[color] || '#3B82F6'
+}
+
+/**
+ * Get inline styles for any color (works for both hex and legacy named)
+ */
+export function getEventHexStyles(color) {
+  const hex = normalizeColor(color)
+  return {
+    backgroundColor: hex + '20',
+    color: hex,
+  }
+}
+
+/**
+ * Get CSS classes for event colors — always returns null now.
+ * Kept for API compat but getEventHexStyles is the primary method.
  */
 export function getEventColorClasses(color) {
-  const eventColor = color || "sky"
-
-  switch (eventColor) {
-    case "sky":
-      return "bg-sky-200/50 hover:bg-sky-200/40 text-sky-950/80 dark:bg-sky-400/25 dark:hover:bg-sky-400/20 dark:text-sky-200 shadow-sky-700/8"
-    case "amber":
-      return "bg-amber-200/50 hover:bg-amber-200/40 text-amber-950/80 dark:bg-amber-400/25 dark:hover:bg-amber-400/20 dark:text-amber-200 shadow-amber-700/8"
-    case "violet":
-      return "bg-violet-200/50 hover:bg-violet-200/40 text-violet-950/80 dark:bg-violet-400/25 dark:hover:bg-violet-400/20 dark:text-violet-200 shadow-violet-700/8"
-    case "rose":
-      return "bg-rose-200/50 hover:bg-rose-200/40 text-rose-950/80 dark:bg-rose-400/25 dark:hover:bg-rose-400/20 dark:text-rose-200 shadow-rose-700/8"
-    case "emerald":
-      return "bg-emerald-200/50 hover:bg-emerald-200/40 text-emerald-950/80 dark:bg-emerald-400/25 dark:hover:bg-emerald-400/20 dark:text-emerald-200 shadow-emerald-700/8"
-    case "orange":
-      return "bg-orange-200/50 hover:bg-orange-200/40 text-orange-950/80 dark:bg-orange-400/25 dark:hover:bg-orange-400/20 dark:text-orange-200 shadow-orange-700/8"
-    default:
-      return "bg-sky-200/50 hover:bg-sky-200/40 text-sky-950/80 dark:bg-sky-400/25 dark:hover:bg-sky-400/20 dark:text-sky-200 shadow-sky-700/8"
-  }
+  return null
 }
 
 /**

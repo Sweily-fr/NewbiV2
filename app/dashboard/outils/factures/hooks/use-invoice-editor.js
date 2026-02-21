@@ -545,8 +545,7 @@ export function useInvoiceEditor({
               (item.description && item.description.trim() !== "") ||
               (item.unitPrice !== undefined &&
                 item.unitPrice !== null &&
-                item.unitPrice !== "" &&
-                item.unitPrice !== 0) ||
+                item.unitPrice !== "") ||
               (item.quantity !== undefined &&
                 item.quantity !== null &&
                 item.quantity !== "" &&
@@ -601,10 +600,10 @@ export function useInvoiceEditor({
                 priceValue === null ||
                 priceValue === "" ||
                 isNaN(parseFloat(priceValue)) ||
-                parseFloat(priceValue) <= 0;
+                parseFloat(priceValue) < 0;
 
               if (isInvalid) {
-                itemErrors.push("prix unitaire doit être > 0€");
+                itemErrors.push("prix unitaire invalide");
                 fields.push("unitPrice");
               }
             }
@@ -1251,10 +1250,10 @@ export function useInvoiceEditor({
           priceValue === null ||
           priceValue === "" ||
           isNaN(parseFloat(priceValue)) ||
-          parseFloat(priceValue) <= 0;
+          parseFloat(priceValue) < 0;
 
         if (isInvalid) {
-          itemErrors.push("prix unitaire doit être > 0€");
+          itemErrors.push("prix unitaire invalide");
           fields.push("unitPrice");
         }
 
@@ -1574,10 +1573,10 @@ export function useInvoiceEditor({
           priceValue === null ||
           priceValue === "" ||
           isNaN(parseFloat(priceValue)) ||
-          parseFloat(priceValue) <= 0;
+          parseFloat(priceValue) < 0;
 
         if (isInvalid) {
-          itemErrors.push("prix unitaire doit être > 0€");
+          itemErrors.push("prix unitaire invalide");
           fields.push("unitPrice");
         }
 
