@@ -36,6 +36,10 @@ export function useInvoiceEditor({
   const { handleError } = useErrorHandler();
   const [validationErrors, setValidationErrors] = useState({});
 
+  // Refs pour lier la facture au BC/devis source lors de la création
+  const sourcePurchaseOrderIdRef = useRef(null);
+  const sourceQuoteIdRef = useRef(null);
+
   // GraphQL hooks
   const { invoice: existingInvoice, loading: loadingInvoice } =
     useInvoice(invoiceId);
@@ -1006,6 +1010,94 @@ export function useInvoiceEditor({
     }
   }, [mode, isFormInitialized, setValue]);
 
+  // Pre-fill from Purchase Order conversion (via sessionStorage)
+  useEffect(() => {
+    if (mode === 'create' && isFormInitialized) {
+      const poData = sessionStorage.getItem('purchaseOrderInvoiceData');
+      if (poData) {
+        try {
+          const po = JSON.parse(poData);
+          sessionStorage.removeItem('purchaseOrderInvoiceData');
+          sourcePurchaseOrderIdRef.current = po.sourcePurchaseOrderId;
+
+          if (po.client) setValue('client', po.client);
+          if (po.items?.length > 0) {
+            setValue('items', po.items.map(item => ({
+              description: item.description || '',
+              quantity: item.quantity || 1,
+              unitPrice: item.unitPrice || 0,
+              vatRate: item.vatRate ?? 0,
+              unit: item.unit || '',
+              discount: item.discount || 0,
+              discountType: item.discountType || 'PERCENTAGE',
+              details: item.details || '',
+              vatExemptionText: item.vatExemptionText || '',
+              progressPercentage: item.progressPercentage ?? 100,
+            })));
+          }
+          if (po.discount != null) setValue('discount', po.discount);
+          if (po.discountType) setValue('discountType', po.discountType);
+          if (po.customFields?.length > 0) {
+            setValue('customFields', po.customFields.map(cf => ({
+              name: cf.key || cf.name || '', value: cf.value || '',
+            })));
+          }
+          if (po.shipping) setValue('shipping', po.shipping);
+          if (po.purchaseOrderNumber) setValue('purchaseOrderNumber', po.purchaseOrderNumber);
+          if (po.isReverseCharge != null) setValue('isReverseCharge', po.isReverseCharge);
+          if (po.retenueGarantie != null) setValue('retenueGarantie', po.retenueGarantie);
+          if (po.escompte != null) setValue('escompte', po.escompte);
+        } catch (e) {
+          sessionStorage.removeItem('purchaseOrderInvoiceData');
+        }
+      }
+    }
+  }, [mode, isFormInitialized, setValue]);
+
+  // Pre-fill from Quote conversion (via sessionStorage)
+  useEffect(() => {
+    if (mode === 'create' && isFormInitialized) {
+      const quoteData = sessionStorage.getItem('quoteInvoiceData');
+      if (quoteData) {
+        try {
+          const q = JSON.parse(quoteData);
+          sessionStorage.removeItem('quoteInvoiceData');
+          sourceQuoteIdRef.current = q.sourceQuoteId;
+
+          if (q.client) setValue('client', q.client);
+          if (q.items?.length > 0) {
+            setValue('items', q.items.map(item => ({
+              description: item.description || '',
+              quantity: item.quantity || 1,
+              unitPrice: item.unitPrice || 0,
+              vatRate: item.vatRate ?? 0,
+              unit: item.unit || '',
+              discount: item.discount || 0,
+              discountType: item.discountType || 'PERCENTAGE',
+              details: item.details || '',
+              vatExemptionText: item.vatExemptionText || '',
+              progressPercentage: item.progressPercentage ?? 100,
+            })));
+          }
+          if (q.discount != null) setValue('discount', q.discount);
+          if (q.discountType) setValue('discountType', q.discountType);
+          if (q.customFields?.length > 0) {
+            setValue('customFields', q.customFields.map(cf => ({
+              name: cf.key || cf.name || '', value: cf.value || '',
+            })));
+          }
+          if (q.shipping) setValue('shipping', q.shipping);
+          if (q.purchaseOrderNumber) setValue('purchaseOrderNumber', q.purchaseOrderNumber);
+          if (q.isReverseCharge != null) setValue('isReverseCharge', q.isReverseCharge);
+          if (q.retenueGarantie != null) setValue('retenueGarantie', q.retenueGarantie);
+          if (q.escompte != null) setValue('escompte', q.escompte);
+        } catch (e) {
+          sessionStorage.removeItem('quoteInvoiceData');
+        }
+      }
+    }
+  }, [mode, isFormInitialized, setValue]);
+
   // Auto-save handler - DISABLED
   // const handleAutoSave = useCallback(async () => {
   //   if (mode !== "edit" || !invoiceId || formData.status !== "DRAFT") {
@@ -1301,9 +1393,15 @@ export function useInvoiceEditor({
       setSaving(true);
 
       // Pas de changement de statut dans handleSave, donc pas besoin du statut précédent
-      const input = transformFormDataToInput(currentFormData);
+      let input = transformFormDataToInput(currentFormData);
 
       if (mode === "create") {
+        if (sourcePurchaseOrderIdRef.current) {
+          input = { ...input, sourcePurchaseOrderId: sourcePurchaseOrderIdRef.current };
+        }
+        if (sourceQuoteIdRef.current) {
+          input = { ...input, sourceQuoteId: sourceQuoteIdRef.current };
+        }
         await createInvoice(input);
         toast.success("Facture créée avec succès");
         router.push("/dashboard/outils/factures");
@@ -1651,9 +1749,15 @@ export function useInvoiceEditor({
       // Passer le statut précédent pour gérer automatiquement la date d'émission
       // IMPORTANT: Ne pas définir previousStatus lors de la création pour éviter de vider le préfixe
       const previousStatus = mode === "edit" ? existingInvoice?.status : null;
-      const input = transformFormDataToInput(dataToTransform, previousStatus);
+      let input = transformFormDataToInput(dataToTransform, previousStatus);
 
       if (mode === "create") {
+        if (sourcePurchaseOrderIdRef.current) {
+          input = { ...input, sourcePurchaseOrderId: sourcePurchaseOrderIdRef.current };
+        }
+        if (sourceQuoteIdRef.current) {
+          input = { ...input, sourceQuoteId: sourceQuoteIdRef.current };
+        }
         const result = await createInvoice(input);
         toast.success("Facture créée avec succès");
         // Retourner les données de la facture pour permettre l'envoi par email

@@ -32,7 +32,6 @@ import { useRouter } from "next/navigation";
 import {
   useChangePurchaseOrderStatus,
   usePurchaseOrder,
-  useConvertPurchaseOrderToInvoice,
   useDeletePurchaseOrder,
   PURCHASE_ORDER_STATUS,
   PURCHASE_ORDER_STATUS_LABELS,
@@ -51,7 +50,6 @@ export default function PurchaseOrderSidebar({
 }) {
   const router = useRouter();
   const { changeStatus, loading: changingStatus } = useChangePurchaseOrderStatus();
-  const { convertToInvoice, loading: converting } = useConvertPurchaseOrderToInvoice();
   const { deletePurchaseOrder, loading: deleting } = useDeletePurchaseOrder();
 
   // Recuperer les donnees completes du bon de commande
@@ -151,20 +149,23 @@ export default function PurchaseOrderSidebar({
     }
   };
 
-  const handleConvertToInvoice = async () => {
-    try {
-      const result = await convertToInvoice(purchaseOrder.id);
-      toast.success("Bon de commande converti en facture avec succès");
-      if (result?.id) {
-        router.push(`/dashboard/outils/factures/${result.id}/editer`);
-      } else {
-        router.push("/dashboard/outils/factures");
-      }
-      if (onRefetch) onRefetch();
-      onClose();
-    } catch (error) {
-      toast.error("Erreur lors de la conversion en facture");
-    }
+  const handleConvertToInvoice = () => {
+    const po = purchaseOrder;
+    sessionStorage.setItem('purchaseOrderInvoiceData', JSON.stringify({
+      sourcePurchaseOrderId: po.id,
+      purchaseOrderNumber: `${po.prefix || ''}${po.number || ''}`,
+      client: po.client,
+      items: po.items,
+      discount: po.discount,
+      discountType: po.discountType,
+      customFields: po.customFields,
+      shipping: po.shipping,
+      isReverseCharge: po.isReverseCharge,
+      retenueGarantie: po.retenueGarantie,
+      escompte: po.escompte,
+    }));
+    router.push('/dashboard/outils/factures/new');
+    onClose();
   };
 
   const handleDelete = async () => {
@@ -178,7 +179,7 @@ export default function PurchaseOrderSidebar({
     }
   };
 
-  const isLoading = changingStatus || converting || deleting;
+  const isLoading = changingStatus || deleting;
 
   // Determiner les statuts utiles
   const isDraft = purchaseOrder.status === PURCHASE_ORDER_STATUS.DRAFT;
