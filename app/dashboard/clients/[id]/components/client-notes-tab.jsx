@@ -162,6 +162,45 @@ function NoteComposer({ onSubmit, disabled, initialContent = "", members = [] })
   const editorRef = useRef(null);
   const [isEmpty, setIsEmpty] = useState(!initialContent);
   const [mentionState, setMentionState] = useState(null); // { query, position }
+  const [activeFormats, setActiveFormats] = useState({});
+
+  const updateActiveFormats = useCallback(() => {
+    const formats = {};
+    toolbarItems.forEach((item) => {
+      if (item.command === "createLink") {
+        const selection = window.getSelection();
+        if (selection && selection.rangeCount > 0) {
+          let node = selection.anchorNode;
+          while (node && node !== editorRef.current) {
+            if (node.nodeName === "A") { formats["createLink"] = true; break; }
+            node = node.parentNode;
+          }
+        }
+      } else if (item.command === "formatBlock") {
+        const val = document.queryCommandValue("formatBlock");
+        if (val && val.toLowerCase() === item.value?.toLowerCase()) {
+          formats[item.command + "-" + item.value] = true;
+        }
+      } else {
+        try {
+          if (document.queryCommandState(item.command)) {
+            formats[item.command] = true;
+          }
+        } catch (_) {}
+      }
+    });
+    setActiveFormats(formats);
+  }, []);
+
+  useEffect(() => {
+    const handleSelectionChange = () => {
+      if (editorRef.current?.contains(document.activeElement) || editorRef.current?.contains(window.getSelection()?.anchorNode)) {
+        updateActiveFormats();
+      }
+    };
+    document.addEventListener("selectionchange", handleSelectionChange);
+    return () => document.removeEventListener("selectionchange", handleSelectionChange);
+  }, [updateActiveFormats]);
 
   useEffect(() => {
     if (editorRef.current && initialContent) {
@@ -265,7 +304,8 @@ function NoteComposer({ onSubmit, disabled, initialContent = "", members = [] })
       document.execCommand(item.command, false, null);
     }
     editorRef.current?.focus();
-  }, []);
+    setTimeout(updateActiveFormats, 0);
+  }, [updateActiveFormats]);
 
   const handleKeyDown = (e) => {
     // Let mention dropdown handle arrow keys and enter
@@ -309,7 +349,13 @@ function NoteComposer({ onSubmit, disabled, initialContent = "", members = [] })
       {/* Formatting toolbar */}
       <div className="flex items-center justify-between px-2 py-1.5 border-b border-[#eeeff1] dark:border-[#232323]">
         <div className="flex items-center gap-0.5">
-          {toolbarItems.map((item, index) => (
+          {toolbarItems.map((item, index) => {
+            const isActive = item.command === "createLink"
+              ? activeFormats["createLink"]
+              : item.command === "formatBlock"
+                ? activeFormats[item.command + "-" + item.value]
+                : activeFormats[item.command];
+            return (
             <Tooltip key={index}>
               <TooltipTrigger asChild>
                 <button
@@ -319,7 +365,7 @@ function NoteComposer({ onSubmit, disabled, initialContent = "", members = [] })
                     e.stopPropagation();
                     applyFormat(item);
                   }}
-                  className="flex h-7 w-7 items-center justify-center rounded-md text-[#606164] dark:text-muted-foreground hover:bg-[#f8f9fa] dark:hover:bg-[#232323] hover:text-[#242529] dark:hover:text-foreground transition-colors"
+                  className={`flex h-7 w-7 items-center justify-center rounded-md transition-colors ${isActive ? "bg-[#5a50ff]/10 text-[#5a50ff] dark:bg-[#5a50ff]/20 dark:text-[#7c74ff]" : "text-[#606164] dark:text-muted-foreground hover:bg-[#f8f9fa] dark:hover:bg-[#232323] hover:text-[#242529] dark:hover:text-foreground"}`}
                 >
                   <item.icon className="h-3.5 w-3.5" strokeWidth={1.75} />
                 </button>
@@ -328,7 +374,8 @@ function NoteComposer({ onSubmit, disabled, initialContent = "", members = [] })
                 <p>{item.tooltip}</p>
               </TooltipContent>
             </Tooltip>
-          ))}
+          );
+          })}
         </div>
         <Tooltip>
           <TooltipTrigger asChild>

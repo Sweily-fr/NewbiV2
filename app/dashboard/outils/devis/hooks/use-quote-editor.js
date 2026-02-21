@@ -1499,11 +1499,19 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
   // Helper function to set form data programmatically
   const setFormData = useCallback(
     (newData) => {
-      Object.keys(newData).forEach((key) => {
-        setValue(key, newData[key], { shouldDirty: true });
-      });
+      if (typeof newData === "function") {
+        const currentData = getValues();
+        const updatedData = newData(currentData);
+        Object.keys(updatedData).forEach((key) => {
+          setValue(key, updatedData[key], { shouldDirty: true });
+        });
+      } else {
+        Object.keys(newData).forEach((key) => {
+          setValue(key, newData[key], { shouldDirty: true });
+        });
+      }
     },
-    [setValue]
+    [setValue, getValues]
   );
 
   // Fonction pour sauvegarder les paramètres dans l'organisation

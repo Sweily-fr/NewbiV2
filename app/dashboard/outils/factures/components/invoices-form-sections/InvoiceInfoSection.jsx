@@ -858,6 +858,46 @@ export default function InvoiceInfoSection({
             )}
           </div>
 
+          {/* Nature de l'opération (obligatoire 2026) */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
+                Nature de l'opération
+              </Label>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent
+                  side="top"
+                  className="max-w-[280px] sm:max-w-xs"
+                >
+                  <p>
+                    Mention obligatoire pour la facturation électronique (réforme
+                    2026). Indique si la facture concerne une livraison de biens,
+                    une prestation de services, ou les deux.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+            <Select
+              value={data.operationType || ""}
+              onValueChange={(value) => {
+                setValue("operationType", value, { shouldDirty: true });
+              }}
+              disabled={!canEdit}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Sélectionner la nature" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="LB">Livraison de biens</SelectItem>
+                <SelectItem value="PS">Prestation de services</SelectItem>
+                <SelectItem value="LBPS">Mixte - Biens et services</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           {/* Référence de situation - Combobox unifié */}
           {data.invoiceType === "situation" && (
             <div className="space-y-2">

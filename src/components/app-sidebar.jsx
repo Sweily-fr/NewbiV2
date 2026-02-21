@@ -106,6 +106,10 @@ const data = {
       title: "Prévision",
       url: "/dashboard/outils/prevision",
     },
+    {
+      title: "Analytiques",
+      url: "/dashboard/outils/analytiques",
+    },
   ],
   navVentes: [
     {
@@ -139,7 +143,7 @@ const data = {
       url: "/dashboard/clients/segments",
     },
     {
-      title: "Blocked",
+      title: "Bloqués",
       url: "/dashboard/clients/blocked",
     },
   ],

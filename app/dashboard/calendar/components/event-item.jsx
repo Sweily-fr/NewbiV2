@@ -6,6 +6,7 @@ import { differenceInMinutes, format, getMinutes, isPast } from "date-fns";
 
 import { getBorderRadiusClasses, getEventHexStyles } from "./index";
 import { ExternalEventBadge } from "./external-event-badge";
+import { SyncBadge } from "./sync-badge";
 import { cn } from "@/src/lib/utils";
 
 // Using date-fns format with custom formatting:
@@ -112,6 +113,7 @@ export function EventItem({
   onTouchStart,
 }) {
   const eventColor = event.color;
+  const syncCount = event.externalCalendarLinks?.length || 0;
 
   // Use the provided currentTime (for dragging) or the event's actual time
   const displayStart = useMemo(() => {
@@ -163,13 +165,16 @@ export function EventItem({
         onTouchStart={onTouchStart}
       >
         {children || (
-          <span className="truncate">
-            {!event.allDay && (
-              <span className="truncate font-normal opacity-70 sm:text-[11px]">
-                {formatTimeWithOptionalMinutes(displayStart)}{" "}
-              </span>
-            )}
-            {event.title}
+          <span className="flex items-center gap-1 truncate">
+            <span className="truncate">
+              {!event.allDay && (
+                <span className="truncate font-normal opacity-70 sm:text-[11px]">
+                  {formatTimeWithOptionalMinutes(displayStart)}{" "}
+                </span>
+              )}
+              {event.title}
+            </span>
+            <SyncBadge count={syncCount} className="hidden sm:inline-flex shrink-0" />
           </span>
         )}
       </EventWrapper>
@@ -197,17 +202,23 @@ export function EventItem({
         onTouchStart={onTouchStart}
       >
         {durationMinutes < 45 ? (
-          <div className="truncate">
-            {event.title}{" "}
-            {showTime && (
-              <span className="opacity-70">
-                {formatTimeWithOptionalMinutes(displayStart)}
-              </span>
-            )}
+          <div className="flex items-center gap-1 truncate">
+            <span className="truncate">
+              {event.title}{" "}
+              {showTime && (
+                <span className="opacity-70">
+                  {formatTimeWithOptionalMinutes(displayStart)}
+                </span>
+              )}
+            </span>
+            <SyncBadge count={syncCount} className="shrink-0" />
           </div>
         ) : (
           <>
-            <div className="truncate font-medium">{event.title}</div>
+            <div className="flex items-center gap-1 truncate">
+              <span className="truncate font-medium">{event.title}</span>
+              <SyncBadge count={syncCount} className="shrink-0" />
+            </div>
             {showTime && (
               <div className="truncate font-normal opacity-70 sm:text-[11px]">
                 {getEventTime()}
@@ -236,6 +247,7 @@ export function EventItem({
     >
       <div className="flex items-center gap-1.5 text-sm font-medium">
         {event.title}
+        <SyncBadge count={syncCount} />
         <ExternalEventBadge source={event.source} />
       </div>
       <div className="text-xs opacity-70">

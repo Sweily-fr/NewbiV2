@@ -2434,6 +2434,7 @@ function transformFormDataToInput(formData, previousStatus = null) {
       : null,
     isReverseCharge: formData.isReverseCharge || false,
     clientPositionRight: formData.clientPositionRight || false,
+    ...(formData.operationType && { operationType: formData.operationType }),
   };
 }
 

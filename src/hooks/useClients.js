@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from '@apollo/client';
-import { CREATE_CLIENT, UPDATE_CLIENT, DELETE_CLIENT, BLOCK_CLIENT, UNBLOCK_CLIENT } from '../graphql/mutations/clients';
+import { CREATE_CLIENT, UPDATE_CLIENT, DELETE_CLIENT, BLOCK_CLIENT, UNBLOCK_CLIENT, ASSIGN_CLIENT_MEMBERS } from '../graphql/mutations/clients';
 import { GET_CLIENTS, GET_CLIENT } from '../graphql/queries/clients';
 import { GET_CLIENT_LISTS } from '../graphql/queries/clientLists';
 import { toast } from '@/src/components/ui/sonner';
@@ -157,7 +157,10 @@ export const useDeleteClient = () => {
   const { handleMutationError } = useErrorHandler();
   
   const [deleteClient, { loading, error }] = useMutation(DELETE_CLIENT, {
-    update: (cache, {}, { variables: { id } }) => {
+    context: { skipErrorToast: true },
+    update: (cache, { data, errors }, { variables: { id } }) => {
+      // Ne pas mettre à jour le cache si la mutation a échoué
+      if (!data?.deleteClient || errors?.length > 0) return;
       // Supprimer le client du cache GET_CLIENT
       cache.evict({
         id: cache.identify({ __typename: 'Client', id })
@@ -250,6 +253,30 @@ export const useUnblockClient = () => {
 
   return {
     unblockClient: (id) => unblockClient({ variables: { workspaceId, id } }),
+    loading,
+    error,
+  };
+};
+
+export const useAssignClientMembers = () => {
+  const { workspaceId } = useWorkspace();
+  const { handleMutationError } = useErrorHandler();
+
+  const [assignClientMembers, { loading, error }] = useMutation(ASSIGN_CLIENT_MEMBERS, {
+    refetchQueries: [
+      { query: GET_CLIENTS, variables: { workspaceId, page: 1, limit: 10, search: '' } },
+    ],
+    awaitRefetchQueries: false,
+    onCompleted: () => {
+      toast.success('Membres assignés');
+    },
+    onError: (error) => {
+      handleMutationError(error, 'assign', 'client');
+    },
+  });
+
+  return {
+    assignClientMembers: (id, memberIds) => assignClientMembers({ variables: { workspaceId, id, memberIds } }),
     loading,
     error,
   };
