@@ -1913,6 +1913,22 @@ export const organizationPlugin = organization({
           input: true,
           required: false,
         },
+        // Numéros de départ personnalisés
+        invoiceStartNumber: {
+          type: "string",
+          input: true,
+          required: false,
+        },
+        quoteStartNumber: {
+          type: "string",
+          input: true,
+          required: false,
+        },
+        purchaseOrderStartNumber: {
+          type: "string",
+          input: true,
+          required: false,
+        },
         // Organization type (business or accounting_firm)
         organizationType: {
           type: "string",

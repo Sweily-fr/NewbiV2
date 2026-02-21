@@ -107,6 +107,8 @@ export default function InvoiceSettingsView({
   // Auto-initialiser le préfixe et le numéro au montage uniquement (pas en continu)
   const prefixInitializedRef = useRef(false);
   const numberInitializedRef = useRef(false);
+  const userEditedNumberRef = useRef(false);
+  const prevPrefixRef = useRef(data.prefix);
 
   useEffect(() => {
     if (!prefixInitializedRef.current && !data.prefix) {
@@ -118,23 +120,43 @@ export default function InvoiceSettingsView({
     }
   }, [data.prefix, setValue]);
 
+  // Réinitialiser le flag d'édition manuelle quand le préfixe change
+  useEffect(() => {
+    if (prevPrefixRef.current !== data.prefix) {
+      userEditedNumberRef.current = false;
+      prevPrefixRef.current = data.prefix;
+    }
+  }, [data.prefix]);
+
   useEffect(() => {
     if (!numberInitializedRef.current && !data.number && nextInvoiceNumber && !isLoadingInvoiceNumber) {
       const defaultNumber = String(nextInvoiceNumber).padStart(4, "0");
       setValue("number", defaultNumber, { shouldValidate: false });
       numberInitializedRef.current = true;
-    } else if (data.number) {
+    } else if (!numberInitializedRef.current && data.number) {
       numberInitializedRef.current = true;
+      // Si le numéro vient de l'org (déjà défini au montage), le protéger contre l'auto-update
+      userEditedNumberRef.current = true;
     }
   }, [data.number, nextInvoiceNumber, isLoadingInvoiceNumber, setValue]);
 
   // Mettre à jour le numéro quand nextInvoiceNumber change (déclenché par changement de préfixe)
+  // Ne pas écraser si l'utilisateur a manuellement modifié le numéro
   useEffect(() => {
-    if (numberInitializedRef.current && nextInvoiceNumber && !isLoadingInvoiceNumber) {
+    if (numberInitializedRef.current && nextInvoiceNumber && !isLoadingInvoiceNumber && !userEditedNumberRef.current) {
       const formattedNumber = String(nextInvoiceNumber).padStart(4, "0");
       setValue("number", formattedNumber, { shouldValidate: false });
     }
   }, [nextInvoiceNumber, isLoadingInvoiceNumber, setValue]);
+
+  // Synchroniser le numéro dans le formulaire quand le champ est désactivé (numérotation séquentielle)
+  // Garantit que data.number reflète toujours nextInvoiceNumber pour le PDF
+  useEffect(() => {
+    if (!isFirstInvoice && nextInvoiceNumber && !isLoadingInvoiceNumber) {
+      const formattedNumber = String(nextInvoiceNumber).padStart(4, "0");
+      setValue("number", formattedNumber, { shouldValidate: false });
+    }
+  }, [isFirstInvoice, nextInvoiceNumber, isLoadingInvoiceNumber, setValue]);
 
   // Gérer le changement de préfixe avec auto-fill pour MM et AAAA
   const handlePrefixChange = (e) => {
@@ -547,6 +569,7 @@ export default function InvoiceSettingsView({
                       onFocus={isFirstInvoice ? undefined : (e) => e.target.blur()}
                       onChange={isFirstInvoice ? (e) => {
                         const val = e.target.value.replace(/[^0-9]/g, "");
+                        userEditedNumberRef.current = true;
                         setValue("number", val, { shouldValidate: false });
                       } : () => {}}
                       className={isFirstInvoice

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback, useState, useMemo } from "react";
+import { useEffect, useCallback, useState, useMemo, useRef } from "react";
 import { useForm, FormProvider, useWatch } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "@/src/components/ui/sonner";
@@ -832,10 +832,16 @@ export function useInvoiceEditor({
   }, [existingInvoice, mode, reset, getValues]);
 
   // Set next invoice number for new invoices
+  // Utiliser un ref pour ne pas écraser le numéro quand loading toggle
+  const prevNextInvoiceNumberRef = useRef(null);
   useEffect(() => {
     if (mode === "create" && nextInvoiceNumber && !numberLoading) {
-      const formattedNumber = String(nextInvoiceNumber).padStart(4, '0');
-      setValue("number", formattedNumber, { shouldValidate: false, shouldDirty: false });
+      // Seulement si nextInvoiceNumber a réellement changé
+      if (prevNextInvoiceNumberRef.current !== nextInvoiceNumber) {
+        const formattedNumber = String(nextInvoiceNumber).padStart(4, '0');
+        setValue("number", formattedNumber, { shouldValidate: false, shouldDirty: false });
+        prevNextInvoiceNumberRef.current = nextInvoiceNumber;
+      }
     }
   }, [mode, nextInvoiceNumber, numberLoading, setValue]);
 
@@ -918,6 +924,9 @@ export function useInvoiceEditor({
       if (organization.invoicePrefix) {
         setValue("prefix", organization.invoicePrefix, { shouldDirty: false });
       }
+
+      // Note: le numéro séquentiel est géré par l'effet nextInvoiceNumber
+      // Le startNumber de l'org est uniquement utilisé dans la vue paramètres (invoice-settings-view)
 
       // Marquer le formulaire comme initialisé après un court délai pour s'assurer que tous les setValue sont terminés
       setTimeout(() => {
@@ -1309,22 +1318,17 @@ export function useInvoiceEditor({
         errorMessage.includes("already exists") ||
         errorMessage.includes("duplicate")
       ) {
-        // Extraire le numéro de facture du message d'erreur si possible
-        const invoiceNumberMatch = errorMessage.match(
-          /([A-Z0-9-]+)\s+existe déjà/i
-        );
-        const invoiceNumber = invoiceNumberMatch
-          ? invoiceNumberMatch[1]
-          : currentFormData.invoiceNumber;
+        // Construire le numéro complet depuis le formulaire
+        const fullNumber = [currentFormData.prefix, currentFormData.number].filter(Boolean).join("-") || "inconnu";
 
         setValidationErrors({
           invoiceNumber: {
-            message: `Le numéro de facture ${invoiceNumber} existe déjà. Veuillez en choisir un autre.`,
+            message: `Le numéro de facture ${fullNumber} existe déjà. Veuillez en choisir un autre.`,
             canEdit: true,
           },
         });
 
-        toast.error(`Le numéro de facture ${invoiceNumber} existe déjà`);
+        toast.error(`Le numéro de facture ${fullNumber} existe déjà`);
       } else if (
         errorMessage.includes("dépasserait le montant du contrat") ||
         errorMessage.includes("situationTotal")
@@ -1340,6 +1344,20 @@ export function useInvoiceEditor({
         toast.error(
           "Le montant total des factures de situation dépasserait le montant du contrat"
         );
+      } else if (
+        errorMessage.includes("erreurs de validation")
+      ) {
+        // Erreur de validation Mongoose - afficher les détails
+        const details = error.validationDetails || error.graphQLErrors?.[0]?.extensions?.details;
+        if (details) {
+          console.error("Détails de validation Mongoose (brouillon):", details);
+          const fieldErrors = Object.entries(details)
+            .map(([field, msg]) => `${field}: ${msg}`)
+            .join("\n");
+          toast.error(`Erreur de validation:\n${fieldErrors}`, { duration: 10000 });
+        } else {
+          toast.error(errorMessage);
+        }
       } else {
         handleError(error, "invoice", {
           preventDuplicates: true,
@@ -1666,22 +1684,17 @@ export function useInvoiceEditor({
         errorMessage.includes("already exists") ||
         errorMessage.includes("duplicate")
       ) {
-        // Extraire le numéro de facture du message d'erreur si possible
-        const invoiceNumberMatch = errorMessage.match(
-          /([A-Z0-9-]+)\s+existe déjà/i
-        );
-        const invoiceNumber = invoiceNumberMatch
-          ? invoiceNumberMatch[1]
-          : currentFormData.invoiceNumber;
+        // Construire le numéro complet depuis le formulaire
+        const fullNumber = [currentFormData.prefix, currentFormData.number].filter(Boolean).join("-") || "inconnu";
 
         setValidationErrors({
           invoiceNumber: {
-            message: `Le numéro de facture ${invoiceNumber} existe déjà. Veuillez en choisir un autre.`,
+            message: `Le numéro de facture ${fullNumber} existe déjà. Veuillez en choisir un autre.`,
             canEdit: true,
           },
         });
 
-        toast.error(`Le numéro de facture ${invoiceNumber} existe déjà`);
+        toast.error(`Le numéro de facture ${fullNumber} existe déjà`);
       } else if (
         errorMessage.includes("dépasserait le montant du contrat") ||
         errorMessage.includes("situationTotal")
@@ -1697,6 +1710,20 @@ export function useInvoiceEditor({
         toast.error(
           "Le montant total des factures de situation dépasserait le montant du contrat"
         );
+      } else if (
+        errorMessage.includes("erreurs de validation")
+      ) {
+        // Erreur de validation Mongoose - afficher les détails des champs qui ont échoué
+        const details = error.validationDetails || error.graphQLErrors?.[0]?.extensions?.details;
+        if (details) {
+          const fieldErrors = Object.entries(details)
+            .map(([field, msg]) => `${field}: ${msg}`)
+            .join("\n");
+          console.error("Détails de validation Mongoose:", details);
+          toast.error(`Erreur de validation:\n${fieldErrors}`, { duration: 10000 });
+        } else {
+          toast.error(errorMessage);
+        }
       } else {
         // Vérifier si l'erreur est vide et la remplacer par un message par défaut
         const errorToHandle =
@@ -1751,8 +1778,9 @@ export function useInvoiceEditor({
         bankName: currentFormData.bankDetails?.bankName || currentFormData.companyInfo?.bankName || "",
         invoiceClientPositionRight:
           currentFormData.clientPositionRight || false,
-        // Préfixe de numérotation
+        // Préfixe et numéro de départ
         invoicePrefix: currentFormData.prefix || "",
+        invoiceStartNumber: currentFormData.number || "",
         // Informations de l'entreprise
         companyName: currentFormData.companyName || "",
         companyEmail: currentFormData.companyEmail || "",
@@ -2312,41 +2340,12 @@ function transformFormDataToInput(formData, previousStatus = null) {
     }
   }
 
-  // Gérer la numérotation automatique lors de la transition DRAFT -> PENDING
+  // Envoyer le numéro et le préfixe du formulaire (le backend gère la validation)
   let numberToSend = formData.number || "";
   let prefixToSend = formData.prefix || "";
 
-  console.log("[transformFormDataToInput] Prefix from form:", formData.prefix);
-  console.log("[transformFormDataToInput] Prefix to send:", prefixToSend);
-  console.log("[transformFormDataToInput] previousStatus:", previousStatus);
-  console.log("[transformFormDataToInput] formData.status:", formData.status);
-
-  // Si on passe de DRAFT à PENDING, ne pas envoyer le numéro pour permettre la génération automatique
-  // IMPORTANT: Seulement si previousStatus existe ET est différent du statut actuel (vrai changement de statut)
-  const isStatusTransition =
-    previousStatus && previousStatus !== formData.status;
-  if (
-    isStatusTransition &&
-    previousStatus === "DRAFT" &&
-    formData.status === "PENDING"
-  ) {
-    console.log(
-      "[transformFormDataToInput] ⚠️ DRAFT->PENDING transition detected, clearing prefix"
-    );
-    numberToSend = undefined; // Ne pas envoyer le numéro
-    prefixToSend = undefined; // Ne pas envoyer le préfixe
-  }
-
   // Ne pas envoyer le prefix s'il est vide (pour laisser le backend utiliser le dernier)
-  // Mais l'envoyer s'il a une valeur (même si c'est une modification)
-  const shouldSendPrefix = prefixToSend !== undefined && prefixToSend !== "";
-
-  console.log(
-    "[transformFormDataToInput] Should send prefix:",
-    shouldSendPrefix,
-    "Value:",
-    prefixToSend
-  );
+  const shouldSendPrefix = prefixToSend !== "";
 
   return {
     ...(shouldSendPrefix && { prefix: prefixToSend }),
@@ -2360,10 +2359,13 @@ function transformFormDataToInput(formData, previousStatus = null) {
       formData.items?.map((item) => {
         const vatRate = parseFloat(item.vatRate || item.taxRate) || 0;
         // Auto-liquidation : si isReverseCharge = true et TVA = 0, utiliser "Auto-liquidation" comme texte d'exonération
+        // IMPORTANT: Si vatRate > 0, vatExemptionText DOIT être vide (validation Mongoose)
         const vatExemptionText =
-          formData.isReverseCharge && vatRate === 0
-            ? "Auto-liquidation"
-            : item.vatExemptionText || "";
+          vatRate === 0
+            ? (formData.isReverseCharge
+                ? "Auto-liquidation"
+                : item.vatExemptionText || "")
+            : "";
 
         return {
           description: item.description || "",
