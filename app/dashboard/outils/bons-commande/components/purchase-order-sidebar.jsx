@@ -223,7 +223,7 @@ export default function PurchaseOrderSidebar({
           <div className="flex items-center justify-between p-6 border-b">
             <div className="flex flex-col gap-2">
               <h2 className="font-normal text-lg">
-                Bon de commande {purchaseOrder.number || "Brouillon"}
+                Bon de commande {purchaseOrder.prefix && purchaseOrder.number ? `${purchaseOrder.prefix}-${purchaseOrder.number}` : purchaseOrder.number || "Brouillon"}
               </h2>
               <div className="flex items-center gap-2">
                 <span

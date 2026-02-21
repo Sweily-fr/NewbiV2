@@ -4,12 +4,9 @@ import React from "react";
 import { useFormContext } from "react-hook-form";
 import {
   Calendar as CalendarIcon,
-  Clock,
-  Building,
   Info,
   Search,
   FileText,
-  Receipt,
   ChevronDown,
   ClipboardList,
   X,
@@ -56,16 +53,7 @@ import {
 } from "@/src/components/ui/command";
 import { cn } from "@/src/lib/utils";
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/src/components/ui/accordion";
-import {
   generateInvoicePrefix,
-  parseInvoicePrefix,
-  formatInvoicePrefix,
-  getCurrentMonthYear,
 } from "@/src/utils/invoiceUtils";
 import {
   useLastInvoicePrefix,
@@ -108,7 +96,6 @@ export default function InvoiceInfoSection({
     setValue,
     register,
     formState: { errors },
-    trigger,
   } = useFormContext();
   const data = watch();
   const { workspaceId } = useRequiredWorkspace();
@@ -192,13 +179,6 @@ export default function InvoiceInfoSection({
 
   // Flag pour savoir si le préfixe a déjà été initialisé
   const prefixInitialized = React.useRef(false);
-  // Flag pour éviter la validation au premier montage
-  const isInitialMount = React.useRef(true);
-
-  // Marquer que le montage initial est terminé après le premier rendu
-  React.useEffect(() => {
-    isInitialMount.current = false;
-  }, []);
 
   // Rechercher les factures de situation et le devis quand le type est "situation" et qu'il y a une référence
   React.useEffect(() => {
@@ -537,43 +517,6 @@ export default function InvoiceInfoSection({
       });
     }
   }, [data.dueDate, setValue]);
-
-  // Handle prefix changes with auto-fill for MM and AAAA
-  const handlePrefixChange = (e) => {
-    const value = e.target.value;
-    const cursorPosition = e.target.selectionStart;
-
-    console.log("[InvoiceInfoSection] handlePrefixChange - New value:", value);
-
-    // Auto-fill MM (month)
-    if (value.includes("MM")) {
-      const { month } = getCurrentMonthYear();
-      const newValue = value.replace("MM", month);
-      setValue("prefix", newValue, { shouldValidate: true });
-      // Position cursor after the inserted month
-      const newPosition = cursorPosition + month.length - 2;
-      setTimeout(() => {
-        e.target.setSelectionRange(newPosition, newPosition);
-      }, 0);
-      return;
-    }
-
-    // Auto-fill AAAA (year)
-    if (value.includes("AAAA")) {
-      const { year } = getCurrentMonthYear();
-      const newValue = value.replace("AAAA", year);
-      setValue("prefix", newValue, { shouldValidate: true });
-      // Position cursor after the inserted year
-      const newPosition = cursorPosition + year.length - 4;
-      setTimeout(() => {
-        e.target.setSelectionRange(newPosition, newPosition);
-      }, 0);
-      return;
-    }
-
-    // Default behavior
-    setValue("prefix", value, { shouldValidate: true });
-  };
 
   // Set default prefix from last invoice only once on mount (only for new invoices)
   // Fallback to generateInvoicePrefix() (F-MMAAAA) if no last invoice prefix

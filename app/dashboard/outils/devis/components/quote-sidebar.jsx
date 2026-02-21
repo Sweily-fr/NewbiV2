@@ -239,7 +239,7 @@ export default function QuoteSidebar({
           <div className="flex items-center justify-between p-6 border-b">
             <div className="flex flex-col gap-2">
               <h2 className="font-normal text-lg">
-                Devis {quote.number || "Brouillon"}
+                Devis {quote.prefix && quote.number ? `${quote.prefix}-${quote.number}` : quote.number || "Brouillon"}
               </h2>
               <div className="flex items-center gap-2">
                 <span

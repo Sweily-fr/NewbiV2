@@ -560,7 +560,7 @@ export default function InvoiceSidebar({
         <div className="flex items-center justify-between px-6 py-4 border-b">
           <div className="flex items-center gap-2">
             <h2 className="text-base font-medium">
-              Facture {invoice.number || "Brouillon"}
+              Facture {invoice.prefix && invoice.number ? `${invoice.prefix}-${invoice.number}` : invoice.number || "Brouillon"}
             </h2>
             <span
               className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium ${
@@ -1293,7 +1293,7 @@ export default function InvoiceSidebar({
         <DialogContent className="w-full max-w-6xl h-[90vh] p-0 flex flex-col">
           <DialogHeader className="px-6 pt-6 pb-4 border-b">
             <DialogTitle className="text-xl font-semibold">
-              Aperçu de la facture {invoice.number || "Brouillon"}
+              Aperçu de la facture {invoice.prefix && invoice.number ? `${invoice.prefix}-${invoice.number}` : invoice.number || "Brouillon"}
             </DialogTitle>
           </DialogHeader>
           <div className="flex-1 overflow-y-auto bg-[#F9F9F9] dark:bg-[#1a1a1a] p-8">
