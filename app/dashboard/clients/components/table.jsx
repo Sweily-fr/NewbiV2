@@ -1125,6 +1125,7 @@ export default function TableClients({
 
 function RowActions({ row, onEdit, onSelectList, workspaceId }) {
   const client = row.original;
+  const router = useRouter();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const { deleteClient } = useDeleteClient();
   const { lists } = useClientListsByClient(workspaceId || "", client.id);
@@ -1236,7 +1237,13 @@ function RowActions({ row, onEdit, onSelectList, workspaceId }) {
                   {lists.map((list) => (
                     <DropdownMenuItem
                       key={list.id}
-                      onClick={() => onSelectList?.(list)}
+                      onClick={() => {
+                        if (onSelectList) {
+                          onSelectList(list);
+                        } else {
+                          router.push(`/dashboard/clients/listes?listId=${list.id}`);
+                        }
+                      }}
                       className="flex items-center gap-2"
                     >
                       <div

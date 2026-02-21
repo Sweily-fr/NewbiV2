@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Plus, Search, CircleXIcon } from "lucide-react";
@@ -14,6 +15,8 @@ import { cn } from "@/src/lib/utils";
 
 function ListesContent() {
   const { workspaceId } = useWorkspace();
+  const searchParams = useSearchParams();
+  const listIdFromUrl = searchParams.get("listId");
   const {
     lists,
     loading: listsLoading,
@@ -23,6 +26,14 @@ function ListesContent() {
   const [globalFilter, setGlobalFilter] = useState("");
   const [viewingList, setViewingList] = useState(false);
   const inputRef = useRef(null);
+
+  // Trouver la liste initiale à partir du query param
+  const initialSelectedList = useMemo(() => {
+    if (listIdFromUrl && lists) {
+      return lists.find((l) => l.id === listIdFromUrl) || null;
+    }
+    return null;
+  }, [listIdFromUrl, lists]);
 
   if (!workspaceId || listsLoading) {
     return (
@@ -95,6 +106,7 @@ function ListesContent() {
         workspaceId={workspaceId}
         lists={lists}
         onListsUpdated={refetchLists}
+        selectedList={initialSelectedList}
         globalFilter={globalFilter}
         onCreateList={() => setCreateListDialogOpen(true)}
         onViewingListChange={setViewingList}

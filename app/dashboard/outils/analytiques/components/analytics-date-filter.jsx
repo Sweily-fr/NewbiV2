@@ -63,15 +63,15 @@ function formatDate(date) {
 
 export function AnalyticsDateFilter({ period, onPeriodChange, dateRange, onDateRangeChange }) {
   const [customOpen, setCustomOpen] = useState(false);
-  const [customFrom, setCustomFrom] = useState(null);
-  const [customTo, setCustomTo] = useState(null);
+  const [customRange, setCustomRange] = useState(undefined);
 
   const currentPreset = PERIOD_PRESETS.find((p) => p.value === period);
 
   const handlePresetSelect = (preset) => {
     if (preset === "custom") {
       onPeriodChange("custom");
-      setCustomOpen(true);
+      // Delay opening to avoid conflict with DropdownMenu close event
+      setTimeout(() => setCustomOpen(true), 150);
       return;
     }
     onPeriodChange(preset);
@@ -80,10 +80,10 @@ export function AnalyticsDateFilter({ period, onPeriodChange, dateRange, onDateR
   };
 
   const handleCustomConfirm = () => {
-    if (customFrom && customTo) {
+    if (customRange?.from && customRange?.to) {
       onDateRangeChange({
-        startDate: formatDate(customFrom),
-        endDate: formatDate(customTo),
+        startDate: formatDate(customRange.from),
+        endDate: formatDate(customRange.to),
       });
       setCustomOpen(false);
     }
@@ -124,38 +124,25 @@ export function AnalyticsDateFilter({ period, onPeriodChange, dateRange, onDateR
         <Popover open={customOpen} onOpenChange={setCustomOpen}>
           <PopoverTrigger asChild>
             <Button variant="outline" size="sm" className="gap-2 text-xs">
+              <CalendarDays className="h-3.5 w-3.5" />
               {dateRange.startDate && dateRange.endDate
-                ? `${format(new Date(dateRange.startDate), "dd MMM yyyy", { locale: fr })} - ${format(new Date(dateRange.endDate), "dd MMM yyyy", { locale: fr })}`
+                ? `${format(new Date(dateRange.startDate), "dd MMM yyyy", { locale: fr })} – ${format(new Date(dateRange.endDate), "dd MMM yyyy", { locale: fr })}`
                 : "Choisir les dates"}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-4" align="end">
             <div className="flex flex-col gap-4">
-              <div className="flex gap-4">
-                <div>
-                  <p className="text-sm font-medium mb-2">Début</p>
-                  <Calendar
-                    mode="single"
-                    selected={customFrom}
-                    onSelect={setCustomFrom}
-                    locale={fr}
-                  />
-                </div>
-                <div>
-                  <p className="text-sm font-medium mb-2">Fin</p>
-                  <Calendar
-                    mode="single"
-                    selected={customTo}
-                    onSelect={setCustomTo}
-                    locale={fr}
-                    disabled={(date) => customFrom && date < customFrom}
-                  />
-                </div>
-              </div>
+              <Calendar
+                mode="range"
+                selected={customRange}
+                onSelect={setCustomRange}
+                numberOfMonths={2}
+                locale={fr}
+              />
               <Button
                 size="sm"
                 onClick={handleCustomConfirm}
-                disabled={!customFrom || !customTo}
+                disabled={!customRange?.from || !customRange?.to}
               >
                 Appliquer
               </Button>
