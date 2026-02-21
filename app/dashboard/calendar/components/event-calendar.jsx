@@ -36,6 +36,7 @@ import {
 } from "./index";
 import { CalendarConnectionsPanel } from "./calendar-connections-panel";
 import { CalendarSyncButton } from "./calendar-sync-button";
+import { ColorLegend } from "./color-legend";
 import { cn } from "@/src/lib/utils";
 import { Button } from "@/src/components/ui/button";
 import {
@@ -330,6 +331,8 @@ export function EventCalendar({
             </Button>
           </div>
         </div>
+
+        <ColorLegend />
 
         <div className="flex flex-1 flex-col">
           {view === "mois" && (

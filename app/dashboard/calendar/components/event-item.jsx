@@ -4,7 +4,7 @@ import { useMemo } from "react";
 // Types removed for JavaScript compatibility
 import { differenceInMinutes, format, getMinutes, isPast } from "date-fns";
 
-import { getBorderRadiusClasses, getEventColorClasses } from "./index";
+import { getBorderRadiusClasses, getEventHexStyles } from "./index";
 import { ExternalEventBadge } from "./external-event-badge";
 import { cn } from "@/src/lib/utils";
 
@@ -60,10 +60,10 @@ function EventWrapper({
     <button
       className={cn(
         "focus-visible:border-ring focus-visible:ring-ring/50 flex size-full overflow-hidden px-1 text-left font-medium backdrop-blur-md transition outline-none select-none focus-visible:ring-[3px] data-dragging:cursor-grabbing data-dragging:shadow-lg data-past-event:line-through sm:px-2",
-        getEventColorClasses(event.color),
         getBorderRadiusClasses(isFirstDay, isLastDay),
         className
       )}
+      style={getEventHexStyles(event.color)}
       data-dragging={isDragging || undefined}
       data-past-event={isEventInPast || undefined}
       onClick={onClick}
@@ -224,9 +224,9 @@ export function EventItem({
     <button
       className={cn(
         "focus-visible:border-ring focus-visible:ring-ring/50 flex w-full flex-col gap-1 rounded p-2 text-left transition outline-none focus-visible:ring-[3px] data-past-event:line-through data-past-event:opacity-90",
-        getEventColorClasses(eventColor),
         className
       )}
+      style={getEventHexStyles(eventColor)}
       data-past-event={isPast(new Date(event.end)) || undefined}
       onClick={onClick}
       onMouseDown={onMouseDown}

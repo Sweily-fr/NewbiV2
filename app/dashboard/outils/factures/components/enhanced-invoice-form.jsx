@@ -569,7 +569,7 @@ export default function EnhancedInvoiceForm({
     const itemsAreValid =
       hasItems &&
       data.items.every(
-        (item) => item.description && item.quantity && item.unitPrice
+        (item) => item.description && item.quantity && item.unitPrice != null && item.unitPrice !== ""
       );
 
     return (

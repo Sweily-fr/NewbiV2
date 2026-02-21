@@ -506,7 +506,7 @@ export default function ItemsSection({
                             />
                             {(errors?.items?.[index]?.unitPrice || getItemError(index, "unitPrice")) && (
                               <p className="text-xs text-destructive">
-                                {errors?.items?.[index]?.unitPrice?.message || "Le prix unitaire doit être > 0€"}
+                                {errors?.items?.[index]?.unitPrice?.message || "Le prix unitaire doit être positif ou nul"}
                               </p>
                             )}
                           </div>
