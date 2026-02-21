@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
-import { CalendarIcon } from "lucide-react";
+import { Building, Euro, CalendarIcon } from "lucide-react";
 import { format, parse } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Calendar as ShadcnCalendar } from "@/src/components/ui/calendar";
@@ -189,7 +189,7 @@ export function InformationsLegalesSection({
   );
 
   const RequiredLabel = ({ htmlFor, children, isRequired }) => (
-    <Label htmlFor={htmlFor}>
+    <Label htmlFor={htmlFor} className="text-sm font-normal pb-2">
       {children}
       {isRequired && <span className="text-red-500 ml-1">*</span>}
     </Label>
@@ -245,10 +245,11 @@ export function InformationsLegalesSection({
         </div>
 
         {/* Formulaire des informations légales */}
-        <div className="space-y-5 md:space-y-6 mt-0 md:mt-8">
+        <div className="space-y-6 mt-8">
           {/* Forme juridique */}
-          <div>
+          <div className="flex flex-col gap-1">
             <RequiredLabel htmlFor="legalForm" isRequired={true}>
+              <Building className="h-4 w-4 inline mr-2 text-gray-500" />
               Forme juridique
             </RequiredLabel>
             <Select
@@ -256,7 +257,7 @@ export function InformationsLegalesSection({
               onValueChange={handleLegalFormChange}
               disabled={!canManageOrgSettings}
             >
-              <SelectTrigger className="w-full mt-1.5">
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Sélectionnez la forme juridique" />
               </SelectTrigger>
               <SelectContent>
@@ -270,15 +271,15 @@ export function InformationsLegalesSection({
           </div>
 
           {/* SIRET et RCS */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
-            <div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="flex flex-col gap-1">
               <RequiredLabel htmlFor="siret" isRequired={requiredFields.siret}>
                 Numéro SIRET
               </RequiredLabel>
               <Input
                 id="siret"
                 placeholder="12345678901234"
-                className="w-full mt-1.5"
+                className="w-full"
                 disabled={!canManageOrgSettings}
                 {...register("legal.siret", {
                   required: requiredFields.siret
@@ -297,20 +298,20 @@ export function InformationsLegalesSection({
                 })}
               />
               {errors.legal?.siret && (
-                <p className="text-sm text-red-500 mt-1">
+                <p className="text-sm text-red-500">
                   {errors.legal.siret.message}
                 </p>
               )}
-              <p className="text-xs text-muted-foreground mt-1.5">14 chiffres sans espaces</p>
+              <p className="text-xs text-gray-600">14 chiffres sans espaces</p>
             </div>
 
             {visibleFields.rcs && (
-              <div>
+              <div className="flex flex-col gap-1">
                 <RequiredLabel htmlFor="rcs" isRequired={requiredFields.rcs}>
                   Numéro RCS
                   {!requiredFields.rcs &&
                     ["EI", "Auto-entrepreneur"].includes(selectedLegalForm) && (
-                      <span className="text-muted-foreground text-xs ml-2">
+                      <span className="text-gray-500 text-xs ml-2">
                         (si activité commerciale)
                       </span>
                     )}
@@ -318,7 +319,7 @@ export function InformationsLegalesSection({
                 <Input
                   id="rcs"
                   placeholder="RCS Paris 123 456 789"
-                  className="w-full mt-1.5"
+                  className="w-full"
                   disabled={!canManageOrgSettings}
                   {...register("legal.rcs", {
                     required: requiredFields.rcs
@@ -337,11 +338,11 @@ export function InformationsLegalesSection({
                   })}
                 />
                 {errors.legal?.rcs && (
-                  <p className="text-sm text-red-500 mt-1">
+                  <p className="text-sm text-red-500">
                     {errors.legal.rcs.message}
                   </p>
                 )}
-                <p className="text-xs text-muted-foreground mt-1.5">
+                <p className="text-xs text-gray-600">
                   Format: RCS Ville 123 456 789
                 </p>
               </div>
@@ -349,13 +350,14 @@ export function InformationsLegalesSection({
           </div>
 
           {/* Capital social et Catégorie d'activité */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {visibleFields.capital && (
-              <div>
+              <div className="flex flex-col gap-1">
                 <RequiredLabel
                   htmlFor="capital"
                   isRequired={requiredFields.capital}
                 >
+                  <Euro className="h-4 w-4 inline mr-2 text-gray-500" />
                   Capital social (€)
                 </RequiredLabel>
                 <Input
@@ -363,7 +365,7 @@ export function InformationsLegalesSection({
                   placeholder="10000"
                   type="number"
                   disabled={!canManageOrgSettings}
-                  className="w-full mt-1.5"
+                  className="w-full"
                   {...register("legal.capital", {
                     required: requiredFields.capital
                       ? "Le capital social est requis"
@@ -381,15 +383,15 @@ export function InformationsLegalesSection({
                   })}
                 />
                 {errors.legal?.capital && (
-                  <p className="text-sm text-red-500 mt-1">
+                  <p className="text-sm text-red-500">
                     {errors.legal.capital.message}
                   </p>
                 )}
-                <p className="text-xs text-muted-foreground mt-1.5">Montant en euros</p>
+                <p className="text-xs text-gray-600">Montant en euros</p>
               </div>
             )}
 
-            <div>
+            <div className="flex flex-col gap-1">
               <RequiredLabel
                 htmlFor="category"
                 isRequired={requiredFields.activityCategory}
@@ -401,7 +403,7 @@ export function InformationsLegalesSection({
                 onValueChange={handleCategoryChange}
                 disabled={!canManageOrgSettings}
               >
-                <SelectTrigger className="w-full mt-1.5">
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="Sélectionnez la catégorie d'activité" />
                 </SelectTrigger>
                 <SelectContent>
@@ -420,9 +422,9 @@ export function InformationsLegalesSection({
           {/* ══════════════════════════════════════════ */}
           <div className="mt-4">
             <SectionTitle>Impôts</SectionTitle>
-            <div className="space-y-5 md:space-y-6">
+            <div className="space-y-6">
               {/* Régime fiscal */}
-              <div>
+              <div className="flex flex-col gap-1">
                 <RequiredLabel
                   htmlFor="regime"
                   isRequired={requiredFields.fiscalRegime}
@@ -434,7 +436,7 @@ export function InformationsLegalesSection({
                   onValueChange={handleRegimeChange}
                   disabled={!canManageOrgSettings}
                 >
-                  <SelectTrigger className="w-full mt-1.5">
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Sélectionnez le régime fiscal" />
                   </SelectTrigger>
                   <SelectContent>
@@ -455,7 +457,7 @@ export function InformationsLegalesSection({
           {/* ══════════════════════════════════════════ */}
           <div className="mt-4">
             <SectionTitle>TVA</SectionTitle>
-            <div className="space-y-5 md:space-y-6">
+            <div className="space-y-6">
               {/* Switch TVA */}
               <div className="flex items-start justify-between">
                 <div className="flex-1">
@@ -474,9 +476,9 @@ export function InformationsLegalesSection({
               </div>
 
               {isVatSubject ? (
-                <div className="space-y-5 md:space-y-6">
+                <div className="space-y-6">
                   {/* Régime de TVA */}
-                  <div>
+                  <div className="flex flex-col gap-1">
                     <RequiredLabel htmlFor="vatRegime" isRequired={false}>
                       Régime de TVA
                     </RequiredLabel>
@@ -485,7 +487,7 @@ export function InformationsLegalesSection({
                       onValueChange={handleVatRegimeChange}
                       disabled={!canManageOrgSettings}
                     >
-                      <SelectTrigger className="w-full mt-1.5">
+                      <SelectTrigger className="w-full">
                         <SelectValue placeholder="Sélectionnez le régime de TVA" />
                       </SelectTrigger>
                       <SelectContent>
@@ -500,7 +502,7 @@ export function InformationsLegalesSection({
 
                   {/* Fréquence - conditionnelle selon le régime de TVA */}
                   {selectedVatRegime === "reel-normal" && (
-                    <div>
+                    <div className="flex flex-col gap-1">
                       <RequiredLabel htmlFor="vatFrequency" isRequired={false}>
                         Fréquence de déclaration
                       </RequiredLabel>
@@ -509,7 +511,7 @@ export function InformationsLegalesSection({
                         onValueChange={handleVatFrequencyChange}
                         disabled={!canManageOrgSettings}
                       >
-                        <SelectTrigger className="w-full mt-1.5">
+                        <SelectTrigger className="w-full">
                           <SelectValue placeholder="Sélectionnez la fréquence" />
                         </SelectTrigger>
                         <SelectContent>
@@ -532,7 +534,7 @@ export function InformationsLegalesSection({
                   )}
 
                   {/* Mode de TVA */}
-                  <div>
+                  <div className="flex flex-col gap-1">
                     <RequiredLabel htmlFor="vatMode" isRequired={false}>
                       Mode de TVA
                     </RequiredLabel>
@@ -541,7 +543,7 @@ export function InformationsLegalesSection({
                       onValueChange={handleVatModeChange}
                       disabled={!canManageOrgSettings}
                     >
-                      <SelectTrigger className="w-full mt-1.5">
+                      <SelectTrigger className="w-full">
                         <SelectValue placeholder="Sélectionnez le mode de TVA" />
                       </SelectTrigger>
                       <SelectContent>
@@ -556,7 +558,7 @@ export function InformationsLegalesSection({
 
                   {/* Numéro de TVA intracommunautaire */}
                   {visibleFields.vatNumber && (
-                    <div>
+                    <div className="flex flex-col gap-1">
                       <RequiredLabel
                         htmlFor="vatNumber"
                         isRequired={requiredFields.vatNumber}
@@ -566,7 +568,7 @@ export function InformationsLegalesSection({
                       <Input
                         id="vatNumber"
                         placeholder="FR12345678901"
-                        className="w-full mt-1.5"
+                        className="w-full"
                         disabled={!canManageOrgSettings}
                         {...register("legal.vatNumber", {
                           required: requiredFields.vatNumber
@@ -585,11 +587,11 @@ export function InformationsLegalesSection({
                         })}
                       />
                       {errors.legal?.vatNumber && (
-                        <p className="text-sm text-red-500 mt-1">
+                        <p className="text-sm text-red-500">
                           {errors.legal.vatNumber.message}
                         </p>
                       )}
-                      <p className="text-xs text-muted-foreground mt-1.5">
+                      <p className="text-xs text-gray-600">
                         Format: FR + 11 chiffres
                       </p>
                     </div>
@@ -610,12 +612,13 @@ export function InformationsLegalesSection({
           {/* ══════════════════════════════════════════ */}
           <div className="mt-4">
             <SectionTitle>Exercice comptable</SectionTitle>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
-              <div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="flex flex-col gap-1">
                 <RequiredLabel
                   htmlFor="fiscalYearStartDate"
                   isRequired={false}
                 >
+                  <CalendarIcon className="h-4 w-4 inline mr-2 text-gray-500" />
                   Date de début
                 </RequiredLabel>
                 <Popover open={startDateOpen} onOpenChange={setStartDateOpen}>
@@ -625,7 +628,7 @@ export function InformationsLegalesSection({
                       variant="outline"
                       disabled={!canManageOrgSettings}
                       className={cn(
-                        "w-full mt-1.5 justify-start text-left font-normal",
+                        "w-full justify-start text-left font-normal",
                         !watchedValues.legal?.fiscalYearStartDate &&
                           "text-muted-foreground"
                       )}
@@ -672,8 +675,9 @@ export function InformationsLegalesSection({
                 </Popover>
               </div>
 
-              <div>
+              <div className="flex flex-col gap-1">
                 <RequiredLabel htmlFor="fiscalYearEndDate" isRequired={false}>
+                  <CalendarIcon className="h-4 w-4 inline mr-2 text-gray-500" />
                   Date de clôture
                 </RequiredLabel>
                 <Popover open={endDateOpen} onOpenChange={setEndDateOpen}>
@@ -683,7 +687,7 @@ export function InformationsLegalesSection({
                       variant="outline"
                       disabled={!canManageOrgSettings}
                       className={cn(
-                        "w-full mt-1.5 justify-start text-left font-normal",
+                        "w-full justify-start text-left font-normal",
                         !watchedValues.legal?.fiscalYearEndDate &&
                           "text-muted-foreground"
                       )}

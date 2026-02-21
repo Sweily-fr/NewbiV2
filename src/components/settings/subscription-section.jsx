@@ -4,15 +4,13 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { Separator } from "@/src/components/ui/separator";
+import { Switch } from "@/src/components/ui/switch";
+import { Card, CardContent } from "@/src/components/ui/card";
 import {
   LoaderCircle,
   Check,
   AlertTriangle,
   Users,
-  Crown,
-  FileText,
-  Building2,
-  Sparkles,
 } from "lucide-react";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { useSession } from "@/src/lib/auth-client";
@@ -48,7 +46,6 @@ const PLANS_CONFIG = [
     monthlyPrice: 17.99,
     annualPrice: 16.19,
     annualTotal: 157.56,
-    icon: FileText,
     features: [
       "1 utilisateur inclus",
       "Facturation & Devis illimités",
@@ -65,7 +62,6 @@ const PLANS_CONFIG = [
     annualPrice: 44.09,
     annualTotal: 529.08,
     popular: true,
-    icon: Building2,
     features: [
       "Jusqu'à 10 utilisateurs",
       "Tout le plan Freelance",
@@ -81,7 +77,6 @@ const PLANS_CONFIG = [
     monthlyPrice: 94.99,
     annualPrice: 85.49,
     annualTotal: 1025.88,
-    icon: Crown,
     features: [
       "Jusqu'à 25 utilisateurs",
       "Tout le plan PME",
@@ -91,77 +86,7 @@ const PLANS_CONFIG = [
       "Support dédié",
     ],
   },
-  {
-    key: "surmesure",
-    name: "Sur-mesure",
-    isContactOnly: true,
-    icon: Sparkles,
-    features: [
-      "Utilisateurs illimités",
-      "Tout le plan Entreprise",
-      "Comptes bancaires illimités",
-      "Signatures email illimitées",
-      "Accès API avancé",
-      "Support dédié prioritaire",
-    ],
-  },
 ];
-
-const PLAN_ORDER = ["freelance", "pme", "entreprise", "surmesure"];
-
-// Tableau de comparaison par catégorie
-const COMPARISON_CATEGORIES = [
-  {
-    name: "Utilisateurs",
-    features: [
-      { name: "Utilisateurs inclus", values: ["1", "10", "25", "Illimité"] },
-      { name: "Comptables gratuits", values: ["1", "3", "5", "Illimité"] },
-      { name: "Utilisateurs supplémentaires", values: [false, "7,49 €/mois", "7,49 €/mois", "Sur devis"] },
-    ],
-  },
-  {
-    name: "Facturation",
-    features: [
-      { name: "Factures & Devis", values: ["Illimité", "Illimité", "Illimité", "Illimité"] },
-      { name: "Relances automatiques", values: [false, true, true, true] },
-      { name: "OCR reçus", values: ["20/mois", "Illimité", "Illimité", "Illimité"] },
-      { name: "Avoirs", values: [true, true, true, true] },
-    ],
-  },
-  {
-    name: "Connexions",
-    features: [
-      { name: "Comptes bancaires", values: ["1", "3", "5", "Illimité"] },
-      { name: "Gestion de trésorerie", values: [true, true, true, true] },
-    ],
-  },
-  {
-    name: "Outils",
-    features: [
-      { name: "Projets Kanban", values: [true, true, true, true] },
-      { name: "Signatures email", values: ["1", "10", "25", "Illimité"] },
-      { name: "Transfert fichiers", values: ["5 Go", "20 Go", "50 Go", "Illimité"] },
-      { name: "CRM client", values: [true, true, true, true] },
-      { name: "Catalogue produits", values: [true, true, true, true] },
-    ],
-  },
-  {
-    name: "Support & Sécurité",
-    features: [
-      { name: "Support prioritaire", values: [false, true, true, true] },
-      { name: "Accès API", values: [false, false, true, true] },
-    ],
-  },
-];
-
-// Icône plan avec grille décorative
-function PlanIcon({ icon: Icon, className }) {
-  return (
-    <div className={cn("relative h-10 w-10 flex items-center justify-center rounded-lg", className)}>
-      <Icon className="h-5 w-5" />
-    </div>
-  );
-}
 
 export function SubscriptionSection({
   canManageSubscription: canManageSubscriptionProp,
@@ -261,6 +186,7 @@ export function SubscriptionSection({
       if (response.ok && data.success) {
         setPlanChangePreview(data.preview);
       } else {
+        // Gérer les états bloqués (past_due, unpaid, etc.)
         if (data.blockedState) {
           toast.error(data.message || "Votre abonnement présente un problème");
         } else if (data.paidSeatsBlocking) {
@@ -334,8 +260,10 @@ export function SubscriptionSection({
       const data = await response.json();
 
       if (response.ok && data.success) {
+        // Afficher le succès
         toast.success(data.message || "Plan changé avec succès !");
 
+        // Afficher les warnings éventuels
         if (data.warnings && data.warnings.length > 0) {
           data.warnings.forEach((warning) => {
             toast.warning(warning.message, { duration: 5000 });
@@ -355,16 +283,21 @@ export function SubscriptionSection({
           window.location.reload();
         }, 800);
       } else {
+        // Gérer les différents cas d'erreur
         if (data.requireNewPreview) {
+          // Les données ont changé, rafraîchir la prévisualisation
           toast.error(data.message || "Les données ont changé, veuillez recharger");
           setPlanChangePreview(null);
           setShowPlanChangeModal(false);
+          // Rouvrir automatiquement le modal avec les nouvelles données
           setTimeout(() => {
             openPlanChangeModal(selectedPlan);
           }, 500);
         } else if (data.subscriptionStatus) {
+          // État bloqué de l'abonnement
           toast.error(data.message || "Votre abonnement présente un problème");
         } else if (data.paidSeats > 0) {
+          // Sièges payants bloquants
           toast.error(data.message || "Retirez d'abord les sièges supplémentaires");
         } else {
           toast.error(
@@ -425,32 +358,6 @@ export function SubscriptionSection({
     return amount.toFixed(2).replace(".", ",");
   };
 
-  // Helpers
-  const currentPlanConfig = PLANS_CONFIG.find((p) => p.key === subscription?.plan);
-  const currentPlanIndex = PLAN_ORDER.indexOf(subscription?.plan);
-
-  const getButtonLabel = (planKey) => {
-    if (!subscription?.plan) return "Choisir";
-    if (planKey === subscription.plan) return "Plan actuel";
-    const targetIndex = PLAN_ORDER.indexOf(planKey);
-    if (targetIndex < currentPlanIndex) return "Downgrade";
-    return "Choisir";
-  };
-
-  const getButtonVariant = (plan) => {
-    if (plan.key === subscription?.plan) return "outline";
-    if (plan.popular) return "default";
-    return "outline";
-  };
-
-  const trialDaysRemaining = () => {
-    if (subscription?.status !== "trialing" || !subscription?.trialEnd) return null;
-    const now = new Date();
-    const end = new Date(subscription.trialEnd);
-    const diff = Math.ceil((end - now) / (1000 * 60 * 60 * 24));
-    return diff > 0 ? diff : null;
-  };
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -495,157 +402,90 @@ export function SubscriptionSection({
         </div>
       )}
 
-      {/* ===================== SECTION 1: Carte du plan actif ===================== */}
-      {isActive() && subscription && currentPlanConfig && (
-        <div className="rounded-xl border border-black/[0.08] dark:border-white/[0.08] p-5 flex items-center justify-between">
-          <div className="flex flex-col gap-1.5">
-            <div className="flex items-center gap-2">
-              <Badge variant="outline" className="text-[10px] font-normal text-black/40 dark:text-white/40 border-black/[0.08] dark:border-white/[0.08]">
-                Actuel
-              </Badge>
-              {subscription.status === "trialing" && (
-                <Badge className="text-[10px] font-normal bg-[#5A50FF]/10 text-[#5A50FF] dark:bg-[#8b7fff]/10 dark:text-[#8b7fff] border-0">
-                  Essai
-                </Badge>
-              )}
-            </div>
-            <h4 className="text-xl font-semibold text-[#242529] dark:text-white">
-              {currentPlanConfig.name}
-            </h4>
-            {trialDaysRemaining() && (
-              <p className="text-sm text-black/40 dark:text-white/40">
-                {trialDaysRemaining()} jours restants d'essai
-              </p>
-            )}
-            <div className="flex items-center gap-2 mt-0.5">
-              <span className="text-sm text-black/55 dark:text-white/55">
-                {formatPrice(isAnnual ? currentPlanConfig.annualPrice : currentPlanConfig.monthlyPrice)} €/mois
-              </span>
-              {!isAnnual && currentPlanConfig.annualPrice && (
-                <button
-                  onClick={() => setIsAnnual(true)}
-                  className="text-sm text-[#5A50FF] dark:text-[#8b7fff] hover:underline cursor-pointer"
-                >
-                  Passer en annuel (Économisez 10%)
-                </button>
-              )}
-            </div>
-          </div>
-          <div className="hidden sm:flex">
-            <PlanIcon
-              icon={currentPlanConfig.icon}
-              className="bg-[#5A50FF]/10 text-[#5A50FF] dark:bg-[#8b7fff]/10 dark:text-[#8b7fff]"
-            />
-          </div>
-        </div>
-      )}
+      {/* Toggle Mensuel/Annuel */}
+      <div className="flex items-center justify-center gap-3">
+        <span className={cn(
+          "text-sm",
+          !isAnnual ? "text-foreground font-medium" : "text-muted-foreground"
+        )}>
+          Mensuel
+        </span>
+        <Switch
+          checked={isAnnual}
+          onCheckedChange={setIsAnnual}
+        />
+        <span className={cn(
+          "text-sm",
+          isAnnual ? "text-foreground font-medium" : "text-muted-foreground"
+        )}>
+          Annuel
+          <span className="ml-1.5 text-xs text-[#5b50fe]">-10%</span>
+        </span>
+      </div>
 
-      {/* ===================== SECTION 2: Comparer les plans ===================== */}
-      <div className="space-y-5">
-        {/* Titre + Toggle */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h3 className="text-lg font-semibold text-[#242529] dark:text-white">
-              Comparer les plans
-            </h3>
-            <p className="text-sm text-black/55 dark:text-white/55">
-              Trouvez le plan adapté à vos besoins
-            </p>
-          </div>
+      {/* Grille des plans */}
+      <Card className="shadow-none">
+        <CardContent className="p-0 grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x">
+          {PLANS_CONFIG.map((plan) => {
+            const isCurrentPlan = subscription?.plan === plan.key;
+            const price = isAnnual ? plan.annualPrice : plan.monthlyPrice;
 
-          {/* Toggle Annuel/Mensuel */}
-          <div className="flex items-center bg-black/[0.04] dark:bg-white/[0.06] rounded-full p-1">
-            <button
-              onClick={() => setIsAnnual(false)}
-              className={cn(
-                "px-4 py-1.5 text-sm font-medium rounded-full transition-all cursor-pointer",
-                !isAnnual
-                  ? "bg-white dark:bg-white/10 shadow-sm text-[#242529] dark:text-white"
-                  : "text-black/40 dark:text-white/40 hover:text-black/60 dark:hover:text-white/60"
-              )}
-            >
-              Mensuel
-            </button>
-            <button
-              onClick={() => setIsAnnual(true)}
-              className={cn(
-                "px-4 py-1.5 text-sm font-medium rounded-full transition-all flex items-center gap-1.5 cursor-pointer",
-                isAnnual
-                  ? "bg-white dark:bg-white/10 shadow-sm text-[#242529] dark:text-white"
-                  : "text-black/40 dark:text-white/40 hover:text-black/60 dark:hover:text-white/60"
-              )}
-            >
-              Annuel
-              <span className="text-[10px] font-semibold bg-[#5A50FF]/10 text-[#5A50FF] dark:bg-[#8b7fff]/10 dark:text-[#8b7fff] px-1.5 py-0.5 rounded-full">
-                -10%
-              </span>
-            </button>
-          </div>
-        </div>
-
-        {/* Grille des 4 plans */}
-        <div className="overflow-x-auto -mx-1 px-1">
-          <div className="grid grid-cols-4 gap-0 min-w-[640px] rounded-xl border border-black/[0.06] dark:border-white/[0.06] overflow-hidden">
-            {PLANS_CONFIG.map((plan) => {
-              const isCurrentPlan = subscription?.plan === plan.key;
-              const price = isAnnual ? plan.annualPrice : plan.monthlyPrice;
-
-              return (
-                <div
-                  key={plan.key}
-                  className={cn(
-                    "flex flex-col p-5 border-r border-black/[0.06] dark:border-white/[0.06] last:border-r-0",
-                    isCurrentPlan && "border-[#5A50FF]/30 dark:border-[#8b7fff]/30 bg-[#5A50FF]/[0.02] dark:bg-[#8b7fff]/[0.02]"
-                  )}
-                >
-                  {/* Nom du plan */}
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="text-sm font-semibold text-[#242529] dark:text-white">
-                      {plan.name}
-                    </span>
+            return (
+              <div
+                key={plan.key}
+                className={cn(
+                  "flex flex-col gap-6 p-5",
+                  plan.popular && "bg-muted/50 md:rounded-none first:rounded-t-xl last:rounded-b-xl md:first:rounded-l-xl md:last:rounded-r-xl md:first:rounded-tr-none md:last:rounded-bl-none"
+                )}
+              >
+                {/* Header du plan */}
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xl font-medium">{plan.name}</h4>
                     {plan.popular && (
-                      <span className="text-[10px] font-semibold text-[#864AFF] dark:text-[#a47bff]">
+                      <Badge className="bg-[#5b50fe] text-white text-xs font-normal rounded-md px-2 py-0.5">
                         Populaire
-                      </span>
+                      </Badge>
+                    )}
+                    {isCurrentPlan && !plan.popular && (
+                      <Badge variant="outline" className="text-[#5b50fe] border-[#5b50fe]/30 text-xs font-normal">
+                        Actuel
+                      </Badge>
                     )}
                   </div>
 
                   {/* Prix */}
-                  {plan.isContactOnly ? (
-                    <div className="mb-1">
-                      <span className="text-2xl font-semibold text-[#242529] dark:text-white">Sur devis</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-baseline gap-0.5 mb-1">
-                      <span className="text-2xl font-semibold text-[#242529] dark:text-white">
-                        {formatPrice(price)} €
-                      </span>
-                      <span className="text-sm text-black/40 dark:text-white/40">/mois</span>
-                    </div>
+                  <div className="flex items-baseline">
+                    <span className="text-muted-foreground text-sm">€</span>
+                    <span className="text-3xl font-medium tabular-nums">
+                      {formatPrice(price)}
+                    </span>
+                    <span className="text-muted-foreground text-sm ml-1">/mois</span>
+                  </div>
+
+                  {isAnnual && (
+                    <p className="text-xs text-muted-foreground -mt-2">
+                      {formatPrice(plan.annualTotal)} € facturé annuellement
+                    </p>
                   )}
+                </div>
 
-                  {/* Sous-texte */}
-                  <p className="text-xs text-black/40 dark:text-white/40 mb-5">
-                    {plan.isContactOnly
-                      ? "Adapté à vos besoins"
-                      : isAnnual
-                        ? "par utilisateur, facturé annuellement"
-                        : "par utilisateur, facturé mensuellement"}
-                  </p>
+                {/* Features */}
+                <div className="flex flex-col gap-2">
+                  {plan.features.map((feature, idx) => (
+                    <div key={idx} className="flex items-start gap-2">
+                      <Check className="h-4 w-4 text-[#5b50fe] mt-0.5 shrink-0" />
+                      <p className="text-sm text-muted-foreground">{feature}</p>
+                    </div>
+                  ))}
+                </div>
 
-                  {/* Bouton */}
-                  {plan.isContactOnly ? (
+                {/* Bouton */}
+                <div className="flex flex-1 items-end pt-2">
+                  {isCurrentPlan ? (
                     <Button
                       variant="outline"
-                      className="w-full cursor-pointer border-black/[0.08] dark:border-white/[0.08]"
-                      asChild
-                    >
-                      <a href="mailto:contact@newbi.fr">Nous contacter</a>
-                    </Button>
-                  ) : isCurrentPlan ? (
-                    <Button
-                      variant="outline"
-                      className="w-full cursor-default border-black/[0.08] dark:border-white/[0.08]"
+                      className="w-full cursor-default"
                       disabled
                     >
                       <Check className="h-4 w-4 mr-2" />
@@ -653,11 +493,10 @@ export function SubscriptionSection({
                     </Button>
                   ) : (
                     <Button
-                      variant={plan.popular ? "default" : "outline"}
+                      variant={plan.popular ? "default" : "secondary"}
                       className={cn(
                         "w-full cursor-pointer",
-                        plan.popular && "bg-[#5A50FF] hover:bg-[#4a3fe8] text-white",
-                        !plan.popular && "border-black/[0.08] dark:border-white/[0.08]"
+                        plan.popular && "bg-[#5b50fe] hover:bg-[#4a3fe8]"
                       )}
                       onClick={() => openPlanChangeModal(plan.key)}
                       disabled={loadingPlan === plan.key || !canManageSubscription}
@@ -665,102 +504,16 @@ export function SubscriptionSection({
                       {loadingPlan === plan.key ? (
                         <LoaderCircle className="h-4 w-4 animate-spin" />
                       ) : (
-                        getButtonLabel(plan.key)
+                        "Choisir"
                       )}
                     </Button>
                   )}
                 </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* ===================== SECTION 3: Tableau comparatif ===================== */}
-        <div className="overflow-x-auto -mx-1 px-1">
-          <div className="min-w-[640px]">
-            {COMPARISON_CATEGORIES.map((category, catIdx) => (
-              <div key={category.name}>
-                {/* En-tête de catégorie */}
-                <div className="grid grid-cols-[1fr_repeat(4,minmax(120px,1fr))] border-b border-black/[0.06] dark:border-white/[0.06]">
-                  <div className="py-3 px-3 sticky left-0 bg-white dark:bg-[#09090b] z-10">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-black/40 dark:text-white/40">
-                      {category.name}
-                    </span>
-                  </div>
-                  {catIdx === 0 ? (
-                    PLANS_CONFIG.map((plan) => (
-                      <div
-                        key={plan.key}
-                        className={cn(
-                          "py-3 px-3 text-center",
-                          subscription?.plan === plan.key && "bg-[#5A50FF]/[0.02] dark:bg-[#8b7fff]/[0.02]"
-                        )}
-                      >
-                        <span className="text-xs font-semibold uppercase tracking-wider text-black/40 dark:text-white/40">
-                          {plan.name}
-                        </span>
-                      </div>
-                    ))
-                  ) : (
-                    PLANS_CONFIG.map((plan) => (
-                      <div
-                        key={plan.key}
-                        className={cn(
-                          "py-3 px-3",
-                          subscription?.plan === plan.key && "bg-[#5A50FF]/[0.02] dark:bg-[#8b7fff]/[0.02]"
-                        )}
-                      />
-                    ))
-                  )}
-                </div>
-
-                {/* Features de la catégorie */}
-                {category.features.map((feature, featureIdx) => (
-                  <div
-                    key={feature.name}
-                    className={cn(
-                      "grid grid-cols-[1fr_repeat(4,minmax(120px,1fr))] border-b border-black/[0.04] dark:border-white/[0.04] transition-colors hover:bg-black/[0.01] dark:hover:bg-white/[0.01]",
-                    )}
-                  >
-                    {/* Nom de la feature */}
-                    <div className="py-2.5 px-3 sticky left-0 bg-white dark:bg-[#09090b] z-10">
-                      <span className="text-sm text-[#505154] dark:text-white/70">
-                        {feature.name}
-                      </span>
-                    </div>
-
-                    {/* Valeurs par plan */}
-                    {feature.values.map((value, valIdx) => {
-                      const planKey = PLAN_ORDER[valIdx];
-                      const isCurrent = subscription?.plan === planKey;
-
-                      return (
-                        <div
-                          key={valIdx}
-                          className={cn(
-                            "py-2.5 px-3 flex items-center justify-center",
-                            isCurrent && "bg-[#5A50FF]/[0.02] dark:bg-[#8b7fff]/[0.02]"
-                          )}
-                        >
-                          {value === true ? (
-                            <svg className="h-4 w-4 text-[#5A50FF] dark:text-[#8b7fff]" viewBox="0 0 16 16" fill="none">
-                              <path d="M13.25 4.75L6 12 2.75 8.75" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
-                          ) : value === false ? (
-                            <span className="text-black/20 dark:text-white/20">—</span>
-                          ) : (
-                            <span className="text-sm text-[#505154] dark:text-white/70">{value}</span>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                ))}
               </div>
-            ))}
-          </div>
-        </div>
-      </div>
+            );
+          })}
+        </CardContent>
+      </Card>
 
       {/* Bouton de résiliation */}
       {isActive() && subscription && !subscription.cancelAtPeriodEnd && subscription.status !== "canceled" && (
