@@ -230,7 +230,7 @@ function ClientsContent() {
                     Plus d&apos;actions
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-52">
+                <DropdownMenuContent align="end" className="w-60">
                   {selectedClients.size === 1 && (
                     <>
                       <DropdownMenuItem
@@ -298,7 +298,7 @@ function ClientsContent() {
                         className="cursor-pointer gap-2 text-sm text-red-600 focus:text-red-600"
                         onSelect={(e) => e.preventDefault()}
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <Trash2 className="w-3.5 h-3.5 text-red-600" />
                         Supprimer définitivement
                       </DropdownMenuItem>
                     </AlertDialogTrigger>

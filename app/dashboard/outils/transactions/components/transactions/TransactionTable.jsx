@@ -722,11 +722,11 @@ export default function TransactionTable({
   const handleReceiptUploadSuccess = (receiptData) => {
     setIsReceiptUploadDrawerOpen(false);
 
-    if (receiptData.createdExpense) {
-      refetch();
-      toast.success(
-        `Dépense créée avec succès: ${receiptData.createdExpense.title}`
-      );
+    // Toujours rafraîchir les données après un upload de reçu réussi
+    refetch();
+
+    if (receiptData.action === "created" || receiptData.action === "auto-matched" || receiptData.action === "linked") {
+      toast.success(`Dépense traitée avec succès`);
     } else {
       toast.success(`Reçu "${receiptData.fileName}" traité avec succès`);
     }
@@ -819,16 +819,23 @@ export default function TransactionTable({
 
   const handleDownloadAttachment = async (transaction) => {
     try {
-      if (!transaction.attachment) {
+      // Chercher l'URL du justificatif dans les différents champs possibles
+      const receiptUrl = transaction.receiptFile?.url
+        || transaction.attachment
+        || (transaction.files && transaction.files.length > 0 ? transaction.files[0].url : null);
+
+      if (!receiptUrl) {
         toast.error("Aucun justificatif disponible");
         return;
       }
 
-      const cloudflareUrl = transaction.attachment;
+      const filename = transaction.receiptFile?.filename
+        || (transaction.files?.[0]?.filename)
+        || `justificatif-${transaction.id}`;
 
       const link = document.createElement("a");
-      link.href = cloudflareUrl;
-      link.download = `justificatif-${transaction.id}.pdf`;
+      link.href = receiptUrl;
+      link.download = filename;
       link.target = "_blank";
 
       document.body.appendChild(link);

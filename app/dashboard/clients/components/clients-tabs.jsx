@@ -81,7 +81,7 @@ export default function ClientsTabs({ activeTab, onTabChange, createListDialogOp
             )}
             value={globalFilter}
             onChange={(e) => setGlobalFilter(e.target.value)}
-            placeholder={activeTab === "lists" ? "Rechercher une liste..." : "Recherchez par nom, email ou SIRET..."}
+            placeholder={activeTab === "lists" ? (selectedList ? "Rechercher un contact..." : "Rechercher une liste...") : "Recherchez par nom, email ou SIRET..."}
             type="text"
             aria-label="Filter by name or email"
           />
@@ -169,6 +169,7 @@ export default function ClientsTabs({ activeTab, onTabChange, createListDialogOp
             list={selectedList}
             onBack={() => setSelectedList(null)}
             onListUpdated={refetchLists}
+            globalFilter={globalFilter}
           />
         ) : (
           <ClientListsView

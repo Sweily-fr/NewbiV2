@@ -1,4 +1,4 @@
-import { useQuery, useMutation } from "@apollo/client";
+import { useQuery, useMutation, gql } from "@apollo/client";
 import { GET_EVENTS, GET_EVENT } from "@/src/graphql/queries/event";
 import {
   CREATE_EVENT,
@@ -85,7 +85,7 @@ export const useCreateEvent = () => {
   const { workspaceId } = useWorkspace();
   
   const [createEventMutation, { loading, error }] = useMutation(CREATE_EVENT, {
-    refetchQueries: [{ query: GET_EVENTS, variables: { workspaceId } }],
+    refetchQueries: ["GetEvents"],
     awaitRefetchQueries: true,
   });
 
@@ -126,7 +126,7 @@ export const useUpdateEvent = () => {
   const { workspaceId } = useWorkspace();
   
   const [updateEventMutation, { loading, error }] = useMutation(UPDATE_EVENT, {
-    refetchQueries: [{ query: GET_EVENTS, variables: { workspaceId } }],
+    refetchQueries: ["GetEvents"],
     awaitRefetchQueries: true,
   });
 
@@ -167,7 +167,7 @@ export const useDeleteEvent = () => {
   const { workspaceId } = useWorkspace();
   
   const [deleteEventMutation, { loading, error }] = useMutation(DELETE_EVENT, {
-    refetchQueries: [{ query: GET_EVENTS, variables: { workspaceId } }],
+    refetchQueries: ["GetEvents"],
     awaitRefetchQueries: true,
   });
 
@@ -210,7 +210,7 @@ export const useSyncInvoiceEvents = () => {
   const [syncInvoiceEventsMutation, { loading, error }] = useMutation(
     SYNC_INVOICE_EVENTS,
     {
-      refetchQueries: [{ query: GET_EVENTS, variables: { workspaceId } }],
+      refetchQueries: ["GetEvents"],
       awaitRefetchQueries: true,
     }
   );
