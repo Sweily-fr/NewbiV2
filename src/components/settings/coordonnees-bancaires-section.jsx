@@ -4,7 +4,6 @@ import React, { useEffect, useState } from "react";
 import { Label } from "@/src/components/ui/label";
 import { Input } from "@/src/components/ui/input";
 import { Separator } from "@/src/components/ui/separator";
-import { CreditCard, Building2, Hash, Shield } from "lucide-react";
 import { useFormContext } from "react-hook-form";
 import {
   sanitizeInput,
@@ -95,7 +94,7 @@ export function CoordonneesBancairesSection({
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4 md:space-y-8">
       {/* Titre */}
       <div>
         <h2 className="text-lg font-medium mb-1 hidden md:block">Coordonnées bancaires</h2>
@@ -112,8 +111,8 @@ export function CoordonneesBancairesSection({
           </div>
         )}
 
-        {/* Information sur la validation conditionnelle */}
-        <div className="mb-8 mt-4 md:mt-12">
+        {/* Desktop: callout info en haut */}
+        <div className="hidden md:block mb-8 mt-12">
           <Callout type="neutral" noMargin>
             <p>
               <span className="font-medium">
@@ -127,23 +126,19 @@ export function CoordonneesBancairesSection({
           </Callout>
         </div>
 
-        <Separator />
+        <Separator className="hidden md:block" />
 
         {/* Formulaire des coordonnées bancaires */}
-        <div className="space-y-6 mt-8">
+        <div className="space-y-5 md:space-y-6 mt-0 md:mt-8">
           {/* IBAN */}
-          <div className="space-y-2">
-            <Label
-              htmlFor="iban"
-              className="flex items-center gap-2 text-sm font-normal"
-            >
-              <Hash className="h-4 w-4 text-gray-500" />
-              IBAN {hasAnyBankField && "*"}
+          <div>
+            <Label htmlFor="iban">
+              IBAN {hasAnyBankField && <span className="text-red-500">*</span>}
             </Label>
             <Input
               id="iban"
               placeholder="FR76 1234 5678 9012 3456 7890 123"
-              className="w-full"
+              className="w-full mt-1.5"
               disabled={!canManageOrgSettings}
               value={displayIban}
               onChange={(e) => {
@@ -178,28 +173,24 @@ export function CoordonneesBancairesSection({
               })}
             />
             {errors.bankDetails?.iban && (
-              <p className="text-sm text-red-500">
+              <p className="text-sm text-red-500 mt-1">
                 {errors.bankDetails.iban.message}
               </p>
             )}
-            <p className="text-xs text-gray-600">
+            <p className="text-xs text-muted-foreground mt-1.5">
               Format international (ex: FR76 1234 5678 9012 3456 7890 123)
             </p>
           </div>
 
           {/* BIC */}
-          <div className="space-y-2">
-            <Label
-              htmlFor="bic"
-              className="flex items-center gap-2 text-sm font-normal"
-            >
-              <Building2 className="h-4 w-4 text-gray-500" />
-              BIC/SWIFT {hasAnyBankField && "*"}
+          <div>
+            <Label htmlFor="bic">
+              BIC/SWIFT {hasAnyBankField && <span className="text-red-500">*</span>}
             </Label>
             <Input
               id="bic"
               placeholder="BNPAFRPP"
-              className="w-full"
+              className="w-full mt-1.5"
               disabled={!canManageOrgSettings}
               {...register("bankDetails.bic", {
                 required: hasAnyBankField
@@ -222,28 +213,24 @@ export function CoordonneesBancairesSection({
               }}
             />
             {errors.bankDetails?.bic && (
-              <p className="text-sm text-red-500">
+              <p className="text-sm text-red-500 mt-1">
                 {errors.bankDetails.bic.message}
               </p>
             )}
-            <p className="text-xs text-gray-600">
+            <p className="text-xs text-muted-foreground mt-1.5">
               Code d'identification de votre banque (8 ou 11 caractères)
             </p>
           </div>
 
           {/* Nom de la banque */}
-          <div className="space-y-2">
-            <Label
-              htmlFor="bankName"
-              className="flex items-center gap-2 text-sm font-normal"
-            >
-              <CreditCard className="h-4 w-4 text-gray-500" />
-              Nom de la banque {hasAnyBankField && "*"}
+          <div>
+            <Label htmlFor="bankName">
+              Nom de la banque {hasAnyBankField && <span className="text-red-500">*</span>}
             </Label>
             <Input
               id="bankName"
               placeholder="BNP Paribas"
-              className="w-full"
+              className="w-full mt-1.5"
               disabled={!canManageOrgSettings}
               {...register("bankDetails.bankName", {
                 required: hasAnyBankField
@@ -266,16 +253,34 @@ export function CoordonneesBancairesSection({
               }}
             />
             {errors.bankDetails?.bankName && (
-              <p className="text-sm text-red-500">
+              <p className="text-sm text-red-500 mt-1">
                 {errors.bankDetails.bankName.message}
               </p>
             )}
-            <p className="text-xs text-gray-600">
+            <p className="text-xs text-muted-foreground mt-1.5">
               Nom de votre établissement bancaire
             </p>
           </div>
+        </div>
 
-          <Separator />
+        <Separator className="my-5 md:my-6" />
+
+        {/* Callouts en dessous du formulaire */}
+        <div className="space-y-4 md:space-y-6">
+          {/* Mobile: callout info en bas */}
+          <div className="md:hidden">
+            <Callout type="neutral" noMargin>
+              <p className="text-sm">
+                <span className="font-medium">
+                  Coordonnées bancaires optionnelles
+                </span>
+                <br />
+                Vous pouvez laisser tous les champs vides. Si vous renseignez une
+                information bancaire, les trois champs (IBAN, BIC et nom de
+                banque) deviennent obligatoires.
+              </p>
+            </Callout>
+          </div>
 
           {/* Information de sécurité */}
           <Callout type="neutral" noMargin>

@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
 import { Button } from "@/src/components/ui/button";
-import { Badge } from "@/src/components/ui/badge";
 import { Separator } from "@/src/components/ui/separator";
 import { Input } from "@/src/components/ui/input";
 import { ScrollArea } from "@/src/components/ui/scroll-area";
@@ -26,7 +25,6 @@ import {
   AlertDialogTrigger,
 } from "@/src/components/ui/alert-dialog";
 import {
-  Landmark,
   Plus,
   Search,
   Building2,
@@ -435,18 +433,23 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
   const getAccountStatus = (account) => {
     const status = account.status?.toLowerCase() || "active";
     if (status === "active" || status === "ok") {
-      return { label: "Actif", variant: "success", icon: CheckCircle2 };
+      return { label: "Actif", className: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400", icon: CheckCircle2 };
     }
     if (status === "error" || status === "disconnected") {
-      return { label: "Erreur", variant: "destructive", icon: XCircle };
+      return { label: "Erreur", className: "bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400", icon: XCircle };
     }
-    return { label: "En attente", variant: "secondary", icon: LoaderCircle };
+    return { label: "En attente", className: "bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400", icon: LoaderCircle };
   };
 
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-lg font-medium mb-1">Comptes bancaires</h2>
+        <div className="flex items-center gap-2 mb-1">
+          <h2 className="text-lg font-medium">Comptes bancaires</h2>
+          <span className="text-xs text-muted-foreground">
+            {connectedBanksCount}/{bankConnectionLimit}
+          </span>
+        </div>
         <Separator className="hidden md:block" />
         {!canManageOrgSettings && (
           <div className="mt-4">
@@ -474,36 +477,20 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
         )}
       </div>
 
-      {/* En-tête avec compteur et actions */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <Landmark className="h-5 w-5 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">
-              {connectedBanksCount}/{bankConnectionLimit} connexion
-              {bankConnectionLimit > 1 ? "s" : ""} utilisée
-              {connectedBanksCount > 1 ? "s" : ""}
-            </span>
-          </div>
-          {subscription?.plan && (
-            <Badge variant="outline" className="text-xs">
-              {subscription.plan}
-            </Badge>
-          )}
-        </div>
+      {/* Actions */}
+      <div className="flex items-center justify-end">
         <div className="flex items-center gap-2">
           {accounts.length > 0 && (
             <Button
-              variant="ghost"
-              size="sm"
+              variant="outline"
+              size="icon"
               onClick={handleRefresh}
               disabled={isLoading}
-              className="font-normal"
+              className="h-8 w-8"
             >
               <RefreshCw
-                className={`h-4 w-4 mr-1 ${isLoading ? "animate-spin" : ""}`}
+                className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`}
               />
-              Synchroniser
             </Button>
           )}
           {canAddBankAccount ? (
@@ -511,7 +498,7 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
               size="sm"
               onClick={handleOpenModal}
               disabled={!canManageOrgSettings || isConnecting || !isEmailVerified}
-              className="font-normal"
+              className="bg-[#5b4eff] hover:bg-[#4a3ecc] text-white"
             >
               {isConnecting ? (
                 <LoaderCircle className="h-4 w-4 animate-spin mr-1" />
@@ -544,23 +531,46 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
         </div>
       ) : accounts.length === 0 ? (
         /* État vide */
-        <div className="border border-dashed rounded-lg p-8 text-center">
-          <Landmark className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
-          <h3 className="text-sm font-medium mb-2">
+        <div className="py-10 flex flex-col items-center">
+          <svg width="138" height="138" viewBox="0 0 138 138" fill="none" xmlns="http://www.w3.org/2000/svg" className="mb-5">
+            <g opacity="0.1">
+              <rect x="4" y="4" width="1" height="1" fill="#242529"/><rect x="12" y="4" width="1" height="1" fill="#242529"/><rect x="20" y="4" width="1" height="1" fill="#242529"/><rect x="28" y="4" width="1" height="1" fill="#242529"/><rect x="36" y="4" width="1" height="1" fill="#242529"/><rect x="44" y="4" width="1" height="1" fill="#242529"/><rect x="52" y="4" width="1" height="1" fill="#242529"/><rect x="60" y="4" width="1" height="1" fill="#242529"/><rect x="68" y="4" width="1" height="1" fill="#242529"/><rect x="76" y="4" width="1" height="1" fill="#242529"/><rect x="84" y="4" width="1" height="1" fill="#242529"/><rect x="92" y="4" width="1" height="1" fill="#242529"/><rect x="100" y="4" width="1" height="1" fill="#242529"/><rect x="108" y="4" width="1" height="1" fill="#242529"/><rect x="116" y="4" width="1" height="1" fill="#242529"/><rect x="124" y="4" width="1" height="1" fill="#242529"/><rect x="132" y="4" width="1" height="1" fill="#242529"/>
+              <rect x="4" y="12" width="1" height="1" fill="#242529"/><rect x="12" y="12" width="1" height="1" fill="#242529"/><rect x="20" y="12" width="1" height="1" fill="#242529"/><rect x="28" y="12" width="1" height="1" fill="#242529"/><rect x="36" y="12" width="1" height="1" fill="#242529"/><rect x="44" y="12" width="1" height="1" fill="#242529"/><rect x="52" y="12" width="1" height="1" fill="#242529"/><rect x="60" y="12" width="1" height="1" fill="#242529"/><rect x="68" y="12" width="1" height="1" fill="#242529"/><rect x="76" y="12" width="1" height="1" fill="#242529"/><rect x="84" y="12" width="1" height="1" fill="#242529"/><rect x="92" y="12" width="1" height="1" fill="#242529"/><rect x="100" y="12" width="1" height="1" fill="#242529"/><rect x="108" y="12" width="1" height="1" fill="#242529"/><rect x="116" y="12" width="1" height="1" fill="#242529"/><rect x="124" y="12" width="1" height="1" fill="#242529"/><rect x="132" y="12" width="1" height="1" fill="#242529"/>
+              <rect x="4" y="20" width="1" height="1" fill="#242529"/><rect x="12" y="20" width="1" height="1" fill="#242529"/><rect x="20" y="20" width="1" height="1" fill="#242529"/><rect x="28" y="20" width="1" height="1" fill="#242529"/><rect x="36" y="20" width="1" height="1" fill="#242529"/><rect x="44" y="20" width="1" height="1" fill="#242529"/><rect x="52" y="20" width="1" height="1" fill="#242529"/><rect x="60" y="20" width="1" height="1" fill="#242529"/><rect x="68" y="20" width="1" height="1" fill="#242529"/><rect x="76" y="20" width="1" height="1" fill="#242529"/><rect x="84" y="20" width="1" height="1" fill="#242529"/><rect x="92" y="20" width="1" height="1" fill="#242529"/><rect x="100" y="20" width="1" height="1" fill="#242529"/><rect x="108" y="20" width="1" height="1" fill="#242529"/><rect x="116" y="20" width="1" height="1" fill="#242529"/><rect x="124" y="20" width="1" height="1" fill="#242529"/><rect x="132" y="20" width="1" height="1" fill="#242529"/>
+              <rect x="4" y="28" width="1" height="1" fill="#242529"/><rect x="12" y="28" width="1" height="1" fill="#242529"/><rect x="20" y="28" width="1" height="1" fill="#242529"/><rect x="28" y="28" width="1" height="1" fill="#242529"/><rect x="36" y="28" width="1" height="1" fill="#242529"/><rect x="44" y="28" width="1" height="1" fill="#242529"/><rect x="52" y="28" width="1" height="1" fill="#242529"/><rect x="60" y="28" width="1" height="1" fill="#242529"/><rect x="68" y="28" width="1" height="1" fill="#242529"/><rect x="76" y="28" width="1" height="1" fill="#242529"/><rect x="84" y="28" width="1" height="1" fill="#242529"/><rect x="92" y="28" width="1" height="1" fill="#242529"/><rect x="100" y="28" width="1" height="1" fill="#242529"/><rect x="108" y="28" width="1" height="1" fill="#242529"/><rect x="116" y="28" width="1" height="1" fill="#242529"/><rect x="124" y="28" width="1" height="1" fill="#242529"/><rect x="132" y="28" width="1" height="1" fill="#242529"/>
+              <rect x="4" y="36" width="1" height="1" fill="#242529"/><rect x="12" y="36" width="1" height="1" fill="#242529"/><rect x="20" y="36" width="1" height="1" fill="#242529"/><rect x="28" y="36" width="1" height="1" fill="#242529"/><rect x="36" y="36" width="1" height="1" fill="#242529"/><rect x="44" y="36" width="1" height="1" fill="#242529"/><rect x="52" y="36" width="1" height="1" fill="#242529"/><rect x="60" y="36" width="1" height="1" fill="#242529"/><rect x="68" y="36" width="1" height="1" fill="#242529"/><rect x="76" y="36" width="1" height="1" fill="#242529"/><rect x="84" y="36" width="1" height="1" fill="#242529"/><rect x="92" y="36" width="1" height="1" fill="#242529"/><rect x="100" y="36" width="1" height="1" fill="#242529"/><rect x="108" y="36" width="1" height="1" fill="#242529"/><rect x="116" y="36" width="1" height="1" fill="#242529"/><rect x="124" y="36" width="1" height="1" fill="#242529"/><rect x="132" y="36" width="1" height="1" fill="#242529"/>
+              <rect x="4" y="44" width="1" height="1" fill="#242529"/><rect x="12" y="44" width="1" height="1" fill="#242529"/><rect x="20" y="44" width="1" height="1" fill="#242529"/><rect x="28" y="44" width="1" height="1" fill="#242529"/><rect x="36" y="44" width="1" height="1" fill="#242529"/><rect x="44" y="44" width="1" height="1" fill="#242529"/><rect x="52" y="44" width="1" height="1" fill="#242529"/><rect x="60" y="44" width="1" height="1" fill="#242529"/><rect x="68" y="44" width="1" height="1" fill="#242529"/><rect x="76" y="44" width="1" height="1" fill="#242529"/><rect x="84" y="44" width="1" height="1" fill="#242529"/><rect x="92" y="44" width="1" height="1" fill="#242529"/><rect x="100" y="44" width="1" height="1" fill="#242529"/><rect x="108" y="44" width="1" height="1" fill="#242529"/><rect x="116" y="44" width="1" height="1" fill="#242529"/><rect x="124" y="44" width="1" height="1" fill="#242529"/><rect x="132" y="44" width="1" height="1" fill="#242529"/>
+              <rect x="4" y="52" width="1" height="1" fill="#242529"/><rect x="12" y="52" width="1" height="1" fill="#242529"/><rect x="20" y="52" width="1" height="1" fill="#242529"/><rect x="28" y="52" width="1" height="1" fill="#242529"/><rect x="36" y="52" width="1" height="1" fill="#242529"/><rect x="44" y="52" width="1" height="1" fill="#242529"/><rect x="52" y="52" width="1" height="1" fill="#242529"/><rect x="60" y="52" width="1" height="1" fill="#242529"/><rect x="68" y="52" width="1" height="1" fill="#242529"/><rect x="76" y="52" width="1" height="1" fill="#242529"/><rect x="84" y="52" width="1" height="1" fill="#242529"/><rect x="92" y="52" width="1" height="1" fill="#242529"/><rect x="100" y="52" width="1" height="1" fill="#242529"/><rect x="108" y="52" width="1" height="1" fill="#242529"/><rect x="116" y="52" width="1" height="1" fill="#242529"/><rect x="124" y="52" width="1" height="1" fill="#242529"/><rect x="132" y="52" width="1" height="1" fill="#242529"/>
+              <rect x="4" y="60" width="1" height="1" fill="#242529"/><rect x="12" y="60" width="1" height="1" fill="#242529"/><rect x="20" y="60" width="1" height="1" fill="#242529"/><rect x="28" y="60" width="1" height="1" fill="#242529"/><rect x="36" y="60" width="1" height="1" fill="#242529"/><rect x="44" y="60" width="1" height="1" fill="#242529"/><rect x="52" y="60" width="1" height="1" fill="#242529"/><rect x="60" y="60" width="1" height="1" fill="#242529"/><rect x="68" y="60" width="1" height="1" fill="#242529"/><rect x="76" y="60" width="1" height="1" fill="#242529"/><rect x="84" y="60" width="1" height="1" fill="#242529"/><rect x="92" y="60" width="1" height="1" fill="#242529"/><rect x="100" y="60" width="1" height="1" fill="#242529"/><rect x="108" y="60" width="1" height="1" fill="#242529"/><rect x="116" y="60" width="1" height="1" fill="#242529"/><rect x="124" y="60" width="1" height="1" fill="#242529"/><rect x="132" y="60" width="1" height="1" fill="#242529"/>
+              <rect x="4" y="68" width="1" height="1" fill="#242529"/><rect x="12" y="68" width="1" height="1" fill="#242529"/><rect x="20" y="68" width="1" height="1" fill="#242529"/><rect x="28" y="68" width="1" height="1" fill="#242529"/><rect x="36" y="68" width="1" height="1" fill="#242529"/><rect x="44" y="68" width="1" height="1" fill="#242529"/><rect x="52" y="68" width="1" height="1" fill="#242529"/><rect x="60" y="68" width="1" height="1" fill="#242529"/><rect x="68" y="68" width="1" height="1" fill="#242529"/><rect x="76" y="68" width="1" height="1" fill="#242529"/><rect x="84" y="68" width="1" height="1" fill="#242529"/><rect x="92" y="68" width="1" height="1" fill="#242529"/><rect x="100" y="68" width="1" height="1" fill="#242529"/><rect x="108" y="68" width="1" height="1" fill="#242529"/><rect x="116" y="68" width="1" height="1" fill="#242529"/><rect x="124" y="68" width="1" height="1" fill="#242529"/><rect x="132" y="68" width="1" height="1" fill="#242529"/>
+              <rect x="4" y="76" width="1" height="1" fill="#242529"/><rect x="12" y="76" width="1" height="1" fill="#242529"/><rect x="20" y="76" width="1" height="1" fill="#242529"/><rect x="28" y="76" width="1" height="1" fill="#242529"/><rect x="36" y="76" width="1" height="1" fill="#242529"/><rect x="44" y="76" width="1" height="1" fill="#242529"/><rect x="52" y="76" width="1" height="1" fill="#242529"/><rect x="60" y="76" width="1" height="1" fill="#242529"/><rect x="68" y="76" width="1" height="1" fill="#242529"/><rect x="76" y="76" width="1" height="1" fill="#242529"/><rect x="84" y="76" width="1" height="1" fill="#242529"/><rect x="92" y="76" width="1" height="1" fill="#242529"/><rect x="100" y="76" width="1" height="1" fill="#242529"/><rect x="108" y="76" width="1" height="1" fill="#242529"/><rect x="116" y="76" width="1" height="1" fill="#242529"/><rect x="124" y="76" width="1" height="1" fill="#242529"/><rect x="132" y="76" width="1" height="1" fill="#242529"/>
+              <rect x="4" y="84" width="1" height="1" fill="#242529"/><rect x="12" y="84" width="1" height="1" fill="#242529"/><rect x="20" y="84" width="1" height="1" fill="#242529"/><rect x="28" y="84" width="1" height="1" fill="#242529"/><rect x="36" y="84" width="1" height="1" fill="#242529"/><rect x="44" y="84" width="1" height="1" fill="#242529"/><rect x="52" y="84" width="1" height="1" fill="#242529"/><rect x="60" y="84" width="1" height="1" fill="#242529"/><rect x="68" y="84" width="1" height="1" fill="#242529"/><rect x="76" y="84" width="1" height="1" fill="#242529"/><rect x="84" y="84" width="1" height="1" fill="#242529"/><rect x="92" y="84" width="1" height="1" fill="#242529"/><rect x="100" y="84" width="1" height="1" fill="#242529"/><rect x="108" y="84" width="1" height="1" fill="#242529"/><rect x="116" y="84" width="1" height="1" fill="#242529"/><rect x="124" y="84" width="1" height="1" fill="#242529"/><rect x="132" y="84" width="1" height="1" fill="#242529"/>
+              <rect x="4" y="92" width="1" height="1" fill="#242529"/><rect x="12" y="92" width="1" height="1" fill="#242529"/><rect x="20" y="92" width="1" height="1" fill="#242529"/><rect x="28" y="92" width="1" height="1" fill="#242529"/><rect x="36" y="92" width="1" height="1" fill="#242529"/><rect x="44" y="92" width="1" height="1" fill="#242529"/><rect x="52" y="92" width="1" height="1" fill="#242529"/><rect x="60" y="92" width="1" height="1" fill="#242529"/><rect x="68" y="92" width="1" height="1" fill="#242529"/><rect x="76" y="92" width="1" height="1" fill="#242529"/><rect x="84" y="92" width="1" height="1" fill="#242529"/><rect x="92" y="92" width="1" height="1" fill="#242529"/><rect x="100" y="92" width="1" height="1" fill="#242529"/><rect x="108" y="92" width="1" height="1" fill="#242529"/><rect x="116" y="92" width="1" height="1" fill="#242529"/><rect x="124" y="92" width="1" height="1" fill="#242529"/><rect x="132" y="92" width="1" height="1" fill="#242529"/>
+              <rect x="4" y="100" width="1" height="1" fill="#242529"/><rect x="12" y="100" width="1" height="1" fill="#242529"/><rect x="20" y="100" width="1" height="1" fill="#242529"/><rect x="28" y="100" width="1" height="1" fill="#242529"/><rect x="36" y="100" width="1" height="1" fill="#242529"/><rect x="44" y="100" width="1" height="1" fill="#242529"/><rect x="52" y="100" width="1" height="1" fill="#242529"/><rect x="60" y="100" width="1" height="1" fill="#242529"/><rect x="68" y="100" width="1" height="1" fill="#242529"/><rect x="76" y="100" width="1" height="1" fill="#242529"/><rect x="84" y="100" width="1" height="1" fill="#242529"/><rect x="92" y="100" width="1" height="1" fill="#242529"/><rect x="100" y="100" width="1" height="1" fill="#242529"/><rect x="108" y="100" width="1" height="1" fill="#242529"/><rect x="116" y="100" width="1" height="1" fill="#242529"/><rect x="124" y="100" width="1" height="1" fill="#242529"/><rect x="132" y="100" width="1" height="1" fill="#242529"/>
+              <rect x="4" y="108" width="1" height="1" fill="#242529"/><rect x="12" y="108" width="1" height="1" fill="#242529"/><rect x="20" y="108" width="1" height="1" fill="#242529"/><rect x="28" y="108" width="1" height="1" fill="#242529"/><rect x="36" y="108" width="1" height="1" fill="#242529"/><rect x="44" y="108" width="1" height="1" fill="#242529"/><rect x="52" y="108" width="1" height="1" fill="#242529"/><rect x="60" y="108" width="1" height="1" fill="#242529"/><rect x="68" y="108" width="1" height="1" fill="#242529"/><rect x="76" y="108" width="1" height="1" fill="#242529"/><rect x="84" y="108" width="1" height="1" fill="#242529"/><rect x="92" y="108" width="1" height="1" fill="#242529"/><rect x="100" y="108" width="1" height="1" fill="#242529"/><rect x="108" y="108" width="1" height="1" fill="#242529"/><rect x="116" y="108" width="1" height="1" fill="#242529"/><rect x="124" y="108" width="1" height="1" fill="#242529"/><rect x="132" y="108" width="1" height="1" fill="#242529"/>
+              <rect x="4" y="116" width="1" height="1" fill="#242529"/><rect x="12" y="116" width="1" height="1" fill="#242529"/><rect x="20" y="116" width="1" height="1" fill="#242529"/><rect x="28" y="116" width="1" height="1" fill="#242529"/><rect x="36" y="116" width="1" height="1" fill="#242529"/><rect x="44" y="116" width="1" height="1" fill="#242529"/><rect x="52" y="116" width="1" height="1" fill="#242529"/><rect x="60" y="116" width="1" height="1" fill="#242529"/><rect x="68" y="116" width="1" height="1" fill="#242529"/><rect x="76" y="116" width="1" height="1" fill="#242529"/><rect x="84" y="116" width="1" height="1" fill="#242529"/><rect x="92" y="116" width="1" height="1" fill="#242529"/><rect x="100" y="116" width="1" height="1" fill="#242529"/><rect x="108" y="116" width="1" height="1" fill="#242529"/><rect x="116" y="116" width="1" height="1" fill="#242529"/><rect x="124" y="116" width="1" height="1" fill="#242529"/><rect x="132" y="116" width="1" height="1" fill="#242529"/>
+              <rect x="4" y="124" width="1" height="1" fill="#242529"/><rect x="12" y="124" width="1" height="1" fill="#242529"/><rect x="20" y="124" width="1" height="1" fill="#242529"/><rect x="28" y="124" width="1" height="1" fill="#242529"/><rect x="36" y="124" width="1" height="1" fill="#242529"/><rect x="44" y="124" width="1" height="1" fill="#242529"/><rect x="52" y="124" width="1" height="1" fill="#242529"/><rect x="60" y="124" width="1" height="1" fill="#242529"/><rect x="68" y="124" width="1" height="1" fill="#242529"/><rect x="76" y="124" width="1" height="1" fill="#242529"/><rect x="84" y="124" width="1" height="1" fill="#242529"/><rect x="92" y="124" width="1" height="1" fill="#242529"/><rect x="100" y="124" width="1" height="1" fill="#242529"/><rect x="108" y="124" width="1" height="1" fill="#242529"/><rect x="116" y="124" width="1" height="1" fill="#242529"/><rect x="124" y="124" width="1" height="1" fill="#242529"/><rect x="132" y="124" width="1" height="1" fill="#242529"/>
+              <rect x="4" y="132" width="1" height="1" fill="#242529"/><rect x="12" y="132" width="1" height="1" fill="#242529"/><rect x="20" y="132" width="1" height="1" fill="#242529"/><rect x="28" y="132" width="1" height="1" fill="#242529"/><rect x="36" y="132" width="1" height="1" fill="#242529"/><rect x="44" y="132" width="1" height="1" fill="#242529"/><rect x="52" y="132" width="1" height="1" fill="#242529"/><rect x="60" y="132" width="1" height="1" fill="#242529"/><rect x="68" y="132" width="1" height="1" fill="#242529"/><rect x="76" y="132" width="1" height="1" fill="#242529"/><rect x="84" y="132" width="1" height="1" fill="#242529"/><rect x="92" y="132" width="1" height="1" fill="#242529"/><rect x="100" y="132" width="1" height="1" fill="#242529"/><rect x="108" y="132" width="1" height="1" fill="#242529"/><rect x="116" y="132" width="1" height="1" fill="#242529"/><rect x="124" y="132" width="1" height="1" fill="#242529"/><rect x="132" y="132" width="1" height="1" fill="#242529"/>
+            </g>
+            <g opacity="0.1"><path d="M4.5 9V0" stroke="#242529"/><path d="M9 4.5L0 4.5" stroke="#242529"/></g>
+            <g opacity="0.1"><path d="M132.5 9V0" stroke="#242529"/><path d="M137 4.5L128 4.5" stroke="#242529"/></g>
+            <g opacity="0.1"><path d="M132.5 137V128" stroke="#242529"/><path d="M137 132.5H128" stroke="#242529"/></g>
+            <g opacity="0.1"><path d="M4.5 137V128" stroke="#242529"/><path d="M9 132.5H0" stroke="#242529"/></g>
+            <g opacity="0.2">
+              <rect x="24" y="38" width="90" height="62" rx="8" stroke="#242529" strokeWidth="2" fill="none"/>
+              <line x1="24" y1="54" x2="114" y2="54" stroke="#242529" strokeWidth="2"/>
+            </g>
+            <g opacity="0.07">
+              <rect x="20" y="34" width="98" height="70" rx="12" stroke="#242529" strokeWidth="7" fill="none"/>
+              <line x1="20" y1="52" x2="118" y2="52" stroke="#242529" strokeWidth="7"/>
+            </g>
+          </svg>
+          <h3 className="text-sm font-medium text-black dark:text-white mb-1">
             Aucun compte bancaire connecté
           </h3>
-          <p className="text-xs text-muted-foreground mb-4 max-w-sm mx-auto">
-            Connectez votre compte bancaire pour synchroniser automatiquement
-            vos transactions et suivre vos finances en temps réel.
+          <p className="text-sm font-normal text-black/55 dark:text-white/55 max-w-xs text-center">
+            Connectez votre compte bancaire pour synchroniser automatiquement vos transactions.
           </p>
-          <Button
-            onClick={handleOpenModal}
-            disabled={!canManageOrgSettings || !isEmailVerified}
-            className="font-normal bg-[#5b4eff] hover:bg-[#4a3ecc]"
-          >
-            <Landmark className="h-4 w-4 mr-2" />
-            Connecter un compte bancaire
-          </Button>
         </div>
       ) : (
         /* Liste des comptes - Style Qonto */
@@ -610,21 +620,12 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
                       <h4 className="text-sm font-medium truncate">
                         {bankName}
                       </h4>
-                      <Badge
-                        variant={
-                          status.variant === "success"
-                            ? "default"
-                            : status.variant
-                        }
-                        className={`text-[10px] px-1.5 py-0 ${
-                          status.variant === "success"
-                            ? "bg-green-50 text-green-600 border-green-200"
-                            : ""
-                        }`}
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium ${status.className}`}
                       >
-                        <StatusIcon className="h-3 w-3 mr-0.5" />
+                        <StatusIcon className="w-3 h-3" />
                         {status.label}
-                      </Badge>
+                      </span>
                     </div>
 
                     {/* Nom du compte */}
