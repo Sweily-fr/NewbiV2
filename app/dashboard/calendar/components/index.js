@@ -17,6 +17,7 @@ export { CalendarSyncButton } from "./calendar-sync-button"
 export { ExternalEventBadge } from "./external-event-badge"
 export { AppleCredentialsDialog } from "./apple-credentials-dialog"
 export { CalendarSelectorDialog } from "./calendar-selector-dialog"
+export { ColorLegend } from "./color-legend"
 
 // Constants and utility exports
 export * from "./constants"

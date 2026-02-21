@@ -215,6 +215,12 @@ function getOperationErrorMessage(operation, context) {
     send: {
       invoice: "Impossible d'envoyer la facture",
       quote: "Impossible d'envoyer le devis"
+    },
+    block: {
+      client: "Impossible de bloquer le contact. Veuillez réessayer."
+    },
+    unblock: {
+      client: "Impossible de débloquer le contact. Veuillez réessayer."
     }
   };
 

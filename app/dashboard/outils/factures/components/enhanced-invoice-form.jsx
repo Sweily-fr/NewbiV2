@@ -569,7 +569,7 @@ export default function EnhancedInvoiceForm({
     const itemsAreValid =
       hasItems &&
       data.items.every(
-        (item) => item.description && item.quantity && item.unitPrice
+        (item) => item.description && item.quantity && item.unitPrice != null && item.unitPrice !== ""
       );
 
     return (
@@ -589,9 +589,9 @@ export default function EnhancedInvoiceForm({
       {/* Form Content */}
       <div
         ref={scrollContainerRef}
-        className="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent min-h-0 pb-20 lg:pb-0"
+        className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 pb-20 lg:pb-0"
       >
-        <div className="space-y-4">
+        <div className="space-y-4 px-2">
           {/* Étape 1: Détails de la facture */}
           {currentStep === 1 && (
             <>

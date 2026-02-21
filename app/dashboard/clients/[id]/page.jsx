@@ -4,14 +4,18 @@ import { useState, useMemo, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
-import { useClient, useClients, useDeleteClient } from "@/src/hooks/useClients";
+import { useClient, useClients, useDeleteClient, useBlockClient, useUnblockClient } from "@/src/hooks/useClients";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { useInvoices } from "@/src/graphql/invoiceQueries";
 import { useQuotes } from "@/src/graphql/quoteQueries";
+import { usePurchaseOrders } from "@/src/graphql/purchaseOrderQueries";
+import { useCreateEvent } from "@/src/hooks/useEvents";
 import ClientsModal from "@/app/dashboard/clients/components/clients-modal";
 import ClientDetailHeader from "./components/client-detail-header";
 import ClientDetailSidebar from "./components/client-detail-sidebar";
 import ClientDetailTabs from "./components/client-detail-tabs";
+import { EventDialog } from "@/app/dashboard/calendar/components/event-dialog";
+import AssignMembersDialog from "./components/assign-members-dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,6 +27,9 @@ import {
   AlertDialogTitle,
 } from "@/src/components/ui/alert-dialog";
 import { Button } from "@/src/components/ui/button";
+import { Label } from "@/src/components/ui/label";
+import { Textarea } from "@/src/components/ui/textarea";
+import { toast } from "@/src/components/ui/sonner";
 
 const isValidObjectId = (id) => /^[a-fA-F0-9]{24}$/.test(id);
 
@@ -37,10 +44,18 @@ function ClientDetailContent() {
   const { clients: allClients } = useClients(1, 1000);
   const { invoices } = useInvoices();
   const { quotes } = useQuotes();
+  const { purchaseOrders } = usePurchaseOrders();
   const { deleteClient } = useDeleteClient();
+  const { blockClient } = useBlockClient();
+  const { unblockClient } = useUnblockClient();
+  const { createEvent } = useCreateEvent();
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isBlockDialogOpen, setIsBlockDialogOpen] = useState(false);
+  const [blockReason, setBlockReason] = useState("");
+  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
+  const [isReminderDialogOpen, setIsReminderDialogOpen] = useState(false);
 
   if (!isValid) {
     router.replace("/dashboard/clients");
@@ -74,7 +89,45 @@ function ClientDetailContent() {
     }
   };
 
+  const handleBlock = async () => {
+    try {
+      await blockClient(id, blockReason || undefined);
+      setIsBlockDialogOpen(false);
+      setBlockReason("");
+      router.push("/dashboard/clients/blocked");
+    } catch (error) {
+      // Error handled by hook
+    }
+  };
+
+  const handleUnblock = async () => {
+    try {
+      await unblockClient(id);
+    } catch (error) {
+      // Error handled by hook
+    }
+  };
+
   const handleClientUpdate = () => {};
+
+  const handleSaveReminder = async (eventData) => {
+    const result = await createEvent({
+      title: eventData.title,
+      description: eventData.description,
+      start: eventData.start,
+      end: eventData.end,
+      allDay: eventData.allDay,
+      location: eventData.location,
+      color: eventData.color,
+      type: "reminder",
+      clientId: id,
+      emailReminder: eventData.emailReminder,
+    });
+    if (result) {
+      toast.success("Rappel créé avec succès");
+      setIsReminderDialogOpen(false);
+    }
+  };
 
   if (clientLoading) {
     return (
@@ -111,6 +164,10 @@ function ClientDetailContent() {
         onNext={handleNext}
         onEdit={() => setIsEditModalOpen(true)}
         onDelete={() => setIsDeleteDialogOpen(true)}
+        onBlock={() => setIsBlockDialogOpen(true)}
+        onUnblock={handleUnblock}
+        onAssign={() => setIsAssignDialogOpen(true)}
+        onCreateReminder={() => setIsReminderDialogOpen(true)}
       />
 
       {/* Main content: tabs (left) + sidebar (right) */}
@@ -120,12 +177,13 @@ function ClientDetailContent() {
             client={client}
             invoices={invoices || []}
             quotes={quotes || []}
+            purchaseOrders={purchaseOrders || []}
             workspaceId={workspaceId}
             onClientUpdate={handleClientUpdate}
           />
         </div>
 
-        <ClientDetailSidebar client={client} invoices={invoices || []} onEdit={() => setIsEditModalOpen(true)} />
+        <ClientDetailSidebar client={client} invoices={invoices || []} workspaceId={workspaceId} onEdit={() => setIsEditModalOpen(true)} />
       </div>
 
       {/* Edit modal */}
@@ -134,6 +192,53 @@ function ClientDetailContent() {
         open={isEditModalOpen}
         onOpenChange={setIsEditModalOpen}
       />
+
+      {/* Assign dialog */}
+      <AssignMembersDialog
+        open={isAssignDialogOpen}
+        onOpenChange={setIsAssignDialogOpen}
+        client={client}
+      />
+
+      {/* Reminder dialog */}
+      <EventDialog
+        isOpen={isReminderDialogOpen}
+        onClose={() => setIsReminderDialogOpen(false)}
+        onSave={handleSaveReminder}
+        onDelete={() => {}}
+      />
+
+      {/* Block dialog */}
+      <AlertDialog open={isBlockDialogOpen} onOpenChange={(open) => { setIsBlockDialogOpen(open); if (!open) setBlockReason(""); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Bloquer ce contact ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Le contact &quot;{client.name}&quot; sera bloqué et déplacé dans les contacts bloqués.
+              Il ne pourra plus être utilisé dans vos documents et communications.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="px-1">
+            <Label htmlFor="block-reason" className="text-sm font-medium mb-1.5 block">
+              Raison du blocage (optionnel)
+            </Label>
+            <Textarea
+              id="block-reason"
+              value={blockReason}
+              onChange={(e) => setBlockReason(e.target.value)}
+              placeholder="Ex: Impayés récurrents, communication difficile..."
+              className="resize-none"
+              rows={3}
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={handleBlock} variant="destructive">
+              Bloquer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Delete dialog */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>

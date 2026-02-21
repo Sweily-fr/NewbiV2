@@ -16,8 +16,6 @@ import {
 } from "@/src/components/ui/tooltip";
 import {
   Settings2,
-  FileText,
-  ClipboardList,
   Mail,
   Trash2,
   Pencil,
@@ -25,12 +23,23 @@ import {
   ShieldOff,
   UserCheck,
   MessageCircle,
+  Bell,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 
 export default function ClientDetailHeader({
   client,
+  currentIndex,
+  totalClients,
+  onPrev,
+  onNext,
   onEdit,
   onDelete,
+  onBlock,
+  onUnblock,
+  onAssign,
+  onCreateReminder,
 }) {
   const router = useRouter();
 
@@ -39,16 +48,54 @@ export default function ClientDetailHeader({
       ? `${client.firstName || ""} ${client.lastName || ""}`.trim()
       : client.name;
 
+  const hasPrev = currentIndex > 0;
+  const hasNext = totalClients > 0 && currentIndex < totalClients - 1;
+
   return (
     <div className="flex items-center justify-between px-4 sm:px-6 py-2.5 border-b border-[#eeeff1] dark:border-[#232323] flex-shrink-0">
-      {/* Left: avatar + name */}
+      {/* Left: nav + avatar + name */}
       <div className="flex items-center gap-2.5 min-w-0">
+        <div className="flex items-center gap-0.5 flex-shrink-0">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                disabled={!hasPrev}
+                onClick={onPrev}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">Client précédent</TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                disabled={!hasNext}
+                onClick={onNext}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">Client suivant</TooltipContent>
+          </Tooltip>
+        </div>
         <div
           className="flex-shrink-0 rounded-md flex items-center justify-center w-6 h-6 bg-[#fbfbfb] dark:bg-[#1a1a1a] shadow-[inset_0_0_0_1px_#eeeff1] dark:shadow-[inset_0_0_0_1px_#232323]"
         >
           <Blocks className="h-3.5 w-3.5 text-[#242529] dark:text-foreground" />
         </div>
         <h1 className="text-sm font-medium text-[#242529] dark:text-foreground truncate">{displayName}</h1>
+        {client.isBlocked && (
+          <span className="flex-shrink-0 inline-flex items-center rounded-md bg-red-50 dark:bg-red-950 px-2 py-0.5 text-[11px] font-medium text-red-600 dark:text-red-400 ring-1 ring-inset ring-red-200 dark:ring-red-900">
+            Bloqué
+          </span>
+        )}
       </div>
 
       {/* Center: action buttons */}
@@ -56,28 +103,11 @@ export default function ClientDetailHeader({
         <Button
           variant="outline"
           className="hidden sm:inline-flex"
-          onClick={() =>
-            router.push(`/dashboard/outils/factures/new?clientId=${client.id}`)
-          }
+          onClick={onCreateReminder}
         >
-          <FileText className="h-3.5 w-3.5" />
-          Nouvelle facture
+          <Bell className="h-3.5 w-3.5" />
+          Créer un rappel
         </Button>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="outline"
-              size="icon"
-              className="hidden sm:inline-flex"
-              onClick={() =>
-                router.push(`/dashboard/outils/devis/new?clientId=${client.id}`)
-              }
-            >
-              <ClipboardList className="h-3.5 w-3.5" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom">Nouveau devis</TooltipContent>
-        </Tooltip>
         {client.email && (
           <Tooltip>
             <TooltipTrigger asChild>
@@ -110,11 +140,11 @@ export default function ClientDetailHeader({
               Modifier
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="cursor-pointer gap-2 text-xs">
+            <DropdownMenuItem onClick={client.isBlocked ? onUnblock : onBlock} className="cursor-pointer gap-2 text-xs">
               <ShieldOff className="w-3.5 h-3.5" />
-              Bloquer le contact
+              {client.isBlocked ? "Débloquer le contact" : "Bloquer le contact"}
             </DropdownMenuItem>
-            <DropdownMenuItem className="cursor-pointer gap-2 text-xs">
+            <DropdownMenuItem onClick={onAssign} className="cursor-pointer gap-2 text-xs">
               <UserCheck className="w-3.5 h-3.5" />
               Assigner
             </DropdownMenuItem>
@@ -134,7 +164,7 @@ export default function ClientDetailHeader({
               onClick={onDelete}
               className="cursor-pointer gap-2 text-xs text-red-600 focus:text-red-600"
             >
-              <Trash2 className="w-3.5 h-3.5" />
+              <Trash2 className="w-3.5 h-3.5 text-red-600" />
               Supprimer définitivement
             </DropdownMenuItem>
           </DropdownMenuContent>

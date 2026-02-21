@@ -15,7 +15,6 @@ import { Badge } from "@/src/components/ui/badge";
 import {
   useChangeQuoteStatus,
   useQuote,
-  useConvertQuoteToInvoice,
   QUOTE_STATUS,
   QUOTE_STATUS_LABELS,
   QUOTE_STATUS_COLORS,
@@ -35,7 +34,6 @@ export default function QuoteMobileFullscreen({
 }) {
   const router = useRouter();
   const { changeStatus, loading: changingStatus } = useChangeQuoteStatus();
-  const { convertToInvoice, loading: converting } = useConvertQuoteToInvoice();
   const { convertToPurchaseOrder, loading: convertingToPO } = useConvertQuoteToPurchaseOrder();
 
   // Récupérer les données complètes du devis
@@ -110,20 +108,22 @@ export default function QuoteMobileFullscreen({
     }
   };
 
-  const handleConvertToInvoice = async () => {
-    try {
-      const result = await convertToInvoice(quote.id);
-      toast.success("Devis converti en facture avec succès");
-      if (onRefetch) onRefetch();
-      onClose();
-      if (result?.id) {
-        router.push(
-          `/dashboard/outils/factures/${result.id}/editer`
-        );
-      }
-    } catch (error) {
-      toast.error("Erreur lors de la conversion en facture");
-    }
+  const handleConvertToInvoice = () => {
+    sessionStorage.setItem('quoteInvoiceData', JSON.stringify({
+      sourceQuoteId: quote.id,
+      purchaseOrderNumber: `${quote.prefix || ''}${quote.number || ''}`,
+      client: quote.client,
+      items: quote.items,
+      discount: quote.discount,
+      discountType: quote.discountType,
+      customFields: quote.customFields,
+      shipping: quote.shipping,
+      isReverseCharge: quote.isReverseCharge,
+      retenueGarantie: quote.retenueGarantie,
+      escompte: quote.escompte,
+    }));
+    router.push('/dashboard/outils/factures/new');
+    onClose();
   };
 
   const handleConvertToPurchaseOrder = async () => {
@@ -140,7 +140,7 @@ export default function QuoteMobileFullscreen({
     }
   };
 
-  const isLoading = changingStatus || converting || convertingToPO || loadingFullQuote;
+  const isLoading = changingStatus || convertingToPO || loadingFullQuote;
 
   const statusColor = QUOTE_STATUS_COLORS[quote.status] || "gray";
   const statusLabel = QUOTE_STATUS_LABELS[quote.status] || quote.status;
@@ -354,11 +354,7 @@ export default function QuoteMobileFullscreen({
                 size="sm"
                 className="w-full font-normal"
               >
-                {converting ? (
-                  <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <FileCheck className="mr-2 h-4 w-4" />
-                )}
+                <FileCheck className="mr-2 h-4 w-4" />
                 Convertir en facture
               </Button>
             )}

@@ -119,9 +119,21 @@ export function useKanbanBoardsTable({
         ),
         cell: ({ row }) => {
           const board = row.original;
+          const clientName = board.client
+            ? board.client.type === "INDIVIDUAL"
+              ? `${board.client.firstName || ""} ${board.client.lastName || ""}`.trim()
+              : board.client.name
+            : null;
           return (
             <div className="min-h-[40px] flex flex-col justify-center min-w-0">
-              <TruncatedText className="font-medium">{board.title}</TruncatedText>
+              <div className="flex items-center gap-2 min-w-0">
+                <TruncatedText className="font-medium">{board.title}</TruncatedText>
+                {clientName && (
+                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-muted text-muted-foreground flex-shrink-0">
+                    {clientName}
+                  </span>
+                )}
+              </div>
               {board.description && (
                 <div className="text-xs text-muted-foreground truncate">
                   {board.description}

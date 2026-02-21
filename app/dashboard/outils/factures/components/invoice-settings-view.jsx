@@ -101,12 +101,14 @@ export default function InvoiceSettingsView({
     getFormattedNextNumber,
   } = useInvoiceNumber(data.prefix);
 
-  // Champ numéro éditable si aucune facture du tout OU nouveau préfixe (pas de factures avec ce préfixe)
-  const isFirstInvoice = !hasExistingInvoices() || !hasDocumentsForPrefix;
+  // Champ numéro éditable uniquement si aucune facture finalisée n'existe pour ce préfixe
+  const isFirstInvoice = !hasDocumentsForPrefix;
 
   // Auto-initialiser le préfixe et le numéro au montage uniquement (pas en continu)
   const prefixInitializedRef = useRef(false);
   const numberInitializedRef = useRef(false);
+  const userEditedNumberRef = useRef(false);
+  const prevPrefixRef = useRef(data.prefix);
 
   useEffect(() => {
     if (!prefixInitializedRef.current && !data.prefix) {
@@ -118,23 +120,43 @@ export default function InvoiceSettingsView({
     }
   }, [data.prefix, setValue]);
 
+  // Réinitialiser le flag d'édition manuelle quand le préfixe change
+  useEffect(() => {
+    if (prevPrefixRef.current !== data.prefix) {
+      userEditedNumberRef.current = false;
+      prevPrefixRef.current = data.prefix;
+    }
+  }, [data.prefix]);
+
   useEffect(() => {
     if (!numberInitializedRef.current && !data.number && nextInvoiceNumber && !isLoadingInvoiceNumber) {
       const defaultNumber = String(nextInvoiceNumber).padStart(4, "0");
       setValue("number", defaultNumber, { shouldValidate: false });
       numberInitializedRef.current = true;
-    } else if (data.number) {
+    } else if (!numberInitializedRef.current && data.number) {
       numberInitializedRef.current = true;
+      // Si le numéro vient de l'org (déjà défini au montage), le protéger contre l'auto-update
+      userEditedNumberRef.current = true;
     }
   }, [data.number, nextInvoiceNumber, isLoadingInvoiceNumber, setValue]);
 
   // Mettre à jour le numéro quand nextInvoiceNumber change (déclenché par changement de préfixe)
+  // Ne pas écraser si l'utilisateur a manuellement modifié le numéro
   useEffect(() => {
-    if (numberInitializedRef.current && nextInvoiceNumber && !isLoadingInvoiceNumber) {
+    if (numberInitializedRef.current && nextInvoiceNumber && !isLoadingInvoiceNumber && !userEditedNumberRef.current) {
       const formattedNumber = String(nextInvoiceNumber).padStart(4, "0");
       setValue("number", formattedNumber, { shouldValidate: false });
     }
   }, [nextInvoiceNumber, isLoadingInvoiceNumber, setValue]);
+
+  // Synchroniser le numéro dans le formulaire quand le champ est désactivé (numérotation séquentielle)
+  // Garantit que data.number reflète toujours nextInvoiceNumber pour le PDF
+  useEffect(() => {
+    if (!isFirstInvoice && nextInvoiceNumber && !isLoadingInvoiceNumber) {
+      const formattedNumber = String(nextInvoiceNumber).padStart(4, "0");
+      setValue("number", formattedNumber, { shouldValidate: false });
+    }
+  }, [isFirstInvoice, nextInvoiceNumber, isLoadingInvoiceNumber, setValue]);
 
   // Gérer le changement de préfixe avec auto-fill pour MM et AAAA
   const handlePrefixChange = (e) => {
@@ -182,6 +204,7 @@ export default function InvoiceSettingsView({
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showBankDetailsDialog, setShowBankDetailsDialog] = useState(false);
   const [organizationRefreshKey, setOrganizationRefreshKey] = useState(0);
+  const [numberDuplicateError, setNumberDuplicateError] = useState(null);
   const initialValuesRef = useRef(null);
 
   // Fonction pour rafraîchir les données de l'organisation après mise à jour
@@ -547,13 +570,37 @@ export default function InvoiceSettingsView({
                       onFocus={isFirstInvoice ? undefined : (e) => e.target.blur()}
                       onChange={isFirstInvoice ? (e) => {
                         const val = e.target.value.replace(/[^0-9]/g, "");
+                        userEditedNumberRef.current = true;
                         setValue("number", val, { shouldValidate: false });
+                        if (numberDuplicateError) setNumberDuplicateError(null);
                       } : () => {}}
+                      onBlur={isFirstInvoice ? async (e) => {
+                        if (validateInvoiceNumberExists && e.target.value) {
+                          const result = await validateInvoiceNumberExists(
+                            e.target.value,
+                            data.prefix
+                          );
+                          if (result?.exists) {
+                            setNumberDuplicateError(
+                              `Le numéro ${data.prefix}${e.target.value} existe déjà.`
+                            );
+                          } else {
+                            setNumberDuplicateError(null);
+                          }
+                        }
+                      } : undefined}
                       className={isFirstInvoice
-                        ? ""
+                        ? numberDuplicateError
+                          ? "border-destructive focus-visible:ring-1 focus-visible:ring-destructive"
+                          : ""
                         : "bg-muted/50 cursor-not-allowed select-none"
                       }
                     />
+                    {numberDuplicateError && (
+                      <p className="text-xs text-destructive">
+                        {numberDuplicateError}
+                      </p>
+                    )}
                     <p className="text-xs text-muted-foreground">
                       {isFirstInvoice
                         ? "Première facture — vous pouvez choisir le numéro de départ."

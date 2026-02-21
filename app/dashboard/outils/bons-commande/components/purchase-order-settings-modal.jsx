@@ -133,7 +133,7 @@ export function PurchaseOrderSettingsModal({ open, onOpenChange }) {
           const formValues = {
             // Numérotation - préfixe par défaut (le numéro sera auto-rempli par le hook usePurchaseOrderNumber)
             prefix: org?.purchaseOrderPrefix || generatePurchaseOrderPrefix(),
-            number: "",
+            number: org?.purchaseOrderStartNumber || "",
             // Informations de l'entreprise
             companyName: org?.companyName || "",
             companyEmail: org?.companyEmail || "",
@@ -271,6 +271,7 @@ export function PurchaseOrderSettingsModal({ open, onOpenChange }) {
 
         // Préfixe de numérotation
         purchaseOrderPrefix: formValues.prefix || "",
+        purchaseOrderStartNumber: formValues.number || "",
 
         // Position du client dans le PDF (bons de commande)
         purchaseOrderClientPositionRight: formValues.clientPositionRight || false,

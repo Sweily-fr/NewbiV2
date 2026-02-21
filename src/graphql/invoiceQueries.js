@@ -36,6 +36,7 @@ export const INVOICE_FRAGMENT = gql`
     showBankDetails
     clientPositionRight
     isReverseCharge
+    operationType
     createdAt
     updatedAt
     client {
@@ -790,11 +791,18 @@ export const useCreateInvoice = () => {
 
       // Vérifier si la mutation a retourné des erreurs
       if (result.errors && result.errors.length > 0) {
-        throw new Error(result.errors[0].message);
+        const gqlError = result.errors[0];
+        const err = new Error(gqlError.message);
+        err.validationDetails = gqlError.extensions?.details || null;
+        throw err;
       }
 
       return result?.data?.createInvoice;
     } catch (error) {
+      // Préserver les détails de validation depuis les erreurs GraphQL
+      if (!error.validationDetails && error.graphQLErrors?.length > 0) {
+        error.validationDetails = error.graphQLErrors[0].extensions?.details || null;
+      }
       // Re-lancer l'erreur pour qu'elle soit capturée par le composant
       throw error;
     }
@@ -838,7 +846,10 @@ export const useUpdateInvoice = () => {
       // Vérifier s'il y a des erreurs GraphQL
       if (result.errors) {
         console.error("GraphQL errors:", result.errors);
-        throw new Error(result.errors.map((e) => e.message).join(", "));
+        const gqlError = result.errors[0];
+        const err = new Error(result.errors.map((e) => e.message).join(", "));
+        err.validationDetails = gqlError?.extensions?.details || null;
+        throw err;
       }
 
       // Vérifier si data est null
@@ -851,6 +862,10 @@ export const useUpdateInvoice = () => {
 
       return result?.data?.updateInvoice;
     } catch (error) {
+      // Préserver les détails de validation depuis les erreurs GraphQL
+      if (!error.validationDetails && error.graphQLErrors?.length > 0) {
+        error.validationDetails = error.graphQLErrors[0].extensions?.details || null;
+      }
       throw error;
     }
   };

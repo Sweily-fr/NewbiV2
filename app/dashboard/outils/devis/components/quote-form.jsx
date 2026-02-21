@@ -338,7 +338,7 @@ export default function QuoteForm({
       data.items &&
       data.items.length > 0 &&
       data.items.every(
-        (item) => item.description && item.quantity && item.unitPrice
+        (item) => item.description && item.quantity && item.unitPrice != null && item.unitPrice !== ""
       )
     );
   };

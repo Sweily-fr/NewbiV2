@@ -92,7 +92,7 @@ export const useCreateProduct = (options = {}) => {
               workspaceId,
             },
           },
-          refetchQueries: [{ query: GET_PRODUCTS, variables: { workspaceId } }],
+          refetchQueries: ["GetProducts"],
         });
         return result;
       } catch {
@@ -106,9 +106,8 @@ export const useCreateProduct = (options = {}) => {
 };
 
 export const useUpdateProduct = () => {
-  const { workspaceId } = useRequiredWorkspace();
   const [updateProduct, { loading, error }] = useMutation(UPDATE_PRODUCT, {
-    refetchQueries: [{ query: GET_PRODUCTS, variables: { workspaceId } }],
+    refetchQueries: ["GetProducts"],
     onCompleted: () => {
       toast.success("Produit modifié avec succès");
     },
@@ -137,10 +136,9 @@ export const useUpdateProduct = () => {
 
 export const useDeleteProduct = (options = {}) => {
   const { showToast = true } = options;
-  const { workspaceId } = useRequiredWorkspace();
 
   const [deleteProduct, { loading, error }] = useMutation(DELETE_PRODUCT, {
-    refetchQueries: [{ query: GET_PRODUCTS, variables: { workspaceId } }],
+    refetchQueries: ["GetProducts"],
     onCompleted: () => {
       if (showToast) {
         toast.success("Produit supprimé avec succès");

@@ -33,9 +33,11 @@ import { SendDocumentModal } from "../../factures/components/send-document-modal
 import {
   useChangePurchaseOrderStatus,
   useDeletePurchaseOrder,
-  useConvertPurchaseOrderToInvoice,
   PURCHASE_ORDER_STATUS,
+  GET_PURCHASE_ORDER,
 } from "@/src/graphql/purchaseOrderQueries";
+import { useApolloClient } from "@apollo/client";
+import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { toast } from "@/src/components/ui/sonner";
 import PurchaseOrderSidebar from "./purchase-order-sidebar";
 
@@ -72,9 +74,10 @@ export default function PurchaseOrderRowActions({ row, onRefetch }) {
   const router = useRouter();
   const purchaseOrder = row.original;
 
+  const apolloClient = useApolloClient();
+  const { workspaceId } = useRequiredWorkspace();
   const { changeStatus, loading: changingStatus } = useChangePurchaseOrderStatus();
   const { deletePurchaseOrder, loading: isDeleting } = useDeletePurchaseOrder();
-  const { convertToInvoice, loading: converting } = useConvertPurchaseOrderToInvoice();
 
   const handleView = () => {
     setIsSidebarOpen(true);
@@ -136,18 +139,36 @@ export default function PurchaseOrderRowActions({ row, onRefetch }) {
 
   const handleConvertToInvoice = async () => {
     try {
-      const result = await convertToInvoice(purchaseOrder.id);
-      toast.success("Bon de commande converti en facture");
-      if (onRefetch) onRefetch();
-      if (result?.id) {
-        router.push(`/dashboard/outils/factures/${result.id}/editer`);
+      const { data } = await apolloClient.query({
+        query: GET_PURCHASE_ORDER,
+        variables: { workspaceId, id: purchaseOrder.id },
+        fetchPolicy: "network-only",
+      });
+      const po = data?.purchaseOrder;
+      if (!po) {
+        toast.error("Impossible de récupérer le bon de commande");
+        return;
       }
+      sessionStorage.setItem('purchaseOrderInvoiceData', JSON.stringify({
+        sourcePurchaseOrderId: po.id,
+        purchaseOrderNumber: `${po.prefix || ''}${po.number || ''}`,
+        client: po.client,
+        items: po.items,
+        discount: po.discount,
+        discountType: po.discountType,
+        customFields: po.customFields,
+        shipping: po.shipping,
+        isReverseCharge: po.isReverseCharge,
+        retenueGarantie: po.retenueGarantie,
+        escompte: po.escompte,
+      }));
+      router.push('/dashboard/outils/factures/new');
     } catch (error) {
       toast.error("Erreur lors de la conversion en facture");
     }
   };
 
-  const isLoading = changingStatus || isDeleting || converting;
+  const isLoading = changingStatus || isDeleting;
 
   // Déterminer les actions disponibles selon le statut
   const isDraft = purchaseOrder.status === PURCHASE_ORDER_STATUS.DRAFT;
