@@ -151,7 +151,7 @@ export function QuoteSettingsModal({ open, onOpenChange }) {
           const formValues = {
             // Numérotation - préfixe par défaut (le numéro sera auto-rempli par le hook useQuoteNumber)
             prefix: org?.quotePrefix || generateQuotePrefix(),
-            number: "",
+            number: org?.quoteStartNumber || "",
             // Informations de l'entreprise
             companyName: org?.companyName || "",
             companyEmail: org?.companyEmail || "",
@@ -293,6 +293,7 @@ export function QuoteSettingsModal({ open, onOpenChange }) {
 
         // Préfixe de numérotation
         quotePrefix: formValues.prefix || "",
+        quoteStartNumber: formValues.number || "",
 
         // Position du client dans le PDF (devis)
         quoteClientPositionRight: formValues.clientPositionRight || false,

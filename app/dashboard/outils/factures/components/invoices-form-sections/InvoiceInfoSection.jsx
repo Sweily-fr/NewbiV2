@@ -67,7 +67,6 @@ import {
   formatInvoicePrefix,
   getCurrentMonthYear,
 } from "@/src/utils/invoiceUtils";
-import { useInvoiceNumber } from "../../hooks/use-invoice-number";
 import {
   useLastInvoicePrefix,
   GET_SITUATION_INVOICES_BY_QUOTE_REF,
@@ -113,16 +112,6 @@ export default function InvoiceInfoSection({
   } = useFormContext();
   const data = watch();
   const { workspaceId } = useRequiredWorkspace();
-
-  // Get the next invoice number and validation function (filtré par préfixe courant)
-  const {
-    nextInvoiceNumber,
-    validateInvoiceNumber,
-    isLoading: isLoadingInvoiceNumber,
-    getFormattedNextNumber,
-    hasExistingInvoices,
-    hasDocumentsForPrefix,
-  } = useInvoiceNumber(data.prefix);
 
   // Get the last invoice prefix
   const { prefix: lastInvoicePrefix, loading: loadingLastPrefix } =
@@ -549,14 +538,6 @@ export default function InvoiceInfoSection({
     }
   }, [data.dueDate, setValue]);
 
-  // Set invoice number based on nextInvoiceNumber (réactif au changement de préfixe)
-  React.useEffect(() => {
-    if (!isLoadingInvoiceNumber && nextInvoiceNumber) {
-      const formattedNumber = String(nextInvoiceNumber).padStart(4, '0');
-      setValue("number", formattedNumber, { shouldValidate: true });
-    }
-  }, [nextInvoiceNumber, isLoadingInvoiceNumber, setValue]);
-
   // Handle prefix changes with auto-fill for MM and AAAA
   const handlePrefixChange = (e) => {
     const value = e.target.value;
@@ -635,11 +616,9 @@ export default function InvoiceInfoSection({
   // Construire le numéro de facture complet pour l'affichage
   const fullInvoiceNumber = React.useMemo(() => {
     const prefix = data.prefix || "";
-    const number =
-      data.number ||
-      (nextInvoiceNumber ? String(nextInvoiceNumber).padStart(4, "0") : "0001");
-    return prefix ? `${prefix}-${number}` : number;
-  }, [data.prefix, data.number, nextInvoiceNumber]);
+    const number = data.number || "...";
+    return prefix && number ? `${prefix}-${number}` : number;
+  }, [data.prefix, data.number]);
 
   return (
     <>

@@ -76,6 +76,8 @@ export default function QuoteSettingsView({
   // Auto-initialiser le préfixe et le numéro au montage uniquement (pas en continu)
   const prefixInitializedRef = useRef(false);
   const numberInitializedRef = useRef(false);
+  const userEditedNumberRef = useRef(false);
+  const prevPrefixRef = useRef(data.prefix);
 
   useEffect(() => {
     if (!prefixInitializedRef.current && !data.prefix) {
@@ -89,23 +91,43 @@ export default function QuoteSettingsView({
     }
   }, [data.prefix, isPurchaseOrder, setValue]);
 
+  // Réinitialiser le flag d'édition manuelle quand le préfixe change
+  useEffect(() => {
+    if (prevPrefixRef.current !== data.prefix) {
+      userEditedNumberRef.current = false;
+      prevPrefixRef.current = data.prefix;
+    }
+  }, [data.prefix]);
+
   useEffect(() => {
     if (!numberInitializedRef.current && !data.number && nextNumber && !isLoadingNumber) {
       const defaultNumber = String(nextNumber).padStart(4, "0");
       setValue("number", defaultNumber, { shouldValidate: false });
       numberInitializedRef.current = true;
-    } else if (data.number) {
+    } else if (!numberInitializedRef.current && data.number) {
       numberInitializedRef.current = true;
+      // Si le numéro vient de l'org (déjà défini au montage), le protéger contre l'auto-update
+      userEditedNumberRef.current = true;
     }
   }, [data.number, nextNumber, isLoadingNumber, setValue]);
 
   // Mettre à jour le numéro quand nextNumber change (déclenché par changement de préfixe)
+  // Ne pas écraser si l'utilisateur a manuellement modifié le numéro
   useEffect(() => {
-    if (numberInitializedRef.current && nextNumber && !isLoadingNumber) {
+    if (numberInitializedRef.current && nextNumber && !isLoadingNumber && !userEditedNumberRef.current) {
       const formattedNumber = String(nextNumber).padStart(4, "0");
       setValue("number", formattedNumber, { shouldValidate: false });
     }
   }, [nextNumber, isLoadingNumber, setValue]);
+
+  // Synchroniser le numéro dans le formulaire quand le champ est désactivé (numérotation séquentielle)
+  // Garantit que data.number reflète toujours nextNumber pour le PDF
+  useEffect(() => {
+    if (!isFirstDocument && nextNumber && !isLoadingNumber) {
+      const formattedNumber = String(nextNumber).padStart(4, "0");
+      setValue("number", formattedNumber, { shouldValidate: false });
+    }
+  }, [isFirstDocument, nextNumber, isLoadingNumber, setValue]);
 
   // Handle prefix changes with auto-fill for MM and AAAA
   const handlePrefixChange = (e) => {
@@ -382,6 +404,7 @@ export default function QuoteSettingsView({
                       onFocus={isFirstDocument ? undefined : (e) => e.target.blur()}
                       onChange={isFirstDocument ? (e) => {
                         const val = e.target.value.replace(/[^0-9]/g, "");
+                        userEditedNumberRef.current = true;
                         setValue("number", val, { shouldValidate: false });
                       } : () => {}}
                       className={isFirstDocument
