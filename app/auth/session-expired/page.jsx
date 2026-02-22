@@ -16,7 +16,6 @@ function SessionExpiredContent() {
       setCountdown((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
-          router.push("/auth/login");
           return 0;
         }
         return prev - 1;
@@ -24,7 +23,13 @@ function SessionExpiredContent() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [router]);
+  }, []);
+
+  useEffect(() => {
+    if (countdown === 0) {
+      router.push("/auth/login");
+    }
+  }, [countdown, router]);
 
   const getReasonContent = () => {
     switch (reason) {

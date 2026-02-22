@@ -7,6 +7,7 @@ import {
 } from "../graphql/mutations/expense";
 import { GET_EXPENSES } from "../graphql/queries/expense";
 import { useRequiredWorkspace } from "./useWorkspace";
+import { mapCategoryToEnum } from "@/app/dashboard/outils/transactions/components/transactions/utils/mappers";
 
 /**
  * Hook pour la gestion des dépenses
@@ -46,15 +47,6 @@ export const useExpense = () => {
         }
       }
 
-      // Mapper les catégories du système d'analyse vers les enums GraphQL
-      const categoryMapping = {
-        transport: "TRAVEL",
-        repas: "MEALS",
-        bureau: "OFFICE_SUPPLIES",
-        prestation: "SERVICES",
-        autre: "OTHER",
-      };
-
       // Mapper les méthodes de paiement
       const paymentMethodMapping = {
         card: "CREDIT_CARD",
@@ -76,7 +68,7 @@ export const useExpense = () => {
         description: transactionData.description || "",
         amount: parseFloat(transactionData.amount) || 0,
         currency: transactionData.currency || "EUR",
-        category: categoryMapping[transactionData.category] || "OTHER",
+        category: mapCategoryToEnum(transactionData.category),
         date: (() => {
           // Vérifier si transaction_date est valide
           if (transactionData.transaction_date) {
