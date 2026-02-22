@@ -102,7 +102,8 @@ export async function subscriptionMiddleware(request) {
     // Si le cookie existe, laisser passer — l'API et les validateurs côté client protègent les données
     if (isAuthRequiredRoute) {
       const cookieHeader = request.headers.get("cookie") || "";
-      const hasSessionCookie = cookieHeader.includes("better-auth.session_token=");
+      const hasSessionCookie = cookieHeader.includes("better-auth.session_token=")
+        || cookieHeader.includes("__Secure-better-auth.session_token=");
 
       if (hasSessionCookie) {
         console.warn("[Middleware] Erreur de validation DB mais cookie de session présent, laisser passer");

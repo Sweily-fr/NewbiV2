@@ -17,7 +17,8 @@ export async function POST(request) {
     }
 
     // Récupérer le token d'auth depuis les cookies ou headers
-    const authCookie = request.cookies.get("better-auth.session_token")?.value;
+    const authCookie = request.cookies.get("better-auth.session_token")?.value
+      || request.cookies.get("__Secure-better-auth.session_token")?.value;
     const authHeader = request.headers.get("authorization");
 
     const graphqlUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/").replace(/\/$/, "") + "/graphql";
