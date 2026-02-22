@@ -9,7 +9,7 @@ export function PreviewModal({ file, onClose }) {
   const isImage = () => {
     if (file.mimeType?.startsWith("image/")) return true;
     const ext = file.originalName?.split(".").pop()?.toLowerCase();
-    return ["jpg", "jpeg", "png", "gif", "webp", "svg"].includes(ext);
+    return ["jpg", "jpeg", "png", "gif", "webp", "svg", "heic", "heif"].includes(ext);
   };
 
   // Déterminer si c'est un PDF

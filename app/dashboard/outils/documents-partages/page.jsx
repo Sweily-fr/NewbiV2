@@ -4022,8 +4022,8 @@ export default function DocumentsPartagesPage() {
         onOpenChange={(open) => !open && setPreviewDocument(null)}
       >
         <DialogContent className="max-w-[95vw] sm:max-w-6xl h-[90vh] sm:h-[85vh] flex flex-col p-0">
-          <DialogHeader className="px-3 pt-3 pb-2 sm:px-6 sm:pt-6 sm:pb-4 border-b">
-            <div className="flex items-center justify-between gap-2">
+          <DialogHeader className="px-3 pt-3 pb-2 sm:px-6 sm:pt-6 sm:pb-4 border-b pr-12 sm:pr-14">
+            <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
                 {previewDocument &&
                   getFileIcon(
@@ -4032,7 +4032,7 @@ export default function DocumentsPartagesPage() {
                     "h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground flex-shrink-0",
                   )}
                 <div className="min-w-0">
-                  <DialogTitle className="truncate text-sm sm:text-base">
+                  <DialogTitle className="truncate text-sm sm:text-base font-normal">
                     {previewDocument?.name || previewDocument?.originalName}
                   </DialogTitle>
                   <DialogDescription className="text-xs mt-0.5 sm:mt-1">
@@ -4048,7 +4048,7 @@ export default function DocumentsPartagesPage() {
                   </DialogDescription>
                 </div>
               </div>
-              <div className="flex items-center gap-1.5 sm:gap-2 ml-2 sm:ml-4 shrink-0">
+              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                 <Button
                   variant="outline"
                   size="sm"
