@@ -101,7 +101,12 @@ export function AnalyticsVatChart({ monthlyRevenue, loading }) {
     );
   }
 
-  const chartMargin = { top: 5, right: 10, left: 10, bottom: 5 };
+  const chartMargin = { top: 5, right: 10, left: 0, bottom: 5 };
+  const vatTick = ({ y, payload }) => (
+    <text x={0} y={y} textAnchor="start" dominantBaseline="middle" fontSize={11} className="fill-muted-foreground">
+      {payload.value >= 1000 ? `${(payload.value / 1000).toFixed(1)}k €` : `${Math.round(payload.value)} €`}
+    </text>
+  );
 
   const renderChart = () => {
     if (chartType === "bar") {
@@ -109,7 +114,7 @@ export function AnalyticsVatChart({ monthlyRevenue, loading }) {
         <BarChart data={chartData} margin={chartMargin}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} />
           <XAxis dataKey="monthLabel" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
-          <YAxis tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(1)}k €` : `${Math.round(v)} €`} tick={{ fontSize: 11 }} tickLine={false} axisLine={false} width={70} />
+          <YAxis tick={vatTick} tickLine={false} axisLine={false} width={55} />
           <Tooltip content={<CustomTooltip />} />
           <Bar dataKey="revenueVAT" fill="#5b50ff" radius={[4, 4, 0, 0]} barSize={20} />
         </BarChart>
@@ -120,7 +125,7 @@ export function AnalyticsVatChart({ monthlyRevenue, loading }) {
         <LineChart data={chartData} margin={chartMargin}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} />
           <XAxis dataKey="monthLabel" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
-          <YAxis tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(1)}k €` : `${Math.round(v)} €`} tick={{ fontSize: 11 }} tickLine={false} axisLine={false} width={70} />
+          <YAxis tick={vatTick} tickLine={false} axisLine={false} width={55} />
           <Tooltip content={<CustomTooltip />} />
           <Line type="monotone" dataKey="revenueVAT" stroke="#5b50ff" strokeWidth={2} dot={false} activeDot={{ r: 5 }} />
         </LineChart>
@@ -130,7 +135,7 @@ export function AnalyticsVatChart({ monthlyRevenue, loading }) {
       <AreaChart data={chartData} margin={chartMargin}>
         <CartesianGrid strokeDasharray="3 3" vertical={false} />
         <XAxis dataKey="monthLabel" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
-        <YAxis tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(1)}k €` : `${Math.round(v)} €`} tick={{ fontSize: 11 }} tickLine={false} axisLine={false} width={70} />
+        <YAxis tick={vatTick} tickLine={false} axisLine={false} width={55} />
         <Tooltip content={<CustomTooltip />} />
         <Area type="monotone" dataKey="revenueVAT" stroke="#5b50ff" fill="#5b50ff" fillOpacity={0.15} strokeWidth={2} />
       </AreaChart>

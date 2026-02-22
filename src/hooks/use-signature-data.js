@@ -6,10 +6,12 @@ import React, {
   useState,
   useEffect,
   useMemo,
+  useRef,
   Suspense,
 } from "react";
 import { useSearchParams } from "next/navigation";
 import { useActiveOrganization } from "@/src/lib/organization-client";
+import { useSession } from "@/src/lib/auth-client";
 import { useLazyQuery, gql } from "@apollo/client";
 import { applyTemplatePreset as applyPresetFunction } from "@/app/dashboard/outils/signatures-mail/utils/template-presets";
 
@@ -292,6 +294,7 @@ function SignatureProviderContent({ children }) {
   const isEditMode = searchParams?.get("edit") === "true";
   const signatureIdFromUrl = searchParams?.get("id");
   const { organization } = useActiveOrganization();
+  const { data: session } = useSession();
 
   // Données par défaut (mémorisées pour éviter les re-renders)
   const defaultSignatureData = useMemo(
@@ -300,21 +303,21 @@ function SignatureProviderContent({ children }) {
       isDefault: true,
       signatureId: null, // ID de la signature (généré lors de la sauvegarde)
       templateId: "template1", // ID du template de signature
-      fullName: "Jean Dupont",
-      firstName: "Jean",
-      lastName: "Dupont",
-      position: "Fondateur & CEO",
-      email: "newbi@contact.fr",
-      phone: "+33 7 34 64 06 18",
-      mobile: "+33 6 12 34 56 78",
+      fullName: "",
+      firstName: "",
+      lastName: "",
+      position: "",
+      email: "",
+      phone: "",
+      mobile: "",
       showPhoneIcon: true,
       showMobileIcon: true,
       showEmailIcon: true,
       showAddressIcon: true,
       showWebsiteIcon: true,
       companyName: "",
-      website: "https://www.newbi.fr",
-      address: "123 Avenue des Champs-Élysées, 75008 Paris, France",
+      website: "",
+      address: "",
       contactElementsOrder: [],
       // Ordre des éléments de la signature verticale (drag & drop)
       elementsOrder: [
@@ -880,7 +883,53 @@ function SignatureProviderContent({ children }) {
     }
   }, [isEditMode, signatureIdFromUrl, getSignature]);
 
-  // Effet pour appliquer automatiquement le logo de l'organisation
+  // Effet pour pré-remplir les données de l'utilisateur connecté et de l'organisation en mode création
+  const hasPreFilled = useRef(false);
+  useEffect(() => {
+    if (isEditMode || hasPreFilled.current) return;
+    if (!session?.user) return;
+
+    const user = session.user;
+    const firstName = user.name || "";
+    const lastName = user.lastName || "";
+    const fullName = `${firstName} ${lastName}`.trim();
+    const email = user.email || "";
+    const phone = user.phoneNumber || "";
+    const avatar = user.avatar || null;
+
+    // Données de l'organisation
+    const companyName = organization?.companyName || organization?.name || "";
+    const website = organization?.website || "";
+    const logo = organization?.logo || null;
+    const companyPhone = organization?.companyPhone || "";
+    const addressParts = [
+      organization?.addressStreet,
+      [organization?.addressZipCode, organization?.addressCity].filter(Boolean).join(" "),
+      organization?.addressCountry,
+    ].filter(Boolean);
+    const address = addressParts.join(", ");
+
+    // Ne pré-remplir que si on a au moins le nom ou l'email
+    if (fullName || email) {
+      hasPreFilled.current = true;
+      setSignatureData((prev) => ({
+        ...prev,
+        firstName,
+        lastName,
+        fullName: fullName || prev.fullName,
+        email: email || prev.email,
+        phone: phone || companyPhone || prev.phone,
+        mobile: phone || prev.mobile,
+        photo: avatar || prev.photo,
+        companyName: companyName || prev.companyName,
+        website: website || prev.website,
+        logo: logo || prev.logo,
+        address: address || prev.address,
+      }));
+    }
+  }, [session?.user, organization, isEditMode]);
+
+  // Effet pour appliquer automatiquement le logo de l'organisation (fallback si pas encore appliqué)
   useEffect(() => {
     if (organization?.logo && !signatureData.logo) {
       setSignatureData((prev) => ({

@@ -236,6 +236,7 @@ function KanbanBoardPageContent({ params }) {
     members,
     loading: membersLoading,
     filterTasksByMember,
+    fetchMembers,
   } = useKanbanMemberFilter(workspaceId);
 
   // Hook DnD simplifié avec @hello-pangea/dnd
@@ -661,7 +662,7 @@ function KanbanBoardPageContent({ params }) {
             </div>
 
             {/* Bouton Filtres avec dropdown utilisateur */}
-            <DropdownMenu>
+            <DropdownMenu onOpenChange={(open) => { if (open) fetchMembers(); }}>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant={selectedMemberId ? "primary" : "filter"}
@@ -836,7 +837,7 @@ function KanbanBoardPageContent({ params }) {
             </div>
 
             {/* Bouton Filtres avec dropdown utilisateur */}
-            <DropdownMenu>
+            <DropdownMenu onOpenChange={(open) => { if (open) fetchMembers(); }}>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant={selectedMemberId ? "primary" : "filter"}
@@ -991,7 +992,7 @@ function KanbanBoardPageContent({ params }) {
         {isBoard && (
           <div
             ref={scrollRef}
-            className="h-full overflow-x-auto overflow-y-hidden pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+            className="h-full overflow-x-auto overflow-y-hidden pb-8 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
           >
             <div
               className="h-full w-max min-w-full origin-top-left flex flex-nowrap items-start"

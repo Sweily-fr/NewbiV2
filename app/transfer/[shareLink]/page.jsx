@@ -584,10 +584,12 @@ export default function TransferPage() {
       "image/png",
       "image/gif",
       "image/webp",
+      "image/heic",
+      "image/heif",
       "application/pdf",
     ];
     const ext = (file.originalName || "").split(".").pop()?.toLowerCase();
-    const previewableExts = ["jpg", "jpeg", "png", "gif", "webp", "pdf"];
+    const previewableExts = ["jpg", "jpeg", "png", "gif", "webp", "pdf", "heic", "heif"];
     return (
       previewableTypes.includes(file.mimeType) || previewableExts.includes(ext)
     );

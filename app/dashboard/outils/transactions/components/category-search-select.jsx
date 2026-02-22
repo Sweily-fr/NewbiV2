@@ -124,6 +124,27 @@ const incomeCategories = [
   { value: "autre_revenu", label: "Autre revenu" },
 ];
 
+// Mapping des catégories API vers un label lisible (fallback quand la value n'est pas dans la liste)
+const apiCategoryLabels = {
+  OFFICE_SUPPLIES: "Fournitures de bureau",
+  TRAVEL: "Transport",
+  MEALS: "Repas",
+  ACCOMMODATION: "Hébergement",
+  SOFTWARE: "Logiciels",
+  HARDWARE: "Matériel",
+  SERVICES: "Services",
+  MARKETING: "Marketing",
+  TAXES: "Impôts et taxes",
+  RENT: "Loyer",
+  UTILITIES: "Charges",
+  SALARIES: "Salaires",
+  INSURANCE: "Assurance",
+  MAINTENANCE: "Entretien",
+  TRAINING: "Formation",
+  SUBSCRIPTIONS: "Abonnements",
+  OTHER: "Autre",
+};
+
 export default function CategorySearchSelect({
   value,
   onValueChange,
@@ -136,6 +157,14 @@ export default function CategorySearchSelect({
 
   // Sélectionner les catégories en fonction du type de transaction
   const categories = type === "INCOME" ? incomeCategories : expenseCategories;
+
+  // Résoudre le label affiché : chercher dans la liste active, puis dans l'autre liste, puis fallback API
+  const resolvedLabel = value
+    ? categories.find((c) => c.value === value)?.label ||
+      (type === "INCOME" ? expenseCategories : incomeCategories).find((c) => c.value === value)?.label ||
+      apiCategoryLabels[value] ||
+      value
+    : null;
 
   return (
     <div className={cn("space-y-2", className)}>
@@ -157,9 +186,7 @@ export default function CategorySearchSelect({
             className="w-56 justify-between border-input bg-background px-3 font-normal outline-offset-0 outline-none hover:bg-background focus-visible:outline-[3px]"
           >
             <span className={cn("truncate", !value && "text-muted-foreground")}>
-              {value
-                ? categories.find((category) => category.value === value)?.label
-                : "Sélectionner une catégorie"}
+              {resolvedLabel || "Sélectionner une catégorie"}
             </span>
             <ChevronDownIcon
               size={16}
@@ -171,10 +198,15 @@ export default function CategorySearchSelect({
         <PopoverContent
           className="w-full min-w-[var(--radix-popper-anchor-width)] border-input p-0"
           align="start"
+          sideOffset={4}
+          style={{ maxHeight: "var(--radix-popper-available-height, 300px)" }}
         >
           <Command>
             <CommandInput placeholder="Rechercher une catégorie..." />
-            <CommandList>
+            <CommandList
+              className="max-h-[250px] overflow-y-auto overscroll-contain"
+              onWheel={(e) => e.stopPropagation()}
+            >
               <CommandEmpty>Aucune catégorie trouvée.</CommandEmpty>
               <CommandGroup>
                 {categories.map((category) => (

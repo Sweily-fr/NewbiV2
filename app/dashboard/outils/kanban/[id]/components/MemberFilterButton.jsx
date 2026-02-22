@@ -8,11 +8,11 @@ import { Badge } from '@/src/components/ui/badge';
 /**
  * Composant pour filtrer les tâches par utilisateur assigné
  */
-export function MemberFilterButton({ members = [], selectedMemberId, onMemberChange, loading }) {
+export function MemberFilterButton({ members = [], selectedMemberId, onMemberChange, loading, onOpen }) {
   const selectedMember = members.find(m => m.id === selectedMemberId);
 
   return (
-    <Popover>
+    <Popover onOpenChange={(open) => { if (open && onOpen) onOpen(); }}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"

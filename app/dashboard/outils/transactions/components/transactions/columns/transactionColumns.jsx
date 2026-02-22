@@ -90,7 +90,7 @@ export const columns = [
       return (
         <div
           className="font-normal text-left"
-          style={{ color: isIncome && "#0E7A3E" }}
+          style={{ color: isIncome ? "#0E7A3E" : "#DC2626" }}
         >
           {isIncome ? "+" : ""}
           {amount.toFixed(2)} €
@@ -147,10 +147,16 @@ export const columns = [
       const getIcon = () => {
         switch (method) {
           case "CARD":
+          case "CREDIT_CARD":
             return <CreditCardIcon size={14} />;
           case "CASH":
             return <BanknoteIcon size={14} />;
           case "TRANSFER":
+          case "BANK_TRANSFER":
+          case "DIRECT_DEBIT":
+          case "SEPA_DEBIT":
+            return <FileTextIcon size={14} />;
+          case "CHECK":
             return <FileTextIcon size={14} />;
           default:
             return <CreditCardIcon size={14} />;
@@ -160,15 +166,20 @@ export const columns = [
       const getLabel = () => {
         switch (method) {
           case "CARD":
+          case "CREDIT_CARD":
             return "Carte";
           case "CASH":
             return "Espèces";
           case "TRANSFER":
+          case "BANK_TRANSFER":
             return "Virement";
           case "CHECK":
             return "Chèque";
+          case "DIRECT_DEBIT":
+          case "SEPA_DEBIT":
+            return "Prélèvement";
           default:
-            return method;
+            return method || "—";
         }
       };
 

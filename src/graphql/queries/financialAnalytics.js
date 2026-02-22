@@ -27,6 +27,45 @@ export const GET_FINANCIAL_ANALYTICS = gql`
         averageInvoiceHT
         clientCount
         quoteConversionRate
+        totalExpensesHT
+        totalExpensesTTC
+        grossMargin
+        grossMarginRate
+        chargeRate
+        creditNoteCount
+        creditNoteTotalHT
+        netRevenueHT
+        outstandingReceivables
+        overdueAmount
+        overdueCount
+        dso
+        collectionRate
+        activeClientCount
+        newClientCount
+        retainedClientCount
+        topClientConcentration
+        quoteCount
+        quoteConvertedCount
+      }
+      previousPeriod {
+        totalRevenueHT
+        totalExpensesHT
+        grossMargin
+        grossMarginRate
+        invoiceCount
+        averageInvoiceHT
+        collectionRate
+        dso
+        activeClientCount
+        newClientCount
+        quoteConversionRate
+        netRevenueHT
+        creditNoteTotalHT
+        overdueAmount
+        overdueCount
+        outstandingReceivables
+        topClientConcentration
+        chargeRate
       }
       revenueByClient {
         clientId
@@ -54,9 +93,15 @@ export const GET_FINANCIAL_ANALYTICS = gql`
         revenueTTC
         revenueVAT
         expenseAmount
+        expenseAmountHT
+        expenseVAT
         invoiceCount
         expenseCount
         netResult
+        creditNoteHT
+        netRevenueHT
+        grossMargin
+        grossMarginRate
       }
       paymentMethodStats {
         method
@@ -94,6 +139,37 @@ export const GET_FINANCIAL_ANALYTICS = gql`
         month
         amount
         count
+      }
+      collection {
+        overdueInvoices {
+          invoiceId
+          invoiceNumber
+          clientName
+          totalTTC
+          dueDate
+          daysOverdue
+        }
+        agingBuckets {
+          label
+          min
+          max
+          count
+          totalTTC
+        }
+        monthlyCollection {
+          month
+          invoicedTTC
+          collectedTTC
+          invoicedCount
+          collectedCount
+        }
+      }
+      alerts {
+        type
+        severity
+        message
+        value
+        threshold
       }
     }
   }

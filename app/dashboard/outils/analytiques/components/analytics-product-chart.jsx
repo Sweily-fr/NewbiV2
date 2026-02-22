@@ -8,6 +8,7 @@ import {
   YAxis,
   Tooltip,
   CartesianGrid,
+  LabelList,
   Treemap,
   ResponsiveContainer,
 } from "recharts";
@@ -60,6 +61,22 @@ function CustomTooltip({ active, payload }) {
         )}
       </div>
     </div>
+  );
+}
+
+function BarLabel({ x, y, width, height, value }) {
+  const isInside = width > value.length * 7 + 16;
+  return (
+    <text
+      x={isInside ? x + 8 : x + width + 6}
+      y={y + height / 2}
+      fill={isInside ? "#fff" : "hsl(var(--foreground))"}
+      dominantBaseline="central"
+      fontSize={11}
+      fontWeight={500}
+    >
+      {value}
+    </text>
   );
 }
 
@@ -141,7 +158,7 @@ export function AnalyticsProductChart({ revenueByProduct, loading }) {
           <BarChart
             data={chartData}
             layout="vertical"
-            margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
+            margin={{ top: 5, right: 30, left: 0, bottom: 5 }}
           >
             <CartesianGrid strokeDasharray="3 3" horizontal={false} />
             <XAxis
@@ -154,10 +171,8 @@ export function AnalyticsProductChart({ revenueByProduct, loading }) {
             <YAxis
               type="category"
               dataKey="shortDesc"
-              width={180}
-              tick={{ fontSize: 11 }}
-              tickLine={false}
-              axisLine={false}
+              hide
+              width={0}
             />
             <Tooltip content={<CustomTooltip />} />
             <Bar
@@ -165,7 +180,9 @@ export function AnalyticsProductChart({ revenueByProduct, loading }) {
               fill="#5b50ff"
               radius={[0, 4, 4, 0]}
               barSize={24}
-            />
+            >
+              <LabelList dataKey="shortDesc" content={<BarLabel />} />
+            </Bar>
           </BarChart>
         </ChartContainer>
       ) : (

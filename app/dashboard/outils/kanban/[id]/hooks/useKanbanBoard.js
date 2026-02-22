@@ -3,22 +3,16 @@ import { useSession } from '@/src/lib/auth-client';
 import { GET_BOARD, TASK_UPDATED_SUBSCRIPTION, COLUMN_UPDATED_SUBSCRIPTION } from '@/src/graphql/kanbanQueries';
 import { useWorkspace } from '@/src/hooks/useWorkspace';
 import { toast } from '@/src/utils/debouncedToast';
-import { useState, useEffect, useRef } from 'react';
+import { useRef } from 'react';
 
 export const useKanbanBoard = (id, isRedirecting = false) => {
   const { workspaceId } = useWorkspace();
   const { data: session, isPending: sessionLoading } = useSession();
-  const [isReady, setIsReady] = useState(false);
   const apolloClient = useApolloClient();
   const lastReorderTimeRef = useRef(0);
-  
-  
-  // Attendre que la session soit chargée avant d'activer les subscriptions
-  useEffect(() => {
-    if (!sessionLoading && session?.user) {
-      setIsReady(true);
-    }
-  }, [sessionLoading, session]);
+
+  // Vérifier directement si la session est prête (sans état intermédiaire)
+  const isSessionReady = !sessionLoading && !!session?.user;
   
   const { data, loading, error, refetch } = useQuery(GET_BOARD, {
     variables: { 
@@ -39,23 +33,10 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
     },
   });
   
-  // Polling désactivé - Les subscriptions WebSocket temps réel sont suffisantes
-  // Le polling causait des conflits et des re-renders inutiles
-  // useEffect(() => {
-  //   if (data?.board && !isRedirecting) {
-  //     console.log('🔄 [Polling] Démarrage du polling (5s)');
-  //     startPolling(5000);
-  //     return () => {
-  //       console.log('⏹️ [Polling] Arrêt du polling');
-  //       stopPolling();
-  //     };
-  //   }
-  // }, [data?.board?.id, isRedirecting, startPolling, stopPolling]);
-
   // Subscription pour les mises à jour temps réel des tâches
   useSubscription(TASK_UPDATED_SUBSCRIPTION, {
     variables: { boardId: id, workspaceId },
-    skip: !workspaceId || !id || !isReady || sessionLoading || isRedirecting,
+    skip: !workspaceId || !id || !isSessionReady || isRedirecting,
     onData: ({ data: subscriptionData }) => {
       console.log('📡 [Subscription] Données reçues:', subscriptionData?.data?.taskUpdated?.type, 'visitor:', subscriptionData?.data?.taskUpdated?.visitor);
       if (subscriptionData?.data?.taskUpdated) {
@@ -241,7 +222,7 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
   // Subscription pour les mises à jour temps réel des colonnes
   useSubscription(COLUMN_UPDATED_SUBSCRIPTION, {
     variables: { boardId: id, workspaceId },
-    skip: !workspaceId || !id || !isReady || sessionLoading || isRedirecting,
+    skip: !workspaceId || !id || !isSessionReady || isRedirecting,
     onData: ({ data: subscriptionData }) => {
       if (subscriptionData?.data?.columnUpdated) {
         const { type, column, columnId } = subscriptionData.data.columnUpdated;

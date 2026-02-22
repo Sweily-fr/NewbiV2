@@ -47,6 +47,8 @@ import {
   Youtube,
   Circle,
   Square,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { toast } from "@/src/components/ui/sonner";
 import { useImageUpload } from "../../hooks/useImageUpload";
@@ -139,6 +141,17 @@ function ContainerLeafSettings({ container, onUpdate, onDelete }) {
   const currentAlignment = container.alignment || 'start';
   const currentPadding = container.padding ?? 12;
   const currentGap = container.gap ?? 12;
+  const { updateElement: updateElementInContext, selectedContainerId } = useSignatureData();
+
+  // Toggle la visibilité d'un élément (hidden/visible)
+  const handleToggleElementVisibility = (elementId, isCurrentlyHidden) => {
+    if (selectedContainerId) {
+      updateElementInContext(selectedContainerId, elementId, { hidden: !isCurrentlyHidden });
+    }
+  };
+
+  const visibleCount = container.elements?.filter(el => !el.props?.hidden).length || 0;
+  const totalCount = container.elements?.length || 0;
 
   return (
     <div className="space-y-6">
@@ -149,7 +162,7 @@ function ContainerLeafSettings({ container, onUpdate, onDelete }) {
             {container.label || 'Conteneur'}
           </h3>
           <p className="text-xs text-neutral-500">
-            Conteneur • {container.elements?.length || 0} éléments
+            Conteneur • {visibleCount}/{totalCount} éléments visibles
           </p>
         </div>
         <Button
@@ -275,26 +288,56 @@ function ContainerLeafSettings({ container, onUpdate, onDelete }) {
         </div>
       </div>
 
-      {/* Elements list */}
+      {/* Elements list with visibility toggles */}
       <div className="space-y-2">
-        <Label className="text-xs">Éléments ({container.elements.length})</Label>
-        <div className="space-y-1 max-h-48 overflow-auto">
-          {container.elements.map((element) => (
-            <div
-              key={element.id}
-              className="flex items-center justify-between py-1.5 px-2 rounded bg-neutral-50 dark:bg-neutral-800 text-xs"
-            >
-              <span className="text-neutral-600 dark:text-neutral-400">
-                {getElementLabel(element.type)}
-              </span>
-            </div>
-          ))}
+        <Label className="text-xs">Éléments ({visibleCount}/{totalCount})</Label>
+        <div className="space-y-1 max-h-64 overflow-auto">
+          {container.elements.map((element) => {
+            const isHidden = element.props?.hidden === true;
+            return (
+              <div
+                key={element.id}
+                className={cn(
+                  "flex items-center justify-between py-1.5 px-2 rounded text-xs transition-all",
+                  isHidden
+                    ? "bg-neutral-100/50 dark:bg-neutral-800/50"
+                    : "bg-neutral-50 dark:bg-neutral-800"
+                )}
+              >
+                <span
+                  className={cn(
+                    "transition-all",
+                    isHidden
+                      ? "line-through text-neutral-400 dark:text-neutral-500"
+                      : "text-neutral-600 dark:text-neutral-400"
+                  )}
+                >
+                  {getElementLabel(element.type)}
+                </span>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleToggleElementVisibility(element.id, isHidden);
+                  }}
+                  className={cn(
+                    "p-1 rounded transition-colors",
+                    isHidden
+                      ? "text-neutral-400 hover:text-neutral-600 hover:bg-neutral-200/50 dark:hover:bg-neutral-700/50"
+                      : "text-neutral-500 hover:text-neutral-700 hover:bg-neutral-200 dark:hover:bg-neutral-700"
+                  )}
+                  title={isHidden ? "Réactiver l'élément" : "Masquer l'élément"}
+                >
+                  {isHidden ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                </button>
+              </div>
+            );
+          })}
         </div>
       </div>
 
       {/* Tip */}
       <div className="p-2 rounded bg-blue-50 dark:bg-blue-900/20 text-xs text-blue-600 dark:text-blue-400">
-        Cliquez sur un élément pour modifier ses propriétés.
+        Cliquez sur un élément pour modifier ses propriétés. Utilisez l'icône oeil pour masquer/afficher un élément.
       </div>
     </div>
   );
@@ -659,6 +702,7 @@ function EmptyContainerSettings({ container, onUpdate, onDelete, isRoot }) {
  */
 function ElementSettings({ element, onUpdate, onDelete }) {
   const props = element.props || {};
+  const isHidden = props.hidden === true;
 
   // Render settings based on element type
   const renderSettings = () => {
@@ -701,22 +745,52 @@ function ElementSettings({ element, onUpdate, onDelete }) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300">
+          <h3 className={cn(
+            "text-sm font-semibold",
+            isHidden
+              ? "text-neutral-400 dark:text-neutral-500 line-through"
+              : "text-neutral-700 dark:text-neutral-300"
+          )}>
             {getElementLabel(element.type)}
           </h3>
-          <p className="text-xs text-neutral-500">Propriétés de l'élément</p>
+          <p className="text-xs text-neutral-500">
+            {isHidden ? "Élément masqué" : "Propriétés de l'élément"}
+          </p>
         </div>
-        {onDelete && (
+        <div className="flex items-center gap-1">
           <Button
             variant="ghost"
             size="sm"
-            onClick={onDelete}
-            className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+            onClick={() => onUpdate({ hidden: !isHidden })}
+            className={cn(
+              isHidden
+                ? "text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                : "text-neutral-500 hover:text-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+            )}
+            title={isHidden ? "Réactiver l'élément" : "Masquer l'élément"}
           >
-            <Trash2 className="w-4 h-4" />
+            {isHidden ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
           </Button>
-        )}
+          {onDelete && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onDelete}
+              className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          )}
+        </div>
       </div>
+
+      {/* Hidden warning */}
+      {isHidden && (
+        <div className="p-2 rounded bg-amber-50 dark:bg-amber-900/20 text-xs text-amber-600 dark:text-amber-400 flex items-center gap-2">
+          <EyeOff className="w-3.5 h-3.5 flex-shrink-0" />
+          Cet élément est masqué dans la signature. Cliquez sur l'oeil pour le réactiver.
+        </div>
+      )}
 
       {/* Element-specific settings */}
       {renderSettings()}

@@ -28,6 +28,7 @@ export function generateFacturXXML(invoiceData, documentType = 'invoice') {
     headerNotes,
     footerNotes,
     purchaseOrderNumber,
+    operationType,
   } = invoiceData;
 
   // Type de document : 380 = Facture, 381 = Avoir
@@ -151,6 +152,19 @@ export function generateFacturXXML(invoiceData, documentType = 'invoice') {
     includedNotes += `
     <ram:IncludedNote>
       <ram:Content>${escapeXML(footerNotes)}</ram:Content>
+    </ram:IncludedNote>`;
+  }
+  // Note conditionnelle : nature de l'opération (LB/PS/LBPS)
+  if (operationType) {
+    const operationLabels = {
+      'LB': 'Livraison de biens',
+      'PS': 'Prestation de services',
+      'LBPS': 'Mixte - Livraison de biens et prestation de services',
+    };
+    includedNotes += `
+    <ram:IncludedNote>
+      <ram:Content>Nature de l'opération : ${escapeXML(operationLabels[operationType] || operationType)}</ram:Content>
+      <ram:SubjectCode>AAI</ram:SubjectCode>
     </ram:IncludedNote>`;
   }
 
