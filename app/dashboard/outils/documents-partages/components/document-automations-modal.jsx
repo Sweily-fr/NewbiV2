@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { toast } from '@/src/components/ui/sonner';
 import { Button } from '@/src/components/ui/button';
 import { Switch } from '@/src/components/ui/switch';
@@ -41,7 +41,11 @@ import {
   useUpdateDocumentAutomation,
   useDeleteDocumentAutomation,
   useToggleDocumentAutomation,
+  useDocumentsForAutomation,
+  useProcessAutomationDocument,
 } from '@/src/hooks/useDocumentAutomations';
+import UniversalPreviewPDF from '@/src/components/pdf/UniversalPreviewPDF';
+import { generatePDFFromElement } from '@/src/utils/generatePDF';
 
 const TRIGGER_OPTIONS = [
   { value: 'INVOICE_SENT', label: 'Facture envoyée' },
@@ -256,6 +260,18 @@ function SettingsPopover({ config, onSave }) {
   );
 }
 
+const DOC_TYPE_API_MAP = {
+  invoice: '/api/invoices/data/',
+  quote: '/api/quotes/data/',
+  creditNote: '/api/credit-notes/data/',
+};
+
+const DOC_TYPE_PDF_MAP = {
+  invoice: 'invoice',
+  quote: 'quote',
+  creditNote: 'creditNote',
+};
+
 export default function DocumentAutomationsModal({ open, onOpenChange }) {
   const { workspaceId } = useWorkspace();
   const { automations, loading: automationsLoading, refetch } = useDocumentAutomations(workspaceId);
@@ -264,6 +280,14 @@ export default function DocumentAutomationsModal({ open, onOpenChange }) {
   const { updateAutomation } = useUpdateDocumentAutomation();
   const { deleteAutomation } = useDeleteDocumentAutomation();
   const { toggleAutomation } = useToggleDocumentAutomation();
+  const { fetchDocuments } = useDocumentsForAutomation();
+  const { processDocument } = useProcessAutomationDocument();
+
+  const [runningId, setRunningId] = useState(null);
+  const [progress, setProgress] = useState(null); // { current, total }
+  const [currentDocData, setCurrentDocData] = useState(null);
+  const [currentDocType, setCurrentDocType] = useState('invoice');
+  const pdfContainerRef = useRef(null);
 
   // New automation row state
   const [showNewRow, setShowNewRow] = useState(false);
@@ -279,7 +303,7 @@ export default function DocumentAutomationsModal({ open, onOpenChange }) {
     try {
       const triggerLabel = TRIGGER_OPTIONS.find(t => t.value === newTrigger)?.label || newTrigger;
       const folderName = folders.find(f => f.id === newFolderId)?.name || 'Dossier';
-      await createAutomation(workspaceId, {
+      const created = await createAutomation(workspaceId, {
         name: `${triggerLabel} → ${folderName}`,
         triggerType: newTrigger,
         actionConfig: {
@@ -293,8 +317,97 @@ export default function DocumentAutomationsModal({ open, onOpenChange }) {
       setNewActionConfig({});
       setShowNewRow(false);
       refetch();
+
+      // Lancer immédiatement le traitement rétroactif côté client
+      if (created?.id) {
+        processExistingDocuments(created.id);
+      }
     } catch {
       toast.error('Erreur lors de la création');
+    }
+  };
+
+  const processExistingDocuments = async (automationId) => {
+    try {
+      setRunningId(automationId);
+      setProgress(null);
+
+      const documents = await fetchDocuments(workspaceId, automationId);
+
+      if (!documents || documents.length === 0) {
+        toast.info('Aucun document existant à traiter');
+        return;
+      }
+
+      const total = documents.length;
+      setProgress({ current: 0, total });
+      let successCount = 0;
+      let failCount = 0;
+
+      for (let i = 0; i < documents.length; i++) {
+        const doc = documents[i];
+        const apiPath = DOC_TYPE_API_MAP[doc.documentType];
+        const pdfType = DOC_TYPE_PDF_MAP[doc.documentType] || 'invoice';
+
+        try {
+          const res = await fetch(`${apiPath}${doc.documentId}`);
+          if (!res.ok) throw new Error(`Erreur API (${res.status})`);
+          const docData = await res.json();
+
+          setCurrentDocData(docData);
+          setCurrentDocType(pdfType);
+
+          await new Promise(resolve => setTimeout(resolve, 800));
+
+          const el = pdfContainerRef.current;
+          if (!el) throw new Error('Conteneur PDF non trouvé');
+
+          const pdfBuffer = await generatePDFFromElement(el);
+
+          const binaryString = Array.from(pdfBuffer)
+            .map((byte) => String.fromCharCode(byte))
+            .join('');
+          const pdfBase64 = btoa(binaryString);
+
+          const result = await processDocument(
+            workspaceId,
+            automationId,
+            doc.documentId,
+            doc.documentType,
+            pdfBase64
+          );
+
+          if (result?.success) {
+            successCount++;
+          } else {
+            failCount++;
+            console.error(`Erreur doc ${doc.documentId}:`, result?.error);
+          }
+        } catch (err) {
+          failCount++;
+          console.error(`Erreur traitement doc ${doc.documentId}:`, err);
+        }
+
+        setProgress({ current: i + 1, total });
+      }
+
+      setCurrentDocData(null);
+
+      if (failCount === 0 && successCount > 0) {
+        toast.success(`${successCount} document(s) traité(s) avec succès`);
+      } else if (successCount > 0 && failCount > 0) {
+        toast.warning(`${successCount} succès, ${failCount} échec(s)`);
+      } else if (failCount > 0) {
+        toast.error(`${failCount} document(s) en échec`);
+      }
+
+      refetch();
+    } catch (err) {
+      const gqlMessage = err?.graphQLErrors?.[0]?.message || err?.message;
+      toast.error(gqlMessage || 'Erreur lors du traitement');
+    } finally {
+      setRunningId(null);
+      setProgress(null);
     }
   };
 
@@ -432,6 +545,13 @@ export default function DocumentAutomationsModal({ open, onOpenChange }) {
                 )}
 
                 <div className="flex items-center gap-2 ml-auto flex-shrink-0">
+                  {runningId === automation.id && progress && (
+                    <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      {progress.current}/{progress.total}
+                    </span>
+                  )}
+
                   <Switch
                     checked={automation.isActive}
                     onCheckedChange={() => handleToggle(automation.id)}
@@ -516,6 +636,27 @@ export default function DocumentAutomationsModal({ open, onOpenChange }) {
               <Plus className="w-4 h-4 mr-2" />
               Ajouter une automatisation
             </Button>
+          </div>
+        )}
+        {/* Off-screen PDF renderer */}
+        {currentDocData && (
+          <div
+            style={{
+              position: 'fixed',
+              left: '-9999px',
+              top: 0,
+              width: '794px',
+              zIndex: -1,
+              pointerEvents: 'none',
+            }}
+          >
+            <div ref={pdfContainerRef}>
+              <UniversalPreviewPDF
+                data={currentDocData}
+                type={currentDocType}
+                forPDF={true}
+              />
+            </div>
           </div>
         )}
       </DialogContent>
