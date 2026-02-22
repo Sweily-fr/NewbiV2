@@ -236,6 +236,7 @@ function KanbanBoardPageContent({ params }) {
     members,
     loading: membersLoading,
     filterTasksByMember,
+    fetchMembers,
   } = useKanbanMemberFilter(workspaceId);
 
   // Hook DnD simplifié avec @hello-pangea/dnd
@@ -661,7 +662,7 @@ function KanbanBoardPageContent({ params }) {
             </div>
 
             {/* Bouton Filtres avec dropdown utilisateur */}
-            <DropdownMenu>
+            <DropdownMenu onOpenChange={(open) => { if (open) fetchMembers(); }}>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant={selectedMemberId ? "primary" : "filter"}
@@ -836,7 +837,7 @@ function KanbanBoardPageContent({ params }) {
             </div>
 
             {/* Bouton Filtres avec dropdown utilisateur */}
-            <DropdownMenu>
+            <DropdownMenu onOpenChange={(open) => { if (open) fetchMembers(); }}>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant={selectedMemberId ? "primary" : "filter"}

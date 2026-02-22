@@ -1,20 +1,23 @@
-import React, { useState, useMemo } from 'react';
-import { useQuery } from '@apollo/client';
+import React, { useState, useMemo, useCallback } from 'react';
+import { useLazyQuery } from '@apollo/client';
 import { GET_ORGANIZATION_MEMBERS } from '@/src/graphql/kanbanQueries';
 
 export const useKanbanMemberFilter = (workspaceId) => {
   const [selectedMemberId, setSelectedMemberId] = useState(null);
 
-  // Récupérer les membres de l'organisation avec cache-first pour éviter les requêtes réseau inutiles
-  const { data, loading, error } = useQuery(GET_ORGANIZATION_MEMBERS, {
+  // Lazy query : ne se déclenche que quand loadMembers() est appelé (ex: ouverture du filtre)
+  const [loadMembers, { data, loading, error, called }] = useLazyQuery(GET_ORGANIZATION_MEMBERS, {
     variables: { workspaceId },
-    skip: !workspaceId,
-    // Utiliser cache-first pour éviter les requêtes réseau pendant le drag
-    // La première requête ira au serveur, mais les suivantes utiliseront le cache
     fetchPolicy: 'cache-first',
-    // Ne pas notifier sur les changements de statut réseau
     notifyOnNetworkStatusChange: false,
   });
+
+  // Charger les membres à la demande (appelé quand le dropdown s'ouvre)
+  const fetchMembers = useCallback(() => {
+    if (!called && workspaceId) {
+      loadMembers();
+    }
+  }, [called, workspaceId, loadMembers]);
 
   // Mémoriser les membres formatés pour éviter les re-calculs inutiles
   const members = useMemo(() => {
@@ -47,5 +50,6 @@ export const useKanbanMemberFilter = (workspaceId) => {
     loading,
     error,
     filterTasksByMember,
+    fetchMembers,
   };
 };

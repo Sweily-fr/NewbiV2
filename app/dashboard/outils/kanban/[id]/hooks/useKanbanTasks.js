@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { toast } from "@/src/utils/debouncedToast";
 import { useMutation, gql } from "@apollo/client";
 import {
@@ -59,41 +59,43 @@ export const useKanbanTasks = (boardId, board) => {
   // Ref pour éviter les mises à jour en boucle
   const lastUpdateRef = useRef(null);
 
-  // Synchroniser taskForm avec les données du board quand la tâche en cours d'édition change
-  // Cela permet de recevoir les mises à jour en temps réel (commentaires, etc.)
+  // Extraire uniquement la tâche en cours d'édition du board (évite de dépendre de board?.tasks entier)
+  const editingTaskFromBoard = useMemo(() => {
+    if (!isEditTaskOpen || !editingTask?.id || !board?.tasks) return null;
+    return board.tasks.find(t => t.id === editingTask.id) || null;
+  }, [board?.tasks, editingTask?.id, isEditTaskOpen]);
+
+  // Synchroniser taskForm avec les données temps réel (commentaires, activité)
+  // Ne dépend que de la tâche spécifique, pas de tout le tableau de tâches
   useEffect(() => {
-    if (!isEditTaskOpen || !editingTask?.id || !board?.tasks) return;
-    
-    // Trouver la tâche mise à jour dans le board
-    const updatedTask = board.tasks.find(t => t.id === editingTask.id);
-    if (!updatedTask) return;
-    
+    if (!editingTaskFromBoard) return;
+
     // Créer une clé de comparaison incluant le contenu des commentaires (userName, userImage)
     const getCommentsKey = (comments) => {
       if (!comments || comments.length === 0) return '';
       return comments.map(c => `${c.id}-${c.userName}-${c.userImage}`).join('|');
     };
-    
-    const currentCommentsKey = getCommentsKey(taskForm.comments);
-    const updatedCommentsKey = getCommentsKey(updatedTask.comments);
-    
+
+    const updatedCommentsKey = getCommentsKey(editingTaskFromBoard.comments);
+
     // Éviter les mises à jour en boucle
-    const updateKey = `${updatedTask.id}-${updatedCommentsKey}-${updatedTask.updatedAt}`;
+    const updateKey = `${editingTaskFromBoard.id}-${updatedCommentsKey}-${editingTaskFromBoard.updatedAt}`;
     if (lastUpdateRef.current === updateKey) return;
-    
+
+    const currentCommentsKey = getCommentsKey(taskForm.comments);
+
     // Si les commentaires ont changé (nombre OU contenu), mettre à jour le taskForm
     if (currentCommentsKey !== updatedCommentsKey) {
-      console.log('🔄 [TaskForm] Mise à jour des commentaires (contenu changé)');
       lastUpdateRef.current = updateKey;
-      
+
       setTaskForm(prev => ({
         ...prev,
-        comments: updatedTask.comments || [],
-        activity: updatedTask.activity || [],
-        updatedAt: updatedTask.updatedAt
+        comments: editingTaskFromBoard.comments || [],
+        activity: editingTaskFromBoard.activity || [],
+        updatedAt: editingTaskFromBoard.updatedAt
       }));
     }
-  }, [board?.tasks, editingTask?.id, isEditTaskOpen, taskForm.comments]);
+  }, [editingTaskFromBoard, taskForm.comments]);
 
   // Task mutations
   const [addComment] = useMutation(ADD_COMMENT);
