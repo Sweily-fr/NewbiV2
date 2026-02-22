@@ -67,52 +67,37 @@ function downloadBlob(blob, filename) {
 
 // --- Data builders ---
 
-function buildOverviewRows(data) {
-  const rows = [];
+function buildSyntheseRows(data) {
   const { kpi } = data;
-  rows.push({
-    Indicateur: "CA HT",
-    Valeur: kpi.totalRevenueHT,
-  });
-  rows.push({
-    Indicateur: "CA TTC",
-    Valeur: kpi.totalRevenueTTC,
-  });
-  rows.push({
-    Indicateur: "Depenses",
-    Valeur: kpi.totalExpenses,
-  });
-  rows.push({
-    Indicateur: "Resultat net",
-    Valeur: kpi.netResult,
-  });
-  rows.push({
-    Indicateur: "Nombre de factures",
-    Valeur: kpi.invoiceCount,
-  });
-  rows.push({
-    Indicateur: "Panier moyen HT",
-    Valeur: kpi.averageInvoiceHT,
-  });
-  rows.push({
-    Indicateur: "Nombre de clients",
-    Valeur: kpi.clientCount,
-  });
-  rows.push({
-    Indicateur: "Taux de conversion devis (%)",
-    Valeur: kpi.quoteConversionRate,
-  });
-  return rows;
+  return [
+    { Indicateur: "CA HT net", Valeur: kpi.netRevenueHT },
+    { Indicateur: "Depenses HT", Valeur: kpi.totalExpensesHT },
+    { Indicateur: "Marge brute", Valeur: kpi.grossMargin },
+    { Indicateur: "Taux de marge (%)", Valeur: kpi.grossMarginRate },
+    { Indicateur: "Factures emises", Valeur: kpi.invoiceCount },
+    { Indicateur: "Panier moyen HT", Valeur: kpi.averageInvoiceHT },
+    { Indicateur: "Taux de recouvrement (%)", Valeur: kpi.collectionRate },
+    { Indicateur: "DSO (jours)", Valeur: kpi.dso },
+    { Indicateur: "Avoirs HT", Valeur: kpi.creditNoteTotalHT },
+    { Indicateur: "Nombre de clients", Valeur: kpi.activeClientCount },
+    { Indicateur: "Conversion devis (%)", Valeur: kpi.quoteConversionRate },
+    { Indicateur: "Concentration top 3 (%)", Valeur: kpi.topClientConcentration },
+  ];
 }
 
 function buildMonthlyRows(data) {
   return (data.monthlyRevenue || []).map((m) => ({
     Mois: m.month,
     "CA HT": m.revenueHT,
+    "CA HT net": m.netRevenueHT,
     "CA TTC": m.revenueTTC,
     TVA: m.revenueVAT,
-    Depenses: m.expenseAmount,
-    "Resultat net": m.netResult,
+    "Depenses TTC": m.expenseAmount,
+    "Depenses HT": m.expenseAmountHT,
+    "TVA depenses": m.expenseVAT,
+    "Marge brute": m.grossMargin,
+    "Taux marge (%)": m.grossMarginRate,
+    "Avoirs HT": m.creditNoteHT,
     "Nb factures": m.invoiceCount,
     "Nb depenses": m.expenseCount,
   }));
@@ -164,23 +149,49 @@ function buildPaymentRows(data) {
   }));
 }
 
+function buildOverdueRows(data) {
+  const invoices = data.collection?.overdueInvoices || [];
+  return invoices.map((inv) => ({
+    Facture: inv.invoiceNumber,
+    Client: inv.clientName,
+    "Montant TTC": inv.totalTTC,
+    Echeance: inv.dueDate,
+    "Jours retard": inv.daysOverdue,
+  }));
+}
+
+function buildCollectionRows(data) {
+  const collection = data.collection?.monthlyCollection || [];
+  return collection.map((m) => ({
+    Mois: m.month,
+    "Facture TTC": m.invoicedTTC,
+    "Encaisse TTC": m.collectedTTC,
+    "Nb facturees": m.invoicedCount,
+    "Nb encaissees": m.collectedCount,
+  }));
+}
+
 function getSheets(data, tab) {
   const sheets = {};
 
-  if (tab === "all" || tab === "overview") {
-    sheets["KPI"] = buildOverviewRows(data);
+  if (tab === "all" || tab === "synthese") {
+    sheets["KPI"] = buildSyntheseRows(data);
     sheets["Evolution mensuelle"] = buildMonthlyRows(data);
-    sheets["Statuts factures"] = buildStatusRows(data);
-    sheets["Methodes paiement"] = buildPaymentRows(data);
   }
-  if (tab === "all" || tab === "clients") {
+  if (tab === "all" || tab === "rentabilite") {
+    sheets["Produits"] = buildProductRows(data);
+    sheets["Depenses par categorie"] = buildExpenseRows(data);
+  }
+  if (tab === "all" || tab === "tresorerie") {
+    sheets["Statuts factures"] = buildStatusRows(data);
+    sheets["Factures en retard"] = buildOverdueRows(data);
+    sheets["Recouvrement mensuel"] = buildCollectionRows(data);
+  }
+  if (tab === "all" || tab === "commercial") {
     sheets["Clients"] = buildClientRows(data);
   }
-  if (tab === "all" || tab === "products") {
-    sheets["Produits"] = buildProductRows(data);
-  }
-  if (tab === "all" || tab === "expenses") {
-    sheets["Depenses par categorie"] = buildExpenseRows(data);
+  if (tab === "all" || tab === "detail") {
+    sheets["Methodes paiement"] = buildPaymentRows(data);
   }
 
   return sheets;

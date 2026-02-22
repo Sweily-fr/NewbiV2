@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { Bar, BarChart, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
+import { Bar, BarChart, XAxis, YAxis, Tooltip, CartesianGrid, LabelList } from "recharts";
 import { ChartContainer } from "@/src/components/ui/chart";
 import { Skeleton } from "@/src/components/ui/skeleton";
 
@@ -40,6 +40,22 @@ function CustomTooltip({ active, payload }) {
         </div>
       </div>
     </div>
+  );
+}
+
+function BarLabel({ x, y, width, height, value }) {
+  const isInside = width > value.length * 7 + 16;
+  return (
+    <text
+      x={isInside ? x + 8 : x + width + 6}
+      y={y + height / 2}
+      fill={isInside ? "#fff" : "hsl(var(--foreground))"}
+      dominantBaseline="central"
+      fontSize={11}
+      fontWeight={500}
+    >
+      {value}
+    </text>
   );
 }
 
@@ -82,7 +98,7 @@ export function AnalyticsClientChart({ topClients, loading }) {
         <BarChart
           data={chartData}
           layout="vertical"
-          margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
+          margin={{ top: 5, right: 30, left: 0, bottom: 5 }}
         >
           <CartesianGrid strokeDasharray="3 3" horizontal={false} />
           <XAxis
@@ -95,10 +111,8 @@ export function AnalyticsClientChart({ topClients, loading }) {
           <YAxis
             type="category"
             dataKey="shortName"
-            width={150}
-            tick={{ fontSize: 11 }}
-            tickLine={false}
-            axisLine={false}
+            hide
+            width={0}
           />
           <Tooltip content={<CustomTooltip />} />
           <Bar
@@ -106,7 +120,9 @@ export function AnalyticsClientChart({ topClients, loading }) {
             fill="#5b50ff"
             radius={[0, 4, 4, 0]}
             barSize={24}
-          />
+          >
+            <LabelList dataKey="shortName" content={<BarLabel />} />
+          </Bar>
         </BarChart>
       </ChartContainer>
     </div>

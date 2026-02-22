@@ -4,7 +4,7 @@ import { GET_FINANCIAL_ANALYTICS } from "../graphql/queries/financialAnalytics";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 
 /**
- * Génère tous les mois "YYYY-MM" entre startDate et endDate
+ * Generates all months "YYYY-MM" between startDate and endDate
  */
 function generateAllMonths(startDate, endDate) {
   if (!startDate || !endDate) return [];
@@ -22,43 +22,41 @@ function generateAllMonths(startDate, endDate) {
   return months;
 }
 
+const EMPTY_MONTH = {
+  revenueHT: 0,
+  revenueTTC: 0,
+  revenueVAT: 0,
+  expenseAmount: 0,
+  expenseAmountHT: 0,
+  expenseVAT: 0,
+  invoiceCount: 0,
+  expenseCount: 0,
+  netResult: 0,
+  creditNoteHT: 0,
+  netRevenueHT: 0,
+  grossMargin: 0,
+  grossMarginRate: 0,
+};
+
 /**
- * Remplit les mois manquants dans monthlyRevenue avec des zéros
+ * Fills missing months in monthlyRevenue with zeros
  */
 function fillMissingMonths(monthlyRevenue, allMonths) {
   if (!allMonths.length) return monthlyRevenue || [];
   if (!monthlyRevenue?.length) {
-    return allMonths.map((month) => ({
-      month,
-      revenueHT: 0,
-      revenueTTC: 0,
-      revenueVAT: 0,
-      expenseAmount: 0,
-      invoiceCount: 0,
-      expenseCount: 0,
-      netResult: 0,
-    }));
+    return allMonths.map((month) => ({ month, ...EMPTY_MONTH }));
   }
   const dataMap = {};
   for (const m of monthlyRevenue) {
     dataMap[m.month] = m;
   }
   return allMonths.map((month) =>
-    dataMap[month] || {
-      month,
-      revenueHT: 0,
-      revenueTTC: 0,
-      revenueVAT: 0,
-      expenseAmount: 0,
-      invoiceCount: 0,
-      expenseCount: 0,
-      netResult: 0,
-    }
+    dataMap[month] || { month, ...EMPTY_MONTH }
   );
 }
 
 /**
- * Hook pour récupérer les données d'analytiques financières
+ * Hook to fetch financial analytics data
  */
 export const useFinancialAnalytics = (startDate, endDate, options = {}) => {
   const { workspaceId } = useRequiredWorkspace();

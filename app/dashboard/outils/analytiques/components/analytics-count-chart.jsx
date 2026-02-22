@@ -112,7 +112,7 @@ export function AnalyticsCountChart({ monthlyRevenue, loading }) {
         </ToggleGroup>
       </div>
       <ChartContainer config={chartConfig} className="h-[300px] w-full">
-        <BarChart data={chartData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+        <BarChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} />
           <XAxis
             dataKey="monthLabel"
@@ -121,10 +121,14 @@ export function AnalyticsCountChart({ monthlyRevenue, loading }) {
             axisLine={false}
           />
           <YAxis
-            tick={{ fontSize: 11 }}
+            tick={({ y, payload }) => (
+              <text x={0} y={y} textAnchor="start" dominantBaseline="middle" fontSize={11} className="fill-muted-foreground">
+                {payload.value}
+              </text>
+            )}
             tickLine={false}
             axisLine={false}
-            width={40}
+            width={25}
             allowDecimals={false}
           />
           <Tooltip content={<CustomTooltip />} />
