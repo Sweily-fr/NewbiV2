@@ -538,10 +538,10 @@ export function AddTransactionDrawer({
                   className="w-56"
                 >
                   <div className="flex">
-                    <Group className="w-full">
+                    <Group className="w-full pointer-events-none">
                       <DateInput className="pe-9" />
                     </Group>
-                    <RACButton className="z-10 -ms-9 -me-px flex w-9 items-center justify-center rounded-e-md text-muted-foreground/80 transition-[color,box-shadow] outline-none hover:text-foreground data-focus-visible:border-ring data-focus-visible:ring-[3px] data-focus-visible:ring-ring/50">
+                    <RACButton className="z-10 -ms-9 -me-px flex w-9 items-center justify-center rounded-e-md text-muted-foreground/80 transition-[color,box-shadow] outline-none hover:text-foreground pointer-events-auto data-focus-visible:border-ring data-focus-visible:ring-[3px] data-focus-visible:ring-ring/50">
                       <CalendarIcon size={16} />
                     </RACButton>
                   </div>

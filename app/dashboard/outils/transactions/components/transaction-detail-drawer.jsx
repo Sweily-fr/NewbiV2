@@ -22,21 +22,8 @@ import { Input } from "@/src/components/ui/input";
 import { Separator } from "@/src/components/ui/separator";
 import { Textarea } from "@/src/components/ui/textarea";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/src/components/ui/popover";
-import {
   Popover as RACPopover,
 } from "react-aria-components";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/src/components/ui/command";
 import {
   Select,
   SelectContent,
@@ -62,8 +49,6 @@ import {
   AlertCircle,
   CheckCircle2,
   Loader2,
-  ChevronDown,
-  Check,
   Save,
   Plus,
   Link2,
@@ -79,7 +64,7 @@ import {
   formatDateTimeToFrench,
 } from "@/src/utils/dateFormatter";
 import { findMerchant } from "@/lib/merchants-config";
-import { getCategoryConfig, CATEGORY_CONFIG } from "@/lib/category-icons-config";
+import { getCategoryConfig } from "@/lib/category-icons-config";
 import { toast } from "@/src/components/ui/sonner";
 import { UPDATE_TRANSACTION } from "@/src/graphql/queries/banking";
 import { Calendar } from "@/src/components/ui/calendar-rac";
@@ -93,14 +78,6 @@ import { VisuallyHidden } from "@/src/components/ui/visually-hidden";
 import CategorySearchSelect from "./category-search-select";
 import { useUnlinkTransactionFromInvoice } from "@/src/hooks/useReconciliationGraphQL";
 import { useRouter } from "next/navigation";
-
-// Liste des catégories disponibles pour la sélection
-const categoryOptions = Object.entries(CATEGORY_CONFIG).map(([key, config]) => ({
-  value: key,
-  label: config.label,
-  icon: config.icon,
-  color: config.color,
-}));
 
 const paymentMethodIcons = {
   CARD: CreditCard,
@@ -301,8 +278,6 @@ export function TransactionDetailDrawer({
   const router = useRouter();
   const [isUploading, setIsUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
-  const [isCategoryOpen, setIsCategoryOpen] = useState(false);
-  const [isUpdatingCategory, setIsUpdatingCategory] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -458,16 +433,27 @@ export function TransactionDetailDrawer({
     },
   });
 
-  // Gérer le changement de catégorie (pour transactions bancaires)
-  const handleCategoryChange = async (newCategory) => {
-    const transactionId = transaction?.originalTransaction?.id || transaction?.id;
-
-    if (!transactionId || newCategory === transaction?.category) {
-      setIsCategoryOpen(false);
-      return;
+  // Catégorie en mode vue : mapper la valeur stockée vers la sous-catégorie fine
+  const viewCategoryForm = (() => {
+    if (!transaction?.category) return "";
+    // Si c'est déjà une sous-catégorie fine
+    if (categoryFormToApi[transaction.category]) return transaction.category;
+    // Sinon c'est une catégorie large API → mapper vers une sous-catégorie
+    if (transaction.amount > 0) {
+      const incomeCategoryMap = {
+        SERVICES: "services", SUBSCRIPTIONS: "abonnements_revenus",
+        SOFTWARE: "licences_revenus", RENT: "loyers_revenus", OTHER: "autre_revenu",
+      };
+      return incomeCategoryMap[transaction.category] || categoryApiToForm[transaction.category] || "";
     }
+    return categoryApiToForm[transaction.category] || "";
+  })();
 
-    setIsUpdatingCategory(true);
+  // Gérer le changement de catégorie (mode vue - utilise les mêmes sous-catégories fines)
+  const handleViewCategoryChange = async (newCategory) => {
+    const transactionId = transaction?.originalTransaction?.id || transaction?.id;
+    if (!transactionId || newCategory === transaction?.category) return;
+
     try {
       await updateTransaction({
         variables: {
@@ -475,9 +461,8 @@ export function TransactionDetailDrawer({
           input: { category: newCategory },
         },
       });
-    } finally {
-      setIsUpdatingCategory(false);
-      setIsCategoryOpen(false);
+    } catch (error) {
+      console.error("Erreur mise à jour catégorie:", error);
     }
   };
 
@@ -500,6 +485,7 @@ export function TransactionDetailDrawer({
         ...formData,
         category: formData.category || "OTHER",
         amount: parseFloat(formData.amount) || 0,
+        receiptFile: selectedFile || null,
       };
       onSubmit?.(submissionData);
       onOpenChange(false);
@@ -739,59 +725,13 @@ export function TransactionDetailDrawer({
                       />
                     </div>
                   ) : (
-                    <Popover open={isCategoryOpen} onOpenChange={setIsCategoryOpen}>
-                      <PopoverTrigger asChild>
-                        <button
-                          className="flex items-center gap-1 text-xs text-muted-foreground font-normal hover:text-foreground transition-colors group"
-                          disabled={isUpdatingCategory}
-                        >
-                          {isUpdatingCategory ? (
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                          ) : (
-                            <>
-                              {categoryConfig.label}
-                              <ChevronDown className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-                            </>
-                          )}
-                        </button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-[250px] p-0" align="start">
-                        <Command>
-                          <CommandInput placeholder="Rechercher une catégorie..." />
-                          <CommandList>
-                            <CommandEmpty>Aucune catégorie trouvée.</CommandEmpty>
-                            <CommandGroup>
-                              {categoryOptions.map((option) => {
-                                const OptionIcon = option.icon;
-                                return (
-                                  <CommandItem
-                                    key={option.value}
-                                    value={option.value}
-                                    keywords={[option.label]}
-                                    onSelect={() => handleCategoryChange(option.value)}
-                                    className="flex items-center gap-2"
-                                  >
-                                    <div
-                                      className="h-6 w-6 rounded-full flex items-center justify-center"
-                                      style={{ backgroundColor: `${option.color}15` }}
-                                    >
-                                      <OptionIcon
-                                        className="h-3 w-3"
-                                        style={{ color: option.color }}
-                                      />
-                                    </div>
-                                    <span className="flex-1">{option.label}</span>
-                                    {transaction?.category === option.value && (
-                                      <Check className="h-4 w-4 text-primary" />
-                                    )}
-                                  </CommandItem>
-                                );
-                              })}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
+                    <div className="mb-1">
+                      <CategorySearchSelect
+                        value={viewCategoryForm}
+                        onValueChange={handleViewCategoryChange}
+                        type={transaction?.amount > 0 ? "INCOME" : "EXPENSE"}
+                      />
+                    </div>
                   )}
 
                   {/* Montant */}
@@ -886,10 +826,10 @@ export function TransactionDetailDrawer({
                     className="w-40"
                   >
                     <div className="flex">
-                      <Group className="w-full">
+                      <Group className="w-full pointer-events-none">
                         <DateInput className="pe-9 text-sm" />
                       </Group>
-                      <RACButton className="z-10 -ms-9 -me-px flex w-9 items-center justify-center rounded-e-md text-muted-foreground/80 transition-[color,box-shadow] outline-none hover:text-foreground">
+                      <RACButton className="z-10 -ms-9 -me-px flex w-9 items-center justify-center rounded-e-md text-muted-foreground/80 transition-[color,box-shadow] outline-none hover:text-foreground pointer-events-auto">
                         <CalendarIcon size={16} />
                       </RACButton>
                     </div>
