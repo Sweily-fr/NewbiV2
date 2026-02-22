@@ -435,6 +435,7 @@ export default function TransactionTable({
             ? expense.files[0].url
             : null,
         files: expense.files || [],
+        receiptFile: expense.receiptFile || null,
         ocrMetadata: expense.ocrMetadata || null,
         createdAt: expense.createdAt,
         updatedAt: expense.updatedAt,
@@ -711,6 +712,22 @@ export default function TransactionTable({
       const result = await createTransaction(transactionInput);
 
       if (result.success) {
+        // Upload du justificatif si un fichier a été sélectionné
+        if (transaction.receiptFile && result.transaction?.id) {
+          try {
+            await uploadReceiptMutation({
+              variables: {
+                transactionId: result.transaction.id,
+                workspaceId,
+                file: transaction.receiptFile,
+              },
+            });
+          } catch (uploadError) {
+            console.error("Erreur upload justificatif:", uploadError);
+            toast.error("Transaction créée mais erreur lors de l'upload du justificatif");
+          }
+        }
+
         setIsAddTransactionDrawerOpen(false);
         await refetchExpenses();
       }
