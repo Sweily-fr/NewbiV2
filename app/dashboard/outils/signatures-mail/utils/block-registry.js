@@ -89,9 +89,9 @@ export const WIDGET_PALETTE = [
   {
     id: 'widget-contact',
     label: 'Coordonnées',
-    description: 'Téléphone, email, site',
+    description: 'Poste, téléphone, email, site',
     icon: 'Phone',
-    elements: [ELEMENT_TYPES.PHONE, ELEMENT_TYPES.EMAIL, ELEMENT_TYPES.WEBSITE, ELEMENT_TYPES.ADDRESS],
+    elements: [ELEMENT_TYPES.POSITION, ELEMENT_TYPES.PHONE, ELEMENT_TYPES.EMAIL, ELEMENT_TYPES.WEBSITE, ELEMENT_TYPES.ADDRESS],
     layout: 'vertical',
   },
   {

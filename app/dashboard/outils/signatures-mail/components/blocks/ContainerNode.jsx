@@ -345,10 +345,16 @@ export default function ContainerNode({
         style={getGapStyle()}
       >
         {container.elements.map((element) => {
+          // Ne pas rendre les éléments masqués
+          if (element.props?.hidden === true) {
+            return null;
+          }
+
           // Pour les séparateurs seuls dans leur conteneur, utiliser le layout du parent (grandparent)
           // car le séparateur doit s'adapter à la position de son conteneur, pas à son layout interne
           const isSeparatorElement = element.type === 'separator-line';
-          const effectiveParentLayout = (isSeparatorElement && container.elements.length === 1)
+          const visibleElements = container.elements.filter(el => !el.props?.hidden);
+          const effectiveParentLayout = (isSeparatorElement && visibleElements.length === 1)
             ? parentLayout  // Layout du grandparent
             : container.layout;  // Layout du conteneur actuel
 
@@ -367,7 +373,7 @@ export default function ContainerNode({
               }
               signatureData={signatureData}
               onFieldChange={onFieldChange}
-              isSingleElement={container.elements.length === 1}
+              isSingleElement={visibleElements.length === 1}
               parentLayout={effectiveParentLayout}
             />
           );
