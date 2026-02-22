@@ -133,7 +133,7 @@ export function AnalyticsCumulativeRevenueChart({ monthlyRevenue, loading }) {
         </ToggleGroup>
       </div>
       <ChartContainer config={chartConfig} className="h-[300px] w-full">
-        <ChartComponent data={chartData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+        <ChartComponent data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} />
           <XAxis
             dataKey="monthLabel"
@@ -142,11 +142,14 @@ export function AnalyticsCumulativeRevenueChart({ monthlyRevenue, loading }) {
             axisLine={false}
           />
           <YAxis
-            tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
-            tick={{ fontSize: 11 }}
+            tick={({ y, payload }) => (
+              <text x={0} y={y} textAnchor="start" dominantBaseline="middle" fontSize={11} className="fill-muted-foreground">
+                {`${(payload.value / 1000).toFixed(0)}k`}
+              </text>
+            )}
             tickLine={false}
             axisLine={false}
-            width={50}
+            width={35}
           />
           <Tooltip content={<CustomTooltip />} />
           {chartType === "area" ? (

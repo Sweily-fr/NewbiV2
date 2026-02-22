@@ -42,10 +42,11 @@ const FORMATS = [
 
 const TAB_OPTIONS = [
   { value: "all", label: "Tous les onglets" },
-  { value: "overview", label: "Vue d'ensemble" },
-  { value: "clients", label: "Clients" },
-  { value: "products", label: "Produits & Services" },
-  { value: "expenses", label: "Dépenses" },
+  { value: "synthese", label: "Synthèse" },
+  { value: "rentabilite", label: "Rentabilité" },
+  { value: "tresorerie", label: "Trésorerie & Recouvrement" },
+  { value: "commercial", label: "Commercial" },
+  { value: "detail", label: "Détail & Export" },
 ];
 
 export function AnalyticsExportDialog({ open, onOpenChange, analyticsData, dateRange }) {

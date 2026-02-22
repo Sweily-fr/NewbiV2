@@ -16,13 +16,20 @@ import {
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
 import { Checkbox } from "@/src/components/ui/checkbox";
-import { Download, Filter, ChevronDown, X } from "lucide-react";
+import {
+  Download,
+  Filter,
+  ChevronDown,
+  X,
+} from "lucide-react";
 import { cn } from "@/src/lib/utils";
 
 import {
   AnalyticsDateFilter,
   getDateRangeForPreset,
 } from "./components/analytics-date-filter";
+import { AnalyticsKpiRow, formatCurrency, formatPercent, formatNumber, formatDays } from "./components/analytics-kpi-cards";
+import { AnalyticsAlertBanner } from "./components/analytics-alert-banner";
 import { AnalyticsRevenueChart } from "./components/analytics-revenue-chart";
 import { AnalyticsCumulativeRevenueChart } from "./components/analytics-cumulative-revenue-chart";
 import { AnalyticsVatChart } from "./components/analytics-vat-chart";
@@ -40,6 +47,10 @@ import {
 import { AnalyticsClientTable, AnalyticsProductTable } from "./components/analytics-data-table";
 import { AnalyticsCrossTabTable } from "./components/analytics-cross-tab-table";
 import { AnalyticsExportDialog } from "./components/analytics-export-dialog";
+import { AnalyticsOverdueTable } from "./components/analytics-overdue-table";
+import { AnalyticsAgingChart } from "./components/analytics-aging-chart";
+import { AnalyticsCollectionChart } from "./components/analytics-collection-chart";
+import { AnalyticsExpenseDetailTable } from "./components/analytics-expense-detail-table";
 
 const STATUS_OPTIONS = [
   { value: "PENDING", label: "En attente", color: "bg-amber-400" },
@@ -67,6 +78,45 @@ const CATEGORY_LABELS = {
   SUBSCRIPTIONS: "Abonnements",
   OTHER: "Autre",
 };
+
+// ==============================
+// KPI CONFIGS PER TAB
+// ==============================
+
+const SYNTHESE_KPI = [
+  { key: "netRevenueHT", label: "CA HT net", tooltip: "Chiffre d'affaires HT après déduction des avoirs" },
+  { key: "totalExpensesHT", label: "Dépenses HT", tooltip: "Total des dépenses hors taxes", invertTrend: true },
+  { key: "grossMargin", label: "Marge brute", tooltip: "CA HT net - Dépenses HT" },
+  { key: "grossMarginRate", label: "Taux de marge", format: formatPercent, tooltip: "Marge brute / CA HT net" },
+  { key: "invoiceCount", label: "Factures émises", format: formatNumber, tooltip: "Nombre de factures émises (hors brouillons)" },
+  { key: "averageInvoiceHT", label: "Panier moyen", tooltip: "CA HT / Nombre de factures" },
+  { key: "collectionRate", label: "Taux recouvrement", format: formatPercent, tooltip: "Factures payées / Total factures émises" },
+  { key: "dso", label: "DSO", format: formatDays, tooltip: "Délai moyen de paiement en jours", invertTrend: true },
+];
+
+const RENTABILITE_KPI = [
+  { key: "netRevenueHT", label: "CA HT net", tooltip: "Chiffre d'affaires HT après déduction des avoirs" },
+  { key: "totalExpensesHT", label: "Dépenses HT", tooltip: "Total des dépenses hors taxes", invertTrend: true },
+  { key: "grossMargin", label: "Marge brute", tooltip: "CA HT net - Dépenses HT" },
+  { key: "grossMarginRate", label: "Taux de marge", format: formatPercent },
+  { key: "chargeRate", label: "Taux de charges", format: formatPercent, tooltip: "Dépenses HT / CA HT net", invertTrend: true },
+  { key: "averageInvoiceHT", label: "Panier moyen", tooltip: "CA HT / Nombre de factures" },
+];
+
+const TRESORERIE_KPI = [
+  { key: "outstandingReceivables", label: "Créances en cours", tooltip: "Somme des factures en attente et en retard" },
+  { key: "overdueAmount", label: "Factures en retard", tooltip: "Factures dont la date d'échéance est dépassée" },
+  { key: "dso", label: "DSO", format: formatDays, tooltip: "Délai moyen de paiement en jours", invertTrend: true },
+  { key: "collectionRate", label: "Taux recouvrement", format: formatPercent, tooltip: "Factures payées / Total factures émises" },
+];
+
+const COMMERCIAL_KPI = [
+  { key: "activeClientCount", label: "Clients actifs", format: formatNumber, tooltip: "Clients ayant au moins une facture sur la période" },
+  { key: "newClientCount", label: "Nouveaux clients", format: formatNumber, tooltip: "Clients actifs cette période mais pas sur N-1" },
+  { key: "retainedClientCount", label: "Clients fidélisés", format: formatNumber, tooltip: "Clients actifs sur les deux périodes" },
+  { key: "quoteConversionRate", label: "Conversion devis", format: formatPercent, tooltip: "Devis acceptés / Total devis" },
+  { key: "topClientConcentration", label: "Concentration top 3", format: formatPercent, tooltip: "Part du CA des 3 premiers clients", invertTrend: true },
+];
 
 function Separator() {
   return <div className="border-t border-border" />;
@@ -130,7 +180,7 @@ export default function AnalytiquesPage() {
     <div className="flex flex-col min-h-full">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pt-4 sm:pt-6 mb-6 px-4 sm:px-6 gap-4">
-        <h1 className="text-2xl font-medium">Analytiques</h1>
+        <h1 className="text-2xl font-medium">Tableau de bord</h1>
         <div className="flex flex-wrap items-center gap-2">
           {/* Client filter */}
           <DropdownMenu>
@@ -245,25 +295,37 @@ export default function AnalytiquesPage() {
 
       {/* Tabs */}
       <div className="pb-8 flex-1">
-        <Tabs defaultValue="overview" className="space-y-6">
+        <Tabs defaultValue="synthese" className="space-y-6">
           <TabsList className="mx-4 sm:mx-6">
-            <TabsTrigger value="overview">Vue d&apos;ensemble</TabsTrigger>
-            <TabsTrigger value="clients">Clients</TabsTrigger>
-            <TabsTrigger value="products">Produits & Services</TabsTrigger>
-            <TabsTrigger value="expenses">Dépenses</TabsTrigger>
+            <TabsTrigger value="synthese">Synthèse</TabsTrigger>
+            <TabsTrigger value="rentabilite">Rentabilité</TabsTrigger>
+            <TabsTrigger value="tresorerie">Trésorerie</TabsTrigger>
+            <TabsTrigger value="commercial">Commercial</TabsTrigger>
+            <TabsTrigger value="detail">Détail & Export</TabsTrigger>
           </TabsList>
 
-          {/* Tab 1 - Overview */}
-          <TabsContent value="overview" className="space-y-8">
+          {/* ===== Tab 1 — SYNTHESE ===== */}
+          <TabsContent value="synthese" className="space-y-6">
+            {/* Alert Banner */}
             <div className="px-4 sm:px-6">
-              <AnalyticsRevenueChart
-                monthlyRevenue={analyticsData?.monthlyRevenue}
+              <AnalyticsAlertBanner alerts={analyticsData?.alerts} />
+            </div>
+
+            {/* KPI */}
+            <div className="px-4 sm:px-6">
+              <AnalyticsKpiRow
+                config={SYNTHESE_KPI}
+                kpi={analyticsData?.kpi}
+                previousPeriod={analyticsData?.previousPeriod}
                 loading={loading}
               />
             </div>
+
             <Separator />
+
+            {/* 2 Charts */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 px-4 sm:px-6">
-              <AnalyticsCumulativeRevenueChart
+              <AnalyticsRevenueChart
                 monthlyRevenue={analyticsData?.monthlyRevenue}
                 loading={loading}
               />
@@ -272,32 +334,142 @@ export default function AnalytiquesPage() {
                 loading={loading}
               />
             </div>
-            <Separator />
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 px-4 sm:px-6">
-              <AnalyticsCountChart
-                monthlyRevenue={analyticsData?.monthlyRevenue}
+          </TabsContent>
+
+          {/* ===== Tab 2 — RENTABILITE ===== */}
+          <TabsContent value="rentabilite" className="space-y-8">
+            {/* KPI Cards */}
+            <div className="px-4 sm:px-6">
+              <AnalyticsKpiRow
+                config={RENTABILITE_KPI}
+                kpi={analyticsData?.kpi}
+                previousPeriod={analyticsData?.previousPeriod}
                 loading={loading}
+
               />
-              <AnalyticsVatChart
+            </div>
+
+            <Separator />
+
+            {/* Revenue Chart */}
+            <div className="px-4 sm:px-6">
+              <AnalyticsRevenueChart
                 monthlyRevenue={analyticsData?.monthlyRevenue}
                 loading={loading}
               />
             </div>
+
             <Separator />
+
+            {/* Cumulative + Expense Category */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 px-4 sm:px-6">
+              <AnalyticsCumulativeRevenueChart
+                monthlyRevenue={analyticsData?.monthlyRevenue}
+                loading={loading}
+              />
+              <AnalyticsExpenseCategoryChart
+                expenseByCategory={analyticsData?.expenseByCategory}
+                loading={loading}
+              />
+            </div>
+
+            <Separator />
+
+            {/* Revenue vs Expense */}
+            <div className="px-4 sm:px-6">
+              <AnalyticsRevenueVsExpenseChart
+                monthlyRevenue={analyticsData?.monthlyRevenue}
+                loading={loading}
+              />
+            </div>
+
+            <Separator />
+
+            {/* Product Chart + Table */}
+            <div className="px-4 sm:px-6">
+              <AnalyticsProductChart
+                revenueByProduct={analyticsData?.revenueByProduct}
+                loading={loading}
+              />
+            </div>
+            <AnalyticsProductTable
+              revenueByProduct={analyticsData?.revenueByProduct}
+              loading={loading}
+            />
+
+            <Separator />
+
+            {/* Expense Detail Table */}
+            <AnalyticsExpenseDetailTable
+              expenseByCategory={analyticsData?.expenseByCategory}
+              totalExpensesHT={analyticsData?.kpi?.totalExpensesHT}
+              totalExpensesTTC={analyticsData?.kpi?.totalExpensesTTC}
+              loading={loading}
+            />
+          </TabsContent>
+
+          {/* ===== Tab 3 — TRESORERIE & RECOUVREMENT ===== */}
+          <TabsContent value="tresorerie" className="space-y-8">
+            {/* KPI Cards */}
+            <div className="px-4 sm:px-6">
+              <AnalyticsKpiRow
+                config={TRESORERIE_KPI}
+                kpi={analyticsData?.kpi}
+                previousPeriod={analyticsData?.previousPeriod}
+                loading={loading}
+
+              />
+            </div>
+
+            <Separator />
+
+            {/* Status Chart + Aging Chart */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 px-4 sm:px-6">
               <AnalyticsStatusChart
                 statusBreakdown={analyticsData?.statusBreakdown}
                 loading={loading}
               />
-              <AnalyticsPaymentMethodChart
-                paymentMethodStats={analyticsData?.paymentMethodStats}
+              <AnalyticsAgingChart
+                agingBuckets={analyticsData?.collection?.agingBuckets}
                 loading={loading}
               />
             </div>
+
+            <Separator />
+
+            {/* Collection Chart */}
+            <div className="px-4 sm:px-6">
+              <AnalyticsCollectionChart
+                monthlyCollection={analyticsData?.collection?.monthlyCollection}
+                loading={loading}
+              />
+            </div>
+
+            <Separator />
+
+            {/* Overdue Table */}
+            <AnalyticsOverdueTable
+              overdueInvoices={analyticsData?.collection?.overdueInvoices}
+              loading={loading}
+            />
           </TabsContent>
 
-          {/* Tab 2 - Clients */}
-          <TabsContent value="clients" className="space-y-8">
+          {/* ===== Tab 4 — COMMERCIAL ===== */}
+          <TabsContent value="commercial" className="space-y-8">
+            {/* KPI Cards */}
+            <div className="px-4 sm:px-6">
+              <AnalyticsKpiRow
+                config={COMMERCIAL_KPI}
+                kpi={analyticsData?.kpi}
+                previousPeriod={analyticsData?.previousPeriod}
+                loading={loading}
+
+              />
+            </div>
+
+            <Separator />
+
+            {/* Client Charts */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 px-4 sm:px-6">
               <AnalyticsClientChart
                 topClients={analyticsData?.topClients}
@@ -308,12 +480,28 @@ export default function AnalytiquesPage() {
                 loading={loading}
               />
             </div>
+
             <Separator />
+
+            {/* Monthly invoice count */}
+            <div className="px-4 sm:px-6">
+              <AnalyticsCountChart
+                monthlyRevenue={analyticsData?.monthlyRevenue}
+                loading={loading}
+              />
+            </div>
+
+            <Separator />
+
+            {/* Client Table */}
             <AnalyticsClientTable
               revenueByClient={analyticsData?.revenueByClient}
               loading={loading}
             />
+
             <Separator />
+
+            {/* Cross Tab Client x Month */}
             <AnalyticsCrossTabTable
               title="Tableau croisé Client x Mois"
               data={analyticsData?.revenueByClientMonthly}
@@ -329,41 +517,29 @@ export default function AnalytiquesPage() {
             />
           </TabsContent>
 
-          {/* Tab 3 - Products */}
-          <TabsContent value="products" className="space-y-8">
+          {/* ===== Tab 5 — DETAIL & EXPORT ===== */}
+          <TabsContent value="detail" className="space-y-8">
+            {/* VAT Chart */}
             <div className="px-4 sm:px-6">
-              <AnalyticsProductChart
-                revenueByProduct={analyticsData?.revenueByProduct}
-                loading={loading}
-              />
-            </div>
-            <Separator />
-            <AnalyticsProductTable
-              revenueByProduct={analyticsData?.revenueByProduct}
-              loading={loading}
-            />
-          </TabsContent>
-
-          {/* Tab 4 - Expenses */}
-          <TabsContent value="expenses" className="space-y-8">
-            <div className="px-4 sm:px-6">
-              <AnalyticsRevenueVsExpenseChart
+              <AnalyticsVatChart
                 monthlyRevenue={analyticsData?.monthlyRevenue}
                 loading={loading}
               />
             </div>
+
             <Separator />
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 px-4 sm:px-6">
-              <AnalyticsExpenseCategoryChart
-                expenseByCategory={analyticsData?.expenseByCategory}
-                loading={loading}
-              />
+
+            {/* Payment Method */}
+            <div className="px-4 sm:px-6">
               <AnalyticsPaymentMethodChart
                 paymentMethodStats={analyticsData?.paymentMethodStats}
                 loading={loading}
               />
             </div>
+
             <Separator />
+
+            {/* Cross Tab Expenses x Month */}
             <AnalyticsCrossTabTable
               title="Tableau croisé Dépenses x Mois"
               data={analyticsData?.expenseByCategoryMonthly}
@@ -376,6 +552,24 @@ export default function AnalytiquesPage() {
               rowLabelMap={CATEGORY_LABELS}
               loading={loading}
             />
+
+            <Separator />
+
+            {/* Export Section */}
+            <div className="px-4 sm:px-6">
+              <div className="rounded-lg border p-6 text-center space-y-4">
+                <h3 className="text-lg font-medium">Exporter les données</h3>
+                <p className="text-sm text-muted-foreground">
+                  Téléchargez vos données analytiques dans le format de votre choix.
+                </p>
+                <div className="flex items-center justify-center gap-3">
+                  <Button onClick={() => setExportOpen(true)} className="gap-2">
+                    <Download className="h-4 w-4" />
+                    Exporter
+                  </Button>
+                </div>
+              </div>
+            </div>
           </TabsContent>
         </Tabs>
       </div>
