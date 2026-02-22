@@ -90,7 +90,7 @@ export const columns = [
       return (
         <div
           className="font-normal text-left"
-          style={{ color: isIncome && "#0E7A3E" }}
+          style={{ color: isIncome ? "#0E7A3E" : "#DC2626" }}
         >
           {isIncome ? "+" : ""}
           {amount.toFixed(2)} €

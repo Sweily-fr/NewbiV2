@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { mapCategoryToEnum } from "@/app/dashboard/outils/transactions/components/transactions/utils/mappers";
 
 /**
  * POST /api/unified-expenses/auto-reconcile
@@ -129,14 +130,6 @@ export async function POST(request) {
       ? Math.abs(ocrData?.amount || 0)
       : -Math.abs(ocrData?.amount || 0);
 
-    const categoryMapping = {
-      transport: "TRAVEL",
-      repas: "MEALS",
-      bureau: "OFFICE_SUPPLIES",
-      prestation: "SERVICES",
-      autre: "OTHER",
-    };
-
     const createQuery = `
       mutation CreateTransaction($input: CreateTransactionInput!) {
         createTransaction(input: $input) {
@@ -167,7 +160,7 @@ export async function POST(request) {
             description: ocrData?.vendor || ocrData?.merchant || "Dépense OCR",
             type: isIncome ? "CREDIT" : "DEBIT",
             date: ocrData?.date || new Date().toISOString().split("T")[0],
-            category: categoryMapping[ocrData?.category] || "OTHER",
+            category: mapCategoryToEnum(ocrData?.category),
             vendor: ocrData?.vendor || ocrData?.merchant || "",
             notes: "Créé depuis OCR",
           },

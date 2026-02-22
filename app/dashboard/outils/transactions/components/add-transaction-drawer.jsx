@@ -94,14 +94,21 @@ export function AddTransactionDrawer({
   const mapApiCategoryToForm = (apiCategory) => {
     const categoryMap = {
       OFFICE_SUPPLIES: "bureau",
+      HARDWARE: "materiel",
       TRAVEL: "transport",
       MEALS: "repas",
+      ACCOMMODATION: "hotel",
       EQUIPMENT: "materiel",
       MARKETING: "marketing",
       TRAINING: "formation",
       SERVICES: "comptabilite",
       RENT: "loyer",
       SALARIES: "salaire",
+      UTILITIES: "electricite",
+      INSURANCE: "assurance",
+      SUBSCRIPTIONS: "abonnement",
+      SOFTWARE: "logiciel",
+      MAINTENANCE: "entretien",
       OTHER: "autre",
     };
     return categoryMap[apiCategory] || "autre";

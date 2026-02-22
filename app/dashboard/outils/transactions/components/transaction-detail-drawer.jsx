@@ -387,7 +387,8 @@ export function TransactionDetailDrawer({
           // Déjà une sous-catégorie fine (ex: "parking", "carburant")
           formCategory = transaction.category;
         } else if (formType === "INCOME") {
-          // Catégorie large API pour un revenu
+          // Catégorie large API pour un revenu — d'abord mapper vers une catégorie revenu spécifique,
+          // sinon utiliser le mapping général (le CategorySearchSelect cherche dans les deux listes)
           const incomeCategoryMap = {
             SERVICES: "services",
             SUBSCRIPTIONS: "abonnements_revenus",
@@ -395,7 +396,7 @@ export function TransactionDetailDrawer({
             RENT: "loyers_revenus",
             OTHER: "autre_revenu",
           };
-          formCategory = incomeCategoryMap[transaction.category] || categoryApiToForm[transaction.category] || "";
+          formCategory = incomeCategoryMap[transaction.category] || categoryApiToForm[transaction.category] || "autre_revenu";
         } else {
           // Catégorie large API pour une dépense (rétro-compatibilité)
           formCategory = categoryApiToForm[transaction.category] || "";
@@ -444,9 +445,9 @@ export function TransactionDetailDrawer({
         SERVICES: "services", SUBSCRIPTIONS: "abonnements_revenus",
         SOFTWARE: "licences_revenus", RENT: "loyers_revenus", OTHER: "autre_revenu",
       };
-      return incomeCategoryMap[transaction.category] || categoryApiToForm[transaction.category] || "";
+      return incomeCategoryMap[transaction.category] || categoryApiToForm[transaction.category] || "autre_revenu";
     }
-    return categoryApiToForm[transaction.category] || "";
+    return categoryApiToForm[transaction.category] || "autre";
   })();
 
   // Gérer le changement de catégorie (mode vue - utilise les mêmes sous-catégories fines)
@@ -1429,7 +1430,11 @@ export function TransactionDetailDrawer({
               <Button
                 variant="outline"
                 className="flex-1 font-normal"
-                onClick={() => setIsEditMode(true)}
+                onClick={() => {
+                  // Synchroniser formData.category avec la catégorie actuelle en mode vue
+                  setFormData((prev) => ({ ...prev, category: viewCategoryForm || prev.category }));
+                  setIsEditMode(true);
+                }}
               >
                 <Edit className="h-4 w-4 mr-2" />
                 Modifier
