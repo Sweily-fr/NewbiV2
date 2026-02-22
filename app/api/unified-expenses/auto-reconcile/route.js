@@ -30,7 +30,7 @@ export async function POST(request) {
     const authCookie = request.cookies.get("better-auth.session_token")?.value;
     const authHeader = request.headers.get("authorization");
 
-    const graphqlUrl = process.env.NEXT_PUBLIC_GRAPHQL_URL || "http://localhost:4000/graphql";
+    const graphqlUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/").replace(/\/$/, "") + "/graphql";
 
     const headers = {};
     if (authCookie) {
