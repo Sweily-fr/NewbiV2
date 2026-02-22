@@ -1,4 +1,4 @@
-import { useMutation, useQuery, gql } from '@apollo/client';
+import { useMutation, useQuery, useLazyQuery, gql } from '@apollo/client';
 
 // Queries
 const GET_DOCUMENT_AUTOMATIONS = gql`
@@ -178,6 +178,55 @@ const TEST_DOCUMENT_AUTOMATION = gql`
   }
 `;
 
+const RUN_DOCUMENT_AUTOMATION = gql`
+  mutation RunDocumentAutomation($workspaceId: ID!, $id: ID!) {
+    runDocumentAutomation(workspaceId: $workspaceId, id: $id) {
+      automationId
+      status
+      totalDocuments
+      message
+      successCount
+      failCount
+      firstError
+    }
+  }
+`;
+
+const GET_DOCUMENTS_FOR_AUTOMATION = gql`
+  query GetDocumentsForAutomation($workspaceId: ID!, $automationId: ID!) {
+    documentsForAutomation(workspaceId: $workspaceId, automationId: $automationId) {
+      documentId
+      documentType
+      documentNumber
+      prefix
+      clientName
+    }
+  }
+`;
+
+const PROCESS_AUTOMATION_DOCUMENT = gql`
+  mutation ProcessAutomationDocument(
+    $workspaceId: ID!
+    $automationId: ID!
+    $documentId: ID!
+    $documentType: String!
+    $pdfBase64: String!
+  ) {
+    processAutomationDocument(
+      workspaceId: $workspaceId
+      automationId: $automationId
+      documentId: $documentId
+      documentType: $documentType
+      pdfBase64: $pdfBase64
+    ) {
+      success
+      sharedDocumentId
+      fileName
+      error
+    }
+  }
+`;
+
 export const useDocumentAutomations = (workspaceId) => {
   const { data, loading, error, refetch } = useQuery(GET_DOCUMENT_AUTOMATIONS, {
     variables: { workspaceId },
@@ -318,6 +367,59 @@ export const useTestDocumentAutomation = () => {
         console.error('Erreur lors du test de l\'automatisation:', err);
         throw err;
       }
+    },
+    loading,
+    error,
+  };
+};
+
+export const useRunDocumentAutomation = () => {
+  const [runMutation, { loading, error }] = useMutation(RUN_DOCUMENT_AUTOMATION);
+
+  return {
+    runAutomation: async (workspaceId, id) => {
+      try {
+        const { data } = await runMutation({
+          variables: { workspaceId, id },
+          refetchQueries: [{ query: GET_DOCUMENT_AUTOMATIONS, variables: { workspaceId } }],
+        });
+        return data.runDocumentAutomation;
+      } catch (err) {
+        console.error('Erreur lors de l\'exécution de l\'automatisation:', err);
+        throw err;
+      }
+    },
+    loading,
+    error,
+  };
+};
+
+export const useDocumentsForAutomation = () => {
+  const [fetchDocuments, { loading, error }] = useLazyQuery(GET_DOCUMENTS_FOR_AUTOMATION, {
+    fetchPolicy: 'network-only',
+  });
+
+  return {
+    fetchDocuments: async (workspaceId, automationId) => {
+      const { data } = await fetchDocuments({
+        variables: { workspaceId, automationId },
+      });
+      return data?.documentsForAutomation || [];
+    },
+    loading,
+    error,
+  };
+};
+
+export const useProcessAutomationDocument = () => {
+  const [processMutation, { loading, error }] = useMutation(PROCESS_AUTOMATION_DOCUMENT);
+
+  return {
+    processDocument: async (workspaceId, automationId, documentId, documentType, pdfBase64) => {
+      const { data } = await processMutation({
+        variables: { workspaceId, automationId, documentId, documentType, pdfBase64 },
+      });
+      return data?.processAutomationDocument;
     },
     loading,
     error,
