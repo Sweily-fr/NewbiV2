@@ -86,6 +86,9 @@ function generateElementHTML(element, signatureData, parentLayout = 'vertical', 
   const props = element.props || {};
   const type = element.type;
 
+  // Ne pas générer de HTML pour les éléments masqués
+  if (props.hidden === true) return '';
+
   switch (type) {
     case ELEMENT_TYPES.NAME: {
       const name = `${signatureData.firstName || ''} ${signatureData.lastName || ''}`.trim();
@@ -347,10 +350,11 @@ function generateContainerHTML(container, signatureData, depth = 0, grandparentL
   const textAlign = alignmentMap[alignment] || 'left';
   const verticalAlign = verticalAlignMap[alignment] || 'top';
 
-  // Build elements with metadata (for detecting separators)
-  const elementsWithMeta = (container.elements || []).map(element => {
+  // Build elements with metadata (for detecting separators) - exclure les éléments masqués
+  const visibleElements = (container.elements || []).filter(el => !el.props?.hidden);
+  const elementsWithMeta = visibleElements.map(element => {
     const isSeparator = element.type === ELEMENT_TYPES.SEPARATOR_LINE;
-    const isSingleElement = container.elements.length === 1;
+    const isSingleElement = visibleElements.length === 1;
     // Séparateur seul: utiliser le layout du grandparent
     const effectiveLayout = (isSeparator && isSingleElement) ? grandparentLayout : layout;
     return {

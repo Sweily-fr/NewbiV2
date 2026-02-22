@@ -29,8 +29,10 @@ import { useQuery } from "@apollo/client";
 
 // Import des composants d'édition
 import BlockPalette from "../blocks/BlockPalette";
-import { useOrganizationInvitations } from "@/src/hooks/useOrganizationInvitations";
 import { useSession } from "@/src/lib/auth-client";
+import { useWorkspace } from "@/src/hooks/useWorkspace";
+import { GET_ORGANIZATION_MEMBERS } from "@/src/graphql/kanbanQueries";
+import { UserAvatar } from "@/src/components/ui/user-avatar";
 import BlockSettings from "../blocks/BlockSettings";
 import { createContainerFromWidget } from "../../utils/block-registry";
 import CancelConfirmationModal from "../modals/CancelConfirmationModal";
@@ -140,37 +142,62 @@ const cleanGraphQLData = (obj) => {
 
 // Composant pour afficher les utilisateurs de l'organisation
 function UsersTab() {
-  const { getAllCollaborators, loading } = useOrganizationInvitations();
   const { data: session } = useSession();
-  const [users, setUsers] = useState([]);
-  const [selectedUsers, setSelectedUsers] = useState([]);
-  const [hasFetched, setHasFetched] = useState(false);
+  const { workspaceId } = useWorkspace();
+  const { setSignatureData } = useSignatureData();
+  const [selectedUserId, setSelectedUserId] = useState(null);
 
+  // Utiliser la même query GraphQL que le kanban pour récupérer les membres avec avatars
+  const { data, loading } = useQuery(GET_ORGANIZATION_MEMBERS, {
+    variables: { workspaceId },
+    skip: !workspaceId,
+  });
+
+  // Formater et trier les membres (utilisateur connecté en premier)
+  const members = React.useMemo(() => {
+    if (!data?.organizationMembers) return [];
+    const currentUserId = session?.user?.id;
+    const sorted = [...data.organizationMembers].sort((a, b) => {
+      if (a.id === currentUserId) return -1;
+      if (b.id === currentUserId) return 1;
+      return 0;
+    });
+    return sorted;
+  }, [data?.organizationMembers, session?.user?.id]);
+
+  // Pré-sélectionner l'utilisateur connecté au premier chargement
   useEffect(() => {
-    if (hasFetched) return;
-
-    const fetchUsers = async () => {
-      const result = await getAllCollaborators();
-      if (result.success) {
-        // Filtrer pour ne garder que les membres (pas les invitations en attente)
-        // et exclure l'utilisateur connecté
-        const currentUserId = session?.user?.id;
-        const members = result.data.filter(
-          (item) => item.type === "member" && item.userId !== currentUserId
-        );
-        setUsers(members);
-        setHasFetched(true);
+    if (members.length > 0 && selectedUserId === null) {
+      const currentUserId = session?.user?.id;
+      const currentMember = members.find(m => m.id === currentUserId);
+      if (currentMember) {
+        setSelectedUserId(currentMember.id);
       }
-    };
-    fetchUsers();
-  }, [hasFetched, session?.user?.id]);
+    }
+  }, [members, session?.user?.id, selectedUserId]);
 
-  const toggleUserSelection = (userId) => {
-    setSelectedUsers((prev) =>
-      prev.includes(userId)
-        ? prev.filter((id) => id !== userId)
-        : [...prev, userId]
-    );
+  // Sélectionner un utilisateur et mettre à jour les données de la signature
+  const handleSelectUser = (member) => {
+    if (selectedUserId === member.id) return;
+
+    setSelectedUserId(member.id);
+
+    const name = member.name || "";
+    const nameParts = name.split(" ");
+    const firstName = nameParts[0] || "";
+    const lastName = nameParts.slice(1).join(" ") || "";
+    const email = member.email || "";
+    const avatar = member.image || null;
+
+    setSignatureData((prev) => ({
+      ...prev,
+      firstName,
+      lastName,
+      fullName: name,
+      email,
+      photo: avatar || null,
+      photoVisible: !!avatar,
+    }));
   };
 
   if (loading) {
@@ -181,14 +208,14 @@ function UsersTab() {
     );
   }
 
-  if (users.length === 0) {
+  if (members.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
         <div className="w-12 h-12 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center mb-4">
           <Users className="w-6 h-6 text-neutral-400" />
         </div>
         <h3 className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-          Aucun utilisateur
+          Aucun membre
         </h3>
         <p className="text-xs text-neutral-500 max-w-[200px]">
           Invitez des membres à votre organisation pour leur attribuer cette signature
@@ -200,88 +227,58 @@ function UsersTab() {
   return (
     <div className="space-y-3">
       <div className="text-xs text-neutral-500 mb-2">
-        Sélectionnez les utilisateurs à qui attribuer cette signature
+        Sélectionnez un membre pour pré-remplir la signature avec ses informations
       </div>
-      {users.map((user) => {
-        const email = user.email || user.user?.email || "";
-        const name = user.user?.name || email.split("@")[0];
-        const avatar = user.user?.image || user.user?.avatar;
-        const isSelected = selectedUsers.includes(user.id);
+      {members.map((member) => {
+        const isSelected = selectedUserId === member.id;
+        const isCurrentUser = member.id === session?.user?.id;
 
         return (
           <div
-            key={user.id}
-            onClick={() => toggleUserSelection(user.id)}
+            key={member.id}
+            onClick={() => handleSelectUser(member)}
             className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
               isSelected
                 ? "border-[#5a50ff] bg-[#5a50ff]/5"
                 : "border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600"
             }`}
           >
-            {/* Avatar */}
-            <div className="w-9 h-9 rounded-full bg-neutral-200 dark:bg-neutral-700 flex items-center justify-center overflow-hidden flex-shrink-0">
-              {avatar ? (
-                <img
-                  src={avatar}
-                  alt={name}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <span className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
-                  {name.charAt(0).toUpperCase()}
-                </span>
-              )}
-            </div>
+            {/* Avatar avec UserAvatar (même composant que le kanban) */}
+            <UserAvatar
+              src={member.image}
+              name={member.name}
+              size="sm"
+              className="flex-shrink-0"
+            />
 
             {/* User info */}
             <div className="flex-1 min-w-0">
               <div className="text-sm font-medium text-neutral-800 dark:text-neutral-200 truncate">
-                {name}
+                {member.name}{isCurrentUser && <span className="text-xs text-[#5a50ff] ml-1">(Vous)</span>}
               </div>
-              <div className="text-xs text-neutral-500 truncate">{email}</div>
+              <div className="text-xs text-neutral-500 truncate">{member.email}</div>
             </div>
 
             {/* Role badge */}
             <div className="text-xs px-2 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300">
-              {user.role === "owner" ? "Admin" : user.role === "admin" ? "Admin" : "Membre"}
+              {member.role === "owner" ? "Admin" : member.role === "admin" ? "Admin" : "Membre"}
             </div>
 
-            {/* Checkbox indicator */}
+            {/* Radio indicator */}
             <div
-              className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+              className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
                 isSelected
-                  ? "border-[#5a50ff] bg-[#5a50ff]"
+                  ? "border-[#5a50ff]"
                   : "border-neutral-300 dark:border-neutral-600"
               }`}
             >
               {isSelected && (
-                <svg
-                  className="w-3 h-3 text-white"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={3}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
+                <div className="w-2.5 h-2.5 rounded-full bg-[#5a50ff]" />
               )}
             </div>
           </div>
         );
       })}
-
-      {selectedUsers.length > 0 && (
-        <div className="mt-4 p-3 bg-[#5a50ff]/5 rounded-lg border border-[#5a50ff]/20">
-          <div className="text-xs text-neutral-600 dark:text-neutral-400">
-            <span className="font-medium text-[#5a50ff]">{selectedUsers.length}</span>{" "}
-            utilisateur{selectedUsers.length > 1 ? "s" : ""} sélectionné{selectedUsers.length > 1 ? "s" : ""}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
