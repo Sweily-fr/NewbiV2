@@ -30,7 +30,7 @@ function formatFileSize(bytes) {
 function isImage(file) {
   if (file?.mimeType?.startsWith("image/")) return true;
   const ext = getFileExtension(file?.originalName);
-  return ["jpg", "jpeg", "png", "gif", "webp", "svg"].includes(ext);
+  return ["jpg", "jpeg", "png", "gif", "webp", "svg", "heic", "heif"].includes(ext);
 }
 
 // Déterminer si c'est un PDF
@@ -81,25 +81,23 @@ export function FilePreviewDrawer({
         className="w-full sm:max-w-[50%] p-0 flex flex-col bg-white border-r-0"
       >
         <div className="flex flex-col h-full">
-          {/* Header - Style WeTransfer */}
-          <div className="px-8 pt-16 pb-6">
-            {/* Titre */}
-            <div className="flex items-start justify-between gap-6">
-              <h1 className="text-3xl font-bold text-gray-800 leading-tight break-all">
-                {file.originalName}
-              </h1>
-            </div>
-
-            {/* Infos sous le titre */}
-            <div className="flex items-center gap-4 mt-3 text-sm text-gray-500">
+          {/* Header */}
+          <div className="px-8 pt-5 pb-6">
+            {/* Infos fichier - alignées avec le bouton fermer */}
+            <div className="flex items-center gap-4 text-sm text-gray-500 pr-10">
               <span>
                 {ext} • {formatFileSize(file.size)}
               </span>
             </div>
+
+            {/* Titre */}
+            <h1 className="text-3xl text-gray-800 leading-tight break-all pr-10 mt-3">
+              {file.originalName}
+            </h1>
           </div>
 
           {/* Toolbar - Navigation + Toggle vue */}
-          <div className="px-8 pb-4 flex items-center justify-between">
+          <div className="px-8 pb-4 pt-2 flex items-center gap-6">
             {/* Navigation entre fichiers */}
             <div className="flex items-center gap-1">
               <button

@@ -992,7 +992,7 @@ function KanbanBoardPageContent({ params }) {
         {isBoard && (
           <div
             ref={scrollRef}
-            className="h-full overflow-x-auto overflow-y-hidden pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+            className="h-full overflow-x-auto overflow-y-hidden pb-8 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
           >
             <div
               className="h-full w-max min-w-full origin-top-left flex flex-nowrap items-start"

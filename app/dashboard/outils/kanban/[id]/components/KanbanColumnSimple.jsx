@@ -48,7 +48,7 @@ export function KanbanColumnSimple({
   columnIndex,
   zoomLevel = 1,
 }) {
-  const baseOffset = 280;
+  const baseOffset = 300;
   const maxHeight = `calc((100vh - ${baseOffset}px) / ${zoomLevel})`;
 
   return (
