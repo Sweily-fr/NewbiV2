@@ -49,6 +49,17 @@ const FranceIcon = () => (
 export default function HeroSection() {
   return (
     <div className="relative w-full overflow-hidden bg-[#FDFDFD] px-5 pb-20 md:pb-54 lg:pb-0">
+      {/* Logo facturation électronique - haut à gauche */}
+      <div className="absolute top-24 lg:top-28 left-6 lg:left-12 z-10">
+        <Link href="/produits/facturation-electronique">
+          <img
+            src="/logo-facturation-electronique.png"
+            alt="Solution compatible Facturation électronique"
+            className="h-14 sm:h-16 lg:h-20 w-auto object-contain"
+          />
+        </Link>
+      </div>
+
       {/* Conteneur principal avec max-width comme Qonto */}
       <div className="max-w-[1200px] mx-auto relative lg:block flex flex-col md:flex-row">
         {/* Grille pour le contenu texte - Structure Qonto */}

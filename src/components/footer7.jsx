@@ -277,6 +277,15 @@ const Footer7 = ({
             </div>
           </div>
         </div>
+        <div className="px-4 md:px-0 pt-4 pb-2">
+          <Link href="/produits/facturation-electronique" className="inline-block">
+            <img
+              src="/logo-facturation-electronique.png"
+              alt="Solution compatible Facturation électronique"
+              className="h-16 w-auto object-contain"
+            />
+          </Link>
+        </div>
         <div className="flex flex-col sm:flex-row sm:justify-between group/row relative isolate pt-[calc(--spacing(2)+1px)] last:pb-[calc(--spacing(2)+1px)] px-4 md:px-0 gap-4 sm:gap-0">
           <div
             aria-hidden="true"
