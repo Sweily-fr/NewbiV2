@@ -280,9 +280,9 @@ const Footer7 = ({
         <div className="px-4 md:px-0 pt-4 pb-2">
           <Link href="/produits/facturation-electronique" className="inline-block">
             <img
-              src="/logo-facturation-electronique.png"
+              src="/logo_Compatible_Facturation_electronique-footer.png"
               alt="Solution compatible Facturation électronique"
-              className="h-10 w-auto object-contain"
+              className="h-14 w-auto object-contain"
             />
           </Link>
         </div>
