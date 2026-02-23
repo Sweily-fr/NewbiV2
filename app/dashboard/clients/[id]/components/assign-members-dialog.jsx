@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -35,31 +35,37 @@ export default function AssignMembersDialog({ open, onOpenChange, client }) {
   const [loadingMembers, setLoadingMembers] = useState(false);
   const [selectedIds, setSelectedIds] = useState([]);
 
-  const fetchMembers = useCallback(async () => {
-    setLoadingMembers(true);
-    const result = await getAllCollaborators();
-    if (result.success) {
-      // Only keep active members (not invitations)
-      const activeMembers = result.data
-        .filter((c) => c.type === "member")
-        .map((m) => ({
-          id: m.userId || m.id,
-          name: m.user?.name || m.name || m.email,
-          email: m.user?.email || m.email,
-          image: m.user?.image || m.image || null,
-          role: m.role,
-        }));
-      setMembers(activeMembers);
-    }
-    setLoadingMembers(false);
-  }, [getAllCollaborators]);
+  const getAllCollaboratorsRef = useRef(getAllCollaborators);
+  getAllCollaboratorsRef.current = getAllCollaborators;
 
   useEffect(() => {
-    if (open) {
-      fetchMembers();
-      setSelectedIds(client?.assignedMembers || []);
-    }
-  }, [open, client?.assignedMembers, fetchMembers]);
+    if (!open) return;
+
+    let cancelled = false;
+
+    const fetchMembers = async () => {
+      setLoadingMembers(true);
+      const result = await getAllCollaboratorsRef.current();
+      if (!cancelled && result.success) {
+        const activeMembers = result.data
+          .filter((c) => c.type === "member")
+          .map((m) => ({
+            id: m.userId || m.id,
+            name: m.user?.name || m.name || m.email,
+            email: m.user?.email || m.email,
+            image: m.user?.image || m.image || null,
+            role: m.role,
+          }));
+        setMembers(activeMembers);
+      }
+      if (!cancelled) setLoadingMembers(false);
+    };
+
+    fetchMembers();
+    setSelectedIds(client?.assignedMembers || []);
+
+    return () => { cancelled = true; };
+  }, [open]);
 
   const toggleMember = (memberId) => {
     setSelectedIds((prev) =>

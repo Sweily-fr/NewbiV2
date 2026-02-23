@@ -241,7 +241,7 @@ export default function AnalytiquesPage() {
     <div className="flex flex-col min-h-full">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pt-4 sm:pt-6 mb-6 px-4 sm:px-6 gap-4">
-        <h1 className="text-2xl font-medium">Tableau de bord</h1>
+        <h1 className="text-2xl font-medium">Analytique</h1>
         <div className="flex flex-wrap items-center gap-2">
           {/* Client filter */}
           <DropdownMenu>
