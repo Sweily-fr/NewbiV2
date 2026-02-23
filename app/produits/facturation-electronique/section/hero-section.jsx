@@ -27,6 +27,15 @@ export function HeroSection() {
                   grâce à notre solution intégrée.
                 </h2>
 
+                {/* Logo facturation électronique */}
+                <div className="flex justify-center lg:justify-start">
+                  <img
+                    src="/logo-facturation-electronique.png"
+                    alt="Solution compatible Facturation électronique"
+                    className="h-16 sm:h-18 lg:h-20 w-auto object-contain"
+                  />
+                </div>
+
                 {/* Boutons CTA */}
                 <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-2 lg:pt-4 justify-center lg:justify-start">
                   <Link href="/auth/signup">
