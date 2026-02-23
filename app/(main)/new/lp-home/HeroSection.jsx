@@ -338,7 +338,7 @@ export default function HeroSection() {
             <div className="px-3 py-3 flex items-center justify-between">
               <Link href="/produits/facturation-electronique">
                 <img
-                  src="/logo-facturation-electronique.png"
+                  src="/logo_Compatible_Facturation_electronique-footer.png"
                   alt="Conforme Facturation électronique 2026"
                   className="h-12 w-auto object-contain"
                 />
