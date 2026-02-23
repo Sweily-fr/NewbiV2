@@ -14,6 +14,15 @@ export function HeroSection() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
               {/* Contenu texte à gauche */}
               <div className="space-y-4 lg:space-y-6 text-center lg:text-left">
+                {/* Logo facturation électronique — mobile : centré au-dessus du titre */}
+                <div className="flex justify-center lg:hidden">
+                  <img
+                    src="/logo-facturation-electronique.png"
+                    alt="Solution compatible Facturation électronique"
+                    className="h-16 sm:h-18 w-auto object-contain"
+                  />
+                </div>
+
                 <h1 className="text-balance font-normal text-4xl sm:text-5xl md:text-5xl lg:text-[3.2rem] leading-tight tracking-tight">
                   Passez à la facturation électronique
                 </h1>
