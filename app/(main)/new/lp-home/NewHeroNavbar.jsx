@@ -392,12 +392,8 @@ export function NewHeroNavbar({ hasBanner = false, solidBackground = false }) {
         {/* Mobile menu overlay - Fullscreen */}
         {menuState && (
           <div
-            className={`lg:hidden fixed inset-0 top-0 bg-white z-40 overflow-hidden transition-all duration-300`}
+            className={`lg:hidden fixed inset-0 bg-white z-50 overflow-hidden transition-all duration-300 ${hasBanner && !isScrolled ? "top-[150px] sm:top-[128px]" : "top-[70px]"}`}
           >
-            {/* Spacer to push content below the header */}
-            <div
-              className={`shrink-0 ${hasBanner && !isScrolled ? "h-[152px] sm:h-[130px]" : "h-[72px]"}`}
-            />
             <div className="flex flex-col h-full">
               {/* Menu content - Scrollable */}
               <div className="flex-1 overflow-y-auto">
