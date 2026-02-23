@@ -26,17 +26,6 @@ export function HeroSection() {
                   depuis une seule interface.
                 </h2>
 
-                {/* Logo facturation électronique */}
-                <div className="flex justify-center lg:justify-start">
-                  <Link href="/produits/facturation-electronique">
-                    <img
-                      src="/logo-facturation-electronique.png"
-                      alt="Solution compatible Facturation électronique"
-                      className="h-16 sm:h-18 lg:h-20 w-auto object-contain"
-                    />
-                  </Link>
-                </div>
-
                 {/* Boutons CTA */}
                 <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-2 lg:pt-4 justify-center lg:justify-start">
                   <Link href="/auth/signup" className="w-full sm:w-auto">
@@ -71,6 +60,17 @@ export function HeroSection() {
                         "linear-gradient(to top, #ffffff 0%, #ffffff 40%, transparent 100%)",
                     }}
                   />
+                  {/* Card logo facturation électronique */}
+                  <Link
+                    href="/produits/facturation-electronique"
+                    className="absolute bottom-16 -left-14 z-50 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex items-center px-5 py-4 gap-2 hover:shadow-md transition-shadow"
+                  >
+                    <img
+                      src="/logo-facturation-electronique.png"
+                      alt="Conforme Facturation électronique 2026"
+                      className="h-12 w-auto object-contain"
+                    />
+                  </Link>
                 </div>
               </div>
             </div>

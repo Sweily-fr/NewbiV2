@@ -282,7 +282,7 @@ const Footer7 = ({
             <img
               src="/logo-facturation-electronique.png"
               alt="Solution compatible Facturation électronique"
-              className="h-16 w-auto object-contain"
+              className="h-10 w-auto object-contain"
             />
           </Link>
         </div>

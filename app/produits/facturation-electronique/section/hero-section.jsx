@@ -27,15 +27,6 @@ export function HeroSection() {
                   grâce à notre solution intégrée.
                 </h2>
 
-                {/* Logo facturation électronique */}
-                <div className="flex justify-center lg:justify-start">
-                  <img
-                    src="/logo-facturation-electronique.png"
-                    alt="Solution compatible Facturation électronique"
-                    className="h-16 sm:h-18 lg:h-20 w-auto object-contain"
-                  />
-                </div>
-
                 {/* Boutons CTA */}
                 <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-2 lg:pt-4 justify-center lg:justify-start">
                   <Link href="/auth/signup">
@@ -62,6 +53,15 @@ export function HeroSection() {
               <div className="relative flex items-center justify-center lg:items-end lg:justify-end overflow-visible pt-8 lg:pt-24">
                 <div className="relative w-full lg:w-[700px] xl:w-[800px] lg:-mr-32 xl:-mr-48">
                   <FacturationElectroniqueAnimation />
+
+                  {/* Card logo facturation électronique */}
+                  <div className="absolute bottom-4 left-0 z-50 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex items-center px-3 py-2.5 gap-2">
+                    <img
+                      src="/logo-facturation-electronique.png"
+                      alt="Conforme Facturation électronique 2026"
+                      className="h-10 w-auto object-contain"
+                    />
+                  </div>
 
                   {/* iPhone Animation en bas à gauche */}
                   <div className="absolute -bottom-8 -left-10 xl:-left-15 w-[160px] xl:w-[180px] z-50">

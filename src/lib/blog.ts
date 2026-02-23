@@ -29,10 +29,8 @@ function calculateReadTime(content: string): number {
 }
 
 function stripImports(content: string): string {
-  return content
-    .split("\n")
-    .filter((line) => !line.trimStart().startsWith("import "))
-    .join("\n");
+  // Remove single-line imports AND multi-line imports (import { ... } from "...")
+  return content.replace(/^import\s[\s\S]*?from\s+["'][^"']+["'];?\s*$/gm, "");
 }
 
 function parsePost(slug: string): BlogPost | null {
