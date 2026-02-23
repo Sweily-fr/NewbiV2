@@ -392,8 +392,12 @@ export function NewHeroNavbar({ hasBanner = false, solidBackground = false }) {
         {/* Mobile menu overlay - Fullscreen */}
         {menuState && (
           <div
-            className={`lg:hidden fixed inset-0 bg-white z-50 overflow-hidden transition-all duration-300 ${hasBanner && !isScrolled ? "top-[152px] sm:top-[130px]" : "top-[72px]"}`}
+            className={`lg:hidden fixed inset-0 top-0 bg-white z-40 overflow-hidden transition-all duration-300`}
           >
+            {/* Spacer to push content below the header */}
+            <div
+              className={`shrink-0 ${hasBanner && !isScrolled ? "h-[152px] sm:h-[130px]" : "h-[72px]"}`}
+            />
             <div className="flex flex-col h-full">
               {/* Menu content - Scrollable */}
               <div className="flex-1 overflow-y-auto">
@@ -499,13 +503,13 @@ export function NewHeroNavbar({ hasBanner = false, solidBackground = false }) {
               </div>
 
               {/* Buttons at bottom - Fixed */}
-              <div className="px-6 pb-8 pt-6 bg-gray-50 border-t border-gray-100">
-                <div className="flex flex-col space-y-3">
+              <div className="px-6 pb-6 pt-4 bg-gray-50 border-t border-gray-100">
+                <div className="flex flex-col space-y-2.5">
                   {isLoggedIn ? (
                     <Button
                       asChild
-                      size="lg"
-                      className="w-full rounded-xl py-6 text-base bg-[#202020]"
+                      size="md"
+                      className="w-full rounded-lg text-sm bg-[#202020]"
                     >
                       <Link
                         href="/dashboard"
@@ -519,8 +523,8 @@ export function NewHeroNavbar({ hasBanner = false, solidBackground = false }) {
                     <>
                       <Button
                         asChild
-                        size="lg"
-                        className="w-full rounded-xl py-6 text-base bg-[#202020]"
+                        size="md"
+                        className="w-full rounded-lg text-sm bg-[#202020]"
                       >
                         <Link
                           href="/auth/signup"
@@ -533,8 +537,8 @@ export function NewHeroNavbar({ hasBanner = false, solidBackground = false }) {
                       <Button
                         asChild
                         variant="outline"
-                        size="lg"
-                        className="w-full rounded-xl py-6 text-base border-gray-300"
+                        size="md"
+                        className="w-full rounded-lg text-sm border-gray-300"
                       >
                         <Link
                           href="/auth/login"
