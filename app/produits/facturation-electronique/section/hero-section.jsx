@@ -17,7 +17,7 @@ export function HeroSection() {
                 {/* Logo facturation électronique — mobile : centré au-dessus du titre */}
                 <div className="flex justify-center lg:hidden">
                   <img
-                    src="/logo-facturation-electronique.png"
+                    src="/logo_Compatible_Facturation_electronique-footer.png"
                     alt="Solution compatible Facturation électronique"
                     className="h-16 sm:h-18 w-auto object-contain"
                   />
@@ -66,7 +66,7 @@ export function HeroSection() {
                   {/* Card logo facturation électronique */}
                   <div className="absolute bottom-4 left-0 z-50 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex items-center px-3 py-2.5 gap-2">
                     <img
-                      src="/logo-facturation-electronique.png"
+                      src="/logo_Compatible_Facturation_electronique-footer.png"
                       alt="Conforme Facturation électronique 2026"
                       className="h-10 w-auto object-contain"
                     />

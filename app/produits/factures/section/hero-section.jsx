@@ -66,7 +66,7 @@ export function HeroSection() {
                     className="absolute bottom-16 -left-14 z-50 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex items-center px-5 py-4 gap-2 hover:shadow-md transition-shadow"
                   >
                     <img
-                      src="/logo-facturation-electronique.png"
+                      src="/logo_Compatible_Facturation_electronique-footer.png"
                       alt="Conforme Facturation électronique 2026"
                       className="h-12 w-auto object-contain"
                     />
