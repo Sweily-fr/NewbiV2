@@ -315,8 +315,8 @@ export function NewHeroNavbar({ hasBanner = false, solidBackground = false }) {
                               </p>
                               <div className="flex-1 flex items-center justify-center mb-6">
                                 <img
-                                  src="/undraw_key-points_iiic.svg"
-                                  alt="Facturation Électronique"
+                                  src="/logo-facturation-electronique.png"
+                                  alt="Solution compatible Facturation électronique"
                                   className="w-48 h-auto object-contain"
                                 />
                               </div>
