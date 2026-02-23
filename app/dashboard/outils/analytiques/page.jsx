@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useDashboardData } from "@/src/hooks/useDashboardData";
+import { useTreasuryForecastData } from "@/src/hooks/useTreasuryForecast";
+import { AnalyticsTreasuryBalanceChart } from "./components/analytics-treasury-balance-chart";
 import { useQuery } from "@apollo/client";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { useFinancialAnalytics } from "@/src/hooks/useFinancialAnalytics";
@@ -51,6 +54,8 @@ import { AnalyticsOverdueTable } from "./components/analytics-overdue-table";
 import { AnalyticsAgingChart } from "./components/analytics-aging-chart";
 import { AnalyticsCollectionChart } from "./components/analytics-collection-chart";
 import { AnalyticsExpenseDetailTable } from "./components/analytics-expense-detail-table";
+import { AnalyticsTreasuryForecastChart } from "./components/analytics-treasury-forecast-chart";
+import { AnalyticsBankFlowChart } from "./components/analytics-bank-flow-chart";
 
 const STATUS_OPTIONS = [
   { value: "PENDING", label: "En attente", color: "bg-amber-400" },
@@ -103,6 +108,13 @@ const RENTABILITE_KPI = [
   { key: "averageInvoiceHT", label: "Panier moyen", tooltip: "CA HT / Nombre de factures" },
 ];
 
+const TRESORERIE_BANK_KPI = [
+  { key: "bankBalance", label: "Solde bancaire", tooltip: "Solde actuel de tous les comptes connectés" },
+  { key: "burnRate", label: "Burn rate mensuel", tooltip: "Moyenne des sorties bancaires sur les 3 derniers mois", invertTrend: true },
+  { key: "runway", label: "Runway", format: (v) => `${Math.round(v || 0)} mois`, tooltip: "Nombre de mois de trésorerie restants au rythme actuel" },
+  { key: "projectedBalance", label: "Solde projeté (3 mois)", tooltip: "Solde estimé dans 3 mois basé sur les prévisions" },
+];
+
 const TRESORERIE_KPI = [
   { key: "outstandingReceivables", label: "Créances en cours", tooltip: "Somme des factures en attente et en retard" },
   { key: "overdueAmount", label: "Factures en retard", tooltip: "Factures dont la date d'échéance est dépassée" },
@@ -150,6 +162,55 @@ export default function AnalytiquesPage() {
       status: statusFilter,
     }
   );
+
+  // Bank data
+  const {
+    bankTransactions,
+    bankAccounts,
+    bankBalance,
+    totalIncome,
+    totalExpenses,
+    isLoading: bankLoading,
+  } = useDashboardData();
+
+  // Treasury forecast (6 months: 3 past + 3 future)
+  const forecastStart = useMemo(() => {
+    const d = new Date();
+    d.setMonth(d.getMonth() - 3);
+    return d.toISOString().slice(0, 10);
+  }, []);
+  const forecastEnd = useMemo(() => {
+    const d = new Date();
+    d.setMonth(d.getMonth() + 3);
+    return d.toISOString().slice(0, 10);
+  }, []);
+
+  const { forecastData, loading: forecastLoading } = useTreasuryForecastData(
+    forecastStart,
+    forecastEnd
+  );
+
+  // Bank KPI calculations
+  const bankKpi = useMemo(() => {
+    const threeMonthsAgo = new Date();
+    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+    const recentExpenses =
+      bankTransactions?.filter(
+        (t) => t.amount < 0 && new Date(t.date) >= threeMonthsAgo
+      ) || [];
+    const burnRate =
+      recentExpenses.length > 0
+        ? Math.abs(recentExpenses.reduce((s, t) => s + t.amount, 0)) / 3
+        : 0;
+    const runway = burnRate > 0 ? (bankBalance || 0) / burnRate : 99;
+
+    return {
+      bankBalance: bankBalance || 0,
+      burnRate,
+      runway: Math.min(runway, 99),
+      projectedBalance: forecastData?.kpi?.projectedBalance3Months || 0,
+    };
+  }, [bankTransactions, bankBalance, forecastData]);
 
   const selectedClientLabel = useMemo(() => {
     if (clientFilter.length === 0) return "Tous les clients";
@@ -410,14 +471,67 @@ export default function AnalytiquesPage() {
 
           {/* ===== Tab 3 — TRESORERIE & RECOUVREMENT ===== */}
           <TabsContent value="tresorerie" className="space-y-8">
-            {/* KPI Cards */}
+            {/* Bank KPI Cards */}
+            <div className="px-4 sm:px-6">
+              <AnalyticsKpiRow
+                config={TRESORERIE_BANK_KPI}
+                kpi={bankKpi}
+                loading={bankLoading}
+              />
+            </div>
+
+            <Separator />
+
+            {/* Treasury balance chart (without Card wrapper) */}
+            <div className="px-4 sm:px-6">
+              <AnalyticsTreasuryBalanceChart
+                bankTransactions={bankTransactions || []}
+                initialBalance={bankBalance || 0}
+                loading={bankLoading}
+              />
+            </div>
+
+            <Separator />
+
+            {/* Forecast Chart */}
+            <div className="px-4 sm:px-6">
+              <AnalyticsTreasuryForecastChart
+                forecastData={forecastData}
+                loading={forecastLoading}
+              />
+            </div>
+
+            <Separator />
+
+            {/* Bank Flow + Collection side by side */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 px-4 sm:px-6">
+              <AnalyticsBankFlowChart
+                monthlyRevenue={analyticsData?.monthlyRevenue}
+                bankTransactions={bankTransactions}
+                loading={loading || bankLoading}
+              />
+              <AnalyticsCollectionChart
+                monthlyCollection={analyticsData?.collection?.monthlyCollection}
+                loading={loading}
+              />
+            </div>
+
+            <Separator />
+
+            {/* Section separator */}
+            <div className="px-4 sm:px-6">
+              <h2 className="text-lg font-medium text-muted-foreground">
+                Analyse du recouvrement
+              </h2>
+            </div>
+
+            {/* Recovery KPI Cards */}
             <div className="px-4 sm:px-6">
               <AnalyticsKpiRow
                 config={TRESORERIE_KPI}
                 kpi={analyticsData?.kpi}
                 previousPeriod={analyticsData?.previousPeriod}
                 loading={loading}
-
               />
             </div>
 
@@ -431,16 +545,6 @@ export default function AnalytiquesPage() {
               />
               <AnalyticsAgingChart
                 agingBuckets={analyticsData?.collection?.agingBuckets}
-                loading={loading}
-              />
-            </div>
-
-            <Separator />
-
-            {/* Collection Chart */}
-            <div className="px-4 sm:px-6">
-              <AnalyticsCollectionChart
-                monthlyCollection={analyticsData?.collection?.monthlyCollection}
                 loading={loading}
               />
             </div>
