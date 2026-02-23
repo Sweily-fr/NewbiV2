@@ -11,6 +11,7 @@ const IMAGE_SCRIPT = path.join(__dirname, "generate-blog-images.py");
 const imagesOnly = process.argv.includes("--images-only");
 const skipImages = process.argv.includes("--skip-images");
 const forceImages = process.argv.includes("--force-images");
+const ignoreLinks = process.argv.includes("--ignore-links");
 const forceFlag = forceImages ? " --force" : "";
 const count = imagesOnly ? 0 : (parseInt(process.argv[2], 10) || 3);
 
@@ -55,9 +56,57 @@ if (imagesOnly) {
   process.exit(0);
 }
 
+// Build set of already-published slugs
+function getPublishedSlugs() {
+  const slugs = new Set();
+  for (const slug of queue.queue) {
+    const fp = path.join(BLOG_DIR, `${slug}.mdx`);
+    if (!fs.existsSync(fp)) continue;
+    const { data } = matter(fs.readFileSync(fp, "utf-8"));
+    if (data.published === true) slugs.add(slug);
+  }
+  return slugs;
+}
+
+// Validate internal /blog/ links in an article's content
+function validateInternalLinks(content, slug, publishedSlugs, batchSlugs) {
+  const linkRegex = /\[([^\]]+)\]\(\/blog\/([^)]+)\)/g;
+  const brokenLinks = [];
+  let match;
+  while ((match = linkRegex.exec(content)) !== null) {
+    const targetSlug = match[2];
+    if (
+      !publishedSlugs.has(targetSlug) &&
+      !batchSlugs.has(targetSlug) &&
+      !fs.existsSync(path.join(BLOG_DIR, `${targetSlug}.mdx`))
+    ) {
+      brokenLinks.push({ text: match[1], target: targetSlug, type: "missing" });
+    } else if (
+      !publishedSlugs.has(targetSlug) &&
+      !batchSlugs.has(targetSlug)
+    ) {
+      brokenLinks.push({ text: match[1], target: targetSlug, type: "unpublished" });
+    }
+  }
+  return brokenLinks;
+}
+
 // Normal mode: publish new articles
 const published = [];
+const publishedSlugs = getPublishedSlugs();
 
+// First pass: collect the batch of slugs we intend to publish
+const batchSlugs = new Set();
+for (const slug of queue.queue) {
+  if (batchSlugs.size >= count) break;
+  const fp = path.join(BLOG_DIR, `${slug}.mdx`);
+  if (!fs.existsSync(fp)) continue;
+  const { data } = matter(fs.readFileSync(fp, "utf-8"));
+  if (data.published === true) continue;
+  batchSlugs.add(slug);
+}
+
+// Second pass: validate links and publish
 for (const slug of queue.queue) {
   if (published.length >= count) break;
 
@@ -72,11 +121,26 @@ for (const slug of queue.queue) {
 
   if (data.published === true) continue;
 
+  // Validate internal links before publishing
+  const brokenLinks = validateInternalLinks(content, slug, publishedSlugs, batchSlugs);
+  if (brokenLinks.length > 0) {
+    console.warn(`\n⚠ ${slug}.mdx has ${brokenLinks.length} broken internal link(s):`);
+    for (const link of brokenLinks) {
+      console.warn(`  - [${link.text}](/blog/${link.target}) — ${link.type === "missing" ? "file not found" : "not yet published"}`);
+    }
+    if (!ignoreLinks) {
+      console.warn(`  → Skipping publication. Use --ignore-links to force.\n`);
+      continue;
+    }
+    console.warn(`  → Publishing anyway (--ignore-links flag used).\n`);
+  }
+
   data.published = true;
   data.publishDate = today;
 
   fs.writeFileSync(filePath, matter.stringify(content, data), "utf-8");
   published.push(slug);
+  publishedSlugs.add(slug);
   console.log(`Published: ${slug}`);
 }
 
