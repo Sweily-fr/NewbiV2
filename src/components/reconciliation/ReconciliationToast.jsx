@@ -49,21 +49,7 @@ export function ReconciliationToastProvider({ children }) {
   const [ignoredSuggestions, setIgnoredSuggestions] = useState(new Set());
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Log pour debug
-  useEffect(() => {
-    if (process.env.NODE_ENV === "development") {
-      console.log("[RECONCILIATION-TOAST] État:", {
-        suggestionsCount: suggestions?.length || 0,
-        loading,
-        error: error?.message,
-        shownCount: shownSuggestions.size,
-        ignoredCount: ignoredSuggestions.size,
-      });
-      if (suggestions?.length > 0) {
-        console.log("[RECONCILIATION-TOAST] Suggestions:", suggestions);
-      }
-    }
-  }, [suggestions, loading, error, shownSuggestions, ignoredSuggestions]);
+  // Debug log supprimé pour performance
 
   // Charger les suggestions ignorées au montage
   useEffect(() => {

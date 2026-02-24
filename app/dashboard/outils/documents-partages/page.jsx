@@ -4374,6 +4374,7 @@ export default function DocumentsPartagesPage() {
     <DocumentAutomationsModal
       open={showAutomationsModal}
       onOpenChange={setShowAutomationsModal}
+      onDocumentsChanged={() => { refetchDocs(); refetchAllDocs(); refetchTrash(); }}
     />
 
     {/* Modal de transfert depuis documents partagés */}

@@ -373,11 +373,6 @@ export function useInvoiceTable({
           label: "Échéance",
         },
         cell: ({ row }) => {
-          // Ne pas afficher d'échéance pour les factures importées
-          if (row.original._type === "imported") {
-            return <span className="text-muted-foreground">-</span>;
-          }
-
           const dateFromGetter = row.getValue("dueDate");
           const dateFromOriginal = row.original.dueDate;
           const date = dateFromGetter || dateFromOriginal;
