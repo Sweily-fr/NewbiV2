@@ -28,14 +28,14 @@ export function PersonnesSection() {
     <div className="space-y-16">
       <div>
         <h2 className="text-lg font-medium mb-1 hidden md:block">Personnes</h2>
-        <Separator className="hidden md:block" />
+        <Separator className="hidden md:block bg-[#eeeff1] dark:bg-[#232323]" />
 
         {/* Section Rôles et permissions */}
         <div className="space-y-6 mt-4 md:mt-8">
           {/* Titre section Rôles */}
           <div>
             <h3 className="text-base font-medium mb-2">Rôles et permissions</h3>
-            <Separator />
+            <Separator className="bg-[#eeeff1] dark:bg-[#232323]" />
           </div>
 
           <div className="flex items-start justify-between">

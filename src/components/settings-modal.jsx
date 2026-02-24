@@ -362,7 +362,14 @@ export function SettingsModal({
           />
         );
       case "facturation":
-        return <FacturationSection />;
+        return (
+          <FacturationSection
+            organization={organization}
+            session={session}
+            canManageSubscription={isOwner()}
+            onTabChange={handleTabChange}
+          />
+        );
       case "subscription":
         return <SubscriptionSection canManageSubscription={isOwner()} />;
       case "securite":

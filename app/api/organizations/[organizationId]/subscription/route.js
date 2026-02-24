@@ -112,6 +112,8 @@ export async function GET(request, { params }) {
       plan: subscription.plan,
       status: subscription.status,
       stripeSubscriptionId: subscription.stripeSubscriptionId,
+      stripeCustomerId: subscription.stripeCustomerId,
+      periodStart: subscription.periodStart || subscription.createdAt,
       periodEnd: subscription.periodEnd,
       cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
       isDefault: false,

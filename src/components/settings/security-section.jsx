@@ -515,7 +515,7 @@ export function SecuritySection({
     <div className="space-y-20">
       <div>
         <h2 className="text-lg font-medium mb-1 hidden md:block">Sécurité</h2>
-        <Separator className="hidden md:block" />
+        <Separator className="hidden md:block bg-[#eeeff1] dark:bg-[#232323]" />
         {!canManageOrgSettings && (
           <div className="mt-4">
             <Callout type="warning" noMargin>
@@ -532,7 +532,7 @@ export function SecuritySection({
           {/* Titre section Identité */}
           <div>
             <h3 className="text-sm font-medium mb-2">Identité</h3>
-            <Separator />
+            <Separator className="bg-[#eeeff1] dark:bg-[#232323]" />
           </div>
 
           {/* Modification nom de l'organisation */}
@@ -552,6 +552,7 @@ export function SecuritySection({
                 >
                   <DialogTrigger asChild>
                     <button
+                      type="button"
                       className="text-gray-400 underline hover:text-gray-600 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                       disabled={orgLoading || !canManageOrgSettings}
                       title={
@@ -616,7 +617,7 @@ export function SecuritySection({
             <h3 className="text-sm font-medium mb-2">
               Authentification à deux facteurs (2FA)
             </h3>
-            <Separator />
+            <Separator className="bg-[#eeeff1] dark:bg-[#232323]" />
           </div>
 
           <div className="flex items-start justify-between">
@@ -642,7 +643,7 @@ export function SecuritySection({
           {/* Titre section Sessions */}
           <div>
             <h3 className="text-sm font-medium mb-2">Paramètres de session</h3>
-            <Separator />
+            <Separator className="bg-[#eeeff1] dark:bg-[#232323]" />
           </div>
 
           <div className="flex items-start justify-between">
@@ -727,7 +728,7 @@ export function SecuritySection({
           {/* Titre section Appareils */}
           <div>
             <h3 className="text-sm font-medium mb-2">Appareils et sessions</h3>
-            <Separator />
+            <Separator className="bg-[#eeeff1] dark:bg-[#232323]" />
           </div>
 
           <div className="flex items-start justify-between">

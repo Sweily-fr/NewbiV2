@@ -207,7 +207,7 @@ export default function UserInfoSection({ onTabChange }) {
     <div className="space-y-16">
       <div>
         <h2 className="text-lg font-medium mb-1 hidden md:block">Mon compte</h2>
-        <Separator className="hidden md:block" />
+        <Separator className="hidden md:block bg-[#eeeff1] dark:bg-[#232323]" />
 
         <div className="space-y-6 mt-4 md:mt-8">
           {/* Section Informations personnelles */}
@@ -215,7 +215,7 @@ export default function UserInfoSection({ onTabChange }) {
             <h3 className="text-sm font-medium mb-2">
               Informations personnelles
             </h3>
-            <Separator />
+            <Separator className="bg-[#eeeff1] dark:bg-[#232323]" />
           </div>
 
           <div className="flex items-start gap-6 mb-6">
@@ -252,7 +252,7 @@ export default function UserInfoSection({ onTabChange }) {
         <div className="space-y-6 mt-8">
           <div>
             <h3 className="text-sm font-medium mb-2">Sécurité du compte</h3>
-            <Separator />
+            <Separator className="bg-[#eeeff1] dark:bg-[#232323]" />
           </div>
 
           {/* E-mail */}
@@ -437,7 +437,7 @@ export default function UserInfoSection({ onTabChange }) {
             <h3 className="text-sm font-medium mb-2">
               Désactivation du compte
             </h3>
-            <Separator />
+            <Separator className="bg-[#eeeff1] dark:bg-[#232323]" />
           </div>
 
           {/* Avertissement pour les utilisateurs premium */}

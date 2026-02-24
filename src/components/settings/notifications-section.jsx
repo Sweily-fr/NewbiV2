@@ -428,7 +428,7 @@ export function NotificationsSection() {
       <div className="flex items-center justify-between">
         <div className="flex-1 hidden md:block">
           <h2 className="text-lg font-medium mb-1">Notifications</h2>
-          <Separator />
+          <Separator className="bg-[#eeeff1] dark:bg-[#232323]" />
         </div>
         {(unreadInvitationsCount > 0 || unreadSentInvitationsCount > 0) && (
           <Button
@@ -822,7 +822,7 @@ export function NotificationsSection() {
 
                       {/* Séparateur entre catégories */}
                       {categoryKey !== "team" && (
-                        <Separator className="mt-10" />
+                        <Separator className="mt-10 bg-[#eeeff1] dark:bg-[#232323]" />
                       )}
                     </div>
                   );

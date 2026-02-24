@@ -94,7 +94,7 @@ import {
 import Link from "next/link";
 import { InviteMemberModal } from "./invite-member-modal";
 import { SettingsModal } from "./settings-modal";
-import { CreateWorkspaceModal } from "./create-workspace-modal";
+
 import { RenameOrganizationModal } from "./rename-organization-modal";
 import { apolloClient } from "@/src/lib/apolloClient";
 import { toast } from "@/src/components/ui/sonner";
@@ -129,7 +129,7 @@ export function TeamSwitcher() {
   const pathname = usePathname();
   const [inviteDialogOpen, setInviteDialogOpen] = React.useState(false);
   const [settingsModalOpen, setSettingsModalOpen] = React.useState(false);
-  const [createWorkspaceOpen, setCreateWorkspaceOpen] = React.useState(false);
+
   const [renameModalOpen, setRenameModalOpen] = React.useState(false);
   const [selectedOrganization, setSelectedOrganization] = React.useState(null);
   const [settingsInitialTab, setSettingsInitialTab] =
@@ -416,7 +416,7 @@ export function TeamSwitcher() {
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                onClick={() => setCreateWorkspaceOpen(true)}
+                onClick={() => router.push('/create-workspace')}
                 className="gap-2 p-2 cursor-pointer text-[#5b4fff]"
               >
                 <Plus className="h-2 w-2 text-[#202020]" />
@@ -493,17 +493,6 @@ export function TeamSwitcher() {
         open={settingsModalOpen}
         onOpenChange={setSettingsModalOpen}
         initialTab={settingsInitialTab}
-      />
-      <CreateWorkspaceModal
-        open={createWorkspaceOpen}
-        onOpenChange={setCreateWorkspaceOpen}
-        onSuccess={() => {
-          // Rafraîchir les organisations
-          loadOrganizations();
-          if (refetchActiveOrg) {
-            refetchActiveOrg();
-          }
-        }}
       />
       <RenameOrganizationModal
         open={renameModalOpen}
