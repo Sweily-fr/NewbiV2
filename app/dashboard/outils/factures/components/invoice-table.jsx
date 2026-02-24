@@ -165,7 +165,7 @@ export default function InvoiceTable({
       // Mapper les champs pour compatibilité avec le tableau
       client: { name: inv.client?.name || inv.vendor?.name || "Client inconnu" },
       issueDate: inv.invoiceDate,
-      dueDate: null,
+      dueDate: inv.dueDate,
       total: inv.totalTTC,
     }));
 
