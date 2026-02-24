@@ -119,7 +119,7 @@ export async function POST(request) {
       cancelUrl = `${baseUrl}/onboarding?step=4&canceled=true`;
     } else if (isNewOrganization) {
       successUrl = `${baseUrl}/dashboard?org_created=true&payment_success=true`;
-      cancelUrl = `${baseUrl}/dashboard`;
+      cancelUrl = `${baseUrl}/create-workspace/payment-error`;
     } else {
       successUrl = `${baseUrl}/dashboard?subscription_success=true`;
       cancelUrl = `${baseUrl}/dashboard`;

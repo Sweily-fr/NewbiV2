@@ -447,7 +447,7 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
     <div className="space-y-8">
       <div>
         <h2 className="text-lg font-medium mb-1">Comptes bancaires</h2>
-        <Separator className="hidden md:block" />
+        <Separator className="hidden md:block bg-[#eeeff1] dark:bg-[#232323]" />
         {!canManageOrgSettings && (
           <div className="mt-4">
             <Callout type="warning" noMargin>
@@ -642,6 +642,7 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
                         )}
                       </span>
                       <button
+                        type="button"
                         onClick={() => toggleIbanVisibility(accountId)}
                         className="text-muted-foreground hover:text-foreground transition-colors"
                       >
@@ -786,6 +787,7 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
               <div className="space-y-2">
                 {filteredInstitutions.map((bank) => (
                   <button
+                    type="button"
                     key={bank.id}
                     onClick={() => handleSelectBank(bank)}
                     disabled={isConnecting}
