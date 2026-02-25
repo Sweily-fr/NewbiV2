@@ -13,13 +13,33 @@ import { ConfirmationForm } from "@/src/components/create-workspace/confirmation
 export default function CreateWorkspacePage() {
   const router = useRouter();
   const { data: session, isPending } = authClient.useSession();
-  const [step, setStep] = useState(1);
-  const [companyName, setCompanyName] = useState("");
-  const [companyData, setCompanyData] = useState(null);
+  // Restore from sessionStorage on mount
+  const STORAGE_KEY = "create-workspace-data";
+  const getSavedState = () => {
+    try {
+      const saved = sessionStorage.getItem(STORAGE_KEY);
+      return saved ? JSON.parse(saved) : null;
+    } catch { return null; }
+  };
+  const savedState = typeof window !== "undefined" ? getSavedState() : null;
+
+  const [step, setStep] = useState(savedState?.step || 1);
+  const [companyName, setCompanyName] = useState(savedState?.companyName || "");
+  const [companyData, setCompanyData] = useState(savedState?.companyData || null);
   const [isNameFocused, setIsNameFocused] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState(null);
-  const [isAnnual, setIsAnnual] = useState(false);
-  const [emails, setEmails] = useState(["", ""]);
+  const [selectedPlan, setSelectedPlan] = useState(savedState?.selectedPlan || null);
+  const [isAnnual, setIsAnnual] = useState(savedState?.isAnnual ?? true);
+  const [members, setMembers] = useState(savedState?.members || [{ email: "", role: "member" }, { email: "", role: "member" }]);
+  const [logoUrl, setLogoUrl] = useState(savedState?.logoUrl || null);
+
+  // Persist form state to sessionStorage on change
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
+        step, companyName, companyData, selectedPlan, isAnnual, members, logoUrl,
+      }));
+    } catch { /* ignore quota errors */ }
+  }, [step, companyName, companyData, selectedPlan, isAnnual, members, logoUrl]);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -68,6 +88,8 @@ export default function CreateWorkspacePage() {
               companyName={companyName}
               setCompanyName={setCompanyName}
               setCompanyData={setCompanyData}
+              logoUrl={logoUrl}
+              setLogoUrl={setLogoUrl}
               onNameFocus={() => setIsNameFocused(true)}
               onNameBlur={() => setIsNameFocused(false)}
               onContinue={() => setStep(2)}
@@ -82,8 +104,9 @@ export default function CreateWorkspacePage() {
             />
           ) : step === 3 ? (
             <InviteForm
-              emails={emails}
-              setEmails={setEmails}
+              members={members}
+              setMembers={setMembers}
+              selectedPlan={selectedPlan}
               onContinue={() => setStep(4)}
               onSkip={() => setStep(4)}
             />
@@ -93,7 +116,8 @@ export default function CreateWorkspacePage() {
               companyData={companyData}
               selectedPlan={selectedPlan}
               isAnnual={isAnnual}
-              emails={emails}
+              members={members}
+              logoUrl={logoUrl}
             />
           )}
 
@@ -103,8 +127,9 @@ export default function CreateWorkspacePage() {
               step={step}
               isNameFocused={isNameFocused}
               companyName={companyName}
-              emails={emails}
+              members={members}
               selectedPlan={selectedPlan}
+              logoUrl={logoUrl}
             />
           </div>
         </div>

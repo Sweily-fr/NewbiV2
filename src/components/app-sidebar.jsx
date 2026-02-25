@@ -43,6 +43,7 @@ import {
   ShoppingBasket,
   BarChart3,
   FolderOpen,
+  Command as CommandIcon,
 } from "lucide-react";
 
 import { NavDocuments } from "@/src/components/nav-documents";

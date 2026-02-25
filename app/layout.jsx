@@ -5,6 +5,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/src/components/theme-provider";
 import { ApolloWrapper } from "@/src/providers/apollo-provider";
 import { Toaster } from "@/src/components/ui/sonner";
+import { DevAnimationTrigger } from "@/src/components/dev-animation-trigger";
 // import CookieManager from "@/src/components/cookies/CookieManager";
 import "@/src/utils/clearApolloCache"; // Nettoyage du cache Apollo
 
@@ -162,6 +163,7 @@ export default function RootLayout({ children }) {
           </ThemeProvider>
         </ApolloWrapper>
         <Toaster />
+        <DevAnimationTrigger />
       </body>
     </html>
   );

@@ -97,20 +97,9 @@ export async function subscriptionMiddleware(request) {
       );
     }
 
-    // Vérifier si un cookie de session signé existe avant de rediriger
-    // En Edge Runtime, les lookups MongoDB peuvent échouer de façon transitoire
-    // Si le cookie existe, laisser passer — l'API et les validateurs côté client protègent les données
+    // En cas d'erreur DB, refuser l'accès — un cookie seul ne suffit pas
     if (isAuthRequiredRoute) {
-      const cookieHeader = request.headers.get("cookie") || "";
-      const hasSessionCookie = cookieHeader.includes("better-auth.session_token=")
-        || cookieHeader.includes("__Secure-better-auth.session_token=");
-
-      if (hasSessionCookie) {
-        console.warn("[Middleware] Erreur de validation DB mais cookie de session présent, laisser passer");
-        return NextResponse.next();
-      }
-
-      console.log("[Middleware] Erreur et pas de cookie de session, redirection vers /auth/login");
+      console.warn("[Middleware] Erreur de validation DB, redirection vers /auth/login");
       return NextResponse.redirect(new URL("/auth/login", request.url));
     }
 

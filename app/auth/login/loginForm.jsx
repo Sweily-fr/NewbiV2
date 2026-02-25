@@ -251,11 +251,6 @@ const LoginForm = () => {
           console.warn("⚠️ [LOGIN] Aucun token JWT récupéré après login");
         }
 
-        // Ne pas afficher la notification si l'utilisateur n'a pas terminé l'onboarding
-        if (ctx.data.user?.hasSeenOnboarding) {
-          toast.success("Connexion réussie");
-        }
-
         // Vérifier la limite de sessions ET définir l'organisation active en parallèle
         // Ces deux opérations sont indépendantes l'une de l'autre
         console.log("🔍 [LOGIN] Vérification sessions + organisation en parallèle...");
@@ -611,11 +606,6 @@ const LoginForm = () => {
       if (error) {
         toast.error("Code de vérification incorrect");
         return false;
-      }
-
-      // Ne pas afficher la notification si l'utilisateur n'a pas terminé l'onboarding
-      if (data?.user?.hasSeenOnboarding) {
-        toast.success("Connexion réussie");
       }
 
       // Définir l'organisation active après la vérification 2FA

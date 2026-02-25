@@ -568,7 +568,7 @@ export default function BankBalanceCard({
           <Button
             variant="outline"
             size="sm"
-            className="w-full mt-4 font-normal"
+            className="w-full mt-4"
             onClick={handleOpenModal}
             disabled={isConnecting}
           >

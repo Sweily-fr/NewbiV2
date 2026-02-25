@@ -64,10 +64,10 @@ function TableRow({ nameWidth = "w-20" }) {
 const MEMBER_COLORS = ["#F59E0B", "#EC4899", "#3B82F6", "#10B981"];
 const ROW_WIDTHS = ["w-20","w-16","w-24","w-14","w-20","w-18","w-12","w-22","w-16","w-20","w-14","w-24","w-18","w-16","w-20"];
 
-export function WorkspacePreview({ step = 1, isNameFocused = false, companyName = "", emails = [], selectedPlan = null }) {
+export function WorkspacePreview({ step = 1, isNameFocused = false, companyName = "", members = [], selectedPlan = null, logoUrl = null }) {
   const displayName = companyName?.trim() || "Workspace";
   const firstLetter = displayName[0]?.toUpperCase() || "A";
-  const filledEmails = emails.filter((e) => e.trim());
+  const filledEmails = members.filter((m) => m.email.trim()).map((m) => m.email);
 
   // Transform based on step and focus state
   let transform;
@@ -76,9 +76,9 @@ export function WorkspacePreview({ step = 1, isNameFocused = false, companyName 
   } else if (step === 1 && isNameFocused) {
     transform = "translate(60px, 55px) scale(1.08)";
   } else if (step === 2 && !selectedPlan) {
-    transform = "translate(90px, -120px) scale(1.14)";
+    transform = "translate(90px, -200px) scale(1)";
   } else if (step === 2 && selectedPlan) {
-    transform = "translate(90px, -90px) scale(1.14)";
+    transform = "translate(90px, -170px) scale(1)";
   } else if (step === 3) {
     transform = "translate(-450px, 80px) scale(0.92)";
   } else {
@@ -90,7 +90,7 @@ export function WorkspacePreview({ step = 1, isNameFocused = false, companyName 
     <div className="relative h-full pt-10 pl-4 overflow-hidden">
       {/* Single unified app mockup */}
       <div
-        className="bg-white rounded-2xl shadow-[0_4px_40px_rgba(0,0,0,0.08)] origin-top-left transition-all duration-[600ms] ease-[cubic-bezier(0.4,0,0.2,1)] overflow-hidden"
+        className="bg-white rounded-2xl shadow-[0_4px_40px_rgba(0,0,0,0.08)] origin-top-left transition-all duration-[600ms] ease-[cubic-bezier(0.4,0,0.2,1)]"
         style={{ transform, width: 1000, minHeight: 900 }}
       >
         <div className="flex h-full">
@@ -98,20 +98,24 @@ export function WorkspacePreview({ step = 1, isNameFocused = false, companyName 
           {/* ================================ */}
           {/* SIDEBAR                          */}
           {/* ================================ */}
-          <div className="w-[195px] border-r border-[#f0f0f0] shrink-0 flex flex-col bg-[#FAFAFA]">
+          <div className="w-[195px] border-r border-[#f0f0f0] shrink-0 flex flex-col bg-[#FAFAFA] rounded-l-2xl">
 
             {/* ZONE A — Header (highlight on focus) */}
             <div
               className={`px-4 pt-4 pb-9 transition-all duration-300 ${
                 isNameFocused && step === 1
-                  ? "shadow-[inset_0_0_0_1.5px_#106BE9,inset_0_0_0_9.5px_#B9CEF5] rounded-2xl relative z-10 bg-white"
+                  ? "shadow-[0_0_0_9.5px_rgba(90,80,255,0.2),inset_0_0_0_1.5px_#5A50FF] rounded-2xl relative z-10 bg-white"
                   : "rounded-tl-2xl"
               }`}
             >
               {/* Identity row */}
               <div className="flex items-center gap-2 mb-3">
-                <div className="size-7 rounded-md bg-[#EEEFF1] flex items-center justify-center shrink-0">
-                  <span className="text-gray-500 text-xs font-semibold">{firstLetter}</span>
+                <div className="size-7 rounded-md bg-[#EEEFF1] flex items-center justify-center shrink-0 overflow-hidden">
+                  {logoUrl ? (
+                    <img src={logoUrl} alt="" className="size-full object-cover" />
+                  ) : (
+                    <span className="text-gray-500 text-xs font-semibold">{firstLetter}</span>
+                  )}
                 </div>
                 <span className="text-sm font-semibold text-gray-800 truncate max-w-[80px]">
                   {displayName}
@@ -327,11 +331,18 @@ export function WorkspacePreview({ step = 1, isNameFocused = false, companyName 
       {step === 2 && selectedPlan && (() => {
         const plan = PLANS.find((p) => p.key === selectedPlan);
         if (!plan) return null;
+        const cardPosition = {
+          freelance: { bottom: 280, left: 64 },
+          pme: { bottom: 180, left: 64 },
+          entreprise: { bottom: 80, left: 64 },
+        }[selectedPlan] || { bottom: 180, left: 64 };
         return (
           <div
             key={selectedPlan}
-            className="absolute bottom-24 left-16 w-[380px] bg-white rounded-3xl p-5 shadow-[0_0_0_1.5px_#5A50FF,0_0_0_9.5px_rgba(90,80,255,0.2),0_8px_30px_rgba(0,0,0,0.08)] z-20"
+            className="absolute w-[380px] bg-white rounded-3xl p-5 shadow-[0_0_0_1.5px_#5A50FF,0_0_0_9.5px_rgba(90,80,255,0.2),0_8px_30px_rgba(0,0,0,0.08)] z-20"
             style={{
+              bottom: cardPosition.bottom,
+              left: cardPosition.left,
               animation: "planCardIn 450ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards",
             }}
           >

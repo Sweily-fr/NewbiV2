@@ -1,11 +1,13 @@
 "use client";
 
 import { useRef, useState, useEffect, useCallback } from "react";
-import { Search, Building2, MapPin, Loader2, AlertCircle } from "lucide-react";
+import { Search, Building2, MapPin, Loader2, AlertCircle, LoaderCircle, X } from "lucide-react";
+import { useMutation } from "@apollo/client";
+import { UPLOAD_DOCUMENT, DELETE_DOCUMENT } from "@/src/graphql/mutations/documentUpload";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
-import { Avatar, AvatarFallback } from "@/src/components/ui/avatar";
+import { Avatar, AvatarImage, AvatarFallback } from "@/src/components/ui/avatar";
 import {
   Select,
   SelectContent,
@@ -13,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
+import { toast } from "@/src/components/ui/sonner";
 
 const FORME_JURIDIQUE_MAP = {
   "1000": "Entrepreneur individuel",
@@ -87,6 +90,8 @@ export function WorkspaceForm({
   companyName,
   setCompanyName,
   setCompanyData,
+  logoUrl,
+  setLogoUrl,
   onNameFocus,
   onNameBlur,
   onContinue,
@@ -98,8 +103,78 @@ export function WorkspaceForm({
   const [selectedCompany, setSelectedCompany] = useState(null);
   const [isCheckingSiret, setIsCheckingSiret] = useState(false);
   const [siretError, setSiretError] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [fileKey, setFileKey] = useState(null);
+  const [billingCountry, setBillingCountry] = useState("FR");
+
+  const [uploadDocument] = useMutation(UPLOAD_DOCUMENT);
+  const [deleteDocument] = useMutation(DELETE_DOCUMENT);
 
   const fallbackLetter = companyName?.trim()?.[0]?.toUpperCase() || "A";
+  const displayLogoUrl = previewUrl || logoUrl;
+
+  const handleFileSelect = useCallback(async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Veuillez sélectionner une image");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("L'image doit faire moins de 5 Mo");
+      return;
+    }
+
+    try {
+      setIsUploading(true);
+
+      // Delete previous upload if exists
+      if (fileKey) {
+        await deleteDocument({ variables: { key: fileKey } }).catch(() => {});
+      }
+
+      // Show local preview immediately
+      const preview = URL.createObjectURL(file);
+      setPreviewUrl(preview);
+
+      // Rename for backend folder detection (imgCompany)
+      const ext = file.name.split(".").pop();
+      const renamedFile = new File([file], `company-logo-${Date.now()}.${ext}`, {
+        type: file.type,
+      });
+
+      const result = await uploadDocument({ variables: { file: renamedFile } });
+      const data = result.data.uploadDocument;
+
+      if (data.success) {
+        setFileKey(data.key);
+        setLogoUrl(data.url);
+        toast.success("Logo uploadé avec succès");
+      } else {
+        throw new Error(data.message);
+      }
+    } catch (error) {
+      console.error("Erreur upload logo:", error);
+      toast.error("Erreur lors de l'upload du logo");
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      setPreviewUrl(null);
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }, [fileKey, deleteDocument, uploadDocument, setLogoUrl, previewUrl]);
+
+  const handleRemoveLogo = useCallback(async () => {
+    if (fileKey) {
+      await deleteDocument({ variables: { key: fileKey } }).catch(() => {});
+    }
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setPreviewUrl(null);
+    setFileKey(null);
+    setLogoUrl(null);
+  }, [fileKey, deleteDocument, previewUrl, setLogoUrl]);
 
   const searchCompanies = useCallback(async (query) => {
     if (!query || query.length < 3) {
@@ -173,6 +248,8 @@ export function WorkspaceForm({
     const codeNaf = company.activite_principale || "";
     const activityLabel = getActivityLabel(codeNaf);
 
+    const COUNTRY_MAP = { FR: "France", BE: "Belgique", CH: "Suisse", CA: "Canada", LU: "Luxembourg" };
+
     setCompanyData({
       companyName: name,
       siret,
@@ -181,7 +258,7 @@ export function WorkspaceForm({
       addressStreet: siege.adresse || "",
       addressCity: siege.libelle_commune || "",
       addressZipCode: siege.code_postal || "",
-      addressCountry: "France",
+      addressCountry: COUNTRY_MAP[billingCountry] || "France",
       activitySector: codeNaf,
       activityCategory: activityLabel,
     });
@@ -207,20 +284,43 @@ export function WorkspaceForm({
 
         {/* Logo section */}
         <div className="flex items-center gap-5 mb-10">
-          <Avatar
-            className="size-14 cursor-pointer rounded-xl border border-dashed border-[#EEEFF1]"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <AvatarFallback className="bg-[#FBFBFB] text-[#999] text-3xl font-medium rounded-xl">
-              {fallbackLetter}
-            </AvatarFallback>
-          </Avatar>
+          <div className="relative">
+            <Avatar
+              key={displayLogoUrl || "empty"}
+              className="size-14 cursor-pointer rounded-xl border border-dashed border-[#EEEFF1] transition-colors hover:border-[#5A50FF]/40"
+              onClick={() => !isUploading && fileInputRef.current?.click()}
+            >
+              {isUploading ? (
+                <AvatarFallback className="bg-[#FBFBFB] rounded-xl">
+                  <LoaderCircle className="size-5 animate-spin text-muted-foreground" />
+                </AvatarFallback>
+              ) : (
+                <>
+                  {displayLogoUrl && (
+                    <AvatarImage src={displayLogoUrl} alt="Logo" className="object-cover rounded-xl" />
+                  )}
+                  <AvatarFallback className="bg-[#FBFBFB] text-[#999] text-3xl font-medium rounded-xl">
+                    {fallbackLetter}
+                  </AvatarFallback>
+                </>
+              )}
+            </Avatar>
+            {displayLogoUrl && !isUploading && (
+              <button
+                type="button"
+                onClick={handleRemoveLogo}
+                className="absolute -top-1.5 -right-1.5 size-5 rounded-full bg-white border border-[#EEEFF1] flex items-center justify-center hover:bg-red-50 hover:border-red-200 transition-colors cursor-pointer"
+              >
+                <X className="size-3 text-muted-foreground" />
+              </button>
+            )}
+          </div>
           <div>
             <p className="text-sm font-semibold text-foreground">
               Logo de l&apos;entreprise
             </p>
             <p className="text-[13px] text-muted-foreground mt-1 leading-snug">
-              PNG, JPG ou GIF. 10 Mo max.
+              PNG, JPG ou GIF. 5 Mo max.
               <br />
               Taille recommandée : 400x400px.
             </p>
@@ -229,6 +329,7 @@ export function WorkspaceForm({
             ref={fileInputRef}
             type="file"
             accept="image/jpeg,image/png,image/gif"
+            onChange={handleFileSelect}
             className="hidden"
           />
         </div>
@@ -347,7 +448,7 @@ export function WorkspaceForm({
           <Label className="text-[13px] text-muted-foreground">
             Pays de facturation
           </Label>
-          <Select defaultValue="FR">
+          <Select value={billingCountry} onValueChange={setBillingCountry}>
             <SelectTrigger>
               <SelectValue placeholder="Sélectionner un pays" />
             </SelectTrigger>

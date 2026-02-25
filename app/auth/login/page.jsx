@@ -83,9 +83,7 @@ const signInWithProvider = async (provider) => {
   await signIn.social(
     { provider, callbackURL: "/dashboard" },
     {
-      onSuccess: () => {
-        toast.success(`Vous etes connecté avec ${provider}`);
-      },
+      onSuccess: () => {},
       onError: (error) => {
         console.error(`Erreur de connexion ${provider}:`, error);
 
