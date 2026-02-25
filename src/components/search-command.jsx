@@ -352,9 +352,7 @@ export function SearchCommand() {
               <span>Catalogues</span>
             </CommandItem>
             <CommandItem
-              onSelect={() =>
-                runCommand(() => router.push("/dashboard/collaborateurs"))
-              }
+              onSelect={() => runCommand(() => openSettings("espaces"))}
             >
               <UserCog className="mr-2 h-4 w-4" />
               <span>Collaborateurs</span>

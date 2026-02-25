@@ -1,10 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
+import { Separator } from "@/src/components/ui/separator";
+import { UserAvatar } from "@/src/components/ui/user-avatar";
+import { AvatarGroup } from "@/src/components/ui/avatar";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/src/components/ui/tooltip";
 import { authClient } from "@/src/lib/auth-client";
 import { toast } from "@/src/components/ui/sonner";
+import { useQuery } from "@apollo/client";
+import { LOOKUP_USERS_BY_EMAILS } from "@/src/graphql/queries/user";
 import { PLANS } from "@/src/components/create-workspace/plan-form";
 
 const formatPrice = (amount) => amount.toFixed(2).replace(".", ",");
@@ -14,14 +20,41 @@ export function ConfirmationForm({
   companyData,
   selectedPlan,
   isAnnual,
-  emails,
+  members,
+  logoUrl,
 }) {
   const [isCreating, setIsCreating] = useState(false);
   const { data: session } = authClient.useSession();
 
   const plan = PLANS.find((p) => p.key === selectedPlan);
   const price = plan ? (isAnnual ? plan.annualPrice : plan.monthlyPrice) : 0;
-  const filledEmails = emails.filter((e) => e.trim());
+  const filledMembers = members.filter((m) => m.email.trim());
+
+  const emails = useMemo(
+    () => filledMembers.map((m) => m.email.trim()),
+    [filledMembers]
+  );
+
+  const { data: lookupData } = useQuery(LOOKUP_USERS_BY_EMAILS, {
+    variables: { emails },
+    skip: emails.length === 0,
+  });
+
+  const avatarMap = useMemo(() => {
+    const map = {};
+    if (lookupData?.lookupUsersByEmails) {
+      for (const user of lookupData.lookupUsersByEmails) {
+        map[user.email.toLowerCase()] = user;
+      }
+    }
+    return map;
+  }, [lookupData]);
+
+  const ROLE_LABELS = {
+    admin: "Administrateur",
+    member: "Membre",
+    accountant: "Comptable",
+  };
 
   const handleCreate = async () => {
     if (!session?.user?.id) {
@@ -32,22 +65,10 @@ export function ConfirmationForm({
     setIsCreating(true);
 
     try {
-      const invitedMembers = filledEmails.map((email) => ({
-        email: email.trim(),
-        role: "member",
+      const invitedMembers = filledMembers.map((m) => ({
+        email: m.email.trim(),
+        role: m.role,
       }));
-
-      const orgData = {
-        name: companyName,
-        type: "new",
-        planName: selectedPlan,
-        isAnnual,
-        invitedMembers,
-        userId: session.user.id,
-        ...companyData,
-      };
-
-      sessionStorage.setItem("pending_org_creation", JSON.stringify(orgData));
 
       const response = await fetch("/api/create-org-subscription", {
         method: "POST",
@@ -59,6 +80,7 @@ export function ConfirmationForm({
             planName: selectedPlan,
             isAnnual,
             invitedMembers,
+            ...(logoUrl && { logo: logoUrl }),
             ...(companyData || {}),
           },
         }),
@@ -74,12 +96,12 @@ export function ConfirmationForm({
       const { url } = await response.json();
 
       if (url) {
+        sessionStorage.removeItem("create-workspace-data");
         window.location.href = url;
       }
     } catch (error) {
       console.error("Erreur création workspace:", error);
       toast.error(error.message || "Erreur lors de la création");
-      sessionStorage.removeItem("pending_org_creation");
       setIsCreating(false);
     }
   };
@@ -94,10 +116,10 @@ export function ConfirmationForm({
           Vérifiez les informations avant de continuer vers le paiement.
         </p>
 
-        {/* Summary cards */}
-        <div className="space-y-3">
+        {/* Summary sections */}
+        <div>
           {/* Workspace name */}
-          <div className="rounded-xl border border-[#EEEFF1] p-4">
+          <div className="py-4">
             <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-1">
               Espace de travail
             </p>
@@ -112,39 +134,69 @@ export function ConfirmationForm({
             )}
           </div>
 
+          <Separator className="bg-[#EEEFF1]" />
+
           {/* Plan */}
           {plan && (
-            <div className="rounded-xl border border-[#EEEFF1] p-4">
-              <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-1">
-                Abonnement
-              </p>
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-semibold text-[#46464A]">
-                  {plan.name}
+            <>
+              <div className="py-4">
+                <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-1">
+                  Abonnement
                 </p>
-                <p className="text-sm text-muted-foreground">
-                  {formatPrice(price)} €/mois
-                  <span className="text-[11px] ml-1">
-                    {isAnnual ? "(annuel)" : "(mensuel)"}
-                  </span>
-                </p>
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-semibold text-[#46464A]">
+                    {plan.name}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {formatPrice(price)} €/mois
+                    <span className="text-[11px] ml-1">
+                      {isAnnual ? "(annuel)" : "(mensuel)"}
+                    </span>
+                  </p>
+                </div>
               </div>
-            </div>
+
+              {filledMembers.length > 0 && <Separator className="bg-[#EEEFF1]" />}
+            </>
           )}
 
           {/* Members */}
-          {filledEmails.length > 0 && (
-            <div className="rounded-xl border border-[#EEEFF1] p-4">
-              <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-1">
-                Membres invités
-              </p>
-              <div className="space-y-1">
-                {filledEmails.map((email, i) => (
-                  <p key={i} className="text-sm text-[#46464A]">
-                    {email.trim()}
-                  </p>
-                ))}
+          {filledMembers.length > 0 && (
+            <div className="py-4">
+              <div className="flex items-center justify-between">
+                <p className="text-[11px] text-muted-foreground uppercase tracking-wider">
+                  Membres invités
+                </p>
+                <span className="text-xs text-muted-foreground">
+                  {filledMembers.length} membre{filledMembers.length > 1 ? "s" : ""}
+                </span>
               </div>
+              <AvatarGroup className="mt-3">
+                {filledMembers.map((m, i) => {
+                  const email = m.email.trim();
+                  const lookupUser = avatarMap[email.toLowerCase()];
+                  const displayName = lookupUser?.name || email.split("@")[0];
+
+                  return (
+                    <Tooltip key={i}>
+                      <TooltipTrigger asChild>
+                        <span>
+                          <UserAvatar
+                            src={lookupUser?.image}
+                            name={displayName}
+                            colorKey={email}
+                            size="sm"
+                            className="ring-2 ring-white cursor-pointer"
+                          />
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {email}
+                      </TooltipContent>
+                    </Tooltip>
+                  );
+                })}
+              </AvatarGroup>
             </div>
           )}
         </div>

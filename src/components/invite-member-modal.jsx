@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/src/components/ui/button";
 import {
   Select,
@@ -25,18 +25,19 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/src/components/ui/alert-dialog";
-import { X, Users, LoaderCircle, CreditCard } from "lucide-react";
+import { LoaderCircle, CreditCard, X, AlertTriangle, Users, CornerDownLeft } from "lucide-react";
 import { useOrganizationInvitations } from "@/src/hooks/useOrganizationInvitations";
-import MultipleSelector from "@/src/components/ui/multiselect";
-import { Avatar, AvatarFallback } from "@/src/components/ui/avatar";
-import { Callout } from "@/src/components/ui/callout";
+import { Progress } from "@/src/components/ui/progress";
 import { useDashboardLayoutContext } from "@/src/contexts/dashboard-layout-context";
 import { toast } from "@/src/components/ui/sonner";
 import { getPlanLimits, SEAT_PRICE } from "@/src/lib/plan-limits";
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export function InviteMemberModal({ open, onOpenChange, onSuccess, organizationId: propOrganizationId = null }) {
-  const [invitedEmails, setInvitedEmails] = useState([]);
-  const [membersWithRoles, setMembersWithRoles] = useState([]);
+  const [emails, setEmails] = useState([]);
+  const [inputValue, setInputValue] = useState("");
+  const [role, setRole] = useState("member");
   const [seatsInfo, setSeatsInfo] = useState(null);
   const [existingMembers, setExistingMembers] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -44,9 +45,20 @@ export function InviteMemberModal({ open, onOpenChange, onSuccess, organizationI
   const [paidSeatsInfo, setPaidSeatsInfo] = useState(null);
   const { inviteMember, inviting } = useOrganizationInvitations();
   const { organization: dashboardOrganization } = useDashboardLayoutContext();
+  const inputRef = useRef(null);
 
-  // Utiliser l'organizationId fourni en prop, sinon celui du dashboard
   const targetOrganizationId = propOrganizationId || dashboardOrganization?.id;
+
+  // Reset state when modal opens/closes
+  useEffect(() => {
+    if (!open) {
+      setEmails([]);
+      setInputValue("");
+      setRole("member");
+      setShowPaidSeatsConfirm(false);
+      setPaidSeatsInfo(null);
+    }
+  }, [open]);
 
   // Récupérer les informations sur les sièges et les membres existants
   useEffect(() => {
@@ -55,7 +67,6 @@ export function InviteMemberModal({ open, onOpenChange, onSuccess, organizationI
 
       setIsLoading(true);
       try {
-        // Récupérer les membres existants (comme dans espaces-section)
         const membersResponse = await fetch(
           `/api/organizations/${targetOrganizationId}/members`
         );
@@ -63,12 +74,9 @@ export function InviteMemberModal({ open, onOpenChange, onSuccess, organizationI
         if (membersResponse.ok) {
           const membersData = await membersResponse.json();
           if (membersData.success) {
-            // Extraire les emails des membres existants
-            const emails = membersData.data.map((m) => m.email?.toLowerCase());
-            setExistingMembers(emails.filter(Boolean));
+            const memberEmails = membersData.data.map((m) => m.email?.toLowerCase());
+            setExistingMembers(memberEmails.filter(Boolean));
 
-            // Calculer les infos de sièges à partir des membres
-            // Même logique que espaces-section.jsx
             const emailMap = new Map();
 
             membersData.data.forEach((item) => {
@@ -108,7 +116,6 @@ export function InviteMemberModal({ open, onOpenChange, onSuccess, organizationI
               (m) => m.role !== "owner"
             );
 
-            // Compter utilisateurs et comptables séparément
             const currentUsers = membersWithoutOwner.filter(
               (m) => m.role !== "accountant"
             ).length;
@@ -116,27 +123,17 @@ export function InviteMemberModal({ open, onOpenChange, onSuccess, organizationI
               (m) => m.role === "accountant"
             ).length;
 
-            // Récupérer le plan de l'organisation depuis la DB
             const subResponse = await fetch(
               `/api/organizations/${targetOrganizationId}/subscription`
             );
 
             let planName = "freelance";
 
-            console.log("🔍 Subscription response status:", subResponse.status);
-
             if (subResponse.ok) {
               const subData = await subResponse.json();
-              console.log("📊 Subscription data:", subData);
               planName = subData.plan?.toLowerCase() || "freelance";
-            } else {
-              console.error(
-                "❌ Erreur récupération subscription:",
-                subResponse.status
-              );
             }
 
-            // Utiliser les limites centralisées
             const planLimits = getPlanLimits(planName);
             const availableUsers = Math.max(0, planLimits.invitableUsers - currentUsers);
             const availableAccountants = Math.max(
@@ -156,16 +153,10 @@ export function InviteMemberModal({ open, onOpenChange, onSuccess, organizationI
               seatCost: SEAT_PRICE,
             });
 
-            console.log("📊 Seats info calculé:", {
-              currentUsers,
-              currentAccountants,
-              includedUsers: planLimits.users,
-              includedAccountants: planLimits.accountants,
-              availableUsers,
-              availableAccountants,
-              canAddPaidUsers: planLimits.canAddPaidUsers,
-              plan: planName,
-            });
+            // Set default role for freelance plan
+            if (planName === "freelance") {
+              setRole("accountant");
+            }
           }
         }
       } catch (error) {
@@ -180,77 +171,121 @@ export function InviteMemberModal({ open, onOpenChange, onSuccess, organizationI
     }
   }, [open, targetOrganizationId]);
 
-  // Quand on ajoute des emails, les ajouter à la liste avec un rôle par défaut
-  const handleEmailsChange = (emails) => {
-    // Filtrer les emails qui existent déjà dans l'organisation
-    const validEmails = [];
-    const duplicateEmails = [];
-
-    emails.forEach((email) => {
-      const emailValue = (email.value || email.label).toLowerCase();
-      if (existingMembers.includes(emailValue)) {
-        duplicateEmails.push(emailValue);
-      } else {
-        validEmails.push(email);
-      }
-    });
-
-    // Afficher un toast si des emails sont déjà membres
-    if (duplicateEmails.length > 0) {
-      toast.error(
-        `${duplicateEmails.length} email${duplicateEmails.length > 1 ? "s" : ""} déjà membre${duplicateEmails.length > 1 ? "s" : ""} de l'organisation`,
-        {
-          description: duplicateEmails.join(", "),
-        }
-      );
+  // Add email as tag
+  const addEmail = useCallback((value) => {
+    const trimmed = value.trim().toLowerCase();
+    if (!trimmed) return;
+    if (emails.includes(trimmed)) {
+      toast.error("Cet email est déjà dans la liste");
+      setInputValue("");
+      return;
     }
+    setEmails((prev) => [...prev, trimmed]);
+    setInputValue("");
+  }, [emails]);
 
-    setInvitedEmails(validEmails);
+  // Remove email tag
+  const removeEmail = useCallback((index) => {
+    setEmails((prev) => prev.filter((_, i) => i !== index));
+  }, []);
 
-    // Ajouter les nouveaux emails à la liste avec rôle par défaut
-    const newMembers = validEmails.map((email) => {
-      const existingMember = membersWithRoles.find(
-        (m) => m.email === (email.value || email.label)
-      );
-      return (
-        existingMember || {
-          email: email.value || email.label,
-          role: "member",
-        }
-      );
-    });
-
-    setMembersWithRoles(newMembers);
+  // Handle key events in the tag input
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" || e.key === "," || e.key === "Tab" || e.key === " ") {
+      e.preventDefault();
+      if (inputValue.trim()) {
+        addEmail(inputValue);
+      }
+    } else if (e.key === "Backspace" && !inputValue && emails.length > 0) {
+      removeEmail(emails.length - 1);
+    }
   };
 
-  // Changer le rôle d'un membre
-  const handleRoleChange = (email, newRole) => {
-    setMembersWithRoles((prev) =>
-      prev.map((member) =>
-        member.email === email ? { ...member, role: newRole } : member
-      )
-    );
+  // Handle paste (multiple emails separated by comma/space/newline/semicolon)
+  const handlePaste = (e) => {
+    e.preventDefault();
+    const pasteData = e.clipboardData.getData("text");
+    const pastedEmails = pasteData.split(/[,;\s\n]+/).filter(Boolean);
+    const newEmails = [];
+    for (const email of pastedEmails) {
+      const trimmed = email.trim().toLowerCase();
+      if (trimmed && !emails.includes(trimmed) && !newEmails.includes(trimmed)) {
+        newEmails.push(trimmed);
+      }
+    }
+    if (newEmails.length > 0) {
+      setEmails((prev) => [...prev, ...newEmails]);
+    }
+    setInputValue("");
   };
 
-  // Supprimer un membre
-  const handleRemoveMember = (emailToRemove) => {
-    setInvitedEmails((prev) =>
-      prev.filter((e) => (e.value || e.label) !== emailToRemove)
-    );
-    setMembersWithRoles((prev) =>
-      prev.filter((m) => m.email !== emailToRemove)
-    );
+  // Click on container focuses the input
+  const handleContainerClick = () => {
+    inputRef.current?.focus();
+  };
+
+  // Check if an email is valid
+  const isEmailValid = (email) => EMAIL_REGEX.test(email);
+
+  // Check if an email is already a member
+  const isExistingMember = (email) => existingMembers.includes(email.toLowerCase());
+
+  // Get available roles based on plan
+  const isFreelance = seatsInfo?.plan === "freelance";
+  const getAvailableRoles = () => {
+    if (isFreelance) return ["accountant"];
+    return ["member", "admin", "viewer", "accountant"];
+  };
+
+  const getRoleLabel = (r) => {
+    switch (r) {
+      case "admin": return "Administrateur";
+      case "member": return "Membre";
+      case "viewer": return "Lecteur";
+      case "accountant": return "Comptable";
+      case "owner": return "Propriétaire";
+      default: return r;
+    }
   };
 
   // Vérifier les limites et demander confirmation si sièges payants
   const handleInviteAll = async () => {
-    if (!targetOrganizationId || membersWithRoles.length === 0) return;
+    // Add current input value if any before submitting
+    let finalEmails = [...emails];
+    if (inputValue.trim()) {
+      const trimmed = inputValue.trim().toLowerCase();
+      if (!finalEmails.includes(trimmed)) {
+        finalEmails.push(trimmed);
+        setEmails(finalEmails);
+      }
+      setInputValue("");
+    }
 
-    // 1. Compter les utilisateurs et comptables dans le batch
-    const newUsers = membersWithRoles.filter((m) => m.role !== "accountant").length;
-    const newAccountants = membersWithRoles.filter((m) => m.role === "accountant").length;
+    if (!targetOrganizationId || finalEmails.length === 0) return;
 
-    // 2. Vérifier les limites AVANT d'envoyer (évite la race condition)
+    // Validate emails
+    const invalidEmails = finalEmails.filter((e) => !isEmailValid(e));
+    if (invalidEmails.length > 0) {
+      toast.error("Certaines adresses email ne sont pas valides", {
+        description: invalidEmails.join(", "),
+      });
+      return;
+    }
+
+    // Check for existing members
+    const duplicates = finalEmails.filter((e) => isExistingMember(e));
+    if (duplicates.length > 0) {
+      toast.error(
+        `${duplicates.length} email${duplicates.length > 1 ? "s" : ""} déjà membre${duplicates.length > 1 ? "s" : ""} de l'organisation`,
+        { description: duplicates.join(", ") }
+      );
+      return;
+    }
+
+    // Compter selon le rôle unique sélectionné
+    const newUsers = role !== "accountant" ? finalEmails.length : 0;
+    const newAccountants = role === "accountant" ? finalEmails.length : 0;
+
     const totalUsersAfter = (seatsInfo?.currentUsers || 0) + newUsers;
     const totalAccountantsAfter = (seatsInfo?.currentAccountants || 0) + newAccountants;
 
@@ -271,7 +306,7 @@ export function InviteMemberModal({ open, onOpenChange, onSuccess, organizationI
       return;
     }
 
-    // 3. Demander confirmation si sièges payants
+    // Demander confirmation si sièges payants
     if (usersOverLimit > 0 && seatsInfo?.canAddPaidUsers) {
       const additionalCost = usersOverLimit * SEAT_PRICE;
       setPaidSeatsInfo({
@@ -282,30 +317,29 @@ export function InviteMemberModal({ open, onOpenChange, onSuccess, organizationI
       return;
     }
 
-    // 4. Envoyer les invitations directement si pas de surcoût
-    await sendAllInvitations();
+    await sendAllInvitations(finalEmails);
   };
 
   // Envoyer toutes les invitations
-  const sendAllInvitations = async () => {
+  const sendAllInvitations = async (emailList) => {
+    const toSend = emailList || emails;
     const results = [];
     const errors = [];
 
-    for (const member of membersWithRoles) {
+    for (const email of toSend) {
       const result = await inviteMember({
-        email: member.email,
-        role: member.role,
+        email,
+        role,
         organizationId: targetOrganizationId,
       });
 
       if (result.success) {
-        results.push(member.email);
+        results.push(email);
       } else {
-        errors.push({ email: member.email, error: result.error });
+        errors.push({ email, error: result.error });
       }
     }
 
-    // Afficher le résumé
     if (errors.length > 0) {
       toast.error(
         `${errors.length} invitation(s) échouée(s)`,
@@ -317,9 +351,9 @@ export function InviteMemberModal({ open, onOpenChange, onSuccess, organizationI
       toast.success(`${results.length} invitation(s) envoyée(s)`);
     }
 
-    // Réinitialiser et fermer
-    setInvitedEmails([]);
-    setMembersWithRoles([]);
+    setEmails([]);
+    setInputValue("");
+    setRole("member");
     setShowPaidSeatsConfirm(false);
     setPaidSeatsInfo(null);
     onOpenChange(false);
@@ -328,270 +362,168 @@ export function InviteMemberModal({ open, onOpenChange, onSuccess, organizationI
     }
   };
 
-  const getRoleLabel = (role) => {
-    switch (role) {
-      case "admin":
-        return "Administrateur";
-      case "member":
-        return "Membre";
-      case "viewer":
-        return "Lecteur";
-      case "accountant":
-        return "Comptable";
-      case "owner":
-        return "Propriétaire";
-      default:
-        return role;
-    }
-  };
-
   return (
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] p-6 gap-5">
-        <DialogHeader className="space-y-2">
-          <DialogTitle className="text-base font-medium text-lg">
+      <DialogContent className="sm:max-w-[720px] p-1 gap-0 top-[40%] border-0 bg-[#efefef] overflow-hidden rounded-2xl">
+        <div className="bg-background rounded-xl overflow-hidden" style={{ boxShadow: "rgba(0, 0, 0, 0.07) 0px 0px 0px 1px" }}>
+        <DialogHeader className="px-5 pt-4 pb-3 border-b border-border/40">
+          <DialogTitle className="text-sm font-medium flex items-center gap-2">
+            <Users className="size-4" />
             Inviter des membres
           </DialogTitle>
-          <div className="space-y-3">
-            <p className="text-sm font-normal text-foreground">
-              Invitez des personnes dans votre espace :
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Tapez l'email puis appuyez sur{" "}
-              <kbd className="px-1.5 py-0.5 text-xs font-semibold bg-muted border border-border rounded">
-                Entrée
-              </kbd>{" "}
-              pour ajouter des utilisateurs et leur appliquer un rôle.
-            </p>
-          </div>
         </DialogHeader>
 
         {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <LoaderCircle className="h-8 w-8 animate-spin text-muted-foreground" />
+          <div className="flex items-center justify-center py-10">
+            <LoaderCircle className="h-5 w-5 animate-spin text-muted-foreground/50" />
           </div>
         ) : (
-          <div className="space-y-4">
-            {/* Affichage des membres actuels et sièges disponibles */}
-            {seatsInfo && (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 px-3 py-2.5 bg-muted/30 rounded-lg border border-border/50">
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                  <div className="flex-1">
-                    <p className="text-xs text-muted-foreground">
-                      <span className="font-medium text-foreground">
-                        {seatsInfo.currentUsers}
-                      </span>{" "}
-                      utilisateur{seatsInfo.currentUsers > 1 ? "s" : ""} •{" "}
-                      <span className="font-medium text-foreground">
-                        {seatsInfo.availableUsers}
-                      </span>{" "}
-                      disponible{seatsInfo.availableUsers > 1 ? "s" : ""} sur{" "}
-                      <span className="font-medium text-foreground">
-                        {seatsInfo.includedUsers}
-                      </span>
-                      {seatsInfo.canAddPaidUsers &&
-                        seatsInfo.availableUsers === 0 && (
-                          <span className="text-amber-600 dark:text-amber-400">
-                            {" "}
-                            (+7,49€/mois)
-                          </span>
-                        )}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 px-3 py-2.5 bg-muted/30 rounded-lg border border-border/50">
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                  <div className="flex-1">
-                    <p className="text-xs text-muted-foreground">
-                      <span className="font-medium text-foreground">
-                        {seatsInfo.currentAccountants}
-                      </span>{" "}
-                      comptable{seatsInfo.currentAccountants > 1 ? "s" : ""} •{" "}
-                      <span className="font-medium text-foreground">
-                        {seatsInfo.availableAccountants}
-                      </span>{" "}
-                      disponible{seatsInfo.availableAccountants > 1 ? "s" : ""}{" "}
-                      sur{" "}
-                      <span className="font-medium text-foreground">
-                        {seatsInfo.includedAccountants}
-                      </span>
-                    </p>
-                  </div>
+          <div className="space-y-3 px-5 pt-3 pb-0">
+            {/* Tag input for emails */}
+            <div className="space-y-2">
+              <label className="text-sm text-muted-foreground">
+                Envoyer l'invitation à ...
+              </label>
+              <div
+                onClick={handleContainerClick}
+                className="min-h-[90px] max-h-[160px] overflow-y-auto rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background transition-colors focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 cursor-text"
+              >
+                <div className="flex flex-wrap gap-1.5">
+                  {emails.map((email, index) => (
+                    <span
+                      key={index}
+                      className="inline-flex items-center gap-1 rounded-md bg-secondary/80 border border-border/50 px-2.5 py-1 text-sm"
+                    >
+                      {(!isEmailValid(email) || isExistingMember(email)) && (
+                        <AlertTriangle className="size-3.5 text-amber-500 shrink-0" />
+                      )}
+                      <span className="truncate max-w-[200px]">{email}</span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeEmail(index);
+                        }}
+                        className="ml-0.5 rounded-sm hover:bg-muted-foreground/20 p-0.5 shrink-0"
+                      >
+                        <X className="size-3" />
+                      </button>
+                    </span>
+                  ))}
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={inputValue}
+                    onChange={(e) => {
+                      // Auto-add if user types a comma or space after an email
+                      const val = e.target.value;
+                      if (val.endsWith(",") || val.endsWith(";")) {
+                        const email = val.slice(0, -1).trim();
+                        if (email) addEmail(email);
+                      } else {
+                        setInputValue(val);
+                      }
+                    }}
+                    onKeyDown={handleKeyDown}
+                    onPaste={handlePaste}
+                    onBlur={() => {
+                      if (inputValue.trim()) addEmail(inputValue);
+                    }}
+                    placeholder={emails.length === 0 ? "exemple@email.com" : ""}
+                    className="flex-1 min-w-[180px] bg-transparent outline-none placeholder:text-muted-foreground py-1"
+                  />
                 </div>
               </div>
-            )}
-
-            {/* Champ d'ajout d'emails */}
-            <div className="space-y-2">
-              <MultipleSelector
-                value={invitedEmails}
-                onChange={handleEmailsChange}
-                placeholder="Entrez des adresses email"
-                creatable
-                className="w-full"
-              />
             </div>
 
-            {/* Callout pour la facturation */}
-            {seatsInfo && (
-              <Callout type="neutral" noMargin>
-                <p className="text-xs">
-                  {seatsInfo.plan === "freelance" ? (
-                    <>
-                      <strong>Plan Freelance :</strong> Vous pouvez inviter{" "}
-                      <strong>{seatsInfo.includedAccountants} comptable</strong>{" "}
-                      gratuit. Pour inviter des collaborateurs, passez au plan
-                      PME ou Entreprise.
-                    </>
-                  ) : seatsInfo.availableUsers > 0 ? (
-                    <>
-                      <strong>
-                        {seatsInfo.availableUsers} siège
-                        {seatsInfo.availableUsers > 1 ? "s" : ""} utilisateur
-                      </strong>{" "}
-                      inclus dans votre abonnement. Au-delà, chaque utilisateur
-                      supplémentaire sera facturé <strong>7,49€/mois</strong>.{" "}
-                      <strong>
-                        {seatsInfo.includedAccountants} comptable
-                        {seatsInfo.includedAccountants > 1 ? "s" : ""}
-                      </strong>{" "}
-                      gratuit{seatsInfo.includedAccountants > 1 ? "s" : ""}.
-                    </>
-                  ) : (
-                    <>
-                      <strong>Limite atteinte :</strong> L'ajout d'un
-                      utilisateur sera facturé <strong>7,49€/mois</strong>.{" "}
-                      <strong>
-                        {seatsInfo.availableAccountants} comptable
-                        {seatsInfo.availableAccountants > 1 ? "s" : ""}
-                      </strong>{" "}
-                      disponible{seatsInfo.availableAccountants > 1 ? "s" : ""}.
-                    </>
-                  )}
-                </p>
-              </Callout>
-            )}
-
-            {/* Liste des membres ajoutés */}
-            {membersWithRoles.length > 0 && (
-              <div className="space-y-2">
-                <p className="text-xs font-medium text-muted-foreground">
-                  Membres à inviter ({membersWithRoles.length})
-                </p>
-                <div className="border rounded-lg divide-y max-h-[300px] overflow-y-auto">
-                  {membersWithRoles.map((member) => (
-                    <div
-                      key={member.email}
-                      className="flex items-center justify-between p-3 hover:bg-muted/50"
-                    >
-                      <div className="flex items-center gap-3 flex-1">
-                        <Avatar className="h-8 w-8">
-                          <AvatarFallback className="bg-[#5b4fff]/10 text-[#5b4fff] text-xs">
-                            {member.email[0].toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span className="text-sm">{member.email}</span>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <Select
-                          value={member.role}
-                          onValueChange={(newRole) =>
-                            handleRoleChange(member.email, newRole)
-                          }
-                        >
-                          <SelectTrigger className="w-[180px] h-8 text-xs border-none shadow-none hover:bg-muted">
-                            <SelectValue>
-                              {getRoleLabel(member.role)}
-                            </SelectValue>
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="admin">
-                              <div className="flex flex-col">
-                                <span className="font-normal text-sm">
-                                  Administrateur
-                                </span>
-                                <span className="text-xs text-muted-foreground">
-                                  Gestion complète (sauf facturation)
-                                </span>
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="member">
-                              <div className="flex flex-col">
-                                <span className="font-normal text-sm">
-                                  Membre
-                                </span>
-                                <span className="text-xs text-muted-foreground">
-                                  Création et envoi de documents
-                                </span>
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="viewer">
-                              <div className="flex flex-col">
-                                <span className="font-normal text-sm">
-                                  Lecteur
-                                </span>
-                                <span className="text-xs text-muted-foreground">
-                                  Consultation uniquement
-                                </span>
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="accountant">
-                              <div className="flex flex-col">
-                                <span className="font-normal text-sm">
-                                  Comptable
-                                </span>
-                                <span className="text-xs text-muted-foreground">
-                                  Accès finances + validation
-                                </span>
-                              </div>
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleRemoveMember(member.email)}
-                          className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
+            {/* Invite as - single role for all */}
+            <div className="space-y-2">
+              <label className="text-sm text-muted-foreground">
+                Inviter en tant que
+              </label>
+              <Select value={role} onValueChange={setRole}>
+                <SelectTrigger className="w-full">
+                  <SelectValue>{getRoleLabel(role)}</SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {getAvailableRoles().map((r) => (
+                    <SelectItem key={r} value={r}>
+                      {getRoleLabel(r)}
+                    </SelectItem>
                   ))}
-                </div>
-              </div>
-            )}
+                </SelectContent>
+              </Select>
+            </div>
 
-            {/* Boutons d'action */}
-            <div className="flex gap-2 pt-2">
+            {/* Seat usage indicators */}
+            {seatsInfo && (() => {
+              const usedUsers = (seatsInfo.currentUsers || 0) + (role !== "accountant" ? emails.length : 0);
+              const usedAccountants = (seatsInfo.currentAccountants || 0) + (role === "accountant" ? emails.length : 0);
+
+              return (
+                <div className="space-y-2">
+                  {!isFreelance && (
+                    <div className="flex items-center gap-2 px-3 py-2 bg-muted/50 rounded-lg border border-border/50">
+                      <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                      <p className="text-xs text-muted-foreground">
+                        <span className="font-medium text-foreground">
+                          {usedUsers}
+                        </span>{" "}
+                        / {seatsInfo.includedUsers} utilisateur{seatsInfo.includedUsers > 1 ? "s" : ""}
+                        {seatsInfo.includedAccountants > 0 && (
+                          <>
+                            {" "}&middot;{" "}
+                            <span className="font-medium text-foreground">
+                              {usedAccountants}
+                            </span>{" "}
+                            / {seatsInfo.includedAccountants} comptable{seatsInfo.includedAccountants > 1 ? "s" : ""}
+                          </>
+                        )}
+                      </p>
+                    </div>
+                  )}
+                  {isFreelance && (
+                    <div className="flex items-center gap-2 px-3 py-2 bg-muted/50 rounded-lg border border-border/50">
+                      <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                      <p className="text-xs text-muted-foreground">
+                        <span className="font-medium text-foreground">
+                          {usedAccountants}
+                        </span>{" "}
+                        / {seatsInfo.includedAccountants} comptable{seatsInfo.includedAccountants > 1 ? "s" : ""}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
+            {/* Send invites button - aligned right */}
+            <div className="flex justify-end border-t border-border/40 mt-3 px-5 py-3 -mx-5">
               <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setInvitedEmails([]);
-                  setMembersWithRoles([]);
-                  onOpenChange(false);
-                }}
-                className="flex-1 h-9 text-sm cursor-pointer font-normal"
-              >
-                Annuler
-              </Button>
-              <Button
+                variant="primary"
                 onClick={handleInviteAll}
-                disabled={inviting || membersWithRoles.length === 0}
-                className="flex-1 h-9 text-sm font-normal bg-[#5b4fff] hover:bg-[#5b4fff]/90 cursor-pointer text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={inviting || emails.length === 0}
+                className="gap-2"
               >
-                {inviting
-                  ? "Envoi..."
-                  : `Inviter ${membersWithRoles.length} membre${membersWithRoles.length > 1 ? "s" : ""}`}
+                {inviting ? (
+                  <>
+                    <LoaderCircle className="size-4 animate-spin" />
+                    Envoi...
+                  </>
+                ) : (
+                  <>
+                    Envoyer les invitations
+                    <kbd className="inline-flex items-center justify-center size-5 rounded bg-white/20 ml-0.5">
+                      <CornerDownLeft className="size-3" />
+                    </kbd>
+                  </>
+                )}
               </Button>
             </div>
           </div>
         )}
+        </div>
       </DialogContent>
     </Dialog>
 
@@ -629,7 +561,7 @@ export function InviteMemberModal({ open, onOpenChange, onSuccess, organizationI
             Annuler
           </AlertDialogCancel>
           <AlertDialogAction
-            onClick={sendAllInvitations}
+            onClick={() => sendAllInvitations()}
             disabled={inviting}
             className="bg-[#5b4fff] hover:bg-[#5b4fff]/90"
           >

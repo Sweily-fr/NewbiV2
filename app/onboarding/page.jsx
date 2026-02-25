@@ -34,6 +34,12 @@ function OnboardingContent() {
         const { data: session } = await authClient.getSession();
         const hasSeenOnboarding = session?.user?.hasSeenOnboarding;
 
+        // ✅ Redirect invited users to accept-invitation page
+        if (session?.user?.isInvitedUser && session?.user?.pendingInvitationId) {
+          router.push("/accept-invitation");
+          return;
+        }
+
         // ✅ Vérifier si l'utilisateur a une organisation
         let activeOrg = null;
         const { data: orgData } = await authClient.organization.getFullOrganization();
@@ -204,7 +210,6 @@ function OnboardingContent() {
     // Nouveaux champs pour le flux d'abonnement
     selectedPlan: "", // 'freelance' | 'pme' | 'entreprise'
     billingPeriod: "monthly", // 'monthly' | 'annual'
-    promoCode: "", // Code promo optionnel
   });
 
   const [isRedirectingToPayment, setIsRedirectingToPayment] = useState(false);
@@ -213,9 +218,8 @@ function OnboardingContent() {
   // Étape 1: Choix du type de compte
   // Étape 2: Nombre d'employés
   // Étape 3: Recherche d'entreprise
-  // Étape 4: Choix du plan (pleine page)
-  // Étape 5: Redirection vers paiement Stripe
-  const totalSteps = 5;
+  // Étape 4: Choix du plan (pleine page) → redirige vers Stripe
+  const totalSteps = 4;
 
   const updateFormData = (data) => {
     setFormData((prev) => ({ ...prev, ...data }));
@@ -296,7 +300,6 @@ function OnboardingContent() {
             type: "onboarding",
             planName: selectedPlan,
             isAnnual: billingPeriod === "annual",
-            promoCode: formData.promoCode,
             // Données entreprise
             companyName: formData.companyName,
             siret: formData.siret,
@@ -768,16 +771,6 @@ function OnboardingContent() {
             )}
 
             {/* Étape 4: Choix du plan - rendu en pleine page au-dessus */}
-
-            {/* Étape 5: Redirection vers paiement (état de chargement) */}
-            {currentStep === 5 && (
-              <div className="flex flex-col items-center justify-center py-12 space-y-4">
-                <LoaderCircle className="w-8 h-8 animate-spin text-[#5A50FF]" />
-                <p className="text-muted-foreground">
-                  Redirection vers le paiement...
-                </p>
-              </div>
-            )}
           </div>
         </div>
       </div>
@@ -835,15 +828,7 @@ function OnboardingContent() {
             />
           )}
 
-          {/* Étape 5: Redirection vers paiement (état de chargement) */}
-          {currentStep === 5 && (
-            <div className="flex flex-col items-center justify-center py-12 space-y-4">
-              <LoaderCircle className="w-8 h-8 animate-spin text-[#5A50FF]" />
-              <p className="text-muted-foreground">
-                Redirection vers le paiement...
-              </p>
-            </div>
-          )}
+          {/* Étape 4 redirige directement vers Stripe via handlePaymentRedirect */}
         </div>
       </div>
     </main>

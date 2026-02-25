@@ -6,7 +6,10 @@ import {
   Plus,
   Crown,
   Settings,
+  UserCog,
   Users,
+  Layers,
+  LayoutGrid,
   Check,
   LogOut,
   GripVertical,
@@ -400,83 +403,86 @@ export function TeamSwitcher() {
               </SidebarMenuButton>
             </DropdownMenuTrigger>
             <DropdownMenuContent
-              className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
+              className="rounded-lg"
+              style={{ minWidth: 290 }}
               align="start"
-              side={isMobile ? "bottom" : "right"}
+              side={isMobile || !isCollapsed ? "bottom" : "right"}
               sideOffset={4}
             >
               <DropdownMenuLabel className="text-muted-foreground text-xs">
                 Organisation active
               </DropdownMenuLabel>
-              <DropdownMenuItem className="gap-2 p-2">
-                <Boxes className="size-3 text-[#707070]" />
-                <span className="text-xs font-normal text-[#202020]">
-                  {currentOrganization.name}
-                </span>
+              <DropdownMenuItem className="gap-2 p-2 rounded-sm">
+                <Boxes className="size-4 text-[#505154]" />
+                <span className="text-[13px] font-medium">{currentOrganization.name}</span>
               </DropdownMenuItem>
-              <DropdownMenuSeparator />
+              <DropdownMenuSeparator className="bg-[#EEEFF1]" />
+              <DropdownMenuItem
+                onClick={() => {
+                  setSettingsInitialTab("user-info");
+                  setSettingsModalOpen(true);
+                }}
+                className="gap-2 p-2 rounded-sm cursor-pointer"
+              >
+                <UserCog className="size-4 text-[#505154]" />
+                <span className="text-[13px] font-medium">Paramètres du compte</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  setSettingsInitialTab("generale");
+                  setSettingsModalOpen(true);
+                }}
+                className="gap-2 p-2 rounded-sm cursor-pointer"
+              >
+                <Settings className="size-4 text-[#505154]" />
+                <span className="text-[13px] font-medium">Paramètres de l'espace</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator className="bg-[#EEEFF1]" />
+              <DropdownMenuItem
+                onClick={() => setInviteDialogOpen(true)}
+                className="gap-2 p-2 rounded-sm cursor-pointer"
+              >
+                <UserPlus className="size-4 text-[#505154]" />
+                <span className="text-[13px] font-medium">Inviter des membres</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  setSettingsInitialTab("espaces");
+                  setSettingsModalOpen(true);
+                }}
+                className="gap-2 p-2 rounded-sm cursor-pointer"
+              >
+                <Users className="size-4 text-[#505154]" />
+                <span className="text-[13px] font-medium">Collaborateurs</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator className="bg-[#EEEFF1]" />
               <DropdownMenuItem
                 onClick={() => router.push('/create-workspace')}
-                className="gap-2 p-2 cursor-pointer text-[#5b4fff]"
+                className="gap-2 p-2 rounded-sm cursor-pointer"
               >
-                <Plus className="h-2 w-2 text-[#202020]" />
-                <span className="text-xs text-[#202020]">
-                  Ajouter un espace de travail
-                </span>
+                <Layers className="size-4 text-[#505154]" />
+                <span className="text-[13px] font-medium">Nouveau espace</span>
               </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <div className="flex gap-2 p-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setSettingsInitialTab("preferences");
-                    setSettingsModalOpen(true);
-                  }}
-                  className="flex-1 h-8 text-xs font-normal cursor-pointer"
-                >
-                  <Settings className="size-3 mr-1" />
-                  Paramètres
-                </Button>
-
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setInviteDialogOpen(true)}
-                  className="flex-1 h-8 text-xs font-normal cursor-pointer relative"
-                >
-                  <Users className="size-3 mr-1" />
-                  Inviter des membres
-                </Button>
-              </div>
-              <div className="p-2 pt-0">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={async () => {
-                    try {
-                      await authClient.signOut({
-                        fetchOptions: {
-                          onSuccess: () => {
-                            toast.success("Déconnexion réussie");
-                            window.location.href = "/auth/login";
-                          },
-                          onError: (ctx) => {
-                            toast.error("Erreur lors de la déconnexion");
-                          },
+              <DropdownMenuSeparator className="bg-[#EEEFF1]" />
+              <DropdownMenuItem
+                onClick={async () => {
+                  try {
+                    await authClient.signOut({
+                      fetchOptions: {
+                        onSuccess: () => {
+                          window.location.href = "/auth/login";
                         },
-                      });
-                    } catch (error) {
-                      console.error("Erreur déconnexion:", error);
-                      toast.error("Erreur lors de la déconnexion");
-                    }
-                  }}
-                  className="w-full h-8 text-xs font-normal cursor-pointer text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
-                >
-                  <LogOut className="size-3 mr-1" />
-                  Déconnexion
-                </Button>
-              </div>
+                      },
+                    });
+                  } catch (error) {
+                    console.error("Erreur déconnexion:", error);
+                  }
+                }}
+                className="gap-2 p-2 rounded-sm cursor-pointer text-red-500 hover:!text-red-600 hover:!bg-red-50"
+              >
+                <LogOut className="size-4 text-red-500" />
+                <span className="text-[13px] font-medium">Déconnexion</span>
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </SidebarMenuItem>
@@ -774,7 +780,7 @@ function SortableOrganizationItem({
           >
             {/* Palette de couleurs */}
             <div className="mb-4">
-              <h3 className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2.5">
+              <h3 className="text-[13px] font-medium text-gray-500 dark:text-gray-400 mb-2.5">
                 Color
               </h3>
               <div className="flex flex-wrap gap-2">

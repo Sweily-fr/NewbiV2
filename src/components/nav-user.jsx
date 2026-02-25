@@ -1,15 +1,6 @@
 "use client";
 
-import {
-  IconCreditCard,
-  IconDotsVertical,
-  IconLogout,
-  IconNotification,
-  IconUserCircle,
-} from "@tabler/icons-react";
-import { Moon, Sun, Monitor } from "lucide-react";
-
-import { CreditCard, Crown } from "lucide-react";
+import { Moon, Sun, Monitor, CreditCard, Crown, CircleUser, LogOut, EllipsisVertical } from "lucide-react";
 
 import {
   Avatar,
@@ -108,16 +99,11 @@ export function NavUser({ user }) {
           onSuccess: () => {
             console.log("Déconnexion réussie - Tous les caches vidés");
             router.push("/");
-            toast.success("Deconnexion reussie");
-          },
-          onError: () => {
-            toast.error("Erreur lors de la deconnexion");
           },
         },
       });
     } catch (error) {
       console.error("Erreur lors de la déconnexion:", error);
-      toast.error("Erreur lors de la deconnexion");
     }
   };
 
@@ -181,7 +167,7 @@ export function NavUser({ user }) {
                       {user.email}
                     </span>
                   </div>
-                  <IconDotsVertical className="ml-auto size-4" />
+                  <EllipsisVertical className="ml-auto size-4" />
                 </>
               )}
             </SidebarMenuButton>
@@ -258,60 +244,60 @@ export function NavUser({ user }) {
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem
-                className="cursor-pointer"
+                className="gap-2 cursor-pointer"
                 onClick={() => {
                   setSettingsInitialTab("user-info");
                   setSettingsModalOpen(true);
                 }}
               >
-                <IconUserCircle />
-                Compte
+                <CircleUser className="size-4 text-muted-foreground" />
+                <span className="text-sm font-normal">Compte</span>
               </DropdownMenuItem>
               <DropdownMenuItem
-                className="cursor-pointer"
+                className="gap-2 cursor-pointer"
                 onClick={() => {
                   setSettingsInitialTab("subscription");
                   setSettingsModalOpen(true);
                 }}
               >
-                <CreditCard />
-                Gérer l'abonnement
+                <CreditCard className="size-4 text-muted-foreground" />
+                <span className="text-sm font-normal">Gérer l'abonnement</span>
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuSub>
-                <DropdownMenuSubTrigger className="cursor-pointer">
+                <DropdownMenuSubTrigger className="gap-2 cursor-pointer">
                   {theme === "light" ? (
-                    <Sun className="h-4 w-4 mr-2" />
+                    <Sun className="size-4 text-muted-foreground" />
                   ) : theme === "dark" ? (
-                    <Moon className="h-4 w-4 mr-2" />
+                    <Moon className="size-4 text-muted-foreground" />
                   ) : (
-                    <Monitor className="h-4 w-4 mr-2" />
+                    <Monitor className="size-4 text-muted-foreground" />
                   )}
-                  Thème
+                  <span className="text-sm font-normal">Thème</span>
                 </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent>
                   <DropdownMenuItem
                     onClick={() => setTheme("light")}
-                    className="cursor-pointer"
+                    className="gap-2 cursor-pointer"
                   >
-                    <Sun className="h-4 w-4 mr-2" />
-                    Clair
+                    <Sun className="size-4 text-muted-foreground" />
+                    <span className="text-sm font-normal">Clair</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => setTheme("dark")}
-                    className="cursor-pointer"
+                    className="gap-2 cursor-pointer"
                   >
-                    <Moon className="h-4 w-4 mr-2" />
-                    Sombre
+                    <Moon className="size-4 text-muted-foreground" />
+                    <span className="text-sm font-normal">Sombre</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => setTheme("system")}
-                    className="cursor-pointer"
+                    className="gap-2 cursor-pointer"
                   >
-                    <Monitor className="h-4 w-4 mr-2" />
-                    Système
+                    <Monitor className="size-4 text-muted-foreground" />
+                    <span className="text-sm font-normal">Système</span>
                   </DropdownMenuItem>
                 </DropdownMenuSubContent>
               </DropdownMenuSub>
@@ -319,11 +305,10 @@ export function NavUser({ user }) {
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={handleLogout}
-              variant="destructive"
-              className="cursor-pointer"
+              className="gap-2 cursor-pointer text-red-500 hover:!text-red-600 hover:!bg-red-50"
             >
-              <IconLogout />
-              Se deconnecter
+              <LogOut className="size-4 text-red-500" />
+              <span className="text-sm font-normal">Se déconnecter</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

@@ -134,7 +134,7 @@ export default function Component({
             </CommandItem>
             <CommandItem
               onSelect={() =>
-                runCommand(() => router.push("/dashboard/account"))
+                runCommand(() => openSettings("user-info"))
               }
             >
               <User className="mr-2 h-4 w-4" />

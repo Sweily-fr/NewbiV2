@@ -199,9 +199,9 @@ export const stripePlugin = stripe({
           }
         }
 
-        // Fallback: autoriser temporairement si l'adapter ne fonctionne pas
-        console.log("🔐 [AUTHORIZE] Fallback: adapter not available, allowing");
-        return true;
+        // Fallback: refuser l'accès si l'adapter ne fonctionne pas
+        console.error("🔐 [AUTHORIZE] Adapter not available, denying access");
+        return false;
       }
 
       return true;
@@ -220,8 +220,8 @@ export const stripePlugin = stripe({
         },
         metadata: {
           displayName: "Pack Freelance",
-          monthlyPrice: 14.59,
-          annualPrice: 13.13, // -10% de réduction (14.59 * 12 * 0.90 / 12)
+          monthlyPrice: 17.99,
+          annualPrice: 16.19, // -10% de réduction
           workspaceAddonPrice: 11.99,
           description: "Pour les indépendants et freelances",
         },
@@ -330,6 +330,11 @@ export const stripePlugin = stripe({
       switch (event.type) {
         case "customer.subscription.created":
         case "checkout.session.completed":
+          // ✅ Déduplication atomique avec MongoDB
+          if (await isEventAlreadyProcessed(event.id, event.type)) {
+            break;
+          }
+
           let subscription;
           let referenceId;
           let userId;
@@ -379,26 +384,8 @@ export const stripePlugin = stripe({
 
             if (isNewOrg) {
               console.log(
-                "🆕 [STRIPE WEBHOOK] Nouvelle organisation détectée, création..."
+                "🆕 [STRIPE WEBHOOK] Nouvelle organisation détectée, création via shared utility..."
               );
-
-              // Créer l'organisation APRÈS le paiement
-              const orgName = session.metadata?.orgName || "Mon entreprise";
-              const orgType = session.metadata?.orgType;
-              const orgInvitedEmails = session.metadata?.orgInvitedEmails;
-
-              // Récupérer les données entreprise depuis les metadata
-              const companyName = session.metadata?.companyName || orgName;
-              const siret = session.metadata?.siret;
-              const siren = session.metadata?.siren;
-              const employeeCount = session.metadata?.employeeCount;
-              const legalForm = session.metadata?.legalForm;
-              const addressStreet = session.metadata?.addressStreet;
-              const addressCity = session.metadata?.addressCity;
-              const addressZipCode = session.metadata?.addressZipCode;
-              const addressCountry = session.metadata?.addressCountry || "France";
-              const activitySector = session.metadata?.activitySector;
-              const activityCategory = session.metadata?.activityCategory;
 
               if (!userId) {
                 console.error(
@@ -407,383 +394,61 @@ export const stripePlugin = stripe({
                 break;
               }
 
-              // Créer l'organisation via Better Auth
               const { mongoDb } = await import("./mongodb.js");
               const { ObjectId } = require("mongodb");
 
-              // ✅ Vérifier si l'utilisateur a déjà une organisation (reprise d'onboarding après échec)
-              let organizationObjectId = null;
-              let orgAlreadyExists = false;
+              // Récupérer les données volumineuses depuis MongoDB
+              let pendingOrgData = null;
+              const pendingOrgDataId = session.metadata?.pendingOrgDataId;
+              if (pendingOrgDataId) {
+                try {
+                  pendingOrgData = await mongoDb
+                    .collection("pending_org_data")
+                    .findOne({ _id: new ObjectId(pendingOrgDataId) });
+                  console.log(
+                    `✅ [STRIPE WEBHOOK] Données pendantes récupérées: ${pendingOrgDataId}`
+                  );
+                } catch (e) {
+                  console.warn(
+                    `⚠️ [STRIPE WEBHOOK] Données pendantes non trouvées: ${pendingOrgDataId}`,
+                    e.message
+                  );
+                }
+              }
 
-              // D'abord, vérifier si l'utilisateur est déjà membre d'une organisation
-              const existingMember = await mongoDb.collection("member").findOne({
-                userId: new ObjectId(userId),
+              // ✅ Utiliser la shared utility pour la création idempotente
+              const { createOrganizationWithSubscription } = await import("./org-creation.js");
+
+              const creationResult = await createOrganizationWithSubscription({
+                mongoDb,
+                userId,
+                orgData: {
+                  companyName: session.metadata?.companyName || session.metadata?.orgName || "Mon entreprise",
+                  orgName: session.metadata?.orgName || "Mon entreprise",
+                  siret: session.metadata?.siret || "",
+                  siren: session.metadata?.siren || "",
+                  employeeCount: session.metadata?.employeeCount || "",
+                  orgType: session.metadata?.orgType || "business",
+                  legalForm: session.metadata?.legalForm || "",
+                  addressStreet: session.metadata?.addressStreet || "",
+                  addressCity: session.metadata?.addressCity || "",
+                  addressZipCode: session.metadata?.addressZipCode || "",
+                  addressCountry: session.metadata?.addressCountry || "France",
+                  activitySector: session.metadata?.activitySector || "",
+                  activityCategory: session.metadata?.activityCategory || "",
+                },
+                subscriptionInfo: subscription,
+                sessionMetadata: session.metadata || {},
+                pendingOrgData,
+                pendingOrgDataId,
               });
 
-              if (existingMember) {
-                // L'utilisateur a déjà une org (onboarding précédent a partiellement fonctionné)
-                organizationObjectId = existingMember.organizationId instanceof ObjectId
-                  ? existingMember.organizationId
-                  : new ObjectId(existingMember.organizationId.toString());
-                orgAlreadyExists = true;
-                console.log(
-                  `♻️ [STRIPE WEBHOOK] Organisation existante trouvée pour userId ${userId}: ${organizationObjectId}`
-                );
-
-                // Mettre à jour l'organisation existante avec les nouvelles données
-                await mongoDb.collection("organization").updateOne(
-                  { _id: organizationObjectId },
-                  {
-                    $set: {
-                      companyName: companyName,
-                      siret: siret || "",
-                      siren: siren || "",
-                      employeeCount: employeeCount || "",
-                      organizationType: orgType || "business",
-                      legalForm: legalForm || "",
-                      addressStreet: addressStreet || "",
-                      addressCity: addressCity || "",
-                      addressZipCode: addressZipCode || "",
-                      addressCountry: addressCountry || "France",
-                      activitySector: activitySector || "",
-                      activityCategory: activityCategory || "",
-                      onboardingCompleted: true,
-                      updatedAt: new Date(),
-                    },
-                  }
-                );
-              } else if (siret) {
-                // Pas de membre, mais vérifier si une org avec ce SIRET existe déjà
-                const existingOrg = await mongoDb.collection("organization").findOne({
-                  siret: siret,
-                });
-
-                if (existingOrg) {
-                  // L'org existe (créée par un précédent webhook) mais l'utilisateur n'est pas membre
-                  // → Le rattacher comme owner
-                  organizationObjectId = existingOrg._id;
-                  orgAlreadyExists = true;
-                  console.log(
-                    `♻️ [STRIPE WEBHOOK] Organisation existante par SIRET ${siret}, rattachement de l'utilisateur ${userId}`
-                  );
-
-                  // Créer le membre owner
-                  await mongoDb.collection("member").insertOne({
-                    userId: new ObjectId(userId),
-                    organizationId: organizationObjectId,
-                    role: "owner",
-                    createdAt: new Date(),
-                  });
-
-                  // Mettre à jour l'organisation
-                  await mongoDb.collection("organization").updateOne(
-                    { _id: organizationObjectId },
-                    {
-                      $set: {
-                        onboardingCompleted: true,
-                        updatedAt: new Date(),
-                      },
-                    }
-                  );
-                }
-              }
-
-              // Si aucune org existante, en créer une nouvelle
-              if (!orgAlreadyExists) {
-                const orgSlug = `org-${userId.slice(-8)}-${Date.now().toString(36)}`;
-
-                const newOrg = {
-                  name: orgName,
-                  slug: orgSlug,
-                  createdAt: new Date(),
-                  companyName: companyName,
-                  siret: siret || "",
-                  siren: siren || "",
-                  employeeCount: employeeCount || "",
-                  organizationType: orgType || "business",
-                  legalForm: legalForm || "",
-                  addressStreet: addressStreet || "",
-                  addressCity: addressCity || "",
-                  addressZipCode: addressZipCode || "",
-                  addressCountry: addressCountry || "France",
-                  activitySector: activitySector || "",
-                  activityCategory: activityCategory || "",
-                  onboardingCompleted: true,
-                  metadata: JSON.stringify({
-                    type: orgType,
-                    invitedEmails: orgInvitedEmails,
-                    createdAt: new Date().toISOString(),
-                    createdAfterPayment: true,
-                  }),
-                };
-
-                const orgResult = await mongoDb
-                  .collection("organization")
-                  .insertOne(newOrg);
-
-                organizationObjectId = orgResult.insertedId;
-
-                // Créer le membre owner
-                await mongoDb.collection("member").insertOne({
-                  userId: new ObjectId(userId),
-                  organizationId: organizationObjectId,
-                  role: "owner",
-                  createdAt: new Date(),
-                });
-              }
-
-              referenceId = organizationObjectId.toString();
-
-              // Définir comme organisation active
-              // ✅ FIX : Mettre à jour toutes les sessions de l'utilisateur
-              const updateResult = await mongoDb
-                .collection("session")
-                .updateMany(
-                  { userId: userId },
-                  { $set: { activeOrganizationId: referenceId } }
-                );
-
-              // ✅ Mettre à jour l'utilisateur avec hasSeenOnboarding: true
-              await mongoDb.collection("user").updateOne(
-                { _id: new ObjectId(userId) },
-                {
-                  $set: {
-                    hasSeenOnboarding: true,
-                    updatedAt: new Date(),
-                  },
-                }
-              );
-
+              referenceId = creationResult.organizationId;
               console.log(
-                `✅ [STRIPE WEBHOOK] Organisation créée: ${referenceId}`
-              );
-              console.log(
-                `✅ [STRIPE WEBHOOK] ${updateResult.modifiedCount} session(s) mise(s) à jour avec activeOrganizationId`
-              );
-              console.log(
-                `✅ [STRIPE WEBHOOK] hasSeenOnboarding défini à true pour userId: ${userId}`
+                `✅ [STRIPE WEBHOOK] Organisation traitée via shared utility: ${referenceId}`
               );
 
-              // ⚠️ IMPORTANT : Créer l'abonnement AVANT d'envoyer les invitations
-              // pour éviter les timeouts qui empêchent la création de l'abonnement
-              console.log(
-                `🔄 [STRIPE WEBHOOK] Création abonnement en priorité...`
-              );
-
-              try {
-                // Vérifier si l'abonnement existe déjà pour cette organisation
-                const existingSub = await mongoDb
-                  .collection("subscription")
-                  .findOne({
-                    referenceId: referenceId,
-                  });
-
-                if (!existingSub) {
-                  // Récupérer le nom du plan depuis les métadonnées
-                  const planName =
-                    subscription.metadata?.planName ||
-                    session.metadata?.planName ||
-                    "freelance";
-                  console.log(`📋 [STRIPE WEBHOOK] Plan détecté: ${planName}`);
-
-                  const subscriptionData = {
-                    plan: planName,
-                    referenceId: referenceId,
-                    stripeCustomerId: subscription.customer,
-                    status: subscription.status,
-                    seats: 1,
-                    cancelAtPeriodEnd:
-                      subscription.cancel_at_period_end || false,
-                    periodEnd: subscription.current_period_end
-                      ? new Date(subscription.current_period_end * 1000)
-                      : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-                    periodStart: subscription.current_period_start
-                      ? new Date(subscription.current_period_start * 1000)
-                      : new Date(),
-                    stripeSubscriptionId: subscription.id,
-                    currentPeriodEnd: subscription.current_period_end
-                      ? new Date(subscription.current_period_end * 1000)
-                      : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-                    currentPeriodStart: subscription.current_period_start
-                      ? new Date(subscription.current_period_start * 1000)
-                      : new Date(),
-                  };
-
-                  // ✅ Créer l'abonnement directement dans MongoDB
-                  await mongoDb
-                    .collection("subscription")
-                    .insertOne({
-                      ...subscriptionData,
-                      createdAt: new Date(),
-                      updatedAt: new Date(),
-                    });
-
-                  console.log(
-                    `✅ [STRIPE WEBHOOK] Abonnement créé via adapter pour nouvelle org: ${referenceId}`
-                  );
-
-                  // ✅ CORRECTION: Marquer l'onboarding comme complété sur l'organisation
-                  const isOnboarding = session.metadata?.isOnboarding === "true";
-                  if (isOnboarding) {
-                    await mongoDb.collection("organization").updateOne(
-                      { _id: organizationObjectId },
-                      {
-                        $set: {
-                          onboardingCompleted: true,
-                          updatedAt: new Date(),
-                        },
-                      }
-                    );
-                    console.log(
-                      `✅ [STRIPE WEBHOOK] onboardingCompleted défini à true pour org: ${referenceId}`
-                    );
-                  }
-                } else {
-                  console.log(
-                    `✅ [STRIPE WEBHOOK] Abonnement existe déjà pour cette org: ${referenceId}`
-                  );
-                }
-              } catch (subError) {
-                console.error(
-                  `❌ [STRIPE WEBHOOK] Erreur création abonnement:`,
-                  subError
-                );
-                // Ne pas bloquer le reste du processus
-              }
-
-              // Envoyer les invitations APRÈS la création de l'abonnement (non bloquant)
-              if (orgInvitedEmails) {
-                // Utiliser Promise.resolve().then() pour rendre l'envoi asynchrone et non-bloquant
-                // Compatible avec Edge Runtime (pas de setImmediate)
-                Promise.resolve()
-                  .then(async () => {
-                    try {
-                      const invitedEmailsList = JSON.parse(orgInvitedEmails);
-
-                      if (
-                        Array.isArray(invitedEmailsList) &&
-                        invitedEmailsList.length > 0
-                      ) {
-                        console.log(
-                          `📧 [STRIPE WEBHOOK] Envoi de ${invitedEmailsList.length} invitation(s) en arrière-plan...`
-                        );
-
-                        // Récupérer les infos de l'inviteur et de l'organisation
-                        const inviterUser = await mongoDb
-                          .collection("user")
-                          .findOne({
-                            _id: new ObjectId(userId),
-                          });
-
-                        const org = await mongoDb
-                          .collection("organization")
-                          .findOne({
-                            _id: organizationObjectId,
-                          });
-
-                        if (!inviterUser || !org) {
-                          console.error(
-                            "❌ [STRIPE WEBHOOK] Inviteur ou organisation introuvable"
-                          );
-                        } else {
-                          // Envoyer les invitations en parallèle (plus rapide)
-                          const { ObjectId } = await import("mongodb");
-                          const invitationPromises = invitedEmailsList
-                            .filter(
-                              (member) =>
-                                member && (member.email || member).trim()
-                            )
-                            .map(async (member) => {
-                              try {
-                                // ✅ FIX : Supporter les objets {email, role} et les strings
-                                const memberEmail =
-                                  typeof member === "string"
-                                    ? member
-                                    : member.email;
-                                const memberRole =
-                                  typeof member === "string"
-                                    ? "member"
-                                    : member.role || "member";
-
-                                const expiresAt = new Date(
-                                  Date.now() + 7 * 24 * 60 * 60 * 1000
-                                );
-
-                                // Insérer l'invitation et récupérer l'_id généré
-                                const insertResult = await mongoDb
-                                  .collection("invitation")
-                                  .insertOne({
-                                    organizationId: new ObjectId(referenceId), // ✅ Convertir en ObjectId
-                                    email: memberEmail.trim(),
-                                    role: memberRole, // ✅ Utiliser le rôle du membre
-                                    inviterId: new ObjectId(userId), // ✅ Convertir en ObjectId
-                                    status: "pending",
-                                    expiresAt: expiresAt,
-                                    createdAt: new Date(),
-                                  });
-
-                                const invitationId =
-                                  insertResult.insertedId.toString();
-
-                                const { sendOrganizationInvitationEmail } =
-                                  await import("./auth-utils.js");
-
-                                await sendOrganizationInvitationEmail({
-                                  id: invitationId,
-                                  email: memberEmail.trim(),
-                                  role: memberRole, // ✅ Utiliser le rôle du membre
-                                  organization: {
-                                    id: referenceId,
-                                    name: org.name,
-                                  },
-                                  inviter: {
-                                    user: {
-                                      id: userId,
-                                      name: inviterUser.name,
-                                      email: inviterUser.email,
-                                    },
-                                  },
-                                });
-
-                                console.log(
-                                  `✅ [STRIPE WEBHOOK] Invitation envoyée à ${memberEmail}`
-                                );
-                              } catch (inviteError) {
-                                console.error(
-                                  `❌ [STRIPE WEBHOOK] Erreur invitation ${memberEmail}:`,
-                                  inviteError
-                                );
-                              }
-                            });
-
-                          // Attendre toutes les invitations (mais en arrière-plan)
-                          await Promise.allSettled(invitationPromises);
-                          console.log(
-                            `✅ [STRIPE WEBHOOK] Toutes les invitations traitées`
-                          );
-                        }
-                      }
-                    } catch (parseError) {
-                      console.error(
-                        "❌ [STRIPE WEBHOOK] Erreur parsing emails invités:",
-                        parseError
-                      );
-                    }
-                  })
-                  .catch((err) => {
-                    console.error(
-                      "❌ [STRIPE WEBHOOK] Erreur globale invitations:",
-                      err
-                    );
-                  });
-
-                console.log(
-                  `📧 [STRIPE WEBHOOK] Invitations programmées en arrière-plan`
-                );
-              }
-
-              // ⚠️ Ne pas continuer vers la création d'abonnement normale
-              // car on l'a déjà créé ci-dessus
+              // Ne pas continuer vers la création d'abonnement normale
               break;
             } else {
               referenceId =
