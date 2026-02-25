@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+import ReactDOM from "react-dom";
 import { useRouter } from "next/navigation";
 import { Button } from "@/src/components/ui/button";
 import {
@@ -40,8 +42,10 @@ export default function ClientDetailHeader({
   onUnblock,
   onAssign,
   onCreateReminder,
+  hasDocuments = false,
 }) {
   const router = useRouter();
+  const [showDeleteTooltip, setShowDeleteTooltip] = useState(null);
 
   const displayName =
     client.type === "INDIVIDUAL" && (client.firstName || client.lastName)
@@ -161,16 +165,50 @@ export default function ClientDetailHeader({
             )}
             <DropdownMenuSeparator />
             <DropdownMenuItem
-              onClick={onDelete}
-              className="cursor-pointer gap-2 text-xs text-red-600 focus:text-red-600"
+              onSelect={(e) => {
+                if (hasDocuments) {
+                  e.preventDefault();
+                } else {
+                  onDelete();
+                }
+              }}
+              onMouseEnter={(e) => {
+                if (hasDocuments) {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  setShowDeleteTooltip({ top: rect.bottom + 6, left: rect.right });
+                }
+              }}
+              onMouseLeave={() => setShowDeleteTooltip(null)}
+              className={hasDocuments
+                ? "cursor-not-allowed gap-2 text-xs opacity-50"
+                : "cursor-pointer gap-2 text-xs text-red-600 focus:text-red-600"
+              }
             >
-              <Trash2 className="w-3.5 h-3.5 text-red-600" />
+              <Trash2 className="w-3.5 h-3.5" />
               Supprimer définitivement
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
 
       </div>
+
+      {showDeleteTooltip && ReactDOM.createPortal(
+        <div
+          className="fixed z-[9999] w-[260px] rounded-md px-3 py-1.5 text-xs text-white whitespace-normal animate-in fade-in-0 zoom-in-95"
+          style={{
+            backgroundColor: "#202020",
+            top: showDeleteTooltip.top,
+            left: showDeleteTooltip.left - 260,
+          }}
+        >
+          Ce contact est lié à des factures, devis ou bons de commande.
+          <div
+            className="absolute bottom-full right-4 size-2.5 translate-y-[calc(50%+2px)] rotate-45 rounded-[2px]"
+            style={{ backgroundColor: "#202020" }}
+          />
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

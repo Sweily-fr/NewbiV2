@@ -195,6 +195,7 @@ function FolderTreeSelect({ folders, value, onValueChange, placeholder }) {
 
 // Popover pour les réglages avancés d'une automatisation
 function SettingsPopover({ config, onSave }) {
+  const [open, setOpen] = useState(false);
   const [createSubfolder, setCreateSubfolder] = useState(config?.createSubfolder || false);
   const [subfolderPattern, setSubfolderPattern] = useState(config?.subfolderPattern || '{year}');
   const [documentNaming, setDocumentNaming] = useState(config?.documentNaming || '{documentType}-{number}-{clientName}');
@@ -208,6 +209,7 @@ function SettingsPopover({ config, onSave }) {
       tags,
       documentStatus: 'classified',
     });
+    setOpen(false);
   };
 
   const handleAddTag = () => {
@@ -219,7 +221,7 @@ function SettingsPopover({ config, onSave }) {
   };
 
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button variant="ghost" size="sm" className="text-xs" style={{ color: '#5b50ff' }}>
           Options avancées

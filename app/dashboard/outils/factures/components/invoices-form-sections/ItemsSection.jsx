@@ -524,7 +524,7 @@ export default function ItemsSection({
                                     value={field.value}
                                     onChange={(e) => {
                                       const newQuantity =
-                                        parseFloat(e.target.value) || 0.5;
+                                        parseFloat(e.target.value) || 1;
                                       field.onChange(newQuantity);
 
                                       // Recalculer le total
