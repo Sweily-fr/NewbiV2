@@ -16,7 +16,9 @@ import {
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from '@/src/components/ui/select';
@@ -48,15 +50,36 @@ import {
 } from '@/src/hooks/useDocumentAutomations';
 
 const TRIGGER_OPTIONS = [
-  { value: 'CREDIT_NOTE_CREATED', label: 'Avoir créé' },
-  { value: 'QUOTE_ACCEPTED', label: 'Devis accepté' },
-  { value: 'QUOTE_SENT', label: 'Devis envoyé' },
-  { value: 'QUOTE_IMPORTED', label: 'Devis importé' },
-  { value: 'QUOTE_CANCELED', label: 'Devis refusé' },
-  { value: 'INVOICE_CANCELED', label: 'Facture annulée' },
-  { value: 'INVOICE_SENT', label: 'Facture envoyée' },
-  { value: 'INVOICE_IMPORTED', label: 'Facture importée' },
-  { value: 'INVOICE_PAID', label: 'Facture payée' },
+  // Factures
+  { value: 'INVOICE_DRAFT', label: 'Facture brouillon', group: 'Facture' },
+  { value: 'INVOICE_SENT', label: 'Facture en attente', group: 'Facture' },
+  { value: 'INVOICE_PAID', label: 'Facture terminée', group: 'Facture' },
+  { value: 'INVOICE_OVERDUE', label: 'Facture en retard', group: 'Facture' },
+  { value: 'INVOICE_CANCELED', label: 'Facture refusée', group: 'Facture' },
+  { value: 'INVOICE_IMPORTED', label: 'Facture importée', group: 'Facture' },
+  // Devis
+  { value: 'QUOTE_DRAFT', label: 'Devis brouillon', group: 'Devis' },
+  { value: 'QUOTE_SENT', label: 'Devis en attente', group: 'Devis' },
+  { value: 'QUOTE_ACCEPTED', label: 'Devis accepté', group: 'Devis' },
+  { value: 'QUOTE_CANCELED', label: 'Devis refusé', group: 'Devis' },
+  { value: 'QUOTE_IMPORTED', label: 'Devis importé', group: 'Devis' },
+  // Avoir
+  { value: 'CREDIT_NOTE_CREATED', label: 'Avoir créé', group: 'Avoir' },
+  // Bon de commande
+  { value: 'PURCHASE_ORDER_DRAFT', label: 'BC brouillon', group: 'Bon de commande' },
+  { value: 'PURCHASE_ORDER_CONFIRMED', label: 'BC confirmé', group: 'Bon de commande' },
+  { value: 'PURCHASE_ORDER_IN_PROGRESS', label: 'BC en cours', group: 'Bon de commande' },
+  { value: 'PURCHASE_ORDER_DELIVERED', label: 'BC livré', group: 'Bon de commande' },
+  { value: 'PURCHASE_ORDER_CANCELED', label: 'BC annulé', group: 'Bon de commande' },
+  // Facture d'achat
+  { value: 'PURCHASE_INVOICE_TO_PROCESS', label: "Fact. achat à traiter", group: "Facture d'achat" },
+  { value: 'PURCHASE_INVOICE_TO_PAY', label: "Fact. achat à payer", group: "Facture d'achat" },
+  { value: 'PURCHASE_INVOICE_PENDING', label: "Fact. achat en attente", group: "Facture d'achat" },
+  { value: 'PURCHASE_INVOICE_PAID', label: "Fact. achat payée", group: "Facture d'achat" },
+  { value: 'PURCHASE_INVOICE_OVERDUE', label: "Fact. achat en retard", group: "Facture d'achat" },
+  { value: 'PURCHASE_INVOICE_ARCHIVED', label: "Fact. achat archivée", group: "Facture d'achat" },
+  // Transaction
+  { value: 'TRANSACTION_RECEIPT', label: 'Justificatif de transaction', group: 'Transaction' },
 ];
 
 const SUBFOLDER_PATTERNS = [
@@ -66,6 +89,35 @@ const SUBFOLDER_PATTERNS = [
   { value: '{clientName}', label: 'Nom du client' },
   { value: '{year}/{clientName}', label: 'Année/Client' },
 ];
+
+// Retourne le label complet pour un trigger
+function getTriggerFullLabel(value) {
+  const opt = TRIGGER_OPTIONS.find(t => t.value === value);
+  return opt?.label || value;
+}
+
+// Pré-calcul des groupes (statique, jamais de re-render)
+const TRIGGER_GROUPS = (() => {
+  const groups = [];
+  let currentGroup = null;
+  for (const opt of TRIGGER_OPTIONS) {
+    if (!currentGroup || currentGroup.label !== opt.group) {
+      currentGroup = { label: opt.group, items: [] };
+      groups.push(currentGroup);
+    }
+    currentGroup.items.push(opt);
+  }
+  return groups;
+})();
+
+const GROUPED_TRIGGER_OPTIONS = TRIGGER_GROUPS.map((g) => (
+  <SelectGroup key={g.label}>
+    <SelectLabel className="text-xs text-muted-foreground font-semibold">{g.label}</SelectLabel>
+    {g.items.map((t) => (
+      <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+    ))}
+  </SelectGroup>
+));
 
 // Construit une liste plate ordonnée en arbre avec profondeur et guides
 function buildFolderTree(folders) {
@@ -266,6 +318,8 @@ export default function DocumentAutomationsModal({ open, onOpenChange, onDocumen
   const client = useApolloClient();
   const { automations, loading: automationsLoading, refetch } = useDocumentAutomations(workspaceId);
   const { folders, loading: foldersLoading } = useSharedFolders();
+  const hasLoadedOnce = useRef(false);
+  if (!automationsLoading && !foldersLoading) hasLoadedOnce.current = true;
   const { createAutomation, loading: createLoading } = useCreateDocumentAutomation();
   const { updateAutomation } = useUpdateDocumentAutomation();
   const { deleteAutomation } = useDeleteDocumentAutomation();
@@ -288,7 +342,7 @@ export default function DocumentAutomationsModal({ open, onOpenChange, onDocumen
       return;
     }
     try {
-      const triggerLabel = TRIGGER_OPTIONS.find(t => t.value === newTrigger)?.label || newTrigger;
+      const triggerLabel = getTriggerFullLabel(newTrigger);
       const folderName = folders.find(f => f.id === newFolderId)?.name || 'Dossier';
       const created = await createAutomation(workspaceId, {
         name: `${triggerLabel} → ${folderName}`,
@@ -379,7 +433,7 @@ export default function DocumentAutomationsModal({ open, onOpenChange, onDocumen
   const handleUpdateTrigger = async (id, triggerType) => {
     try {
       const automation = automations.find(a => a.id === id);
-      const triggerLabel = TRIGGER_OPTIONS.find(t => t.value === triggerType)?.label || triggerType;
+      const triggerLabel = getTriggerFullLabel(triggerType);
       const folderName = automation?.actionConfig?.targetFolder?.name || 'Dossier';
       await updateAutomation(workspaceId, id, {
         name: `${triggerLabel} → ${folderName}`,
@@ -395,7 +449,7 @@ export default function DocumentAutomationsModal({ open, onOpenChange, onDocumen
     try {
       const automation = automations.find(a => a.id === id);
       const currentConfig = automation?.actionConfig || {};
-      const triggerLabel = TRIGGER_OPTIONS.find(t => t.value === automation?.triggerType)?.label || '';
+      const triggerLabel = getTriggerFullLabel(automation?.triggerType);
       const folderName = folders.find(f => f.id === targetFolderId)?.name || 'Dossier';
       await updateAutomation(workspaceId, id, {
         name: `${triggerLabel} → ${folderName}`,
@@ -443,7 +497,7 @@ export default function DocumentAutomationsModal({ open, onOpenChange, onDocumen
     }
   };
 
-  const isLoading = automationsLoading || foldersLoading;
+  const isLoading = !hasLoadedOnce.current && (automationsLoading || foldersLoading);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -473,13 +527,11 @@ export default function DocumentAutomationsModal({ open, onOpenChange, onDocumen
                   value={automation.triggerType}
                   onValueChange={(value) => handleUpdateTrigger(automation.id, value)}
                 >
-                  <SelectTrigger className="w-[170px]">
+                  <SelectTrigger className="w-[220px]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {TRIGGER_OPTIONS.map((t) => (
-                      <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
-                    ))}
+                    {GROUPED_TRIGGER_OPTIONS}
                   </SelectContent>
                 </Select>
 
@@ -550,13 +602,11 @@ export default function DocumentAutomationsModal({ open, onOpenChange, onDocumen
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground flex-shrink-0">Quand</span>
                 <Select value={newTrigger} onValueChange={setNewTrigger}>
-                  <SelectTrigger className="w-[170px]">
+                  <SelectTrigger className="w-[220px]">
                     <SelectValue placeholder="Déclencheur..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {TRIGGER_OPTIONS.map((t) => (
-                      <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
-                    ))}
+                    {GROUPED_TRIGGER_OPTIONS}
                   </SelectContent>
                 </Select>
 

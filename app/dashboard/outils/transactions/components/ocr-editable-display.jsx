@@ -145,6 +145,7 @@ export default function OcrEditableDisplay({
   onValidate,
   isCreatingExpense = false,
   imageUrl = null,
+  imageMimeType = null,
   isEditing = false,
   setIsEditing = () => {},
   onSave = null,
@@ -160,6 +161,7 @@ export default function OcrEditableDisplay({
 
   // Stable object URL for the image to avoid re-creating on every render
   const stableImageUrl = useMemo(() => imageUrl, [imageUrl]);
+  const isPdf = imageMimeType === "application/pdf" || stableImageUrl?.toLowerCase().endsWith(".pdf");
 
   // Parser l'analyse financière si elle est en string
   let financialAnalysis = null;
@@ -377,7 +379,7 @@ export default function OcrEditableDisplay({
                 }
               }}
             >
-              {stableImageUrl.toLowerCase().endsWith(".pdf") ? (
+              {isPdf ? (
                 <iframe
                   src={stableImageUrl}
                   className="h-full w-full pointer-events-none"
@@ -388,7 +390,6 @@ export default function OcrEditableDisplay({
                   className="h-full w-full object-contain"
                   src={stableImageUrl}
                   alt="Preview du document OCR"
-                  loading="lazy"
                 />
               )}
               {/* Overlay avec icône */}
@@ -456,7 +457,7 @@ export default function OcrEditableDisplay({
                 </div>
                 {/* Document viewer */}
                 <div className="flex-1 overflow-auto bg-muted/30 flex items-center justify-center">
-                  {stableImageUrl?.toLowerCase().endsWith(".pdf") ? (
+                  {isPdf ? (
                     <iframe
                       src={stableImageUrl}
                       className="w-full h-full"
