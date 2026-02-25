@@ -2,22 +2,22 @@ import React, { useState, useEffect } from "react";
 import { MinusIcon, PlusIcon } from "lucide-react";
 
 export const QuantityInput = React.forwardRef(
-  ({ value, onChange, onBlur, disabled = false, min = 0.5, max, name, step = 0.5, className, ...props }, ref) => {
-    const [displayValue, setDisplayValue] = useState('0.5');
+  ({ value, onChange, onBlur, disabled = false, min = 1, max, name, step = 1, className, ...props }, ref) => {
+    const [displayValue, setDisplayValue] = useState('1');
 
     useEffect(() => {
       if (value !== undefined && value !== null && value !== '') {
         setDisplayValue(String(value));
       } else {
-        setDisplayValue('0.5');
+        setDisplayValue('1');
       }
     }, [value]);
 
-    const currentValue = displayValue !== '' ? parseFloat(displayValue) || 0.5 : 0.5;
+    const currentValue = displayValue !== '' ? parseFloat(displayValue) || 1 : 1;
 
     const handleDecrement = () => {
-      const current = parseFloat(displayValue) || 0.5;
-      const newValue = Math.max(0.5, current - step);
+      const current = parseFloat(displayValue) || 1;
+      const newValue = Math.max(min, current - step);
       const roundedValue = Math.round(newValue * 100) / 100;
       setDisplayValue(roundedValue.toString());
       if (onChange) {
@@ -26,7 +26,7 @@ export const QuantityInput = React.forwardRef(
     };
 
     const handleIncrement = () => {
-      const current = parseFloat(displayValue) || 0.5;
+      const current = parseFloat(displayValue) || 1;
       const newValue = max ? Math.min(max, current + step) : current + step;
       const roundedValue = Math.round(newValue * 100) / 100;
       setDisplayValue(roundedValue.toString());
@@ -39,11 +39,11 @@ export const QuantityInput = React.forwardRef(
       const inputValue = e.target.value;
       if (inputValue === '' || /^\d*[.,]?\d*$/.test(inputValue)) {
         const normalizedValue = inputValue.replace(',', '.');
-        const numValue = normalizedValue === '' ? 0.5 : parseFloat(normalizedValue);
-        if (numValue >= 0.5 || inputValue === '' || normalizedValue.endsWith('.')) {
-          setDisplayValue(normalizedValue === '' ? '0.5' : normalizedValue);
+        const numValue = normalizedValue === '' ? 1 : parseFloat(normalizedValue);
+        if (numValue >= min || inputValue === '' || normalizedValue.endsWith('.')) {
+          setDisplayValue(normalizedValue === '' ? '1' : normalizedValue);
           if (onChange && normalizedValue !== '' && !normalizedValue.endsWith('.')) {
-            onChange({ target: { name, value: normalizedValue === '' ? '0.5' : normalizedValue } });
+            onChange({ target: { name, value: normalizedValue === '' ? '1' : normalizedValue } });
           }
         }
       }

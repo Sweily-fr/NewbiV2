@@ -34,7 +34,6 @@ import {
   QUOTE_STATUS_COLORS,
 } from "@/src/graphql/quoteQueries";
 import { useCreateLinkedInvoice } from "@/src/graphql/invoiceQueries";
-import { useConvertQuoteToPurchaseOrder } from "@/src/graphql/purchaseOrderQueries";
 import { toast } from "@/src/components/ui/sonner";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import UniversalPDFDownloaderWithFacturX from "@/src/components/pdf/UniversalPDFDownloaderWithFacturX";
@@ -53,8 +52,6 @@ export default function QuoteSidebar({
   const { changeStatus, loading: changingStatus } = useChangeQuoteStatus();
   const { createLinkedInvoice, loading: creatingLinkedInvoice } =
     useCreateLinkedInvoice();
-  const { convertToPurchaseOrder, loading: convertingToPO } =
-    useConvertQuoteToPurchaseOrder();
 
   // Récupérer les données complètes du devis
   const {
@@ -133,17 +130,25 @@ export default function QuoteSidebar({
     }
   };
 
-  const handleConvertToPurchaseOrder = async () => {
+  const handleConvertToPurchaseOrder = () => {
     try {
-      const result = await convertToPurchaseOrder(quote.id);
-      toast.success("Bon de commande créé à partir du devis");
-      if (onRefetch) onRefetch();
-      if (result?.id) {
-        router.push(`/dashboard/outils/bons-commande/${result.id}/editer`);
-      }
+      sessionStorage.setItem('quotePurchaseOrderData', JSON.stringify({
+        sourceQuoteId: quote.id,
+        purchaseOrderNumber: `${quote.prefix || ''}${quote.number || ''}`,
+        client: quote.client,
+        items: quote.items,
+        discount: quote.discount,
+        discountType: quote.discountType,
+        customFields: quote.customFields,
+        shipping: quote.shipping,
+        isReverseCharge: quote.isReverseCharge,
+        retenueGarantie: quote.retenueGarantie,
+        escompte: quote.escompte,
+      }));
+      router.push('/dashboard/outils/bons-commande/new');
       onClose();
     } catch (error) {
-      toast.error("Erreur lors de la création du bon de commande");
+      toast.error("Erreur lors de la conversion en bon de commande");
     }
   };
 
@@ -202,7 +207,7 @@ export default function QuoteSidebar({
     }
   };
 
-  const isLoading = changingStatus || creatingLinkedInvoice || convertingToPO;
+  const isLoading = changingStatus || creatingLinkedInvoice;
 
   return (
     <>
