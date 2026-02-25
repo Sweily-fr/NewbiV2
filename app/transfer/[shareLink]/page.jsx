@@ -39,6 +39,7 @@ export default function TransferPage() {
   const [isPasswordVerified, setIsPasswordVerified] = useState(false);
   const [previewFile, setPreviewFile] = useState(null);
   const [previewFileIndex, setPreviewFileIndex] = useState(0);
+  const [thumbnailError, setThumbnailError] = useState(false);
 
   // Ref pour annuler le téléchargement
   const downloadAbortRef = useRef(null);
@@ -452,7 +453,7 @@ export default function TransferPage() {
 
   // Fonction pour télécharger un fichier individuel (depuis le drawer)
   const downloadSingleFile = async (file) => {
-    const fileId = file.fileId || file.id || file._id;
+    const fileId = file.id || file.fileId || file._id;
     // Utiliser la fonction principale avec progression
     await downloadFile(fileId, file.originalName, file.size);
     setPreviewFile(null);
@@ -564,16 +565,9 @@ export default function TransferPage() {
 
   // Vérifier si un fichier est une image
   const isImageFile = (file) => {
-    const imageTypes = [
-      "image/jpeg",
-      "image/png",
-      "image/gif",
-      "image/webp",
-      "image/bmp",
-    ];
+    if (file?.mimeType?.startsWith("image/")) return true;
     const ext = (file.originalName || "").split(".").pop()?.toLowerCase();
-    const imageExts = ["jpg", "jpeg", "png", "gif", "webp", "bmp"];
-    return imageTypes.includes(file.mimeType) || imageExts.includes(ext);
+    return ["jpg", "jpeg", "png", "gif", "webp", "bmp", "heic", "heif", "svg", "tiff"].includes(ext);
   };
 
   // Vérifier si un fichier peut être prévisualisé
@@ -720,30 +714,42 @@ export default function TransferPage() {
                     </div>
                   ) : (
                     <>
-                      {[
-                        "image/jpeg",
-                        "image/png",
-                        "image/gif",
-                        "image/webp",
-                      ].includes(
-                        transfer?.fileTransfer?.files?.[0]?.mimeType
-                      ) ||
-                      ["jpg", "jpeg", "png", "gif", "webp"].includes(
-                        transfer?.fileTransfer?.files?.[0]?.originalName
-                          ?.split(".")
-                          .pop()
-                          ?.toLowerCase()
-                      ) ? (
-                        <img
-                          src={`${(process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000").replace(/\/$/, "")}/api/files/preview/${transfer?.fileTransfer?.id}/${transfer?.fileTransfer?.files?.[0]?.fileId || transfer?.fileTransfer?.files?.[0]?.id}`}
-                          alt={transfer?.fileTransfer?.files?.[0]?.originalName}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <FileIcon className="w-16 h-16 text-gray-300" />
-                        </div>
-                      )}
+                      {(() => {
+                        const firstFile = transfer?.fileTransfer?.files?.[0];
+                        const previewApiUrl = `${(process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000").replace(/\/$/, "")}/api/files/preview/${transfer?.fileTransfer?.id}/${firstFile?.fileId || firstFile?.id}`;
+                        const isImg = firstFile?.mimeType?.startsWith("image/") ||
+                          ["jpg", "jpeg", "png", "gif", "webp", "heic", "heif", "bmp", "svg", "tiff"].includes(
+                            firstFile?.originalName?.split(".")?.pop()?.toLowerCase()
+                          );
+                        const isPdf = firstFile?.mimeType === "application/pdf" ||
+                          firstFile?.originalName?.split(".")?.pop()?.toLowerCase() === "pdf";
+
+                        if (isImg && !thumbnailError) {
+                          return (
+                            <img
+                              src={previewApiUrl}
+                              alt={firstFile?.originalName}
+                              className="w-full h-full object-cover"
+                              onError={() => setThumbnailError(true)}
+                            />
+                          );
+                        }
+                        if (isPdf && !thumbnailError) {
+                          return (
+                            <iframe
+                              src={previewApiUrl}
+                              className="w-full h-full pointer-events-none"
+                              title={firstFile?.originalName}
+                              onError={() => setThumbnailError(true)}
+                            />
+                          );
+                        }
+                        return (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <FileIcon className="w-16 h-16 text-gray-300" />
+                          </div>
+                        );
+                      })()}
                       {/* Bouton preview au centre */}
                       <button
                         onClick={() =>
