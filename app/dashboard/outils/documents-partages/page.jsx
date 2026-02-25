@@ -1679,14 +1679,11 @@ export default function DocumentsPartagesPage() {
                                   Gérer la visibilité
                                 </DropdownMenuItem>
                               )}
-                              {/* Separator seulement si Renommer ou Supprimer sera affiché */}
-                              {!treeContextMenu.item.isSystem && (
-                                <DropdownMenuSeparator />
-                              )}
+                              <DropdownMenuSeparator />
                             </>
                           )}
-                        {/* Renommer - pas pour les dossiers système */}
-                        {!treeContextMenu.item.isSystem && (
+                        {/* Renommer - pas pour inbox */}
+                        {!treeContextMenu.item.isInbox && (
                           <DropdownMenuItem
                             onClick={() => {
                               const isFolder = treeContextMenu.item.isFolder;
@@ -1735,9 +1732,8 @@ export default function DocumentsPartagesPage() {
                             </DropdownMenuItem>
                           </>
                         )}
-                        {/* Supprimer - pas pour inbox ni dossiers système */}
-                        {!treeContextMenu.item.isInbox &&
-                          !treeContextMenu.item.isSystem && (
+                        {/* Supprimer - pas pour inbox */}
+                        {!treeContextMenu.item.isInbox && (
                             <>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem
