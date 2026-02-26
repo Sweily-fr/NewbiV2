@@ -100,10 +100,10 @@ export const generateDynamicFooter = (companyInfo, variant = 'standard') => {
   } else if (address && typeof address === 'string') {
     // Si l'adresse est une string, on l'utilise telle quelle
     const adresseComplete = address;
-    const villeRCS = rcs ? rcs.replace(/RCS\s*/i, '').trim() : city;
-    
+    const villeRCS = rcs ? rcs.replace(/RCS\s*/i, '').trim() : '';
+
     // Déterminer si c'est une micro-entreprise
-    const isMicroEntreprise = fiscalRegime?.toLowerCase().includes('micro') || 
+    const isMicroEntreprise = fiscalRegime?.toLowerCase().includes('micro') ||
                               fiscalRegime?.toLowerCase().includes('franchise');
 
     // Utiliser directement l'adresse string dans les variantes
@@ -146,8 +146,8 @@ export const generateDynamicFooter = (companyInfo, variant = 'standard') => {
     }
   }
   
-  // Ville RCS (extraite de l'adresse ou du RCS)
-  const villeRCS = rcs ? rcs.replace(/RCS\s*/i, '').trim() : city;
+  // Ville RCS (extraite du RCS uniquement - ne pas fallback sur city)
+  const villeRCS = rcs ? rcs.replace(/RCS\s*/i, '').trim() : '';
   
   // Adresse complète à partir des champs séparés
   const adresseComplete = [street, zipCode, city]
