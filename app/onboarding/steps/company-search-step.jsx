@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
-import { Search, Building2, MapPin, ExternalLink, Loader2, AlertCircle } from "lucide-react";
+import { Label } from "@/src/components/ui/label";
+import { Search, Building2, MapPin, Loader2, AlertCircle } from "lucide-react";
 
 // Mapping des codes de forme juridique vers les libellés
 const FORME_JURIDIQUE_MAP = {
@@ -200,18 +201,17 @@ export default function CompanySearchStep({
 
   // Debounce effect
   useEffect(() => {
+    if (selectedCompany) return;
     const timer = setTimeout(() => {
       searchCompanies(searchQuery);
     }, 400);
 
     return () => clearTimeout(timer);
-  }, [searchQuery, searchCompanies]);
+  }, [searchQuery, searchCompanies, selectedCompany]);
 
   const handleSelectCompany = async (company) => {
-    // Réinitialiser l'erreur
     setSiretError(null);
 
-    // Extraire les informations de l'entreprise
     const siege = company.siege || {};
     const siret = siege.siret || "";
 
@@ -220,38 +220,39 @@ export default function CompanySearchStep({
       return;
     }
 
-    // Vérifier si le SIRET est déjà utilisé
     setIsCheckingSiret(true);
     try {
       const response = await fetch(`/api/check-siret?siret=${siret}`);
-      const data = await response.json();
 
-      if (!data.available) {
-        setSiretError(
-          `${data.message} Si vous faites partie de cette entreprise, demandez une invitation à l'administrateur du compte.`
-        );
-        setIsCheckingSiret(false);
-        return;
+      if (response.ok) {
+        const data = await response.json();
+        if (data.available === false) {
+          setSiretError(
+            `${data.message || "Ce numéro SIRET est déjà associé à un compte existant sur Newbi."} Si vous faites partie de cette entreprise, demandez une invitation à l'administrateur du compte.`
+          );
+          setIsCheckingSiret(false);
+          return;
+        }
       }
+      // Si 401 ou autre erreur serveur, on laisse passer (le webhook vérifiera)
     } catch (error) {
       console.error("Erreur vérification SIRET:", error);
-      // En cas d'erreur, on laisse passer (le webhook vérifiera aussi)
     }
     setIsCheckingSiret(false);
 
-    // SIRET disponible - sélectionner l'entreprise
+    const name = company.nom_complet || company.nom_raison_sociale || "";
     setSelectedCompany(company);
+    setSearchQuery(name);
+    setSearchResults([]);
+    setHasSearched(false);
 
-    // Mapper le code de forme juridique vers le libellé
     const formeJuridiqueCode = company.nature_juridique || "";
     const formeJuridiqueLibelle = FORME_JURIDIQUE_MAP[formeJuridiqueCode] || formeJuridiqueCode;
-
-    // Mapper le code NAF vers la catégorie d'activité
     const codeNaf = company.activite_principale || "";
     const activityLabel = getActivityLabel(codeNaf);
 
     updateFormData({
-      companyName: company.nom_complet || company.nom_raison_sociale || "",
+      companyName: name,
       siret: siret,
       siren: company.siren || "",
       legalForm: formeJuridiqueLibelle,
@@ -264,170 +265,129 @@ export default function CompanySearchStep({
     });
   };
 
-  const handleContinue = () => {
-    onNext();
+  const handleInputChange = (e) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+    if (selectedCompany) {
+      setSelectedCompany(null);
+    }
   };
 
+  const showResults = hasSearched && !selectedCompany && !isCheckingSiret;
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-medium text-foreground">
-          Recherchez votre entreprise
-        </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Trouvez votre entreprise pour pré-remplir automatiquement vos
-          informations.
-        </p>
-      </div>
+    <div className="flex flex-col">
+      <h1 className="text-xl font-semibold text-[#46464A] mb-10">
+        Recherchez votre entreprise
+      </h1>
 
-      {/* Champ de recherche */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input
-          type="text"
-          placeholder="Nom de l'entreprise, SIRET ou SIREN..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10 h-12"
-        />
-        {isLoading && (
-          <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground animate-spin" />
-        )}
-      </div>
+      {/* Company search field */}
+      <div className="relative space-y-1.5">
+        <Label htmlFor="company-search" className="text-[13px] text-muted-foreground">
+          Nom de l&apos;entreprise, SIRET ou SIREN
+        </Label>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+          <Input
+            id="company-search"
+            value={searchQuery}
+            onChange={handleInputChange}
+            placeholder="Rechercher..."
+            className="pl-10"
+          />
+          {isLoading && (
+            <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground animate-spin" />
+          )}
+        </div>
 
-      {/* Message d'erreur SIRET déjà utilisé */}
-      {siretError && (
-        <div className="flex items-start gap-3 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 px-4 py-3">
-          <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-          <div className="text-sm">
-            <p className="font-medium text-red-800 dark:text-red-200">
-              Entreprise déjà enregistrée
-            </p>
-            <p className="text-red-700 dark:text-red-300 text-xs mt-0.5">
-              {siretError}
-            </p>
+        {/* Selected company info */}
+        {selectedCompany && (
+          <div className="flex items-center gap-2.5 rounded-lg border border-[#5A50FF]/20 bg-[#5A50FF]/5 px-3 py-2 mt-1">
+            <div className="p-1.5 rounded-md bg-[#5A50FF]">
+              <Building2 className="size-3.5 text-white" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-medium text-[#46464A] truncate">
+                {selectedCompany.nom_complet || selectedCompany.nom_raison_sociale}
+              </p>
+              <p className="text-[11px] text-muted-foreground">
+                SIREN: {selectedCompany.siren}
+                {selectedCompany.siege?.libelle_commune && ` · ${selectedCompany.siege.libelle_commune}`}
+              </p>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Loader vérification SIRET */}
-      {isCheckingSiret && (
-        <div className="flex items-center justify-center gap-2 py-4">
-          <Loader2 className="w-4 h-4 animate-spin" />
-          <span className="text-sm text-muted-foreground">Vérification de l'entreprise...</span>
-        </div>
-      )}
+        {/* SIRET error */}
+        {siretError && (
+          <div className="flex items-start gap-2.5 rounded-lg bg-red-50 border border-red-200 px-3 py-2.5 mt-1">
+            <AlertCircle className="size-4 text-red-500 shrink-0 mt-0.5" />
+            <p className="text-xs text-red-700">{siretError}</p>
+          </div>
+        )}
 
-      {/* Résultats de recherche */}
-      {hasSearched && !isCheckingSiret && (
-        <div className="space-y-2 max-h-[320px] overflow-y-auto">
-          {searchResults.length > 0
-            ? searchResults.map((company) => {
-                const siege = company.siege || {};
-                const isSelected = selectedCompany?.siren === company.siren;
+        {/* SIRET checking loader */}
+        {isCheckingSiret && (
+          <div className="flex items-center gap-2 py-2 mt-1">
+            <Loader2 className="size-3.5 animate-spin text-muted-foreground" />
+            <span className="text-xs text-muted-foreground">Vérification de l&apos;entreprise...</span>
+          </div>
+        )}
 
-                return (
-                  <button
-                    key={company.siren}
-                    onClick={() => handleSelectCompany(company)}
-                    disabled={isCheckingSiret}
-                    className={`w-full p-4 rounded-xl border transition-all duration-200 text-left ${
-                      isSelected
-                        ? "border-[#5A50FF] bg-[#5A50FF]/5"
-                        : "border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 bg-white dark:bg-gray-950"
-                    }`}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div
-                        className={`p-2 rounded-lg ${
-                          isSelected
-                            ? "bg-[#5A50FF]"
-                            : "bg-gray-100 dark:bg-gray-900"
-                        }`}
+        {/* Search results dropdown */}
+        {showResults && (
+          <div className="absolute left-0 right-0 top-full mt-1 z-50 rounded-xl border border-[#e6e7ea] bg-white shadow-[0_4px_20px_rgba(0,0,0,0.08)] overflow-hidden">
+            <div className="max-h-[280px] overflow-y-auto p-1">
+              {searchResults.length > 0
+                ? searchResults.map((company) => {
+                    const siege = company.siege || {};
+                    return (
+                      <button
+                        key={company.siren}
+                        onClick={() => handleSelectCompany(company)}
+                        disabled={isCheckingSiret}
+                        className="flex w-full flex-col items-start gap-1 rounded-md p-2.5 text-left text-sm outline-none hover:bg-accent hover:text-accent-foreground cursor-pointer transition-colors"
                       >
-                        <Building2
-                          className={`w-4 h-4 ${
-                            isSelected
-                              ? "text-white"
-                              : "text-gray-600 dark:text-gray-400"
-                          }`}
-                        />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3
-                          className={`text-sm font-medium truncate ${
-                            isSelected ? "text-[#5A50FF]" : "text-foreground"
-                          }`}
-                        >
-                          {company.nom_complet || company.nom_raison_sociale}
-                        </h3>
-                        <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
-                          <MapPin className="w-3 h-3" />
+                        <div className="flex items-center justify-between w-full">
+                          <span className="font-medium text-sm truncate">
+                            {company.nom_complet || company.nom_raison_sociale}
+                          </span>
+                          <span className="text-xs text-muted-foreground shrink-0 ml-2">
+                            {company.siren}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <MapPin className="size-3 shrink-0" />
                           <span className="truncate">
                             {siege.libelle_commune || "Adresse non disponible"}
                             {siege.code_postal && ` (${siege.code_postal})`}
                           </span>
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          SIREN: {company.siren}
-                        </p>
-                      </div>
-                      {isSelected && (
-                        <div className="w-2 h-2 rounded-full bg-[#5A50FF] mt-1" />
-                      )}
+                      </button>
+                    );
+                  })
+                : !isLoading && (
+                    <div className="p-4 text-center text-sm text-muted-foreground">
+                      Aucune entreprise trouvée pour &quot;{searchQuery}&quot;
                     </div>
-                  </button>
-                );
-              })
-            : !isLoading && (
-                <div className="text-center py-8 px-4">
-                  <p className="text-sm text-muted-foreground mb-3">
-                    Aucune entreprise trouvée pour "{searchQuery}"
-                  </p>
-                  <a
-                    href="https://annuaire-entreprises.data.gouv.fr/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-sm text-[#5A50FF] hover:underline"
-                  >
-                    Rechercher sur l'annuaire officiel
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
-                </div>
-              )}
-        </div>
-      )}
-
-      {/* Texte informatif */}
-      <div className="text-center pt-2">
-        <p className="text-xs text-muted-foreground">
-          Vous ne trouvez pas votre entreprise ?{" "}
-          <a
-            href="https://annuaire-entreprises.data.gouv.fr/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-[#5A50FF] hover:underline inline-flex items-center gap-1"
-          >
-            Consultez l'annuaire officiel
-            <ExternalLink className="w-3 h-3" />
-          </a>
-        </p>
-        <p className="text-xs text-muted-foreground mt-2">
-          L'accès à Newbi est réservé aux entreprises immatriculées.
-        </p>
+                  )}
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Boutons de navigation */}
-      <div className="flex items-center justify-between pt-4">
+      {/* Navigation buttons */}
+      <div className="flex items-center justify-between mt-10">
         <Button variant="ghost" onClick={onBack}>
           Retour
         </Button>
         <Button
-          onClick={handleContinue}
+          variant="primary"
+          onClick={onNext}
           disabled={!selectedCompany || isCheckingSiret}
         >
           {isCheckingSiret ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
+            <Loader2 className="size-4 animate-spin" />
           ) : (
             "Continuer"
           )}

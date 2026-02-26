@@ -286,8 +286,14 @@ export default function ClientActivityTab({ client }) {
                               ? client?.name || "Client"
                               : item.userName || "Système";
                             // Ne pas afficher la description séparément quand elle est déjà dans le texte d'action
-                            const hideDescription =
-                              item.type === "updated" || item.type === "crm_email_sent";
+                            const typesWithActionText = [
+                              "created", "updated", "invoice_created", "invoice_status_changed",
+                              "quote_created", "quote_status_changed", "credit_note_created",
+                              "note_added", "note_updated", "note_deleted",
+                              "document_email_sent", "invoice_reminder_sent", "reminder_created",
+                              "crm_email_sent", "blocked", "unblocked",
+                            ];
+                            const hideDescription = typesWithActionText.includes(item.type);
 
                             return (
                               <div

@@ -1040,6 +1040,13 @@ export const REVOKE_PUBLIC_SHARE = gql`
   }
 `;
 
+// Mutation pour réactiver un lien de partage désactivé
+export const REACTIVATE_PUBLIC_SHARE = gql`
+  mutation ReactivatePublicShare($id: ID!, $workspaceId: ID) {
+    reactivatePublicShare(id: $id, workspaceId: $workspaceId)
+  }
+`;
+
 // Mutation pour révoquer l'accès d'un visiteur spécifique (le bannit)
 export const REVOKE_VISITOR_ACCESS = gql`
   mutation RevokeVisitorAccess($shareId: ID!, $visitorEmail: String!, $reason: String, $workspaceId: ID) {

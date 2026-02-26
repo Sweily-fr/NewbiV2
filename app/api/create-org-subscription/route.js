@@ -19,7 +19,16 @@ export async function POST(request) {
     }
 
     // Déterminer le plan (par défaut freelance si non spécifié)
+    const VALID_PLANS = ["freelance", "pme", "entreprise"];
     const planName = organizationData.planName || "freelance";
+
+    if (!VALID_PLANS.includes(planName)) {
+      return NextResponse.json(
+        { error: "Plan invalide" },
+        { status: 400 }
+      );
+    }
+
     const isAnnual = organizationData.isAnnual || false;
 
     // 1. Vérifier la session utilisateur
@@ -119,11 +128,27 @@ export async function POST(request) {
       cancelUrl = `${baseUrl}/onboarding?step=4&canceled=true`;
     } else if (isNewOrganization) {
       successUrl = `${baseUrl}/dashboard?org_created=true&payment_success=true`;
-      cancelUrl = `${baseUrl}/dashboard`;
+      cancelUrl = `${baseUrl}/create-workspace/payment-error`;
     } else {
       successUrl = `${baseUrl}/dashboard?subscription_success=true`;
       cancelUrl = `${baseUrl}/dashboard`;
     }
+
+    // 5. Stocker les données volumineuses dans MongoDB (évite la limite Stripe de 500 chars/clé)
+    const { mongoDb } = await import("@/src/lib/mongodb");
+    const pendingData = {
+      userId: session.user.id,
+      invitedMembers: organizationData.invitedMembers || [],
+      logo: organizationData.logo || null,
+      createdAt: new Date(),
+      // TTL : le document sera nettoyé après 24h si jamais le webhook ne le supprime pas
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+    };
+    const pendingResult = await mongoDb
+      .collection("pending_org_data")
+      .insertOne(pendingData);
+    const pendingOrgDataId = pendingResult.insertedId.toString();
+    console.log(`✅ [CREATE-SUB] Données pendantes stockées: ${pendingOrgDataId}`);
 
     console.log(`🔄 [CREATE-SUB] Création session Stripe Checkout...`);
     console.log(
@@ -149,10 +174,11 @@ export async function POST(request) {
         userId: session.user.id,
         isNewOrganization: isNewOrganization ? "true" : "false",
         isOnboarding: isOnboarding ? "true" : "false",
-        // Stocker les données de l'organisation pour le webhook
+        // Référence vers les données complètes en MongoDB
+        pendingOrgDataId: pendingOrgDataId,
+        // Données légères pour le webhook (pas de limite de taille ici)
         orgName: organizationData.name || "",
         orgType: organizationData.type || "",
-        orgInvitedEmails: JSON.stringify(organizationData.invitedMembers || []),
         planName: planName,
         isAnnual: isAnnual ? "true" : "false",
         organizationId: session.session?.activeOrganizationId || "",

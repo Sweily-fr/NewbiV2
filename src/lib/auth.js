@@ -243,6 +243,7 @@ export const auth = betterAuth({
         console.log(`✅ [EMAIL VERIFICATION] isEmailVerified synchronisé pour ${user.email}`);
 
         // 1. Vérifier que l'utilisateur a une organisation
+        let anyMember = null;
         const member = await mongoDb.collection("member").findOne({
           userId: new ObjectId(user.id),
           role: "owner", // Priorité à l'organisation owner
@@ -254,7 +255,7 @@ export const auth = betterAuth({
           );
 
           // Fallback : chercher n'importe quelle organisation
-          const anyMember = await mongoDb.collection("member").findOne({
+          anyMember = await mongoDb.collection("member").findOne({
             userId: new ObjectId(user.id),
           });
 
@@ -275,8 +276,6 @@ export const auth = betterAuth({
         }
 
         // 2. S'assurer que la session a l'organisation active définie
-        // Note : Le hook session.create.after devrait déjà l'avoir fait
-        // Mais on vérifie au cas où
         const sessions = await mongoDb
           .collection("session")
           .find({ userId: new ObjectId(user.id) })
@@ -379,6 +378,11 @@ export const auth = betterAuth({
         defaultValue: false,
       },
       pendingInvitationId: {
+        type: "string",
+        required: false,
+        defaultValue: "",
+      },
+      stripeCustomerId: {
         type: "string",
         required: false,
         defaultValue: "",

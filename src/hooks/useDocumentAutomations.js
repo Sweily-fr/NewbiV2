@@ -192,6 +192,15 @@ const RUN_DOCUMENT_AUTOMATION = gql`
   }
 `;
 
+export const GET_AUTOMATION_PROGRESS = gql`
+  query GetAutomationProgress($workspaceId: ID!, $automationId: ID!) {
+    documentAutomationProgress(workspaceId: $workspaceId, automationId: $automationId) {
+      current
+      total
+    }
+  }
+`;
+
 const GET_DOCUMENTS_FOR_AUTOMATION = gql`
   query GetDocumentsForAutomation($workspaceId: ID!, $automationId: ID!) {
     documentsForAutomation(workspaceId: $workspaceId, automationId: $automationId) {
@@ -210,7 +219,7 @@ const PROCESS_AUTOMATION_DOCUMENT = gql`
     $automationId: ID!
     $documentId: ID!
     $documentType: String!
-    $pdfBase64: String!
+    $pdfBase64: String
   ) {
     processAutomationDocument(
       workspaceId: $workspaceId

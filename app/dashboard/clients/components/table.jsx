@@ -8,6 +8,7 @@ import {
   useState,
   useCallback,
 } from "react";
+import ReactDOM from "react-dom";
 import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
 import {
   ColumnDef,
@@ -1127,6 +1128,7 @@ function RowActions({ row, onEdit, onSelectList, workspaceId }) {
   const client = row.original;
   const router = useRouter();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showDeleteTooltip, setShowDeleteTooltip] = useState(null);
   const { deleteClient } = useDeleteClient();
   const { lists } = useClientListsByClient(workspaceId || "", client.id);
 
@@ -1189,14 +1191,16 @@ function RowActions({ row, onEdit, onSelectList, workspaceId }) {
       }
 
       if ((event.metaKey || event.ctrlKey) && event.key === "Backspace") {
-        setShowDeleteDialog(true);
+        if (!client.hasDocuments) {
+          setShowDeleteDialog(true);
+        }
         event.preventDefault();
       }
     };
 
     document.addEventListener("keydown", handleGlobalKeyDown);
     return () => document.removeEventListener("keydown", handleGlobalKeyDown);
-  }, [handleEdit, showDeleteDialog]);
+  }, [handleEdit, showDeleteDialog, client.hasDocuments]);
 
   return (
     <>
@@ -1260,8 +1264,24 @@ function RowActions({ row, onEdit, onSelectList, workspaceId }) {
 
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            className="text-destructive focus:text-destructive"
-            onClick={() => setShowDeleteDialog(true)}
+            className={client.hasDocuments
+              ? "opacity-50 cursor-not-allowed"
+              : "text-destructive focus:text-destructive"
+            }
+            onSelect={(e) => {
+              if (client.hasDocuments) {
+                e.preventDefault();
+              } else {
+                setShowDeleteDialog(true);
+              }
+            }}
+            onMouseEnter={(e) => {
+              if (client.hasDocuments) {
+                const rect = e.currentTarget.getBoundingClientRect();
+                setShowDeleteTooltip({ top: rect.bottom + 6, left: rect.right });
+              }
+            }}
+            onMouseLeave={() => setShowDeleteTooltip(null)}
             variant="destructive"
           >
             <span>Supprimer</span>
@@ -1298,6 +1318,24 @@ function RowActions({ row, onEdit, onSelectList, workspaceId }) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {showDeleteTooltip && ReactDOM.createPortal(
+        <div
+          className="fixed z-[9999] w-[260px] rounded-md px-3 py-1.5 text-xs text-white whitespace-normal animate-in fade-in-0 zoom-in-95"
+          style={{
+            backgroundColor: "#202020",
+            top: showDeleteTooltip.top,
+            left: showDeleteTooltip.left - 260,
+          }}
+        >
+          Ce contact est lié à des factures, devis ou bons de commande.
+          <div
+            className="absolute bottom-full right-4 size-2.5 translate-y-[calc(50%+2px)] rotate-45 rounded-[2px]"
+            style={{ backgroundColor: "#202020" }}
+          />
+        </div>,
+        document.body
+      )}
     </>
   );
 }

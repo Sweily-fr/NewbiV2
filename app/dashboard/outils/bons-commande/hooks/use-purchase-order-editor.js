@@ -104,6 +104,7 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
 
   const [saving, setSaving] = useState(false);
   const [isFormInitialized, setIsFormInitialized] = useState(false); // Indique si le formulaire est complètement chargé
+  const sourceQuoteIdRef = useRef(null);
 
   // Watch all form data for auto-save
   const formData = watch();
@@ -852,6 +853,50 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
     }
   }, [isFormInitialized, mode, setValue, getValues]);
 
+  // Pre-fill from Quote conversion (via sessionStorage)
+  useEffect(() => {
+    if (mode === 'create' && isFormInitialized) {
+      const quoteData = sessionStorage.getItem('quotePurchaseOrderData');
+      if (quoteData) {
+        try {
+          const q = JSON.parse(quoteData);
+          sessionStorage.removeItem('quotePurchaseOrderData');
+          sourceQuoteIdRef.current = q.sourceQuoteId;
+
+          if (q.client) setValue('client', q.client);
+          if (q.items?.length > 0) {
+            setValue('items', q.items.map(item => ({
+              description: item.description || '',
+              quantity: item.quantity || 1,
+              unitPrice: item.unitPrice || 0,
+              vatRate: item.vatRate ?? item.taxRate ?? 20,
+              unit: item.unit ?? '',
+              discount: item.discount || 0,
+              discountType: item.discountType || 'PERCENTAGE',
+              details: item.details || '',
+              vatExemptionText: item.vatExemptionText || '',
+            })));
+          }
+          if (q.discount != null) setValue('discount', q.discount);
+          if (q.discountType) setValue('discountType', q.discountType);
+          if (q.customFields?.length > 0) {
+            setValue('customFields', q.customFields.map(f => ({
+              name: f.key || f.name || '',
+              value: f.value || '',
+            })));
+          }
+          if (q.shipping) setValue('shipping', q.shipping);
+          if (q.purchaseOrderNumber) setValue('purchaseOrderNumber', q.purchaseOrderNumber);
+          if (q.isReverseCharge != null) setValue('isReverseCharge', q.isReverseCharge);
+          if (q.retenueGarantie != null) setValue('retenueGarantie', q.retenueGarantie);
+          if (q.escompte != null) setValue('escompte', q.escompte);
+        } catch (e) {
+          sessionStorage.removeItem('quotePurchaseOrderData');
+        }
+      }
+    }
+  }, [mode, isFormInitialized, setValue]);
+
   // Validation functions
   const validateStep1 = useCallback(() => {
     const data = getValues();
@@ -1139,6 +1184,11 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
         );
         input.status = "CONFIRMED";
 
+        // Ajouter la référence au devis source si présente
+        if (sourceQuoteIdRef.current) {
+          input.sourceQuoteId = sourceQuoteIdRef.current;
+        }
+
         let result;
         if (mode === "create" || !purchaseOrderId) {
           result = await createPurchaseOrder(input);
@@ -1412,6 +1462,11 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
           existingPurchaseOrder
         );
         input.status = "CONFIRMED";
+
+        // Ajouter la référence au devis source si présente
+        if (sourceQuoteIdRef.current) {
+          input.sourceQuoteId = sourceQuoteIdRef.current;
+        }
 
         let result;
         if (existingPurchaseOrder?.id) {

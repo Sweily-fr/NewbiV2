@@ -145,10 +145,7 @@ export function useDashboardLayoutSimple() {
       try {
         setIsLoading(true);
 
-        console.log(
-          "🔍 [SUBSCRIPTION] Fetching for organizationId:",
-          organizationId
-        );
+        // Fetch subscription silently
 
         // ✅ Utiliser l'API personnalisée qui récupère directement depuis MongoDB
         // (inclut les abonnements canceled, contrairement à Better Auth subscription.list)
@@ -157,7 +154,7 @@ export function useDashboardLayoutSimple() {
         );
         const data = await response.json();
 
-        console.log("🔍 [SUBSCRIPTION] Result:", data);
+        // Result received
 
         if (response.ok && data) {
           // Vérifier si l'abonnement est actif ou encore valide (canceled mais dans la période payée)
@@ -165,7 +162,7 @@ export function useDashboardLayoutSimple() {
 
           // Si pas d'abonnement ou abonnement expiré
           if (data.isDefault || data.status === "expired" || !data.status) {
-            console.log("🔍 [SUBSCRIPTION] Pas d'abonnement actif ou expiré");
+            // No active subscription
             activeSubscription = null;
           } else if (data.status === "active" || data.status === "trialing") {
             activeSubscription = data;
@@ -173,21 +170,11 @@ export function useDashboardLayoutSimple() {
             const periodEndDate = new Date(data.periodEnd);
             const now = new Date();
             if (periodEndDate > now) {
-              console.log(
-                "🔍 [SUBSCRIPTION] Abonnement annulé mais encore valide jusqu'au:",
-                periodEndDate.toLocaleDateString("fr-FR")
-              );
               activeSubscription = data;
             } else {
-              console.log("🔍 [SUBSCRIPTION] Abonnement annulé et expiré");
               activeSubscription = null;
             }
           }
-
-          console.log(
-            "🔍 [SUBSCRIPTION] Active subscription:",
-            activeSubscription
-          );
 
           setSubscription(activeSubscription);
 

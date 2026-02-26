@@ -12,14 +12,15 @@ const SubmitButton = (props) => {
   const loading = isLoading || pending;
 
   return (
-    <Button {...rest} disabled={props.disabled || loading}>
-      {loading ? (
-        <>
-          <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
-        </>
-      ) : (
-        children
+    <Button {...rest} disabled={props.disabled || loading} className={`${props.className || ""} relative`}>
+      {loading && (
+        <span className="absolute inset-0 flex items-center justify-center">
+          <LoaderCircle className="h-4 w-4 animate-spin" />
+        </span>
       )}
+      <span className={loading ? "invisible" : ""}>
+        {children}
+      </span>
     </Button>
   );
 };

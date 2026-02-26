@@ -12,7 +12,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
-import { Building, Euro, CalendarIcon } from "lucide-react";
+import { CalendarIcon, Info } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/src/components/ui/tooltip";
 import { format, parse } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Calendar as ShadcnCalendar } from "@/src/components/ui/calendar";
@@ -188,11 +193,23 @@ export function InformationsLegalesSection({
     hasCommercialActivity
   );
 
-  const RequiredLabel = ({ htmlFor, children, isRequired }) => (
-    <Label htmlFor={htmlFor} className="text-sm font-normal pb-2">
-      {children}
-      {isRequired && <span className="text-red-500 ml-1">*</span>}
-    </Label>
+  const RequiredLabel = ({ htmlFor, children, isRequired, tooltip }) => (
+    <div className="flex items-center gap-2">
+      <Label htmlFor={htmlFor} className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
+        {children}
+        {isRequired && <span className="text-red-500 ml-1">*</span>}
+      </Label>
+      {tooltip && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+          </TooltipTrigger>
+          <TooltipContent side="top" className="max-w-[280px] sm:max-w-xs">
+            <p>{tooltip}</p>
+          </TooltipContent>
+        </Tooltip>
+      )}
+    </div>
   );
 
   const SectionTitle = ({ children }) => (
@@ -200,7 +217,7 @@ export function InformationsLegalesSection({
       <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
         {children}
       </h3>
-      <div className="flex-1 h-px bg-gray-200" />
+      <div className="flex-1 h-px bg-[#eeeff1] dark:bg-[#232323]" />
     </div>
   );
 
@@ -209,7 +226,7 @@ export function InformationsLegalesSection({
       {/* Titre */}
       <div>
         <h2 className="text-lg font-medium mb-1 hidden md:block">Informations légales</h2>
-        <Separator className="hidden md:block" />
+        <Separator className="hidden md:block bg-[#eeeff1] dark:bg-[#232323]" />
         {!canManageOrgSettings && (
           <div className="mt-4">
             <Callout type="warning" noMargin>
@@ -249,7 +266,6 @@ export function InformationsLegalesSection({
           {/* Forme juridique */}
           <div className="flex flex-col gap-1">
             <RequiredLabel htmlFor="legalForm" isRequired={true}>
-              <Building className="h-4 w-4 inline mr-2 text-gray-500" />
               Forme juridique
             </RequiredLabel>
             <Select
@@ -273,7 +289,7 @@ export function InformationsLegalesSection({
           {/* SIRET et RCS */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="flex flex-col gap-1">
-              <RequiredLabel htmlFor="siret" isRequired={requiredFields.siret}>
+              <RequiredLabel htmlFor="siret" isRequired={requiredFields.siret} tooltip="14 chiffres sans espaces">
                 Numéro SIRET
               </RequiredLabel>
               <Input
@@ -302,12 +318,11 @@ export function InformationsLegalesSection({
                   {errors.legal.siret.message}
                 </p>
               )}
-              <p className="text-xs text-gray-600">14 chiffres sans espaces</p>
             </div>
 
             {visibleFields.rcs && (
               <div className="flex flex-col gap-1">
-                <RequiredLabel htmlFor="rcs" isRequired={requiredFields.rcs}>
+                <RequiredLabel htmlFor="rcs" isRequired={requiredFields.rcs} tooltip="Format: RCS Ville 123 456 789">
                   Numéro RCS
                   {!requiredFields.rcs &&
                     ["EI", "Auto-entrepreneur"].includes(selectedLegalForm) && (
@@ -342,9 +357,6 @@ export function InformationsLegalesSection({
                     {errors.legal.rcs.message}
                   </p>
                 )}
-                <p className="text-xs text-gray-600">
-                  Format: RCS Ville 123 456 789
-                </p>
               </div>
             )}
           </div>
@@ -356,8 +368,8 @@ export function InformationsLegalesSection({
                 <RequiredLabel
                   htmlFor="capital"
                   isRequired={requiredFields.capital}
+                  tooltip="Montant en euros"
                 >
-                  <Euro className="h-4 w-4 inline mr-2 text-gray-500" />
                   Capital social (€)
                 </RequiredLabel>
                 <Input
@@ -387,7 +399,6 @@ export function InformationsLegalesSection({
                     {errors.legal.capital.message}
                   </p>
                 )}
-                <p className="text-xs text-gray-600">Montant en euros</p>
               </div>
             )}
 
@@ -562,6 +573,7 @@ export function InformationsLegalesSection({
                       <RequiredLabel
                         htmlFor="vatNumber"
                         isRequired={requiredFields.vatNumber}
+                        tooltip="Format: FR + 11 chiffres"
                       >
                         Numéro de TVA intracommunautaire
                       </RequiredLabel>
@@ -591,9 +603,6 @@ export function InformationsLegalesSection({
                           {errors.legal.vatNumber.message}
                         </p>
                       )}
-                      <p className="text-xs text-gray-600">
-                        Format: FR + 11 chiffres
-                      </p>
                     </div>
                   )}
                 </div>
@@ -618,7 +627,6 @@ export function InformationsLegalesSection({
                   htmlFor="fiscalYearStartDate"
                   isRequired={false}
                 >
-                  <CalendarIcon className="h-4 w-4 inline mr-2 text-gray-500" />
                   Date de début
                 </RequiredLabel>
                 <Popover open={startDateOpen} onOpenChange={setStartDateOpen}>
@@ -677,7 +685,6 @@ export function InformationsLegalesSection({
 
               <div className="flex flex-col gap-1">
                 <RequiredLabel htmlFor="fiscalYearEndDate" isRequired={false}>
-                  <CalendarIcon className="h-4 w-4 inline mr-2 text-gray-500" />
                   Date de clôture
                 </RequiredLabel>
                 <Popover open={endDateOpen} onOpenChange={setEndDateOpen}>
@@ -736,7 +743,7 @@ export function InformationsLegalesSection({
             </div>
           </div>
 
-          <Separator />
+          <Separator className="bg-[#eeeff1] dark:bg-[#232323]" />
 
           {/* Information légale */}
           <div className="mb-8 mt-2">

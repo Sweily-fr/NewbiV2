@@ -31,6 +31,7 @@ const CONFIG = {
 // ==================== ÉTAT GLOBAL ====================
 let lastActivityTimestamp = Date.now();
 let lastSessionRefreshTimestamp = 0;
+let lastApiActivityTimestamp = 0;
 let isRefreshingSession = false;
 let checkIntervalId = null;
 let isInitialized = false;
@@ -54,12 +55,18 @@ export function recordActivity(source = "unknown") {
     return;
   }
 
-  lastActivityTimestamp = now;
-
-  // Log en développement
-  if (process.env.NODE_ENV === "development") {
-    console.log(`🟢 [ActivityTracker] Activité enregistrée: ${source}`);
+  // Debounce fort pour les activités API (5 secondes)
+  if (source === "api") {
+    const timeSinceLastApi = now - lastApiActivityTimestamp;
+    if (timeSinceLastApi < 5000) {
+      // Met à jour le timestamp d'activité silencieusement, sans logs ni callbacks
+      lastActivityTimestamp = now;
+      return;
+    }
+    lastApiActivityTimestamp = now;
   }
+
+  lastActivityTimestamp = now;
 
   // Notifier les listeners
   activityCallbacks.forEach((callback) => {
@@ -124,17 +131,12 @@ export function shouldRefreshSession() {
  */
 export async function refreshSession() {
   if (isRefreshingSession) {
-    console.log("[ActivityTracker] Rafraîchissement déjà en cours, skip");
     return false;
   }
 
   isRefreshingSession = true;
 
   try {
-    console.log(
-      "🔄 [ActivityTracker] Rafraîchissement de la session Better Auth...",
-    );
-
     let jwtObtained = false;
 
     const session = await authClient.getSession({
@@ -148,18 +150,11 @@ export async function refreshSession() {
           if (jwt) {
             localStorage.setItem("bearer_token", jwt);
             jwtObtained = true;
-            console.log("✅ [ActivityTracker] Nouveau JWT stocké via getSession");
           }
 
           lastSessionRefreshTimestamp = Date.now();
-          console.log("✅ [ActivityTracker] Session rafraîchie avec succès");
         },
-        onError: (error) => {
-          console.error(
-            "❌ [ActivityTracker] Erreur rafraîchissement session:",
-            error,
-          );
-        },
+        onError: () => {},
       },
     });
 
@@ -177,11 +172,10 @@ export async function refreshSession() {
             const tokenData = await tokenResponse.json();
             if (tokenData.token) {
               localStorage.setItem("bearer_token", tokenData.token);
-              console.log("✅ [ActivityTracker] JWT stocké via /api/auth/token");
             }
           }
-        } catch (err) {
-          console.warn("⚠️ [ActivityTracker] Erreur /api/auth/token:", err.message);
+        } catch {
+          // Silently ignore token fetch errors
         }
       }
 
@@ -189,11 +183,7 @@ export async function refreshSession() {
     }
 
     return false;
-  } catch (error) {
-    console.error(
-      "❌ [ActivityTracker] Exception rafraîchissement session:",
-      error,
-    );
+  } catch {
     return false;
   } finally {
     isRefreshingSession = false;
@@ -231,7 +221,6 @@ export function onSessionExpired(callback) {
  * Notifie que la session a expiré
  */
 export function notifySessionExpired(reason = "inactivity") {
-  console.log(`⚠️ [ActivityTracker] Session expirée: ${reason}`);
   sessionExpiredCallbacks.forEach((callback) => {
     try {
       callback(reason);
@@ -246,17 +235,10 @@ export function notifySessionExpired(reason = "inactivity") {
  * Doit être appelé une seule fois au démarrage de l'application
  */
 export function initializeActivityTracker() {
-  if (isInitialized) {
-    console.log("[ActivityTracker] Déjà initialisé, skip");
-    return;
-  }
+  if (isInitialized) return;
+  if (typeof window === "undefined") return;
 
-  if (typeof window === "undefined") {
-    console.log("[ActivityTracker] Pas de window (SSR), skip");
-    return;
-  }
-
-  console.log("🚀 [ActivityTracker] Initialisation...");
+  // Initialisation silencieuse
 
   // Configurer les événements DOM
   const domEvents = [
@@ -307,18 +289,8 @@ export function initializeActivityTracker() {
 
   isInitialized = true;
   lastActivityTimestamp = Date.now();
-  // ✅ FIX: Ne PAS initialiser à Date.now() — cela retardait le premier refresh de 25 min.
-  // En initialisant à 0, le premier refresh se fait dès la première activité,
-  // garantissant un JWT frais rapidement après le chargement de la page.
+  // Ne PAS initialiser à Date.now() — cela retardait le premier refresh de 25 min.
   lastSessionRefreshTimestamp = 0;
-
-  console.log("✅ [ActivityTracker] Initialisé avec succès");
-  console.log(
-    `   - Timeout d'inactivité: ${CONFIG.INACTIVITY_TIMEOUT / 60000} minutes`,
-  );
-  console.log(
-    `   - Intervalle de rafraîchissement: ${CONFIG.SESSION_REFRESH_INTERVAL / 60000} minutes`,
-  );
 }
 
 /**
@@ -332,7 +304,6 @@ export function cleanupActivityTracker() {
   activityCallbacks.clear();
   sessionExpiredCallbacks.clear();
   isInitialized = false;
-  console.log("🧹 [ActivityTracker] Nettoyé");
 }
 
 /**

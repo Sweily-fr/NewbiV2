@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useCallback } from 'react';
 import { toast } from '@/src/components/ui/sonner';
 import { Button } from '@/src/components/ui/button';
 import { Switch } from '@/src/components/ui/switch';
@@ -16,7 +16,9 @@ import {
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from '@/src/components/ui/select';
@@ -32,30 +34,52 @@ import {
   Loader2,
   Tag,
   Plus,
+  Play,
 } from 'lucide-react';
 import { useWorkspace } from '@/src/hooks/useWorkspace';
 import { useSharedFolders } from '@/src/hooks/useSharedDocuments';
+import { useApolloClient } from '@apollo/client';
 import {
   useDocumentAutomations,
   useCreateDocumentAutomation,
   useUpdateDocumentAutomation,
   useDeleteDocumentAutomation,
   useToggleDocumentAutomation,
-  useDocumentsForAutomation,
-  useProcessAutomationDocument,
+  useRunDocumentAutomation,
+  GET_AUTOMATION_PROGRESS,
 } from '@/src/hooks/useDocumentAutomations';
-import UniversalPreviewPDF from '@/src/components/pdf/UniversalPreviewPDF';
-import { generatePDFFromElement } from '@/src/utils/generatePDF';
 
 const TRIGGER_OPTIONS = [
-  { value: 'INVOICE_SENT', label: 'Facture envoyée' },
-  { value: 'INVOICE_PAID', label: 'Facture payée' },
-  { value: 'INVOICE_CANCELED', label: 'Facture annulée' },
-  { value: 'QUOTE_SENT', label: 'Devis envoyé' },
-  { value: 'QUOTE_ACCEPTED', label: 'Devis accepté' },
-  { value: 'QUOTE_CANCELED', label: 'Devis refusé' },
-  { value: 'CREDIT_NOTE_CREATED', label: 'Avoir créé' },
-  { value: 'INVOICE_IMPORTED', label: 'Facture importée' },
+  // Factures
+  { value: 'INVOICE_DRAFT', label: 'Facture brouillon', group: 'Facture' },
+  { value: 'INVOICE_SENT', label: 'Facture en attente', group: 'Facture' },
+  { value: 'INVOICE_PAID', label: 'Facture terminée', group: 'Facture' },
+  { value: 'INVOICE_OVERDUE', label: 'Facture en retard', group: 'Facture' },
+  { value: 'INVOICE_CANCELED', label: 'Facture refusée', group: 'Facture' },
+  { value: 'INVOICE_IMPORTED', label: 'Facture importée', group: 'Facture' },
+  // Devis
+  { value: 'QUOTE_DRAFT', label: 'Devis brouillon', group: 'Devis' },
+  { value: 'QUOTE_SENT', label: 'Devis en attente', group: 'Devis' },
+  { value: 'QUOTE_ACCEPTED', label: 'Devis accepté', group: 'Devis' },
+  { value: 'QUOTE_CANCELED', label: 'Devis refusé', group: 'Devis' },
+  { value: 'QUOTE_IMPORTED', label: 'Devis importé', group: 'Devis' },
+  // Avoir
+  { value: 'CREDIT_NOTE_CREATED', label: 'Avoir créé', group: 'Avoir' },
+  // Bon de commande
+  { value: 'PURCHASE_ORDER_DRAFT', label: 'BC brouillon', group: 'Bon de commande' },
+  { value: 'PURCHASE_ORDER_CONFIRMED', label: 'BC confirmé', group: 'Bon de commande' },
+  { value: 'PURCHASE_ORDER_IN_PROGRESS', label: 'BC en cours', group: 'Bon de commande' },
+  { value: 'PURCHASE_ORDER_DELIVERED', label: 'BC livré', group: 'Bon de commande' },
+  { value: 'PURCHASE_ORDER_CANCELED', label: 'BC annulé', group: 'Bon de commande' },
+  // Facture d'achat
+  { value: 'PURCHASE_INVOICE_TO_PROCESS', label: "Fact. achat à traiter", group: "Facture d'achat" },
+  { value: 'PURCHASE_INVOICE_TO_PAY', label: "Fact. achat à payer", group: "Facture d'achat" },
+  { value: 'PURCHASE_INVOICE_PENDING', label: "Fact. achat en attente", group: "Facture d'achat" },
+  { value: 'PURCHASE_INVOICE_PAID', label: "Fact. achat payée", group: "Facture d'achat" },
+  { value: 'PURCHASE_INVOICE_OVERDUE', label: "Fact. achat en retard", group: "Facture d'achat" },
+  { value: 'PURCHASE_INVOICE_ARCHIVED', label: "Fact. achat archivée", group: "Facture d'achat" },
+  // Transaction
+  { value: 'TRANSACTION_RECEIPT', label: 'Justificatif de transaction', group: 'Transaction' },
 ];
 
 const SUBFOLDER_PATTERNS = [
@@ -65,6 +89,35 @@ const SUBFOLDER_PATTERNS = [
   { value: '{clientName}', label: 'Nom du client' },
   { value: '{year}/{clientName}', label: 'Année/Client' },
 ];
+
+// Retourne le label complet pour un trigger
+function getTriggerFullLabel(value) {
+  const opt = TRIGGER_OPTIONS.find(t => t.value === value);
+  return opt?.label || value;
+}
+
+// Pré-calcul des groupes (statique, jamais de re-render)
+const TRIGGER_GROUPS = (() => {
+  const groups = [];
+  let currentGroup = null;
+  for (const opt of TRIGGER_OPTIONS) {
+    if (!currentGroup || currentGroup.label !== opt.group) {
+      currentGroup = { label: opt.group, items: [] };
+      groups.push(currentGroup);
+    }
+    currentGroup.items.push(opt);
+  }
+  return groups;
+})();
+
+const GROUPED_TRIGGER_OPTIONS = TRIGGER_GROUPS.map((g) => (
+  <SelectGroup key={g.label}>
+    <SelectLabel className="text-xs text-muted-foreground font-semibold">{g.label}</SelectLabel>
+    {g.items.map((t) => (
+      <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+    ))}
+  </SelectGroup>
+));
 
 // Construit une liste plate ordonnée en arbre avec profondeur et guides
 function buildFolderTree(folders) {
@@ -142,6 +195,7 @@ function FolderTreeSelect({ folders, value, onValueChange, placeholder }) {
 
 // Popover pour les réglages avancés d'une automatisation
 function SettingsPopover({ config, onSave }) {
+  const [open, setOpen] = useState(false);
   const [createSubfolder, setCreateSubfolder] = useState(config?.createSubfolder || false);
   const [subfolderPattern, setSubfolderPattern] = useState(config?.subfolderPattern || '{year}');
   const [documentNaming, setDocumentNaming] = useState(config?.documentNaming || '{documentType}-{number}-{clientName}');
@@ -155,6 +209,7 @@ function SettingsPopover({ config, onSave }) {
       tags,
       documentStatus: 'classified',
     });
+    setOpen(false);
   };
 
   const handleAddTag = () => {
@@ -166,7 +221,7 @@ function SettingsPopover({ config, onSave }) {
   };
 
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button variant="ghost" size="sm" className="text-xs" style={{ color: '#5b50ff' }}>
           Options avancées
@@ -260,34 +315,22 @@ function SettingsPopover({ config, onSave }) {
   );
 }
 
-const DOC_TYPE_API_MAP = {
-  invoice: '/api/invoices/data/',
-  quote: '/api/quotes/data/',
-  creditNote: '/api/credit-notes/data/',
-};
-
-const DOC_TYPE_PDF_MAP = {
-  invoice: 'invoice',
-  quote: 'quote',
-  creditNote: 'creditNote',
-};
-
-export default function DocumentAutomationsModal({ open, onOpenChange }) {
+export default function DocumentAutomationsModal({ open, onOpenChange, onDocumentsChanged }) {
   const { workspaceId } = useWorkspace();
+  const client = useApolloClient();
   const { automations, loading: automationsLoading, refetch } = useDocumentAutomations(workspaceId);
   const { folders, loading: foldersLoading } = useSharedFolders();
+  const hasLoadedOnce = useRef(false);
+  if (!automationsLoading && !foldersLoading) hasLoadedOnce.current = true;
   const { createAutomation, loading: createLoading } = useCreateDocumentAutomation();
   const { updateAutomation } = useUpdateDocumentAutomation();
   const { deleteAutomation } = useDeleteDocumentAutomation();
   const { toggleAutomation } = useToggleDocumentAutomation();
-  const { fetchDocuments } = useDocumentsForAutomation();
-  const { processDocument } = useProcessAutomationDocument();
+  const { runAutomation } = useRunDocumentAutomation();
 
   const [runningId, setRunningId] = useState(null);
   const [progress, setProgress] = useState(null); // { current, total }
-  const [currentDocData, setCurrentDocData] = useState(null);
-  const [currentDocType, setCurrentDocType] = useState('invoice');
-  const pdfContainerRef = useRef(null);
+  const pollRef = useRef(null);
 
   // New automation row state
   const [showNewRow, setShowNewRow] = useState(false);
@@ -301,7 +344,7 @@ export default function DocumentAutomationsModal({ open, onOpenChange }) {
       return;
     }
     try {
-      const triggerLabel = TRIGGER_OPTIONS.find(t => t.value === newTrigger)?.label || newTrigger;
+      const triggerLabel = getTriggerFullLabel(newTrigger);
       const folderName = folders.find(f => f.id === newFolderId)?.name || 'Dossier';
       const created = await createAutomation(workspaceId, {
         name: `${triggerLabel} → ${folderName}`,
@@ -318,7 +361,7 @@ export default function DocumentAutomationsModal({ open, onOpenChange }) {
       setShowNewRow(false);
       refetch();
 
-      // Lancer immédiatement le traitement rétroactif côté client
+      // Lancer immédiatement le traitement rétroactif
       if (created?.id) {
         processExistingDocuments(created.id);
       }
@@ -327,85 +370,63 @@ export default function DocumentAutomationsModal({ open, onOpenChange }) {
     }
   };
 
+  const stopPolling = useCallback(() => {
+    if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+  }, []);
+
+  const startPolling = useCallback((automationId) => {
+    stopPolling();
+    pollRef.current = setInterval(async () => {
+      try {
+        const { data } = await client.query({
+          query: GET_AUTOMATION_PROGRESS,
+          variables: { workspaceId, automationId },
+          fetchPolicy: 'no-cache',
+        });
+        if (data?.documentAutomationProgress) {
+          setProgress(data.documentAutomationProgress);
+        }
+      } catch {
+        // Ignorer les erreurs de polling
+      }
+    }, 1500);
+  }, [client, workspaceId, stopPolling]);
+
   const processExistingDocuments = async (automationId) => {
     try {
       setRunningId(automationId);
       setProgress(null);
 
-      const documents = await fetchDocuments(workspaceId, automationId);
+      // Lancer le polling de progression en parallèle
+      startPolling(automationId);
 
-      if (!documents || documents.length === 0) {
+      // Un seul appel backend qui fait tout le traitement
+      const result = await runAutomation(workspaceId, automationId);
+
+      const { successCount, failCount, status, message } = result;
+
+      if (status === 'NO_DOCUMENTS') {
         toast.info('Aucun document existant à traiter');
-        return;
-      }
-
-      const total = documents.length;
-      setProgress({ current: 0, total });
-      let successCount = 0;
-      let failCount = 0;
-
-      for (let i = 0; i < documents.length; i++) {
-        const doc = documents[i];
-        const apiPath = DOC_TYPE_API_MAP[doc.documentType];
-        const pdfType = DOC_TYPE_PDF_MAP[doc.documentType] || 'invoice';
-
-        try {
-          const res = await fetch(`${apiPath}${doc.documentId}`);
-          if (!res.ok) throw new Error(`Erreur API (${res.status})`);
-          const docData = await res.json();
-
-          setCurrentDocData(docData);
-          setCurrentDocType(pdfType);
-
-          await new Promise(resolve => setTimeout(resolve, 800));
-
-          const el = pdfContainerRef.current;
-          if (!el) throw new Error('Conteneur PDF non trouvé');
-
-          const pdfBuffer = await generatePDFFromElement(el);
-
-          const binaryString = Array.from(pdfBuffer)
-            .map((byte) => String.fromCharCode(byte))
-            .join('');
-          const pdfBase64 = btoa(binaryString);
-
-          const result = await processDocument(
-            workspaceId,
-            automationId,
-            doc.documentId,
-            doc.documentType,
-            pdfBase64
-          );
-
-          if (result?.success) {
-            successCount++;
-          } else {
-            failCount++;
-            console.error(`Erreur doc ${doc.documentId}:`, result?.error);
-          }
-        } catch (err) {
-          failCount++;
-          console.error(`Erreur traitement doc ${doc.documentId}:`, err);
-        }
-
-        setProgress({ current: i + 1, total });
-      }
-
-      setCurrentDocData(null);
-
-      if (failCount === 0 && successCount > 0) {
-        toast.success(`${successCount} document(s) traité(s) avec succès`);
-      } else if (successCount > 0 && failCount > 0) {
-        toast.warning(`${successCount} succès, ${failCount} échec(s)`);
-      } else if (failCount > 0) {
-        toast.error(`${failCount} document(s) en échec`);
+      } else if (status === 'COMPLETED') {
+        toast.success(message || `${successCount} document(s) traité(s)`);
+      } else if (status === 'PARTIAL') {
+        toast.warning(message || `${successCount} succès, ${failCount} échec(s)`);
+      } else if (status === 'FAILED') {
+        toast.error(message || 'Échec du traitement');
+      } else {
+        toast.info(message || 'Traitement terminé');
       }
 
       refetch();
+      if (status !== 'NO_DOCUMENTS') onDocumentsChanged?.();
     } catch (err) {
       const gqlMessage = err?.graphQLErrors?.[0]?.message || err?.message;
       toast.error(gqlMessage || 'Erreur lors du traitement');
     } finally {
+      stopPolling();
       setRunningId(null);
       setProgress(null);
     }
@@ -414,7 +435,7 @@ export default function DocumentAutomationsModal({ open, onOpenChange }) {
   const handleUpdateTrigger = async (id, triggerType) => {
     try {
       const automation = automations.find(a => a.id === id);
-      const triggerLabel = TRIGGER_OPTIONS.find(t => t.value === triggerType)?.label || triggerType;
+      const triggerLabel = getTriggerFullLabel(triggerType);
       const folderName = automation?.actionConfig?.targetFolder?.name || 'Dossier';
       await updateAutomation(workspaceId, id, {
         name: `${triggerLabel} → ${folderName}`,
@@ -430,7 +451,7 @@ export default function DocumentAutomationsModal({ open, onOpenChange }) {
     try {
       const automation = automations.find(a => a.id === id);
       const currentConfig = automation?.actionConfig || {};
-      const triggerLabel = TRIGGER_OPTIONS.find(t => t.value === automation?.triggerType)?.label || '';
+      const triggerLabel = getTriggerFullLabel(automation?.triggerType);
       const folderName = folders.find(f => f.id === targetFolderId)?.name || 'Dossier';
       await updateAutomation(workspaceId, id, {
         name: `${triggerLabel} → ${folderName}`,
@@ -478,7 +499,7 @@ export default function DocumentAutomationsModal({ open, onOpenChange }) {
     }
   };
 
-  const isLoading = automationsLoading || foldersLoading;
+  const isLoading = !hasLoadedOnce.current && (automationsLoading || foldersLoading);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -508,13 +529,11 @@ export default function DocumentAutomationsModal({ open, onOpenChange }) {
                   value={automation.triggerType}
                   onValueChange={(value) => handleUpdateTrigger(automation.id, value)}
                 >
-                  <SelectTrigger className="w-[170px]">
+                  <SelectTrigger className="w-[220px]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {TRIGGER_OPTIONS.map((t) => (
-                      <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
-                    ))}
+                    {GROUPED_TRIGGER_OPTIONS}
                   </SelectContent>
                 </Select>
 
@@ -538,17 +557,27 @@ export default function DocumentAutomationsModal({ open, onOpenChange }) {
                   })}
                 />
 
-                {automation.stats?.totalExecutions > 0 && (
-                  <span className="text-xs text-muted-foreground flex-shrink-0">
-                    {automation.stats.totalExecutions}x
-                  </span>
-                )}
-
                 <div className="flex items-center gap-2 ml-auto flex-shrink-0">
-                  {runningId === automation.id && progress && (
+                  {runningId === automation.id ? (
                     <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      {progress.current}/{progress.total}
+                      {progress ? `${progress.current}/${progress.total}` : 'Traitement...'}
+                    </span>
+                  ) : (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-[#5b50ff]"
+                      onClick={() => processExistingDocuments(automation.id)}
+                      disabled={runningId !== null}
+                    >
+                      <Play className="h-4 w-4" />
+                    </Button>
+                  )}
+
+                  {automation.stats?.totalExecutions > 0 && (
+                    <span className="text-xs text-muted-foreground flex-shrink-0">
+                      {automation.stats.totalExecutions}x
                     </span>
                   )}
 
@@ -575,13 +604,11 @@ export default function DocumentAutomationsModal({ open, onOpenChange }) {
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground flex-shrink-0">Quand</span>
                 <Select value={newTrigger} onValueChange={setNewTrigger}>
-                  <SelectTrigger className="w-[170px]">
+                  <SelectTrigger className="w-[220px]">
                     <SelectValue placeholder="Déclencheur..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {TRIGGER_OPTIONS.map((t) => (
-                      <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
-                    ))}
+                    {GROUPED_TRIGGER_OPTIONS}
                   </SelectContent>
                 </Select>
 
@@ -636,27 +663,6 @@ export default function DocumentAutomationsModal({ open, onOpenChange }) {
               <Plus className="w-4 h-4 mr-2" />
               Ajouter une automatisation
             </Button>
-          </div>
-        )}
-        {/* Off-screen PDF renderer */}
-        {currentDocData && (
-          <div
-            style={{
-              position: 'fixed',
-              left: '-9999px',
-              top: 0,
-              width: '794px',
-              zIndex: -1,
-              pointerEvents: 'none',
-            }}
-          >
-            <div ref={pdfContainerRef}>
-              <UniversalPreviewPDF
-                data={currentDocData}
-                type={currentDocType}
-                forPDF={true}
-              />
-            </div>
           </div>
         )}
       </DialogContent>

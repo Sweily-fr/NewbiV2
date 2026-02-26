@@ -221,6 +221,7 @@ export function ChartAreaInteractive({
         tickLine={false}
         axisLine={false}
         tickMargin={8}
+        width={50}
         tickFormatter={(value) => {
           if (Math.abs(value) >= 1000) {
             return `${(value / 1000).toFixed(0)}k`;
@@ -280,7 +281,7 @@ export function ChartAreaInteractive({
     return (
       <ComposedChart
         data={aggregatedData}
-        margin={{ left: 12, right: 12, top: 12, bottom: 12 }}
+        margin={{ left: -12, right: 12, top: 12, bottom: 12 }}
       >
         {children}
       </ComposedChart>
@@ -365,8 +366,16 @@ export function ChartAreaInteractive({
                     Période personnalisée
                   </DropdownMenuSubTrigger>
                   <DropdownMenuPortal>
-                    <DropdownMenuSubContent className="w-64 p-4">
-                      <div className="space-y-4">
+                    <DropdownMenuSubContent
+                      className="w-64 p-4"
+                      onPointerDownOutside={(e) => e.preventDefault()}
+                      onFocusOutside={(e) => e.preventDefault()}
+                    >
+                      <div
+                        className="space-y-4"
+                        onKeyDown={(e) => { if (e.key !== 'Escape') e.stopPropagation(); }}
+                        onPointerDown={(e) => e.stopPropagation()}
+                      >
                         <div className="space-y-2">
                           <Label className="text-xs font-medium">
                             Date de début
@@ -438,11 +447,11 @@ export function ChartAreaInteractive({
           </CardAction>
         )}
       </CardHeader>
-      <CardContent className="px-2 pt-4 pb-2 sm:px-6 sm:pt-6 sm:pb-4">
+      <CardContent className="px-2 pt-4 pb-2 sm:px-6 sm:pt-6 sm:pb-4 overflow-visible">
         <ChartContainer
           key={chartMountKey}
           config={config}
-          className="aspect-auto w-full"
+          className="aspect-auto w-full overflow-visible"
           style={{ height }}
         >
           {renderChart()}

@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { Label } from "@/src/components/ui/label";
 import { Input } from "@/src/components/ui/input";
 import { Separator } from "@/src/components/ui/separator";
-import { Building, Mail, Phone, Globe, MapPin } from "lucide-react";
+import { Button } from "@/src/components/ui/button";
 import { CompanyLogoUpload } from "@/src/components/profile/CompanyLogoUpload";
+import { Camera, Trash2 } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -51,6 +52,8 @@ export function GeneraleSection({
     formState: { errors },
   } = useFormContext();
 
+  const logoContainerRef = useRef(null);
+
   // Surveiller les valeurs du formulaire pour détecter les changements
   const watchedValues = watch();
 
@@ -94,7 +97,7 @@ export function GeneraleSection({
       {/* Titre */}
       <div>
         <h2 className="text-lg font-medium mb-1 hidden md:block">Générale</h2>
-        <Separator className="hidden md:block" />
+        <Separator className="hidden md:block bg-[#eeeff1] dark:bg-[#232323]" />
         
         {/* Message d'information si pas de permissions */}
         {!canManageOrgSettings && (
@@ -110,28 +113,53 @@ export function GeneraleSection({
 
         {/* Logo de l'entreprise */}
         <div className="mb-8 mt-4 md:mt-12">
-          <Callout type="neutral" noMargin noIcon>
-            <div className="flex items-start gap-4">
+          <div className="flex items-center gap-5">
+            <div ref={logoContainerRef}>
               <CompanyLogoUpload
                 currentImageUrl={logoUrl}
                 onImageChange={handleLogoChange}
                 onOrganizationUpdate={handleOrganizationUpdate}
                 showDescription={false}
               />
-              <div className="flex-1">
-                <Label className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                  Logo de l'entreprise
-                </Label>
-                <p className="text-xs w-[80%] text-gray-600 dark:text-gray-400 mt-1">
-                  Glissez une image ou cliquez pour uploader le logo de votre
-                  entreprise. Formats acceptés : JPG, PNG, GIF (max 5MB)
-                </p>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label className="text-sm font-semibold text-foreground">
+                Logo de l'entreprise
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Formats acceptés : PNG, JPEG et GIF (max 5MB)
+              </p>
+              <div className="flex items-center gap-2 mt-1">
+                <Button
+                  type="button"
+                  variant="primary"
+                  size="sm"
+                  disabled={!canManageOrgSettings}
+                  onClick={() => {
+                    const input = logoContainerRef.current?.querySelector('input[type="file"]');
+                    if (input) input.click();
+                  }}
+                >
+                  <Camera className="h-4 w-4 mr-1.5" />
+                  Uploader le logo
+                </Button>
+                {logoUrl && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    disabled={!canManageOrgSettings}
+                    onClick={() => handleLogoChange(null)}
+                  >
+                    <Trash2 className="h-4 w-4 text-red-500" />
+                  </Button>
+                )}
               </div>
             </div>
-          </Callout>
+          </div>
         </div>
 
-        <Separator />
+        <Separator className="bg-[#eeeff1] dark:bg-[#232323]" />
 
         {/* Informations générales */}
         <div className="space-y-6 mt-8">
@@ -140,10 +168,9 @@ export function GeneraleSection({
             <div className="space-y-2">
               <Label
                 htmlFor="name"
-                className="flex items-center gap-2 text-sm font-normal"
+                className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
               >
-                <Building className="h-4 w-4 text-gray-500" />
-                Nom de l'entreprise *
+                Nom de l'entreprise <span className="text-red-500 ml-1">*</span>
               </Label>
               <Input
                 id="name"
@@ -172,10 +199,9 @@ export function GeneraleSection({
             <div className="space-y-2">
               <Label
                 htmlFor="email"
-                className="flex items-center gap-2 text-sm font-normal"
+                className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
               >
-                <Mail className="h-4 w-4 text-gray-500" />
-                Email professionnel *
+                Email professionnel <span className="text-red-500 ml-1">*</span>
               </Label>
               <Input
                 id="email"
@@ -208,9 +234,8 @@ export function GeneraleSection({
             <div className="space-y-2">
               <Label
                 htmlFor="phone"
-                className="flex items-center gap-2 text-sm font-normal"
+                className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
               >
-                <Phone className="h-4 w-4 text-gray-500" />
                 Téléphone
               </Label>
               <Input
@@ -239,9 +264,8 @@ export function GeneraleSection({
             <div className="space-y-2">
               <Label
                 htmlFor="website"
-                className="flex items-center gap-2 text-sm font-normal"
+                className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
               >
-                <Globe className="h-4 w-4 text-gray-500" />
                 Site web
               </Label>
               <Input
@@ -268,7 +292,7 @@ export function GeneraleSection({
             </div>
           </div>
 
-          <Separator />
+          <Separator className="bg-[#eeeff1] dark:bg-[#232323]" />
 
           {/* Section Adresse */}
           <div className="space-y-6">
@@ -281,8 +305,8 @@ export function GeneraleSection({
 
             {/* Adresse complète */}
             <div className="space-y-2">
-              <Label className="text-sm font-normal" htmlFor="address">
-                Adresse *
+              <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55" htmlFor="address">
+                Adresse <span className="text-red-500 ml-1">*</span>
               </Label>
               <Input
                 id="address"
@@ -313,8 +337,8 @@ export function GeneraleSection({
             {/* Ville et Code postal */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label className="text-sm font-normal" htmlFor="city">
-                  Ville *
+                <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55" htmlFor="city">
+                  Ville <span className="text-red-500 ml-1">*</span>
                 </Label>
                 <Input
                   id="city"
@@ -343,8 +367,8 @@ export function GeneraleSection({
               </div>
 
               <div className="space-y-2">
-                <Label className="text-sm font-normal" htmlFor="postalCode">
-                  Code postal *
+                <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55" htmlFor="postalCode">
+                  Code postal <span className="text-red-500 ml-1">*</span>
                 </Label>
                 <Input
                   id="postalCode"
@@ -375,8 +399,8 @@ export function GeneraleSection({
 
             {/* Pays */}
             <div className="space-y-2">
-              <Label className="text-sm font-normal" htmlFor="country">
-                Pays *
+              <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55" htmlFor="country">
+                Pays <span className="text-red-500 ml-1">*</span>
               </Label>
               <Select
                 value={selectedCountry}

@@ -16,11 +16,17 @@ export function ProSubscriptionOverlayHandler() {
 
     if (paymentSuccess || subscriptionSuccess) {
       console.log("🎉 Paiement réussi détecté, affichage de l'animation Pro");
-      setShowAnimation(true);
 
       // Nettoyer l'URL des paramètres
       const cleanUrl = window.location.pathname;
       window.history.replaceState({}, "", cleanUrl);
+
+      // Attendre que le dashboard soit rendu avant de lancer l'animation
+      const timer = setTimeout(() => {
+        setShowAnimation(true);
+      }, 600);
+
+      return () => clearTimeout(timer);
     }
   }, [searchParams]);
 

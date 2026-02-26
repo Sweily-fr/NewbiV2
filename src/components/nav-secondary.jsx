@@ -195,12 +195,12 @@ function SettingsDropdownMenu() {
           <DropdownMenuItem
             className="cursor-pointer"
             onClick={() => {
-              setSettingsInitialTab("preferences");
+              setSettingsInitialTab("generale");
               setSettingsModalOpen(true);
             }}
           >
-            <Settings2 />
-            <span className="">Paramètres entreprise</span>
+            <Settings2 className="size-4 text-[#505154]" />
+            <span className="text-[13px]">Paramètres entreprise</span>
           </DropdownMenuItem>
 
           <DropdownMenuItem
@@ -216,14 +216,14 @@ function SettingsDropdownMenu() {
           >
             {isActive() ? (
               <>
-                <IconUsers />
-                <span className="">Collaborateurs</span>
+                <IconUsers className="size-4 text-[#505154]" />
+                <span className="text-[13px]">Collaborateurs</span>
               </>
             ) : (
               <div className="flex items-center justify-between w-full">
                 <div className="flex items-center gap-2">
-                  <IconUsers />
-                  <span className="">Collaborateurs</span>
+                  <IconUsers className="size-4 text-[#505154]" />
+                  <span className="text-[13px]">Collaborateurs</span>
                 </div>
                 <Crown className="w-3 h-3 text-[#5b4fff]" />
               </div>

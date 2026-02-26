@@ -37,6 +37,56 @@ if (!global._mongoClient) {
       // Index existe déjà ou erreur non critique
     }
 
+    // TTL index pour nettoyer les données temporaires de création d'organisation
+    try {
+      await global._mongoDb.collection("pending_org_data").createIndex(
+        { expiresAt: 1 },
+        { expireAfterSeconds: 0, background: true }
+      );
+    } catch (e) {
+      // Index existe déjà ou erreur non critique
+    }
+
+    // Unique compound index on member (prevents duplicate owner records)
+    try {
+      await global._mongoDb.collection("member").createIndex(
+        { userId: 1, organizationId: 1 },
+        { unique: true, background: true }
+      );
+    } catch (e) {
+      // Index existe déjà ou erreur non critique
+    }
+
+    // Unique index on subscription.stripeSubscriptionId
+    try {
+      await global._mongoDb.collection("subscription").createIndex(
+        { stripeSubscriptionId: 1 },
+        { unique: true, sparse: true, background: true }
+      );
+    } catch (e) {
+      // Index existe déjà ou erreur non critique
+    }
+
+    // Index on subscription.referenceId for fast lookups
+    try {
+      await global._mongoDb.collection("subscription").createIndex(
+        { referenceId: 1 },
+        { background: true }
+      );
+    } catch (e) {
+      // Index existe déjà ou erreur non critique
+    }
+
+    // Webhook deduplication index
+    try {
+      await global._mongoDb.collection("stripeWebhookEvents").createIndex(
+        { eventId: 1 },
+        { unique: true, background: true }
+      );
+    } catch (e) {
+      // Index existe déjà ou erreur non critique
+    }
+
     return client;
   }).catch((err) => {
     console.error("❌ MongoDB initial connection error:", err);

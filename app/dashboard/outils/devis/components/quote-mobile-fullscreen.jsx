@@ -19,7 +19,6 @@ import {
   QUOTE_STATUS_LABELS,
   QUOTE_STATUS_COLORS,
 } from "@/src/graphql/quoteQueries";
-import { useConvertQuoteToPurchaseOrder } from "@/src/graphql/purchaseOrderQueries";
 import { toast } from "@/src/components/ui/sonner";
 import { Pencil } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -34,7 +33,6 @@ export default function QuoteMobileFullscreen({
 }) {
   const router = useRouter();
   const { changeStatus, loading: changingStatus } = useChangeQuoteStatus();
-  const { convertToPurchaseOrder, loading: convertingToPO } = useConvertQuoteToPurchaseOrder();
 
   // Récupérer les données complètes du devis
   const {
@@ -126,21 +124,29 @@ export default function QuoteMobileFullscreen({
     onClose();
   };
 
-  const handleConvertToPurchaseOrder = async () => {
+  const handleConvertToPurchaseOrder = () => {
     try {
-      const result = await convertToPurchaseOrder(quote.id);
-      toast.success("Bon de commande créé à partir du devis");
-      if (onRefetch) onRefetch();
+      sessionStorage.setItem('quotePurchaseOrderData', JSON.stringify({
+        sourceQuoteId: quote.id,
+        purchaseOrderNumber: `${quote.prefix || ''}${quote.number || ''}`,
+        client: quote.client,
+        items: quote.items,
+        discount: quote.discount,
+        discountType: quote.discountType,
+        customFields: quote.customFields,
+        shipping: quote.shipping,
+        isReverseCharge: quote.isReverseCharge,
+        retenueGarantie: quote.retenueGarantie,
+        escompte: quote.escompte,
+      }));
+      router.push('/dashboard/outils/bons-commande/new');
       onClose();
-      if (result?.id) {
-        router.push(`/dashboard/outils/bons-commande/${result.id}/editer`);
-      }
     } catch (error) {
-      toast.error("Erreur lors de la création du bon de commande");
+      toast.error("Erreur lors de la conversion en bon de commande");
     }
   };
 
-  const isLoading = changingStatus || convertingToPO || loadingFullQuote;
+  const isLoading = changingStatus || loadingFullQuote;
 
   const statusColor = QUOTE_STATUS_COLORS[quote.status] || "gray";
   const statusLabel = QUOTE_STATUS_LABELS[quote.status] || quote.status;
@@ -367,11 +373,7 @@ export default function QuoteMobileFullscreen({
               size="sm"
               className="w-full font-normal"
             >
-              {convertingToPO ? (
-                <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <ShoppingCart className="mr-2 h-4 w-4" />
-              )}
+              <ShoppingCart className="mr-2 h-4 w-4" />
               Convertir en bon de commande
             </Button>
           )}

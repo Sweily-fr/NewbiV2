@@ -164,6 +164,7 @@ function ClientDetailContent() {
         onNext={handleNext}
         onEdit={() => setIsEditModalOpen(true)}
         onDelete={() => setIsDeleteDialogOpen(true)}
+        hasDocuments={client.hasDocuments}
         onBlock={() => setIsBlockDialogOpen(true)}
         onUnblock={handleUnblock}
         onAssign={() => setIsAssignDialogOpen(true)}

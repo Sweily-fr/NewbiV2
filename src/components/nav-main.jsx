@@ -25,6 +25,7 @@ import {
   LayoutGrid,
   Landmark,
   Users,
+  Command,
 } from "lucide-react";
 import { Input } from "@/src/components/ui/input";
 
@@ -205,7 +206,7 @@ export function NavMain({
                 className={cn(
                   "bg-transparent w-full cursor-pointer",
                   isVentesSubActive &&
-                    "bg-[#F0F0F0] dark:bg-sidebar-accent text-sidebar-foreground"
+                    "bg-[#EEEFF1] dark:bg-sidebar-accent text-sidebar-foreground"
                 )}
               >
                 <ShoppingCart />
@@ -305,7 +306,7 @@ export function NavMain({
             data-tutorial="nav-ventes"
             className={cn(
               "flex items-center w-full rounded-md transition-colors",
-              isVentesSubActive && "bg-[#F0F0F0] dark:bg-sidebar-accent"
+              isVentesSubActive && "bg-[#EEEFF1] dark:bg-sidebar-accent"
             )}
           >
             <SidebarMenuButton
@@ -354,7 +355,7 @@ export function NavMain({
                           onClick={handleLinkClick}
                           className={cn(
                             isSubItemActive &&
-                              "bg-[#F0F0F0] dark:bg-sidebar-accent text-sidebar-foreground font-medium"
+                              "bg-[#EEEFF1] dark:bg-sidebar-accent text-sidebar-foreground font-medium"
                           )}
                         >
                           <span className="text-sm">{subItem.title}</span>
@@ -390,7 +391,7 @@ export function NavMain({
                 className={cn(
                   "bg-transparent w-full cursor-pointer",
                   isKanbanActive &&
-                    "bg-[#F0F0F0] dark:bg-sidebar-accent text-sidebar-foreground"
+                    "bg-[#EEEFF1] dark:bg-sidebar-accent text-sidebar-foreground"
                 )}
               >
                 <FolderKanban />
@@ -490,7 +491,7 @@ export function NavMain({
               className={cn(
                 "bg-transparent w-full cursor-pointer",
                 isKanbanActive &&
-                  "bg-[#F0F0F0] dark:bg-sidebar-accent text-sidebar-foreground"
+                  "bg-[#EEEFF1] dark:bg-sidebar-accent text-sidebar-foreground"
               )}
             >
               <FolderKanban />
@@ -630,7 +631,7 @@ export function NavMain({
                 className={cn(
                   "bg-transparent w-full cursor-pointer",
                   isSubActive &&
-                    "bg-[#F0F0F0] dark:bg-sidebar-accent text-sidebar-foreground"
+                    "bg-[#EEEFF1] dark:bg-sidebar-accent text-sidebar-foreground"
                 )}
               >
                 <IconComponent />
@@ -737,7 +738,7 @@ export function NavMain({
           <div
             className={cn(
               "flex items-center w-full rounded-md transition-colors",
-              isSubActive && "bg-[#F0F0F0] dark:bg-sidebar-accent"
+              isSubActive && "bg-[#EEEFF1] dark:bg-sidebar-accent"
             )}
           >
             <SidebarMenuButton
@@ -800,7 +801,7 @@ export function NavMain({
                                   onClick={handleLinkClick}
                                   className={cn(
                                     isSubItemActive &&
-                                      "bg-[#F0F0F0] dark:bg-sidebar-accent text-sidebar-foreground font-medium"
+                                      "bg-[#EEEFF1] dark:bg-sidebar-accent text-sidebar-foreground font-medium"
                                   )}
                                 >
                                   <span className="text-sm">{item.title}</span>
@@ -838,7 +839,7 @@ export function NavMain({
                           onClick={handleLinkClick}
                           className={cn(
                             isSubItemActive &&
-                              "bg-[#F0F0F0] dark:bg-sidebar-accent text-sidebar-foreground font-medium"
+                              "bg-[#EEEFF1] dark:bg-sidebar-accent text-sidebar-foreground font-medium"
                           )}
                         >
                           <span className="text-sm">{subItem.title}</span>
@@ -947,7 +948,7 @@ export function NavMain({
               "bg-transparent w-full cursor-pointer relative",
               !hasAccess && "opacity-60 cursor-not-allowed",
               isItemActive &&
-                "bg-[#F0F0F0] dark:bg-sidebar-accent text-sidebar-foreground"
+                "bg-[#EEEFF1] dark:bg-sidebar-accent text-sidebar-foreground"
             )}
             tooltip={
               isProTab && !hasAccess

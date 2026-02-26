@@ -281,7 +281,6 @@ const authLink = setContext(async (_, { headers }) => {
 
     if (!jwtToken || needsSessionRefresh) {
       if (needsSessionRefresh) {
-        console.log("🔄 [Apollo] Rafraîchissement via ActivityTracker...");
         // Utiliser la fonction centralisée de rafraîchissement
         await refreshSession();
         // Récupérer le nouveau token

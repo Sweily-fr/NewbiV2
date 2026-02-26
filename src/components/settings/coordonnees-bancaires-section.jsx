@@ -4,7 +4,12 @@ import React, { useEffect, useState } from "react";
 import { Label } from "@/src/components/ui/label";
 import { Input } from "@/src/components/ui/input";
 import { Separator } from "@/src/components/ui/separator";
-import { CreditCard, Building2, Hash, Shield } from "lucide-react";
+import { Info } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/src/components/ui/tooltip";
 import { useFormContext } from "react-hook-form";
 import {
   sanitizeInput,
@@ -99,7 +104,7 @@ export function CoordonneesBancairesSection({
       {/* Titre */}
       <div>
         <h2 className="text-lg font-medium mb-1 hidden md:block">Coordonnées bancaires</h2>
-        <Separator className="hidden md:block" />
+        <Separator className="hidden md:block bg-[#eeeff1] dark:bg-[#232323]" />
         {!canManageOrgSettings && (
           <div className="mt-4">
             <Callout type="warning" noMargin>
@@ -112,34 +117,26 @@ export function CoordonneesBancairesSection({
           </div>
         )}
 
-        {/* Information sur la validation conditionnelle */}
-        <div className="mb-8 mt-4 md:mt-12">
-          <Callout type="neutral" noMargin>
-            <p>
-              <span className="font-medium">
-                Coordonnées bancaires optionnelles
-              </span>
-              <br />
-              Vous pouvez laisser tous les champs vides. Si vous renseignez une
-              information bancaire, les trois champs (IBAN, BIC et nom de
-              banque) deviennent obligatoires.
-            </p>
-          </Callout>
-        </div>
-
-        <Separator />
-
         {/* Formulaire des coordonnées bancaires */}
-        <div className="space-y-6 mt-8">
+        <div className="space-y-6 mt-4 md:mt-12">
           {/* IBAN */}
           <div className="space-y-2">
-            <Label
-              htmlFor="iban"
-              className="flex items-center gap-2 text-sm font-normal"
-            >
-              <Hash className="h-4 w-4 text-gray-500" />
-              IBAN {hasAnyBankField && "*"}
-            </Label>
+            <div className="flex items-center gap-2">
+              <Label
+                htmlFor="iban"
+                className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
+              >
+                IBAN {hasAnyBankField && <span className="text-red-500 ml-1">*</span>}
+              </Label>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-[280px] sm:max-w-xs">
+                  <p>Format international (ex: FR76 1234 5678 9012 3456 7890 123)</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
             <Input
               id="iban"
               placeholder="FR76 1234 5678 9012 3456 7890 123"
@@ -182,20 +179,26 @@ export function CoordonneesBancairesSection({
                 {errors.bankDetails.iban.message}
               </p>
             )}
-            <p className="text-xs text-gray-600">
-              Format international (ex: FR76 1234 5678 9012 3456 7890 123)
-            </p>
           </div>
 
           {/* BIC */}
           <div className="space-y-2">
-            <Label
-              htmlFor="bic"
-              className="flex items-center gap-2 text-sm font-normal"
-            >
-              <Building2 className="h-4 w-4 text-gray-500" />
-              BIC/SWIFT {hasAnyBankField && "*"}
-            </Label>
+            <div className="flex items-center gap-2">
+              <Label
+                htmlFor="bic"
+                className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
+              >
+                BIC/SWIFT {hasAnyBankField && <span className="text-red-500 ml-1">*</span>}
+              </Label>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-[280px] sm:max-w-xs">
+                  <p>Code d'identification de votre banque (8 ou 11 caractères)</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
             <Input
               id="bic"
               placeholder="BNPAFRPP"
@@ -226,20 +229,26 @@ export function CoordonneesBancairesSection({
                 {errors.bankDetails.bic.message}
               </p>
             )}
-            <p className="text-xs text-gray-600">
-              Code d'identification de votre banque (8 ou 11 caractères)
-            </p>
           </div>
 
           {/* Nom de la banque */}
           <div className="space-y-2">
-            <Label
-              htmlFor="bankName"
-              className="flex items-center gap-2 text-sm font-normal"
-            >
-              <CreditCard className="h-4 w-4 text-gray-500" />
-              Nom de la banque {hasAnyBankField && "*"}
-            </Label>
+            <div className="flex items-center gap-2">
+              <Label
+                htmlFor="bankName"
+                className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
+              >
+                Nom de la banque {hasAnyBankField && <span className="text-red-500 ml-1">*</span>}
+              </Label>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-[280px] sm:max-w-xs">
+                  <p>Nom de votre établissement bancaire</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
             <Input
               id="bankName"
               placeholder="BNP Paribas"
@@ -270,12 +279,9 @@ export function CoordonneesBancairesSection({
                 {errors.bankDetails.bankName.message}
               </p>
             )}
-            <p className="text-xs text-gray-600">
-              Nom de votre établissement bancaire
-            </p>
           </div>
 
-          <Separator />
+          <Separator className="bg-[#eeeff1] dark:bg-[#232323]" />
 
           {/* Information de sécurité */}
           <Callout type="neutral" noMargin>

@@ -43,6 +43,7 @@ import { Badge } from "@/src/components/ui/badge";
 export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editedFinancialAnalysis, setEditedFinancialAnalysis] = useState(null);
 
@@ -119,6 +120,11 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
         return;
       }
 
+      // Révoquer l'ancien blob URL si existant
+      setPreviewUrl((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return URL.createObjectURL(file);
+      });
       setSelectedFile(file);
     },
     []
@@ -137,6 +143,10 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
 
   // Suppression du fichier
   const handleRemoveFile = useCallback(() => {
+    setPreviewUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
     setSelectedFile(null);
   }, []);
 
@@ -459,7 +469,8 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
                 ocrResult={ocrResult}
                 onValidate={handleValidateOcr}
                 isCreatingExpense={isCreatingExpense || isReconciling}
-                imageUrl={selectedFile ? URL.createObjectURL(selectedFile) : null}
+                imageUrl={previewUrl}
+                imageMimeType={selectedFile?.type || null}
                 isEditing={isEditing}
                 setIsEditing={setIsEditing}
                 onEditedDataChange={setEditedFinancialAnalysis}
