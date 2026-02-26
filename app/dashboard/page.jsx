@@ -133,16 +133,13 @@ function DashboardContent() {
 
       const syncBankAccounts = async () => {
         try {
-          // Récupérer le JWT depuis localStorage (même pattern qu'Apollo Client)
-          const token = localStorage.getItem("bearer_token");
-
           // Lancer la sync complète (comptes + transactions) via le proxy Next.js
           const response = await fetch("/api/banking-sync/full", {
             method: "POST",
+            credentials: "include",
             headers: {
               "Content-Type": "application/json",
               "x-workspace-id": workspaceId,
-              ...(token && { Authorization: `Bearer ${token}` }),
             },
             body: JSON.stringify({ limit: 100 }),
           });
@@ -365,15 +362,13 @@ function DashboardContent() {
           {(bankAccounts || []).length > 0 && (
             <Popover open={accountPopoverOpen} onOpenChange={setAccountPopoverOpen}>
               <PopoverTrigger asChild>
-                <div className="flex items-center gap-2 cursor-pointer">
-                  <Landmark className="size-3.5 text-[#707070]" />
-                  <span className="text-[13px] font-normal truncate max-w-[150px]">
+                <Button variant="outline" size="sm" className="gap-2 font-normal">
+                  <Landmark className="size-3.5" />
+                  <span className="truncate max-w-[150px]">
                     {selectedAccountLabel}
                   </span>
-                  <button className="p-1 rounded-md hover:bg-accent transition-colors cursor-pointer outline-none">
-                    <ChevronsUpDown className="h-3.5 w-3.5 text-muted-foreground" />
-                  </button>
-                </div>
+                  <ChevronsUpDown className="h-3.5 w-3.5 text-muted-foreground" />
+                </Button>
               </PopoverTrigger>
               <PopoverContent className="w-80 rounded-lg p-0" align="start" sideOffset={8}>
                 <Command>

@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 export async function GET(request) {
   try {
     const workspaceId = request.headers.get("x-workspace-id");
-    const authHeader = request.headers.get("authorization");
+    const cookie = request.headers.get("cookie") || "";
 
     if (!workspaceId) {
       return NextResponse.json(
@@ -21,7 +21,7 @@ export async function GET(request) {
       headers: {
         "x-workspace-id": workspaceId,
         "Content-Type": "application/json",
-        ...(authHeader && { Authorization: authHeader }),
+        Cookie: cookie,
       },
     });
 

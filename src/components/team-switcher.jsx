@@ -413,10 +413,10 @@ export function TeamSwitcher() {
                 Organisation active
               </DropdownMenuLabel>
               <DropdownMenuItem className="gap-2 p-2 rounded-sm">
-                <Boxes className="size-4 text-[#505154]" />
-                <span className="text-[13px] font-medium">{currentOrganization.name}</span>
+                <Boxes className="size-4 text-muted-foreground" />
+                <span className="text-[13px] font-normal">{currentOrganization.name}</span>
               </DropdownMenuItem>
-              <DropdownMenuSeparator className="bg-[#EEEFF1]" />
+              <DropdownMenuSeparator className="bg-border" />
               <DropdownMenuItem
                 onClick={() => {
                   setSettingsInitialTab("user-info");
@@ -424,8 +424,8 @@ export function TeamSwitcher() {
                 }}
                 className="gap-2 p-2 rounded-sm cursor-pointer"
               >
-                <UserCog className="size-4 text-[#505154]" />
-                <span className="text-[13px] font-medium">Paramètres du compte</span>
+                <UserCog className="size-4 text-muted-foreground" />
+                <span className="text-[13px] font-normal">Paramètres du compte</span>
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => {
@@ -434,16 +434,16 @@ export function TeamSwitcher() {
                 }}
                 className="gap-2 p-2 rounded-sm cursor-pointer"
               >
-                <Settings className="size-4 text-[#505154]" />
-                <span className="text-[13px] font-medium">Paramètres de l'espace</span>
+                <Settings className="size-4 text-muted-foreground" />
+                <span className="text-[13px] font-normal">Paramètres de l'espace</span>
               </DropdownMenuItem>
-              <DropdownMenuSeparator className="bg-[#EEEFF1]" />
+              <DropdownMenuSeparator className="bg-border" />
               <DropdownMenuItem
                 onClick={() => setInviteDialogOpen(true)}
                 className="gap-2 p-2 rounded-sm cursor-pointer"
               >
-                <UserPlus className="size-4 text-[#505154]" />
-                <span className="text-[13px] font-medium">Inviter des membres</span>
+                <UserPlus className="size-4 text-muted-foreground" />
+                <span className="text-[13px] font-normal">Inviter des membres</span>
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => {
@@ -452,18 +452,18 @@ export function TeamSwitcher() {
                 }}
                 className="gap-2 p-2 rounded-sm cursor-pointer"
               >
-                <Users className="size-4 text-[#505154]" />
-                <span className="text-[13px] font-medium">Collaborateurs</span>
+                <Users className="size-4 text-muted-foreground" />
+                <span className="text-[13px] font-normal">Collaborateurs</span>
               </DropdownMenuItem>
-              <DropdownMenuSeparator className="bg-[#EEEFF1]" />
+              <DropdownMenuSeparator className="bg-border" />
               <DropdownMenuItem
                 onClick={() => router.push('/create-workspace')}
                 className="gap-2 p-2 rounded-sm cursor-pointer"
               >
-                <Layers className="size-4 text-[#505154]" />
-                <span className="text-[13px] font-medium">Nouveau espace</span>
+                <Layers className="size-4 text-muted-foreground" />
+                <span className="text-[13px] font-normal">Nouveau espace</span>
               </DropdownMenuItem>
-              <DropdownMenuSeparator className="bg-[#EEEFF1]" />
+              <DropdownMenuSeparator className="bg-border" />
               <DropdownMenuItem
                 onClick={async () => {
                   try {
@@ -481,7 +481,7 @@ export function TeamSwitcher() {
                 className="gap-2 p-2 rounded-sm cursor-pointer text-red-500 hover:!text-red-600 hover:!bg-red-50"
               >
                 <LogOut className="size-4 text-red-500" />
-                <span className="text-[13px] font-medium">Déconnexion</span>
+                <span className="text-[13px] font-normal">Déconnexion</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
