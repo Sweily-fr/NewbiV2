@@ -14,14 +14,8 @@ import { Input } from "@/src/components/ui/input";
 import { Textarea } from "@/src/components/ui/textarea";
 import { CurrencyInput } from "@/src/components/ui/currency-input";
 import { Checkbox } from "@/src/components/ui/checkbox";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/src/components/ui/select";
 import { Separator } from "@/src/components/ui/separator";
+import { VatRateSelect } from "@/src/components/vat-rate-select";
 
 // Fonctions de validation qui accèdent aux données du formulaire
 const createValidationFunction = (fieldName, errorMessage) => {
@@ -347,25 +341,15 @@ export default function ShippingSection({ canEdit, validationErrors = {} }) {
                 <Label htmlFor="shippingVatRate" className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
                   TVA (%)
                 </Label>
-                <Select
-                  value={shipping.shippingVatRate?.toString() || "20"}
-                  onValueChange={(value) =>
-                    setValue("shipping.shippingVatRate", parseFloat(value), {
+                <VatRateSelect
+                  value={shipping.shippingVatRate ?? 20}
+                  onChange={(val) =>
+                    setValue("shipping.shippingVatRate", val, {
                       shouldDirty: true,
                     })
                   }
                   disabled={!canEdit}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Taux de TVA" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="0">0%</SelectItem>
-                    <SelectItem value="5.5">5,5%</SelectItem>
-                    <SelectItem value="10">10%</SelectItem>
-                    <SelectItem value="20">20%</SelectItem>
-                  </SelectContent>
-                </Select>
+                />
                 {errors?.shipping?.shippingVatRate && (
                   <p className="text-sm text-destructive">
                     {errors.shipping.shippingVatRate.message}

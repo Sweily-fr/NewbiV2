@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  transpilePackages: ["@marsidev/react-turnstile"],
+  transpilePackages: ["@marsidev/react-turnstile", "apollo-upload-client"],
   compiler: {
     removeConsole:
       process.env.NODE_ENV === "production"

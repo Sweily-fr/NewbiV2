@@ -366,8 +366,16 @@ export function ChartAreaInteractive({
                     Période personnalisée
                   </DropdownMenuSubTrigger>
                   <DropdownMenuPortal>
-                    <DropdownMenuSubContent className="w-64 p-4">
-                      <div className="space-y-4">
+                    <DropdownMenuSubContent
+                      className="w-64 p-4"
+                      onPointerDownOutside={(e) => e.preventDefault()}
+                      onFocusOutside={(e) => e.preventDefault()}
+                    >
+                      <div
+                        className="space-y-4"
+                        onKeyDown={(e) => { if (e.key !== 'Escape') e.stopPropagation(); }}
+                        onPointerDown={(e) => e.stopPropagation()}
+                      >
                         <div className="space-y-2">
                           <Label className="text-xs font-medium">
                             Date de début
