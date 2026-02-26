@@ -6,6 +6,7 @@ import React, {
   useMemo,
   useRef,
   useEffect,
+  startTransition,
 } from "react";
 import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
 import { useIsMobile } from "@/src/hooks/use-mobile";
@@ -1345,7 +1346,7 @@ export default function DocumentsPartagesPage() {
                       size="icon"
                       className="relative"
                       style={activeAutomationsCount > 0 ? { backgroundColor: '#5b50ff' } : {}}
-                      onClick={() => setShowAutomationsModal(true)}
+                      onClick={() => startTransition(() => setShowAutomationsModal(true))}
                     >
                       <Zap className="h-4 w-4" strokeWidth={1.5} />
                       {activeAutomationsCount > 0 && (

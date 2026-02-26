@@ -117,11 +117,15 @@ export function useKanbanDnD({
       indicator = document.createElement('div');
       indicator.style.cssText =
         'position:fixed;z-index:9999;pointer-events:none;display:none;' +
-        'background:hsl(221.2 83.2% 53.3%);border-radius:2px;' +
-        'box-shadow:0 0 8px hsl(221.2 83.2% 53.3%/.4);' +
+        'border-radius:2px;' +
         'transition:top 60ms ease-out,left 60ms ease-out,width 60ms ease-out,height 60ms ease-out;';
       document.body.appendChild(indicator);
       return indicator;
+    }
+
+    function setIndicatorColor(ind, color) {
+      ind.style.background = color;
+      ind.style.boxShadow = `0 0 8px ${color}66`;
     }
 
     function clearHighlight() {
@@ -219,6 +223,7 @@ export function useKanbanDnD({
         if (!colEl) { ind.style.display = 'none'; return null; }
 
         const columnId = colEl.dataset.dndColumn;
+        const columnColor = colEl.dataset.dndColumnColor || '#3b82f6';
         const insertIndex = computeTaskIndex(colEl, y);
 
         // Position indicator line
@@ -238,6 +243,7 @@ export function useKanbanDnD({
           top = tasks[insertIndex].getBoundingClientRect().top - 4;
         }
 
+        setIndicatorColor(ind, columnColor);
         Object.assign(ind.style, {
           display: 'block',
           top: top + 'px',
@@ -258,15 +264,19 @@ export function useKanbanDnD({
 
         if (remaining.length === 0) { ind.style.display = 'none'; return { insertIndex }; }
 
-        let left, refRect;
+        let left, refRect, nearestCol;
         if (insertIndex >= remaining.length) {
-          refRect = remaining[remaining.length - 1].getBoundingClientRect();
+          nearestCol = remaining[remaining.length - 1];
+          refRect = nearestCol.getBoundingClientRect();
           left = refRect.right + 4;
         } else {
-          refRect = remaining[insertIndex].getBoundingClientRect();
+          nearestCol = remaining[insertIndex];
+          refRect = nearestCol.getBoundingClientRect();
           left = refRect.left - 6;
         }
 
+        const draggedColor = drag.element.dataset.dndColumnColor || '#3b82f6';
+        setIndicatorColor(ind, draggedColor);
         Object.assign(ind.style, {
           display: 'block',
           left: left + 'px',

@@ -129,7 +129,10 @@ function KanbanPageContent() {
         </div>
         <Dialog open={isCreateDialogOpen} onOpenChange={(open) => {
           setIsCreateDialogOpen(open);
-          if (!open) setSelectedTemplateId(null);
+          if (!open) {
+            setSelectedTemplateId(null);
+            setFormData({ title: "", description: "", clientId: null });
+          }
         }}>
           <DialogTrigger asChild>
             <Button
@@ -280,7 +283,11 @@ function KanbanPageContent() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setIsCreateDialogOpen(false)}
+                  onClick={() => {
+                    setIsCreateDialogOpen(false);
+                    setSelectedTemplateId(null);
+                    setFormData({ title: "", description: "", clientId: null });
+                  }}
                 >
                   Annuler
                 </Button>

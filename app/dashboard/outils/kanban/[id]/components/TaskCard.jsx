@@ -188,7 +188,7 @@ const TaskCard = memo(function TaskCard({ task, onEdit, onDelete, index, isDragg
                 }}
                 className="text-red-600 cursor-pointer"
               >
-                <Trash2 className="mr-2 h-3 w-3" />
+                <Trash2 className="mr-2 h-3 w-3 text-red-600" />
                 Supprimer
               </DropdownMenuItem>
             </DropdownMenuContent>

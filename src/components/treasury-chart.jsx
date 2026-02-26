@@ -391,16 +391,16 @@ export function TreasuryChart({
           </DropdownMenuContent>
         </DropdownMenu>
       </CardHeader>
-      <CardContent className="px-2 pt-4 pb-2 sm:px-6 sm:pt-6 sm:pb-4">
+      <CardContent className="px-2 pt-4 pb-2 sm:px-6 sm:pt-6 sm:pb-4 overflow-visible">
         <ChartContainer
           key={chartMountKey}
           config={chartConfig}
-          className="aspect-auto h-[200px] w-full"
+          className="aspect-auto h-[200px] w-full overflow-visible"
         >
           <ComposedChart
             data={treasuryData}
             margin={{
-              left: 12,
+              left: -12,
               right: 12,
               top: 12,
               bottom: 12,
@@ -439,6 +439,7 @@ export function TreasuryChart({
               tickLine={false}
               axisLine={false}
               tickMargin={8}
+              width={50}
               tickFormatter={(value) => {
                 const absValue = Math.abs(value);
                 if (absValue >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
