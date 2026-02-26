@@ -15,6 +15,7 @@ const forceSessionExpiredRedirect = (reason = "inactivity") => {
   if (isRedirecting) return;
   isRedirecting = true;
 
+  clearCachedJWT();
   resetOrganizationIdForApollo();
 
   setTimeout(() => {
@@ -38,6 +39,74 @@ export function resetOrganizationIdForApollo() {
   _confirmedOrgId = null;
 }
 
+// ==================== JWT ON-DEMAND (mémoire uniquement) ====================
+// Le cookie session est scopé au domaine frontend (Vercel).
+// Pour les requêtes cross-origin vers le backend, on génère un JWT
+// à la volée via /api/auth/token (same-origin = cookie envoyé).
+// Le JWT vit uniquement en mémoire — jamais en localStorage (pas de risque XSS).
+let _cachedJWT = null;
+let _jwtExpiresAt = 0;
+let _jwtFetchPromise = null;
+
+const getJWTToken = async () => {
+  // Si on a un JWT valide en cache (avec 60s de marge), le réutiliser
+  if (_cachedJWT && Date.now() < _jwtExpiresAt - 60000) {
+    return _cachedJWT;
+  }
+
+  // Éviter les appels parallèles (déduplique les fetches simultanés)
+  if (_jwtFetchPromise) {
+    return _jwtFetchPromise;
+  }
+
+  _jwtFetchPromise = (async () => {
+    try {
+      const response = await fetch("/api/auth/token", {
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        _cachedJWT = null;
+        _jwtExpiresAt = 0;
+        return null;
+      }
+
+      const data = await response.json();
+      if (!data.token) {
+        _cachedJWT = null;
+        _jwtExpiresAt = 0;
+        return null;
+      }
+
+      _cachedJWT = data.token;
+
+      // Extraire l'expiration du JWT (payload base64)
+      try {
+        const payload = JSON.parse(atob(data.token.split(".")[1]));
+        _jwtExpiresAt = (payload.exp || 0) * 1000;
+      } catch {
+        // Fallback : cache 5 minutes
+        _jwtExpiresAt = Date.now() + 5 * 60 * 1000;
+      }
+
+      return _cachedJWT;
+    } catch {
+      _cachedJWT = null;
+      _jwtExpiresAt = 0;
+      return null;
+    } finally {
+      _jwtFetchPromise = null;
+    }
+  })();
+
+  return _jwtFetchPromise;
+};
+
+function clearCachedJWT() {
+  _cachedJWT = null;
+  _jwtExpiresAt = 0;
+}
+
 // ==================== UPLOAD LINK ====================
 const uploadLink = createUploadLink({
   uri: process.env.NEXT_PUBLIC_API_URL
@@ -50,8 +119,7 @@ const uploadLink = createUploadLink({
 });
 
 // ==================== WEBSOCKET LINK ====================
-// WebSocket ne peut pas envoyer de cookies — on génère un JWT à la volée
-// (jamais stocké en localStorage, vit uniquement en mémoire pour la connexion)
+// WebSocket ne peut pas envoyer de cookies — on utilise le même JWT on-demand
 let wsClient = null;
 
 const wsLink =
@@ -68,22 +136,7 @@ const wsLink =
 
             if (isPublicPage) return {};
 
-            // Générer un JWT à la volée pour le WebSocket (jamais stocké)
-            let jwtToken = null;
-            try {
-              const tokenResponse = await fetch("/api/auth/token", {
-                credentials: "include",
-              });
-              if (tokenResponse.ok) {
-                const tokenData = await tokenResponse.json();
-                if (tokenData.token) {
-                  jwtToken = tokenData.token;
-                }
-              }
-            } catch {
-              // Fallback silencieux
-            }
-
+            const jwtToken = await getJWTToken();
             return {
               authorization: jwtToken ? `Bearer ${jwtToken}` : "",
             };
@@ -100,16 +153,23 @@ if (wsLink && typeof window !== "undefined") {
 }
 
 // ==================== AUTH LINK ====================
-// Authentification cookie-only : le cookie better-auth.session_token
-// est envoyé automatiquement via credentials: "include".
-// On ajoute uniquement les headers d'organisation et de rôle.
+// JWT on-demand pour l'auth cross-origin (frontend Vercel → backend API).
+// Le JWT est récupéré via /api/auth/token (same-origin, cookie envoyé)
+// et transmis au backend en Authorization: Bearer.
+// Le JWT vit uniquement en mémoire — pas de localStorage.
 const authLink = setContext(async (_, { headers }) => {
+  const requestHeaders = { ...headers };
+
+  // JWT on-demand pour authentifier les requêtes cross-origin
+  const jwtToken = await getJWTToken();
+  if (jwtToken) {
+    requestHeaders["authorization"] = `Bearer ${jwtToken}`;
+  }
+
   const organizationId = _workspaceReady ? _confirmedOrgId : null;
   const userRole = _workspaceReady
     ? localStorage.getItem("user_role")
     : null;
-
-  const requestHeaders = { ...headers };
 
   if (organizationId) {
     requestHeaders["x-organization-id"] = organizationId;
@@ -132,11 +192,15 @@ const handleCriticalAuthError = async (operation, message) => {
 
   isRetryingAuth = true;
 
+  // Invalider le JWT en cache pour forcer un re-fetch au prochain appel
+  clearCachedJWT();
+
   try {
     // Vérifier si la session est encore valide (cookie)
     const session = await authClient.getSession();
     if (session?.data?.user) {
-      // Session valide — l'erreur était transitoire
+      // Session valide — l'erreur était transitoire (JWT expiré mais session OK)
+      // Le prochain appel GraphQL récupérera un nouveau JWT automatiquement
       return;
     }
 
