@@ -2,13 +2,8 @@
 
 import { useState, useEffect } from "react";
 
-/**
- * Récupère le token JWT depuis localStorage
- */
-const getAuthToken = () => {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem("bearer_token");
-};
+// Auth cookie-only : le cookie better-auth.session_token est envoyé
+// automatiquement via credentials: "include" sur les routes same-origin.
 
 /**
  * Hook pour gérer la connexion bancaire
@@ -34,11 +29,9 @@ export function useBankingConnection(workspaceId) {
       setIsLoading(true);
       setError(null);
 
-      const token = getAuthToken();
       const response = await fetch("/api/banking-connect/status", {
         headers: {
           "x-workspace-id": workspaceId,
-          ...(token && { Authorization: `Bearer ${token}` }),
         },
       });
 
@@ -71,13 +64,10 @@ export function useBankingConnection(workspaceId) {
       setIsLoadingInstitutions(true);
       setError(null);
 
-      const token = getAuthToken();
       const response = await fetch(
         `/api/banking-connect/gocardless/institutions?country=${country}`,
         {
-          headers: {
-            ...(token && { Authorization: `Bearer ${token}` }),
-          },
+          headers: {},
         }
       );
 
@@ -117,14 +107,12 @@ export function useBankingConnection(workspaceId) {
       setIsLoading(true);
       setError(null);
 
-      const token = getAuthToken();
       const response = await fetch(
         `/api/banking-connect/gocardless/connect?institutionId=${institutionId}`,
         {
           headers: {
             "x-workspace-id": workspaceId,
-            ...(token && { Authorization: `Bearer ${token}` }),
-          },
+            },
         }
       );
 
@@ -160,13 +148,11 @@ export function useBankingConnection(workspaceId) {
       setIsLoading(true);
       setError(null);
 
-      const token = getAuthToken();
       const response = await fetch("/api/banking-connect/disconnect", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "x-workspace-id": workspaceId,
-          ...(token && { Authorization: `Bearer ${token}` }),
         },
         body: JSON.stringify({
           provider,

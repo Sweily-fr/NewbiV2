@@ -2,15 +2,6 @@ import { NextResponse } from "next/server";
 
 export async function POST(request) {
   try {
-    const authHeader = request.headers.get("authorization");
-
-    if (!authHeader) {
-      return NextResponse.json(
-        { error: "Non authentifié - Token manquant" },
-        { status: 401 }
-      );
-    }
-
     const body = await request.json();
     const { folderIds, documentIds, excludedFolderIds, workspaceId } = body;
 
@@ -25,12 +16,14 @@ export async function POST(request) {
       process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
     ).replace(/\/$/, "");
 
+    const cookie = request.headers.get("cookie") || "";
+
     const response = await fetch(
       `${backendUrl}/api/shared-documents/download-selection`,
       {
         method: "POST",
         headers: {
-          Authorization: authHeader,
+          cookie,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ folderIds, documentIds, excludedFolderIds, workspaceId }),

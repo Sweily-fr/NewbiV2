@@ -206,7 +206,7 @@ export function NavMain({
                 className={cn(
                   "bg-transparent w-full cursor-pointer",
                   isVentesSubActive &&
-                    "bg-[#EEEFF1] dark:bg-sidebar-accent text-sidebar-foreground"
+                    "bg-sidebar-accent text-sidebar-foreground"
                 )}
               >
                 <ShoppingCart />
@@ -306,7 +306,7 @@ export function NavMain({
             data-tutorial="nav-ventes"
             className={cn(
               "flex items-center w-full rounded-md transition-colors",
-              isVentesSubActive && "bg-[#EEEFF1] dark:bg-sidebar-accent"
+              isVentesSubActive && "bg-sidebar-accent"
             )}
           >
             <SidebarMenuButton
@@ -355,7 +355,7 @@ export function NavMain({
                           onClick={handleLinkClick}
                           className={cn(
                             isSubItemActive &&
-                              "bg-[#EEEFF1] dark:bg-sidebar-accent text-sidebar-foreground font-medium"
+                              "bg-sidebar-accent text-sidebar-foreground font-medium"
                           )}
                         >
                           <span className="text-sm">{subItem.title}</span>
@@ -391,7 +391,7 @@ export function NavMain({
                 className={cn(
                   "bg-transparent w-full cursor-pointer",
                   isKanbanActive &&
-                    "bg-[#EEEFF1] dark:bg-sidebar-accent text-sidebar-foreground"
+                    "bg-sidebar-accent text-sidebar-foreground"
                 )}
               >
                 <FolderKanban />
@@ -491,7 +491,7 @@ export function NavMain({
               className={cn(
                 "bg-transparent w-full cursor-pointer",
                 isKanbanActive &&
-                  "bg-[#EEEFF1] dark:bg-sidebar-accent text-sidebar-foreground"
+                  "bg-sidebar-accent text-sidebar-foreground"
               )}
             >
               <FolderKanban />
@@ -631,7 +631,7 @@ export function NavMain({
                 className={cn(
                   "bg-transparent w-full cursor-pointer",
                   isSubActive &&
-                    "bg-[#EEEFF1] dark:bg-sidebar-accent text-sidebar-foreground"
+                    "bg-sidebar-accent text-sidebar-foreground"
                 )}
               >
                 <IconComponent />
@@ -738,7 +738,7 @@ export function NavMain({
           <div
             className={cn(
               "flex items-center w-full rounded-md transition-colors",
-              isSubActive && "bg-[#EEEFF1] dark:bg-sidebar-accent"
+              isSubActive && "bg-sidebar-accent"
             )}
           >
             <SidebarMenuButton
@@ -801,7 +801,7 @@ export function NavMain({
                                   onClick={handleLinkClick}
                                   className={cn(
                                     isSubItemActive &&
-                                      "bg-[#EEEFF1] dark:bg-sidebar-accent text-sidebar-foreground font-medium"
+                                      "bg-sidebar-accent text-sidebar-foreground font-medium"
                                   )}
                                 >
                                   <span className="text-sm">{item.title}</span>
@@ -839,7 +839,7 @@ export function NavMain({
                           onClick={handleLinkClick}
                           className={cn(
                             isSubItemActive &&
-                              "bg-[#EEEFF1] dark:bg-sidebar-accent text-sidebar-foreground font-medium"
+                              "bg-sidebar-accent text-sidebar-foreground font-medium"
                           )}
                         >
                           <span className="text-sm">{subItem.title}</span>
@@ -948,7 +948,7 @@ export function NavMain({
               "bg-transparent w-full cursor-pointer relative",
               !hasAccess && "opacity-60 cursor-not-allowed",
               isItemActive &&
-                "bg-[#EEEFF1] dark:bg-sidebar-accent text-sidebar-foreground"
+                "bg-sidebar-accent text-sidebar-foreground"
             )}
             tooltip={
               isProTab && !hasAccess

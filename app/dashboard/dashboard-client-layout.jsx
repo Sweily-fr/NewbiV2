@@ -16,10 +16,7 @@ import {
 } from "@/src/contexts/dashboard-layout-context";
 import { CacheDebugPanel } from "@/src/components/cache-debug-panel";
 import { SiteHeaderSkeleton } from "@/src/components/site-header-skeleton";
-import { useInactivityTimer } from "@/src/hooks/useInactivityTimer";
-import { useSessionValidator } from "@/src/hooks/useSessionValidator";
 import { authClient } from "@/src/lib/auth-client";
-import { initializeActivityTracker } from "@/src/lib/activityTracker";
 import { ProSubscriptionOverlayHandler } from "@/src/components/pro-subscription-overlay-handler";
 import { SettingsModal } from "@/src/components/settings-modal";
 import { OrgActivationHandler } from "@/src/components/org-activation-handler";
@@ -65,28 +62,6 @@ function DashboardContent({ children }) {
 
   // Hook pour vérifier le statut de l'abonnement
   const { isActive, subscription, isLoading: subscriptionLoading } = useDashboardLayoutContext();
-
-  const isDev = process.env.NODE_ENV === "development";
-
-  // ✅ IMPORTANT: Initialiser ActivityTracker EN PREMIER pour que les event listeners
-  // d'activité (visibilitychange, focus) soient enregistrés AVANT ceux de useSessionValidator.
-  // Cela garantit que lastActivityTimestamp est mis à jour AVANT la validation de session
-  // quand l'utilisateur revient sur l'onglet.
-  useEffect(() => {
-    if (!isDev) {
-      initializeActivityTracker();
-    }
-  }, [isDev]);
-
-  // Hook pour valider la session et détecter les révocations
-  // Désactivé en développement pour éviter les redirections lors du hot-reload
-  useSessionValidator(!isDev);
-
-  // Hook pour gérer la déconnexion automatique après inactivité
-  // Le timeout est maintenant géré par ActivityTracker (60 min = 1 heure)
-  // qui prend en compte les appels API + les événements DOM
-  // Désactivé en développement
-  useInactivityTimer(60, !isDev);
 
   // Protection contre l'erreur d'hydratation
   useEffect(() => {

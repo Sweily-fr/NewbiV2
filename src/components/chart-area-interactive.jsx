@@ -81,6 +81,7 @@ export function ChartAreaInteractive({
   ...props
 }) {
   const isMobile = useIsMobile();
+  const chartId = React.useId();
   const [timeRange, setTimeRange] = React.useState("90d");
   const [customStartDate, setCustomStartDate] = React.useState("");
   const [customEndDate, setCustomEndDate] = React.useState("");
@@ -200,6 +201,16 @@ export function ChartAreaInteractive({
   // Les fragments <></> et ternaires cassent cette détection en production
   const renderChart = () => {
     const children = [
+      <defs key="gradients">
+        <linearGradient id={`fillDesktop-${chartId}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="5%" stopColor="var(--color-desktop)" stopOpacity={0.8} />
+          <stop offset="95%" stopColor="var(--color-desktop)" stopOpacity={0.1} />
+        </linearGradient>
+        <linearGradient id={`fillMobile-${chartId}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="5%" stopColor="var(--color-mobile)" stopOpacity={0.8} />
+          <stop offset="95%" stopColor="var(--color-mobile)" stopOpacity={0.1} />
+        </linearGradient>
+      </defs>,
       <CartesianGrid key="grid" vertical={false} />,
       <XAxis
         key="xaxis"
@@ -253,11 +264,11 @@ export function ChartAreaInteractive({
         <Area
           key="mobile"
           dataKey="mobile"
-          type="monotone"
-          fill="var(--color-mobile)"
-          fillOpacity={0.15}
+          type="bump"
+          fill={`url(#fillMobile-${chartId})`}
+          fillOpacity={0.4}
           stroke="var(--color-mobile)"
-          strokeWidth={2}
+          strokeWidth={1.5}
           stackId="a"
           connectNulls
         />
@@ -268,11 +279,11 @@ export function ChartAreaInteractive({
       <Area
         key="desktop"
         dataKey="desktop"
-        type="monotone"
-        fill="var(--color-desktop)"
-        fillOpacity={0.15}
+        type="bump"
+        fill={`url(#fillDesktop-${chartId})`}
+        fillOpacity={0.4}
         stroke="var(--color-desktop)"
-        strokeWidth={2}
+        strokeWidth={1.5}
         stackId={!singleCurve && !hideMobileCurve ? "a" : undefined}
         connectNulls
       />

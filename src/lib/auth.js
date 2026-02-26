@@ -42,11 +42,11 @@ export const auth = betterAuth({
 
   // Configuration de la session
   session: {
-    expiresIn: 70 * 60, // 70 minutes - Marge de sécurité au-delà du timeout d'inactivité (60 min)
-    updateAge: 60 * 30, // 30 minutes - Renouvellement automatique à mi-vie si utilisateur actif
+    expiresIn: 30 * 24 * 60 * 60, // 30 jours - Session longue, standard industrie
+    updateAge: 60 * 60, // 1 heure - Renouvellement automatique si utilisateur actif
     cookieCache: {
       enabled: true,
-      maxAge: 300, // 5 minutes - Évite les lookups MongoDB fréquents en Edge Runtime
+      maxAge: 5 * 60, // 5 minutes — safe avec une session de 30 jours
     },
     // Ajouter activeOrganizationId aux champs de session
     additionalFields: {

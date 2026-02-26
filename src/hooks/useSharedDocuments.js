@@ -1034,12 +1034,6 @@ export function useDownloadFile() {
       return;
     }
 
-    const token = localStorage.getItem("bearer_token");
-    if (!token) {
-      toast.error("Non authentifié");
-      return;
-    }
-
     setLoading(true);
     try {
       const apiUrl = (
@@ -1049,9 +1043,7 @@ export function useDownloadFile() {
       const response = await fetch(
         `${apiUrl}/api/shared-documents/download-file/${doc.id}?workspaceId=${workspaceId}`,
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          credentials: "include",
         }
       );
 
@@ -1086,12 +1078,8 @@ export function useDownloadFile() {
    */
   const getPreviewUrl = (docId) => {
     if (!workspaceId || !docId) return null;
-    const token = localStorage.getItem("bearer_token");
-    if (!token) return null;
-    const apiUrl = (
-      process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
-    ).replace(/\/$/, "");
-    return `${apiUrl}/api/shared-documents/preview-file/${docId}?workspaceId=${workspaceId}&token=${token}`;
+    // Utiliser le proxy Next.js (same-origin) — le cookie session sera envoyé automatiquement
+    return `/api/shared-documents/preview-file/${docId}?workspaceId=${workspaceId}`;
   };
 
   return { downloadFile, getPreviewUrl, loading };
@@ -1110,25 +1098,15 @@ export function useDownloadFolder() {
       return;
     }
 
-    // Récupérer le token d'authentification
-    const token = localStorage.getItem("bearer_token");
-    if (!token) {
-      toast.error("Non authentifié");
-      return;
-    }
-
     setLoading(true);
     const loadingToast = toast.loading("Préparation du téléchargement...");
 
     try {
-      // Utiliser la route API Next.js (proxy vers le backend)
       const response = await fetch(
         `/api/shared-documents/download-folder?folderId=${folderId}&workspaceId=${workspaceId}`,
         {
           method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          credentials: "include",
         }
       );
 
@@ -1186,20 +1164,14 @@ export function useDownloadSelection() {
       return;
     }
 
-    const token = localStorage.getItem("bearer_token");
-    if (!token) {
-      toast.error("Non authentifié");
-      return;
-    }
-
     setLoading(true);
     const loadingToast = toast.loading("Préparation du téléchargement...");
 
     try {
       const response = await fetch("/api/shared-documents/download-selection", {
         method: "POST",
+        credentials: "include",
         headers: {
-          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ folderIds, documentIds, excludedFolderIds, workspaceId }),
@@ -1250,15 +1222,12 @@ export function useSelectionInfo() {
   const fetchSelectionInfo = async ({ folderIds = [], documentIds = [] } = {}) => {
     if (!workspaceId) return null;
 
-    const token = localStorage.getItem("bearer_token");
-    if (!token) return null;
-
     setLoading(true);
     try {
       const response = await fetch("/api/shared-documents/selection-info", {
         method: "POST",
+        credentials: "include",
         headers: {
-          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ folderIds, documentIds, workspaceId }),

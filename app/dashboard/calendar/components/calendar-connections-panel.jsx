@@ -16,7 +16,7 @@ import { toast } from "@/src/components/ui/sonner";
 import { useCalendarConnections } from "@/src/hooks/useCalendarConnections";
 import { CalendarConnectionCard } from "./calendar-connection-card";
 import { AppleCredentialsDialog } from "./apple-credentials-dialog";
-import { useBetterAuthJWT } from "@/src/hooks/useBetterAuthJWT";
+import { useSession } from "@/src/lib/auth-client";
 import { cn } from "@/src/lib/utils";
 
 const providers = [
@@ -66,7 +66,8 @@ export function CalendarConnectionsPanel() {
   const [showAppleDialog, setShowAppleDialog] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [connecting, setConnecting] = useState(null);
-  const { jwtToken, isReady } = useBetterAuthJWT();
+  const { data: sessionData } = useSession();
+  const isReady = !!sessionData?.user;
 
   const connectedProviders = new Set(
     connections.filter((c) => c.status !== "disconnected").map((c) => c.provider)
@@ -75,7 +76,7 @@ export function CalendarConnectionsPanel() {
   const availableProviders = providers.filter((p) => !connectedProviders.has(p.id));
 
   const handleCalendarConnect = useCallback(async (provider) => {
-    if (!jwtToken) {
+    if (!isReady) {
       toast.error("Session non disponible. Veuillez rafraichir la page et reessayer.");
       return;
     }
@@ -89,9 +90,7 @@ export function CalendarConnectionsPanel() {
     try {
       const apiUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000").replace(/\/+$/, "");
       const response = await fetch(`${apiUrl}/calendar-connect/${provider}/authorize`, {
-        headers: {
-          Authorization: `Bearer ${jwtToken}`,
-        },
+        credentials: "include",
       });
 
       if (!response.ok) {
@@ -114,7 +113,7 @@ export function CalendarConnectionsPanel() {
     } finally {
       setConnecting(null);
     }
-  }, [jwtToken]);
+  }, [isReady]);
 
   return (
     <>
