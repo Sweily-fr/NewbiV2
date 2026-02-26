@@ -57,6 +57,7 @@ export function KanbanColumnSimple({
       <div
         data-dnd-column={column.id}
         data-dnd-column-index={columnIndex}
+        data-dnd-column-color={column.color || "#94a3b8"}
         className={`rounded-xl p-1.5 sm:p-2 min-w-[240px] max-w-[240px] sm:min-w-[300px] sm:max-w-[300px] flex flex-col flex-shrink-0 ${
           isCollapsed ? "max-w-[80px] min-w-[80px]" : ""
         }`}
@@ -130,7 +131,7 @@ export function KanbanColumnSimple({
                   Modifier
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => onDeleteColumn(column)} className="text-destructive">
-                  <Trash2 className="mr-2 h-4 w-4" />
+                  <Trash2 className="mr-2 h-4 w-4 text-destructive" />
                   Supprimer
                 </DropdownMenuItem>
               </DropdownMenuContent>

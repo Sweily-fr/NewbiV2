@@ -285,22 +285,27 @@ export function TimerControls({ taskId, timeTracking, onTimerUpdate }) {
         )}
 
         {/* Prix à l'heure */}
-        <Input
-          type="number"
-          min="0"
-          step="0.01"
-          value={hourlyRate}
-          onChange={(e) => setHourlyRate(e.target.value)}
-          onBlur={handleSaveSettings}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              handleSaveSettings();
-            }
-          }}
-          placeholder="Prix/h"
-          className="w-24 sm:w-28 h-9 flex-shrink-0"
-          title="Prix à l'heure"
-        />
+        <div className="relative flex-shrink-0">
+          <Input
+            type="number"
+            min="0"
+            step="0.01"
+            value={hourlyRate}
+            onChange={(e) => setHourlyRate(e.target.value)}
+            onBlur={handleSaveSettings}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                handleSaveSettings();
+              }
+            }}
+            placeholder="0.00"
+            className="w-28 sm:w-32 h-9 pr-10"
+            title="Prix à l'heure"
+          />
+          <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">
+            €/h
+          </span>
+        </div>
 
         {/* Arrondi */}
         <Select value={roundingOption} onValueChange={(value) => {

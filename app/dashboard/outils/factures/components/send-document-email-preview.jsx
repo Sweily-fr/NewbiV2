@@ -7,6 +7,7 @@ const DOCUMENT_LABELS = {
   invoice: { singular: "facture", title: "Votre facture", detailsTitle: "DE LA FACTURE" },
   quote: { singular: "devis", title: "Votre devis", detailsTitle: "DU DEVIS" },
   creditNote: { singular: "avoir", title: "Votre avoir", detailsTitle: "DE L'AVOIR" },
+  purchaseOrder: { singular: "bon de commande", title: "Votre bon de commande", detailsTitle: "DU BON DE COMMANDE" },
 };
 
 // Données de démonstration
@@ -196,7 +197,7 @@ export default function SendDocumentEmailPreview({
 
         {/* Informations complémentaires */}
         <div className="text-sm text-gray-600 dark:text-gray-300 space-y-3">
-          <p>La {labels.singular} est jointe à cet email au format PDF.</p>
+          <p>{documentType === "invoice" ? "La" : documentType === "creditNote" ? "L'" : "Le"} {labels.singular} est {documentType === "invoice" ? "jointe" : "joint"} à cet email au format PDF.</p>
           <p>Pour toute question, n&apos;hésitez pas à nous contacter.</p>
           <p>
             Cordialement,<br />
@@ -208,7 +209,7 @@ export default function SendDocumentEmailPreview({
       {/* Footer */}
       <div className="bg-gray-50 dark:bg-[#252525] px-6 py-4 text-center border-t border-gray-200 dark:border-gray-700">
         <p className="text-xs text-gray-400 dark:text-gray-500">
-          {documentType === "invoice" ? "Cette facture" : documentType === "quote" ? "Ce devis" : "Cet avoir"} a été envoyé{documentType === "invoice" || documentType === "creditNote" ? "e" : ""} par {displayData.companyName} depuis la plateforme Newbi Logiciel de gestion.
+          {documentType === "invoice" ? "Cette facture" : documentType === "quote" ? "Ce devis" : documentType === "purchaseOrder" ? "Ce bon de commande" : "Cet avoir"} a été envoyé{documentType === "invoice" ? "e" : ""} par {displayData.companyName} depuis la plateforme Newbi Logiciel de gestion.
         </p>
       </div>
     </div>

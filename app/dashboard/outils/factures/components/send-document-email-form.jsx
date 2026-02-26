@@ -10,6 +10,7 @@ const DOCUMENT_LABELS = {
   invoice: { singular: "facture", article: "la" },
   quote: { singular: "devis", article: "le" },
   creditNote: { singular: "avoir", article: "l'" },
+  purchaseOrder: { singular: "bon de commande", article: "le" },
 };
 
 export default function SendDocumentEmailForm({
@@ -87,7 +88,7 @@ export default function SendDocumentEmailForm({
           <Input
             id="emailSubject"
             {...register("emailSubject", { required: "L'objet est requis" })}
-            placeholder={`${documentType === "invoice" ? "Facture" : documentType === "quote" ? "Devis" : "Avoir"} {documentNumber}`}
+            placeholder={`${documentType === "invoice" ? "Facture" : documentType === "quote" ? "Devis" : documentType === "purchaseOrder" ? "Bon de commande" : "Avoir"} {documentNumber}`}
             className="dark:border-gray-700"
           />
           {errors.emailSubject && (
