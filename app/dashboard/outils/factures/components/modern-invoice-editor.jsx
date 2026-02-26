@@ -336,6 +336,7 @@ export default function ModernInvoiceEditor({
                       validateInvoiceNumberExists={validateInvoiceNumber}
                       validationErrors={validationErrors}
                       setValidationErrors={setValidationErrors}
+                      organization={organization}
                       onSave={async () => {
                         try {
                           // Sauvegarder les paramètres dans l'organisation
