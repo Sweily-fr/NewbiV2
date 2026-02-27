@@ -377,7 +377,7 @@ function KanbanPageContent() {
       {isInitialLoading ? (
         <KanbanTableSkeleton />
       ) : boards?.length === 0 && !globalFilter ? (
-        <div className="flex-1 flex items-center justify-center">
+        <div className="flex-1 flex items-center justify-center pb-24">
           <div className="text-center">
             <div className="text-foreground mb-6 text-center">
               <h3 className="text-xl font-medium mb-2">
@@ -391,7 +391,7 @@ function KanbanPageContent() {
             <Button
               onClick={() => setIsCreateDialogOpen(true)}
               variant="default"
-              className="flex items-center gap-2 font-normal"
+              className="mx-auto flex items-center gap-2 font-normal"
             >
               Créer votre première liste
             </Button>

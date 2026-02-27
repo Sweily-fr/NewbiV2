@@ -168,7 +168,14 @@ export const useDeletePurchaseInvoice = () => {
 };
 
 export const useAddPurchaseInvoiceFile = () => {
-  const [addFileMutation, { loading }] = useMutation(ADD_PURCHASE_INVOICE_FILE);
+  const { workspaceId } = useRequiredWorkspace();
+
+  const [addFileMutation, { loading }] = useMutation(ADD_PURCHASE_INVOICE_FILE, {
+    refetchQueries: [
+      { query: GET_PURCHASE_INVOICES, variables: { workspaceId, page: 1, limit: 50 } },
+    ],
+    awaitRefetchQueries: false,
+  });
 
   const addFile = async (purchaseInvoiceId, input) => {
     try {

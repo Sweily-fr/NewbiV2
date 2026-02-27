@@ -257,9 +257,9 @@ export const columns = [
                 <Eye className="h-4 w-4 mr-2" />
                 Voir
               </DropdownMenuItem>
-              {invoice.files?.[0]?.path && (
+              {invoice.files?.[0]?.url && (
                 <DropdownMenuItem
-                  onClick={() => window.open(invoice.files[0].path, "_blank")}
+                  onClick={() => window.open(invoice.files[0].url, "_blank")}
                 >
                   <Paperclip className="h-4 w-4 mr-2" />
                   Voir le justificatif

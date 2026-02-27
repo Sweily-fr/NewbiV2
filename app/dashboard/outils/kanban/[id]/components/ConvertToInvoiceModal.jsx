@@ -305,6 +305,7 @@ export function ConvertToInvoiceModal({ open, onOpenChange, tasks, onConvert, ge
                       <Checkbox
                         checked={isSelected}
                         onCheckedChange={() => toggleTask(task.id)}
+                        onClick={(e) => e.stopPropagation()}
                         className="mt-0.5"
                       />
                       <div className="flex-1 min-w-0">
