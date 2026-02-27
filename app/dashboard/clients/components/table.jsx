@@ -130,7 +130,8 @@ const columns = (
   onSelectClient,
   onSelectAll,
   allClients,
-  invoiceCountByClient = {}
+  invoiceCountByClient = {},
+  customFieldDefinitions = []
 ) => [
   {
     id: "select",
@@ -265,6 +266,28 @@ const columns = (
     size: 150,
   },
   {
+    header: "Téléphone",
+    id: "phone",
+    cell: ({ row }) => {
+      const contacts = row.original.contacts;
+      const primary = contacts?.find((c) => c.isPrimary) || contacts?.[0];
+      return primary?.phone || "-";
+    },
+    size: 140,
+  },
+  {
+    header: "Prénom",
+    accessorKey: "firstName",
+    cell: ({ row }) => row.getValue("firstName") || "-",
+    size: 130,
+  },
+  {
+    header: "Nom de famille",
+    accessorKey: "lastName",
+    cell: ({ row }) => row.getValue("lastName") || "-",
+    size: 150,
+  },
+  {
     header: "SIRET",
     accessorKey: "siret",
     cell: ({ row }) => {
@@ -273,6 +296,34 @@ const columns = (
     },
     size: 140,
   },
+  {
+    header: "N° TVA",
+    accessorKey: "vatNumber",
+    cell: ({ row }) => {
+      const vat = row.getValue("vatNumber");
+      return vat ? <span className="font-mono text-sm">{vat}</span> : "-";
+    },
+    size: 150,
+  },
+  {
+    header: "International",
+    accessorKey: "isInternational",
+    cell: ({ row }) => {
+      const val = row.getValue("isInternational");
+      return val ? "Oui" : "Non";
+    },
+    size: 110,
+  },
+  // Dynamic custom field columns
+  ...customFieldDefinitions.map((field) => ({
+    id: `cf_${field.id}`,
+    header: field.name,
+    cell: ({ row }) => {
+      const cf = row.original.customFields?.find((c) => c.fieldId === field.id);
+      return cf?.value || "-";
+    },
+    size: 140,
+  })),
   {
     id: "actions",
     header: () => <span className="sr-only">Actions</span>,
@@ -307,11 +358,16 @@ export default function TableClients({
   externalSelectedTypes = [],
   selectedList = null,
   hideSearchBar = false,
+  customFieldDefinitions = [],
+  externalColumnVisibility,
+  onColumnVisibilityChange,
 }) {
   const id = useId();
   const router = useRouter();
   const [columnFilters, setColumnFilters] = useState([]);
-  const [columnVisibility, setColumnVisibility] = useState({});
+  const [internalColumnVisibility, setInternalColumnVisibility] = useState({});
+  const columnVisibility = externalColumnVisibility || internalColumnVisibility;
+  const setColumnVisibility = onColumnVisibilityChange || setInternalColumnVisibility;
   const [pagination, setPagination] = useState({
     pageIndex: 0,
     pageSize: 10,
@@ -488,7 +544,8 @@ export default function TableClients({
       onSelectClient,
       handleSelectAll,
       clients,
-      invoiceCountByClient
+      invoiceCountByClient,
+      customFieldDefinitions
     ),
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),

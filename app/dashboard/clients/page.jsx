@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/src/components/ui/button";
 import { ButtonGroup, ButtonGroupSeparator } from "@/src/components/ui/button-group";
 import { Input } from "@/src/components/ui/input";
+import { Checkbox } from "@/src/components/ui/checkbox";
+import { Label } from "@/src/components/ui/label";
 import { PermissionButton } from "@/src/components/rbac";
 import {
   DropdownMenu,
@@ -13,6 +15,11 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/src/components/ui/dropdown-menu";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/src/components/ui/popover";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,11 +31,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/src/components/ui/alert-dialog";
-import { Plus, Search, CircleXIcon, ListPlus, MoreHorizontal, Pencil, ShieldOff, UserCheck, Trash2, CircleAlertIcon } from "lucide-react";
+import { Plus, Search, CircleXIcon, ListPlus, MoreHorizontal, Pencil, ShieldOff, UserCheck, Trash2, CircleAlertIcon, Upload, Columns3 } from "lucide-react";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { useClientLists } from "@/src/hooks/useClientLists";
 import { useAddClientToLists } from "@/src/hooks/useClientLists";
 import { useDeleteClient, useBlockClient } from "@/src/hooks/useClients";
+import { useClientCustomFields } from "@/src/hooks/useClientCustomFields";
 import { toast } from "@/src/components/ui/sonner";
 import ClientsTable from "./components/clients-table";
 import ClientsModal from "./components/clients-modal";
@@ -36,6 +44,20 @@ import ClientFilters from "./components/client-filters";
 import CustomFieldsPopover from "./components/custom-fields-popover";
 import AutomationsPopover from "./components/automations-popover";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
+import ClientImportDialog from "./components/client-import-dialog";
+
+const STANDARD_COLUMNS = [
+  { id: "email", label: "Email" },
+  { id: "type", label: "Type" },
+  { id: "invoiceCount", label: "Factures" },
+  { id: "address", label: "Adresse" },
+  { id: "phone", label: "Téléphone" },
+  { id: "firstName", label: "Prénom" },
+  { id: "lastName", label: "Nom de famille" },
+  { id: "siret", label: "SIRET" },
+  { id: "vatNumber", label: "N° TVA" },
+  { id: "isInternational", label: "International" },
+];
 
 function ClientsContent() {
   const router = useRouter();
@@ -44,9 +66,26 @@ function ClientsContent() {
   const [selectedTypes, setSelectedTypes] = useState([]);
   const [selectedClients, setSelectedClients] = useState(new Set());
   const [editClientId, setEditClientId] = useState(null);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [columnVisibility, setColumnVisibility] = useState({
+    phone: false,
+    firstName: false,
+    lastName: false,
+    vatNumber: false,
+    isInternational: false,
+  });
   const inputRef = useRef(null);
 
   const { workspaceId } = useWorkspace();
+  const { fields: customFieldDefinitions } = useClientCustomFields(workspaceId);
+
+  const allToggleableColumns = useMemo(() => {
+    const cfCols = (customFieldDefinitions || []).map((f) => ({
+      id: `cf_${f.id}`,
+      label: f.name,
+    }));
+    return [...STANDARD_COLUMNS, ...cfCols];
+  }, [customFieldDefinitions]);
   const { lists, refetch: refetchLists } = useClientLists(workspaceId);
   const { addToLists } = useAddClientToLists();
   const { deleteClient } = useDeleteClient();
@@ -135,6 +174,14 @@ function ClientsContent() {
               </Button>
             </ButtonGroup> */}
             <Button
+              variant="outline"
+              onClick={() => setImportDialogOpen(true)}
+              className="self-start"
+            >
+              <Upload size={14} strokeWidth={2} aria-hidden="true" />
+              Importer
+            </Button>
+            <Button
               variant="primary"
               onClick={handleOpenInviteDialog}
               className="self-start"
@@ -178,6 +225,46 @@ function ClientsContent() {
               selectedTypes={selectedTypes}
               setSelectedTypes={setSelectedTypes}
             />
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline">
+                  <Columns3 style={{ width: '14px', height: '14px' }} />
+                  Colonnes
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="start" className="w-56 p-3">
+                <div className="space-y-3">
+                  <p className="text-xs font-medium text-muted-foreground">
+                    Colonnes visibles
+                  </p>
+                  <div className="space-y-2">
+                    {allToggleableColumns.map((col) => {
+                      const isVisible = columnVisibility[col.id] !== false;
+                      return (
+                        <div key={col.id} className="flex items-center gap-2">
+                          <Checkbox
+                            id={`col-${col.id}`}
+                            checked={isVisible}
+                            onCheckedChange={(checked) => {
+                              setColumnVisibility((prev) => ({
+                                ...prev,
+                                [col.id]: !!checked,
+                              }));
+                            }}
+                          />
+                          <Label
+                            htmlFor={`col-${col.id}`}
+                            className="text-sm font-normal cursor-pointer"
+                          >
+                            {col.label}
+                          </Label>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
           {selectedClients.size > 0 && (
             <div className="flex items-center gap-2">
@@ -345,6 +432,8 @@ function ClientsContent() {
           hideSearchBar={true}
           selectedClients={selectedClients}
           onSelectedClientsChange={setSelectedClients}
+          columnVisibility={columnVisibility}
+          onColumnVisibilityChange={setColumnVisibility}
         />
       </div>
 
@@ -368,6 +457,8 @@ function ClientsContent() {
           hideSearchBar={false}
           selectedClients={selectedClients}
           onSelectedClientsChange={setSelectedClients}
+          columnVisibility={columnVisibility}
+          onColumnVisibilityChange={setColumnVisibility}
         />
 
         <PermissionButton
@@ -384,6 +475,7 @@ function ClientsContent() {
       </div>
 
       <ClientsModal open={dialogOpen} onOpenChange={setDialogOpen} />
+      <ClientImportDialog open={importDialogOpen} onOpenChange={setImportDialogOpen} />
     </>
   );
 }

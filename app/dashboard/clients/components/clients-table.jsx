@@ -8,6 +8,7 @@ import {
   useRemoveClientFromLists,
 } from "@/src/hooks/useClientLists";
 import { useDeleteClient } from "@/src/hooks/useClients";
+import { useClientCustomFields } from "@/src/hooks/useClientCustomFields";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import {
@@ -121,6 +122,8 @@ export default function ClientsTable({
   hideSearchBar = false,
   selectedClients: externalSelectedClients,
   onSelectedClientsChange,
+  columnVisibility,
+  onColumnVisibilityChange,
 }) {
   const router = useRouter();
   const [internalSelectedClients, setInternalSelectedClients] = useState(new Set());
@@ -129,6 +132,7 @@ export default function ClientsTable({
   const { addToLists } = useAddClientToLists();
   const { removeFromLists } = useRemoveClientFromLists();
   const { deleteClient } = useDeleteClient();
+  const { fields: customFieldDefinitions } = useClientCustomFields(workspaceId);
   const [assigningLists, setAssigningLists] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -267,6 +271,9 @@ export default function ClientsTable({
         externalSelectedTypes={selectedTypes}
         selectedList={selectedList}
         hideSearchBar={hideSearchBar}
+        customFieldDefinitions={customFieldDefinitions}
+        externalColumnVisibility={columnVisibility}
+        onColumnVisibilityChange={onColumnVisibilityChange}
       />
 
       <ClientsModal
