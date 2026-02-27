@@ -36,7 +36,7 @@ import {
   X,
   FileText,
   CheckCircle2,
-  ExternalLink,
+  Eye,
   LinkIcon,
   CalendarIcon,
   Receipt,
@@ -764,31 +764,71 @@ export function PurchaseInvoiceDetailDrawer({
                       Attaché
                     </span>
                   </div>
-                  <div className="space-y-2">
-                    {invoice.files.map((file) => (
+                  {invoice.files.map((file) => {
+                    const isImage = file.mimetype?.startsWith("image/");
+                    const isPdf =
+                      file.mimetype === "application/pdf" ||
+                      file.originalFilename?.endsWith(".pdf");
+                    return (
                       <div
                         key={file.id}
-                        className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30 hover:bg-muted/50 transition-colors group cursor-pointer"
+                        className="relative group cursor-pointer rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden hover:border-gray-400 dark:hover:border-gray-500 hover:shadow-sm transition-all"
                         onClick={() => window.open(file.url, "_blank")}
                       >
-                        <div className="w-10 h-10 rounded overflow-hidden bg-gray-100 flex items-center justify-center">
-                          <FileText className="h-5 w-5 text-gray-600" />
+                        <div className="w-full h-52 bg-gray-50 dark:bg-gray-900 flex items-center justify-center overflow-hidden">
+                          {isImage && file.url ? (
+                            <img
+                              src={file.url}
+                              alt={file.originalFilename}
+                              className="w-full h-full object-contain"
+                              onError={(e) => {
+                                e.target.style.display = "none";
+                                e.target.parentElement.querySelector(
+                                  ".preview-fallback"
+                                ).style.display = "flex";
+                              }}
+                            />
+                          ) : null}
+                          {isPdf && file.url ? (
+                            <iframe
+                              src={`${file.url}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
+                              title={file.originalFilename}
+                              className="w-full h-full border-0 pointer-events-none"
+                            />
+                          ) : null}
+                          <div
+                            className={`preview-fallback items-center justify-center ${isImage || isPdf ? "hidden" : "flex"}`}
+                          >
+                            <FileText className="h-10 w-10 text-red-400" />
+                          </div>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-normal truncate">
-                            {file.originalFilename}
-                          </p>
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                          <div className="w-10 h-10 rounded-full bg-white/90 items-center justify-center shadow-lg hidden group-hover:flex transition-all">
+                            <Eye className="w-5 h-5 text-gray-700" />
+                          </div>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                        >
-                          <ExternalLink className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center gap-2 px-3 py-2 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+                          <div className="w-8 h-8 rounded-md bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
+                            {isPdf ? (
+                              <FileText className="h-4 w-4 text-red-500" />
+                            ) : (
+                              <FileText className="h-4 w-4 text-blue-500" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-normal truncate text-foreground">
+                              {file.originalFilename}
+                            </p>
+                            {file.size && (
+                              <p className="text-[10px] text-muted-foreground">
+                                {(file.size / 1024).toFixed(0)} Ko
+                              </p>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                    ))}
-                  </div>
+                    );
+                  })}
                 </div>
               </>
             )}

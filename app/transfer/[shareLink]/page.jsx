@@ -265,21 +265,12 @@ export default function TransferPage() {
       const allFiles = transfer?.fileTransfer?.files || [];
       const hasWatermark = transfer?.fileTransfer?.hasWatermark;
 
-      // Filtrer les fichiers téléchargeables (exclure les images si filigrane)
-      const files = hasWatermark
-        ? allFiles.filter((f) => {
-            const imageTypes = [
-              "image/jpeg",
-              "image/png",
-              "image/gif",
-              "image/webp",
-              "image/bmp",
-            ];
-            const ext = (f.originalName || "").split(".").pop()?.toLowerCase();
-            const imageExts = ["jpg", "jpeg", "png", "gif", "webp", "bmp"];
-            return !imageTypes.includes(f.mimeType) && !imageExts.includes(ext);
-          })
-        : allFiles;
+      // Bloquer tous les fichiers si filigrane actif
+      if (hasWatermark) {
+        toast.error("Les fichiers de ce transfert sont protégés par un filigrane et ne peuvent pas être téléchargés.");
+        return;
+      }
+      const files = allFiles;
 
       // Si aucun fichier téléchargeable
       if (files.length === 0) {
@@ -589,9 +580,9 @@ export default function TransferPage() {
     );
   };
 
-  // Vérifier si le téléchargement d'un fichier est bloqué (image avec filigrane)
+  // Vérifier si le téléchargement d'un fichier est bloqué (filigrane actif)
   const isDownloadBlocked = (file) => {
-    return transfer?.fileTransfer?.hasWatermark && isImageFile(file);
+    return !!transfer?.fileTransfer?.hasWatermark;
   };
 
   return (
@@ -835,45 +826,31 @@ export default function TransferPage() {
               {transfer?.fileTransfer?.hasWatermark && (
                 <div className="w-full px-5 py-2">
                   <p className="text-xs text-center text-amber-600 bg-amber-50 rounded-lg py-2 px-3">
-                    Les images de ce transfert sont protégées par un filigrane
-                    et ne peuvent pas être téléchargées.
+                    Les fichiers de ce transfert sont protégés par un filigrane
+                    et ne peuvent pas être téléchargés.
                   </p>
                 </div>
               )}
 
               {/* Bouton télécharger - masqué si filigrane et uniquement des images */}
-              {(() => {
-                const files = transfer?.fileTransfer?.files || [];
-                const hasWatermark = transfer?.fileTransfer?.hasWatermark;
-                const downloadableFiles = hasWatermark
-                  ? files.filter((f) => !isImageFile(f))
-                  : files;
-                const allBlocked =
-                  hasWatermark && downloadableFiles.length === 0;
-
-                // Ne pas afficher le bouton si tous les fichiers sont bloqués
-                if (allBlocked) {
-                  return null;
-                }
-
-                return (
-                  <div className="w-full px-5 py-5 text-center">
-                    <Button
-                      onClick={downloadAllFiles}
-                      disabled={isDownloading}
-                      className="text-white px-10 w-full rounded-xl"
-                    >
-                      {isDownloading ? (
-                        <LoaderCircle className="w-5 h-5 animate-spin" />
-                      ) : downloadableFiles.length > 1 ? (
-                        "Tout télécharger"
-                      ) : (
-                        "Télécharger"
-                      )}
-                    </Button>
-                  </div>
-                );
-              })()}
+              {/* Bouton télécharger - masqué si filigrane actif */}
+              {!transfer?.fileTransfer?.hasWatermark && (
+                <div className="w-full px-5 py-5 text-center">
+                  <Button
+                    onClick={downloadAllFiles}
+                    disabled={isDownloading}
+                    className="text-white px-10 w-full rounded-xl"
+                  >
+                    {isDownloading ? (
+                      <LoaderCircle className="w-5 h-5 animate-spin" />
+                    ) : (transfer?.fileTransfer?.files?.length || 0) > 1 ? (
+                      "Tout télécharger"
+                    ) : (
+                      "Télécharger"
+                    )}
+                  </Button>
+                </div>
+              )}
             </>
           )}
         </Card>

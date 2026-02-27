@@ -52,8 +52,8 @@ export function FilePreviewDrawer({
   onNavigate,
   hasWatermark = false,
 }) {
-  // Vérifier si le téléchargement est bloqué (image avec filigrane)
-  const isDownloadBlocked = hasWatermark && isImage(file);
+  // Vérifier si le téléchargement est bloqué (filigrane actif)
+  const isDownloadBlocked = !!hasWatermark;
   const [viewMode, setViewMode] = useState("grid"); // "grid" ou "list"
   const [imageLoading, setImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
