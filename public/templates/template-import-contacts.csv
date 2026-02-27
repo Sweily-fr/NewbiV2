@@ -1,0 +1,6 @@
+Type;Nom / Raison sociale;Prénom;Nom de famille;Email;Téléphone;Adresse;Ville;Code postal;Pays;SIRET;N° TVA;International
+Entreprise;Acme Corp;Jean;Dupont;jean.dupont@acme.fr;0612345678;12 rue de la Paix;Paris;75001;France;12345678901234;FR12345678901;Non
+Particulier;Martin;Sophie;Martin;sophie.martin@email.com;0698765432;5 avenue des Champs;Lyon;69001;France;;;Non
+Entreprise;Tech Solutions SAS;Pierre;Bernard;contact@techsolutions.fr;0145678901;8 boulevard Haussmann;Paris;75008;France;98765432109876;FR98765432109;Non
+Entreprise;Global Services Ltd;Emma;Wilson;emma@globalservices.co.uk;+44123456789;10 Oxford Street;London;W1D 1BS;United Kingdom;;;Oui
+Particulier;Lefebvre;Marie;Lefebvre;marie.lefebvre@gmail.com;0678901234;22 rue Victor Hugo;Bordeaux;33000;France;;;Non
