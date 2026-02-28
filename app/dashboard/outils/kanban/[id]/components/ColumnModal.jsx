@@ -59,6 +59,7 @@ export function ColumnModal({
                   <ColorPicker
                     color={columnForm.color}
                     onChange={(color) => setColumnForm({ ...columnForm, color })}
+                    inline
                   />
                 </div>
               </div>

@@ -1,7 +1,6 @@
 "use client";
 
-import { AlertTriangle, AlertCircle, Info, X } from "lucide-react";
-import { useState } from "react";
+import { AlertTriangle, AlertCircle, Info } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import {
   Tooltip,
@@ -13,24 +12,18 @@ import {
 const SEVERITY_CONFIG = {
   danger: {
     icon: AlertCircle,
-    bg: "bg-red-50 dark:bg-red-950/30",
-    border: "border-red-200 dark:border-red-800",
-    text: "text-red-800 dark:text-red-200",
-    iconColor: "text-red-600 dark:text-red-400",
+    text: "text-red-500/70 dark:text-red-400/60",
+    iconColor: "text-red-400/60 dark:text-red-400/50",
   },
   warning: {
     icon: AlertTriangle,
-    bg: "bg-amber-50 dark:bg-amber-950/30",
-    border: "border-amber-200 dark:border-amber-800",
-    text: "text-amber-800 dark:text-amber-200",
-    iconColor: "text-amber-600 dark:text-amber-400",
+    text: "text-amber-600/70 dark:text-amber-400/60",
+    iconColor: "text-amber-500/60 dark:text-amber-400/50",
   },
   info: {
     icon: Info,
-    bg: "bg-blue-50 dark:bg-blue-950/30",
-    border: "border-blue-200 dark:border-blue-800",
-    text: "text-blue-800 dark:text-blue-200",
-    iconColor: "text-blue-600 dark:text-blue-400",
+    text: "text-blue-500/70 dark:text-blue-400/60",
+    iconColor: "text-blue-400/60 dark:text-blue-400/50",
   },
 };
 
@@ -42,62 +35,39 @@ const ALERT_EXPLANATIONS = {
 };
 
 export function AnalyticsAlertBanner({ alerts }) {
-  const [dismissed, setDismissed] = useState(new Set());
-
   if (!alerts?.length) return null;
 
-  const visibleAlerts = alerts.filter((_, i) => !dismissed.has(i));
-  if (!visibleAlerts.length) return null;
-
-  const dismiss = (index) => {
-    setDismissed((prev) => new Set([...prev, index]));
-  };
-
   return (
-    <div className="space-y-2">
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
       {alerts.map((alert, i) => {
-        if (dismissed.has(i)) return null;
         const config = SEVERITY_CONFIG[alert.severity] || SEVERITY_CONFIG.info;
         const Icon = config.icon;
         const explanation = ALERT_EXPLANATIONS[alert.type];
 
         return (
-          <div
-            key={`${alert.type}-${i}`}
-            className={cn(
-              "flex items-start gap-3 rounded-lg border px-4 py-3",
-              config.bg,
-              config.border
-            )}
-          >
-            <Icon className={cn("h-5 w-5 shrink-0 mt-0.5", config.iconColor)} />
-            <p className={cn("text-sm flex-1", config.text)}>
-              {alert.message}
+          <TooltipProvider key={`${alert.type}-${i}`}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span
+                  className={cn(
+                    "inline-flex items-center gap-1.5 text-xs cursor-default",
+                    config.text
+                  )}
+                >
+                  <Icon className={cn("h-3.5 w-3.5 shrink-0", config.iconColor)} />
+                  {alert.message}
+                </span>
+              </TooltipTrigger>
               {explanation && (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button className={cn("inline-flex items-center justify-center h-4 w-4 rounded-full border ml-1.5 align-text-top cursor-help", config.border, config.text)}>
-                        <span className="text-[10px] font-bold leading-none">!</span>
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent
-                      side="bottom"
-                      className="bg-[#202020] text-white border-0 max-w-xs"
-                    >
-                      <p>{explanation}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                <TooltipContent
+                  side="bottom"
+                  className="bg-[#202020] text-white border-0 max-w-xs"
+                >
+                  <p>{explanation}</p>
+                </TooltipContent>
               )}
-            </p>
-            <button
-              onClick={() => dismiss(i)}
-              className={cn("shrink-0 p-0.5 rounded hover:bg-black/5", config.text)}
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
+            </Tooltip>
+          </TooltipProvider>
         );
       })}
     </div>

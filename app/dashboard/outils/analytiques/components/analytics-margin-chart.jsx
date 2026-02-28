@@ -2,8 +2,8 @@
 
 import { useMemo } from "react";
 import {
-  Line,
-  LineChart,
+  Area,
+  AreaChart,
   XAxis,
   YAxis,
   Tooltip,
@@ -49,7 +49,7 @@ function CustomTooltip({ active, payload }) {
 
   return (
     <div className="rounded-lg border bg-background p-3 shadow-sm text-sm">
-      <p className="font-medium mb-2 capitalize">{label}</p>
+      <p className="font-medium mb-10 capitalize">{label}</p>
       <div className="space-y-1">
         <div className="flex items-center justify-between gap-6">
           <span className="flex items-center gap-2">
@@ -90,18 +90,18 @@ export function AnalyticsMarginChart({ monthlyRevenue, loading }) {
 
   if (loading) {
     return (
-      <div>
-        <h3 className="text-base font-medium mb-4">Taux de marge brute %</h3>
-        <Skeleton className="h-[300px] w-full" />
+      <div className="flex flex-col min-h-0">
+        <h3 className="text-sm font-medium mb-10 shrink-0">Taux de marge brute %</h3>
+        <Skeleton className="flex-1 min-h-[200px] w-full" />
       </div>
     );
   }
 
   if (!chartData.length) {
     return (
-      <div>
-        <h3 className="text-base font-medium mb-4">Taux de marge brute %</h3>
-        <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+      <div className="flex flex-col min-h-0">
+        <h3 className="text-sm font-medium mb-10 shrink-0">Taux de marge brute %</h3>
+        <div className="flex items-center justify-center flex-1 min-h-[200px] text-muted-foreground">
           Aucune donnée pour cette période
         </div>
       </div>
@@ -109,10 +109,16 @@ export function AnalyticsMarginChart({ monthlyRevenue, loading }) {
   }
 
   return (
-    <div>
-      <h3 className="text-base font-medium mb-4">Taux de marge brute %</h3>
-      <ChartContainer config={chartConfig} className="h-[300px] w-full">
-        <LineChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+    <div className="flex flex-col min-h-0">
+      <h3 className="text-sm font-medium mb-10 shrink-0">Taux de marge brute %</h3>
+      <ChartContainer config={chartConfig} className="flex-1 min-h-[200px] w-full">
+        <AreaChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+          <defs>
+            <linearGradient id="fillMarginRate" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#5b50ff" stopOpacity={0.8} />
+              <stop offset="95%" stopColor="#5b50ff" stopOpacity={0.1} />
+            </linearGradient>
+          </defs>
           <CartesianGrid strokeDasharray="3 3" vertical={false} />
           <XAxis
             dataKey="monthLabel"
@@ -132,15 +138,18 @@ export function AnalyticsMarginChart({ monthlyRevenue, loading }) {
           />
           <Tooltip content={<CustomTooltip />} />
           <ReferenceLine y={0} stroke="#94a3b8" strokeDasharray="3 3" />
-          <Line
-            type="monotone"
+          <Area
+            type="bump"
             dataKey="grossMarginRate"
             stroke="#5b50ff"
-            strokeWidth={2}
+            strokeWidth={1.5}
+            fill="url(#fillMarginRate)"
+            fillOpacity={0.4}
             dot={false}
             activeDot={{ r: 5 }}
+            connectNulls
           />
-        </LineChart>
+        </AreaChart>
       </ChartContainer>
     </div>
   );

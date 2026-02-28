@@ -333,10 +333,10 @@ export function ChartAreaInteractive({
       <CardHeader>
         <CardTitle className="text-base font-normal">{title}</CardTitle>
         <CardDescription>
-          <span className="hidden @[540px]/card:block text-lg">
+          <span className="hidden @[540px]/card:block text-2xl font-medium text-foreground">
             {resolvedDescription}
           </span>
-          <span className="@[540px]/card:hidden">{computeDescription ? resolvedDescription : shortDescription}</span>
+          <span className="@[540px]/card:hidden text-2xl font-medium text-foreground">{computeDescription ? resolvedDescription : shortDescription}</span>
         </CardDescription>
         {showTimeRange && (
           <CardAction>

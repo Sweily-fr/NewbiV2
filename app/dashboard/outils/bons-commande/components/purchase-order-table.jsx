@@ -446,6 +446,8 @@ export default function PurchaseOrderTable({ handleNewPurchaseOrder, poIdToOpen,
                     data-state={row.getIsSelected() && "selected"}
                     className="border-b hover:bg-muted/50 data-[state=selected]:bg-muted cursor-pointer transition-colors"
                     onClick={(e) => {
+                      // Ignorer les clics provenant de portals React (modals, dropdowns)
+                      if (!e.currentTarget.contains(e.target)) return;
                       if (
                         e.target.closest('[role="checkbox"]') ||
                         e.target.closest("[data-actions-cell]") ||

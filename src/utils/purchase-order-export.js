@@ -108,7 +108,7 @@ function formatPurchaseOrderForExport(po) {
 
   return {
     "Numéro": po.prefix
-      ? `${po.prefix}${po.number}`
+      ? `${po.prefix}-${po.number}`
       : (po.number || ""),
 
     "Client": po.client?.name || "",
@@ -314,7 +314,7 @@ export function exportToFEC(purchaseOrders, dateRange = null) {
 
     const dateStr = format(issueDate, "yyyyMMdd");
     const validDateStr = createdAt ? format(createdAt, "yyyyMMdd") : dateStr;
-    const poNumber = sanitizeFECField(po.prefix ? `${po.prefix}${po.number}` : po.number);
+    const poNumber = sanitizeFECField(po.prefix ? `${po.prefix}-${po.number}` : po.number);
     const clientName = sanitizeFECField(po.client?.name || "Client inconnu");
     const totalTTC = parseFloat(po.finalTotalTTC) || 0;
 
@@ -557,7 +557,7 @@ export function exportToSage(purchaseOrders, dateRange = null) {
     if (!issueDate) return;
 
     const dateStr = format(issueDate, "ddMMyyyy");
-    const poNumber = sanitizeSageField(po.prefix ? `${po.prefix}${po.number}` : po.number);
+    const poNumber = sanitizeSageField(po.prefix ? `${po.prefix}-${po.number}` : po.number);
     const clientName = sanitizeSageField(po.client?.name || "Client inconnu");
     const clientCode = sanitizeSageField(po.client?.siret || poNumber);
     const totalTTC = parseFloat(po.finalTotalTTC) || 0;
@@ -686,7 +686,7 @@ export function exportToCegid(purchaseOrders, dateRange = null) {
     if (!issueDate) return;
 
     const dateStr = format(issueDate, "dd/MM/yyyy");
-    const poNumber = sanitizeCegidField(po.prefix ? `${po.prefix}${po.number}` : po.number);
+    const poNumber = sanitizeCegidField(po.prefix ? `${po.prefix}-${po.number}` : po.number);
     const clientName = sanitizeCegidField(po.client?.name || "Client inconnu");
     const clientCode = sanitizeCegidField(po.client?.siret || "");
     const totalTTC = parseFloat(po.finalTotalTTC) || 0;

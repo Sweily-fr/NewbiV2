@@ -183,6 +183,7 @@ export function ColorLegend() {
               <ColorPicker
                 color={selectedColor}
                 onChange={setSelectedColor}
+                inline
               />
             </div>
 

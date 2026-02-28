@@ -60,6 +60,8 @@ export const useWorkspace = () => {
       })
       .catch((error) => {
         console.error("Error loading full organization:", error);
+        // Marquer comme fetché même en cas d'erreur pour éviter une boucle de retry
+        lastFetchedOrgId.current = orgId;
       })
       .finally(() => {
         setLoadingFull(false);

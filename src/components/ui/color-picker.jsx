@@ -90,6 +90,7 @@ export function ColorPicker({
   side = "bottom",
   sideOffset = 0,
   sideOffsetVw,
+  inline = false,
 }) {
   // Convertir HEX en HSV pour initialisation
   const getInitialHsv = (hexColor) => {
@@ -540,6 +541,164 @@ export function ColorPicker({
     "#E5E5EA",
   ];
 
+  const pickerContent = (
+    <div className="space-y-4">
+      {/* Input natif caché */}
+      <input
+        ref={colorInputRef}
+        type="color"
+        value={currentColor}
+        onChange={handleNativeColorChange}
+        className="sr-only"
+      />
+
+      {/* Bloc de sélection de couleur avec curseur */}
+      <div
+        ref={pickerRef}
+        className="w-full h-48 rounded-lg cursor-crosshair relative select-none overflow-hidden"
+        onMouseDown={handlePickerMouseDown}
+        style={{
+          backgroundColor: `hsl(${hue}, 100%, 50%)`,
+        }}
+      >
+        {/* Gradient blanc à transparent (saturation) */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: "linear-gradient(to right, #fff, transparent)",
+          }}
+        />
+        {/* Gradient transparent à noir (value/brightness) */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: "linear-gradient(to bottom, transparent, #000)",
+          }}
+        />
+        {/* Curseur */}
+        <div
+          className="w-5 h-5 rounded-full border-2 border-white shadow-lg absolute pointer-events-none"
+          style={{
+            left: `${cursorPosition.x}%`,
+            top: `${cursorPosition.y}%`,
+            transform: "translate(-50%, -50%)",
+            backgroundColor: currentColor,
+            boxShadow:
+              "0 0 0 1px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.2)",
+          }}
+        />
+      </div>
+
+      {/* Slider de teinte */}
+      <input
+        type="range"
+        min="0"
+        max="360"
+        value={hue}
+        onChange={(e) => setHue(Number(e.target.value))}
+        className="w-full h-3 rounded-full appearance-none cursor-pointer"
+        style={{
+          background: `linear-gradient(to right,
+            hsl(0, 100%, 50%), hsl(60, 100%, 50%), hsl(120, 100%, 50%),
+            hsl(180, 100%, 50%), hsl(240, 100%, 50%), hsl(300, 100%, 50%), hsl(360, 100%, 50%)
+          )`,
+        }}
+      />
+
+      {/* Input et boutons */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            className="h-9 px-3 font-mono text-xs"
+            onClick={toggleColorFormat}
+            title="Changer le format"
+          >
+            {colorFormat}
+          </Button>
+          <Input
+            type="text"
+            value={hexInput}
+            onChange={handleColorInputChange}
+            className="flex-1 h-9 px-3 font-mono text-sm"
+            placeholder={
+              colorFormat === "HEX"
+                ? "#000000"
+                : colorFormat === "RGB"
+                  ? "255, 255, 255"
+                  : "0°, 0%, 0%"
+            }
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="h-9 w-9"
+            onClick={handleEyeDropper}
+            title="Capturer une couleur"
+          >
+            <Pipette className="h-4 w-4" />
+          </Button>
+          <div
+            className="w-9 h-9 rounded border-2 border-gray-300"
+            style={{ backgroundColor: currentColor }}
+          />
+        </div>
+      </div>
+
+      {/* Couleurs prédéfinies */}
+      <div>
+        <p className="text-xs text-gray-500 mb-2 font-medium">
+          Couleurs rapides
+        </p>
+        <div className="grid grid-cols-6 gap-2">
+          {colorPresets.map((preset) => (
+            <button
+              key={preset}
+              className="w-full aspect-square rounded border-2 border-gray-300 hover:border-gray-400 hover:scale-105 transition-all"
+              style={{ backgroundColor: preset }}
+              onClick={() => {
+                const hsv = hexToHsv(preset);
+                setCurrentColor(preset);
+                setHexInput(preset);
+                setHue(hsv.h);
+                setCursorPosition({ x: hsv.s, y: 100 - hsv.v });
+                onChange(preset);
+              }}
+              title={preset}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
+  // Mode inline : pas de Popover, le picker s'affiche directement sous le bouton
+  if (inline) {
+    return (
+      <div className="space-y-2">
+        <Button
+          type="button"
+          variant="outline"
+          className={`h-8 px-2 justify-start gap-2 ${className}`}
+          onClick={() => setIsOpen(!isOpen)}
+        >
+          <div
+            className="w-4 h-4 rounded border border-gray-300"
+            style={{ backgroundColor: currentColor }}
+          />
+          <span className="text-xs font-mono">{currentColor.slice(1)}</span>
+        </Button>
+        {isOpen && (
+          <div className="w-[280px] p-4 rounded-xl border bg-popover text-popover-foreground shadow-md">
+            {pickerContent}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
@@ -563,136 +722,7 @@ export function ColorPicker({
           sideOffsetVw ? { transform: `translateX(${sideOffsetVw}vw)` } : {}
         }
       >
-        <div className="space-y-4">
-          {/* Input natif caché */}
-          <input
-            ref={colorInputRef}
-            type="color"
-            value={currentColor}
-            onChange={handleNativeColorChange}
-            className="sr-only"
-          />
-
-          {/* Bloc de sélection de couleur avec curseur */}
-          <div
-            ref={pickerRef}
-            className="w-full h-48 rounded-lg cursor-crosshair relative select-none overflow-hidden"
-            onMouseDown={handlePickerMouseDown}
-            style={{
-              backgroundColor: `hsl(${hue}, 100%, 50%)`,
-            }}
-          >
-            {/* Gradient blanc à transparent (saturation) */}
-            <div
-              className="absolute inset-0 pointer-events-none"
-              style={{
-                background: "linear-gradient(to right, #fff, transparent)",
-              }}
-            />
-            {/* Gradient transparent à noir (value/brightness) */}
-            <div
-              className="absolute inset-0 pointer-events-none"
-              style={{
-                background: "linear-gradient(to bottom, transparent, #000)",
-              }}
-            />
-            {/* Curseur */}
-            <div
-              className="w-5 h-5 rounded-full border-2 border-white shadow-lg absolute pointer-events-none"
-              style={{
-                left: `${cursorPosition.x}%`,
-                top: `${cursorPosition.y}%`,
-                transform: "translate(-50%, -50%)",
-                backgroundColor: currentColor,
-                boxShadow:
-                  "0 0 0 1px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.2)",
-              }}
-            />
-          </div>
-
-          {/* Slider de teinte */}
-          <input
-            type="range"
-            min="0"
-            max="360"
-            value={hue}
-            onChange={(e) => setHue(Number(e.target.value))}
-            className="w-full h-3 rounded-full appearance-none cursor-pointer"
-            style={{
-              background: `linear-gradient(to right, 
-                hsl(0, 100%, 50%), hsl(60, 100%, 50%), hsl(120, 100%, 50%), 
-                hsl(180, 100%, 50%), hsl(240, 100%, 50%), hsl(300, 100%, 50%), hsl(360, 100%, 50%)
-              )`,
-            }}
-          />
-
-          {/* Input et boutons */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                className="h-9 px-3 font-mono text-xs"
-                onClick={toggleColorFormat}
-                title="Changer le format"
-              >
-                {colorFormat}
-              </Button>
-              <Input
-                type="text"
-                value={hexInput}
-                onChange={handleColorInputChange}
-                className="flex-1 h-9 px-3 font-mono text-sm"
-                placeholder={
-                  colorFormat === "HEX"
-                    ? "#000000"
-                    : colorFormat === "RGB"
-                      ? "255, 255, 255"
-                      : "0°, 0%, 0%"
-                }
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                className="h-9 w-9"
-                onClick={handleEyeDropper}
-                title="Capturer une couleur"
-              >
-                <Pipette className="h-4 w-4" />
-              </Button>
-              <div
-                className="w-9 h-9 rounded border-2 border-gray-300"
-                style={{ backgroundColor: currentColor }}
-              />
-            </div>
-          </div>
-
-          {/* Couleurs prédéfinies */}
-          <div>
-            <p className="text-xs text-gray-500 mb-2 font-medium">
-              Couleurs rapides
-            </p>
-            <div className="grid grid-cols-6 gap-2">
-              {colorPresets.map((preset) => (
-                <button
-                  key={preset}
-                  className="w-full aspect-square rounded border-2 border-gray-300 hover:border-gray-400 hover:scale-105 transition-all"
-                  style={{ backgroundColor: preset }}
-                  onClick={() => {
-                    const hsv = hexToHsv(preset);
-                    setCurrentColor(preset);
-                    setHexInput(preset);
-                    setHue(hsv.h);
-                    setCursorPosition({ x: hsv.s, y: 100 - hsv.v });
-                    onChange(preset);
-                  }}
-                  title={preset}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
+        {pickerContent}
       </PopoverContent>
     </Popover>
   );
