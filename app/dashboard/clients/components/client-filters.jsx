@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,7 +15,7 @@ import {
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { Checkbox } from "@/src/components/ui/checkbox";
-import { Filter, Users } from "lucide-react";
+import { ListFilterIcon, Users } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 
 // Types de clients (en majuscules pour correspondre aux données)
@@ -27,15 +27,16 @@ const CLIENT_TYPE_LABELS = {
 export default function ClientFilters({
   selectedTypes = [],
   setSelectedTypes,
-  table,
+  columnVisibility = {},
+  onColumnVisibilityChange,
+  allColumns = [],
+  customFieldNames = {},
   className,
 }) {
   const [open, setOpen] = useState(false);
 
   // Calculer le nombre de filtres actifs
-  const activeFiltersCount = useMemo(() => {
-    return selectedTypes.length;
-  }, [selectedTypes.length]);
+  const activeFiltersCount = selectedTypes.length;
 
   // Gérer le toggle d'un type
   const toggleType = (type) => {
@@ -44,13 +45,6 @@ export default function ClientFilters({
       : [...selectedTypes, type];
 
     setSelectedTypes(newTypes);
-
-    // Mettre à jour le filtre de la table si disponible
-    if (table) {
-      table
-        .getColumn("type")
-        ?.setFilterValue(newTypes.length ? newTypes : undefined);
-    }
   };
 
   // Tout sélectionner / tout désélectionner les types
@@ -60,56 +54,62 @@ export default function ClientFilters({
   const toggleAllTypes = () => {
     const newTypes = allTypesSelected ? [] : Object.keys(CLIENT_TYPE_LABELS);
     setSelectedTypes(newTypes);
-
-    // Mettre à jour le filtre de la table si disponible
-    if (table) {
-      table
-        .getColumn("type")
-        ?.setFilterValue(newTypes.length ? newTypes : undefined);
-    }
   };
 
-  // Obtenir les colonnes cachables (seulement si table est disponible)
-  const hideableColumns = useMemo(() => {
-    if (!table) return [];
-    return table
-      .getAllColumns()
-      .filter(
-        (column) =>
-          typeof column.accessorFn !== "undefined" && column.getCanHide()
-      );
-  }, [table]);
-
-  // Calculer le nombre de colonnes visibles
-  const visibleColumnsCount = hideableColumns.filter((column) =>
-    column.getIsVisible()
+  // Colonnes visibles (basé sur props)
+  const visibleColumnsCount = allColumns.filter(
+    (col) => columnVisibility[col.id] !== false
   ).length;
 
-  // Vérifier si toutes les colonnes sont visibles
   const allColumnsVisible =
-    hideableColumns.length > 0 &&
-    hideableColumns.every((column) => column.getIsVisible());
+    allColumns.length > 0 &&
+    allColumns.every((col) => columnVisibility[col.id] !== false);
+
+  const toggleAllColumnsVisible = () => {
+    if (!onColumnVisibilityChange) return;
+    const newVisibility = {};
+    for (const col of allColumns) {
+      newVisibility[col.id] = !allColumnsVisible;
+    }
+    onColumnVisibilityChange(newVisibility);
+  };
+
+  const toggleColumnVisibility = (colId) => {
+    if (!onColumnVisibilityChange) return;
+    onColumnVisibilityChange((prev) => ({
+      ...prev,
+      [colId]: prev[colId] === false ? true : false,
+    }));
+  };
 
   // Traductions des colonnes
   const columnTranslations = {
-    name: "Nom",
     email: "Email",
-    phone: "Téléphone",
     type: "Type",
+    invoiceCount: "Factures",
     address: "Adresse",
+    phone: "Téléphone",
+    firstName: "Prénom",
+    lastName: "Nom de famille",
     siret: "SIRET",
+    vatNumber: "N° TVA",
+    isInternational: "International",
+    ...customFieldNames,
   };
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
-        <Button variant="filter" className={className}>
-          <Filter style={{ width: '14px', height: '14px' }} />
+        <Button
+          variant={activeFiltersCount > 0 ? "primary" : "filter"}
+          className={cn("cursor-pointer", className)}
+        >
+          <ListFilterIcon className="h-3.5 w-3.5" />
           Filtres
           {activeFiltersCount > 0 && (
-            <Badge variant="secondary" className="ml-1">
+            <span className="ml-1 rounded-full bg-white/20 px-1.5 py-0 text-[10px] font-medium">
               {activeFiltersCount}
-            </Badge>
+            </span>
           )}
         </Button>
       </DropdownMenuTrigger>
@@ -118,9 +118,6 @@ export default function ClientFilters({
         <DropdownMenuItem
           onClick={() => {
             setSelectedTypes([]);
-            if (table) {
-              table.getColumn("type")?.setFilterValue(undefined);
-            }
           }}
           className="cursor-pointer"
         >
@@ -169,7 +166,7 @@ export default function ClientFilters({
           </DropdownMenuSubContent>
         </DropdownMenuSub>
 
-        {table && hideableColumns.length > 0 && (
+        {allColumns.length > 0 && (
           <>
             <DropdownMenuSeparator />
             <DropdownMenuSub>
@@ -183,9 +180,7 @@ export default function ClientFilters({
                 {/* Checkbox Tout sélectionner */}
                 <div
                   className="flex items-center px-2 py-1.5 cursor-pointer hover:bg-accent rounded-sm text-sm"
-                  onClick={() => {
-                    table.toggleAllColumnsVisible(!allColumnsVisible);
-                  }}
+                  onClick={toggleAllColumnsVisible}
                 >
                   <Checkbox
                     checked={allColumnsVisible}
@@ -195,17 +190,17 @@ export default function ClientFilters({
                 </div>
                 <DropdownMenuSeparator />
 
-                {hideableColumns.map((column) => (
+                {allColumns.map((col) => (
                   <div
-                    key={column.id}
+                    key={col.id}
                     className="flex items-center px-2 py-1.5 cursor-pointer hover:bg-accent rounded-sm text-sm"
-                    onClick={() => column.toggleVisibility()}
+                    onClick={() => toggleColumnVisibility(col.id)}
                   >
                     <Checkbox
-                      checked={column.getIsVisible()}
+                      checked={columnVisibility[col.id] !== false}
                       className="mr-2 pointer-events-none"
                     />
-                    <span>{columnTranslations[column.id] || column.id}</span>
+                    <span>{columnTranslations[col.id] || col.label || col.id}</span>
                   </div>
                 ))}
               </DropdownMenuSubContent>

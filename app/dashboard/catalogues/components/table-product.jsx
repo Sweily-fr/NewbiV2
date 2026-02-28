@@ -596,38 +596,30 @@ export default function TableProduct({ handleAddProduct, hideHeaderButtons = fal
           </div>
         </div>
 
-        {/* Table - Style identique à Transactions */}
-        <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
-          {/* Header fixe */}
-          <div className="flex-shrink-0 border-b border-gray-200 dark:border-gray-800">
-            <table className="w-full table-fixed">
-              <thead>
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <tr key={headerGroup.id}>
-                    {headerGroup.headers.map((header, index, arr) => (
-                      <th
-                        key={header.id}
-                        style={{ width: header.getSize() }}
-                        className={`h-10 p-2 text-left align-middle font-normal text-xs text-muted-foreground ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
-                      >
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
-                      </th>
-                    ))}
-                  </tr>
-                ))}
-              </thead>
-            </table>
-          </div>
-
-          {/* Body scrollable */}
-          <div className="flex-1 overflow-auto">
-            <table className="w-full table-fixed">
-              <tbody>
+        {/* Table - scroll horizontal + vertical synchronisé */}
+        <div className="flex-1 min-h-0 overflow-auto">
+          <table className="w-full table-fixed">
+            <thead className="sticky top-0 z-10 bg-background border-b border-gray-200 dark:border-gray-800">
+              {table.getHeaderGroups().map((headerGroup) => (
+                <tr key={headerGroup.id}>
+                  {headerGroup.headers.map((header, index, arr) => (
+                    <th
+                      key={header.id}
+                      style={{ width: header.getSize() }}
+                      className={`h-10 p-2 text-left align-middle font-normal text-xs text-muted-foreground ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
+                    >
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                    </th>
+                  ))}
+                </tr>
+              ))}
+            </thead>
+            <tbody>
                 {loading ? (
                   Array.from({ length: pagination.pageSize }).map((_, index) => (
                     <tr key={`skeleton-${index}`} className="border-b">
@@ -690,8 +682,7 @@ export default function TableProduct({ handleAddProduct, hideHeaderButtons = fal
                   </tr>
                 )}
               </tbody>
-            </table>
-          </div>
+          </table>
         </div>
 
         {/* Pagination - Style identique à Transactions */}

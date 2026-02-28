@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import {
   useClientCustomFields,
@@ -39,17 +39,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/src/components/ui/alert-dialog";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/src/components/ui/popover";
 import { toast } from "@/src/components/ui/sonner";
 import {
   Plus,
   Trash2,
   Edit2,
-  GripVertical,
   Settings2,
   Type,
   AlignLeft,
@@ -156,13 +150,27 @@ function OptionEditor({ options, onChange }) {
 
 function FieldFormDialog({ open, onOpenChange, field, onSave, isLoading }) {
   const [formData, setFormData] = useState({
-    name: field?.name || "",
-    fieldType: field?.fieldType || "TEXT",
-    description: field?.description || "",
-    placeholder: field?.placeholder || "",
-    isRequired: field?.isRequired || false,
-    options: field?.options || [],
+    name: "",
+    fieldType: "TEXT",
+    description: "",
+    placeholder: "",
+    isRequired: false,
+    options: [],
   });
+
+  // Reset form data when field changes (opening edit for a different field) or dialog opens
+  useEffect(() => {
+    if (open) {
+      setFormData({
+        name: field?.name || "",
+        fieldType: field?.fieldType || "TEXT",
+        description: field?.description || "",
+        placeholder: field?.placeholder || "",
+        isRequired: field?.isRequired ?? false,
+        options: field?.options?.map(o => ({ label: o.label, value: o.value, color: o.color })) || [],
+      });
+    }
+  }, [open, field]);
 
   const isEditing = !!field;
   const needsOptions = ["SELECT", "MULTISELECT"].includes(formData.fieldType);
@@ -293,58 +301,51 @@ function FieldRow({ field, onEdit, onDelete, onToggle }) {
   const fieldType = FIELD_TYPES.find((t) => t.value === field.fieldType);
 
   return (
-    <div className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
-      <div className="cursor-grab text-muted-foreground">
-        <GripVertical className="h-4 w-4" />
-      </div>
-
-      <div className="flex items-center justify-center w-8 h-8 rounded-md bg-primary/10">
-        <FieldTypeIcon type={field.fieldType} className="h-4 w-4 text-primary" />
+    <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-md border bg-card hover:bg-accent/50 transition-colors">
+      <div className="flex items-center justify-center w-6 h-6 rounded bg-primary/10 flex-shrink-0">
+        <FieldTypeIcon type={field.fieldType} className="h-3 w-3 text-primary" />
       </div>
 
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className="font-medium truncate">{field.name}</span>
+        <div className="flex items-center gap-1.5">
+          <span className="text-sm font-medium truncate">{field.name}</span>
+          <span className="text-[11px] text-muted-foreground">{fieldType?.label}</span>
           {field.isRequired && (
-            <Badge variant="secondary" className="text-xs">
+            <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4">
               Requis
             </Badge>
           )}
         </div>
-        <p className="text-sm text-muted-foreground truncate">
-          {fieldType?.label}
-          {field.description && ` • ${field.description}`}
-        </p>
       </div>
 
       <Switch
         checked={field.isActive}
         onCheckedChange={() => onToggle(field)}
-        className="data-[state=checked]:bg-[#5b50ff]"
+        className="data-[state=checked]:bg-[#5b50ff] scale-90"
       />
 
       <Button
         variant="ghost"
         size="icon"
         onClick={() => onEdit(field)}
-        className="h-8 w-8"
+        className="h-6 w-6"
       >
-        <Edit2 className="h-4 w-4" />
+        <Edit2 className="h-3 w-3" />
       </Button>
 
       <Button
         variant="ghost"
         size="icon"
         onClick={() => onDelete(field)}
-        className="h-8 w-8 text-muted-foreground hover:text-destructive"
+        className="h-6 w-6 text-muted-foreground hover:text-destructive"
       >
-        <Trash2 className="h-4 w-4" />
+        <Trash2 className="h-3 w-3" />
       </Button>
     </div>
   );
 }
 
-export default function CustomFieldsManager() {
+export default function CustomFieldsManager({ open, onOpenChange }) {
   const { workspaceId } = useWorkspace();
   const { fields, loading, refetch } = useClientCustomFields(workspaceId);
   const { createField, loading: createLoading } = useCreateClientCustomField();
@@ -397,98 +398,103 @@ export default function CustomFieldsManager() {
     }
   };
 
-  if (loading && fields.length === 0) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-6 w-6 animate-spin" />
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-medium">Champs personnalisés</h3>
-          <p className="text-sm text-muted-foreground">
-            Ajoutez des champs personnalisés à vos fiches clients
-          </p>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[600px] max-h-[80vh] flex flex-col">
+        <DialogHeader>
+          <DialogTitle>Champs personnalisés clients</DialogTitle>
+          <DialogDescription>
+            Gérez les champs personnalisés de vos fiches clients
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="flex-1 overflow-auto py-4 space-y-4">
+          {loading && fields.length === 0 ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-6 w-6 animate-spin" />
+            </div>
+          ) : fields.length === 0 ? (
+            <div className="text-center py-12 border rounded-lg bg-muted/20">
+              <Settings2 className="mx-auto h-12 w-12 text-muted-foreground/50" />
+              <h4 className="mt-4 text-lg font-medium">Aucun champ personnalisé</h4>
+              <p className="mt-2 text-sm text-muted-foreground max-w-sm mx-auto">
+                Créez des champs personnalisés pour enrichir vos fiches clients avec
+                des informations spécifiques à votre activité.
+              </p>
+              <Button className="mt-4" onClick={() => setIsFormOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                Créer un champ
+              </Button>
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-muted-foreground">
+                  {fields.length} champ{fields.length > 1 ? "s" : ""}
+                </p>
+                <Button size="sm" onClick={() => setIsFormOpen(true)}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Nouveau champ
+                </Button>
+              </div>
+              <div className="space-y-2">
+                {fields.map((field) => (
+                  <FieldRow
+                    key={field.id}
+                    field={field}
+                    onEdit={setEditingField}
+                    onDelete={setDeletingField}
+                    onToggle={handleToggle}
+                  />
+                ))}
+              </div>
+            </>
+          )}
         </div>
-        <Button onClick={() => setIsFormOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          Nouveau champ
-        </Button>
-      </div>
 
-      {fields.length === 0 ? (
-        <div className="text-center py-12 border rounded-lg bg-muted/20">
-          <Settings2 className="mx-auto h-12 w-12 text-muted-foreground/50" />
-          <h4 className="mt-4 text-lg font-medium">Aucun champ personnalisé</h4>
-          <p className="mt-2 text-sm text-muted-foreground max-w-sm mx-auto">
-            Créez des champs personnalisés pour enrichir vos fiches clients avec
-            des informations spécifiques à votre activité.
-          </p>
-          <Button className="mt-4" onClick={() => setIsFormOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Créer un champ
-          </Button>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {fields.map((field) => (
-            <FieldRow
-              key={field.id}
-              field={field}
-              onEdit={setEditingField}
-              onDelete={setDeletingField}
-              onToggle={handleToggle}
-            />
-          ))}
-        </div>
-      )}
+        {/* Dialog de création */}
+        <FieldFormDialog
+          open={isFormOpen}
+          onOpenChange={setIsFormOpen}
+          onSave={handleCreate}
+          isLoading={createLoading}
+        />
 
-      {/* Dialog de création */}
-      <FieldFormDialog
-        open={isFormOpen}
-        onOpenChange={setIsFormOpen}
-        onSave={handleCreate}
-        isLoading={createLoading}
-      />
+        {/* Dialog de modification */}
+        <FieldFormDialog
+          open={!!editingField}
+          onOpenChange={(open) => !open && setEditingField(null)}
+          field={editingField}
+          onSave={handleUpdate}
+          isLoading={updateLoading}
+        />
 
-      {/* Dialog de modification */}
-      <FieldFormDialog
-        open={!!editingField}
-        onOpenChange={(open) => !open && setEditingField(null)}
-        field={editingField}
-        onSave={handleUpdate}
-        isLoading={updateLoading}
-      />
-
-      {/* Dialog de suppression */}
-      <AlertDialog
-        open={!!deletingField}
-        onOpenChange={(open) => !open && setDeletingField(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Supprimer le champ</AlertDialogTitle>
-            <AlertDialogDescription>
-              Êtes-vous sûr de vouloir supprimer le champ "{deletingField?.name}"
-              ? Les données associées à ce champ seront perdues.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              className="bg-destructive text-white hover:bg-destructive/90"
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Supprimer
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
+        {/* Dialog de suppression */}
+        <AlertDialog
+          open={!!deletingField}
+          onOpenChange={(open) => !open && setDeletingField(null)}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Supprimer le champ</AlertDialogTitle>
+              <AlertDialogDescription>
+                Êtes-vous sûr de vouloir supprimer le champ &quot;{deletingField?.name}&quot;
+                ? Les données associées à ce champ seront perdues.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Annuler</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDelete}
+                className="bg-destructive text-white hover:bg-destructive/90"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Supprimer
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </DialogContent>
+    </Dialog>
   );
 }
