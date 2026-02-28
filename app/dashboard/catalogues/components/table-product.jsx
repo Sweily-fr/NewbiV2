@@ -293,30 +293,43 @@ export default function TableProduct({ handleAddProduct, hideHeaderButtons = fal
   const { workspaceId } = useWorkspace();
   const { fields: customFields } = useProductCustomFields(workspaceId);
 
+  // Stable key for active custom fields to prevent infinite re-renders
+  const activeCustomFields = useMemo(
+    () => customFields.filter((f) => f.isActive),
+    [customFields]
+  );
+  const cfKey = useMemo(
+    () => activeCustomFields.map((f) => f.id).join(","),
+    [activeCustomFields]
+  );
+
   // Build columns dynamically: base + custom fields + actions
   const columns = useMemo(() => {
-    const cfCols = customFields
-      .filter((f) => f.isActive)
-      .map(buildCustomFieldColumn);
+    const cfCols = activeCustomFields.map(buildCustomFieldColumn);
     return [...baseColumns, ...cfCols, actionsColumn];
-  }, [customFields]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cfKey]);
 
   const [columnFilters, setColumnFilters] = useState([]);
   const [columnVisibility, setColumnVisibility] = useState({});
 
   // When custom fields load/change, hide new ones by default (don't overwrite user choices)
   useEffect(() => {
+    if (!cfKey) return;
     setColumnVisibility((prev) => {
       const next = { ...prev };
-      customFields.filter((f) => f.isActive).forEach((f) => {
+      let changed = false;
+      activeCustomFields.forEach((f) => {
         const key = `cf_${f.id}`;
         if (!(key in next)) {
           next[key] = false;
+          changed = true;
         }
       });
-      return next;
+      return changed ? next : prev;
     });
-  }, [customFields]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cfKey]);
   const [pagination, setPagination] = useState({
     pageIndex: 0,
     pageSize: 10,
@@ -529,7 +542,7 @@ export default function TableProduct({ handleAddProduct, hideHeaderButtons = fal
               uniqueCategories={uniqueCategoryValues}
               table={table}
               customFieldNames={Object.fromEntries(
-                customFields.filter((f) => f.isActive).map((f) => [`cf_${f.id}`, f.name])
+                activeCustomFields.map((f) => [`cf_${f.id}`, f.name])
               )}
             />
           </div>
