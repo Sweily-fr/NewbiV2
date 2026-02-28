@@ -33,9 +33,9 @@ import {
 } from "lucide-react";
 import { FIELD_TYPES } from "@/src/hooks/useClientCustomFields";
 import {
-  CLIENT_FIELD_DEFINITIONS,
-  FIELD_GROUPS,
-} from "@/src/utils/client-import";
+  PRODUCT_FIELD_DEFINITIONS,
+  PRODUCT_FIELD_GROUPS,
+} from "@/src/utils/product-import-v2";
 import { toast } from "@/src/components/ui/sonner";
 
 const SKIP_VALUE = "__skip__";
@@ -150,7 +150,7 @@ function NewFieldForm({ defaultName, onSave, onCancel }) {
           <Input
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            placeholder="Ex: Date d'anniversaire, Source..."
+            placeholder="Ex: Fournisseur, Stock..."
             className="h-9"
             autoFocus
           />
@@ -214,10 +214,10 @@ export default function ImportStepMapping({
   firstRow,
   mapping,
   onMappingChange,
-  customFieldMappings,
+  customFieldMappings = [],
   onCustomFieldMappingsChange,
   onCreateCustomField,
-  existingCustomFields,
+  existingCustomFields = [],
 }) {
   const [creatingForIndex, setCreatingForIndex] = useState(null);
   const [showFormForIndex, setShowFormForIndex] = useState(null);
@@ -320,13 +320,13 @@ export default function ImportStepMapping({
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-medium">Champs détectés</h3>
           <Badge variant="secondary" className="text-xs font-normal">
-            {mappedCount} / {CLIENT_FIELD_DEFINITIONS.length}
+            {mappedCount} / {PRODUCT_FIELD_DEFINITIONS.length}
           </Badge>
         </div>
 
         <div className="space-y-4 overflow-auto max-h-[calc(80vh-280px)] pr-1">
-          {FIELD_GROUPS.map((group) => {
-            const fields = CLIENT_FIELD_DEFINITIONS.filter((f) => f.group === group.key);
+          {PRODUCT_FIELD_GROUPS.map((group) => {
+            const fields = PRODUCT_FIELD_DEFINITIONS.filter((f) => f.group === group.key);
             return (
               <div key={group.key} className="space-y-1.5">
                 <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">

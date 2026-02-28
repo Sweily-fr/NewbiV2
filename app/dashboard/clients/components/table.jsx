@@ -676,174 +676,166 @@ export default function TableClients({
           </div>
         )}
 
-        {/* Table - Desktop style avec header fixe et body scrollable */}
-        <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
-          {/* Header fixe */}
-          <div className="flex-shrink-0 border-t border-b border-border">
-            <table className="w-full table-fixed">
-              <thead>
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <tr key={headerGroup.id}>
-                    {headerGroup.headers.map((header, index, arr) => (
-                      <th
-                        key={header.id}
-                        style={{ width: `${header.getSize()}px` }}
-                        className={`h-10 p-2 text-left align-middle font-normal text-xs text-muted-foreground ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
-                      >
-                        {header.isPlaceholder ? null : header.column.getCanSort() ? (
-                          <div
-                            className={cn(
-                              header.column.getCanSort() &&
-                                "flex h-full cursor-pointer items-center justify-between gap-2 select-none"
-                            )}
-                            onClick={header.column.getToggleSortingHandler()}
-                            onKeyDown={(e) => {
-                              if (
-                                header.column.getCanSort() &&
-                                (e.key === "Enter" || e.key === " ")
-                              ) {
-                                e.preventDefault();
-                                header.column.getToggleSortingHandler()?.(e);
-                              }
-                            }}
-                            tabIndex={
-                              header.column.getCanSort() ? 0 : undefined
-                            }
-                          >
-                            {flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
-                            {{
-                              asc: (
-                                <ChevronUpIcon
-                                  className="shrink-0 opacity-60"
-                                  size={16}
-                                  aria-hidden="true"
-                                />
-                              ),
-                              desc: (
-                                <ChevronDownIcon
-                                  className="shrink-0 opacity-60"
-                                  size={16}
-                                  aria-hidden="true"
-                                />
-                              ),
-                            }[header.column.getIsSorted()] ?? null}
-                          </div>
-                        ) : (
-                          flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )
-                        )}
-                      </th>
-                    ))}
-                  </tr>
-                ))}
-              </thead>
-            </table>
-          </div>
-          {/* Body scrollable */}
-          <div className="flex-1 overflow-auto">
-            <table className="w-full table-fixed">
-              <tbody>
-                {loading ? (
-                  // Skeleton loading state
-                  Array.from({ length: pagination.pageSize }).map(
-                    (_, index) => (
-                      <tr
-                        key={`skeleton-${index}`}
-                        className="border-b hover:bg-muted/50"
-                      >
-                        <td style={{ width: 28 }} className="p-2 pl-4 sm:pl-6">
-                          <Skeleton className="h-4 w-4 rounded" />
-                        </td>
-                        <td style={{ width: 200 }} className="p-2">
-                          <Skeleton className="h-4 w-32" />
-                        </td>
-                        <td style={{ width: 220 }} className="p-2">
-                          <Skeleton className="h-4 w-40" />
-                        </td>
-                        <td style={{ width: 120 }} className="p-2">
-                          <Skeleton className="h-5 w-20 rounded-full" />
-                        </td>
-                        <td style={{ width: 100 }} className="p-2">
-                          <Skeleton className="h-5 w-12 rounded-full" />
-                        </td>
-                        <td style={{ width: 150 }} className="p-2">
-                          <Skeleton className="h-3 w-24" />
-                        </td>
-                        <td style={{ width: 140 }} className="p-2">
-                          <Skeleton className="h-4 w-28" />
-                        </td>
-                        <td style={{ width: 60 }} className="p-2 pr-4 sm:pr-6">
-                          <div className="flex justify-end">
-                            <Skeleton className="h-8 w-8 rounded" />
-                          </div>
-                        </td>
-                      </tr>
-                    )
-                  )
-                ) : table.getRowModel().rows?.length ? (
-                  table.getRowModel().rows.map((row) => (
-                    <tr
-                      key={row.id}
-                      data-state={row.getIsSelected() && "selected"}
-                      className="border-b hover:bg-muted/50 data-[state=selected]:bg-muted cursor-pointer transition-colors"
-                      onClick={(e) => {
-                        // Ne pas naviguer si on clique sur la checkbox ou le menu d'actions
-                        if (
-                          e.target.closest('[role="checkbox"]') ||
-                          e.target.closest("button") ||
-                          e.target.closest('[role="menuitem"]')
-                        ) {
-                          return;
-                        }
-                        router.push(`/dashboard/clients/${row.original.id}`);
-                      }}
+        {/* Table - Desktop style avec header sticky et scroll horizontal synchronisé */}
+        <div className="flex-1 min-h-0 overflow-auto border-t border-border">
+          <table className="w-full table-fixed">
+            <thead className="sticky top-0 z-10 bg-background border-b border-border">
+              {table.getHeaderGroups().map((headerGroup) => (
+                <tr key={headerGroup.id}>
+                  {headerGroup.headers.map((header, index, arr) => (
+                    <th
+                      key={header.id}
+                      style={{ width: `${header.getSize()}px` }}
+                      className={`h-10 p-2 text-left align-middle font-normal text-xs text-muted-foreground ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
                     >
-                      {row.getVisibleCells().map((cell, index, arr) => (
-                        <td
-                          key={cell.id}
-                          style={{ width: cell.column.getSize() }}
-                          className={`p-2 align-middle text-sm font-normal ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
+                      {header.isPlaceholder ? null : header.column.getCanSort() ? (
+                        <div
+                          className={cn(
+                            header.column.getCanSort() &&
+                              "flex h-full cursor-pointer items-center justify-between gap-2 select-none"
+                          )}
+                          onClick={header.column.getToggleSortingHandler()}
+                          onKeyDown={(e) => {
+                            if (
+                              header.column.getCanSort() &&
+                              (e.key === "Enter" || e.key === " ")
+                            ) {
+                              e.preventDefault();
+                              header.column.getToggleSortingHandler()?.(e);
+                            }
+                          }}
+                          tabIndex={
+                            header.column.getCanSort() ? 0 : undefined
+                          }
                         >
                           {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext()
+                            header.column.columnDef.header,
+                            header.getContext()
                           )}
-                        </td>
-                      ))}
-                    </tr>
-                  ))
-                ) : error ? (
-                  <tr>
-                    <td
-                      colSpan={8}
-                      className="h-24 text-center text-red-500 p-2"
+                          {{
+                            asc: (
+                              <ChevronUpIcon
+                                className="shrink-0 opacity-60"
+                                size={16}
+                                aria-hidden="true"
+                              />
+                            ),
+                            desc: (
+                              <ChevronDownIcon
+                                className="shrink-0 opacity-60"
+                                size={16}
+                                aria-hidden="true"
+                              />
+                            ),
+                          }[header.column.getIsSorted()] ?? null}
+                        </div>
+                      ) : (
+                        flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )
+                      )}
+                    </th>
+                  ))}
+                </tr>
+              ))}
+            </thead>
+            <tbody>
+              {loading ? (
+                // Skeleton loading state
+                Array.from({ length: pagination.pageSize }).map(
+                  (_, index) => (
+                    <tr
+                      key={`skeleton-${index}`}
+                      className="border-b hover:bg-muted/50"
                     >
-                      <div className="flex flex-col items-center gap-2">
-                        <span>Erreur lors du chargement des clients</span>
-                        <button
-                          onClick={handleRefresh}
-                          className="text-blue-600 hover:text-blue-800 underline"
-                        >
-                          Réessayer
-                        </button>
-                      </div>
-                    </td>
+                      <td style={{ width: 28 }} className="p-2 pl-4 sm:pl-6">
+                        <Skeleton className="h-4 w-4 rounded" />
+                      </td>
+                      <td style={{ width: 200 }} className="p-2">
+                        <Skeleton className="h-4 w-32" />
+                      </td>
+                      <td style={{ width: 220 }} className="p-2">
+                        <Skeleton className="h-4 w-40" />
+                      </td>
+                      <td style={{ width: 120 }} className="p-2">
+                        <Skeleton className="h-5 w-20 rounded-full" />
+                      </td>
+                      <td style={{ width: 100 }} className="p-2">
+                        <Skeleton className="h-5 w-12 rounded-full" />
+                      </td>
+                      <td style={{ width: 150 }} className="p-2">
+                        <Skeleton className="h-3 w-24" />
+                      </td>
+                      <td style={{ width: 140 }} className="p-2">
+                        <Skeleton className="h-4 w-28" />
+                      </td>
+                      <td style={{ width: 60 }} className="p-2 pr-4 sm:pr-6">
+                        <div className="flex justify-end">
+                          <Skeleton className="h-8 w-8 rounded" />
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                )
+              ) : table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <tr
+                    key={row.id}
+                    data-state={row.getIsSelected() && "selected"}
+                    className="border-b hover:bg-muted/50 data-[state=selected]:bg-muted cursor-pointer transition-colors"
+                    onClick={(e) => {
+                      // Ne pas naviguer si on clique sur la checkbox ou le menu d'actions
+                      if (
+                        e.target.closest('[role="checkbox"]') ||
+                        e.target.closest("button") ||
+                        e.target.closest('[role="menuitem"]')
+                      ) {
+                        return;
+                      }
+                      router.push(`/dashboard/clients/${row.original.id}`);
+                    }}
+                  >
+                    {row.getVisibleCells().map((cell, index, arr) => (
+                      <td
+                        key={cell.id}
+                        style={{ width: cell.column.getSize() }}
+                        className={`p-2 align-middle text-sm font-normal ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
+                      >
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </td>
+                    ))}
                   </tr>
-                ) : (
-                  <tr>
-                    <td colSpan={8} className="h-24 text-center p-2">
-                      Aucun contact trouvé.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+                ))
+              ) : error ? (
+                <tr>
+                  <td
+                    colSpan={8}
+                    className="h-24 text-center text-red-500 p-2"
+                  >
+                    <div className="flex flex-col items-center gap-2">
+                      <span>Erreur lors du chargement des clients</span>
+                      <button
+                        onClick={handleRefresh}
+                        className="text-blue-600 hover:text-blue-800 underline"
+                      >
+                        Réessayer
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                <tr>
+                  <td colSpan={8} className="h-24 text-center p-2">
+                    Aucun contact trouvé.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
 
         {/* Pagination - Fixe en bas sur desktop */}

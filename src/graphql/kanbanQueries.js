@@ -16,6 +16,7 @@ export const GET_TASK_TIMER = gql`
           startTime
           endTime
           duration
+          isManual
         }
       }
     }
@@ -37,6 +38,16 @@ export const GET_BOARDS = gql`
         type
       }
       totalBillableAmount
+      members {
+        id
+        userId
+        name
+        email
+        image
+      }
+      taskCount
+      totalTimeSpent
+      templateName
       createdAt
       updatedAt
     }
@@ -110,6 +121,7 @@ export const GET_BOARD = gql`
             startTime
             endTime
             duration
+            isManual
           }
           hourlyRate
           roundingOption
@@ -320,6 +332,7 @@ export const CREATE_TASK = gql`
           startTime
           endTime
           duration
+          isManual
         }
         hourlyRate
         roundingOption
@@ -411,6 +424,7 @@ export const UPDATE_TASK = gql`
           startTime
           endTime
           duration
+          isManual
         }
         hourlyRate
         roundingOption
@@ -519,6 +533,7 @@ export const TASK_FRAGMENT = gql`
         startTime
         endTime
         duration
+        isManual
       }
       hourlyRate
       roundingOption
@@ -709,6 +724,15 @@ export const RESET_TIMER = gql`
 export const UPDATE_TIMER_SETTINGS = gql`
   mutation UpdateTimerSettings($taskId: ID!, $hourlyRate: Float, $roundingOption: String, $workspaceId: ID) {
     updateTimerSettings(taskId: $taskId, hourlyRate: $hourlyRate, roundingOption: $roundingOption, workspaceId: $workspaceId) {
+      ...TaskFields
+    }
+  }
+  ${TASK_FRAGMENT}
+`;
+
+export const ADD_MANUAL_TIME = gql`
+  mutation AddManualTime($taskId: ID!, $seconds: Int!, $description: String, $workspaceId: ID) {
+    addManualTime(taskId: $taskId, seconds: $seconds, description: $description, workspaceId: $workspaceId) {
       ...TaskFields
     }
   }

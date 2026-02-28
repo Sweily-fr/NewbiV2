@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
 import {
   ColumnDef,
@@ -90,6 +90,8 @@ import {
 import { toast } from "@/src/components/ui/sonner";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { useProducts, useDeleteProduct } from "@/src/hooks/useProducts";
+import { useProductCustomFields } from "@/src/hooks/useProductCustomFields";
+import { useWorkspace } from "@/src/hooks/useWorkspace";
 import ProductModal from "./product-modal";
 import ProductExportButton from "./product-export-button";
 import ProductImportDialog from "./product-import-dialog";
@@ -109,7 +111,7 @@ const categoryFilterFn = (row, columnId, filterValue) => {
   return filterValue.includes(category);
 };
 
-const columns = [
+const baseColumns = [
   {
     id: "select",
     header: ({ table }) => (
@@ -243,29 +245,78 @@ const columns = [
     },
     size: 200,
   },
-  {
-    id: "actions",
-    header: () => <span className="sr-only">Actions</span>,
-    cell: ({ row, table }) => {
-      const handleEditProduct = table.options.meta?.handleEditProduct;
-      const handleDeleteProduct = table.options.meta?.handleDeleteProduct;
+];
+
+const actionsColumn = {
+  id: "actions",
+  header: () => <span className="sr-only">Actions</span>,
+  cell: ({ row, table }) => {
+    const handleEditProduct = table.options.meta?.handleEditProduct;
+    const handleDeleteProduct = table.options.meta?.handleDeleteProduct;
+    return (
+      <RowActions
+        row={row}
+        onEdit={handleEditProduct}
+        onDelete={(id) => handleDeleteProduct(id)}
+      />
+    );
+  },
+  size: 60,
+  enableHiding: false,
+};
+
+function buildCustomFieldColumn(field) {
+  return {
+    id: `cf_${field.id}`,
+    header: field.name,
+    accessorFn: (row) => {
+      const cf = row.customFields?.find((c) => c.fieldId === field.id);
+      return cf?.value ?? null;
+    },
+    cell: ({ getValue }) => {
+      const value = getValue();
+      if (value === null || value === undefined || value === "") return "-";
+      if (typeof value === "boolean") return value ? "Oui" : "Non";
       return (
-        <RowActions
-          row={row}
-          onEdit={handleEditProduct}
-          onDelete={(id) => handleDeleteProduct(id)}
-        />
+        <div className="text-sm max-w-[150px] truncate" title={String(value)}>
+          {String(value)}
+        </div>
       );
     },
-    size: 60,
-    enableHiding: false,
-  },
-];
+    size: 130,
+    enableSorting: true,
+  };
+}
 
 export default function TableProduct({ handleAddProduct, hideHeaderButtons = false }) {
   const id = useId();
+  const { workspaceId } = useWorkspace();
+  const { fields: customFields } = useProductCustomFields(workspaceId);
+
+  // Build columns dynamically: base + custom fields + actions
+  const columns = useMemo(() => {
+    const cfCols = customFields
+      .filter((f) => f.isActive)
+      .map(buildCustomFieldColumn);
+    return [...baseColumns, ...cfCols, actionsColumn];
+  }, [customFields]);
+
   const [columnFilters, setColumnFilters] = useState([]);
   const [columnVisibility, setColumnVisibility] = useState({});
+
+  // When custom fields load/change, hide new ones by default (don't overwrite user choices)
+  useEffect(() => {
+    setColumnVisibility((prev) => {
+      const next = { ...prev };
+      customFields.filter((f) => f.isActive).forEach((f) => {
+        const key = `cf_${f.id}`;
+        if (!(key in next)) {
+          next[key] = false;
+        }
+      });
+      return next;
+    });
+  }, [customFields]);
   const [pagination, setPagination] = useState({
     pageIndex: 0,
     pageSize: 10,
@@ -477,6 +528,9 @@ export default function TableProduct({ handleAddProduct, hideHeaderButtons = fal
               setSelectedCategories={setSelectedCategories}
               uniqueCategories={uniqueCategoryValues}
               table={table}
+              customFieldNames={Object.fromEntries(
+                customFields.filter((f) => f.isActive).map((f) => [`cf_${f.id}`, f.name])
+              )}
             />
           </div>
 

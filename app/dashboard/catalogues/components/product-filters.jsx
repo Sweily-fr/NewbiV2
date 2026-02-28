@@ -24,6 +24,7 @@ export default function ProductFilters({
   uniqueCategories = [],
   table,
   className,
+  customFieldNames = {},
 }) {
   const [open, setOpen] = useState(false);
 
@@ -79,7 +80,7 @@ export default function ProductFilters({
   const allColumnsVisible = hideableColumns.length > 0 && 
     hideableColumns.every((column) => column.getIsVisible());
 
-  // Traductions des colonnes
+  // Traductions des colonnes (standards + custom fields)
   const columnTranslations = {
     name: "Nom",
     reference: "Référence",
@@ -88,6 +89,7 @@ export default function ProductFilters({
     unit: "Unité",
     category: "Catégorie",
     description: "Description",
+    ...customFieldNames,
   };
 
   return (

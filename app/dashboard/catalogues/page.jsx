@@ -2,16 +2,19 @@
 
 import { useState } from "react";
 import { Button } from "@/src/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Upload, Settings2 } from "lucide-react";
 import TableProduct from "./components/table-product";
 import ProductModal from "./components/product-modal";
 import ProductImportDialog from "./components/product-import-dialog";
 import ProductExportButton from "./components/product-export-button";
+import ProductCustomFieldsManager from "./components/product-custom-fields-manager";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
 import { useProducts } from "@/src/hooks/useProducts";
 
 function CataloguesContent() {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [customFieldsOpen, setCustomFieldsOpen] = useState(false);
 
   // Récupérer les produits pour l'export
   const { products: allProducts, refetch } = useProducts(1, 100, "");
@@ -31,10 +34,22 @@ function CataloguesContent() {
             <h1 className="text-2xl font-medium mb-2">Gestion du Catalogue</h1>
           </div>
           <div className="flex gap-2">
-            <ProductImportDialog
-              onImportComplete={refetch}
-              iconOnly={false}
-            />
+            <Button
+              variant="outline"
+              onClick={() => setCustomFieldsOpen(true)}
+              className="cursor-pointer"
+            >
+              <Settings2 size={14} strokeWidth={1.5} />
+              Champs
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setImportDialogOpen(true)}
+              className="cursor-pointer"
+            >
+              <Upload size={14} strokeWidth={1.5} />
+              Importer
+            </Button>
             <ProductExportButton products={allProducts} iconOnly={false} />
             <Button
               variant="primary"
@@ -87,6 +102,8 @@ function CataloguesContent() {
 
       {/* Modal unique pour desktop et mobile */}
       <ProductModal open={dialogOpen} onOpenChange={setDialogOpen} />
+      <ProductImportDialog open={importDialogOpen} onOpenChange={setImportDialogOpen} />
+      <ProductCustomFieldsManager open={customFieldsOpen} onOpenChange={setCustomFieldsOpen} />
     </>
   );
 }
