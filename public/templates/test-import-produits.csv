@@ -1,0 +1,21 @@
+Nom;Référence;Catégorie;Prix unitaire HT (€);Taux TVA (%);Unité;Description;Fournisseur;Stock;Code barre;Poids (kg)
+Développement web;DEV-001;Service;500,00;20;jour;Prestation de développement web full-stack;Interne;-;-;-
+Design UI/UX;DES-001;Service;450,00;20;jour;Conception d'interfaces utilisateur et expérience;Interne;-;-;-
+Maintenance mensuelle;MAINT-001;Service;200,00;20;mois;Support technique et maintenance applicative;Interne;-;-;-
+Hébergement cloud;HEBT-001;Service;49,90;20;mois;Hébergement serveur dédié haute disponibilité;OVH;-;-;-
+Audit SEO;SEO-001;Service;1200,00;20;unité;Audit complet du référencement naturel;Interne;-;-;-
+Formation React;FORM-001;Formation;800,00;20;jour;Formation développement React pour équipes;Interne;-;-;-
+Logo et identité visuelle;LOGO-001;Création;1500,00;20;unité;Création de logo et charte graphique complète;Interne;-;-;-
+Rédaction contenu;RED-001;Service;0,15;20;mot;Rédaction web optimisée SEO;Interne;-;-;-
+Pack photos produit;PHOTO-001;Création;350,00;20;unité;Shooting photo produit (10 photos retouchées);Studio Lumière;-;-;-
+Licence logiciel annuelle;LIC-001;Licence;299,00;20;an;Licence d'utilisation du logiciel pour 1 an;Interne;-;-;-
+Câble USB-C;CABLE-001;Matériel;12,90;20;unité;Câble USB-C vers USB-C 2m;TechDistrib;150;3760000000001;0,05
+Écran 27 pouces;ECR-001;Matériel;389,00;20;unité;Moniteur LED 27 pouces 4K;Samsung;25;3760000000018;4,50
+Clavier mécanique;CLAV-001;Matériel;89,90;20;unité;Clavier mécanique sans fil;Logitech;80;3760000000025;0,85
+Pack papeterie;PAP-001;Fourniture;25,00;20;lot;Lot de 500 cartes de visite et 100 enveloppes;Imprimerie Dupont;200;3760000000032;1,20
+Consultation stratégique;CONS-001;Conseil;150,00;20;heure;Conseil en stratégie digitale;Interne;-;-;-
+Community management;CM-001;Service;600,00;20;mois;Gestion réseaux sociaux (3 plateformes);Interne;-;-;-
+Vidéo promotionnelle;VID-001;Création;2500,00;20;unité;Vidéo promotionnelle 60s tournage et montage;Studio Pixel;-;-;-
+Traduction FR vers EN;TRAD-001;Service;0,12;20;mot;Traduction professionnelle français vers anglais;Agence Trad;-;-;-
+Plugin WordPress;PLUG-001;Développement;350,00;20;unité;Développement plugin WordPress sur mesure;Interne;-;-;-
+Campagne emailing;MAIL-001;Marketing;450,00;20;unité;Conception et envoi campagne email (5000 contacts);Interne;-;-;-

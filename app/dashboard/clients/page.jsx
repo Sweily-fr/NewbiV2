@@ -3,10 +3,7 @@
 import { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/src/components/ui/button";
-import { ButtonGroup, ButtonGroupSeparator } from "@/src/components/ui/button-group";
 import { Input } from "@/src/components/ui/input";
-import { Checkbox } from "@/src/components/ui/checkbox";
-import { Label } from "@/src/components/ui/label";
 import { PermissionButton } from "@/src/components/rbac";
 import {
   DropdownMenu,
@@ -15,11 +12,6 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/src/components/ui/dropdown-menu";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/src/components/ui/popover";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,7 +23,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/src/components/ui/alert-dialog";
-import { Plus, Search, CircleXIcon, ListPlus, MoreHorizontal, Pencil, ShieldOff, UserCheck, Trash2, CircleAlertIcon, Upload, Columns3 } from "lucide-react";
+import { Plus, Search, CircleXIcon, ListPlus, MoreHorizontal, Pencil, ShieldOff, UserCheck, Trash2, CircleAlertIcon, Upload, Settings2 } from "lucide-react";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { useClientLists } from "@/src/hooks/useClientLists";
 import { useAddClientToLists } from "@/src/hooks/useClientLists";
@@ -41,7 +33,7 @@ import { toast } from "@/src/components/ui/sonner";
 import ClientsTable from "./components/clients-table";
 import ClientsModal from "./components/clients-modal";
 import ClientFilters from "./components/client-filters";
-import CustomFieldsPopover from "./components/custom-fields-popover";
+import CustomFieldsManager from "./components/custom-fields-manager";
 import AutomationsPopover from "./components/automations-popover";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
 import ClientImportDialog from "./components/client-import-dialog";
@@ -67,6 +59,7 @@ function ClientsContent() {
   const [selectedClients, setSelectedClients] = useState(new Set());
   const [editClientId, setEditClientId] = useState(null);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [customFieldsOpen, setCustomFieldsOpen] = useState(false);
   const [columnVisibility, setColumnVisibility] = useState({
     phone: false,
     firstName: false,
@@ -174,22 +167,14 @@ function ClientsContent() {
           </div>
           <div className="flex gap-2">
             <AutomationsPopover />
-            {/* <ButtonGroup>
-              <Button
-                onClick={handleOpenInviteDialog}
-                className="cursor-pointer font-normal bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
-              >
-                Nouveau contact
-              </Button>
-              <ButtonGroupSeparator />
-              <Button
-                onClick={handleOpenInviteDialog}
-                size="icon"
-                className="cursor-pointer bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
-              >
-                <Plus size={16} aria-hidden="true" />
-              </Button>
-            </ButtonGroup> */}
+            <Button
+              variant="outline"
+              onClick={() => setCustomFieldsOpen(true)}
+              className="self-start"
+            >
+              <Settings2 size={14} strokeWidth={2} aria-hidden="true" />
+              Champs
+            </Button>
             <Button
               variant="outline"
               onClick={() => setImportDialogOpen(true)}
@@ -237,51 +222,16 @@ function ClientsContent() {
                 </button>
               )}
             </div>
-            <CustomFieldsPopover />
             <ClientFilters
               selectedTypes={selectedTypes}
               setSelectedTypes={setSelectedTypes}
+              columnVisibility={columnVisibility}
+              onColumnVisibilityChange={setColumnVisibility}
+              allColumns={allToggleableColumns}
+              customFieldNames={Object.fromEntries(
+                (customFieldDefinitions || []).map((f) => [`cf_${f.id}`, f.name])
+              )}
             />
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline">
-                  <Columns3 style={{ width: '14px', height: '14px' }} />
-                  Colonnes
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent align="start" className="w-56 p-3">
-                <div className="space-y-3">
-                  <p className="text-xs font-medium text-muted-foreground">
-                    Colonnes visibles
-                  </p>
-                  <div className="space-y-2">
-                    {allToggleableColumns.map((col) => {
-                      const isVisible = columnVisibility[col.id] !== false;
-                      return (
-                        <div key={col.id} className="flex items-center gap-2">
-                          <Checkbox
-                            id={`col-${col.id}`}
-                            checked={isVisible}
-                            onCheckedChange={(checked) => {
-                              setColumnVisibility((prev) => ({
-                                ...prev,
-                                [col.id]: !!checked,
-                              }));
-                            }}
-                          />
-                          <Label
-                            htmlFor={`col-${col.id}`}
-                            className="text-sm font-normal cursor-pointer"
-                          >
-                            {col.label}
-                          </Label>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </PopoverContent>
-            </Popover>
           </div>
           {selectedClients.size > 0 && (
             <div className="flex items-center gap-2">
@@ -493,6 +443,7 @@ function ClientsContent() {
 
       <ClientsModal open={dialogOpen} onOpenChange={setDialogOpen} />
       <ClientImportDialog open={importDialogOpen} onOpenChange={setImportDialogOpen} />
+      <CustomFieldsManager open={customFieldsOpen} onOpenChange={setCustomFieldsOpen} />
     </>
   );
 }
