@@ -26,6 +26,7 @@ import { useCreateProduct, useUpdateProduct } from "@/src/hooks/useProducts";
 import { toast } from "@/src/components/ui/sonner";
 import { PackagePlusIcon } from "lucide-react";
 import { VatRateSelect } from "@/src/components/vat-rate-select";
+import ProductCustomFieldsForm from "./product-custom-fields-form";
 
 
 // Unités utilisées dans les devis
@@ -91,6 +92,13 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
   const isEditing = !!product;
   const loading = createLoading || updateLoading;
 
+  // Custom fields state
+  const [customFieldValues, setCustomFieldValues] = useState({});
+
+  const handleCustomFieldChange = (fieldId, value) => {
+    setCustomFieldValues((prev) => ({ ...prev, [fieldId]: value }));
+  };
+
   const {
     register,
     handleSubmit,
@@ -140,6 +148,14 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
         category: product.category || "",
         description: product.description || "",
       });
+      // Pré-remplir les champs personnalisés
+      const cfValues = {};
+      if (product.customFields?.length) {
+        product.customFields.forEach((cf) => {
+          cfValues[cf.fieldId] = cf.value;
+        });
+      }
+      setCustomFieldValues(cfValues);
     } else if (!product && open) {
       // Reset pour nouveau produit
       reset({
@@ -151,15 +167,22 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
         category: "",
         description: "",
       });
+      setCustomFieldValues({});
     }
   }, [product, open, reset]);
 
   const onSubmit = async (formData) => {
     try {
+      // Convertir les champs personnalisés en format GraphQL
+      const customFields = Object.entries(customFieldValues)
+        .filter(([_, v]) => v !== "" && v !== null && v !== undefined)
+        .map(([fieldId, value]) => ({ fieldId, value }));
+
       const productData = {
         ...formData,
         unitPrice: parseFloat(formData.unitPrice),
         vatRate: parseFloat(formData.vatRate),
+        ...(customFields.length > 0 && { customFields }),
       };
 
       let result;
@@ -357,6 +380,12 @@ export default function ProductModal({ product, onSave, open, onOpenChange }) {
                     {...register("description")}
                   />
                 </div>
+
+                {/* Champs personnalisés */}
+                <ProductCustomFieldsForm
+                  values={customFieldValues}
+                  onChange={handleCustomFieldChange}
+                />
               </div>
 
               {/* Colonne droite - Aperçu des prix */}

@@ -1,315 +1,409 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { Upload, FileText, FileSpreadsheet, Download, AlertCircle, CheckCircle2, Loader2, ArrowRightFromLine } from "lucide-react";
-import { Button } from "@/src/components/ui/button";
+import { useState, useCallback, useMemo } from "react";
+import { useMutation, useApolloClient } from "@apollo/client";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
+  DialogDescription,
 } from "@/src/components/ui/dialog";
-import { Alert, AlertDescription } from "@/src/components/ui/alert";
-import { Callout } from "@/src/components/ui/callout";
-import { downloadCSVTemplate, downloadExcelTemplate } from "@/src/utils/product-export";
-import { parseCSV, parseExcel, validateFile } from "@/src/utils/product-import";
-import { useCreateProduct } from "@/src/hooks/useProducts";
+import { Button } from "@/src/components/ui/button";
+import { Progress } from "@/src/components/ui/progress";
 import { toast } from "@/src/components/ui/sonner";
+import { ArrowLeft, ArrowRight, Loader2, Upload, CheckCircle2, XCircle, Download } from "lucide-react";
+import { useWorkspace } from "@/src/hooks/useWorkspace";
+import { CREATE_PRODUCT } from "@/src/graphql/mutations/products";
+import { useProductCustomFields, useCreateProductCustomField } from "@/src/hooks/useProductCustomFields";
+import {
+  parseCSVRaw,
+  parseExcelRaw,
+  autoDetectProductMapping,
+  transformRowToProduct,
+  validateProductRow,
+  downloadProductErrorsCSV,
+} from "@/src/utils/product-import-v2";
 
-export default function ProductImportDialog({ onImportComplete, iconOnly = false, triggerImport = false, onImportTriggered }) {
-  const [isOpen, setIsOpen] = useState(false);
+import ImportStepUpload from "./import-steps/import-step-upload";
+import ImportStepMapping from "./import-steps/import-step-mapping";
+
+const STEPS = [
+  { key: "upload", label: "Fichier", number: 1 },
+  { key: "mapping", label: "Mapping", number: 2 },
+];
+
+const BATCH_SIZE = 10;
+
+export default function ProductImportDialog({ open, onOpenChange }) {
+  const { workspaceId } = useWorkspace();
+  const apolloClient = useApolloClient();
+  const [createProduct] = useMutation(CREATE_PRODUCT);
+  const { fields: allCustomFields } = useProductCustomFields(workspaceId);
+  const existingCustomFields = useMemo(() => allCustomFields.filter(f => f.isActive), [allCustomFields]);
+  const { createField } = useCreateProductCustomField();
+
+  // State
+  const [currentStep, setCurrentStep] = useState(0);
   const [file, setFile] = useState(null);
-  const [parsedProducts, setParsedProducts] = useState([]);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [importResults, setImportResults] = useState(null);
-  const fileInputRef = useRef(null);
-  
-  const { createProduct } = useCreateProduct({ showToast: false });
+  const [parsing, setParsing] = useState(false);
+  const [parsedData, setParsedData] = useState(null); // { headers, rows }
+  const [mapping, setMapping] = useState({});
+  const [customFieldMappings, setCustomFieldMappings] = useState([]);
+  const [isImporting, setIsImporting] = useState(false);
+  const [importResults, setImportResults] = useState({ successCount: 0, errors: [] });
 
-  // Gérer le déclenchement externe
-  useEffect(() => {
-    if (triggerImport) {
-      setIsOpen(true);
-      if (onImportTriggered) {
-        onImportTriggered();
+  // Transformed products
+  const transformedProducts = useMemo(() => {
+    if (!parsedData) return [];
+    return parsedData.rows.map((row) =>
+      transformRowToProduct(row, parsedData.headers, mapping, customFieldMappings)
+    );
+  }, [parsedData, mapping, customFieldMappings]);
+
+  // How many valid rows
+  const importableCount = useMemo(() => {
+    return transformedProducts.filter((product, idx) => {
+      return validateProductRow(product, idx).valid;
+    }).length;
+  }, [transformedProducts]);
+
+  const importFinished = !isImporting && (importResults.successCount > 0 || importResults.errors.length > 0);
+
+  // Reset all state
+  const resetState = useCallback(() => {
+    setCurrentStep(0);
+    setFile(null);
+    setParsing(false);
+    setParsedData(null);
+    setMapping({});
+    setCustomFieldMappings([]);
+    setIsImporting(false);
+    setImportResults({ successCount: 0, errors: [] });
+  }, []);
+
+  const handleClose = useCallback(() => {
+    if (isImporting) return;
+    onOpenChange(false);
+    setTimeout(resetState, 300);
+  }, [isImporting, onOpenChange, resetState]);
+
+  // ── Step handlers ──
+
+  const handleFileSelected = useCallback((f) => {
+    setFile(f);
+  }, []);
+
+  const handleFileRemoved = useCallback(() => {
+    setFile(null);
+    setParsedData(null);
+    setMapping({});
+    setCustomFieldMappings([]);
+  }, []);
+
+  const handleCreateCustomField = useCallback(async (formData) => {
+    if (!workspaceId) return null;
+    return await createField(workspaceId, formData);
+  }, [workspaceId, createField]);
+
+  const handleParseAndGoToMapping = useCallback(async () => {
+    if (!file) return;
+    setParsing(true);
+    try {
+      const ext = file.name.substring(file.name.lastIndexOf(".")).toLowerCase();
+      let data;
+      if (ext === ".csv") {
+        data = await parseCSVRaw(file);
+      } else {
+        data = await parseExcelRaw(file);
       }
+
+      // Filter out completely empty rows
+      data.rows = data.rows.filter((row) => row.some((cell) => cell.trim() !== ""));
+
+      if (data.rows.length === 0) {
+        toast.error("Le fichier ne contient aucune ligne de données.");
+        setParsing(false);
+        return;
+      }
+
+      if (data.rows.length > 500) {
+        toast.warning(
+          `Le fichier contient ${data.rows.length} lignes. L'import sera effectué par lots de ${BATCH_SIZE}.`
+        );
+      }
+
+      setParsedData(data);
+      const autoMapping = autoDetectProductMapping(data.headers);
+      setMapping(autoMapping);
+      setCurrentStep(1);
+    } catch (err) {
+      toast.error(err.message || "Erreur lors de la lecture du fichier.");
+    } finally {
+      setParsing(false);
     }
-  }, [triggerImport, onImportTriggered]);
+  }, [file]);
 
-  const handleFileSelect = async (event) => {
-    const selectedFile = event.target.files[0];
-    if (!selectedFile) return;
+  const handleStartImport = useCallback(async () => {
+    if (!parsedData || !workspaceId) return;
 
-    // Valider le fichier
-    const validation = validateFile(selectedFile);
-    if (!validation.valid) {
-      toast.error(validation.error);
+    // Check required fields are mapped
+    if (mapping.name === null || mapping.name === undefined) {
+      toast.error('Le champ "Nom" doit être mappé.');
       return;
     }
 
-    setFile(selectedFile);
-    setIsProcessing(true);
-    setParsedProducts([]);
-    setImportResults(null);
+    setIsImporting(true);
+    setImportResults({ successCount: 0, errors: [] });
 
-    try {
-      // Parser le fichier selon son extension
-      const extension = selectedFile.name.split('.').pop().toLowerCase();
-      let products;
+    const productsToImport = transformedProducts
+      .map((product, idx) => ({ product, idx }))
+      .filter(({ product, idx }) => validateProductRow(product, idx).valid);
 
-      if (extension === 'csv') {
-        products = await parseCSV(selectedFile);
-      } else {
-        products = await parseExcel(selectedFile);
-      }
+    let successCount = 0;
+    const errors = [];
 
-      setParsedProducts(products);
-      toast.success(`Fichier analysé - ${products.length} produit${products.length > 1 ? 's' : ''} trouvé${products.length > 1 ? 's' : ''} et prêt${products.length > 1 ? 's' : ''} à importer`);
-    } catch (error) {
-      toast.error(error.message);
-      setFile(null);
-    } finally {
-      setIsProcessing(false);
-    }
-  };
+    // Process in batches
+    for (let i = 0; i < productsToImport.length; i += BATCH_SIZE) {
+      const batch = productsToImport.slice(i, i + BATCH_SIZE);
 
-  const handleImport = async () => {
-    if (parsedProducts.length === 0) return;
+      const results = await Promise.allSettled(
+        batch.map(({ product, idx }) =>
+          createProduct({
+            variables: {
+              input: {
+                ...product,
+                workspaceId,
+              },
+            },
+          }).then(() => ({ idx }))
+        )
+      );
 
-    setIsProcessing(true);
-    const results = {
-      success: 0,
-      errors: [],
-    };
-
-    for (let i = 0; i < parsedProducts.length; i++) {
-      const product = parsedProducts[i];
-      try {
-        const result = await createProduct(product);
-        if (result && result.data) {
-          results.success++;
+      for (let j = 0; j < results.length; j++) {
+        const result = results[j];
+        const rowIdx = batch[j].idx;
+        if (result.status === "fulfilled") {
+          successCount++;
         } else {
-          results.errors.push(`${product.name}: Échec de la création`);
+          const message = result.reason?.message || "Erreur inconnue";
+          errors.push({ row: rowIdx + 1, message });
         }
-      } catch (error) {
-        results.errors.push(`${product.name}: ${error.message}`);
       }
+
+      setImportResults({ successCount, errors: [...errors] });
     }
 
-    setImportResults(results);
-    setIsProcessing(false);
+    setIsImporting(false);
 
-    if (results.success > 0) {
-      toast.success(`Import terminé - ${results.success} produit${results.success > 1 ? 's' : ''} importé${results.success > 1 ? 's' : ''} avec succès`);
-      
-      // Appeler le callback pour rafraîchir la liste
-      if (onImportComplete) {
-        onImportComplete();
+    if (successCount > 0) {
+      try {
+        await apolloClient.refetchQueries({
+          include: ["GetProducts"],
+        });
+      } catch {
+        // Ignore refetch errors
       }
+      toast.success(`${successCount} produit${successCount > 1 ? "s" : ""} importé${successCount > 1 ? "s" : ""}`);
     }
-
-    if (results.errors.length > 0) {
-      toast.error(`Erreurs d'import - ${results.errors.length} produit${results.errors.length > 1 ? 's' : ''} ${results.errors.length > 1 ? "n'ont" : "n'a"} pas pu être importé${results.errors.length > 1 ? 's' : ''}`);
+    if (errors.length > 0) {
+      toast.error(`${errors.length} erreur${errors.length > 1 ? "s" : ""} lors de l'import`);
     }
-  };
+  }, [parsedData, workspaceId, transformedProducts, mapping, createProduct, apolloClient]);
 
-  const handleReset = () => {
-    setFile(null);
-    setParsedProducts([]);
-    setImportResults(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+  // ── Navigation ──
+
+  const canGoNext = useMemo(() => {
+    switch (currentStep) {
+      case 0:
+        return !!file;
+      case 1:
+        return mapping.name !== null && mapping.name !== undefined && importableCount > 0;
+      default:
+        return false;
     }
-  };
+  }, [currentStep, file, mapping, importableCount]);
 
-  const handleClose = () => {
-    handleReset();
-    setIsOpen(false);
-  };
-
-  const handleOpenChange = (open) => {
-    if (!open) {
-      handleReset();
+  const handleNext = useCallback(() => {
+    switch (currentStep) {
+      case 0:
+        handleParseAndGoToMapping();
+        break;
+      case 1:
+        handleStartImport();
+        break;
     }
-    setIsOpen(open);
-  };
+  }, [currentStep, handleParseAndGoToMapping, handleStartImport]);
+
+  const handlePrev = useCallback(() => {
+    if (currentStep > 0 && !isImporting && !importFinished) {
+      setCurrentStep(currentStep - 1);
+    }
+  }, [currentStep, isImporting, importFinished]);
+
+  const step = STEPS[currentStep];
+  const progressValue = ((currentStep + 1) / STEPS.length) * 100;
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        {iconOnly ? (
-          <Button variant="secondary" size="icon" className="cursor-pointer">
-            <ArrowRightFromLine className="h-4 w-4" strokeWidth={1.5} />
-          </Button>
-        ) : (
-          <Button variant="outline" className="cursor-pointer">
-            <Upload size={14} strokeWidth={1.5} />
-            Importer
-          </Button>
-        )}
-      </DialogTrigger>
-      <DialogContent className="w-full max-w-[600px] max-h-[90vh] flex flex-col p-0 sm:max-w-[600px]">
-        <div className="flex-shrink-0 p-6 pb-4 border-b">
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent
+        className="sm:max-w-[56rem] h-[80vh] flex flex-col p-0 gap-0"
+        showCloseButton={!isImporting}
+      >
+        {/* Header */}
+        <div className="px-6 pt-6 pb-4 border-b flex-shrink-0">
           <DialogHeader>
-            <DialogTitle>Importer des produits</DialogTitle>
-            <DialogDescription>
-              Importez vos produits depuis un fichier CSV ou Excel.
+            <DialogTitle className="text-base">Importer des produits</DialogTitle>
+            <DialogDescription className="text-sm text-muted-foreground">
+              {step.label} — Étape {step.number} sur {STEPS.length}
             </DialogDescription>
           </DialogHeader>
+          <Progress value={progressValue} className="h-1 mt-4" />
         </div>
 
-        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
-          {/* Téléchargement des modèles */}
-          <div className="space-y-2">
-            <p className="text-sm font-medium">1. Téléchargez le modèle</p>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={downloadCSVTemplate}
-                className="flex-1 cursor-pointer"
-              >
-                <FileText className="mr-2 h-4 w-4" />
-                Modèle CSV
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={downloadExcelTemplate}
-                className="flex-1 cursor-pointer"
-              >
-                <FileSpreadsheet className="mr-2 h-4 w-4" />
-                Modèle Excel
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Le modèle contient des exemples pour vous guider.
-            </p>
-          </div>
-
-          {/* Upload du fichier */}
-          <div className="space-y-2">
-            <p className="text-sm font-medium">2. Importez votre fichier</p>
-            <div className="flex items-center gap-2">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".csv,.xls,.xlsx"
-                onChange={handleFileSelect}
-                className="hidden"
-                id="file-upload"
-              />
-              <label
-                htmlFor="file-upload"
-                className="flex-1 cursor-pointer"
-              >
-                <div className="flex items-center justify-center border-2 border-dashed rounded-lg p-6 hover:border-primary transition-colors">
-                  <div className="text-center">
-                    <Upload className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
-                    <p className="text-sm font-medium">
-                      {file ? file.name : "Cliquez pour sélectionner un fichier"}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      CSV ou Excel (max 5MB)
-                    </p>
-                  </div>
-                </div>
-              </label>
-            </div>
-          </div>
-
-          {/* État du parsing */}
-          {isProcessing && !importResults && (
-            <Alert>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              <AlertDescription>
-                Analyse du fichier en cours...
-              </AlertDescription>
-            </Alert>
+        {/* Content */}
+        <div className="flex-1 overflow-auto px-6 py-5">
+          {currentStep === 0 && (
+            <ImportStepUpload
+              file={file}
+              onFileSelected={handleFileSelected}
+              onFileRemoved={handleFileRemoved}
+            />
+          )}
+          {currentStep === 1 && parsedData && !isImporting && !importFinished && (
+            <ImportStepMapping
+              headers={parsedData.headers}
+              firstRow={parsedData.rows[0]}
+              mapping={mapping}
+              onMappingChange={setMapping}
+              customFieldMappings={customFieldMappings}
+              onCustomFieldMappingsChange={setCustomFieldMappings}
+              onCreateCustomField={handleCreateCustomField}
+              existingCustomFields={existingCustomFields}
+            />
           )}
 
-          {/* Produits parsés */}
-          {parsedProducts.length > 0 && !importResults && (
-            <Callout type="info" noMargin>
-              <div>
-                <strong>{parsedProducts.length} produit{parsedProducts.length > 1 ? 's' : ''}</strong> prêt{parsedProducts.length > 1 ? 's' : ''} à être importé{parsedProducts.length > 1 ? 's' : ''}
-                <ul className="mt-2 text-xs space-y-1">
-                  {parsedProducts.slice(0, 3).map((p, i) => (
-                    <li key={i}>• {p.name} - {p.unitPrice}€ HT</li>
-                  ))}
-                  {parsedProducts.length > 3 && (
-                    <li className="italic">... et {parsedProducts.length - 3} autre{parsedProducts.length - 3 > 1 ? 's' : ''}</li>
-                  )}
-                </ul>
+          {/* Import progress */}
+          {currentStep === 1 && isImporting && (
+            <div className="flex flex-col items-center justify-center h-full gap-4">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              <div className="text-center space-y-2 w-full max-w-md">
+                <p className="text-sm font-medium">
+                  Import en cours... {importResults.successCount + importResults.errors.length} / {importableCount}
+                </p>
+                <Progress
+                  value={importableCount > 0 ? Math.round(((importResults.successCount + importResults.errors.length) / importableCount) * 100) : 0}
+                  className="h-2"
+                />
               </div>
-            </Callout>
-          )}
-
-          {/* Résultats de l'import */}
-          {importResults && (
-            <div className="space-y-2">
-              {importResults.success > 0 && (
-                <Callout type="info" noMargin>
-                  <strong>{importResults.success} produit{importResults.success > 1 ? 's' : ''}</strong> importé{importResults.success > 1 ? 's' : ''} avec succès
-                </Callout>
-              )}
-              
-              {importResults.errors.length > 0 && (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    <strong>{importResults.errors.length} erreur(s) :</strong>
-                    <ul className="mt-2 text-xs space-y-1 max-h-32 overflow-y-auto">
-                      {importResults.errors.map((error, i) => (
-                        <li key={i}>• {error}</li>
-                      ))}
-                    </ul>
-                  </AlertDescription>
-                </Alert>
-              )}
             </div>
           )}
 
-          {/* Instructions */}
-          <div className="rounded-lg border bg-muted/50 p-4">
-            <p className="text-sm font-medium mb-2">📋 Instructions</p>
-            <ul className="text-xs text-muted-foreground space-y-1">
-              <li>• Les colonnes <strong>Nom</strong>, <strong>Prix unitaire HT</strong>, <strong>Taux TVA</strong> et <strong>Unité</strong> sont obligatoires</li>
-              <li>• Les autres colonnes sont optionnelles</li>
-              <li>• Utilisez le point ou la virgule pour les décimales</li>
-              <li>• Le fichier ne doit pas dépasser 5MB</li>
-            </ul>
-          </div>
+          {/* Import results */}
+          {currentStep === 1 && importFinished && (
+            <div className="flex flex-col items-center justify-center h-full">
+              <div className="w-full max-w-md space-y-4">
+                <div className="flex items-center gap-3 p-4 rounded-lg bg-emerald-50 dark:bg-emerald-900/10">
+                  <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+                  <p className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
+                    {importResults.successCount} produit{importResults.successCount > 1 ? "s" : ""} importé{importResults.successCount > 1 ? "s" : ""} avec succès
+                  </p>
+                </div>
+
+                {importResults.errors.length > 0 && (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3 p-4 rounded-lg bg-red-50 dark:bg-red-900/10">
+                      <XCircle className="h-5 w-5 text-red-600 dark:text-red-400 flex-shrink-0" />
+                      <p className="text-sm font-medium text-red-700 dark:text-red-300">
+                        {importResults.errors.length} erreur{importResults.errors.length > 1 ? "s" : ""}
+                      </p>
+                    </div>
+
+                    <div className="border rounded-lg max-h-[200px] overflow-auto">
+                      <div className="divide-y">
+                        {importResults.errors.map((err, idx) => (
+                          <div key={idx} className="px-4 py-2 text-xs">
+                            <span className="font-medium text-red-600 dark:text-red-400">
+                              Ligne {err.row}
+                            </span>
+                            <span className="text-muted-foreground ml-2">
+                              {err.message}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-2"
+                      onClick={() => downloadProductErrorsCSV(importResults.errors)}
+                    >
+                      <Download className="h-3.5 w-3.5" />
+                      Télécharger les erreurs (CSV)
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
-        <div className="flex-shrink-0 border-t p-6 bg-background">
-          <div className="flex gap-3 justify-end">
-            <Button variant="outline" onClick={handleClose}>
-              {importResults ? "Fermer" : "Annuler"}
-            </Button>
-            {parsedProducts.length > 0 && !importResults && (
-              <>
-                <Button variant="outline" onClick={handleReset}>
-                  Réinitialiser
-                </Button>
-                <Button onClick={handleImport} disabled={isProcessing}>
-                  {isProcessing ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Import en cours...
+        {/* Footer */}
+        <div className="px-6 py-4 border-t flex items-center justify-between flex-shrink-0">
+          <div>
+            {currentStep > 0 && !isImporting && !importFinished && (
+              <Button
+                variant="outline"
+                onClick={handlePrev}
+                className="gap-2"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Précédent
+              </Button>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            {!isImporting && !importFinished && (
+              <Button variant="outline" onClick={handleClose}>
+                Annuler
+              </Button>
+            )}
+            {currentStep === 0 && (
+              <Button
+                onClick={handleNext}
+                disabled={!canGoNext || parsing}
+                className="gap-2"
+              >
+                {parsing ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Lecture...
                   </>
                 ) : (
                   <>
-                    <Download className="mr-2 h-4 w-4" />
-                    Importer {parsedProducts.length} produit(s)
+                    Suivant
+                    <ArrowRight className="h-4 w-4" />
                   </>
                 )}
               </Button>
-            </>
-          )}
+            )}
+            {currentStep === 1 && !isImporting && !importFinished && (
+              <Button
+                onClick={handleNext}
+                disabled={!canGoNext}
+                className="gap-2"
+              >
+                <Upload className="h-4 w-4" />
+                Importer {importableCount} produit{importableCount > 1 ? "s" : ""}
+              </Button>
+            )}
+            {importFinished && (
+              <Button onClick={handleClose}>
+                Fermer
+              </Button>
+            )}
           </div>
         </div>
       </DialogContent>

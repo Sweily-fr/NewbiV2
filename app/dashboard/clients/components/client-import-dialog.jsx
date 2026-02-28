@@ -12,7 +12,7 @@ import {
 import { Button } from "@/src/components/ui/button";
 import { Progress } from "@/src/components/ui/progress";
 import { toast } from "@/src/components/ui/sonner";
-import { ArrowLeft, ArrowRight, Loader2, Upload } from "lucide-react";
+import { ArrowLeft, ArrowRight, Loader2, Upload, CheckCircle2, XCircle, Download } from "lucide-react";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import {
   useClientCustomFields,
@@ -25,18 +25,15 @@ import {
   autoDetectMapping,
   transformRowToClient,
   validateClientRow,
+  downloadErrorsCSV,
 } from "@/src/utils/client-import";
 
 import ImportStepUpload from "./import-steps/import-step-upload";
 import ImportStepMapping from "./import-steps/import-step-mapping";
-import ImportStepPreview from "./import-steps/import-step-preview";
-import ImportStepResults from "./import-steps/import-step-results";
 
 const STEPS = [
   { key: "upload", label: "Fichier", number: 1 },
   { key: "mapping", label: "Mapping", number: 2 },
-  { key: "preview", label: "Vérification", number: 3 },
-  { key: "results", label: "Résultats", number: 4 },
 ];
 
 const BATCH_SIZE = 10;
@@ -56,11 +53,10 @@ export default function ClientImportDialog({ open, onOpenChange }) {
   const [parsedData, setParsedData] = useState(null); // { headers, rows }
   const [mapping, setMapping] = useState({});
   const [customFieldMappings, setCustomFieldMappings] = useState([]);
-  const [excludedRows, setExcludedRows] = useState(new Set());
   const [isImporting, setIsImporting] = useState(false);
   const [importResults, setImportResults] = useState({ successCount: 0, errors: [] });
 
-  // Transformed clients for preview
+  // Transformed clients
   const transformedClients = useMemo(() => {
     if (!parsedData) return [];
     return parsedData.rows.map((row) =>
@@ -68,13 +64,14 @@ export default function ClientImportDialog({ open, onOpenChange }) {
     );
   }, [parsedData, mapping, customFieldMappings]);
 
-  // How many valid, non-excluded rows
+  // How many valid rows
   const importableCount = useMemo(() => {
     return transformedClients.filter((client, idx) => {
-      if (excludedRows.has(idx)) return false;
       return validateClientRow(client, idx).valid;
     }).length;
-  }, [transformedClients, excludedRows]);
+  }, [transformedClients]);
+
+  const importFinished = !isImporting && (importResults.successCount > 0 || importResults.errors.length > 0);
 
   // Reset all state
   const resetState = useCallback(() => {
@@ -84,7 +81,6 @@ export default function ClientImportDialog({ open, onOpenChange }) {
     setParsedData(null);
     setMapping({});
     setCustomFieldMappings([]);
-    setExcludedRows(new Set());
     setIsImporting(false);
     setImportResults({ successCount: 0, errors: [] });
   }, []);
@@ -139,7 +135,6 @@ export default function ClientImportDialog({ open, onOpenChange }) {
       setParsedData(data);
       const autoMapping = autoDetectMapping(data.headers);
       setMapping(autoMapping);
-      setExcludedRows(new Set());
       setCurrentStep(1);
     } catch (err) {
       toast.error(err.message || "Erreur lors de la lecture du fichier.");
@@ -148,25 +143,18 @@ export default function ClientImportDialog({ open, onOpenChange }) {
     }
   }, [file]);
 
-  const handleGoToPreview = useCallback(() => {
-    // Check that 'name' is mapped (required)
+  const handleStartImport = useCallback(async () => {
+    if (!parsedData || !workspaceId) return;
     if (mapping.name === null || mapping.name === undefined) {
       toast.error('Le champ "Nom / Raison sociale" doit être mappé.');
       return;
     }
-    setCurrentStep(2);
-  }, [mapping]);
-
-  const handleStartImport = useCallback(async () => {
-    if (!parsedData || !workspaceId) return;
-    setCurrentStep(3);
     setIsImporting(true);
     setImportResults({ successCount: 0, errors: [] });
 
     const clientsToImport = transformedClients
       .map((client, idx) => ({ client, idx }))
       .filter(({ client, idx }) => {
-        if (excludedRows.has(idx)) return false;
         return validateClientRow(client, idx).valid;
       });
 
@@ -218,11 +206,11 @@ export default function ClientImportDialog({ open, onOpenChange }) {
     if (errors.length > 0) {
       toast.error(`${errors.length} erreur${errors.length > 1 ? "s" : ""} lors de l'import`);
     }
-  }, [parsedData, workspaceId, transformedClients, excludedRows, createClient, apolloClient]);
+  }, [parsedData, workspaceId, transformedClients, mapping, createClient, apolloClient]);
 
   const handleCreateCustomField = useCallback(
-    async (name) => {
-      const field = await createField(workspaceId, { name, fieldType: "TEXT" });
+    async ({ name, fieldType = "TEXT", options = [], isRequired = false }) => {
+      const field = await createField(workspaceId, { name, fieldType, options, isRequired });
       return field;
     },
     [createField, workspaceId]
@@ -235,9 +223,7 @@ export default function ClientImportDialog({ open, onOpenChange }) {
       case 0:
         return !!file;
       case 1:
-        return mapping.name !== null && mapping.name !== undefined;
-      case 2:
-        return importableCount > 0;
+        return mapping.name !== null && mapping.name !== undefined && importableCount > 0;
       default:
         return false;
     }
@@ -249,19 +235,16 @@ export default function ClientImportDialog({ open, onOpenChange }) {
         handleParseAndGoToMapping();
         break;
       case 1:
-        handleGoToPreview();
-        break;
-      case 2:
         handleStartImport();
         break;
     }
-  }, [currentStep, handleParseAndGoToMapping, handleGoToPreview, handleStartImport]);
+  }, [currentStep, handleParseAndGoToMapping, handleStartImport]);
 
   const handlePrev = useCallback(() => {
-    if (currentStep > 0 && currentStep < 3) {
+    if (currentStep > 0 && !isImporting && !importFinished) {
       setCurrentStep(currentStep - 1);
     }
-  }, [currentStep]);
+  }, [currentStep, isImporting, importFinished]);
 
   const step = STEPS[currentStep];
   const progressValue = ((currentStep + 1) / STEPS.length) * 100;
@@ -292,7 +275,7 @@ export default function ClientImportDialog({ open, onOpenChange }) {
               onFileRemoved={handleFileRemoved}
             />
           )}
-          {currentStep === 1 && parsedData && (
+          {currentStep === 1 && parsedData && !isImporting && !importFinished && (
             <ImportStepMapping
               headers={parsedData.headers}
               firstRow={parsedData.rows[0]}
@@ -304,32 +287,78 @@ export default function ClientImportDialog({ open, onOpenChange }) {
               existingCustomFields={customFields}
             />
           )}
-          {currentStep === 2 && (
-            <ImportStepPreview
-              transformedClients={transformedClients}
-              excludedRows={excludedRows}
-              onExcludedRowsChange={setExcludedRows}
-              mapping={mapping}
-            />
+
+          {/* Import progress */}
+          {currentStep === 1 && isImporting && (
+            <div className="flex flex-col items-center justify-center h-full gap-4">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              <div className="text-center space-y-2 w-full max-w-md">
+                <p className="text-sm font-medium">
+                  Import en cours... {importResults.successCount + importResults.errors.length} / {importableCount}
+                </p>
+                <Progress
+                  value={importableCount > 0 ? Math.round(((importResults.successCount + importResults.errors.length) / importableCount) * 100) : 0}
+                  className="h-2"
+                />
+              </div>
+            </div>
           )}
-          {currentStep === 3 && (
-            <ImportStepResults
-              results={importResults}
-              total={
-                transformedClients.filter((_, idx) => {
-                  if (excludedRows.has(idx)) return false;
-                  return validateClientRow(transformedClients[idx], idx).valid;
-                }).length
-              }
-              isImporting={isImporting}
-            />
+
+          {/* Import results */}
+          {currentStep === 1 && importFinished && (
+            <div className="flex flex-col items-center justify-center h-full">
+              <div className="w-full max-w-md space-y-4">
+                <div className="flex items-center gap-3 p-4 rounded-lg bg-emerald-50 dark:bg-emerald-900/10">
+                  <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+                  <p className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
+                    {importResults.successCount} contact{importResults.successCount > 1 ? "s" : ""} importé{importResults.successCount > 1 ? "s" : ""} avec succès
+                  </p>
+                </div>
+
+                {importResults.errors.length > 0 && (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3 p-4 rounded-lg bg-red-50 dark:bg-red-900/10">
+                      <XCircle className="h-5 w-5 text-red-600 dark:text-red-400 flex-shrink-0" />
+                      <p className="text-sm font-medium text-red-700 dark:text-red-300">
+                        {importResults.errors.length} erreur{importResults.errors.length > 1 ? "s" : ""}
+                      </p>
+                    </div>
+
+                    <div className="border rounded-lg max-h-[200px] overflow-auto">
+                      <div className="divide-y">
+                        {importResults.errors.map((err, idx) => (
+                          <div key={idx} className="px-4 py-2 text-xs">
+                            <span className="font-medium text-red-600 dark:text-red-400">
+                              Ligne {err.row}
+                            </span>
+                            <span className="text-muted-foreground ml-2">
+                              {err.message}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-2"
+                      onClick={() => downloadErrorsCSV(importResults.errors)}
+                    >
+                      <Download className="h-3.5 w-3.5" />
+                      Télécharger les erreurs (CSV)
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
           )}
         </div>
 
         {/* Footer */}
         <div className="px-6 py-4 border-t flex items-center justify-between flex-shrink-0">
           <div>
-            {currentStep > 0 && currentStep < 3 && (
+            {currentStep > 0 && !isImporting && !importFinished && (
               <Button
                 variant="outline"
                 onClick={handlePrev}
@@ -341,12 +370,12 @@ export default function ClientImportDialog({ open, onOpenChange }) {
             )}
           </div>
           <div className="flex items-center gap-2">
-            {currentStep < 3 && (
+            {!isImporting && !importFinished && (
               <Button variant="outline" onClick={handleClose}>
                 Annuler
               </Button>
             )}
-            {currentStep < 2 && (
+            {currentStep === 0 && (
               <Button
                 onClick={handleNext}
                 disabled={!canGoNext || parsing}
@@ -365,7 +394,7 @@ export default function ClientImportDialog({ open, onOpenChange }) {
                 )}
               </Button>
             )}
-            {currentStep === 2 && (
+            {currentStep === 1 && !isImporting && !importFinished && (
               <Button
                 onClick={handleNext}
                 disabled={!canGoNext}
@@ -375,7 +404,7 @@ export default function ClientImportDialog({ open, onOpenChange }) {
                 Importer {importableCount} contact{importableCount > 1 ? "s" : ""}
               </Button>
             )}
-            {currentStep === 3 && !isImporting && (
+            {importFinished && (
               <Button onClick={handleClose}>
                 Fermer
               </Button>

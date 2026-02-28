@@ -137,15 +137,19 @@ export default function InvoiceFilters({
     }
   };
 
-  // Tout sélectionner / tout désélectionner les statuts
+  // Tout sélectionner / tout désélectionner les statuts (normales + importées)
+  const allStatusKeys = [
+    ...Object.keys(INVOICE_STATUS_LABELS),
+    ...Object.keys(IMPORTED_INVOICE_STATUS_LABELS),
+  ];
   const allStatusesSelected =
-    selectedStatuses.length === Object.keys(INVOICE_STATUS_LABELS).length;
+    selectedStatuses.length === allStatusKeys.length;
 
   const toggleAllStatuses = () => {
     if (allStatusesSelected) {
       setStatusFilter("");
     } else {
-      setStatusFilter(Object.keys(INVOICE_STATUS_LABELS));
+      setStatusFilter(allStatusKeys);
     }
   };
 

@@ -97,7 +97,7 @@ function HelpDropdownMenu({ onCommunityClick }) {
         <DropdownMenuContent
           className="w-[280px] rounded-lg"
           side={isMobile ? "bottom" : "right"}
-          align="start"
+          align="end"
           sideOffset={8}
         >
           <DropdownMenuItem

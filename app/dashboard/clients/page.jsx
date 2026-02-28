@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback, useMemo } from "react";
+import { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/src/components/ui/button";
 import { ButtonGroup, ButtonGroupSeparator } from "@/src/components/ui/button-group";
@@ -85,6 +85,23 @@ function ClientsContent() {
       label: f.name,
     }));
     return [...STANDARD_COLUMNS, ...cfCols];
+  }, [customFieldDefinitions]);
+
+  // Hide custom fields by default (unless user already toggled them on)
+  useEffect(() => {
+    if (!customFieldDefinitions || customFieldDefinitions.length === 0) return;
+    setColumnVisibility((prev) => {
+      const next = { ...prev };
+      let changed = false;
+      for (const f of customFieldDefinitions) {
+        const key = `cf_${f.id}`;
+        if (!(key in next)) {
+          next[key] = false;
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
   }, [customFieldDefinitions]);
   const { lists, refetch: refetchLists } = useClientLists(workspaceId);
   const { addToLists } = useAddClientToLists();

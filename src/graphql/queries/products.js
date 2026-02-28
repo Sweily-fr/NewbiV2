@@ -13,6 +13,10 @@ export const GET_PRODUCTS = gql`
         unit
         category
         reference
+        customFields {
+          fieldId
+          value
+        }
         createdAt
         updatedAt
       }

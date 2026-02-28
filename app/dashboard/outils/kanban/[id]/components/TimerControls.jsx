@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Clock, Euro, RotateCcw } from "lucide-react";
+import { Clock, Euro, RotateCcw, Pencil } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/src/components/ui/avatar";
@@ -23,8 +23,14 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/src/components/ui/alert-dialog";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/src/components/ui/popover";
+import { Label } from "@/src/components/ui/label";
 import { useMutation } from "@apollo/client";
-import { START_TIMER, STOP_TIMER, RESET_TIMER, UPDATE_TIMER_SETTINGS } from "@/src/graphql/kanbanQueries";
+import { START_TIMER, STOP_TIMER, RESET_TIMER, UPDATE_TIMER_SETTINGS, ADD_MANUAL_TIME } from "@/src/graphql/kanbanQueries";
 import { toast } from "@/src/utils/debouncedToast";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 
@@ -39,6 +45,9 @@ export function TimerControls({ taskId, timeTracking, onTimerUpdate }) {
   const [currentTime, setCurrentTime] = useState(0);
   const [hourlyRate, setHourlyRate] = useState("");
   const [roundingOption, setRoundingOption] = useState("none");
+  const [manualHours, setManualHours] = useState("");
+  const [manualMinutes, setManualMinutes] = useState("");
+  const [manualPopoverOpen, setManualPopoverOpen] = useState(false);
 
 
   // Fonction pour mettre à jour le cache Apollo
@@ -121,6 +130,26 @@ export function TimerControls({ taskId, timeTracking, onTimerUpdate }) {
     },
     onError: (error) => {
       toast.error(error.message || "Erreur lors de la mise à jour");
+    },
+  });
+
+  const [addManualTime, { loading: addingManualTime }] = useMutation(ADD_MANUAL_TIME, {
+    update: (cache, { data }) => {
+      if (data?.addManualTime) {
+        updateCache(cache, data.addManualTime);
+      }
+    },
+    onCompleted: (data) => {
+      toast.success("Temps ajouté manuellement");
+      if (onTimerUpdate && data?.addManualTime?.timeTracking) {
+        onTimerUpdate(data.addManualTime.timeTracking);
+      }
+      setManualHours("");
+      setManualMinutes("");
+      setManualPopoverOpen(false);
+    },
+    onError: (error) => {
+      toast.error(error.message || "Erreur lors de l'ajout du temps");
     },
   });
 
@@ -220,6 +249,23 @@ export function TimerControls({ taskId, timeTracking, onTimerUpdate }) {
     });
   };
 
+  const handleAddManualTime = async () => {
+    const h = parseInt(manualHours) || 0;
+    const m = parseInt(manualMinutes) || 0;
+    const totalSeconds = h * 3600 + m * 60;
+    if (totalSeconds <= 0) {
+      toast.error("Veuillez entrer un temps valide");
+      return;
+    }
+    try {
+      await addManualTime({
+        variables: { taskId, seconds: totalSeconds, workspaceId },
+      });
+    } catch (error) {
+      console.error("Erreur ajout temps manuel:", error);
+    }
+  };
+
   const isRunning = timeTracking?.isRunning;
   const price = calculatePrice();
   const hasTime = currentTime > 0;
@@ -248,11 +294,64 @@ export function TimerControls({ taskId, timeTracking, onTimerUpdate }) {
           <div className={`w-2 h-2 rounded-full ${isRunning ? 'bg-white' : 'bg-gray-600'}`} />
         </button>
 
-        {/* Affichage du temps */}
+        {/* Affichage du temps + icône modifier */}
         <div className="flex items-center gap-1.5 px-3 py-1.5 bg-muted/50 rounded-md border border-border flex-shrink-0">
           <span className="text-sm font-mono tabular-nums">
             {formatTime(currentTime)}
           </span>
+          {!isRunning && (
+            <Popover open={manualPopoverOpen} onOpenChange={setManualPopoverOpen}>
+              <PopoverTrigger asChild>
+                <button
+                  className="ml-1 text-muted-foreground hover:text-blue-500 transition-colors"
+                  title="Ajouter du temps manuellement"
+                >
+                  <Pencil className="h-3 w-3" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-64" align="start">
+                <div className="space-y-3">
+                  <p className="text-sm font-medium">Ajouter du temps</p>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1">
+                      <Label htmlFor="manual-hours" className="text-xs text-muted-foreground">Heures</Label>
+                      <Input
+                        id="manual-hours"
+                        type="number"
+                        min="0"
+                        max="99"
+                        value={manualHours}
+                        onChange={(e) => setManualHours(e.target.value)}
+                        placeholder="0"
+                        className="h-8"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <Label htmlFor="manual-minutes" className="text-xs text-muted-foreground">Minutes</Label>
+                      <Input
+                        id="manual-minutes"
+                        type="number"
+                        min="0"
+                        max="59"
+                        value={manualMinutes}
+                        onChange={(e) => setManualMinutes(e.target.value)}
+                        placeholder="0"
+                        className="h-8"
+                      />
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    className="w-full"
+                    onClick={handleAddManualTime}
+                    disabled={addingManualTime || (!manualHours && !manualMinutes)}
+                  >
+                    {addingManualTime ? "Ajout..." : "Ajouter"}
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
+          )}
         </div>
 
         {/* Bouton réinitialiser */}
