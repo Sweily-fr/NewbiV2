@@ -310,6 +310,7 @@ export const GET_MY_TRANSFERS = gql`
         accessKey
         expiryDate
         downloadCount
+        passwordProtected
         status
         isPaymentRequired
         paymentAmount

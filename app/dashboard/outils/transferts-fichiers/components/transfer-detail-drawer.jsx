@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Drawer, DrawerClose, DrawerContent, DrawerTitle } from "@/src/components/ui/drawer";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
@@ -128,6 +128,12 @@ export function TransferDetailDrawer({
   const [copied, setCopied] = useState(false);
   const inputRef = useRef(null);
 
+  // Download count local state (pour mise à jour instantanée)
+  const [localDownloadCount, setLocalDownloadCount] = useState(transfer.downloadCount || 0);
+  useEffect(() => {
+    setLocalDownloadCount(transfer.downloadCount || 0);
+  }, [transfer.id, transfer.downloadCount]);
+
   // Lightbox state
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
@@ -165,6 +171,7 @@ export function TransferDetailDrawer({
 
       // Ouvrir le lien de téléchargement
       window.open(downloadUrl, "_blank");
+      setLocalDownloadCount((prev) => prev + 1);
       toast.success("Téléchargement démarré");
     } catch (error) {
       console.error("Erreur téléchargement:", error);
@@ -453,7 +460,7 @@ export function TransferDetailDrawer({
                       Nombre de téléchargements
                     </p>
                     <p className="text-xl font-medium text-gray-900">
-                      {transfer.downloadCount || 0}
+                      {localDownloadCount}
                     </p>
                   </div>
                 </div>
@@ -483,7 +490,7 @@ export function TransferDetailDrawer({
                     <div className="flex items-center gap-3">
                       <Lock className="w-4 h-4 text-gray-500" />
                       <span className="text-xs text-gray-700">
-                        {transfer.password
+                        {transfer.passwordProtected
                           ? "Protégé par mot de passe"
                           : "Aucun mot de passe défini"}
                       </span>

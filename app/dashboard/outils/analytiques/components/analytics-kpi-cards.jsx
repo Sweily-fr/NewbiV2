@@ -40,22 +40,22 @@ function computeVariation(current, previous) {
 export function AnalyticsKpiRow({ config, kpi, previousPeriod, loading }) {
   if (loading) {
     return (
-      <div className="overflow-x-auto scrollbar-hide">
-        <div className="bg-background border rounded-lg px-4 py-3 flex items-center gap-4 w-fit">
-          {config.map((item) => (
-            <div key={item.key} className="pr-4 last:pr-0 border-r last:border-r-0 border-border">
+      <div className="bg-background border rounded-lg px-4 py-3 flex items-center">
+        {config.map((item, index) => (
+          <div key={item.key} className="flex-1 min-w-0 flex items-center">
+            {index > 0 && <div className="w-px h-10 bg-border mx-4 shrink-0" />}
+            <div className="min-w-0">
               <Skeleton className="h-3 w-16 mb-2" />
               <Skeleton className="h-5 w-20" />
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
       </div>
     );
   }
 
   return (
-    <div className="overflow-x-auto scrollbar-hide">
-      <div className="bg-background border rounded-lg px-4 py-3 flex items-center w-fit">
+    <div className="bg-background border rounded-lg px-4 py-3 flex items-center">
         {config.map((item, index) => {
           const value = kpi?.[item.key] ?? 0;
           const format = item.format || formatCurrency;
@@ -71,12 +71,12 @@ export function AnalyticsKpiRow({ config, kpi, previousPeriod, loading }) {
           const isCurrency = !item.format || item.format === formatCurrency;
 
           return (
-            <div key={item.key} className="flex items-center">
+            <div key={item.key} className="flex-1 min-w-0 flex items-center">
               {/* Vertical separator between items */}
-              {index > 0 && <div className="w-px h-10 bg-border mx-4" />}
+              {index > 0 && <div className="w-px h-10 bg-border mx-4 shrink-0" />}
 
-              <div>
-                <div className="flex items-center gap-1.5 mb-1 whitespace-nowrap">
+              <div className="min-w-0">
+                <div className="flex items-center gap-1 mb-1 whitespace-nowrap">
                   <span className="text-xs text-muted-foreground">
                     {item.label}
                   </span>
@@ -95,21 +95,6 @@ export function AnalyticsKpiRow({ config, kpi, previousPeriod, loading }) {
                       </Tooltip>
                     </TooltipProvider>
                   )}
-                  {/* N-1 variation badge */}
-                  {variation != null && (
-                    <span
-                      className={cn(
-                        "inline-flex items-center gap-0.5 text-[10px] font-medium rounded-full px-1.5 py-0.5",
-                        isPositive && "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400",
-                        isNegative && "bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400",
-                        !isPositive && !isNegative && "bg-muted text-muted-foreground"
-                      )}
-                    >
-                      {isPositive && <ArrowUpRight className="h-2.5 w-2.5" />}
-                      {isNegative && <ArrowDownRight className="h-2.5 w-2.5" />}
-                      {variation > 0 ? "+" : ""}{variation.toFixed(1)}%
-                    </span>
-                  )}
                 </div>
                 <div className="flex items-baseline gap-1">
                   <span className="text-lg font-medium tracking-tight">
@@ -118,12 +103,25 @@ export function AnalyticsKpiRow({ config, kpi, previousPeriod, loading }) {
                   {isCurrency && (
                     <span className="text-xs text-muted-foreground">€</span>
                   )}
+                  {variation != null && (
+                    <span
+                      className={cn(
+                        "inline-flex items-center gap-0.5 text-[10px] font-medium ml-1",
+                        isPositive && "text-emerald-600 dark:text-emerald-400",
+                        isNegative && "text-red-500 dark:text-red-400",
+                        !isPositive && !isNegative && "text-muted-foreground"
+                      )}
+                    >
+                      {isPositive && <ArrowUpRight className="h-2.5 w-2.5" />}
+                      {isNegative && <ArrowDownRight className="h-2.5 w-2.5" />}
+                      {variation > 0 ? "+" : ""}{variation.toFixed(1)}%
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
           );
         })}
-      </div>
     </div>
   );
 }

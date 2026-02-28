@@ -51,7 +51,7 @@ function CustomTooltip({ active, payload }) {
 
   return (
     <div className="rounded-lg border bg-background p-3 shadow-sm text-sm">
-      <p className="font-medium mb-2 capitalize">{label}</p>
+      <p className="font-medium mb-10 capitalize">{label}</p>
       <div className="space-y-1">
         <div className="flex items-center justify-between gap-6">
           <span className="flex items-center gap-2">
@@ -92,18 +92,18 @@ export function AnalyticsRevenueChart({ monthlyRevenue, loading }) {
 
   if (loading) {
     return (
-      <div>
-        <h3 className="text-base font-medium mb-4">CA, Dépenses et Marge brute</h3>
-        <Skeleton className="h-[300px] w-full" />
+      <div className="flex flex-col min-h-0">
+        <h3 className="text-sm font-medium mb-10 shrink-0">CA, Dépenses et Marge brute</h3>
+        <Skeleton className="flex-1 min-h-[200px] w-full" />
       </div>
     );
   }
 
   if (!chartData.length) {
     return (
-      <div>
-        <h3 className="text-base font-medium mb-4">CA, Dépenses et Marge brute</h3>
-        <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+      <div className="flex flex-col min-h-0">
+        <h3 className="text-sm font-medium mb-10 shrink-0">CA, Dépenses et Marge brute</h3>
+        <div className="flex items-center justify-center flex-1 min-h-[200px] text-muted-foreground">
           Aucune donnée pour cette période
         </div>
       </div>
@@ -111,9 +111,9 @@ export function AnalyticsRevenueChart({ monthlyRevenue, loading }) {
   }
 
   return (
-    <div>
-      <h3 className="text-base font-medium mb-4">CA, Dépenses et Marge brute</h3>
-      <ChartContainer config={chartConfig} className="h-[300px] w-full">
+    <div className="flex flex-col min-h-0">
+      <h3 className="text-sm font-medium mb-10 shrink-0">CA, Dépenses et Marge brute</h3>
+      <ChartContainer config={chartConfig} className="flex-1 min-h-[200px] w-full">
         <ComposedChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} />
           <XAxis
@@ -148,7 +148,7 @@ export function AnalyticsRevenueChart({ monthlyRevenue, loading }) {
             barSize={20}
           />
           <Line
-            type="monotone"
+            type="bump"
             dataKey="grossMargin"
             stroke="#5b50ff"
             strokeWidth={2}

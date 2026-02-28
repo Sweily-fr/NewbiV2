@@ -63,7 +63,6 @@ export function useDashboardData() {
   });
 
   // Hook GraphQL pour les transactions
-  // Temporairement: network-only pour forcer le rechargement et voir les vraies données
   const {
     data: transactionsData,
     loading: bankLoading,
@@ -71,7 +70,7 @@ export function useDashboardData() {
     refetch: refetchBankTransactions,
   } = useQuery(GET_TRANSACTIONS, {
     variables: { workspaceId, limit: 5000 },
-    fetchPolicy: "network-only", // Forcer le rechargement depuis le serveur
+    fetchPolicy: "cache-and-network",
     skip: !workspaceId,
   });
 

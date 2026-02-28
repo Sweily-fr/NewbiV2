@@ -143,14 +143,14 @@ function HelpDropdownMenu({ onCommunityClick }) {
             asChild
           >
             <a
-              href="https://newbi.academy"
+              href="https://docs.newbi.fr"
               target="_blank"
               rel="noopener noreferrer"
             >
               <div className="flex items-center gap-2 w-full">
                 <GraduationCap className="h-4 w-4" />
                 <div className="flex flex-col">
-                  <span className="font-normal text-sm">Newbi Academy</span>
+                  <span className="font-normal text-sm">Documentation</span>
                   <span className="text-xs text-muted-foreground">
                     Formations et tutoriels
                   </span>

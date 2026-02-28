@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useState, useMemo } from "react";
 import {
   PieChart,
   Pie,
@@ -16,6 +16,17 @@ import {
 } from "recharts";
 import { ChartContainer } from "@/src/components/ui/chart";
 import { Skeleton } from "@/src/components/ui/skeleton";
+import { ToggleGroup, ToggleGroupItem } from "@/src/components/ui/toggle-group";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  TableFooter,
+} from "@/src/components/ui/table";
+import { PieChartIcon, TableIcon } from "lucide-react";
 
 const CATEGORY_LABELS = {
   OFFICE_SUPPLIES: "Fournitures",
@@ -109,14 +120,14 @@ function MonthlyTooltip({ active, payload }) {
       <div className="space-y-1">
         <div className="flex items-center justify-between gap-6">
           <span className="flex items-center gap-2">
-            <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "#5b50ff" }} />
+            <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
             Revenus HT
           </span>
           <span className="font-medium">{formatCurrency(data.revenueHT)}</span>
         </div>
         <div className="flex items-center justify-between gap-6">
           <span className="flex items-center gap-2">
-            <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "#5b50ff", opacity: 0.45 }} />
+            <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
             Dépenses
           </span>
           <span className="font-medium">{formatCurrency(data.expenseAmount)}</span>
@@ -126,7 +137,9 @@ function MonthlyTooltip({ active, payload }) {
   );
 }
 
-export function AnalyticsExpenseCategoryChart({ expenseByCategory, loading }) {
+export function AnalyticsExpenseCategoryChart({ expenseByCategory, totalExpensesHT, totalExpensesTTC, loading }) {
+  const [viewType, setViewType] = useState("pie");
+
   const chartData = useMemo(() => {
     if (!expenseByCategory?.length) return [];
     return expenseByCategory.map((c, i) => ({
@@ -143,6 +156,15 @@ export function AnalyticsExpenseCategoryChart({ expenseByCategory, loading }) {
     });
     return cfg;
   }, [chartData]);
+
+  const totalAmount = useMemo(
+    () => chartData.reduce((s, e) => s + e.amount, 0),
+    [chartData]
+  );
+  const totalCount = useMemo(
+    () => chartData.reduce((s, e) => s + e.count, 0),
+    [chartData]
+  );
 
   if (loading) {
     return (
@@ -166,31 +188,95 @@ export function AnalyticsExpenseCategoryChart({ expenseByCategory, loading }) {
 
   return (
     <div>
-      <h3 className="text-base font-medium mb-4">Dépenses par catégorie</h3>
-      <ChartContainer config={chartConfig} className="h-[300px] w-full">
-        <PieChart>
-          <Pie
-            data={chartData}
-            dataKey="amount"
-            nameKey="name"
-            cx="50%"
-            cy="50%"
-            outerRadius={100}
-            innerRadius={70}
-            paddingAngle={2}
-          >
-            {chartData.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={entry.fill} />
-            ))}
-          </Pie>
-          <Tooltip content={<CategoryTooltip />} />
-          <Legend
-            formatter={(value) => (
-              <span className="text-xs">{value}</span>
-            )}
-          />
-        </PieChart>
-      </ChartContainer>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-base font-medium">Dépenses par catégorie</h3>
+        <ToggleGroup type="single" value={viewType} onValueChange={(v) => v && setViewType(v)} size="sm">
+          <ToggleGroupItem value="pie" aria-label="Graphique">
+            <PieChartIcon className="h-4 w-4" />
+          </ToggleGroupItem>
+          <ToggleGroupItem value="table" aria-label="Tableau">
+            <TableIcon className="h-4 w-4" />
+          </ToggleGroupItem>
+        </ToggleGroup>
+      </div>
+
+      {viewType === "pie" ? (
+        <ChartContainer config={chartConfig} className="h-[300px] w-full">
+          <PieChart>
+            <Pie
+              data={chartData}
+              dataKey="amount"
+              nameKey="name"
+              cx="50%"
+              cy="50%"
+              outerRadius={100}
+              innerRadius={70}
+              paddingAngle={2}
+            >
+              {chartData.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={entry.fill} />
+              ))}
+            </Pie>
+            <Tooltip content={<CategoryTooltip />} />
+            <Legend
+              formatter={(value) => (
+                <span className="text-xs">{value}</span>
+              )}
+            />
+          </PieChart>
+        </ChartContainer>
+      ) : (
+        <div className="rounded-lg border overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Catégorie</TableHead>
+                <TableHead className="text-right">Nombre</TableHead>
+                <TableHead className="text-right">Montant TTC</TableHead>
+                <TableHead className="text-right">% du total</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {chartData.map((e) => (
+                <TableRow key={e.category}>
+                  <TableCell className="font-medium">{e.name}</TableCell>
+                  <TableCell className="text-right">{e.count}</TableCell>
+                  <TableCell className="text-right">{formatCurrency(e.amount)}</TableCell>
+                  <TableCell className="text-right text-muted-foreground">
+                    {totalAmount > 0
+                      ? `${((e.amount / totalAmount) * 100).toFixed(1)}%`
+                      : "—"}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+            <TableFooter>
+              <TableRow>
+                <TableCell className="font-medium">Total</TableCell>
+                <TableCell className="text-right font-medium">{totalCount}</TableCell>
+                <TableCell className="text-right font-medium">{formatCurrency(totalAmount)}</TableCell>
+                <TableCell className="text-right font-medium">100%</TableCell>
+              </TableRow>
+              {totalExpensesHT != null && (
+                <>
+                  <TableRow>
+                    <TableCell colSpan={2} className="text-muted-foreground">Total HT</TableCell>
+                    <TableCell className="text-right font-medium">{formatCurrency(totalExpensesHT)}</TableCell>
+                    <TableCell />
+                  </TableRow>
+                  <TableRow>
+                    <TableCell colSpan={2} className="text-muted-foreground">TVA récupérable</TableCell>
+                    <TableCell className="text-right font-medium">
+                      {formatCurrency((totalExpensesTTC || 0) - (totalExpensesHT || 0))}
+                    </TableCell>
+                    <TableCell />
+                  </TableRow>
+                </>
+              )}
+            </TableFooter>
+          </Table>
+        </div>
+      )}
     </div>
   );
 }
@@ -205,8 +291,8 @@ export function AnalyticsRevenueVsExpenseChart({ monthlyRevenue, loading }) {
   }, [monthlyRevenue]);
 
   const chartConfig = {
-    revenueHT: { label: "Revenus HT", color: "#5b50ff" },
-    expenseAmount: { label: "Dépenses", color: "#5b50ff" },
+    revenueHT: { label: "Revenus HT", color: "#10b981" },
+    expenseAmount: { label: "Dépenses", color: "#ef4444" },
   };
 
   if (loading) {
@@ -252,8 +338,8 @@ export function AnalyticsRevenueVsExpenseChart({ monthlyRevenue, loading }) {
             width={35}
           />
           <Tooltip content={<MonthlyTooltip />} />
-          <Bar dataKey="revenueHT" fill="#5b50ff" fillOpacity={0.8} radius={[4, 4, 0, 0]} barSize={20} />
-          <Bar dataKey="expenseAmount" fill="#5b50ff" fillOpacity={0.4} radius={[4, 4, 0, 0]} barSize={20} />
+          <Bar dataKey="revenueHT" fill="#10b981" fillOpacity={0.8} radius={[4, 4, 0, 0]} barSize={20} />
+          <Bar dataKey="expenseAmount" fill="#ef4444" fillOpacity={0.7} radius={[4, 4, 0, 0]} barSize={20} />
         </ComposedChart>
       </ChartContainer>
     </div>

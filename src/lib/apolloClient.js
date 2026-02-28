@@ -18,10 +18,9 @@ const forceSessionExpiredRedirect = (reason = "inactivity") => {
   clearCachedJWT();
   resetOrganizationIdForApollo();
 
-  setTimeout(() => {
-    isRedirecting = false;
-  }, 3000);
-
+  // Ne pas reset isRedirecting — la page va se recharger via la redirection.
+  // Le reset après timeout causait des boucles de redirection si la page
+  // n'avait pas encore navigué et que d'autres erreurs auth arrivaient.
   window.location.href = `/auth/session-expired?reason=${reason}`;
 };
 

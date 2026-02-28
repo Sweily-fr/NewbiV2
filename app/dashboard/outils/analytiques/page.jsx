@@ -47,13 +47,12 @@ import {
   AnalyticsRevenueVsExpenseChart,
   AnalyticsPaymentMethodChart,
 } from "./components/analytics-expense-chart";
-import { AnalyticsClientTable, AnalyticsProductTable } from "./components/analytics-data-table";
+import { AnalyticsClientTable } from "./components/analytics-data-table";
 import { AnalyticsCrossTabTable } from "./components/analytics-cross-tab-table";
 import { AnalyticsExportDialog } from "./components/analytics-export-dialog";
 import { AnalyticsOverdueTable } from "./components/analytics-overdue-table";
 import { AnalyticsAgingChart } from "./components/analytics-aging-chart";
 import { AnalyticsCollectionChart } from "./components/analytics-collection-chart";
-import { AnalyticsExpenseDetailTable } from "./components/analytics-expense-detail-table";
 import { AnalyticsTreasuryForecastChart } from "./components/analytics-treasury-forecast-chart";
 import { AnalyticsBankFlowChart } from "./components/analytics-bank-flow-chart";
 
@@ -238,15 +237,15 @@ export default function AnalytiquesPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-full">
+    <div className="flex flex-col h-full overflow-hidden">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pt-4 sm:pt-6 mb-6 px-4 sm:px-6 gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pt-3 sm:pt-4 mb-3 px-4 sm:px-6 gap-3">
         <h1 className="text-2xl font-medium">Analytique</h1>
         <div className="flex flex-wrap items-center gap-2">
           {/* Client filter */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-2">
+              <Button variant="filter" size="sm" className="gap-2">
                 <Filter className="h-4 w-4" />
                 {selectedClientLabel}
                 {clientFilter.length > 0 && (
@@ -355,9 +354,9 @@ export default function AnalytiquesPage() {
       </div>
 
       {/* Tabs */}
-      <div className="pb-8 flex-1">
-        <Tabs defaultValue="synthese" className="space-y-6">
-          <TabsList className="mx-4 sm:mx-6">
+      <div className="flex-1 min-h-0 flex flex-col">
+        <Tabs defaultValue="synthese" className="flex flex-col flex-1 min-h-0 gap-3">
+          <TabsList className="mx-4 sm:mx-6 shrink-0">
             <TabsTrigger value="synthese">Synthèse</TabsTrigger>
             <TabsTrigger value="rentabilite">Rentabilité</TabsTrigger>
             <TabsTrigger value="tresorerie">Trésorerie</TabsTrigger>
@@ -366,14 +365,10 @@ export default function AnalytiquesPage() {
           </TabsList>
 
           {/* ===== Tab 1 — SYNTHESE ===== */}
-          <TabsContent value="synthese" className="space-y-6">
-            {/* Alert Banner */}
-            <div className="px-4 sm:px-6">
+          <TabsContent value="synthese" className="flex flex-col gap-3 flex-1 min-h-0">
+            {/* Alert Banner + KPI */}
+            <div className="px-4 sm:px-6 flex flex-col gap-3 shrink-0">
               <AnalyticsAlertBanner alerts={analyticsData?.alerts} />
-            </div>
-
-            {/* KPI */}
-            <div className="px-4 sm:px-6">
               <AnalyticsKpiRow
                 config={SYNTHESE_KPI}
                 kpi={analyticsData?.kpi}
@@ -385,7 +380,7 @@ export default function AnalytiquesPage() {
             <Separator />
 
             {/* 2 Charts */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 px-4 sm:px-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 px-4 sm:px-6 flex-1 min-h-0">
               <AnalyticsRevenueChart
                 monthlyRevenue={analyticsData?.monthlyRevenue}
                 loading={loading}
@@ -398,7 +393,7 @@ export default function AnalytiquesPage() {
           </TabsContent>
 
           {/* ===== Tab 2 — RENTABILITE ===== */}
-          <TabsContent value="rentabilite" className="space-y-8">
+          <TabsContent value="rentabilite" className="space-y-8 flex-1 min-h-0 overflow-y-auto">
             {/* KPI Cards */}
             <div className="px-4 sm:px-6">
               <AnalyticsKpiRow
@@ -422,14 +417,22 @@ export default function AnalytiquesPage() {
 
             <Separator />
 
-            {/* Cumulative + Expense Category */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 px-4 sm:px-6">
+            {/* Cumulative Revenue */}
+            <div className="px-4 sm:px-6">
               <AnalyticsCumulativeRevenueChart
                 monthlyRevenue={analyticsData?.monthlyRevenue}
                 loading={loading}
               />
+            </div>
+
+            <Separator />
+
+            {/* Expense Category (full width, with pie/table toggle) */}
+            <div className="px-4 sm:px-6">
               <AnalyticsExpenseCategoryChart
                 expenseByCategory={analyticsData?.expenseByCategory}
+                totalExpensesHT={analyticsData?.kpi?.totalExpensesHT}
+                totalExpensesTTC={analyticsData?.kpi?.totalExpensesTTC}
                 loading={loading}
               />
             </div>
@@ -446,31 +449,17 @@ export default function AnalytiquesPage() {
 
             <Separator />
 
-            {/* Product Chart + Table */}
+            {/* Product Chart (full width, with bar/treemap/table toggle) */}
             <div className="px-4 sm:px-6">
               <AnalyticsProductChart
                 revenueByProduct={analyticsData?.revenueByProduct}
                 loading={loading}
               />
             </div>
-            <AnalyticsProductTable
-              revenueByProduct={analyticsData?.revenueByProduct}
-              loading={loading}
-            />
-
-            <Separator />
-
-            {/* Expense Detail Table */}
-            <AnalyticsExpenseDetailTable
-              expenseByCategory={analyticsData?.expenseByCategory}
-              totalExpensesHT={analyticsData?.kpi?.totalExpensesHT}
-              totalExpensesTTC={analyticsData?.kpi?.totalExpensesTTC}
-              loading={loading}
-            />
           </TabsContent>
 
           {/* ===== Tab 3 — TRESORERIE & RECOUVREMENT ===== */}
-          <TabsContent value="tresorerie" className="space-y-8">
+          <TabsContent value="tresorerie" className="space-y-8 flex-1 min-h-0 overflow-y-auto">
             {/* Bank KPI Cards */}
             <div className="px-4 sm:px-6">
               <AnalyticsKpiRow
@@ -559,7 +548,7 @@ export default function AnalytiquesPage() {
           </TabsContent>
 
           {/* ===== Tab 4 — COMMERCIAL ===== */}
-          <TabsContent value="commercial" className="space-y-8">
+          <TabsContent value="commercial" className="space-y-8 flex-1 min-h-0 overflow-y-auto">
             {/* KPI Cards */}
             <div className="px-4 sm:px-6">
               <AnalyticsKpiRow
@@ -622,7 +611,7 @@ export default function AnalytiquesPage() {
           </TabsContent>
 
           {/* ===== Tab 5 — DETAIL & EXPORT ===== */}
-          <TabsContent value="detail" className="space-y-8">
+          <TabsContent value="detail" className="space-y-8 flex-1 min-h-0 overflow-y-auto">
             {/* VAT Chart */}
             <div className="px-4 sm:px-6">
               <AnalyticsVatChart

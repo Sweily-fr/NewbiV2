@@ -15,6 +15,7 @@ export const CREATE_EVENT = gql`
         color
         location
         type
+        clientId
         emailReminder {
           enabled
           anticipation

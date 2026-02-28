@@ -817,6 +817,7 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
             <ColorPicker
               color={labelDialogColor}
               onChange={setLabelDialogColor}
+              inline
             />
           </div>
 

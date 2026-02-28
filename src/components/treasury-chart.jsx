@@ -272,7 +272,7 @@ export function TreasuryChart({
           <CardTitle className="text-base font-normal">Trésorerie</CardTitle>
           <CardDescription>
             <span
-              className={`text-xl font-medium ${
+              className={`text-2xl font-medium ${
                 treasuryConsumption >= 0 ? "text-green-600" : "text-red-600"
               }`}
             >

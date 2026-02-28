@@ -119,7 +119,7 @@ function ClientDetailContent() {
       allDay: eventData.allDay,
       location: eventData.location,
       color: eventData.color,
-      type: "reminder",
+      type: "REMINDER",
       clientId: id,
       emailReminder: eventData.emailReminder,
     });

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { useQuery, useMutation, useApolloClient } from "@apollo/client";
 import {
   MY_STRIPE_CONNECT_ACCOUNT,
@@ -22,8 +22,7 @@ export const useStripeConnect = (organizationId) => {
   } = useQuery(MY_STRIPE_CONNECT_ACCOUNT, {
     skip: !organizationId,
     errorPolicy: "all",
-    fetchPolicy: "network-only",
-    notifyOnNetworkStatusChange: true,
+    fetchPolicy: "cache-and-network",
   });
 
   // Note: Le cache est maintenant vidé globalement lors de la déconnexion dans nav-user.jsx
