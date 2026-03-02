@@ -176,7 +176,7 @@ export const useKanbanBoards = () => {
   const [createBoardFromTemplate, { loading: creatingFromTemplate }] = useMutation(CREATE_BOARD_FROM_TEMPLATE, {
     onCompleted: () => {
       setIsCreateDialogOpen(false);
-      setFormData({ title: "", description: "" });
+      setFormData({ title: "", description: "", clientId: null });
       setSelectedTemplateId(null);
     },
     onError: (error) => {
@@ -242,6 +242,7 @@ export const useKanbanBoards = () => {
             title: formData.title.trim(),
             description: formData.description.trim() || null,
             templateId: selectedTemplateId,
+            clientId: formData.clientId || null,
           },
           workspaceId,
         },

@@ -149,6 +149,7 @@ function ProductSearchCombobox({
     if (selectedProduct && onSelect) {
       onSelect({
         description: selectedProduct.label,
+        details: selectedProduct.description || "",
         quantity: 1,
         unitPrice: selectedProduct.price,
         vatRate:
@@ -195,12 +196,11 @@ function ProductSearchCombobox({
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        className="p-0 overflow-hidden rounded-xl"
+        className="p-0 overflow-hidden rounded-xl w-[var(--radix-popover-trigger-width)] sm:w-[calc(var(--radix-popover-trigger-width)+12rem)]"
         align="start"
         side="bottom"
         sideOffset={4}
         avoidCollisions={false}
-        style={{ width: "var(--radix-popover-trigger-width)" }}
       >
         {/* Search header */}
         <div className="flex items-center gap-2.5 px-2.5 h-10 border-b border-[#e6e7ea] dark:border-[#232323]">
@@ -221,13 +221,11 @@ function ProductSearchCombobox({
               <LoaderCircle className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
               <span className="text-sm text-muted-foreground">Recherche...</span>
             </div>
-          ) : !debouncedSearchTerm ? (
-            <div className="p-4 text-center text-sm text-muted-foreground">
-              Tapez pour rechercher un produit...
-            </div>
           ) : products.length === 0 ? (
             <div className="p-4 text-center text-sm text-muted-foreground">
-              Aucun produit trouvé pour &quot;{debouncedSearchTerm}&quot;.
+              {debouncedSearchTerm
+                ? `Aucun produit trouvé pour "${debouncedSearchTerm}".`
+                : "Aucun produit disponible."}
             </div>
           ) : (
             products.map((product) => (

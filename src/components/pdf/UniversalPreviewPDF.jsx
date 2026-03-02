@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useSession } from "@/src/lib/auth-client";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { generateDynamicFooter } from "@/src/utils/document-suggestions";
+import { stripHtml } from "@/src/utils/kanbanHelpers";
 
 // Fonction utilitaire pour calculer le total d'un article en prenant en compte la remise et l'avancement
 const calculateItemTotal = (
@@ -1148,7 +1149,7 @@ const UniversalPreviewPDF = ({
                             </div>
                             {item.details && (
                               <div className="text-xs text-gray-600 mt-1 dark:text-[#0A0A0A] whitespace-pre-line break-words">
-                                {item.details}
+                                {stripHtml(item.details)}
                               </div>
                             )}
                             {item.discount > 0 && (

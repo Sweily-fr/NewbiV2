@@ -1098,6 +1098,42 @@ export function useInvoiceEditor({
     }
   }, [mode, isFormInitialized, setValue]);
 
+  // Pre-fill from Quote linked invoice (via sessionStorage)
+  useEffect(() => {
+    if (mode === 'create' && isFormInitialized) {
+      const linkedData = sessionStorage.getItem('quoteLinkedInvoiceData');
+      if (linkedData) {
+        try {
+          const data = JSON.parse(linkedData);
+          sessionStorage.removeItem('quoteLinkedInvoiceData');
+          sourceQuoteIdRef.current = data.sourceQuoteId;
+
+          if (data.client) setValue('client', data.client);
+          if (data.items?.length > 0) {
+            setValue('items', data.items.map(item => ({
+              description: item.description || '',
+              quantity: item.quantity || 1,
+              unitPrice: item.unitPrice || 0,
+              vatRate: item.vatRate ?? 0,
+              unit: item.unit || '',
+              discount: item.discount || 0,
+              discountType: item.discountType || 'PERCENTAGE',
+              details: item.details || '',
+              vatExemptionText: item.vatExemptionText || '',
+            })));
+          }
+          if (data.purchaseOrderNumber) setValue('purchaseOrderNumber', data.purchaseOrderNumber);
+          if (data.isDeposit) {
+            setValue('isDepositInvoice', true);
+            setValue('invoiceType', 'deposit');
+          }
+        } catch (e) {
+          sessionStorage.removeItem('quoteLinkedInvoiceData');
+        }
+      }
+    }
+  }, [mode, isFormInitialized, setValue]);
+
   // Auto-save handler - DISABLED
   // const handleAutoSave = useCallback(async () => {
   //   if (mode !== "edit" || !invoiceId || formData.status !== "DRAFT") {
@@ -2119,30 +2155,32 @@ function getInitialFormData(mode, initialData, session, organization) {
     },
   };
 
-  // Utiliser les paramètres par défaut de l'organisation si disponibles
+  // Utiliser les paramètres par défaut de FACTURE de l'organisation si disponibles
   if (mode === "create" && organization) {
-    // Paramètres d'apparence par défaut
-    if (
-      organization.defaultTextColor ||
-      organization.defaultHeaderTextColor ||
-      organization.defaultHeaderBgColor
-    ) {
+    // Paramètres d'apparence par défaut (invoice* puis document* puis hardcoded)
+    const orgTextColor = organization.invoiceTextColor || organization.documentTextColor;
+    const orgHeaderTextColor = organization.invoiceHeaderTextColor || organization.documentHeaderTextColor;
+    const orgHeaderBgColor = organization.invoiceHeaderBgColor || organization.documentHeaderBgColor;
+    if (orgTextColor || orgHeaderTextColor || orgHeaderBgColor) {
       defaultData.appearance = {
-        textColor: organization.defaultTextColor || "#000000",
-        headerTextColor: organization.defaultHeaderTextColor || "#ffffff",
-        headerBgColor: organization.defaultHeaderBgColor || "#5b50FF",
+        textColor: orgTextColor || "#000000",
+        headerTextColor: orgHeaderTextColor || "#ffffff",
+        headerBgColor: orgHeaderBgColor || "#5b50FF",
       };
     }
 
-    // Paramètres de contenu par défaut
-    if (organization.defaultHeaderNotes) {
-      defaultData.headerNotes = organization.defaultHeaderNotes;
+    // Paramètres de contenu par défaut (invoice* puis document*)
+    const orgHeaderNotes = organization.invoiceHeaderNotes || organization.documentHeaderNotes;
+    const orgFooterNotes = organization.invoiceFooterNotes || organization.documentFooterNotes;
+    const orgTermsAndConditions = organization.invoiceTermsAndConditions || organization.documentTermsAndConditions;
+    if (orgHeaderNotes) {
+      defaultData.headerNotes = orgHeaderNotes;
     }
-    if (organization.defaultFooterNotes) {
-      defaultData.footerNotes = organization.defaultFooterNotes;
+    if (orgFooterNotes) {
+      defaultData.footerNotes = orgFooterNotes;
     }
-    if (organization.defaultTermsAndConditions) {
-      defaultData.termsAndConditions = organization.defaultTermsAndConditions;
+    if (orgTermsAndConditions) {
+      defaultData.termsAndConditions = orgTermsAndConditions;
     }
   }
 

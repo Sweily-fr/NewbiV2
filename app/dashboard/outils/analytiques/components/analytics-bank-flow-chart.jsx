@@ -70,7 +70,7 @@ function CustomTooltip({ active, payload }) {
         </div>
         <div className="flex items-center justify-between gap-4 border-t pt-1 mt-1 text-muted-foreground">
           <span>Écart</span>
-          <span className={gap > 0 ? "text-amber-600" : "text-emerald-600"}>
+          <span className={gap >= 0 ? "text-emerald-600" : "text-red-500"}>
             {gap > 0 ? "+" : ""}
             {formatCurrency(gap)}
           </span>
@@ -103,7 +103,7 @@ export function AnalyticsBankFlowChart({
     return monthlyRevenue.map((m) => ({
       month: m.month,
       monthLabel: formatMonthLabel(m.month),
-      invoiced: m.totalHT || 0,
+      invoiced: m.revenueHT || 0,
       collected: bankByMonth[m.month] || 0,
     }));
   }, [monthlyRevenue, bankTransactions]);
@@ -151,6 +151,10 @@ export function AnalyticsBankFlowChart({
             tick={{ fontSize: 11 }}
             tickLine={false}
             axisLine={false}
+            interval={0}
+            angle={-45}
+            textAnchor="end"
+            height={50}
           />
           <YAxis
             tick={({ y, payload }) => (

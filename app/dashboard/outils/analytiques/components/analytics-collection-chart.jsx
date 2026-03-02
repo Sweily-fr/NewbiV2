@@ -119,6 +119,10 @@ export function AnalyticsCollectionChart({ monthlyCollection, loading }) {
             tick={{ fontSize: 11 }}
             tickLine={false}
             axisLine={false}
+            interval={0}
+            angle={-45}
+            textAnchor="end"
+            height={50}
           />
           <YAxis
             tick={({ y, payload }) => (
