@@ -91,7 +91,7 @@ export function InviteForm({ members, setMembers, selectedPlan, onContinue, onSk
     <div className="flex flex-col h-full px-20 py-6">
       <div className="flex flex-col pt-14">
         {/* Title */}
-        <h1 className="text-xl font-semibold text-[#46464A] mb-2">
+        <h1 className="text-xl font-semibold text-foreground mb-2">
           Collaborez avec votre équipe
         </h1>
         <p className="text-sm text-muted-foreground mb-10">
@@ -99,7 +99,7 @@ export function InviteForm({ members, setMembers, selectedPlan, onContinue, onSk
         </p>
 
         {/* Section label */}
-        <p className="text-sm text-[#46464A] mb-4">
+        <p className="text-sm text-foreground mb-4">
           Invitez votre équipe à collaborer
         </p>
 

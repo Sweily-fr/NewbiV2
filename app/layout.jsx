@@ -115,9 +115,10 @@ export default function RootLayout({ children }) {
               (function() {
                 try {
                   const theme = localStorage.getItem('vite-ui-theme') || 'system';
-                  const isDashboard = window.location.pathname.startsWith('/dashboard');
-                  
-                  if (!isDashboard) {
+                  const path = window.location.pathname;
+                  const isDarkAllowed = path.startsWith('/dashboard') || path.startsWith('/create-workspace');
+
+                  if (!isDarkAllowed) {
                     document.documentElement.classList.add('light');
                     return;
                   }

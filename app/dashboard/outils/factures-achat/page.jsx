@@ -6,13 +6,18 @@ import { PurchaseInvoiceDetailDrawer } from "./components/detail-drawer";
 import { PurchaseInvoiceUploadDrawer } from "./components/upload-drawer";
 import { ExportDialog } from "./components/export-dialog";
 import { GmailConnectionDialog } from "./components/gmail-connection";
-import { GmailStatusBanner } from "./components/gmail-status-banner";
+// GmailStatusBanner remplacé par un bouton inline dans la toolbar
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
 import {
   usePurchaseInvoices,
   usePurchaseInvoiceStats,
 } from "@/src/hooks/usePurchaseInvoices";
 import { useGmailConnection } from "@/src/hooks/useGmailConnection";
+import {
+  useImportedInvoices,
+  useImportedInvoiceStats,
+} from "@/src/graphql/importedInvoiceQueries";
+import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { Button } from "@/src/components/ui/button";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import {
@@ -86,6 +91,17 @@ function PurchaseInvoicesContent() {
   const { invoices, loading, refetch } = usePurchaseInvoices({ limit: 200 });
   const { stats, loading: statsLoading } = usePurchaseInvoiceStats();
   const { connection: gmailConnection } = useGmailConnection();
+  const { workspaceId } = useWorkspace();
+  const {
+    importedInvoices,
+    loading: importedLoading,
+    refetch: refetchImported,
+  } = useImportedInvoices(workspaceId, { filters: { status: "PENDING_REVIEW" } });
+
+  const handleImportedConverted = () => {
+    refetch?.();
+    refetchImported?.();
+  };
 
   // Drawer state — managed here so only ONE set of drawers is rendered
   const [isDetailDrawerOpen, setIsDetailDrawerOpen] = useState(false);
@@ -178,11 +194,6 @@ function PurchaseInvoicesContent() {
           </div>
         </div>
 
-        {/* Gmail Status Banner */}
-        {gmailConnection && gmailConnection.status !== "disconnected" && (
-          <GmailStatusBanner onOpenGmailDialog={handleOpenGmailDialog} />
-        )}
-
         {/* Stats Cards */}
         <div className="flex gap-3 px-4 sm:px-6 py-3">
           {statsLoading ? (
@@ -263,6 +274,11 @@ function PurchaseInvoicesContent() {
             loading={loading}
             refetch={refetch}
             onRowClick={handleRowClick}
+            importedInvoices={importedInvoices}
+            importedLoading={importedLoading}
+            onImportedConverted={handleImportedConverted}
+            gmailConnection={gmailConnection}
+            onOpenGmailDialog={handleOpenGmailDialog}
           />
         </Suspense>
       </div>
@@ -312,11 +328,6 @@ function PurchaseInvoicesContent() {
           </div>
         </div>
 
-        {/* Gmail Status Banner (Mobile) */}
-        {gmailConnection && gmailConnection.status !== "disconnected" && (
-          <GmailStatusBanner onOpenGmailDialog={handleOpenGmailDialog} />
-        )}
-
         {/* Stats Cards Mobile */}
         <div className="flex gap-2 px-4 pb-3 overflow-x-auto">
           {!statsLoading && (
@@ -344,6 +355,11 @@ function PurchaseInvoicesContent() {
             loading={loading}
             refetch={refetch}
             onRowClick={handleRowClick}
+            importedInvoices={importedInvoices}
+            importedLoading={importedLoading}
+            onImportedConverted={handleImportedConverted}
+            gmailConnection={gmailConnection}
+            onOpenGmailDialog={handleOpenGmailDialog}
           />
         </Suspense>
       </div>

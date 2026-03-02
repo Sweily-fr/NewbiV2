@@ -8,16 +8,16 @@ export default function PaymentErrorPage() {
   const router = useRouter();
 
   return (
-    <div className="min-h-screen bg-[#FDFDFD] flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col">
       <div className="flex-1 flex flex-col items-center justify-center p-4">
-        <img src="/newbiLetter.png" alt="Newbi" className="h-6 mb-6" />
-        <div className="w-full max-w-md rounded-3xl border border-[#EEEFF1] bg-white p-10 text-center">
+        <img src="/newbiLetter.png" alt="Newbi" className="h-6 mb-6 dark:invert" />
+        <div className="w-full max-w-md rounded-3xl border border-border bg-card p-10 text-center">
           {/* Error icon */}
-          <div className="mx-auto mb-6 flex items-center justify-center size-14 rounded-2xl bg-red-50 border border-red-100">
+          <div className="mx-auto mb-6 flex items-center justify-center size-14 rounded-2xl bg-red-50 dark:bg-red-950/50 border border-red-100 dark:border-red-800">
             <AlertCircle className="size-7 text-red-500" />
           </div>
 
-          <h1 className="text-xl font-semibold text-[#46464A] mb-2">
+          <h1 className="text-xl font-semibold text-foreground mb-2">
             Paiement échoué
           </h1>
           <p className="text-sm text-muted-foreground mb-8 leading-relaxed">

@@ -377,6 +377,168 @@ export function NavMain({
     );
   };
 
+  // Fonction spéciale pour le menu Clients avec action rapide "Nouveau client"
+  const renderClientsMenu = () => {
+    if (isCollapsed && !isMobile) {
+      return (
+        <DropdownMenu key="clients">
+          <SidebarMenuItem>
+            <DropdownMenuTrigger asChild>
+              <SidebarMenuButton
+                tooltip="Clients"
+                className={cn(
+                  "bg-transparent w-full cursor-pointer",
+                  isClientsSubActive &&
+                    "bg-sidebar-accent text-sidebar-foreground"
+                )}
+              >
+                <Users />
+                <span>Clients</span>
+                <ChevronRight className="ml-auto h-4 w-4" />
+              </SidebarMenuButton>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              side={isMobile ? "bottom" : "right"}
+              align="start"
+              className="min-w-[180px]"
+            >
+              {/* Action rapide: Nouveau client (masquée pour le comptable) */}
+              {userRole !== "accountant" && (
+                <>
+                  <DropdownMenuItem asChild>
+                    <Link
+                      href="/dashboard/clients?new=true"
+                      onClick={handleLinkClick}
+                      className="cursor-pointer flex justify-between w-full"
+                    >
+                      <span>Nouveau client</span>
+                      <Plus className="h-4 w-4" />
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                </>
+              )}
+              {/* Sous-menus */}
+              {navClients.map((subItem) => {
+                const allUrls = navClients.map((i) => i.url);
+                const isSubItemActive = isNavItemActive(subItem.url, allUrls);
+                const hasSubAccess = !subItem.isPro || hasProAccess;
+                return (
+                  <DropdownMenuItem
+                    key={subItem.title}
+                    asChild={hasSubAccess}
+                    disabled={!hasSubAccess}
+                    className={cn(
+                      !hasSubAccess && "opacity-60 cursor-not-allowed"
+                    )}
+                  >
+                    {hasSubAccess ? (
+                      <Link
+                        href={subItem.url}
+                        onClick={handleLinkClick}
+                        className={cn(
+                          "cursor-pointer",
+                          isSubItemActive && "bg-accent font-medium"
+                        )}
+                      >
+                        {subItem.title}
+                      </Link>
+                    ) : (
+                      <div className="flex items-center justify-between w-full">
+                        <span>{subItem.title}</span>
+                        <Crown className="w-3 h-3 text-[#5b4fff]" />
+                      </div>
+                    )}
+                  </DropdownMenuItem>
+                );
+              })}
+            </DropdownMenuContent>
+          </SidebarMenuItem>
+        </DropdownMenu>
+      );
+    }
+
+    return (
+      <Collapsible
+        key="clients"
+        open={isClientsOpen}
+        onOpenChange={setIsClientsOpen}
+      >
+        <SidebarMenuItem>
+          <div
+            className={cn(
+              "flex items-center w-full rounded-md transition-colors",
+              isClientsSubActive && "bg-sidebar-accent"
+            )}
+          >
+            <SidebarMenuButton
+              tooltip="Clients"
+              className={cn(
+                "bg-transparent w-full cursor-pointer hover:bg-transparent",
+                isClientsSubActive && "text-sidebar-foreground"
+              )}
+              onClick={() => setIsClientsOpen(!isClientsOpen)}
+            >
+              <Users />
+              <span>Clients</span>
+            </SidebarMenuButton>
+            <CollapsibleTrigger asChild>
+              <button
+                className="p-2 hover:bg-transparent transition-colors cursor-pointer"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <ChevronRight
+                  className={cn(
+                    "h-4 w-4 transition-transform duration-200",
+                    isClientsOpen && "rotate-90"
+                  )}
+                />
+              </button>
+            </CollapsibleTrigger>
+          </div>
+          <CollapsibleContent>
+            <SidebarMenuSub>
+              {navClients.map((subItem) => {
+                const allUrls = navClients.map((i) => i.url);
+                const isSubItemActive = isNavItemActive(subItem.url, allUrls);
+                const hasSubAccess = !subItem.isPro || hasProAccess;
+                return (
+                  <SidebarMenuSubItem key={subItem.title}>
+                    <SidebarMenuSubButton
+                      asChild={hasSubAccess}
+                      isActive={isSubItemActive && hasSubAccess}
+                      className={cn(
+                        !hasSubAccess && "opacity-60 cursor-not-allowed"
+                      )}
+                    >
+                      {hasSubAccess ? (
+                        <Link
+                          href={subItem.url}
+                          onClick={handleLinkClick}
+                          className={cn(
+                            isSubItemActive &&
+                              "bg-sidebar-accent text-sidebar-foreground font-medium"
+                          )}
+                        >
+                          <span className="text-sm">{subItem.title}</span>
+                        </Link>
+                      ) : (
+                        <div className="flex items-center justify-between w-full">
+                          <span className="text-sm">{subItem.title}</span>
+                          <Crown className="w-3 h-3 text-[#5b4fff]" />
+                        </div>
+                      )}
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                );
+              })}
+            </SidebarMenuSub>
+          </CollapsibleContent>
+        </SidebarMenuItem>
+      </Collapsible>
+    );
+  };
+
   // Fonction pour rendre le menu Projets avec barre de recherche et tableaux Kanban
   const renderProjetsMenu = () => {
     const isKanbanActive = pathname?.startsWith("/dashboard/outils/kanban");
@@ -996,16 +1158,8 @@ export function NavMain({
             return filteredNavVentes.length > 0 && renderVentesMenu(filteredNavVentes);
           })()}
 
-          {/* Menu Clients (CRM) avec sous-menus */}
-          {navClients.length > 0 &&
-            renderCollapsibleMenu(
-              "Clients",
-              Users,
-              navClients,
-              isClientsOpen,
-              setIsClientsOpen,
-              isClientsSubActive
-            )}
+          {/* Menu Clients (CRM) avec sous-menus et action rapide */}
+          {navClients.length > 0 && renderClientsMenu()}
 
           {/* Factures d'achat, Calendrier */}
           {navAfterVentes.map((item) => renderSimpleItem(item))}

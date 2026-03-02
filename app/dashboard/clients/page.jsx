@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useMemo, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { PermissionButton } from "@/src/components/rbac";
@@ -53,6 +53,7 @@ const STANDARD_COLUMNS = [
 
 function ClientsContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [globalFilter, setGlobalFilter] = useState("");
   const [selectedTypes, setSelectedTypes] = useState([]);
@@ -71,6 +72,14 @@ function ClientsContent() {
 
   const { workspaceId } = useWorkspace();
   const { fields: customFieldDefinitions } = useClientCustomFields(workspaceId);
+
+  // Ouvrir automatiquement le modal si ?new=true dans l'URL
+  useEffect(() => {
+    if (searchParams.get("new") === "true") {
+      setDialogOpen(true);
+      router.replace("/dashboard/clients", { scroll: false });
+    }
+  }, [searchParams, router]);
 
   const allToggleableColumns = useMemo(() => {
     const cfCols = (customFieldDefinitions || []).map((f) => ({

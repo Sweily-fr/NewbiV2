@@ -365,8 +365,8 @@ export function InviteMemberModal({ open, onOpenChange, onSuccess, organizationI
   return (
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[720px] p-1 gap-0 top-[40%] border-0 bg-[#efefef] overflow-hidden rounded-2xl">
-        <div className="bg-background rounded-xl overflow-hidden" style={{ boxShadow: "rgba(0, 0, 0, 0.07) 0px 0px 0px 1px" }}>
+      <DialogContent className="sm:max-w-[720px] p-1 gap-0 top-[40%] border-0 bg-[#efefef] dark:bg-[#1a1a1a] overflow-hidden rounded-2xl">
+        <div className="bg-background rounded-xl overflow-hidden ring-1 ring-black/[0.07] dark:ring-white/[0.1]">
         <DialogHeader className="px-5 pt-4 pb-3 border-b border-border/40">
           <DialogTitle className="text-sm font-medium flex items-center gap-2">
             <Users className="size-4" />
