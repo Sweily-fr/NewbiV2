@@ -1,6 +1,7 @@
 "use client";
 
 import { INVOICE_STATUS } from "@/src/graphql/invoiceQueries";
+import { stripHtml } from "@/src/utils/kanbanHelpers";
 
 // Fonction de formatage de l'IBAN avec espaces
 const formatIban = (iban) => {
@@ -416,7 +417,7 @@ export default function InvoicePreview({ data = {}, className = "", status }) {
                               marginTop: "2px",
                             }}
                           >
-                            {item.details}
+                            {stripHtml(item.details)}
                           </div>
                         )}
                         {item.discount > 0 && (

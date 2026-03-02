@@ -72,6 +72,21 @@ export const getPriorityIcon = (priority) => {
 };
 
 /**
+ * Convertit du HTML en texte brut
+ * @param {string} html - La chaîne HTML à convertir
+ * @returns {string} Le texte brut sans balises HTML
+ */
+export const stripHtml = (html) => {
+  if (!html) return "";
+  if (typeof document !== "undefined") {
+    const tmp = document.createElement("div");
+    tmp.innerHTML = html;
+    return tmp.textContent || tmp.innerText || "";
+  }
+  return html.replace(/<[^>]*>/g, "");
+};
+
+/**
  * Organise les tâches par colonne et les trie par position
  */
 export const getTasksByColumn = (tasks, columnId) => {

@@ -1,5 +1,5 @@
 import React, { useState, Fragment, useMemo, useCallback } from "react";
-import { MoreHorizontal, Calendar, ChevronDown, ChevronRight, Plus, Flag, MessageSquare, Paperclip, MoreVertical, GripVertical, AlignLeft, Clock, Users } from "lucide-react";
+import { MoreHorizontal, Calendar, ChevronDown, ChevronRight, Plus, Flag, MessageSquare, Paperclip, MoreVertical, GripVertical, AlignLeft, Clock, Users, Building2 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import {
   DropdownMenu,
@@ -246,7 +246,7 @@ function DraggableTaskRow({ task, column, onEditTask, index, children }) {
           style={{
             ...provided.draggableProps.style,
             display: snapshot.isDragging ? provided.draggableProps.style?.display : undefined,
-            gridTemplateColumns: '2.5fr 1fr 1fr 1fr 1fr 80px',
+            gridTemplateColumns: '2.5fr 1fr 1fr 1fr 1fr 1fr 80px',
             gap: '2rem'
           }}
           className={`grid px-2 py-1.5 items-center hover:bg-accent/5 cursor-grab active:cursor-grabbing group relative overflow-hidden border-b border-border/60 ${
@@ -549,7 +549,7 @@ export function KanbanListView({
               <div className="w-full overflow-x-auto scrollbar-hide">
                 <div className="w-max min-w-full">
                   {/* Header de section avec colonnes */}
-                  <div className="grid px-2 py-2 text-xs font-normal text-muted-foreground/70 tracking-wide border-b border-border/60" style={{ gridTemplateColumns: '2.5fr 1fr 1fr 1fr 1fr 80px', gap: '2rem' }}>
+                  <div className="grid px-2 py-2 text-xs font-normal text-muted-foreground/70 tracking-wide border-b border-border/60" style={{ gridTemplateColumns: '2.5fr 1fr 1fr 1fr 1fr 1fr 80px', gap: '2rem' }}>
                     <div className="flex items-center gap-2">
                       <GripVertical className="h-4 w-4 opacity-0" />
                       <Checkbox
@@ -572,6 +572,7 @@ export function KanbanListView({
                     <div className="flex items-center">Status</div>
                     <div className="flex items-center">Échéance</div>
                     <div className="flex items-center">Priorité</div>
+                    <div className="flex items-center">Client</div>
                     <div className="flex items-center justify-center">Actions</div>
                   </div>
 
@@ -940,6 +941,22 @@ export function KanbanListView({
                                     </div>
                                   </PopoverContent>
                                 </Popover>
+                              </div>
+
+                              {/* Client */}
+                              <div className="flex items-center min-w-0">
+                                {task.client ? (
+                                  <span className="inline-flex items-center gap-1 text-xs text-muted-foreground truncate">
+                                    <Building2 className="h-3.5 w-3.5 flex-shrink-0" />
+                                    <span className="truncate">
+                                      {task.client.type === 'INDIVIDUAL'
+                                        ? `${task.client.firstName || ''} ${task.client.lastName || task.client.name || ''}`.trim()
+                                        : task.client.name || ''}
+                                    </span>
+                                  </span>
+                                ) : (
+                                  <span className="text-xs text-muted-foreground/50">-</span>
+                                )}
                               </div>
 
                               {/* Actions */}

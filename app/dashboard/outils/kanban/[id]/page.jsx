@@ -81,6 +81,7 @@ import { MemberFilterButton } from "./components/MemberFilterButton";
 import { ShareBoardDialog } from "./components/ShareBoardDialog";
 import { SaveTemplateDialog } from "./components/SaveTemplateDialog";
 import { ConvertToInvoiceModal } from "./components/ConvertToInvoiceModal";
+import { stripHtml } from "@/src/utils/kanbanHelpers";
 import { KanbanPageSkeleton, KanbanListSkeleton } from "./components/KanbanPageSkeleton";
 import {
   GET_BOARD,
@@ -349,7 +350,7 @@ function KanbanBoardPageContent({ params }) {
       else if (tt.roundingOption === 'down') billableHours = Math.floor(hours);
       return {
         description: task.title,
-        details: task.description || "",
+        details: stripHtml(task.description),
         quantity: billableHours,
         unitPrice: tt.hourlyRate,
         vatRate: 20,

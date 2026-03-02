@@ -128,7 +128,7 @@ function MonthlyTooltip({ active, payload }) {
         <div className="flex items-center justify-between gap-6">
           <span className="flex items-center gap-2">
             <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
-            Dépenses
+            Dépenses HT
           </span>
           <span className="font-medium">{formatCurrency(data.expenseAmount)}</span>
         </div>
@@ -281,14 +281,32 @@ export function AnalyticsExpenseCategoryChart({ expenseByCategory, totalExpenses
   );
 }
 
-export function AnalyticsRevenueVsExpenseChart({ monthlyRevenue, loading }) {
+export function AnalyticsRevenueVsExpenseChart({ monthlyRevenue, bankTransactions, loading }) {
   const chartData = useMemo(() => {
     if (!monthlyRevenue?.length) return [];
-    return monthlyRevenue.map((m) => ({
-      ...m,
-      monthLabel: formatMonthLabel(m.month),
-    }));
-  }, [monthlyRevenue]);
+
+    // Aggregate negative bank transactions by month as expenses
+    const bankExpenseByMonth = {};
+    (bankTransactions || []).forEach((t) => {
+      if (t.amount >= 0) return;
+      const rawDate = t.date || t.processedAt || t.createdAt;
+      if (!rawDate) return;
+      const d = new Date(rawDate);
+      if (isNaN(d.getTime())) return;
+      const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      bankExpenseByMonth[monthKey] = (bankExpenseByMonth[monthKey] || 0) + Math.abs(t.amount);
+    });
+
+    return monthlyRevenue.map((m) => {
+      const expenseFromModel = m.expenseAmountHT || 0;
+      const expenseFromBank = bankExpenseByMonth[m.month] || 0;
+      return {
+        ...m,
+        monthLabel: formatMonthLabel(m.month),
+        expenseAmount: expenseFromModel > 0 ? expenseFromModel : expenseFromBank,
+      };
+    });
+  }, [monthlyRevenue, bankTransactions]);
 
   const chartConfig = {
     revenueHT: { label: "Revenus HT", color: "#10b981" },
@@ -326,6 +344,10 @@ export function AnalyticsRevenueVsExpenseChart({ monthlyRevenue, loading }) {
             tick={{ fontSize: 11 }}
             tickLine={false}
             axisLine={false}
+            interval={0}
+            angle={-45}
+            textAnchor="end"
+            height={50}
           />
           <YAxis
             tick={({ y, payload }) => (

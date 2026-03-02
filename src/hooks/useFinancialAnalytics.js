@@ -38,6 +38,13 @@ const EMPTY_MONTH = {
   grossMarginRate: 0,
 };
 
+const EMPTY_COLLECTION_MONTH = {
+  invoicedTTC: 0,
+  collectedTTC: 0,
+  invoicedCount: 0,
+  collectedCount: 0,
+};
+
 /**
  * Fills missing months in monthlyRevenue with zeros
  */
@@ -52,6 +59,24 @@ function fillMissingMonths(monthlyRevenue, allMonths) {
   }
   return allMonths.map((month) =>
     dataMap[month] || { month, ...EMPTY_MONTH }
+  );
+}
+
+/**
+ * Fills missing months in monthlyCollection with zeros,
+ * and filters out months outside the date range.
+ */
+function fillMissingCollectionMonths(monthlyCollection, allMonths) {
+  if (!allMonths.length) return monthlyCollection || [];
+  if (!monthlyCollection?.length) {
+    return allMonths.map((month) => ({ month, ...EMPTY_COLLECTION_MONTH }));
+  }
+  const dataMap = {};
+  for (const m of monthlyCollection) {
+    dataMap[m.month] = m;
+  }
+  return allMonths.map((month) =>
+    dataMap[month] || { month, ...EMPTY_COLLECTION_MONTH }
   );
 }
 
@@ -83,6 +108,15 @@ export const useFinancialAnalytics = (startDate, endDate, options = {}) => {
     return {
       ...raw,
       monthlyRevenue: fillMissingMonths(raw.monthlyRevenue, allMonths),
+      collection: raw.collection
+        ? {
+            ...raw.collection,
+            monthlyCollection: fillMissingCollectionMonths(
+              raw.collection.monthlyCollection,
+              allMonths
+            ),
+          }
+        : raw.collection,
     };
   }, [data, startDate, endDate]);
 

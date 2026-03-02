@@ -4,28 +4,9 @@ import { useState, useMemo } from "react";
 import { useDashboardData } from "@/src/hooks/useDashboardData";
 import { useTreasuryForecastData } from "@/src/hooks/useTreasuryForecast";
 import { AnalyticsTreasuryBalanceChart } from "./components/analytics-treasury-balance-chart";
-import { useQuery } from "@apollo/client";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { useFinancialAnalytics } from "@/src/hooks/useFinancialAnalytics";
-import { GET_CLIENTS } from "@/src/graphql/clientQueries";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
-import { Button } from "@/src/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/src/components/ui/dropdown-menu";
-import { Checkbox } from "@/src/components/ui/checkbox";
-import {
-  Download,
-  Filter,
-  ChevronDown,
-  X,
-} from "lucide-react";
-import { cn } from "@/src/lib/utils";
 
 import {
   AnalyticsDateFilter,
@@ -49,19 +30,11 @@ import {
 } from "./components/analytics-expense-chart";
 import { AnalyticsClientTable } from "./components/analytics-data-table";
 import { AnalyticsCrossTabTable } from "./components/analytics-cross-tab-table";
-import { AnalyticsExportDialog } from "./components/analytics-export-dialog";
 import { AnalyticsOverdueTable } from "./components/analytics-overdue-table";
 import { AnalyticsAgingChart } from "./components/analytics-aging-chart";
 import { AnalyticsCollectionChart } from "./components/analytics-collection-chart";
 import { AnalyticsTreasuryForecastChart } from "./components/analytics-treasury-forecast-chart";
 import { AnalyticsBankFlowChart } from "./components/analytics-bank-flow-chart";
-
-const STATUS_OPTIONS = [
-  { value: "PENDING", label: "En attente", color: "bg-amber-400" },
-  { value: "COMPLETED", label: "Payée", color: "bg-emerald-500" },
-  { value: "OVERDUE", label: "En retard", color: "bg-red-500" },
-  { value: "CANCELED", label: "Annulée", color: "bg-gray-400" },
-];
 
 const CATEGORY_LABELS = {
   OFFICE_SUPPLIES: "Fournitures",
@@ -138,28 +111,11 @@ export default function AnalytiquesPage() {
 
   const [period, setPeriod] = useState("current_year");
   const [dateRange, setDateRange] = useState(() => getDateRangeForPreset("current_year"));
-  const [clientFilter, setClientFilter] = useState([]);
-  const [statusFilter, setStatusFilter] = useState([]);
-  const [exportOpen, setExportOpen] = useState(false);
-
-  // Fetch clients for filter dropdown
-  const { data: clientsData } = useQuery(GET_CLIENTS, {
-    variables: { workspaceId, limit: 200 },
-    skip: !workspaceId,
-  });
-  const clients = useMemo(
-    () => clientsData?.clients?.items || [],
-    [clientsData]
-  );
 
   // Fetch analytics data
   const { analyticsData, loading } = useFinancialAnalytics(
     dateRange?.startDate,
-    dateRange?.endDate,
-    {
-      clientIds: clientFilter,
-      status: statusFilter,
-    }
+    dateRange?.endDate
   );
 
   // Bank data
@@ -211,129 +167,12 @@ export default function AnalytiquesPage() {
     };
   }, [bankTransactions, bankBalance, forecastData]);
 
-  const selectedClientLabel = useMemo(() => {
-    if (clientFilter.length === 0) return "Tous les clients";
-    if (clientFilter.length === 1) {
-      const c = clients.find((cl) => cl.id === clientFilter[0]);
-      return c?.name || `${c?.firstName || ""} ${c?.lastName || ""}`.trim() || "Client";
-    }
-    return `${clientFilter.length} clients`;
-  }, [clientFilter, clients]);
-
-  const toggleClient = (clientId) => {
-    setClientFilter((prev) =>
-      prev.includes(clientId)
-        ? prev.filter((id) => id !== clientId)
-        : [...prev, clientId]
-    );
-  };
-
-  const toggleStatus = (status) => {
-    setStatusFilter((prev) =>
-      prev.includes(status)
-        ? prev.filter((s) => s !== status)
-        : [...prev, status]
-    );
-  };
-
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pt-3 sm:pt-4 mb-3 px-4 sm:px-6 gap-3">
         <h1 className="text-2xl font-medium">Analytique</h1>
         <div className="flex flex-wrap items-center gap-2">
-          {/* Client filter */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="filter" size="sm" className="gap-2">
-                <Filter className="h-4 w-4" />
-                {selectedClientLabel}
-                {clientFilter.length > 0 && (
-                  <span className="ml-1 rounded-full bg-primary/10 text-primary px-1.5 py-0.5 text-xs font-medium">
-                    {clientFilter.length}
-                  </span>
-                )}
-                <ChevronDown className="h-3.5 w-3.5 opacity-50" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="min-w-[280px] max-h-72 overflow-auto">
-              <DropdownMenuLabel>Client</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {clients.map((c) => (
-                <DropdownMenuItem
-                  key={c.id}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    toggleClient(c.id);
-                  }}
-                  className="gap-2"
-                >
-                  <Checkbox
-                    checked={clientFilter.includes(c.id)}
-                    className="pointer-events-none"
-                  />
-                  <span className="truncate">
-                    {c.name || `${c.firstName || ""} ${c.lastName || ""}`.trim()}
-                  </span>
-                </DropdownMenuItem>
-              ))}
-              {clientFilter.length > 0 && (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => setClientFilter([])} className="gap-2 text-muted-foreground">
-                    <X className="h-4 w-4" />
-                    Réinitialiser
-                  </DropdownMenuItem>
-                </>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          {/* Status filter */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-2">
-                Statut
-                {statusFilter.length > 0 && (
-                  <span className="ml-1 rounded-full bg-primary/10 text-primary px-1.5 py-0.5 text-xs font-medium">
-                    {statusFilter.length}
-                  </span>
-                )}
-                <ChevronDown className="h-3.5 w-3.5 opacity-50" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Statut facture</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {STATUS_OPTIONS.map((s) => (
-                <DropdownMenuItem
-                  key={s.value}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    toggleStatus(s.value);
-                  }}
-                  className="gap-2"
-                >
-                  <Checkbox
-                    checked={statusFilter.includes(s.value)}
-                    className="pointer-events-none"
-                  />
-                  <span className={cn("h-2.5 w-2.5 rounded-full shrink-0", s.color)} />
-                  {s.label}
-                </DropdownMenuItem>
-              ))}
-              {statusFilter.length > 0 && (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => setStatusFilter([])} className="gap-2 text-muted-foreground">
-                    <X className="h-4 w-4" />
-                    Réinitialiser
-                  </DropdownMenuItem>
-                </>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-
           {/* Date filter */}
           <AnalyticsDateFilter
             period={period}
@@ -342,14 +181,6 @@ export default function AnalytiquesPage() {
             onDateRangeChange={setDateRange}
           />
 
-          {/* Export */}
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => setExportOpen(true)}
-          >
-            <Download className="h-4 w-4" />
-          </Button>
         </div>
       </div>
 
@@ -360,8 +191,8 @@ export default function AnalytiquesPage() {
             <TabsTrigger value="synthese">Synthèse</TabsTrigger>
             <TabsTrigger value="rentabilite">Rentabilité</TabsTrigger>
             <TabsTrigger value="tresorerie">Trésorerie</TabsTrigger>
-            <TabsTrigger value="commercial">Commercial</TabsTrigger>
-            <TabsTrigger value="detail">Détail & Export</TabsTrigger>
+            <TabsTrigger value="commercial">Clients</TabsTrigger>
+            <TabsTrigger value="detail">Taxes</TabsTrigger>
           </TabsList>
 
           {/* ===== Tab 1 — SYNTHESE ===== */}
@@ -383,7 +214,8 @@ export default function AnalytiquesPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 px-4 sm:px-6 flex-1 min-h-0">
               <AnalyticsRevenueChart
                 monthlyRevenue={analyticsData?.monthlyRevenue}
-                loading={loading}
+                bankTransactions={bankTransactions}
+                loading={loading || bankLoading}
               />
               <AnalyticsMarginChart
                 monthlyRevenue={analyticsData?.monthlyRevenue}
@@ -411,7 +243,8 @@ export default function AnalytiquesPage() {
             <div className="px-4 sm:px-6">
               <AnalyticsRevenueChart
                 monthlyRevenue={analyticsData?.monthlyRevenue}
-                loading={loading}
+                bankTransactions={bankTransactions}
+                loading={loading || bankLoading}
               />
             </div>
 
@@ -443,7 +276,8 @@ export default function AnalytiquesPage() {
             <div className="px-4 sm:px-6">
               <AnalyticsRevenueVsExpenseChart
                 monthlyRevenue={analyticsData?.monthlyRevenue}
-                loading={loading}
+                bankTransactions={bankTransactions}
+                loading={loading || bankLoading}
               />
             </div>
 
@@ -646,34 +480,10 @@ export default function AnalytiquesPage() {
               loading={loading}
             />
 
-            <Separator />
-
-            {/* Export Section */}
-            <div className="px-4 sm:px-6">
-              <div className="rounded-lg border p-6 text-center space-y-4">
-                <h3 className="text-lg font-medium">Exporter les données</h3>
-                <p className="text-sm text-muted-foreground">
-                  Téléchargez vos données analytiques dans le format de votre choix.
-                </p>
-                <div className="flex items-center justify-center gap-3">
-                  <Button onClick={() => setExportOpen(true)} className="gap-2">
-                    <Download className="h-4 w-4" />
-                    Exporter
-                  </Button>
-                </div>
-              </div>
-            </div>
           </TabsContent>
         </Tabs>
       </div>
 
-      {/* Export dialog */}
-      <AnalyticsExportDialog
-        open={exportOpen}
-        onOpenChange={setExportOpen}
-        analyticsData={analyticsData}
-        dateRange={dateRange}
-      />
     </div>
   );
 }

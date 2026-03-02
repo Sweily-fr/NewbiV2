@@ -45,8 +45,8 @@ const TAB_OPTIONS = [
   { value: "synthese", label: "Synthèse" },
   { value: "rentabilite", label: "Rentabilité" },
   { value: "tresorerie", label: "Trésorerie & Recouvrement" },
-  { value: "commercial", label: "Commercial" },
-  { value: "detail", label: "Détail & Export" },
+  { value: "commercial", label: "Clients" },
+  { value: "detail", label: "Taxes" },
 ];
 
 export function AnalyticsExportDialog({ open, onOpenChange, analyticsData, dateRange }) {

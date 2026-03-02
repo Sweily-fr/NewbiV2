@@ -218,7 +218,16 @@ function KanbanPageContent() {
                   </div>
                   <Select
                     value={selectedTemplateId || "none"}
-                    onValueChange={(value) => setSelectedTemplateId(value === "none" ? null : value)}
+                    onValueChange={(value) => {
+                      const templateId = value === "none" ? null : value;
+                      setSelectedTemplateId(templateId);
+                      if (templateId) {
+                        const template = templates.find((t) => t.id === templateId);
+                        if (template?.clientId) {
+                          setFormData((prev) => ({ ...prev, clientId: template.clientId }));
+                        }
+                      }
+                    }}
                   >
                     <SelectTrigger className="w-full min-w-0">
                       <SelectValue placeholder="Aucun template (colonnes par défaut)" />
