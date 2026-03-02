@@ -481,3 +481,51 @@ export function usePurchaseExtraOcrImports() {
   const [purchaseExtraOcrImports, { loading, error }] = useMutation(PURCHASE_EXTRA_OCR_IMPORTS);
   return { purchaseExtraOcrImports, loading, error };
 }
+
+// === Conversion ImportedInvoice → PurchaseInvoice ===
+
+export const CONVERT_IMPORTED_INVOICE = gql`
+  mutation ConvertImportedInvoiceToPurchaseInvoice($id: ID!) {
+    convertImportedInvoiceToPurchaseInvoice(id: $id) {
+      id
+      supplierName
+      invoiceNumber
+      amountTTC
+      status
+    }
+  }
+`;
+
+export const CONVERT_IMPORTED_INVOICES = gql`
+  mutation ConvertImportedInvoicesToPurchaseInvoices($ids: [ID!]!) {
+    convertImportedInvoicesToPurchaseInvoices(ids: $ids) {
+      success
+      converted
+      skipped
+      errors
+      message
+    }
+  }
+`;
+
+const CONVERSION_REFETCH = [
+  ...IMPORTED_INVOICE_REFETCH,
+  "GetPurchaseInvoices",
+  "GetPurchaseInvoiceStats",
+];
+
+export function useConvertImportedInvoice() {
+  const [convertImportedInvoice, { loading, error }] = useMutation(
+    CONVERT_IMPORTED_INVOICE,
+    { refetchQueries: CONVERSION_REFETCH }
+  );
+  return { convertImportedInvoice, loading, error };
+}
+
+export function useConvertImportedInvoices() {
+  const [convertImportedInvoices, { loading, error }] = useMutation(
+    CONVERT_IMPORTED_INVOICES,
+    { refetchQueries: CONVERSION_REFETCH }
+  );
+  return { convertImportedInvoices, loading, error };
+}

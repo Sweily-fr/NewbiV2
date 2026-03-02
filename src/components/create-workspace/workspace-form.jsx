@@ -278,7 +278,7 @@ export function WorkspaceForm({
   return (
     <div className="flex flex-col h-full px-20 py-6">
       <div className="flex flex-col pt-14">
-        <h1 className="text-xl font-semibold text-[#46464A] mb-10">
+        <h1 className="text-xl font-semibold text-foreground mb-10">
           Créer votre espace de travail
         </h1>
 
@@ -287,11 +287,11 @@ export function WorkspaceForm({
           <div className="relative">
             <Avatar
               key={displayLogoUrl || "empty"}
-              className="size-14 cursor-pointer rounded-xl border border-dashed border-[#EEEFF1] transition-colors hover:border-[#5A50FF]/40"
+              className="size-14 cursor-pointer rounded-xl border border-dashed border-border transition-colors hover:border-[#5A50FF]/40"
               onClick={() => !isUploading && fileInputRef.current?.click()}
             >
               {isUploading ? (
-                <AvatarFallback className="bg-[#FBFBFB] rounded-xl">
+                <AvatarFallback className="bg-muted rounded-xl">
                   <LoaderCircle className="size-5 animate-spin text-muted-foreground" />
                 </AvatarFallback>
               ) : (
@@ -299,7 +299,7 @@ export function WorkspaceForm({
                   {displayLogoUrl && (
                     <AvatarImage src={displayLogoUrl} alt="Logo" className="object-cover rounded-xl" />
                   )}
-                  <AvatarFallback className="bg-[#FBFBFB] text-[#999] text-3xl font-medium rounded-xl">
+                  <AvatarFallback className="bg-muted text-muted-foreground text-3xl font-medium rounded-xl">
                     {fallbackLetter}
                   </AvatarFallback>
                 </>
@@ -309,7 +309,7 @@ export function WorkspaceForm({
               <button
                 type="button"
                 onClick={handleRemoveLogo}
-                className="absolute -top-1.5 -right-1.5 size-5 rounded-full bg-white border border-[#EEEFF1] flex items-center justify-center hover:bg-red-50 hover:border-red-200 transition-colors cursor-pointer"
+                className="absolute -top-1.5 -right-1.5 size-5 rounded-full bg-card border border-border flex items-center justify-center hover:bg-red-50 hover:border-red-200 dark:hover:bg-red-950 dark:hover:border-red-800 transition-colors cursor-pointer"
               >
                 <X className="size-3 text-muted-foreground" />
               </button>
@@ -362,7 +362,7 @@ export function WorkspaceForm({
                 <Building2 className="size-3.5 text-white" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium text-[#46464A] truncate">
+                <p className="text-xs font-medium text-foreground truncate">
                   {selectedCompany.nom_complet || selectedCompany.nom_raison_sociale}
                 </p>
                 <p className="text-[11px] text-muted-foreground">
@@ -375,9 +375,9 @@ export function WorkspaceForm({
 
           {/* SIRET error */}
           {siretError && (
-            <div className="flex items-start gap-2.5 rounded-lg bg-red-50 border border-red-200 px-3 py-2.5 mt-1">
+            <div className="flex items-start gap-2.5 rounded-lg bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800 px-3 py-2.5 mt-1">
               <AlertCircle className="size-4 text-red-500 shrink-0 mt-0.5" />
-              <p className="text-xs text-red-700">{siretError}</p>
+              <p className="text-xs text-red-700 dark:text-red-400">{siretError}</p>
             </div>
           )}
 
@@ -391,7 +391,7 @@ export function WorkspaceForm({
 
           {/* Search results dropdown */}
           {showResults && (
-            <div className="absolute left-0 right-0 top-full mt-1 z-50 rounded-xl border border-[#e6e7ea] bg-white shadow-[0_4px_20px_rgba(0,0,0,0.08)] overflow-hidden">
+            <div className="absolute left-0 right-0 top-full mt-1 z-50 rounded-xl border border-border bg-card shadow-[0_4px_20px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_20px_rgba(0,0,0,0.3)] overflow-hidden">
               <div className="max-h-[280px] overflow-y-auto p-1">
                 {searchResults.length > 0
                   ? searchResults.map((company) => {

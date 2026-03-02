@@ -9,7 +9,7 @@ import { useEffect, useState } from "react";
 // Composant de notification de succès
 const SuccessToast = ({ message, isMobile }) => (
   <div
-    className={`max-w-[400px] shadow-lg ${isMobile ? "rounded-2xl px-4 py-4" : "rounded-md px-4 py-3"}`}
+    className={`max-w-[400px] shadow-lg ${isMobile ? "rounded-2xl px-4 py-4" : "rounded-lg px-4 py-3"}`}
     style={{ backgroundColor: "#202020" }}
   >
     <div className="flex gap-2 items-center">
@@ -44,7 +44,7 @@ const SuccessToast = ({ message, isMobile }) => (
 // Composant de notification d'erreur
 const ErrorToast = ({ message, isMobile }) => (
   <div
-    className={`max-w-[400px] shadow-lg ${isMobile ? "rounded-2xl px-4 py-4" : "rounded-md px-4 py-3"}`}
+    className={`max-w-[400px] shadow-lg ${isMobile ? "rounded-2xl px-4 py-4" : "rounded-lg px-4 py-3"}`}
     style={{ backgroundColor: "#202020" }}
   >
     <div className="flex gap-2 items-center">
@@ -79,7 +79,7 @@ const ErrorToast = ({ message, isMobile }) => (
 // Composant de notification d'information
 const InfoToast = ({ message, isMobile }) => (
   <div
-    className={`max-w-[400px] shadow-lg ${isMobile ? "rounded-2xl px-4 py-4" : "rounded-md px-4 py-3"}`}
+    className={`max-w-[400px] shadow-lg ${isMobile ? "rounded-2xl px-4 py-4" : "rounded-lg px-4 py-3"}`}
     style={{ backgroundColor: "#202020" }}
   >
     <div className="flex gap-2 items-center">
@@ -114,7 +114,7 @@ const InfoToast = ({ message, isMobile }) => (
 // Composant de notification de chargement
 const LoadingToast = ({ message, isMobile }) => (
   <div
-    className={`max-w-[400px] shadow-lg ${isMobile ? "rounded-2xl px-4 py-4" : "rounded-md px-4 py-3"}`}
+    className={`max-w-[400px] shadow-lg ${isMobile ? "rounded-2xl px-4 py-4" : "rounded-lg px-4 py-3"}`}
     style={{ backgroundColor: "#202020" }}
   >
     <div className="flex gap-2 items-center">

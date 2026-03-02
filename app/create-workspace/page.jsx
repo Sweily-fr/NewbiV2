@@ -65,19 +65,19 @@ export default function CreateWorkspacePage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FDFDFD] flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col">
       {/* Progress bar */}
-      <div className="w-full h-0.5 bg-[#FDFDFD]">
-        <div className="h-full bg-[#242529] transition-all duration-500" style={{ width: progressWidth }} />
+      <div className="w-full h-0.5 bg-background">
+        <div className="h-full bg-foreground transition-all duration-500" style={{ width: progressWidth }} />
       </div>
 
       <div className="flex-1 flex flex-col items-center justify-center p-4">
-      <img src="/newbiLetter.png" alt="Newbi" className="h-6 mb-6" />
-      <div className="relative w-full max-w-6xl h-[85vh] rounded-3xl border border-[#EEEFF1] bg-white overflow-hidden">
+      <img src="/newbiLetter.png" alt="Newbi" className="h-6 mb-6 dark:invert" />
+      <div className="relative w-full max-w-6xl h-[85vh] rounded-3xl border border-border bg-card overflow-hidden">
         {/* Back button */}
         <button
           onClick={handleBack}
-          className="absolute top-4 left-4 z-10 flex items-center justify-center size-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-[#F5F5F5] transition-colors cursor-pointer"
+          className="absolute top-4 left-4 z-10 flex items-center justify-center size-8 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors cursor-pointer"
         >
           <ChevronLeft className="size-4" />
         </button>
@@ -122,7 +122,7 @@ export default function CreateWorkspacePage() {
           )}
 
           {/* Right side — Unified preview */}
-          <div className="hidden lg:block bg-[#FBFBFB] border-l border-[#EEEFF1] rounded-r-3xl overflow-hidden">
+          <div className="hidden lg:block bg-muted border-l border-border rounded-r-3xl overflow-hidden">
             <WorkspacePreview
               step={step}
               isNameFocused={isNameFocused}

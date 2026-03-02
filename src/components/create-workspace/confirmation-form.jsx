@@ -109,7 +109,7 @@ export function ConfirmationForm({
   return (
     <div className="flex flex-col h-full px-20 py-6">
       <div className="flex flex-col pt-14">
-        <h1 className="text-xl font-semibold text-[#46464A] mb-2">
+        <h1 className="text-xl font-semibold text-foreground mb-2">
           Confirmez votre espace de travail
         </h1>
         <p className="text-sm text-muted-foreground mb-10">
@@ -123,7 +123,7 @@ export function ConfirmationForm({
             <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-1">
               Espace de travail
             </p>
-            <p className="text-sm font-semibold text-[#46464A]">
+            <p className="text-sm font-semibold text-foreground">
               {companyName}
             </p>
             {companyData?.siret && (
@@ -134,7 +134,7 @@ export function ConfirmationForm({
             )}
           </div>
 
-          <Separator className="bg-[#EEEFF1]" />
+          <Separator className="bg-border" />
 
           {/* Plan */}
           {plan && (
@@ -144,7 +144,7 @@ export function ConfirmationForm({
                   Abonnement
                 </p>
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-semibold text-[#46464A]">
+                  <p className="text-sm font-semibold text-foreground">
                     {plan.name}
                   </p>
                   <p className="text-sm text-muted-foreground">
@@ -156,7 +156,7 @@ export function ConfirmationForm({
                 </div>
               </div>
 
-              {filledMembers.length > 0 && <Separator className="bg-[#EEEFF1]" />}
+              {filledMembers.length > 0 && <Separator className="bg-border" />}
             </>
           )}
 
@@ -186,7 +186,7 @@ export function ConfirmationForm({
                             name={displayName}
                             colorKey={email}
                             size="sm"
-                            className="ring-2 ring-white cursor-pointer"
+                            className="ring-2 ring-background cursor-pointer"
                           />
                         </span>
                       </TooltipTrigger>
