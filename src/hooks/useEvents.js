@@ -1,4 +1,5 @@
-import { useQuery, useMutation, gql } from "@apollo/client";
+import { useQuery, useMutation, useSubscription, gql } from "@apollo/client";
+import { useEffect, useRef, useCallback } from "react";
 import { GET_EVENTS, GET_EVENT } from "@/src/graphql/queries/event";
 import {
   CREATE_EVENT,
@@ -6,8 +7,10 @@ import {
   DELETE_EVENT,
   SYNC_INVOICE_EVENTS,
 } from "@/src/graphql/mutations/event";
+import { CALENDAR_EVENTS_CHANGED_SUBSCRIPTION } from "@/src/graphql/subscriptions/calendarEvents";
 import { toast } from "@/src/components/ui/sonner";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
+import { useSession } from "@/src/lib/auth-client";
 
 /**
  * Hook pour récupérer la liste des événements
@@ -24,8 +27,9 @@ export const useEvents = (options = {}) => {
   } = options;
 
   const { workspaceId: contextWorkspaceId, loading: workspaceLoading } = useWorkspace();
+  const { data: sessionData } = useSession();
+  const userId = sessionData?.user?.id;
   const finalWorkspaceId = workspaceId || contextWorkspaceId;
-  
 
   const queryVariables = {
     startDate,
@@ -42,6 +46,27 @@ export const useEvents = (options = {}) => {
     skip: skip || !finalWorkspaceId,
     errorPolicy: "all",
   });
+
+  // Real-time calendar sync via GraphQL subscription
+  const lastTimestampRef = useRef(null);
+  const refetchRef = useRef(refetch);
+  refetchRef.current = refetch;
+
+  const { data: subscriptionData } = useSubscription(
+    CALENDAR_EVENTS_CHANGED_SUBSCRIPTION,
+    {
+      variables: { userId },
+      skip: !userId,
+    }
+  );
+
+  useEffect(() => {
+    const timestamp = subscriptionData?.calendarEventsChanged?.timestamp;
+    if (timestamp && timestamp !== lastTimestampRef.current) {
+      lastTimestampRef.current = timestamp;
+      refetchRef.current();
+    }
+  }, [subscriptionData]);
 
   return {
     events: data?.getEvents?.events || [],
