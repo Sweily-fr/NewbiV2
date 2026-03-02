@@ -33,8 +33,6 @@ import {
   QUOTE_STATUS_LABELS,
   QUOTE_STATUS_COLORS,
 } from "@/src/graphql/quoteQueries";
-import { useCreateLinkedInvoice } from "@/src/graphql/invoiceQueries";
-import { useConvertQuoteToPurchaseOrder } from "@/src/graphql/purchaseOrderQueries";
 import { toast } from "@/src/components/ui/sonner";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import UniversalPDFDownloaderWithFacturX from "@/src/components/pdf/UniversalPDFDownloaderWithFacturX";
@@ -51,10 +49,6 @@ export default function QuoteSidebar({
 }) {
   const router = useRouter();
   const { changeStatus, loading: changingStatus } = useChangeQuoteStatus();
-  const { createLinkedInvoice, loading: creatingLinkedInvoice } =
-    useCreateLinkedInvoice();
-  const { convertToPurchaseOrder, loading: convertingToPO } =
-    useConvertQuoteToPurchaseOrder();
 
   // Récupérer les données complètes du devis
   const {
@@ -67,6 +61,16 @@ export default function QuoteSidebar({
 
   // Utiliser les données complètes si disponibles, sinon les données initiales
   const quote = fullQuote || initialQuote;
+
+  const calculateRemainingAmount = () => {
+    if (!quote.linkedInvoices || quote.linkedInvoices.length === 0) {
+      return quote.finalTotalTTC;
+    }
+    const totalInvoiced = quote.linkedInvoices.reduce((sum, invoice) => {
+      return sum + (invoice.finalTotalTTC || 0);
+    }, 0);
+    return quote.finalTotalTTC - totalInvoiced;
+  };
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat("fr-FR", {
@@ -133,17 +137,25 @@ export default function QuoteSidebar({
     }
   };
 
-  const handleConvertToPurchaseOrder = async () => {
+  const handleConvertToPurchaseOrder = () => {
     try {
-      const result = await convertToPurchaseOrder(quote.id);
-      toast.success("Bon de commande créé à partir du devis");
-      if (onRefetch) onRefetch();
-      if (result?.id) {
-        router.push(`/dashboard/outils/bons-commande/${result.id}/editer`);
-      }
+      sessionStorage.setItem('quotePurchaseOrderData', JSON.stringify({
+        sourceQuoteId: quote.id,
+        purchaseOrderNumber: `${quote.prefix || ''}${quote.number || ''}`,
+        client: quote.client,
+        items: quote.items,
+        discount: quote.discount,
+        discountType: quote.discountType,
+        customFields: quote.customFields,
+        shipping: quote.shipping,
+        isReverseCharge: quote.isReverseCharge,
+        retenueGarantie: quote.retenueGarantie,
+        escompte: quote.escompte,
+      }));
+      router.push('/dashboard/outils/bons-commande/new');
       onClose();
     } catch (error) {
-      toast.error("Erreur lors de la création du bon de commande");
+      toast.error("Erreur lors de la conversion en bon de commande");
     }
   };
 
@@ -185,24 +197,43 @@ export default function QuoteSidebar({
     onClose();
   };
 
-  const handleCreateLinkedInvoice = async ({ quoteId, amount, isDeposit }) => {
-    try {
-      const result = await createLinkedInvoice(quoteId, amount, isDeposit);
+  const handleCreateLinkedInvoice = ({ quoteId, amount, isDeposit }) => {
+    const vatRate = 20;
+    const unitPriceHT = amount / (1 + vatRate / 100);
+    const remainingAmount = calculateRemainingAmount();
+    const quoteRef = `${quote.prefix || ''}${quote.number || ''}`;
 
-      // Naviguer vers l'éditeur de facture brouillon
-      if (result?.invoice?.id) {
-        router.push(`/dashboard/outils/factures/${result.invoice.id}/editer`);
-        onClose(); // Fermer la sidebar
-      }
-
-      if (onRefetch) onRefetch();
-      return result;
-    } catch (error) {
-      throw error;
+    let description;
+    if (isDeposit) {
+      description = `Acompte sur devis ${quoteRef}`;
+    } else if (amount >= remainingAmount - 0.01) {
+      description = `Facture sur devis ${quoteRef}`;
+    } else {
+      description = `Facture partielle sur devis ${quoteRef}`;
     }
+
+    sessionStorage.setItem('quoteLinkedInvoiceData', JSON.stringify({
+      sourceQuoteId: quoteId,
+      purchaseOrderNumber: quoteRef,
+      client: quote.client,
+      isDeposit,
+      items: [{
+        description,
+        quantity: 1,
+        unitPrice: unitPriceHT,
+        vatRate,
+        unit: "forfait",
+        discount: 0,
+        discountType: "FIXED",
+        details: "",
+        vatExemptionText: "",
+      }],
+    }));
+    router.push('/dashboard/outils/factures/new');
+    onClose();
   };
 
-  const isLoading = changingStatus || creatingLinkedInvoice || convertingToPO;
+  const isLoading = changingStatus;
 
   return (
     <>

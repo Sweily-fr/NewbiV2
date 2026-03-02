@@ -97,7 +97,7 @@ function HelpDropdownMenu({ onCommunityClick }) {
         <DropdownMenuContent
           className="w-[280px] rounded-lg"
           side={isMobile ? "bottom" : "right"}
-          align="start"
+          align="end"
           sideOffset={8}
         >
           <DropdownMenuItem
@@ -143,14 +143,14 @@ function HelpDropdownMenu({ onCommunityClick }) {
             asChild
           >
             <a
-              href="https://newbi.academy"
+              href="https://docs.newbi.fr"
               target="_blank"
               rel="noopener noreferrer"
             >
               <div className="flex items-center gap-2 w-full">
                 <GraduationCap className="h-4 w-4" />
                 <div className="flex flex-col">
-                  <span className="font-normal text-sm">Newbi Academy</span>
+                  <span className="font-normal text-sm">Documentation</span>
                   <span className="text-xs text-muted-foreground">
                     Formations et tutoriels
                   </span>
@@ -195,12 +195,12 @@ function SettingsDropdownMenu() {
           <DropdownMenuItem
             className="cursor-pointer"
             onClick={() => {
-              setSettingsInitialTab("preferences");
+              setSettingsInitialTab("generale");
               setSettingsModalOpen(true);
             }}
           >
-            <Settings2 />
-            <span className="">Paramètres entreprise</span>
+            <Settings2 className="size-4 text-[#505154]" />
+            <span className="text-[13px]">Paramètres entreprise</span>
           </DropdownMenuItem>
 
           <DropdownMenuItem
@@ -216,14 +216,14 @@ function SettingsDropdownMenu() {
           >
             {isActive() ? (
               <>
-                <IconUsers />
-                <span className="">Collaborateurs</span>
+                <IconUsers className="size-4 text-[#505154]" />
+                <span className="text-[13px]">Collaborateurs</span>
               </>
             ) : (
               <div className="flex items-center justify-between w-full">
                 <div className="flex items-center gap-2">
-                  <IconUsers />
-                  <span className="">Collaborateurs</span>
+                  <IconUsers className="size-4 text-[#505154]" />
+                  <span className="text-[13px]">Collaborateurs</span>
                 </div>
                 <Crown className="w-3 h-3 text-[#5b4fff]" />
               </div>

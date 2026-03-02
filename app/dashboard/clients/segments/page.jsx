@@ -449,15 +449,21 @@ function SegmentDetailView({ segment, onBack }) {
       {/* Rules display + Search */}
       <div className="px-4 sm:px-6 pb-4 flex-shrink-0 space-y-3">
         <div className="flex flex-wrap gap-1.5">
-          {segment.rules.map((rule, i) => (
-            <Badge key={i} variant="outline" className="text-xs font-normal py-1">
-              {getFieldDef(rule.field)?.label || rule.field}{" "}
-              {getOperatorsForField(rule.field)?.find((o) => o.value === rule.operator)?.label || rule.operator}
-              {rule.value && !NO_VALUE_OPERATORS.includes(rule.operator)
-                ? ` "${rule.value}"`
-                : ""}
-            </Badge>
-          ))}
+          {segment.rules.map((rule, i) => {
+            const fieldDef = getFieldDef(rule.field);
+            const displayValue = rule.value && !NO_VALUE_OPERATORS.includes(rule.operator)
+              ? fieldDef?.type === "select"
+                ? fieldDef.options?.find((opt) => opt.value === rule.value)?.label || rule.value
+                : rule.value
+              : null;
+            return (
+              <Badge key={i} variant="outline" className="text-xs font-normal py-1">
+                {fieldDef?.label || rule.field}{" "}
+                {getOperatorsForField(rule.field)?.find((o) => o.value === rule.operator)?.label || rule.operator}
+                {displayValue ? ` "${displayValue}"` : ""}
+              </Badge>
+            );
+          })}
           <Badge variant="outline" className="text-xs font-normal py-1 bg-muted">
             {segment.matchType === "all" ? "Toutes (ET)" : "Au moins une (OU)"}
           </Badge>

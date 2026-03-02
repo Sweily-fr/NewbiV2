@@ -107,208 +107,83 @@ export async function GET(request) {
 
       // ✅ NOUVEAU FLUX: Vérifier si c'est une nouvelle organisation
       const isNewOrganization = checkoutSession.metadata?.isNewOrganization === "true";
-      const isOnboarding = checkoutSession.metadata?.isOnboarding === "true";
       let organizationId =
         checkoutSession.metadata?.organizationId ||
         session.session?.activeOrganizationId;
 
       console.log(`🏢 [VERIFY-CHECKOUT] Organization ID initial: ${organizationId}, isNewOrganization: ${isNewOrganization}`);
 
-      // ✅ Si c'est une nouvelle org et qu'on n'a pas d'organizationId, créer l'organisation
+      // ✅ Si c'est une nouvelle org et qu'on n'a pas d'organizationId, créer l'organisation via shared utility
       if (isNewOrganization && !organizationId) {
         console.log(`🆕 [VERIFY-CHECKOUT] Création de l'organisation (webhook non reçu)...`);
 
-        const orgName = checkoutSession.metadata?.orgName || checkoutSession.metadata?.companyName || "Mon entreprise";
-        const companyName = checkoutSession.metadata?.companyName || orgName;
-        const siret = checkoutSession.metadata?.siret;
-        const siren = checkoutSession.metadata?.siren;
-
-        // ✅ Vérifier que le SIRET n'est pas déjà utilisé (double sécurité)
-        if (siret) {
-          const existingOrg = await mongoDb.collection("organization").findOne({
-            siret: siret,
-          });
-
-          if (existingOrg) {
-            console.error(
-              `❌ [VERIFY-CHECKOUT] SIRET ${siret} déjà utilisé par l'organisation: ${existingOrg.name}`
-            );
-            return NextResponse.json({
-              success: false,
-              error: "Ce numéro SIRET est déjà associé à un compte existant.",
-            }, { status: 409 });
+        // Récupérer les données volumineuses depuis MongoDB
+        let pendingOrgData = null;
+        const pendingOrgDataId = checkoutSession.metadata?.pendingOrgDataId;
+        if (pendingOrgDataId) {
+          try {
+            pendingOrgData = await mongoDb
+              .collection("pending_org_data")
+              .findOne({ _id: new ObjectId(pendingOrgDataId) });
+            console.log(`✅ [VERIFY-CHECKOUT] Données pendantes récupérées: ${pendingOrgDataId}`);
+          } catch (e) {
+            console.warn(`⚠️ [VERIFY-CHECKOUT] Données pendantes non trouvées: ${pendingOrgDataId}`);
           }
         }
-        const employeeCount = checkoutSession.metadata?.employeeCount;
-        const orgType = checkoutSession.metadata?.orgType || "business";
-        const legalForm = checkoutSession.metadata?.legalForm;
-        const addressStreet = checkoutSession.metadata?.addressStreet;
-        const addressCity = checkoutSession.metadata?.addressCity;
-        const addressZipCode = checkoutSession.metadata?.addressZipCode;
-        const addressCountry = checkoutSession.metadata?.addressCountry || "France";
-        const activitySector = checkoutSession.metadata?.activitySector;
-        const activityCategory = checkoutSession.metadata?.activityCategory;
-        const userId = session.user.id;
 
-        const orgSlug = `org-${userId.slice(-8)}-${Date.now().toString(36)}`;
+        const { createOrganizationWithSubscription } = await import("@/src/lib/org-creation.js");
 
-        const newOrg = {
-          name: orgName,
-          slug: orgSlug,
-          createdAt: new Date(),
-          companyName: companyName,
-          siret: siret || "",
-          siren: siren || "",
-          employeeCount: employeeCount || "",
-          organizationType: orgType,
-          legalForm: legalForm || "",
-          addressStreet: addressStreet || "",
-          addressCity: addressCity || "",
-          addressZipCode: addressZipCode || "",
-          addressCountry: addressCountry || "France",
-          activitySector: activitySector || "",
-          activityCategory: activityCategory || "",
-          onboardingCompleted: true,
-          metadata: JSON.stringify({
-            type: orgType,
-            createdAt: new Date().toISOString(),
-            createdViaFallback: true,
-          }),
-        };
-
-        const orgResult = await mongoDb.collection("organization").insertOne(newOrg);
-        const organizationObjectId = orgResult.insertedId;
-        organizationId = organizationObjectId.toString();
-
-        console.log(`✅ [VERIFY-CHECKOUT] Organisation créée: ${organizationId}`);
-
-        // Créer le membre owner
-        await mongoDb.collection("member").insertOne({
-          userId: new ObjectId(userId),
-          organizationId: organizationObjectId,
-          role: "owner",
-          createdAt: new Date(),
+        const creationResult = await createOrganizationWithSubscription({
+          mongoDb,
+          userId: session.user.id,
+          orgData: {
+            companyName: checkoutSession.metadata?.companyName || checkoutSession.metadata?.orgName || "Mon entreprise",
+            orgName: checkoutSession.metadata?.orgName || checkoutSession.metadata?.companyName || "Mon entreprise",
+            siret: checkoutSession.metadata?.siret || "",
+            siren: checkoutSession.metadata?.siren || "",
+            employeeCount: checkoutSession.metadata?.employeeCount || "",
+            orgType: checkoutSession.metadata?.orgType || "business",
+            legalForm: checkoutSession.metadata?.legalForm || "",
+            addressStreet: checkoutSession.metadata?.addressStreet || "",
+            addressCity: checkoutSession.metadata?.addressCity || "",
+            addressZipCode: checkoutSession.metadata?.addressZipCode || "",
+            addressCountry: checkoutSession.metadata?.addressCountry || "France",
+            activitySector: checkoutSession.metadata?.activitySector || "",
+            activityCategory: checkoutSession.metadata?.activityCategory || "",
+          },
+          subscriptionInfo: subscriptionObj,
+          sessionMetadata: checkoutSession.metadata || {},
+          pendingOrgData,
+          pendingOrgDataId,
         });
 
-        // Mettre à jour les sessions
-        await mongoDb.collection("session").updateMany(
-          { userId: userId },
-          { $set: { activeOrganizationId: organizationId } }
-        );
-
-        // Mettre à jour l'utilisateur
-        await mongoDb.collection("user").updateOne(
-          { _id: new ObjectId(userId) },
-          {
-            $set: {
-              hasSeenOnboarding: true,
-              updatedAt: new Date(),
-            },
-          }
-        );
-
-        console.log(`✅ [VERIFY-CHECKOUT] Membre owner créé et sessions mises à jour`);
-      }
-
-      console.log(`🏢 [VERIFY-CHECKOUT] Organization ID pour abonnement: ${organizationId}`);
-
-      if (organizationId) {
+        organizationId = creationResult.organizationId;
+        console.log(`✅ [VERIFY-CHECKOUT] Organisation traitée via shared utility: ${organizationId}`);
+      } else if (organizationId) {
+        // Org exists, just ensure subscription exists
         const existingSub = await mongoDb.collection("subscription").findOne({
           $or: [
             { stripeSubscriptionId: subscriptionId },
             { referenceId: organizationId },
-            { organizationId: organizationId },
           ],
         });
 
         if (!existingSub) {
-          console.log(
-            `🔄 [VERIFY-CHECKOUT] Création de l'abonnement en base (webhook non reçu)...`
-          );
+          console.log(`🔄 [VERIFY-CHECKOUT] Création de l'abonnement en base (webhook non reçu)...`);
 
-          const planName =
-            subscriptionObj.metadata?.planName ||
-            checkoutSession.metadata?.planName ||
-            "freelance";
+          const { createOrganizationWithSubscription } = await import("@/src/lib/org-creation.js");
 
-          console.log(`📋 [VERIFY-CHECKOUT] Plan: ${planName}`);
-
-          const subscriptionData = {
-            plan: planName,
-            referenceId: organizationId,
-            stripeCustomerId: typeof subscriptionObj.customer === "string"
-              ? subscriptionObj.customer
-              : subscriptionObj.customer?.id,
-            status: subscriptionObj.status,
-            seats: 1,
-            cancelAtPeriodEnd: subscriptionObj.cancel_at_period_end || false,
-            periodEnd: subscriptionObj.current_period_end
-              ? new Date(subscriptionObj.current_period_end * 1000)
-              : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-            periodStart: subscriptionObj.current_period_start
-              ? new Date(subscriptionObj.current_period_start * 1000)
-              : new Date(),
-            stripeSubscriptionId: subscriptionObj.id,
-            currentPeriodEnd: subscriptionObj.current_period_end
-              ? new Date(subscriptionObj.current_period_end * 1000)
-              : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-            currentPeriodStart: subscriptionObj.current_period_start
-              ? new Date(subscriptionObj.current_period_start * 1000)
-              : new Date(),
-            createdAt: new Date(),
-            updatedAt: new Date(),
-            createdVia: "verify-checkout-fallback",
-          };
-
-          console.log(`📋 [VERIFY-CHECKOUT] Données abonnement:`, JSON.stringify(subscriptionData, null, 2));
-
-          await mongoDb.collection("subscription").insertOne(subscriptionData);
-
-          console.log(
-            `✅ [VERIFY-CHECKOUT] Abonnement créé en base pour org: ${organizationId}`
-          );
-
-          // Mettre à jour l'organisation (trial status + onboardingCompleted)
-          const updateData = {
-            onboardingCompleted: true,
-            updatedAt: new Date(),
-          };
-
-          if (subscriptionObj.status === "trialing") {
-            const trialEnd = subscriptionObj.trial_end
-              ? new Date(subscriptionObj.trial_end * 1000)
-              : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-
-            updateData.isTrialActive = true;
-            updateData.trialStartDate = new Date().toISOString();
-            updateData.trialEndDate = trialEnd.toISOString();
-            updateData.stripeTrialActive = true;
-          }
-
-          // Essayer avec ObjectId, sinon avec string
-          try {
-            const orgObjectId = new ObjectId(organizationId);
-            const orgUpdateResult = await mongoDb.collection("organization").updateOne(
-              { _id: orgObjectId },
-              { $set: updateData }
-            );
-            console.log(
-              `✅ [VERIFY-CHECKOUT] Organisation mise à jour (ObjectId): ${organizationId}, modified: ${orgUpdateResult.modifiedCount}`
-            );
-          } catch (objectIdError) {
-            // Si l'ID n'est pas un ObjectId valide, essayer avec string
-            const orgUpdateResult = await mongoDb.collection("organization").updateOne(
-              { id: organizationId },
-              { $set: updateData }
-            );
-            console.log(
-              `✅ [VERIFY-CHECKOUT] Organisation mise à jour (string id): ${organizationId}, modified: ${orgUpdateResult.modifiedCount}`
-            );
-          }
+          await createOrganizationWithSubscription({
+            mongoDb,
+            userId: session.user.id,
+            orgData: {
+              companyName: checkoutSession.metadata?.companyName || "Mon entreprise",
+            },
+            subscriptionInfo: subscriptionObj,
+            sessionMetadata: checkoutSession.metadata || {},
+          });
         } else {
-          console.log(
-            `✅ [VERIFY-CHECKOUT] Abonnement déjà existant en base:`, existingSub._id
-          );
+          console.log(`✅ [VERIFY-CHECKOUT] Abonnement déjà existant en base:`, existingSub._id);
         }
       } else {
         console.error(`❌ [VERIFY-CHECKOUT] Pas d'organizationId trouvé !`);

@@ -69,7 +69,7 @@ import { IncomeCategoryChart } from "@/app/dashboard/components/income-category-
 
 import { DashboardSkeleton } from "@/src/components/dashboard-skeleton";
 import { useDashboardData } from "@/src/hooks/useDashboardData";
-import { useState, useEffect, useMemo, Suspense } from "react";
+import { useState, useEffect, useMemo, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useInvoices } from "@/src/graphql/invoiceQueries";
 import { ProSubscriptionOverlay } from "@/src/components/pro-subscription-overlay";
@@ -81,6 +81,8 @@ import {
   getExpenseChartConfig,
 } from "@/src/utils/chartDataProcessors";
 import { useStripeConnect } from "@/src/hooks/useStripeConnect";
+import { InvoicesToCollectCard } from "@/app/dashboard/components/invoices-to-collect-card";
+import { InvoicesToPayCard } from "@/app/dashboard/components/invoices-to-pay-card";
 
 function DashboardContent() {
   const { session } = useUser();
@@ -118,12 +120,19 @@ function DashboardContent() {
   // État pour l'overlay de synchronisation bancaire
   const [isBankSyncing, setIsBankSyncing] = useState(false);
 
+  // Refs pour empêcher les useEffects de se re-déclencher
+  const hasHandledBridgeReturn = useRef(false);
+  const hasHandledStripeReturn = useRef(false);
+
   // Gérer le retour de Bridge Connect (sync automatique des comptes bancaires)
   useEffect(() => {
+    if (hasHandledBridgeReturn.current) return;
+
     const urlParams = new URLSearchParams(window.location.search);
     const isFromBridge = urlParams.has("item_id") || urlParams.has("status");
 
     if (isFromBridge && workspaceId) {
+      hasHandledBridgeReturn.current = true;
       console.log(
         "🏦 Retour de Bridge détecté, synchronisation des comptes..."
       );
@@ -133,16 +142,13 @@ function DashboardContent() {
 
       const syncBankAccounts = async () => {
         try {
-          // Récupérer le JWT depuis localStorage (même pattern qu'Apollo Client)
-          const token = localStorage.getItem("bearer_token");
-
           // Lancer la sync complète (comptes + transactions) via le proxy Next.js
           const response = await fetch("/api/banking-sync/full", {
             method: "POST",
+            credentials: "include",
             headers: {
               "Content-Type": "application/json",
               "x-workspace-id": workspaceId,
-              ...(token && { Authorization: `Bearer ${token}` }),
             },
             body: JSON.stringify({ limit: 100 }),
           });
@@ -175,11 +181,14 @@ function DashboardContent() {
 
   // Gérer le retour de Stripe Connect
   useEffect(() => {
+    if (hasHandledStripeReturn.current) return;
+
     const urlParams = new URLSearchParams(window.location.search);
     const isFromStripe = urlParams.get("stripe_success") === "true";
     const shouldOpenSettings = urlParams.get("open_settings") === "securite";
 
     if (isFromStripe && session?.user?.id) {
+      hasHandledStripeReturn.current = true;
       console.log(
         "🔄 Retour de Stripe détecté sur dashboard, vérification du statut..."
       );
@@ -365,15 +374,13 @@ function DashboardContent() {
           {(bankAccounts || []).length > 0 && (
             <Popover open={accountPopoverOpen} onOpenChange={setAccountPopoverOpen}>
               <PopoverTrigger asChild>
-                <div className="flex items-center gap-2 cursor-pointer">
-                  <Landmark className="size-3.5 text-[#707070]" />
-                  <span className="text-[13px] font-normal truncate max-w-[150px]">
+                <Button variant="outline" size="sm" className="gap-2 font-normal">
+                  <Landmark className="size-3.5" />
+                  <span className="truncate max-w-[150px]">
                     {selectedAccountLabel}
                   </span>
-                  <button className="p-1 rounded-md hover:bg-accent transition-colors cursor-pointer outline-none">
-                    <ChevronsUpDown className="h-3.5 w-3.5 text-muted-foreground" />
-                  </button>
-                </div>
+                  <ChevronsUpDown className="h-3.5 w-3.5 text-muted-foreground" />
+                </Button>
               </PopoverTrigger>
               <PopoverContent className="w-80 rounded-lg p-0" align="start" sideOffset={8}>
                 <Command>
@@ -582,6 +589,12 @@ function DashboardContent() {
             hideMobileCurve={true}
             isLoading={chartsLoading}
           />
+        </div>
+
+        {/* Factures à encaisser / à payer */}
+        <div className="flex flex-col md:flex-row gap-4 md:gap-6 w-full">
+          <InvoicesToCollectCard className="shadow-xs w-full md:w-1/2" invoices={invoices} isLoading={invoicesLoading} />
+          <InvoicesToPayCard className="shadow-xs w-full md:w-1/2" />
         </div>
 
         {/* Graphiques de répartition par catégorie (MODE BANCAIRE PUR) */}

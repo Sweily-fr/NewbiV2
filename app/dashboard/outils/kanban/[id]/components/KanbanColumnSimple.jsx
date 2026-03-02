@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { Plus, Edit, Trash2, MoreVertical, ChevronUp, ChevronDown } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import {
@@ -51,12 +51,45 @@ export function KanbanColumnSimple({
   const baseOffset = 300;
   const maxHeight = `calc((100vh - ${baseOffset}px) / ${zoomLevel})`;
 
+  // Ref pour le conteneur scrollable de la colonne
+  const scrollContainerRef = useRef(null);
+
+  // Force le scroll vertical sur la colonne, même si un élément enfant
+  // (tooltip, popover, overflow-hidden) essaie de capturer l'événement wheel
+  useEffect(() => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+
+    const onWheel = (e) => {
+      // Ignorer si le scroll est majoritairement horizontal (scroll du board)
+      if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+
+      // Si la colonne n'a pas de contenu dépassant, laisser passer
+      if (el.scrollHeight <= el.clientHeight) return;
+
+      const atTop = el.scrollTop <= 0 && e.deltaY < 0;
+      const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 1 && e.deltaY > 0;
+
+      // Aux limites, laisser l'événement se propager normalement
+      if (atTop || atBottom) return;
+
+      // Forcer le scroll de la colonne
+      e.preventDefault();
+      e.stopPropagation();
+      el.scrollTop += e.deltaY;
+    };
+
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, []);
+
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: scrollbarStyles }} />
       <div
         data-dnd-column={column.id}
         data-dnd-column-index={columnIndex}
+        data-dnd-column-color={column.color || "#94a3b8"}
         className={`rounded-xl p-1.5 sm:p-2 min-w-[240px] max-w-[240px] sm:min-w-[300px] sm:max-w-[300px] flex flex-col flex-shrink-0 ${
           isCollapsed ? "max-w-[80px] min-w-[80px]" : ""
         }`}
@@ -130,7 +163,7 @@ export function KanbanColumnSimple({
                   Modifier
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => onDeleteColumn(column)} className="text-destructive">
-                  <Trash2 className="mr-2 h-4 w-4" />
+                  <Trash2 className="mr-2 h-4 w-4 text-destructive" />
                   Supprimer
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -141,6 +174,7 @@ export function KanbanColumnSimple({
         {/* Zone drop pour les tâches */}
         {!isCollapsed && (
           <div
+            ref={scrollContainerRef}
             data-dnd-drop-zone={column.id}
             className="kanban-column-scroll p-2 pb-4 rounded-lg transition-colors overflow-y-auto"
             style={{ minHeight: '50px', maxHeight }}

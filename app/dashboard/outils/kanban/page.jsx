@@ -15,7 +15,15 @@ import {
   ChevronRightIcon,
   BookTemplate,
   Settings2,
+  User,
+  Users,
+  ListChecks,
+  Clock,
+  Euro,
+  LayoutTemplate,
+  CalendarClock,
 } from "lucide-react";
+import { Avatar, AvatarImage, AvatarFallback } from "@/src/components/ui/avatar";
 import { flexRender } from "@tanstack/react-table";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
@@ -129,7 +137,10 @@ function KanbanPageContent() {
         </div>
         <Dialog open={isCreateDialogOpen} onOpenChange={(open) => {
           setIsCreateDialogOpen(open);
-          if (!open) setSelectedTemplateId(null);
+          if (!open) {
+            setSelectedTemplateId(null);
+            setFormData({ title: "", description: "", clientId: null });
+          }
         }}>
           <DialogTrigger asChild>
             <Button
@@ -207,7 +218,16 @@ function KanbanPageContent() {
                   </div>
                   <Select
                     value={selectedTemplateId || "none"}
-                    onValueChange={(value) => setSelectedTemplateId(value === "none" ? null : value)}
+                    onValueChange={(value) => {
+                      const templateId = value === "none" ? null : value;
+                      setSelectedTemplateId(templateId);
+                      if (templateId) {
+                        const template = templates.find((t) => t.id === templateId);
+                        if (template?.clientId) {
+                          setFormData((prev) => ({ ...prev, clientId: template.clientId }));
+                        }
+                      }
+                    }}
                   >
                     <SelectTrigger className="w-full min-w-0">
                       <SelectValue placeholder="Aucun template (colonnes par défaut)" />
@@ -280,7 +300,11 @@ function KanbanPageContent() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setIsCreateDialogOpen(false)}
+                  onClick={() => {
+                    setIsCreateDialogOpen(false);
+                    setSelectedTemplateId(null);
+                    setFormData({ title: "", description: "", clientId: null });
+                  }}
                 >
                   Annuler
                 </Button>
@@ -370,7 +394,7 @@ function KanbanPageContent() {
       {isInitialLoading ? (
         <KanbanTableSkeleton />
       ) : boards?.length === 0 && !globalFilter ? (
-        <div className="flex-1 flex items-center justify-center">
+        <div className="flex-1 flex items-center justify-center pb-24">
           <div className="text-center">
             <div className="text-foreground mb-6 text-center">
               <h3 className="text-xl font-medium mb-2">
@@ -384,7 +408,7 @@ function KanbanPageContent() {
             <Button
               onClick={() => setIsCreateDialogOpen(true)}
               variant="default"
-              className="flex items-center gap-2 font-normal"
+              className="mx-auto flex items-center gap-2 font-normal"
             >
               Créer votre première liste
             </Button>
@@ -706,7 +730,7 @@ function KanbanPageContent() {
               {boardPreview?.title}
             </DialogTitle>
           </DialogHeader>
-          
+
           <div className="space-y-6">
             {/* Description Section */}
             <div className="space-y-2">
@@ -717,17 +741,126 @@ function KanbanPageContent() {
                 {boardPreview?.description || "Aucune description"}
               </p>
             </div>
+
+            {/* Stats Grid */}
+            <div className="grid grid-cols-2 gap-4">
+              {/* Client */}
+              {boardPreview?.client && (
+                <div className="flex items-center gap-3 rounded-lg border p-3">
+                  <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-xs text-muted-foreground">Client</p>
+                    <p className="text-sm font-medium truncate">
+                      {boardPreview.client.type === "INDIVIDUAL"
+                        ? `${boardPreview.client.firstName || ""} ${boardPreview.client.lastName || ""}`.trim()
+                        : boardPreview.client.name}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Nombre de tâches */}
+              {boardPreview?.taskCount != null && (
+                <div className="flex items-center gap-3 rounded-lg border p-3">
+                  <ListChecks className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Tâches</p>
+                    <p className="text-sm font-medium">{boardPreview.taskCount}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Temps passé */}
+              {boardPreview?.totalTimeSpent > 0 && (
+                <div className="flex items-center gap-3 rounded-lg border p-3">
+                  <Clock className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Temps passé</p>
+                    <p className="text-sm font-medium">
+                      {(() => {
+                        const h = Math.floor(boardPreview.totalTimeSpent / 3600);
+                        const m = Math.floor((boardPreview.totalTimeSpent % 3600) / 60);
+                        return h > 0 ? `${h}h ${m}min` : `${m}min`;
+                      })()}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Montant du projet */}
+              {boardPreview?.totalBillableAmount > 0 && (
+                <div className="flex items-center gap-3 rounded-lg border p-3">
+                  <Euro className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Montant</p>
+                    <p className="text-sm font-medium">
+                      {boardPreview.totalBillableAmount.toLocaleString("fr-FR", { style: "currency", currency: "EUR" })}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Modèle source */}
+              {boardPreview?.templateName && (
+                <div className="flex items-center gap-3 rounded-lg border p-3">
+                  <LayoutTemplate className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-xs text-muted-foreground">Modèle</p>
+                    <p className="text-sm font-medium truncate">{boardPreview.templateName}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Membres */}
+            {boardPreview?.members?.length > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                    Membres ({boardPreview.members.length})
+                  </h3>
+                </div>
+                <div className="flex -space-x-2">
+                  {boardPreview.members.slice(0, 8).map((member) => (
+                    <Avatar key={member.id} className="h-8 w-8 border-2 border-background">
+                      {member.image ? (
+                        <AvatarImage src={member.image} alt={member.name} />
+                      ) : null}
+                      <AvatarFallback className="text-xs">
+                        {member.name?.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase() || "?"}
+                      </AvatarFallback>
+                    </Avatar>
+                  ))}
+                  {boardPreview.members.length > 8 && (
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-background bg-muted text-xs font-medium">
+                      +{boardPreview.members.length - 8}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="mt-8 pt-6 border-t flex items-center justify-between">
-            {/* Date en bas à gauche */}
-            <div className="flex items-center gap-3 text-sm">
-              <Calendar className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-              <span className="text-foreground">
-                Créé le <span className="font-medium">{boardPreview && formatDate(boardPreview.createdAt)}</span>
-              </span>
+            {/* Dates en bas à gauche */}
+            <div className="flex flex-col gap-1 text-sm">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                <span className="text-foreground">
+                  Créé le <span className="font-medium">{boardPreview && formatDate(boardPreview.createdAt)}</span>
+                </span>
+              </div>
+              {boardPreview?.updatedAt && boardPreview.updatedAt !== boardPreview.createdAt && (
+                <div className="flex items-center gap-2">
+                  <CalendarClock className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  <span className="text-foreground">
+                    Modifié le <span className="font-medium">{formatDate(boardPreview.updatedAt)}</span>
+                  </span>
+                </div>
+              )}
             </div>
-            
+
             {/* Bouton en bas à droite */}
             <Button
               variant="outline"

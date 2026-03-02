@@ -135,7 +135,7 @@ const chartConfig = {
   },
   OTHER: {
     label: "Autre",
-    color: "#9ca3af", // Gray-400
+    color: "#A585DB",
   },
 };
 
@@ -331,8 +331,16 @@ export function ExpenseCategoryChart({
             Période personnalisée
           </DropdownMenuSubTrigger>
           <DropdownMenuPortal>
-            <DropdownMenuSubContent className="w-64 p-4">
-              <div className="space-y-4">
+            <DropdownMenuSubContent
+              className="w-64 p-4"
+              onPointerDownOutside={(e) => e.preventDefault()}
+              onFocusOutside={(e) => e.preventDefault()}
+            >
+              <div
+                className="space-y-4"
+                onKeyDown={(e) => { if (e.key !== 'Escape') e.stopPropagation(); }}
+                onPointerDown={(e) => e.stopPropagation()}
+              >
                 <div className="space-y-2">
                   <FormLabel className="text-xs font-medium">
                     Date de début
@@ -473,7 +481,7 @@ export function ExpenseCategoryChart({
           <div className="flex-shrink-0">
             <ChartContainer
               config={chartConfig}
-              className="aspect-square h-[240px] w-[240px]"
+              className="aspect-square h-[280px] w-[280px]"
             >
               <PieChart>
                 <ChartTooltip
@@ -506,13 +514,10 @@ export function ExpenseCategoryChart({
                   data={chartData}
                   dataKey="amount"
                   nameKey="label"
-                  innerRadius={80}
-                  outerRadius={110}
+                  innerRadius={90}
+                  outerRadius={125}
+                  paddingAngle={2}
                   strokeWidth={0}
-                  activeIndex={0}
-                  activeShape={({ outerRadius = 0, ...props }) => (
-                    <Sector {...props} outerRadius={outerRadius + 8} />
-                  )}
                 >
                   <Label
                     content={({ viewBox }) => {

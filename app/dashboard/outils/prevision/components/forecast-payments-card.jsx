@@ -263,11 +263,9 @@ export function ForecastPaymentsCard({ months, kpi, loading }) {
         catMap[key].amount += isPast ? (cb.actualAmount || 0) : (cb.forecastAmount || 0);
       });
     });
-    const sorted = Object.values(catMap)
-      .filter((c) => c.amount > 0)
-      .sort((a, b) => b.amount - a.amount)
-      .slice(0, limit);
-    const total = sorted.reduce((s, c) => s + c.amount, 0);
+    const all = Object.values(catMap).filter((c) => c.amount > 0);
+    const total = all.reduce((s, c) => s + c.amount, 0);
+    const sorted = [...all].sort((a, b) => b.amount - a.amount).slice(0, limit);
     return { categories: sorted.map((c, i) => ({
       ...c,
       label: CATEGORY_LABELS[c.category] || c.category,

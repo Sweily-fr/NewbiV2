@@ -119,7 +119,7 @@ function ClientDetailContent() {
       allDay: eventData.allDay,
       location: eventData.location,
       color: eventData.color,
-      type: "reminder",
+      type: "REMINDER",
       clientId: id,
       emailReminder: eventData.emailReminder,
     });
@@ -164,6 +164,7 @@ function ClientDetailContent() {
         onNext={handleNext}
         onEdit={() => setIsEditModalOpen(true)}
         onDelete={() => setIsDeleteDialogOpen(true)}
+        hasDocuments={client.hasDocuments}
         onBlock={() => setIsBlockDialogOpen(true)}
         onUnblock={handleUnblock}
         onAssign={() => setIsAssignDialogOpen(true)}

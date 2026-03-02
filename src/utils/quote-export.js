@@ -111,7 +111,7 @@ function formatQuoteForExport(quote) {
 
   return {
     "Numéro": quote.prefix
-      ? `${quote.prefix}${quote.number}`
+      ? `${quote.prefix}-${quote.number}`
       : (quote.number || ""),
 
     "Client": quote.client?.name || "",
@@ -316,7 +316,7 @@ export function exportToFEC(quotes, dateRange = null) {
 
     const dateStr = format(issueDate, "yyyyMMdd");
     const validDateStr = createdAt ? format(createdAt, "yyyyMMdd") : dateStr;
-    const quoteNumber = sanitizeFECField(quote.prefix ? `${quote.prefix}${quote.number}` : quote.number);
+    const quoteNumber = sanitizeFECField(quote.prefix ? `${quote.prefix}-${quote.number}` : quote.number);
     const clientName = sanitizeFECField(quote.client?.name || "Client inconnu");
     const totalTTC = parseFloat(quote.finalTotalTTC) || 0;
 
@@ -559,7 +559,7 @@ export function exportToSage(quotes, dateRange = null) {
     if (!issueDate) return;
 
     const dateStr = format(issueDate, "ddMMyyyy");
-    const quoteNumber = sanitizeSageField(quote.prefix ? `${quote.prefix}${quote.number}` : quote.number);
+    const quoteNumber = sanitizeSageField(quote.prefix ? `${quote.prefix}-${quote.number}` : quote.number);
     const clientName = sanitizeSageField(quote.client?.name || "Client inconnu");
     const clientCode = sanitizeSageField(quote.client?.siret || quoteNumber);
     const totalTTC = parseFloat(quote.finalTotalTTC) || 0;
@@ -688,7 +688,7 @@ export function exportToCegid(quotes, dateRange = null) {
     if (!issueDate) return;
 
     const dateStr = format(issueDate, "dd/MM/yyyy");
-    const quoteNumber = sanitizeCegidField(quote.prefix ? `${quote.prefix}${quote.number}` : quote.number);
+    const quoteNumber = sanitizeCegidField(quote.prefix ? `${quote.prefix}-${quote.number}` : quote.number);
     const clientName = sanitizeCegidField(quote.client?.name || "Client inconnu");
     const clientCode = sanitizeCegidField(quote.client?.siret || "");
     const totalTTC = parseFloat(quote.finalTotalTTC) || 0;

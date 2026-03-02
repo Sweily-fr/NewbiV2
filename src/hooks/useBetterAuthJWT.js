@@ -1,141 +1,29 @@
-import { useState, useEffect } from "react";
 import { useSession } from "@/src/lib/auth-client";
 
 /**
- * Hook d'authentification utilisant les Bearer tokens de Better Auth
- * Résout le problème des domaines croisés en production
+ * Hook d'authentification simplifié — cookie-only
+ *
+ * L'authentification repose entièrement sur le cookie httpOnly
+ * better-auth.session_token, envoyé automatiquement via credentials: "include".
+ * Plus besoin de stocker de JWT dans localStorage (risque XSS éliminé).
  */
 export const useBetterAuthJWT = () => {
   const { data: session, isPending } = useSession();
-  const [bearerToken, setBearerToken] = useState(null);
-  const [isLoadingToken, setIsLoadingToken] = useState(false);
-
-  useEffect(() => {
-    const initializeToken = () => {
-      // Récupérer le Bearer token depuis localStorage
-      const storedToken = localStorage.getItem("bearer_token");
-
-      if (storedToken) {
-        setBearerToken(storedToken);
-        return;
-      }
-    };
-
-    if (!isPending && session?.user) {
-      initializeToken();
-    }
-  }, [session, isPending]);
-
-  useEffect(() => {
-    // Nettoyer le token si l'utilisateur n'est plus connecté
-    if (!session?.user && bearerToken) {
-      setBearerToken(null);
-      localStorage.removeItem("bearer_token");
-    }
-  }, [session, bearerToken]);
-
-  useEffect(() => {
-    const getTokenFromHeader = async () => {
-      if (!session?.user || bearerToken) return;
-
-      setIsLoadingToken(true);
-
-      try {
-        const { authClient } = await import("@/src/lib/auth-client");
-
-        await authClient.getSession({
-          fetchOptions: {
-            onSuccess: (ctx) => {
-              // Vérifier les deux noms de headers possibles (Better Auth peut utiliser l'un ou l'autre)
-              const token = ctx.response.headers.get("set-auth-jwt") ||
-                           ctx.response.headers.get("set-auth-token");
-
-              if (token) {
-                setBearerToken(token);
-                localStorage.setItem("bearer_token", token);
-              }
-            },
-            onError: (ctx) => {
-              console.error(
-                "❌ [useBetterAuthJWT] Erreur getSession:",
-                ctx.error
-              );
-            },
-          },
-        });
-      } catch (error) {
-        console.error(
-          "❌ [useBetterAuthJWT] Erreur récupération Bearer token:",
-          error
-        );
-      } finally {
-        setIsLoadingToken(false);
-      }
-    };
-
-    if (session?.user && !bearerToken && !isLoadingToken) {
-      getTokenFromHeader();
-    }
-  }, [session, bearerToken, isLoadingToken]);
-
-  const refreshToken = async () => {
-    setBearerToken(null);
-    localStorage.removeItem("bearer_token");
-
-    if (session?.user) {
-      setIsLoadingToken(true);
-      try {
-        const { authClient } = await import("@/src/lib/auth-client");
-
-        await authClient.getSession({
-          fetchOptions: {
-            onSuccess: (ctx) => {
-              // Vérifier les deux noms de headers possibles
-              const token = ctx.response.headers.get("set-auth-jwt") ||
-                           ctx.response.headers.get("set-auth-token");
-              if (token) {
-                setBearerToken(token);
-                localStorage.setItem("bearer_token", token);
-              }
-            },
-          },
-        });
-      } catch (error) {
-        console.error(
-          "❌ [useBetterAuthJWT] Erreur rafraîchissement Bearer token:",
-          error
-        );
-      } finally {
-        setIsLoadingToken(false);
-      }
-    }
-  };
 
   /**
-   * Effectue une requête authentifiée vers l'API avec Bearer token
+   * Effectue une requête authentifiée vers l'API avec cookies
    */
   const apiRequest = async (url, options = {}) => {
-    if (!bearerToken) {
-      throw new Error("Bearer token non disponible");
-    }
-
     const headers = {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${bearerToken}`,
       ...options.headers,
     };
 
     const response = await fetch(url, {
       ...options,
       headers,
+      credentials: "include",
     });
-
-    // Si le token est expiré, nettoyer et essayer de récupérer un nouveau
-    if (response.status === 401) {
-      setBearerToken(null);
-      localStorage.removeItem("bearer_token");
-      // Le useEffect se chargera de récupérer un nouveau token
-    }
 
     return response;
   };
@@ -148,10 +36,7 @@ export const useBetterAuthJWT = () => {
       `${process.env.NEXT_PUBLIC_API_URL}/graphql`,
       {
         method: "POST",
-        body: JSON.stringify({
-          query,
-          variables,
-        }),
+        body: JSON.stringify({ query, variables }),
       }
     );
 
@@ -169,17 +54,10 @@ export const useBetterAuthJWT = () => {
    */
   const logout = async () => {
     try {
-      // Déconnecter Better Auth
       await fetch("/api/auth/sign-out", {
         method: "POST",
         credentials: "include",
       });
-
-      // Nettoyer l'état local
-      setBearerToken(null);
-      localStorage.removeItem("bearer_token");
-
-      // Rediriger vers la page de connexion
       window.location.href = "/auth/signin";
     } catch (error) {
       console.error("Erreur déconnexion:", error);
@@ -187,25 +65,18 @@ export const useBetterAuthJWT = () => {
   };
 
   return {
-    // Session Better Auth
     session,
     user: session?.user,
-    isLoading: isPending || isLoadingToken,
-
-    // Bearer token (avec alias JWT pour compatibilité)
-    bearerToken,
-    jwtToken: bearerToken,
-    hasJWT: !!bearerToken,
-
-    // Méthodes
-    refreshToken,
-    refreshJWT: refreshToken,
+    isLoading: isPending,
+    bearerToken: null,
+    jwtToken: null,
+    hasJWT: false,
+    refreshToken: () => Promise.resolve(),
+    refreshJWT: () => Promise.resolve(),
     apiRequest,
     graphqlRequest,
     logout,
-
-    // État
     isAuthenticated: !!session?.user,
-    isReady: !!session?.user && !!bearerToken,
+    isReady: !!session?.user,
   };
 };

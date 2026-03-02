@@ -21,7 +21,7 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "@/src/components/ui/avatar";
-import { Landmark, LoaderCircle, Search, Building2, Plus } from "lucide-react";
+import { Landmark, LoaderCircle, Search, Building2, Plus, Eye, EyeOff } from "lucide-react";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { useState, useEffect, useMemo } from "react";
 import { toast } from "@/src/components/ui/sonner";
@@ -29,13 +29,6 @@ import { findBank } from "@/lib/banks-config";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { usePermissions } from "@/src/hooks/usePermissions";
 
-/**
- * Récupère le token JWT depuis localStorage (même pattern qu'Apollo Client)
- */
-const getAuthToken = () => {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem("bearer_token");
-};
 
 export default function BankBalanceCard({
   className,
@@ -58,6 +51,7 @@ export default function BankBalanceCard({
   const [error, setError] = useState(null);
   const [isConnecting, setIsConnecting] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
+  const [isBalanceHidden, setIsBalanceHidden] = useState(false);
 
   // Utiliser les comptes passés en props ou les comptes locaux
   const accounts = propBankAccounts || localAccounts;
@@ -75,11 +69,9 @@ export default function BankBalanceCard({
     if (!workspaceId) return;
 
     try {
-      const token = getAuthToken();
       const response = await fetch("/api/banking-connect/status", {
         headers: {
           "x-workspace-id": workspaceId,
-          ...(token && { Authorization: `Bearer ${token}` }),
         },
       });
 
@@ -148,13 +140,11 @@ export default function BankBalanceCard({
   const fetchInstitutions = async () => {
     try {
       setIsLoadingInstitutions(true);
-      const token = getAuthToken();
       const response = await fetch(
         "/api/banking-connect/bridge/institutions?country=FR",
         {
           headers: {
-            ...(token && { Authorization: `Bearer ${token}` }),
-          },
+            },
         }
       );
 
@@ -211,14 +201,12 @@ export default function BankBalanceCard({
       setIsConnecting(true);
 
       // Passer le provider_id pour pré-sélectionner la banque dans Bridge Connect
-      const token = getAuthToken();
       const response = await fetch(
         `/api/banking-connect/bridge/connect?providerId=${bank.id}`,
         {
           headers: {
             "x-workspace-id": workspaceId,
-            ...(token && { Authorization: `Bearer ${token}` }),
-          },
+            },
         }
       );
 
@@ -405,82 +393,83 @@ export default function BankBalanceCard({
 
         {/* Modal de sélection de banque */}
         <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-          <DialogContent className="sm:max-w-md max-h-[80vh]">
-            <DialogHeader>
-              <DialogTitle>Connecter votre banque</DialogTitle>
-              <DialogDescription>
-                Sélectionnez votre banque pour synchroniser vos comptes
-              </DialogDescription>
+          <DialogContent className="sm:max-w-xl p-1 gap-0 top-[40%] border-0 bg-[#efefef] overflow-hidden rounded-2xl">
+            <div className="bg-background rounded-xl overflow-hidden" style={{ boxShadow: "rgba(0, 0, 0, 0.07) 0px 0px 0px 1px" }}>
+            <DialogHeader className="px-5 pt-4 pb-3 border-b border-border/40">
+              <DialogTitle className="text-sm font-medium flex items-center gap-2">
+                <Landmark className="size-4" />
+                Connecter votre banque
+              </DialogTitle>
             </DialogHeader>
 
-            {/* Barre de recherche */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Rechercher une banque..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
-              />
-            </div>
+            <div className="px-5 pt-3 pb-3 space-y-3">
+              {/* Barre de recherche */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Rechercher une banque..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
 
-            {/* Liste des banques */}
-            <ScrollArea className="h-[350px] pr-4">
-              {isLoadingInstitutions ? (
-                <div className="flex items-center justify-center py-8">
-                  <LoaderCircle className="h-6 w-6 animate-spin text-muted-foreground" />
-                  <span className="ml-2 text-sm text-muted-foreground">
-                    Chargement des banques...
-                  </span>
-                </div>
-              ) : filteredInstitutions.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  {searchQuery
-                    ? "Aucune banque trouvée"
-                    : "Aucune banque disponible"}
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {filteredInstitutions.map((bank) => (
-                    <button
-                      key={bank.id}
-                      onClick={() => handleSelectBank(bank)}
-                      disabled={isConnecting}
-                      className="w-full flex items-center gap-3 p-3 rounded-lg border hover:bg-accent hover:border-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {bank.logo ? (
-                        <img
-                          src={bank.logo}
-                          alt={bank.name}
-                          className="h-8 w-8 object-contain rounded"
-                          onError={(e) => {
-                            e.target.style.display = "none";
-                            e.target.nextSibling.style.display = "flex";
-                          }}
-                        />
-                      ) : null}
-                      <div
-                        className="h-8 w-8 rounded bg-muted items-center justify-center"
-                        style={{ display: bank.logo ? "none" : "flex" }}
+              {/* Liste des banques */}
+              <ScrollArea className="h-[350px]">
+                {isLoadingInstitutions ? (
+                  <div className="flex items-center justify-center py-10">
+                    <LoaderCircle className="h-5 w-5 animate-spin text-muted-foreground/50" />
+                  </div>
+                ) : filteredInstitutions.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground text-sm">
+                    {searchQuery
+                      ? "Aucune banque trouvée"
+                      : "Aucune banque disponible"}
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    {filteredInstitutions.map((bank) => (
+                      <button
+                        key={bank.id}
+                        onClick={() => handleSelectBank(bank)}
+                        disabled={isConnecting}
+                        className="w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        <Building2 className="h-4 w-4 text-muted-foreground" />
-                      </div>
-                      <div className="flex-1 text-left">
-                        <p className="text-sm font-medium">{bank.name}</p>
-                        {bank.groupName && bank.groupName !== bank.name && (
-                          <p className="text-xs text-muted-foreground">
-                            {bank.groupName}
-                          </p>
+                        {bank.logo ? (
+                          <img
+                            src={bank.logo}
+                            alt={bank.name}
+                            className="h-8 w-8 object-contain rounded"
+                            onError={(e) => {
+                              e.target.style.display = "none";
+                              e.target.nextSibling.style.display = "flex";
+                            }}
+                          />
+                        ) : null}
+                        <div
+                          className="h-8 w-8 rounded bg-muted items-center justify-center"
+                          style={{ display: bank.logo ? "none" : "flex" }}
+                        >
+                          <Building2 className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                        <div className="flex-1 text-left">
+                          <p className="text-sm font-medium">{bank.name}</p>
+                          {bank.groupName && bank.groupName !== bank.name && (
+                            <p className="text-xs text-muted-foreground">
+                              {bank.groupName}
+                            </p>
+                          )}
+                        </div>
+                        {isConnecting && selectedBank?.id === bank.id && (
+                          <LoaderCircle className="h-4 w-4 animate-spin" />
                         )}
-                      </div>
-                      {isConnecting && selectedBank?.id === bank.id && (
-                        <LoaderCircle className="h-4 w-4 animate-spin" />
-                      )}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </ScrollArea>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </ScrollArea>
+            </div>
+            </div>
           </DialogContent>
         </Dialog>
       </Card>
@@ -488,8 +477,8 @@ export default function BankBalanceCard({
   }
 
   return (
-    <Card className={`${className} flex flex-col`}>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+    <Card className={`${className} flex flex-col gap-2`}>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-0">
         <div className="flex items-center gap-2">
           <CardTitle className="text-sm font-normal">Soldes</CardTitle>
           {uniqueBanks.length > 0 && (
@@ -498,43 +487,27 @@ export default function BankBalanceCard({
             </span>
           )}
         </div>
-        {/* Avatars des banques connectées */}
-        {uniqueBanks.length > 0 && (
-          <div className="-space-x-2 flex">
-            {uniqueBanks.slice(0, 4).map((bank, index) => (
-              <Avatar
-                key={bank.id || `bank-${index}`}
-                className="h-9 w-9 ring-2 ring-background bg-white"
-              >
-                {bank.logo ? (
-                  <AvatarImage
-                    alt={bank.name}
-                    src={bank.logo}
-                    className="object-contain p-0.5"
-                  />
-                ) : null}
-                <AvatarFallback className="text-sm bg-gray-100">
-                  {bank.name.substring(0, 2).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-            ))}
-            {uniqueBanks.length > 4 && (
-              <Avatar className="h-9 w-9 ring-2 ring-background">
-                <AvatarFallback className="text-sm bg-gray-200">
-                  +{uniqueBanks.length - 4}
-                </AvatarFallback>
-              </Avatar>
-            )}
-          </div>
-        )}
       </CardHeader>
       <CardContent className="flex flex-col flex-1">
         {/* Solde bancaire (mode bancaire pur) */}
         <div className="mb-6">
-          <div className="text-3xl font-medium mb-2">
-            {formatCurrency(bankBalance)}
+          <div className="flex items-center gap-3">
+            <span className={`text-3xl font-medium transition-all duration-200 ${isBalanceHidden ? "blur-md select-none" : ""}`}>
+              {formatCurrency(bankBalance)}
+            </span>
+            <button
+              onClick={() => setIsBalanceHidden(!isBalanceHidden)}
+              className="text-muted-foreground hover:text-foreground transition-colors"
+              aria-label={isBalanceHidden ? "Afficher le solde" : "Masquer le solde"}
+            >
+              {isBalanceHidden ? (
+                <Eye className="h-4 w-4" />
+              ) : (
+                <EyeOff className="h-4 w-4" />
+              )}
+            </button>
           </div>
-          <p className="text-xs text-muted-foreground">Solde bancaire total</p>
+          <p className="text-xs text-muted-foreground mt-1">Solde bancaire total</p>
         </div>
 
         {/* Liste des comptes */}
@@ -545,7 +518,22 @@ export default function BankBalanceCard({
               className="flex items-center justify-between"
             >
               <div className="flex items-center space-x-3">
-                <Landmark className="h-4 w-4" />
+                {account.institutionLogo || findBank(account.name)?.logo ? (
+                  <Avatar className="h-7 w-7 ring-1 ring-border bg-white">
+                    <AvatarImage
+                      alt={account.institutionName || account.bankName || account.name}
+                      src={account.institutionLogo || findBank(account.name)?.logo}
+                      className="object-contain p-0.5"
+                    />
+                    <AvatarFallback className="text-xs bg-white">
+                      <Landmark className="h-3.5 w-3.5 text-muted-foreground" />
+                    </AvatarFallback>
+                  </Avatar>
+                ) : (
+                  <div className="h-7 w-7 rounded-full border border-border flex items-center justify-center">
+                    <Landmark className="h-3.5 w-3.5 text-muted-foreground" />
+                  </div>
+                )}
                 <span className="text-sm font-normal truncate max-w-[180px]">
                   {account.bankName || account.name || "Compte bancaire"}
                 </span>
@@ -568,14 +556,14 @@ export default function BankBalanceCard({
           <Button
             variant="outline"
             size="sm"
-            className="w-full mt-4 font-normal"
+            className="w-full mt-4"
             onClick={handleOpenModal}
             disabled={isConnecting}
           >
             {isConnecting ? (
               <LoaderCircle className="h-4 w-4 animate-spin mr-2" />
             ) : (
-              <Plus className="h-4 w-4 mr-2" />
+              <Landmark className="h-4 w-4 mr-2" />
             )}
             Connecter une banque ({bankConnectionLimit - connectedBanksCount}{" "}
             restante{bankConnectionLimit - connectedBanksCount > 1 ? "s" : ""})
@@ -584,84 +572,83 @@ export default function BankBalanceCard({
 
         {/* Modal de sélection de banque */}
         <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-          <DialogContent className="sm:max-w-md max-h-[80vh]">
-            <DialogHeader>
-              <DialogTitle>Connecter votre banque</DialogTitle>
-              <DialogDescription>
-                Sélectionnez votre banque pour synchroniser vos comptes (
-                {connectedBanksCount}/{bankConnectionLimit} connexions
-                utilisées)
-              </DialogDescription>
+          <DialogContent className="sm:max-w-xl p-1 gap-0 top-[40%] border-0 bg-[#efefef] overflow-hidden rounded-2xl">
+            <div className="bg-background rounded-xl overflow-hidden" style={{ boxShadow: "rgba(0, 0, 0, 0.07) 0px 0px 0px 1px" }}>
+            <DialogHeader className="px-5 pt-4 pb-3 border-b border-border/40">
+              <DialogTitle className="text-sm font-medium flex items-center gap-2">
+                <Landmark className="size-4" />
+                Connecter votre banque
+              </DialogTitle>
             </DialogHeader>
 
-            {/* Barre de recherche */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Rechercher une banque..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
-              />
-            </div>
+            <div className="px-5 pt-3 pb-3 space-y-3">
+              {/* Barre de recherche */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Rechercher une banque..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
 
-            {/* Liste des banques */}
-            <ScrollArea className="h-[350px] pr-4">
-              {isLoadingInstitutions ? (
-                <div className="flex items-center justify-center py-8">
-                  <LoaderCircle className="h-6 w-6 animate-spin text-muted-foreground" />
-                  <span className="ml-2 text-sm text-muted-foreground">
-                    Chargement des banques...
-                  </span>
-                </div>
-              ) : filteredInstitutions.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  {searchQuery
-                    ? "Aucune banque trouvée"
-                    : "Aucune banque disponible"}
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {filteredInstitutions.map((bank) => (
-                    <button
-                      key={bank.id}
-                      onClick={() => handleSelectBank(bank)}
-                      disabled={isConnecting}
-                      className="w-full flex items-center gap-3 p-3 rounded-lg border hover:bg-accent hover:border-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {bank.logo ? (
-                        <img
-                          src={bank.logo}
-                          alt={bank.name}
-                          className="h-8 w-8 object-contain rounded"
-                          onError={(e) => {
-                            e.target.style.display = "none";
-                            e.target.nextSibling.style.display = "flex";
-                          }}
-                        />
-                      ) : null}
-                      <div
-                        className="h-8 w-8 rounded bg-muted items-center justify-center"
-                        style={{ display: bank.logo ? "none" : "flex" }}
+              {/* Liste des banques */}
+              <ScrollArea className="h-[350px]">
+                {isLoadingInstitutions ? (
+                  <div className="flex items-center justify-center py-10">
+                    <LoaderCircle className="h-5 w-5 animate-spin text-muted-foreground/50" />
+                  </div>
+                ) : filteredInstitutions.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground text-sm">
+                    {searchQuery
+                      ? "Aucune banque trouvée"
+                      : "Aucune banque disponible"}
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    {filteredInstitutions.map((bank) => (
+                      <button
+                        key={bank.id}
+                        onClick={() => handleSelectBank(bank)}
+                        disabled={isConnecting}
+                        className="w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        <Building2 className="h-4 w-4 text-muted-foreground" />
-                      </div>
-                      <div className="flex-1 text-left">
-                        <p className="text-sm font-medium">{bank.name}</p>
-                        {bank.groupName && bank.groupName !== bank.name && (
-                          <p className="text-xs text-muted-foreground">
-                            {bank.groupName}
-                          </p>
+                        {bank.logo ? (
+                          <img
+                            src={bank.logo}
+                            alt={bank.name}
+                            className="h-8 w-8 object-contain rounded"
+                            onError={(e) => {
+                              e.target.style.display = "none";
+                              e.target.nextSibling.style.display = "flex";
+                            }}
+                          />
+                        ) : null}
+                        <div
+                          className="h-8 w-8 rounded bg-muted items-center justify-center"
+                          style={{ display: bank.logo ? "none" : "flex" }}
+                        >
+                          <Building2 className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                        <div className="flex-1 text-left">
+                          <p className="text-sm font-medium">{bank.name}</p>
+                          {bank.groupName && bank.groupName !== bank.name && (
+                            <p className="text-xs text-muted-foreground">
+                              {bank.groupName}
+                            </p>
+                          )}
+                        </div>
+                        {isConnecting && selectedBank?.id === bank.id && (
+                          <LoaderCircle className="h-4 w-4 animate-spin" />
                         )}
-                      </div>
-                      {isConnecting && selectedBank?.id === bank.id && (
-                        <LoaderCircle className="h-4 w-4 animate-spin" />
-                      )}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </ScrollArea>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </ScrollArea>
+            </div>
+            </div>
           </DialogContent>
         </Dialog>
       </CardContent>

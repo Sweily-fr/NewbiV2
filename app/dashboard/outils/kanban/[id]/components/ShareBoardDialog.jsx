@@ -3,10 +3,11 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useSubscription } from "@apollo/client";
 import { 
-  GET_PUBLIC_SHARES, 
-  CREATE_PUBLIC_SHARE, 
+  GET_PUBLIC_SHARES,
+  CREATE_PUBLIC_SHARE,
   DELETE_PUBLIC_SHARE,
   REVOKE_PUBLIC_SHARE,
+  REACTIVATE_PUBLIC_SHARE,
   REVOKE_VISITOR_ACCESS,
   UNBAN_VISITOR,
   APPROVE_ACCESS_REQUEST,
@@ -134,6 +135,17 @@ export function ShareBoardDialog({ boardId, boardTitle, workspaceId }) {
   const [revokeShare] = useMutation(REVOKE_PUBLIC_SHARE, {
     onCompleted: () => {
       toast.success("Lien désactivé");
+      refetch();
+    },
+    onError: (error) => {
+      toast.error("Erreur: " + error.message);
+    }
+  });
+
+  // Mutation pour réactiver un lien
+  const [reactivateShare] = useMutation(REACTIVATE_PUBLIC_SHARE, {
+    onCompleted: () => {
+      toast.success("Lien réactivé");
       refetch();
     },
     onError: (error) => {
@@ -312,6 +324,10 @@ export function ShareBoardDialog({ boardId, boardTitle, workspaceId }) {
       revokeShare({
         variables: { id: share.id, workspaceId }
       });
+    } else {
+      reactivateShare({
+        variables: { id: share.id, workspaceId }
+      });
     }
   };
 
@@ -449,7 +465,7 @@ export function ShareBoardDialog({ boardId, boardTitle, workspaceId }) {
                       <div 
                         key={share.id} 
                         className={`border rounded-lg p-3 space-y-2 ${
-                          !share.isActive ? 'opacity-60 bg-muted/50' : ''
+                          !share.isActive ? 'bg-muted/50' : ''
                         }`}
                       >
                         <div className="flex items-center justify-between">
@@ -501,7 +517,7 @@ export function ShareBoardDialog({ boardId, boardTitle, workspaceId }) {
                                 </Button>
                               </PopoverTrigger>
                               <PopoverContent className="w-48 p-2" align="end">
-                                {share.isActive && (
+                                {share.isActive ? (
                                   <Button
                                     variant="ghost"
                                     size="sm"
@@ -510,6 +526,16 @@ export function ShareBoardDialog({ boardId, boardTitle, workspaceId }) {
                                   >
                                     <EyeOff className="h-4 w-4" />
                                     Désactiver
+                                  </Button>
+                                ) : (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="w-full justify-start gap-2"
+                                    onClick={() => handleToggleActive(share)}
+                                  >
+                                    <Eye className="h-4 w-4" />
+                                    Réactiver
                                   </Button>
                                 )}
                                 <Button

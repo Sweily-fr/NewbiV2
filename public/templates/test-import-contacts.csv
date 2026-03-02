@@ -1,0 +1,21 @@
+Type;Nom / Raison sociale;Prénom;Nom de famille;Email;Téléphone;Adresse;Ville;Code postal;Pays;SIRET;N° TVA;International;Source;Secteur;Note interne
+Entreprise;Dupont & Fils SAS;Jean;Dupont;jean@dupont-fils.fr;0612345678;12 rue de la Paix;Paris;75002;France;12345678901234;FR12345678901;Non;Site web;BTP;Client fidèle depuis 2019
+Entreprise;TechVision SARL;Marie;Lambert;m.lambert@techvision.fr;0698765432;45 avenue des Champs;Lyon;69003;France;98765432109876;FR98765432109;Non;Salon professionnel;Informatique;Prospect chaud
+Particulier;Martin Claire;Claire;Martin;claire.martin@gmail.com;0645123789;8 boulevard Haussmann;Marseille;13001;France;;;Non;Recommandation;Particulier;Acheteuse régulière
+Entreprise;GlobalTrade GmbH;Hans;Mueller;hans@globaltrade.de;+4917612345678;Berliner Str. 23;Berlin;10115;Allemagne;DE123456789;DE123456789;Oui;LinkedIn;Import/Export;Partenaire allemand
+Entreprise;NordikDesign AB;Erik;Johansson;erik@nordikdesign.se;+46701234567;Kungsgatan 15;Stockholm;11143;Suède;SE5567891234;SE556789123401;Oui;Conférence;Design;Collaboration en cours
+Particulier;Petit Sophie;Sophie;Petit;sophie.petit@outlook.fr;0678432156;22 rue Victor Hugo;Bordeaux;33000;France;;;Non;Instagram;Mode;Nouvelle cliente
+Entreprise;Boulangerie Moreau;Pierre;Moreau;contact@boulangerie-moreau.fr;0556789012;3 place de la Mairie;Toulouse;31000;France;56789012345678;FR56789012345;Non;Bouche à oreille;Alimentaire;Livraison chaque lundi
+Entreprise;DataFlow Inc;Sarah;Johnson;sarah@dataflow.io;+14155551234;500 Market St;San Francisco;94105;États-Unis;US12345678;US12345678;Oui;Partenariat;Tech;Client US important
+Particulier;Durand Lucas;Lucas;Durand;lucas.durand@free.fr;0632198765;17 allée des Tilleuls;Nantes;44000;France;;;Non;Foire expo;Particulier;Intéressé par devis
+Entreprise;Atelier Vert EURL;Camille;Leroy;camille@ateliervert.fr;0712345678;9 impasse des Lilas;Strasbourg;67000;France;34567890123456;FR34567890123;Non;Google Ads;Écologie;Projet en attente
+Entreprise;MediCare Solutions;Anna;Rossi;anna.rossi@medicare.it;+393401234567;Via Roma 42;Milano;20121;Italie;IT12345678901;IT12345678901;Oui;Appel entrant;Santé;Premier contact
+Particulier;Bernard Emma;Emma;Bernard;emma.b@yahoo.fr;0654987321;5 rue Pasteur;Lille;59000;France;;;Non;Recommandation;Particulier;Amie de Sophie Petit
+Entreprise;LogiPro Transport;Marc;Fontaine;m.fontaine@logipro.fr;0498765431;Zone industrielle Nord;Montpellier;34000;France;78901234567890;FR78901234567;Non;Annuaire pro;Logistique;Contrat annuel
+Entreprise;SmartBuild Oy;Mikko;Virtanen;mikko@smartbuild.fi;+358401234567;Mannerheimintie 10;Helsinki;00100;Finlande;FI12345678;FI12345678;Oui;Salon Helsinki;Construction;Échange de services
+Particulier;Roux Antoine;Antoine;Roux;antoine.roux@laposte.net;0687654321;30 chemin de la Rivière;Grenoble;38000;France;;;Non;Site web;Particulier;Demande de renseignements
+Entreprise;Agence Créative;Julie;Garcia;julie@agencecreative.fr;0145678901;88 rue du Faubourg;Paris;75010;France;45678901234567;FR45678901234;Non;Portfolio;Communication;Collaboration ponctuelle
+Entreprise;BioFarm Organic;Liam;O'Brien;liam@biofarm.ie;+353851234567;12 Green Lane;Dublin;D02;Irlande;IE1234567T;IE1234567T;Oui;Bio expo;Agriculture;Fournisseur potentiel
+Particulier;Fournier Léa;Léa;Fournier;lea.fournier@gmail.com;0623456789;14 rue de la Liberté;Nice;06000;France;;;Non;Facebook;Particulier;Achat unique
+Entreprise;ProClean Services;Thomas;Mercier;t.mercier@proclean.fr;0567890123;Zone Artisanale Sud;Rennes;35000;France;67890123456789;FR67890123456;Non;Démarchage;Nettoyage;Contrat mensuel
+Entreprise;Sakura Trading Co;Yuki;Tanaka;yuki@sakuratrading.jp;+81312345678;Shibuya 2-1-1;Tokyo;150-0002;Japon;JP1234567890123;JP1234567890;Oui;Import direct;Commerce;Relation long terme

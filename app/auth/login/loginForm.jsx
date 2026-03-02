@@ -220,42 +220,7 @@ const LoginForm = () => {
           return;
         }
 
-        // Connexion normale sans 2FA
-        // Le plugin JWT de Better Auth n'envoie le header set-auth-jwt que sur /get-session,
-        // pas sur /sign-in/email. On récupère donc le JWT via l'endpoint dédié /api/auth/token.
-        let authToken = ctx.response.headers.get("set-auth-jwt") ||
-                       ctx.response.headers.get("set-auth-token");
-
-        if (!authToken) {
-          // Récupérer le JWT via l'endpoint dédié du plugin JWT
-          try {
-            const tokenResponse = await fetch(
-              `${process.env.NEXT_PUBLIC_BETTER_AUTH_URL || ""}/api/auth/token`,
-              { credentials: "include" }
-            );
-            if (tokenResponse.ok) {
-              const tokenData = await tokenResponse.json();
-              if (tokenData.token) {
-                authToken = tokenData.token;
-              }
-            }
-          } catch (err) {
-            console.warn("⚠️ [LOGIN] Erreur récupération JWT via /api/auth/token:", err.message);
-          }
-        }
-
-        if (authToken) {
-          localStorage.setItem("bearer_token", authToken);
-          console.log("💾 [LOGIN] Token JWT sauvegardé");
-        } else {
-          console.warn("⚠️ [LOGIN] Aucun token JWT récupéré après login");
-        }
-
-        // Ne pas afficher la notification si l'utilisateur n'a pas terminé l'onboarding
-        if (ctx.data.user?.hasSeenOnboarding) {
-          toast.success("Connexion réussie");
-        }
-
+        // Connexion réussie — le cookie better-auth.session_token est automatiquement défini
         // Vérifier la limite de sessions ET définir l'organisation active en parallèle
         // Ces deux opérations sont indépendantes l'une de l'autre
         console.log("🔍 [LOGIN] Vérification sessions + organisation en parallèle...");
@@ -611,11 +576,6 @@ const LoginForm = () => {
       if (error) {
         toast.error("Code de vérification incorrect");
         return false;
-      }
-
-      // Ne pas afficher la notification si l'utilisateur n'a pas terminé l'onboarding
-      if (data?.user?.hasSeenOnboarding) {
-        toast.success("Connexion réussie");
       }
 
       // Définir l'organisation active après la vérification 2FA

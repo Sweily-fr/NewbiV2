@@ -53,6 +53,17 @@ import {
 } from "@/src/graphql/importedInvoiceQueries";
 import { toast } from "sonner";
 
+const formatDateForInput = (dateValue) => {
+  if (!dateValue) return "";
+  try {
+    const d = /^\d+$/.test(dateValue) ? new Date(parseInt(dateValue, 10)) : new Date(dateValue);
+    if (isNaN(d.getTime())) return "";
+    return d.toISOString().split("T")[0];
+  } catch {
+    return "";
+  }
+};
+
 export function ImportedInvoiceSidebar({ invoice, open, onOpenChange, onUpdate }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({});
@@ -69,7 +80,8 @@ export function ImportedInvoiceSidebar({ invoice, open, onOpenChange, onUpdate }
       originalInvoiceNumber: invoice.originalInvoiceNumber || "",
       clientName: invoice.client?.name || invoice.vendor?.name || "",
       clientSiret: invoice.client?.siret || invoice.vendor?.siret || "",
-      invoiceDate: invoice.invoiceDate?.split("T")[0] || "",
+      invoiceDate: formatDateForInput(invoice.invoiceDate),
+      dueDate: formatDateForInput(invoice.dueDate),
       totalHT: invoice.totalHT || 0,
       totalVAT: invoice.totalVAT || 0,
       totalTTC: invoice.totalTTC || 0,
@@ -181,6 +193,14 @@ export function ImportedInvoiceSidebar({ invoice, open, onOpenChange, onUpdate }
                     onChange={(e) => setEditData({ ...editData, invoiceDate: e.target.value })}
                   />
                 </div>
+                <div className="space-y-2">
+                  <Label>Date d'échéance</Label>
+                  <Input
+                    type="date"
+                    value={editData.dueDate}
+                    onChange={(e) => setEditData({ ...editData, dueDate: e.target.value })}
+                  />
+                </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   <div className="space-y-2">
                     <Label>HT</Label>
@@ -278,7 +298,12 @@ export function ImportedInvoiceSidebar({ invoice, open, onOpenChange, onUpdate }
                     <span className="text-sm text-muted-foreground">Date</span>
                     <span className="text-sm">{invoice.invoiceDate ? formatDateToFrench(invoice.invoiceDate) : "Non spécifiée"}</span>
                   </div>
-                  
+
+                  <div className="flex justify-between">
+                    <span className="text-sm text-muted-foreground">Échéance</span>
+                    <span className="text-sm">{invoice.dueDate ? formatDateToFrench(invoice.dueDate) : "Non spécifiée"}</span>
+                  </div>
+
                   <div className="flex justify-between">
                     <span className="text-sm text-muted-foreground">Catégorie</span>
                     <span className="text-sm">{EXPENSE_CATEGORY_LABELS[invoice.category] || "Autre"}</span>

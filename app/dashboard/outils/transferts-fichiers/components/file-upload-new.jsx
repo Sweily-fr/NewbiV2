@@ -60,7 +60,7 @@ import {
   IconEye,
   IconDroplet,
 } from "@tabler/icons-react";
-import { isImageFile, countImageFiles } from "../utils/watermark";
+import { isImageFile, countWatermarkableFiles } from "../utils/watermark";
 
 // Format bytes utility function
 const formatBytes = (bytes, decimals = 2) => {
@@ -166,9 +166,9 @@ export default function FileUploadNew({
     watermarkPosition: "diagonal", // 'center', 'bottom-right', 'diagonal', 'tile'
   });
 
-  // Compter le nombre d'images dans les fichiers sélectionnés
-  const imageCount = useMemo(() => {
-    return countImageFiles(selectedFiles);
+  // Compter le nombre de fichiers supportés pour le filigrane (images + PDFs)
+  const watermarkableCount = useMemo(() => {
+    return countWatermarkableFiles(selectedFiles);
   }, [selectedFiles]);
 
   const [isDragging, setIsDragging] = useState(false);
@@ -1024,9 +1024,9 @@ export default function FileUploadNew({
             <div className="flex items-center gap-2">
               <IconDroplet className="size-4 text-muted-foreground" />
               <Label className="text-sm font-normal">Filigrane</Label>
-              {imageCount > 0 && (
+              {watermarkableCount > 0 && (
                 <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                  {imageCount} image{imageCount > 1 ? "s" : ""}
+                  {watermarkableCount} fichier{watermarkableCount > 1 ? "s" : ""}
                 </span>
               )}
             </div>
@@ -1037,7 +1037,7 @@ export default function FileUploadNew({
                   Appliquer un filigrane
                 </Label>
                 <p className="text-xs text-muted-foreground">
-                  Ajouter un filigrane sur les images avant l'envoi
+                  Ajouter un filigrane sur les images et PDFs
                 </p>
               </div>
               <Switch
@@ -1050,12 +1050,12 @@ export default function FileUploadNew({
                     handleOptionChange("paymentAmount", 0);
                   }
                 }}
-                disabled={imageCount === 0}
+                disabled={watermarkableCount === 0}
                 className="data-[state=checked]:bg-[#5a50ff] scale-75 cursor-pointer"
               />
             </div>
 
-            {transferOptions.applyWatermark && imageCount > 0 && (
+            {transferOptions.applyWatermark && watermarkableCount > 0 && (
               <div className="space-y-3 pt-2">
                 <div className="space-y-2">
                   <Label className="text-xs text-muted-foreground">
@@ -1096,15 +1096,15 @@ export default function FileUploadNew({
                   </Select>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Le filigrane sera appliqué sur {imageCount} image
-                  {imageCount > 1 ? "s" : ""}.
+                  Le filigrane sera appliqué sur {watermarkableCount} fichier
+                  {watermarkableCount > 1 ? "s" : ""}.
                 </p>
               </div>
             )}
 
-            {imageCount === 0 && selectedFiles.length > 0 && (
+            {watermarkableCount === 0 && selectedFiles.length > 0 && (
               <p className="text-xs text-muted-foreground italic">
-                Aucune image détectée dans les fichiers sélectionnés.
+                Aucune image ou PDF détecté dans les fichiers sélectionnés.
               </p>
             )}
           </div>

@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useRef, useCallback, useMemo, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/src/components/ui/button";
-import { ButtonGroup, ButtonGroupSeparator } from "@/src/components/ui/button-group";
 import { Input } from "@/src/components/ui/input";
 import { PermissionButton } from "@/src/components/rbac";
 import {
@@ -24,29 +23,88 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/src/components/ui/alert-dialog";
-import { Plus, Search, CircleXIcon, ListPlus, MoreHorizontal, Pencil, ShieldOff, UserCheck, Trash2, CircleAlertIcon } from "lucide-react";
+import { Plus, Search, CircleXIcon, ListPlus, MoreHorizontal, Pencil, ShieldOff, UserCheck, Trash2, CircleAlertIcon, Upload, Settings2 } from "lucide-react";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { useClientLists } from "@/src/hooks/useClientLists";
 import { useAddClientToLists } from "@/src/hooks/useClientLists";
 import { useDeleteClient, useBlockClient } from "@/src/hooks/useClients";
+import { useClientCustomFields } from "@/src/hooks/useClientCustomFields";
 import { toast } from "@/src/components/ui/sonner";
 import ClientsTable from "./components/clients-table";
 import ClientsModal from "./components/clients-modal";
 import ClientFilters from "./components/client-filters";
-import CustomFieldsPopover from "./components/custom-fields-popover";
+import CustomFieldsManager from "./components/custom-fields-manager";
 import AutomationsPopover from "./components/automations-popover";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
+import ClientImportDialog from "./components/client-import-dialog";
+
+const STANDARD_COLUMNS = [
+  { id: "email", label: "Email" },
+  { id: "type", label: "Type" },
+  { id: "invoiceCount", label: "Factures" },
+  { id: "address", label: "Adresse" },
+  { id: "phone", label: "Téléphone" },
+  { id: "firstName", label: "Prénom" },
+  { id: "lastName", label: "Nom de famille" },
+  { id: "siret", label: "SIRET" },
+  { id: "vatNumber", label: "N° TVA" },
+  { id: "isInternational", label: "International" },
+];
 
 function ClientsContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [globalFilter, setGlobalFilter] = useState("");
   const [selectedTypes, setSelectedTypes] = useState([]);
   const [selectedClients, setSelectedClients] = useState(new Set());
   const [editClientId, setEditClientId] = useState(null);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [customFieldsOpen, setCustomFieldsOpen] = useState(false);
+  const [columnVisibility, setColumnVisibility] = useState({
+    phone: false,
+    firstName: false,
+    lastName: false,
+    vatNumber: false,
+    isInternational: false,
+  });
   const inputRef = useRef(null);
 
   const { workspaceId } = useWorkspace();
+  const { fields: customFieldDefinitions } = useClientCustomFields(workspaceId);
+
+  // Ouvrir automatiquement le modal si ?new=true dans l'URL
+  useEffect(() => {
+    if (searchParams.get("new") === "true") {
+      setDialogOpen(true);
+      router.replace("/dashboard/clients", { scroll: false });
+    }
+  }, [searchParams, router]);
+
+  const allToggleableColumns = useMemo(() => {
+    const cfCols = (customFieldDefinitions || []).map((f) => ({
+      id: `cf_${f.id}`,
+      label: f.name,
+    }));
+    return [...STANDARD_COLUMNS, ...cfCols];
+  }, [customFieldDefinitions]);
+
+  // Hide custom fields by default (unless user already toggled them on)
+  useEffect(() => {
+    if (!customFieldDefinitions || customFieldDefinitions.length === 0) return;
+    setColumnVisibility((prev) => {
+      const next = { ...prev };
+      let changed = false;
+      for (const f of customFieldDefinitions) {
+        const key = `cf_${f.id}`;
+        if (!(key in next)) {
+          next[key] = false;
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [customFieldDefinitions]);
   const { lists, refetch: refetchLists } = useClientLists(workspaceId);
   const { addToLists } = useAddClientToLists();
   const { deleteClient } = useDeleteClient();
@@ -118,22 +176,22 @@ function ClientsContent() {
           </div>
           <div className="flex gap-2">
             <AutomationsPopover />
-            {/* <ButtonGroup>
-              <Button
-                onClick={handleOpenInviteDialog}
-                className="cursor-pointer font-normal bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
-              >
-                Nouveau contact
-              </Button>
-              <ButtonGroupSeparator />
-              <Button
-                onClick={handleOpenInviteDialog}
-                size="icon"
-                className="cursor-pointer bg-black text-white hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
-              >
-                <Plus size={16} aria-hidden="true" />
-              </Button>
-            </ButtonGroup> */}
+            <Button
+              variant="outline"
+              onClick={() => setCustomFieldsOpen(true)}
+              className="self-start"
+            >
+              <Settings2 size={14} strokeWidth={2} aria-hidden="true" />
+              Champs
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setImportDialogOpen(true)}
+              className="self-start"
+            >
+              <Upload size={14} strokeWidth={2} aria-hidden="true" />
+              Importer
+            </Button>
             <Button
               variant="primary"
               onClick={handleOpenInviteDialog}
@@ -173,10 +231,15 @@ function ClientsContent() {
                 </button>
               )}
             </div>
-            <CustomFieldsPopover />
             <ClientFilters
               selectedTypes={selectedTypes}
               setSelectedTypes={setSelectedTypes}
+              columnVisibility={columnVisibility}
+              onColumnVisibilityChange={setColumnVisibility}
+              allColumns={allToggleableColumns}
+              customFieldNames={Object.fromEntries(
+                (customFieldDefinitions || []).map((f) => [`cf_${f.id}`, f.name])
+              )}
             />
           </div>
           {selectedClients.size > 0 && (
@@ -345,6 +408,8 @@ function ClientsContent() {
           hideSearchBar={true}
           selectedClients={selectedClients}
           onSelectedClientsChange={setSelectedClients}
+          columnVisibility={columnVisibility}
+          onColumnVisibilityChange={setColumnVisibility}
         />
       </div>
 
@@ -368,6 +433,8 @@ function ClientsContent() {
           hideSearchBar={false}
           selectedClients={selectedClients}
           onSelectedClientsChange={setSelectedClients}
+          columnVisibility={columnVisibility}
+          onColumnVisibilityChange={setColumnVisibility}
         />
 
         <PermissionButton
@@ -384,6 +451,8 @@ function ClientsContent() {
       </div>
 
       <ClientsModal open={dialogOpen} onOpenChange={setDialogOpen} />
+      <ClientImportDialog open={importDialogOpen} onOpenChange={setImportDialogOpen} />
+      <CustomFieldsManager open={customFieldsOpen} onOpenChange={setCustomFieldsOpen} />
     </>
   );
 }

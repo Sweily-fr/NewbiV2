@@ -95,7 +95,7 @@ export function EInvoicingSection({ canManageOrgSettings }) {
         {/* Titre section */}
         <div>
           <h3 className="text-sm font-medium mb-2">Configuration</h3>
-          <Separator />
+          <Separator className="bg-[#eeeff1] dark:bg-[#232323]" />
         </div>
 
         {/* Connexion SuperPDP via OAuth2 */}
@@ -191,7 +191,7 @@ export function EInvoicingSection({ canManageOrgSettings }) {
       <div className="space-y-6 mt-8">
         <div>
           <h3 className="text-sm font-medium mb-2">Comment ça marche ?</h3>
-          <Separator />
+          <Separator className="bg-[#eeeff1] dark:bg-[#232323]" />
         </div>
 
         <div className="space-y-4">
@@ -255,7 +255,7 @@ export function EInvoicingSection({ canManageOrgSettings }) {
           <h3 className="text-sm font-medium mb-2">
             Réforme de la facturation électronique
           </h3>
-          <Separator />
+          <Separator className="bg-[#eeeff1] dark:bg-[#232323]" />
         </div>
 
         <div className="bg-[#5b4eff]/10 dark:bg-[#5b4eff]/20 rounded-lg p-4">

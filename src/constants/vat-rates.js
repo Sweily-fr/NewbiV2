@@ -14,7 +14,7 @@ export const VAT_RATE_GROUPS = [
     rates: [
       { value: "1.05", label: "1,05% - Taux réduit" },
       { value: "1.75", label: "1,75% - Taux réduit" },
-      { value: "2.1", label: "2,1% - Taux réduit" },
+      { value: "2.1_dom", label: "2,1% - Taux réduit" },
       { value: "8.5", label: "8,5% - Taux normal" },
     ],
   },

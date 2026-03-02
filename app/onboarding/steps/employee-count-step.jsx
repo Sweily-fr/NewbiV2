@@ -52,10 +52,6 @@ export default function EmployeeCountStep({
     updateFormData({
       employeeCount: option.value,
     });
-    // Transition automatique après sélection
-    setTimeout(() => {
-      onNext();
-    }, 300);
   };
 
   const selectedValue = formData.employeeCount;
@@ -63,7 +59,7 @@ export default function EmployeeCountStep({
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-medium text-foreground">
+        <h1 className="text-xl font-semibold text-[#46464A]">
           Quelle est la taille de votre entreprise ?
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
@@ -81,41 +77,43 @@ export default function EmployeeCountStep({
             <button
               key={option.id}
               onClick={() => handleSelectOption(option)}
-              className={`group relative p-4 rounded-xl border transition-all duration-200 flex items-center gap-4 ${
+              className={`outline-none p-2 rounded-xl border transition-all duration-400 flex items-center gap-2.5 w-full ${
                 isSelected
-                  ? "border-[#5A50FF] bg-[#5A50FF]/5 shadow-sm"
-                  : "border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 bg-white dark:bg-gray-950 hover:shadow-sm cursor-pointer"
+                  ? "border-[#5A50FF] bg-[#5A50FF]/[0.04] shadow-[0_0_0_2px_rgba(90,80,255,0.04)]"
+                  : "bg-transparent border-[#EEEFF1] hover:bg-[#F8F9FA] cursor-pointer"
               }`}
             >
               {/* Icon */}
               <div
-                className={`p-3 rounded-lg ${
+                className={`flex items-center justify-center size-10 shrink-0 rounded-lg border ${
                   isSelected
-                    ? "bg-[#5A50FF] text-white"
-                    : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"
+                    ? "bg-[#5A50FF]/[0.04] border-[#5A50FF]/20 text-[#5A50FF]"
+                    : "bg-[#F8F9FA] border-black/5 text-[#959596]"
                 }`}
               >
-                <Icon className="w-5 h-5" />
+                <Icon className="size-4" />
               </div>
 
               {/* Text */}
               <div className="flex-1 text-left">
                 <h3
-                  className={`text-sm font-medium ${
-                    isSelected ? "text-[#5A50FF]" : "text-foreground"
-                  }`}
+                  className="text-sm font-medium leading-5 tracking-[-0.01em] text-[#505154]"
                 >
                   {option.label}
                 </h3>
-                <p className="text-xs text-muted-foreground mt-0.5">
+                <p className="text-xs font-normal leading-4 tracking-[-0.01em] text-[#505154]">
                   {option.description}
                 </p>
               </div>
 
-              {/* Selection Indicator */}
-              {isSelected && (
-                <div className="w-2 h-2 rounded-full bg-[#5A50FF]" />
-              )}
+              {/* Radio Indicator */}
+              <div
+                className={`size-[18px] rounded-full shrink-0 ml-auto border bg-white ${
+                  isSelected
+                    ? "border-[6px] border-[#5A50FF]"
+                    : "border border-[#EEEFF1]"
+                }`}
+              />
             </button>
           );
         })}
@@ -126,9 +124,9 @@ export default function EmployeeCountStep({
           Retour
         </Button>
         <Button
+          variant="primary"
           onClick={onNext}
           disabled={!selectedValue}
-          className="min-w-[120px]"
         >
           Continuer
         </Button>

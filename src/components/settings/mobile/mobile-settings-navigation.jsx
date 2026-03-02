@@ -44,6 +44,7 @@ export default function MobileSettingsNavigation({
       return (
         <React.Fragment key={tab.id}>
           <button
+            type="button"
             onClick={() => !tab.disabled && onTabSelect(tab.id)}
             disabled={tab.disabled}
             className={`
@@ -74,6 +75,7 @@ export default function MobileSettingsNavigation({
     <div className="h-full overflow-y-auto">
       {/* User Profile — style nav-user */}
       <button
+        type="button"
         onClick={() => onTabSelect("user-info")}
         className="w-full px-4 py-4 flex items-center gap-3 text-left active:bg-accent transition-colors"
       >

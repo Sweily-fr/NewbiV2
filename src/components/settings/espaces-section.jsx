@@ -10,6 +10,10 @@ import {
   Building2,
   ChevronRight,
   ArrowLeft,
+  SlidersHorizontal,
+  User,
+  KeyRound,
+  Users,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
@@ -25,6 +29,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuCheckboxItem,
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
 import {
@@ -47,14 +52,8 @@ import {
 } from "@/src/components/ui/avatar";
 import { useOrganizationInvitations } from "@/src/hooks/useOrganizationInvitations";
 import { InviteMemberModal } from "@/src/components/invite-member-modal";
-import { authClient } from "@/src/lib/auth-client";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/src/components/ui/select";
+import { authClient, useSession } from "@/src/lib/auth-client";
+// Select retiré — rôle affiché en badge
 import { usePermissions } from "@/src/hooks/usePermissions";
 import { Callout } from "@/src/components/ui/callout";
 import { Separator } from "@/src/components/ui/separator";
@@ -75,6 +74,13 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
   const [memberToDelete, setMemberToDelete] = useState(null);
   const [orgMemberData, setOrgMemberData] = useState({});
   const [updatingRoleForMember, setUpdatingRoleForMember] = useState(null);
+  const [statusFilters, setStatusFilters] = useState({
+    active: true,
+    pending: true,
+    suspended: true,
+  });
+
+  const { data: session } = useSession();
 
   // Utiliser le hook pour les invitations
   const {
@@ -240,13 +246,26 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
     refreshSelectedOrgMembers();
   }, [refreshTrigger]);
 
-  // Filter members based on search term (afficher tous les statuts : active, pending, etc.)
-  const filteredMembers = members.filter(
-    (member) =>
+  // Filter members based on search term + status filters
+  const filteredMembers = members.filter((member) => {
+    // Search filter
+    const matchesSearch =
       member.name?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
       member.email?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-      member.role?.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
-  );
+      member.role?.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
+
+    // Status filter
+    const memberStatus = member.status === "pending" ? "pending" : member.status === "suspended" ? "suspended" : "active";
+    const matchesStatus = statusFilters[memberStatus];
+
+    return matchesSearch && matchesStatus;
+  });
+
+  const toggleStatusFilter = (status) => {
+    setStatusFilters((prev) => ({ ...prev, [status]: !prev[status] }));
+  };
+
+  const activeFilterCount = Object.values(statusFilters).filter((v) => !v).length;
 
   const handleDeleteMember = (member) => {
     setMemberToDelete(member);
@@ -389,7 +408,7 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
           {/* Header */}
           <div className="flex flex-col gap-1 mb-0 md:mb-6">
             <h3 className="text-lg font-medium hidden md:block">Gestion des espaces</h3>
-            <Separator className="hidden md:block" />
+            <Separator className="hidden md:block bg-[#eeeff1] dark:bg-[#232323]" />
           </div>
 
           {!canManageOrgSettings && (
@@ -545,25 +564,58 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
                 </div>
               </div>
             </div>
-            <Separator className="hidden md:block" />
+            <Separator className="hidden md:block bg-[#eeeff1] dark:bg-[#232323]" />
           </div>
 
-          {/* Search et bouton */}
+          {/* Search + Filter + Invite */}
           <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2 md:gap-3 mb-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Rechercher un membre..."
+                placeholder="Rechercher par nom ou email"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 h-9"
+                className="pl-9"
               />
             </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button type="button" variant="outline" className="cursor-pointer gap-2">
+                  <SlidersHorizontal className="h-4 w-4" />
+                  Filtrer
+                  {activeFilterCount > 0 && (
+                    <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-[10px]">
+                      {activeFilterCount}
+                    </Badge>
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuCheckboxItem
+                  checked={statusFilters.active}
+                  onCheckedChange={() => toggleStatusFilter("active")}
+                >
+                  Actif
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem
+                  checked={statusFilters.pending}
+                  onCheckedChange={() => toggleStatusFilter("pending")}
+                >
+                  Invité
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem
+                  checked={statusFilters.suspended}
+                  onCheckedChange={() => toggleStatusFilter("suspended")}
+                >
+                  Suspendu
+                </DropdownMenuCheckboxItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button
               type="button"
               onClick={() => setInviteDialogOpen(true)}
               disabled={!canManageOrgSettings}
-              className="flex items-center justify-center gap-1.5 font-normal cursor-pointer bg-[#5b4fff] hover:bg-[#5b4fff]/90 dark:text-white px-3 h-9 whitespace-nowrap"
+              className="cursor-pointer gap-2 bg-[#5b4fff] hover:bg-[#5b4fff]/90 dark:text-white whitespace-nowrap"
               title={
                 !canManageOrgSettings
                   ? "Seuls les owners et admins peuvent ajouter des membres"
@@ -571,19 +623,32 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
               }
             >
               <UserRoundPlusIcon size={14} />
-              <span className="hidden sm:inline">Ajouter des membres</span>
-              <span className="sm:hidden">Ajouter</span>
+              Inviter des membres
             </Button>
           </div>
 
           {/* Members Table */}
-          <div className="max-h-[400px] overflow-y-auto overflow-x-auto">
+          <div className="rounded-xl border border-gray-200 dark:border-[#2c2c2c]">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="min-w-[200px]">Nom</TableHead>
-                  <TableHead className="text-right min-w-[120px]">
-                    Rôle
+                  <TableHead className="min-w-[280px]">
+                    <div className="flex items-center gap-2">
+                      <User className="h-4 w-4" />
+                      Utilisateur
+                    </div>
+                  </TableHead>
+                  <TableHead>
+                    <div className="flex items-center gap-2">
+                      <KeyRound className="h-4 w-4" />
+                      Rôle
+                    </div>
+                  </TableHead>
+                  <TableHead>
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4" />
+                      Équipes
+                    </div>
                   </TableHead>
                   <TableHead className="w-[50px]"></TableHead>
                 </TableRow>
@@ -591,39 +656,46 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
               <TableBody>
                 {membersLoading ? (
                   <TableRow>
-                    <TableCell colSpan={3} className="text-center py-8">
+                    <TableCell colSpan={4} className="text-center py-8">
                       Chargement...
                     </TableCell>
                   </TableRow>
                 ) : filteredMembers.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={3} className="text-center py-8">
+                    <TableCell colSpan={4} className="text-center py-8 text-sm text-muted-foreground">
                       {searchTerm ? "Aucun membre trouvé" : "Aucun membre"}
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredMembers.map((member) => (
-                    <TableRow key={member.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-8 w-8">
-                            <AvatarImage
-                              src={member.avatar}
-                              alt={member.name || member.email}
-                              className="object-cover"
-                            />
-                            <AvatarFallback className="bg-[#D1D5DB] text-[#364153] text-xs">
-                              {member.name
-                                ?.split(" ")
-                                .map((n) => n[0])
-                                .join("")
-                                .toUpperCase() || "?"}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1">
+                  filteredMembers.map((member) => {
+                    const isCurrentUser = member.email === session?.user?.email;
+                    return (
+                      <TableRow key={member.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage
+                                src={member.avatar}
+                                alt={member.name || member.email}
+                                className="object-cover"
+                              />
+                              <AvatarFallback className="bg-[#D1D5DB] text-[#364153] text-xs">
+                                {member.name
+                                  ?.split(" ")
+                                  .map((n) => n[0])
+                                  .join("")
+                                  .toUpperCase() || "?"}
+                              </AvatarFallback>
+                            </Avatar>
                             <div className="flex items-center gap-2">
-                              <span className="font-normal text-sm">
+                              <span className="font-medium text-sm">
                                 {member.name || "Sans nom"}
+                                {isCurrentUser && (
+                                  <span className="text-muted-foreground font-normal"> (Vous)</span>
+                                )}
+                              </span>
+                              <span className="text-sm text-muted-foreground truncate max-w-[160px]">
+                                {member.email}
                               </span>
                               {member.status === "pending" && (
                                 <Badge className="bg-orange-100 border-orange-300 text-orange-800 font-normal text-[10px] px-1.5 py-0">
@@ -631,118 +703,63 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
                                 </Badge>
                               )}
                             </div>
-                            <div className="text-xs text-muted-foreground">
-                              {member.email}
-                            </div>
                           </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Select
-                          value={member.role}
-                          disabled={
-                            !canManageOrgSettings ||
-                            updatingRoleForMember === member.id
-                          }
-                          onValueChange={(newRole) => {
-                            handleRoleChange(member, newRole);
-                          }}
-                        >
-                          <SelectTrigger className="w-full md:w-[240px] border-none shadow-none cursor-pointer hover:bg-[#F0EFED]/90 ml-auto transition-colors">
-                            <SelectValue>
-                              <div className="flex flex-col items-start">
-                                <span className="font-normal text-sm">
-                                  {getRoleLabel(member.role)}
-                                </span>
-                                <span className="text-xs text-muted-foreground">
-                                  {getRoleLabel(member.role)} de l'espace
-                                  d'équipe
-                                </span>
-                              </div>
-                            </SelectValue>
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="owner">
-                              <div className="flex flex-col">
-                                <span className="font-normal text-sm">
-                                  Propriétaire
-                                </span>
-                                <span className="text-xs text-muted-foreground">
-                                  Propriétaire de l'espace d'équipe
-                                </span>
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="admin">
-                              <div className="flex flex-col">
-                                <span className="font-normal text-sm">
-                                  Administrateur
-                                </span>
-                                <span className="text-xs text-muted-foreground">
-                                  Administrateur de l'espace d'équipe
-                                </span>
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="member">
-                              <div className="flex flex-col">
-                                <span className="font-normal text-sm">
-                                  Membre
-                                </span>
-                                <span className="text-xs text-muted-foreground">
-                                  Membre de l'espace d'équipe
-                                </span>
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="accountant">
-                              <div className="flex flex-col">
-                                <span className="font-normal text-sm">
-                                  Comptable
-                                </span>
-                                <span className="text-xs text-muted-foreground">
-                                  Comptable de l'espace d'équipe
-                                </span>
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="viewer">
-                              <div className="flex flex-col">
-                                <span className="font-normal text-sm">
-                                  Lecteur
-                                </span>
-                                <span className="text-xs text-muted-foreground">
-                                  Consultation uniquement
-                                </span>
-                              </div>
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {canManageOrgSettings && (
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 cursor-pointer"
-                              >
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem
-                                className="text-red-600 cursor-pointer focus:text-red-600 focus:bg-red-50"
-                                onClick={() => handleDeleteMember(member)}
-                              >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                {member.type === "invitation"
-                                  ? "Annuler l'invitation"
-                                  : "Retirer de l'espace"}
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              "font-normal",
+                              getRoleBadgeStyle(member.role)
+                            )}
+                          >
+                            {updatingRoleForMember === member.id ? "..." : getRoleLabel(member.role)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-xs text-muted-foreground">—</span>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {canManageOrgSettings && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 cursor-pointer"
+                                >
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem
+                                  className="cursor-pointer"
+                                  onClick={() => {
+                                    const roles = ["owner", "admin", "member", "accountant", "viewer"];
+                                    const currentIndex = roles.indexOf(member.role);
+                                    const nextRole = roles[(currentIndex + 1) % roles.length];
+                                    handleRoleChange(member, nextRole);
+                                  }}
+                                >
+                                  <KeyRound className="h-4 w-4 mr-2" />
+                                  Changer le rôle
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  className="text-red-600 cursor-pointer focus:text-red-600 focus:bg-red-50"
+                                  onClick={() => handleDeleteMember(member)}
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  {member.type === "invitation"
+                                    ? "Annuler l'invitation"
+                                    : "Retirer de l'espace"}
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
                 )}
               </TableBody>
             </Table>

@@ -16,8 +16,8 @@ export function ThemeProvider({
   ...props
 }) {
   const pathname = usePathname();
-  const isDashboardRoute = pathname?.startsWith("/dashboard");
-  
+  const isDarkAllowed = pathname?.startsWith("/dashboard") || pathname?.startsWith("/create-workspace");
+
   const [theme, setTheme] = useState(defaultTheme);
 
   // Sync with localStorage on mount (client-side only)
@@ -33,13 +33,13 @@ export function ThemeProvider({
 
     root.classList.remove("light", "dark");
 
-    // Si on n'est pas sur une route dashboard, forcer le thème light
-    if (!isDashboardRoute) {
+    // Si on n'est pas sur une route autorisée, forcer le thème light
+    if (!isDarkAllowed) {
       root.classList.add("light");
       return;
     }
 
-    // Si on est sur dashboard, appliquer le thème choisi
+    // Si on est sur une route autorisée, appliquer le thème choisi
     if (theme === "system") {
       const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
         .matches
@@ -51,7 +51,7 @@ export function ThemeProvider({
     }
 
     root.classList.add(theme);
-  }, [theme, isDashboardRoute]);
+  }, [theme, isDarkAllowed]);
 
   const value = {
     theme,

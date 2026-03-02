@@ -47,13 +47,6 @@ import { findBank, getBankLogo } from "@/lib/banks-config";
 import { Callout } from "@/src/components/ui/callout";
 import { authClient } from "@/src/lib/auth-client";
 
-/**
- * Récupère le token JWT depuis localStorage
- */
-const getAuthToken = () => {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem("bearer_token");
-};
 
 /**
  * Formate un IBAN pour l'affichage (groupes de 4)
@@ -150,11 +143,9 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
     if (!workspaceId) return;
 
     try {
-      const token = getAuthToken();
       const response = await fetch("/api/banking-connect/status", {
         headers: {
           "x-workspace-id": workspaceId,
-          ...(token && { Authorization: `Bearer ${token}` }),
         },
       });
 
@@ -175,13 +166,11 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
       setIsLoading(true);
       await checkConnectionStatus();
 
-      const token = getAuthToken();
       const response = await fetch("/api/banking/accounts", {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
           "x-workspace-id": workspaceId,
-          ...(token && { Authorization: `Bearer ${token}` }),
         },
       });
 
@@ -205,13 +194,11 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
   const fetchInstitutions = async () => {
     try {
       setIsLoadingInstitutions(true);
-      const token = getAuthToken();
       const response = await fetch(
         "/api/banking-connect/bridge/institutions?country=FR",
         {
           headers: {
-            ...(token && { Authorization: `Bearer ${token}` }),
-          },
+            },
         },
       );
 
@@ -291,14 +278,12 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
       setSelectedBank(bank);
       setIsConnecting(true);
 
-      const token = getAuthToken();
       const response = await fetch(
         `/api/banking-connect/bridge/connect?providerId=${bank.id}`,
         {
           headers: {
             "x-workspace-id": workspaceId,
-            ...(token && { Authorization: `Bearer ${token}` }),
-          },
+            },
         },
       );
 
@@ -328,13 +313,11 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
 
     try {
       setDisconnectingAccountId(accountId);
-      const token = getAuthToken();
       const response = await fetch("/api/banking-connect/disconnect", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "x-workspace-id": workspaceId,
-          ...(token && { Authorization: `Bearer ${token}` }),
         },
         body: JSON.stringify({
           accountId: accountId,
@@ -447,7 +430,7 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
     <div className="space-y-8">
       <div>
         <h2 className="text-lg font-medium mb-1">Comptes bancaires</h2>
-        <Separator className="hidden md:block" />
+        <Separator className="hidden md:block bg-[#eeeff1] dark:bg-[#232323]" />
         {!canManageOrgSettings && (
           <div className="mt-4">
             <Callout type="warning" noMargin>
@@ -642,6 +625,7 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
                         )}
                       </span>
                       <button
+                        type="button"
                         onClick={() => toggleIbanVisibility(accountId)}
                         className="text-muted-foreground hover:text-foreground transition-colors"
                       >
@@ -786,6 +770,7 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
               <div className="space-y-2">
                 {filteredInstitutions.map((bank) => (
                   <button
+                    type="button"
                     key={bank.id}
                     onClick={() => handleSelectBank(bank)}
                     disabled={isConnecting}

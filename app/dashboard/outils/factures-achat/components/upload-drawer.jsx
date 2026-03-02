@@ -39,6 +39,10 @@ import {
   Hash,
   Building2,
   Tag,
+  CreditCard,
+  Receipt,
+  Paperclip,
+  Eye,
 } from "lucide-react";
 
 const ACCEPTED_TYPES = [
@@ -61,6 +65,30 @@ const CATEGORY_OPTIONS = [
   { value: "SOFTWARE", label: "Logiciels" },
   { value: "HARDWARE", label: "Matériel" },
   { value: "MARKETING", label: "Marketing" },
+  { value: "TRAINING", label: "Formation" },
+  { value: "MAINTENANCE", label: "Maintenance" },
+  { value: "TAXES", label: "Impôts & taxes" },
+  { value: "UTILITIES", label: "Services publics" },
+  { value: "OTHER", label: "Autre" },
+];
+
+const STATUS_OPTIONS = [
+  { value: "TO_PROCESS", label: "À traiter" },
+  { value: "TO_PAY", label: "À payer" },
+  { value: "PENDING", label: "En attente" },
+  { value: "PAID", label: "Payée" },
+  { value: "OVERDUE", label: "En retard" },
+  { value: "ARCHIVED", label: "Archivée" },
+];
+
+const VALID_CATEGORIES = new Set(CATEGORY_OPTIONS.map((o) => o.value));
+
+const PAYMENT_METHOD_OPTIONS = [
+  { value: "BANK_TRANSFER", label: "Virement" },
+  { value: "CREDIT_CARD", label: "Carte bancaire" },
+  { value: "DIRECT_DEBIT", label: "Prélèvement" },
+  { value: "CHECK", label: "Chèque" },
+  { value: "CASH", label: "Espèces" },
   { value: "OTHER", label: "Autre" },
 ];
 
@@ -92,6 +120,8 @@ export function PurchaseInvoiceUploadDrawer({
     vatRate: "20",
     amountTTC: "",
     category: "OTHER",
+    status: "TO_PROCESS",
+    paymentMethod: "",
   });
 
   const handleDrag = useCallback((e) => {
@@ -166,29 +196,58 @@ export function PurchaseInvoiceUploadDrawer({
     const firstSuccess = results.find((r) => !r.error);
     if (firstSuccess?.financial) {
       const f = firstSuccess.financial;
+      const td = f.transaction_data || {};
+      const ef = f.extracted_fields || {};
+      const totals = ef.totals || {};
+
+      // Normalize date to YYYY-MM-DD for <input type="date">
+      const toDateInput = (dateStr) => {
+        if (!dateStr) return "";
+        // Already YYYY-MM-DD
+        if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
+        // French format DD/MM/YYYY or DD-MM-YYYY or DD.MM.YYYY
+        const frMatch = dateStr.match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})$/);
+        if (frMatch) {
+          const [, day, month, year] = frMatch;
+          return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+        }
+        // Try ISO parse
+        const d = new Date(dateStr);
+        if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+        return dateStr;
+      };
+
       setEditableData({
         supplierName:
-          f.vendor_name || f.supplier_name || f.emitter_name || "",
-        invoiceNumber: f.invoice_number || f.document_number || "",
-        issueDate: f.invoice_date || f.date || "",
-        dueDate: f.due_date || "",
+          td.vendor_name || td.supplier_name || f.vendor_name || f.supplier_name || "",
+        invoiceNumber:
+          td.document_number || td.invoice_number || f.invoice_number || f.document_number || "",
+        issueDate:
+          toDateInput(td.transaction_date || td.invoice_date || f.invoice_date || f.date || ""),
+        dueDate:
+          toDateInput(td.due_date || f.due_date || ""),
         amountHT:
-          f.subtotal?.toString() ||
-          f.total_ht?.toString() ||
+          td.amount_ht?.toString() ||
+          totals.total_ht?.toString() ||
           f.amount_ht?.toString() ||
+          f.total_ht?.toString() ||
           "",
         amountTVA:
+          td.tax_amount?.toString() ||
+          totals.total_tax?.toString() ||
           f.tax_amount?.toString() ||
           f.total_vat?.toString() ||
-          f.vat_amount?.toString() ||
           "",
-        vatRate: f.tax_rate?.toString() || f.vat_rate?.toString() || "20",
+        vatRate: td.tax_rate?.toString() || f.tax_rate?.toString() || "20",
         amountTTC:
-          f.total?.toString() ||
+          td.amount?.toString() ||
+          totals.total_ttc?.toString() ||
           f.total_ttc?.toString() ||
           f.amount_ttc?.toString() ||
           "",
-        category: "OTHER",
+        category: VALID_CATEGORIES.has(td.category) ? td.category : VALID_CATEGORIES.has(f.category) ? f.category : "OTHER",
+        status: "TO_PROCESS",
+        paymentMethod: "",
       });
     }
 
@@ -225,18 +284,27 @@ export function PurchaseInvoiceUploadDrawer({
         vatRate: parseFloat(editableData.vatRate) || 20,
         amountTTC: parseFloat(editableData.amountTTC),
         category: editableData.category,
+        status: editableData.status,
+        paymentMethod: editableData.paymentMethod || undefined,
         source: "OCR",
       });
       if (invoice?.id) {
         for (const result of ocrResults) {
           if (!result.error && result.metadata) {
-            await addFile(invoice.id, {
-              cloudflareUrl: result.metadata.documentUrl,
-              fileName: result.metadata.fileName,
-              mimeType: result.metadata.mimeType,
-              fileSize: result.metadata.fileSize,
-              ocrData: JSON.stringify(result.financial),
-            });
+            const fileInput = result.metadata.documentUrl
+              ? {
+                  cloudflareUrl: result.metadata.documentUrl,
+                  fileName: result.metadata.fileName,
+                  mimeType: result.metadata.mimeType,
+                  fileSize: result.metadata.fileSize,
+                  ocrData: result.financial,
+                }
+              : {
+                  file: result.file,
+                  ocrData: result.financial,
+                  processOCR: false,
+                };
+            await addFile(invoice.id, fileInput);
           }
         }
       }
@@ -265,6 +333,8 @@ export function PurchaseInvoiceUploadDrawer({
       vatRate: "20",
       amountTTC: "",
       category: "OTHER",
+      status: "TO_PROCESS",
+      paymentMethod: "",
     });
   };
 
@@ -539,7 +609,7 @@ export function PurchaseInvoiceUploadDrawer({
                       <VatRateSelect
                         value={editableData.vatRate}
                         onChange={(v) => handleEditChange("vatRate", String(v))}
-                        className="w-32 h-8 text-sm"
+                        className="w-44 h-8 text-sm [&>span:first-child]:min-w-0 [&>span:first-child]:truncate [&>span:first-child]:block"
                       />
                     </div>
                     <div className="flex items-center justify-between">
@@ -593,7 +663,132 @@ export function PurchaseInvoiceUploadDrawer({
                       </SelectContent>
                     </Select>
                   </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Receipt className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-normal text-muted-foreground">
+                        Statut
+                      </span>
+                    </div>
+                    <Select
+                      value={editableData.status}
+                      onValueChange={(v) => handleEditChange("status", v)}
+                    >
+                      <SelectTrigger className="w-44 h-8 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {STATUS_OPTIONS.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <CreditCard className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-normal text-muted-foreground">
+                        Mode de paiement
+                      </span>
+                    </div>
+                    <Select
+                      value={editableData.paymentMethod}
+                      onValueChange={(v) =>
+                        handleEditChange("paymentMethod", v)
+                      }
+                    >
+                      <SelectTrigger className="w-44 h-8 text-sm">
+                        <SelectValue placeholder="Non défini" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {PAYMENT_METHOD_OPTIONS.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
+
+                {/* Justificatif */}
+                {ocrResults.some((r) => !r.error && r.metadata) && (
+                  <>
+                    <Separator />
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs text-muted-foreground font-normal uppercase tracking-wide">
+                          Justificatif
+                        </p>
+                        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400">
+                          <Paperclip className="w-3 h-3" />
+                          Attaché
+                        </span>
+                      </div>
+                      {ocrResults
+                        .filter((r) => !r.error && r.metadata)
+                        .map((r, i) => {
+                          const isImage = r.file.type.startsWith("image/");
+                          const isPdf = r.file.type === "application/pdf";
+                          const blobUrl = URL.createObjectURL(r.file);
+                          return (
+                            <div
+                              key={i}
+                              className="relative group cursor-pointer rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden hover:border-gray-400 dark:hover:border-gray-500 hover:shadow-sm transition-all"
+                              onClick={() =>
+                                window.open(
+                                  r.metadata.documentUrl || blobUrl,
+                                  "_blank"
+                                )
+                              }
+                            >
+                              <div className="w-full h-52 bg-gray-50 dark:bg-gray-900 flex items-center justify-center overflow-hidden">
+                                {isImage ? (
+                                  <img
+                                    src={blobUrl}
+                                    alt={r.file.name}
+                                    className="w-full h-full object-contain"
+                                  />
+                                ) : isPdf ? (
+                                  <iframe
+                                    src={`${blobUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
+                                    title={r.file.name}
+                                    className="w-full h-full border-0 pointer-events-none"
+                                  />
+                                ) : (
+                                  <FileText className="h-10 w-10 text-red-400" />
+                                )}
+                              </div>
+                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                                <div className="w-10 h-10 rounded-full bg-white/90 items-center justify-center shadow-lg hidden group-hover:flex transition-all">
+                                  <Eye className="w-5 h-5 text-gray-700" />
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2 px-3 py-2 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+                                <div className="w-8 h-8 rounded-md bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
+                                  {isPdf ? (
+                                    <FileText className="h-4 w-4 text-red-500" />
+                                  ) : (
+                                    <ImageIcon className="h-4 w-4 text-blue-500" />
+                                  )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-xs font-normal truncate text-foreground">
+                                    {r.file.name}
+                                  </p>
+                                  <p className="text-[10px] text-muted-foreground">
+                                    {(r.file.size / 1024).toFixed(0)} Ko
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </>
+                )}
               </>
             )}
 

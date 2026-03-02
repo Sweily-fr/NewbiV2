@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Sheet, SheetContent } from "@/src/components/ui/sheet";
+import { Sheet, SheetContent, SheetTitle } from "@/src/components/ui/sheet";
+import { VisuallyHidden } from "@/src/components/ui/dialog";
 import { Button } from "@/src/components/ui/button";
 import {
   Download,
@@ -9,6 +10,8 @@ import {
   List,
   ChevronLeft,
   ChevronRight,
+  FileIcon,
+  LoaderCircle,
 } from "lucide-react";
 
 // Fonction pour obtenir l'extension du fichier
@@ -30,7 +33,7 @@ function formatFileSize(bytes) {
 function isImage(file) {
   if (file?.mimeType?.startsWith("image/")) return true;
   const ext = getFileExtension(file?.originalName);
-  return ["jpg", "jpeg", "png", "gif", "webp", "svg", "heic", "heif"].includes(ext);
+  return ["jpg", "jpeg", "png", "gif", "webp", "svg", "heic", "heif", "bmp", "tiff"].includes(ext);
 }
 
 // Déterminer si c'est un PDF
@@ -49,9 +52,11 @@ export function FilePreviewDrawer({
   onNavigate,
   hasWatermark = false,
 }) {
-  // Vérifier si le téléchargement est bloqué (image avec filigrane)
-  const isDownloadBlocked = hasWatermark && isImage(file);
+  // Vérifier si le téléchargement est bloqué (filigrane actif)
+  const isDownloadBlocked = !!hasWatermark;
   const [viewMode, setViewMode] = useState("grid"); // "grid" ou "list"
+  const [imageLoading, setImageLoading] = useState(true);
+  const [imageError, setImageError] = useState(false);
 
   if (!file) return null;
 
@@ -64,15 +69,37 @@ export function FilePreviewDrawer({
 
   const handlePrev = () => {
     if (canGoPrev && onNavigate) {
+      setImageLoading(true);
+      setImageError(false);
       onNavigate(currentIndex - 1);
     }
   };
 
   const handleNext = () => {
     if (canGoNext && onNavigate) {
+      setImageLoading(true);
+      setImageError(false);
       onNavigate(currentIndex + 1);
     }
   };
+
+  const handleImageLoad = () => {
+    setImageLoading(false);
+    setImageError(false);
+  };
+
+  const handleImageError = () => {
+    setImageLoading(false);
+    setImageError(true);
+  };
+
+  // Fallback quand l'image ne charge pas
+  const renderImageFallback = () => (
+    <div className="flex flex-col items-center justify-center h-[300px] text-gray-400 bg-gray-50 rounded-lg">
+      <FileIcon className="w-16 h-16 mb-3" />
+      <p className="text-sm">Impossible de charger la prévisualisation</p>
+    </div>
+  );
 
   return (
     <Sheet open={!!file} onOpenChange={(open) => !open && onClose()}>
@@ -80,6 +107,9 @@ export function FilePreviewDrawer({
         side="left"
         className="w-full sm:max-w-[50%] p-0 flex flex-col bg-white border-r-0"
       >
+        <VisuallyHidden>
+          <SheetTitle>Prévisualisation du fichier</SheetTitle>
+        </VisuallyHidden>
         <div className="flex flex-col h-full">
           {/* Header */}
           <div className="px-8 pt-5 pb-6">
@@ -158,14 +188,25 @@ export function FilePreviewDrawer({
               /* Vue Grille - Image grande */
               <div className="relative group">
                 {isImage(file) ? (
-                  <div className="relative inline-block">
-                    <img
-                      src={file.previewUrl}
-                      alt={file.originalName}
-                      className="max-w-full max-h-[500px] rounded-lg object-contain"
-                    />
+                  <div className="relative inline-block w-full">
+                    {imageLoading && !imageError && (
+                      <div className="flex items-center justify-center h-[300px] bg-gray-50 rounded-lg">
+                        <LoaderCircle className="w-8 h-8 text-gray-300 animate-spin" />
+                      </div>
+                    )}
+                    {imageError ? (
+                      renderImageFallback()
+                    ) : (
+                      <img
+                        src={file.previewUrl}
+                        alt={file.originalName}
+                        className={`max-w-full max-h-[500px] rounded-lg object-contain ${imageLoading ? "hidden" : ""}`}
+                        onLoad={handleImageLoad}
+                        onError={handleImageError}
+                      />
+                    )}
                     {/* Bouton download sur l'image - masqué si filigrane */}
-                    {!isDownloadBlocked && (
+                    {!isDownloadBlocked && !imageLoading && !imageError && (
                       <button
                         onClick={() => onDownload?.(file)}
                         className="absolute bottom-4 right-4 w-10 h-10 bg-black/80 hover:bg-black rounded-full flex items-center justify-center transition-colors"
@@ -205,6 +246,7 @@ export function FilePreviewDrawer({
                           src={file.previewUrl}
                           alt={file.originalName}
                           className="w-full h-full object-cover"
+                          onError={(e) => { e.target.style.display = "none"; }}
                         />
                       </div>
                     ) : (

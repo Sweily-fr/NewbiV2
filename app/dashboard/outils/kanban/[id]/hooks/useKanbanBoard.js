@@ -158,7 +158,7 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
         }
         
         // Pour les mises à jour (UPDATED, COMMENT_ADDED, COMMENT_UPDATED, TIMER_STARTED, TIMER_STOPPED), mettre à jour le cache Apollo
-        if ((type === 'UPDATED' || type === 'COMMENT_ADDED' || type === 'COMMENT_UPDATED' || type === 'TIMER_STARTED' || type === 'TIMER_STOPPED') && task) {
+        if ((type === 'UPDATED' || type === 'COMMENT_ADDED' || type === 'COMMENT_UPDATED' || type === 'TIMER_STARTED' || type === 'TIMER_STOPPED' || type === 'MANUAL_TIME_ADDED') && task) {
           try {
             const cacheData = apolloClient.cache.readQuery({
               query: GET_BOARD,

@@ -109,11 +109,6 @@ import { Calendar } from "@/src/components/ui/calendar";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
-// Fonction utilitaire pour récupérer le token JWT
-const getAuthToken = () => {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem("bearer_token");
-};
 
 export default function TransactionTable({
   expenses: expensesProp = [],

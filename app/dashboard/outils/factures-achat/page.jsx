@@ -1,14 +1,23 @@
 "use client";
-import { Suspense, useState } from "react";
+import { Suspense, useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import PurchaseInvoiceTable from "./components/table";
 import { PurchaseInvoiceDetailDrawer } from "./components/detail-drawer";
 import { PurchaseInvoiceUploadDrawer } from "./components/upload-drawer";
 import { ExportDialog } from "./components/export-dialog";
+import { GmailConnectionDialog } from "./components/gmail-connection";
+// GmailStatusBanner remplacé par un bouton inline dans la toolbar
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
 import {
   usePurchaseInvoices,
   usePurchaseInvoiceStats,
 } from "@/src/hooks/usePurchaseInvoices";
+import { useGmailConnection } from "@/src/hooks/useGmailConnection";
+import {
+  useImportedInvoices,
+  useImportedInvoiceStats,
+} from "@/src/graphql/importedInvoiceQueries";
+import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { Button } from "@/src/components/ui/button";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import {
@@ -24,6 +33,7 @@ import {
   Upload,
   Download,
   Info,
+  Mail,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -31,8 +41,10 @@ import {
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
+import { toast } from "@/src/components/ui/sonner";
 
 const formatAmount = (amount) => {
   return new Intl.NumberFormat("fr-FR", {
@@ -75,15 +87,42 @@ function StatsCard({ label, tooltip, amount, count, alert }) {
 }
 
 function PurchaseInvoicesContent() {
+  const searchParams = useSearchParams();
   const { invoices, loading, refetch } = usePurchaseInvoices({ limit: 200 });
   const { stats, loading: statsLoading } = usePurchaseInvoiceStats();
+  const { connection: gmailConnection } = useGmailConnection();
+  const { workspaceId } = useWorkspace();
+  const {
+    importedInvoices,
+    loading: importedLoading,
+    refetch: refetchImported,
+  } = useImportedInvoices(workspaceId, { filters: { status: "PENDING_REVIEW" } });
+
+  const handleImportedConverted = () => {
+    refetch?.();
+    refetchImported?.();
+  };
 
   // Drawer state — managed here so only ONE set of drawers is rendered
   const [isDetailDrawerOpen, setIsDetailDrawerOpen] = useState(false);
   const [isCreateDrawerOpen, setIsCreateDrawerOpen] = useState(false);
   const [isUploadDrawerOpen, setIsUploadDrawerOpen] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
+  const [isGmailDialogOpen, setIsGmailDialogOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
+
+  // Handle OAuth callback query params
+  useEffect(() => {
+    if (searchParams.get("gmail_connected") === "true") {
+      toast.success("Gmail connecté ! Le scan initial de vos emails est en cours...");
+      // Clean URL
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+    if (searchParams.get("gmail_error")) {
+      toast.error(`Erreur connexion Gmail : ${searchParams.get("gmail_error")}`);
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, [searchParams]);
 
   const handleRowClick = (invoice) => {
     setSelectedInvoice(invoice);
@@ -97,6 +136,10 @@ function PurchaseInvoicesContent() {
 
   const handleAddOcr = () => {
     setIsUploadDrawerOpen(true);
+  };
+
+  const handleOpenGmailDialog = () => {
+    setIsGmailDialogOpen(true);
   };
 
   return (
@@ -136,6 +179,14 @@ function PurchaseInvoicesContent() {
                   <DropdownMenuItem onClick={handleAddOcr}>
                     <Upload size={16} />
                     Importer (scan/OCR)
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+                    Automatisation
+                  </DropdownMenuLabel>
+                  <DropdownMenuItem onClick={handleOpenGmailDialog}>
+                    <Mail size={16} />
+                    Automatiser (Gmail)
                   </DropdownMenuItem>
                 </DropdownMenuGroup>
               </DropdownMenuContent>
@@ -223,6 +274,11 @@ function PurchaseInvoicesContent() {
             loading={loading}
             refetch={refetch}
             onRowClick={handleRowClick}
+            importedInvoices={importedInvoices}
+            importedLoading={importedLoading}
+            onImportedConverted={handleImportedConverted}
+            gmailConnection={gmailConnection}
+            onOpenGmailDialog={handleOpenGmailDialog}
           />
         </Suspense>
       </div>
@@ -256,6 +312,14 @@ function PurchaseInvoicesContent() {
                     <DropdownMenuItem onClick={handleAddOcr}>
                       <Upload size={16} />
                       Importer (scan/OCR)
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+                      Automatisation
+                    </DropdownMenuLabel>
+                    <DropdownMenuItem onClick={handleOpenGmailDialog}>
+                      <Mail size={16} />
+                      Automatiser (Gmail)
                     </DropdownMenuItem>
                   </DropdownMenuGroup>
                 </DropdownMenuContent>
@@ -291,6 +355,11 @@ function PurchaseInvoicesContent() {
             loading={loading}
             refetch={refetch}
             onRowClick={handleRowClick}
+            importedInvoices={importedInvoices}
+            importedLoading={importedLoading}
+            onImportedConverted={handleImportedConverted}
+            gmailConnection={gmailConnection}
+            onOpenGmailDialog={handleOpenGmailDialog}
           />
         </Suspense>
       </div>
@@ -331,6 +400,10 @@ function PurchaseInvoicesContent() {
         open={isExportOpen}
         onOpenChange={setIsExportOpen}
         invoices={invoices}
+      />
+      <GmailConnectionDialog
+        open={isGmailDialogOpen}
+        onOpenChange={setIsGmailDialogOpen}
       />
     </>
   );

@@ -47,3 +47,19 @@ export function useSendQuoteEmail() {
 export function useSendCreditNoteEmail() {
   return useMutation(SEND_CREDIT_NOTE_EMAIL);
 }
+
+// Mutation pour envoyer un bon de commande par email
+export const SEND_PURCHASE_ORDER_EMAIL = gql`
+  mutation SendPurchaseOrderEmail($workspaceId: ID!, $input: SendDocumentEmailInput!) {
+    sendPurchaseOrderEmail(workspaceId: $workspaceId, input: $input) {
+      success
+      messageId
+      recipientEmail
+    }
+  }
+`;
+
+// Hook pour envoyer un bon de commande par email
+export function useSendPurchaseOrderEmail() {
+  return useMutation(SEND_PURCHASE_ORDER_EMAIL);
+}

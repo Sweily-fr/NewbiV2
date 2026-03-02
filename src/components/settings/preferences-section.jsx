@@ -68,13 +68,13 @@ export function PreferencesSection() {
       {/* Confidentialité */}
       <div>
         <h2 className="text-lg font-medium mb-1 hidden md:block">Préférences</h2>
-        <Separator className="hidden md:block" />
+        <Separator className="hidden md:block bg-[#eeeff1] dark:bg-[#232323]" />
         {/* Dark Mode Component */}
         <div className="mb-8 mt-4 md:mt-12">
           <DarkModeComponent />
         </div>
 
-        <Separator />
+        <Separator className="bg-[#eeeff1] dark:bg-[#232323]" />
 
         <div className="space-y-10 mt-8">
           {/* Section Ouverture au démarrage */}

@@ -53,9 +53,7 @@ export default function SignUpPage() {
     await signIn.social(
       { provider, callbackURL: "/dashboard" },
       {
-        onSuccess: () => {
-          toast.success(`Vous etes connecté avec ${provider}`);
-        },
+        onSuccess: () => {},
         onError: (error) => {
           toast.error(`Erreur lors de la connexion avec ${provider}`);
           throw error;

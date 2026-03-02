@@ -583,6 +583,8 @@ export default function QuoteTable({ handleNewQuote, quoteIdToOpen, triggerImpor
                     data-state={row.getIsSelected() && "selected"}
                     className="border-b hover:bg-muted/50 data-[state=selected]:bg-muted cursor-pointer transition-colors"
                     onClick={(e) => {
+                      // Ignorer les clics provenant de portals React (modals, dropdowns)
+                      if (!e.currentTarget.contains(e.target)) return;
                       // Ne pas ouvrir la sidebar si on clique sur la checkbox ou les actions
                       if (
                         e.target.closest('[role="checkbox"]') ||
@@ -677,6 +679,8 @@ export default function QuoteTable({ handleNewQuote, quoteIdToOpen, triggerImpor
                       data-state={row.getIsSelected() && "selected"}
                       className="border-b border-gray-50 dark:border-gray-800 hover:bg-gray-25 dark:hover:bg-gray-900 cursor-pointer"
                       onClick={(e) => {
+                        // Ignorer les clics provenant de portals React (modals, dropdowns)
+                        if (!e.currentTarget.contains(e.target)) return;
                         if (
                           e.target.closest('[role="checkbox"]') ||
                           e.target.closest("[data-actions-cell]") ||

@@ -44,8 +44,8 @@ const statusFilterFn = (row, columnId, filterValue) => {
 // Mémoize filter functions to prevent recreation on each render
 const memoizedMultiColumnFilter = (row, columnId, filterValue) => {
   const invoice = row.original;
-  const clientName = invoice.client?.name || "";
-  const invoiceNumber = invoice.number || "";
+  const clientName = invoice.client?.name || invoice.vendor?.name || "";
+  const invoiceNumber = invoice.number || invoice.originalInvoiceNumber || "";
 
   // Formater les dates dans différents formats pour la recherche
   const formatDate = (dateValue) => {
@@ -115,9 +115,14 @@ const memoizedMultiColumnFilter = (row, columnId, filterValue) => {
   const issueDates = invoice.issueDate ? formatDate(invoice.issueDate) : [];
   const dueDates = invoice.dueDate ? formatDate(invoice.dueDate) : [];
 
-  // Récupérer les autres données
-  const status = INVOICE_STATUS_LABELS[invoice.status] || "";
-  const amount = invoice.finalTotalTTC ? invoice.finalTotalTTC.toString() : "";
+  // Récupérer les autres données (supporter factures normales et importées)
+  const isImported = invoice._type === "imported";
+  const status = isImported
+    ? IMPORTED_INVOICE_STATUS_LABELS[invoice.status] || ""
+    : INVOICE_STATUS_LABELS[invoice.status] || "";
+  const amount = (invoice.finalTotalTTC || invoice.totalTTC || invoice.total)
+    ? (invoice.finalTotalTTC || invoice.totalTTC || invoice.total).toString()
+    : "";
 
   // Préparer le contenu de recherche
   const searchableContent = [
@@ -158,9 +163,22 @@ const dateFilterFn = (row, columnId, filterValue) => {
   const issueDate = row.original.issueDate;
   if (!issueDate) return false;
 
-  const date = new Date(
-    typeof issueDate === "string" ? parseInt(issueDate) : issueDate
-  );
+  let date;
+  if (typeof issueDate === "string") {
+    // Timestamp numérique en string (factures normales)
+    if (/^\d+$/.test(issueDate)) {
+      date = new Date(parseInt(issueDate, 10));
+    } else {
+      // Date ISO ou autre format string (factures importées)
+      date = new Date(issueDate);
+    }
+  } else if (typeof issueDate === "number") {
+    date = new Date(issueDate);
+  } else {
+    date = new Date(issueDate);
+  }
+
+  if (isNaN(date.getTime())) return false;
   date.setHours(0, 0, 0, 0);
 
   if (filterValue.from && filterValue.to) {
@@ -373,11 +391,6 @@ export function useInvoiceTable({
           label: "Échéance",
         },
         cell: ({ row }) => {
-          // Ne pas afficher d'échéance pour les factures importées
-          if (row.original._type === "imported") {
-            return <span className="text-muted-foreground">-</span>;
-          }
-
           const dateFromGetter = row.getValue("dueDate");
           const dateFromOriginal = row.original.dueDate;
           const date = dateFromGetter || dateFromOriginal;

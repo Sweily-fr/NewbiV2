@@ -48,7 +48,7 @@ const FranceIcon = () => (
 
 export default function HeroSection() {
   return (
-    <div className="relative w-full overflow-hidden bg-[#FDFDFD] px-5 pb-20 md:pb-54 lg:pb-0">
+    <div className="relative w-full overflow-x-clip bg-[#FDFDFD] px-5 pb-20 md:pb-54 lg:pb-0">
       {/* Conteneur principal avec max-width comme Qonto */}
       <div className="max-w-[1200px] mx-auto relative lg:block flex flex-col md:flex-row">
         {/* Grille pour le contenu texte - Structure Qonto */}
@@ -145,6 +145,33 @@ export default function HeroSection() {
                 alt="newbi logo"
                 className="w-[60px] h-auto object-contain"
               />
+            </div>
+
+            {/* Mobile: Image mockup + label facturation électronique superposé */}
+            <div className="lg:hidden mt-10 relative">
+              <div className="relative">
+                <img
+                  src="/mockup-mac-hero-section.png"
+                  alt="Dashboard Newbi sur Mac"
+                  style={{
+                    width: "140%",
+                    maxWidth: "none",
+                    marginLeft: "15%",
+                  }}
+                  className="object-contain rounded-md"
+                />
+              </div>
+              {/* Label superposé en bas à gauche */}
+              <Link
+                href="/produits/facturation-electronique"
+                className="absolute bottom-20 left-0 z-10 inline-flex items-center gap-2 bg-white rounded-xl border border-gray-200 shadow-sm px-4 py-3 hover:shadow-md transition-shadow"
+              >
+                <img
+                  src="/logo_Compatible_Facturation_electronique-footer.png"
+                  alt="Conforme Facturation électronique 2026"
+                  className="h-10 w-auto object-contain"
+                />
+              </Link>
             </div>
           </div>
         </div>

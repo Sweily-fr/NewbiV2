@@ -16,6 +16,7 @@ export const GET_TASK_TIMER = gql`
           startTime
           endTime
           duration
+          isManual
         }
       }
     }
@@ -37,6 +38,16 @@ export const GET_BOARDS = gql`
         type
       }
       totalBillableAmount
+      members {
+        id
+        userId
+        name
+        email
+        image
+      }
+      taskCount
+      totalTimeSpent
+      templateName
       createdAt
       updatedAt
     }
@@ -95,6 +106,14 @@ export const GET_BOARD = gql`
           text
           completed
         }
+        clientId
+        client {
+          id
+          name
+          firstName
+          lastName
+          type
+        }
         assignedMembers
         timeTracking {
           totalSeconds
@@ -110,6 +129,7 @@ export const GET_BOARD = gql`
             startTime
             endTime
             duration
+            isManual
           }
           hourlyRate
           roundingOption
@@ -305,6 +325,14 @@ export const CREATE_TASK = gql`
         text
         completed
       }
+      clientId
+      client {
+        id
+        name
+        firstName
+        lastName
+        type
+      }
       assignedMembers
       timeTracking {
         totalSeconds
@@ -320,6 +348,7 @@ export const CREATE_TASK = gql`
           startTime
           endTime
           duration
+          isManual
         }
         hourlyRate
         roundingOption
@@ -396,6 +425,14 @@ export const UPDATE_TASK = gql`
         text
         completed
       }
+      clientId
+      client {
+        id
+        name
+        firstName
+        lastName
+        type
+      }
       assignedMembers
       timeTracking {
         totalSeconds
@@ -411,6 +448,7 @@ export const UPDATE_TASK = gql`
           startTime
           endTime
           duration
+          isManual
         }
         hourlyRate
         roundingOption
@@ -504,6 +542,14 @@ export const TASK_FRAGMENT = gql`
       text
       completed
     }
+    clientId
+    client {
+      id
+      name
+      firstName
+      lastName
+      type
+    }
     assignedMembers
     timeTracking {
       totalSeconds
@@ -519,6 +565,7 @@ export const TASK_FRAGMENT = gql`
         startTime
         endTime
         duration
+        isManual
       }
       hourlyRate
       roundingOption
@@ -619,6 +666,16 @@ export const BOARD_FRAGMENT = gql`
       type
     }
     totalBillableAmount
+    members {
+      id
+      userId
+      name
+      email
+      image
+    }
+    taskCount
+    totalTimeSpent
+    templateName
     createdAt
     updatedAt
   }
@@ -709,6 +766,15 @@ export const RESET_TIMER = gql`
 export const UPDATE_TIMER_SETTINGS = gql`
   mutation UpdateTimerSettings($taskId: ID!, $hourlyRate: Float, $roundingOption: String, $workspaceId: ID) {
     updateTimerSettings(taskId: $taskId, hourlyRate: $hourlyRate, roundingOption: $roundingOption, workspaceId: $workspaceId) {
+      ...TaskFields
+    }
+  }
+  ${TASK_FRAGMENT}
+`;
+
+export const ADD_MANUAL_TIME = gql`
+  mutation AddManualTime($taskId: ID!, $seconds: Int!, $description: String, $workspaceId: ID) {
+    addManualTime(taskId: $taskId, seconds: $seconds, description: $description, workspaceId: $workspaceId) {
       ...TaskFields
     }
   }
@@ -1037,6 +1103,13 @@ export const DELETE_PUBLIC_SHARE = gql`
 export const REVOKE_PUBLIC_SHARE = gql`
   mutation RevokePublicShare($id: ID!, $workspaceId: ID) {
     revokePublicShare(id: $id, workspaceId: $workspaceId)
+  }
+`;
+
+// Mutation pour réactiver un lien de partage désactivé
+export const REACTIVATE_PUBLIC_SHARE = gql`
+  mutation ReactivatePublicShare($id: ID!, $workspaceId: ID) {
+    reactivatePublicShare(id: $id, workspaceId: $workspaceId)
   }
 `;
 
@@ -1463,6 +1536,7 @@ export const GET_KANBAN_TEMPLATES = gql`
       id
       name
       description
+      clientId
       columns {
         title
         color

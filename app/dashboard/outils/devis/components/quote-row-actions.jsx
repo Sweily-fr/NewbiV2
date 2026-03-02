@@ -36,7 +36,6 @@ import {
   QUOTE_STATUS,
   GET_QUOTE,
 } from "@/src/graphql/quoteQueries";
-import { useConvertQuoteToPurchaseOrder } from "@/src/graphql/purchaseOrderQueries";
 import { useApolloClient } from "@apollo/client";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { toast } from "@/src/components/ui/sonner";
@@ -94,8 +93,6 @@ export default function QuoteRowActions({ row, onRefetch }) {
   const { workspaceId } = useRequiredWorkspace();
   const { changeStatus, loading: changingStatus } = useChangeQuoteStatus();
   const { deleteQuote, loading: isDeleting } = useDeleteQuote();
-  const { convertToPurchaseOrder, loading: convertingToPO } = useConvertQuoteToPurchaseOrder();
-
   const handleView = () => {
     if (isMobile) {
       setIsMobileFullscreenOpen(true);
@@ -181,18 +178,36 @@ export default function QuoteRowActions({ row, onRefetch }) {
 
   const handleConvertToPurchaseOrder = async () => {
     try {
-      const result = await convertToPurchaseOrder(quote.id);
-      toast.success("Bon de commande créé à partir du devis");
-      if (onRefetch) onRefetch();
-      if (result?.id) {
-        router.push(`/dashboard/outils/bons-commande/${result.id}/editer`);
+      const { data } = await apolloClient.query({
+        query: GET_QUOTE,
+        variables: { workspaceId, id: quote.id },
+        fetchPolicy: "network-only",
+      });
+      const fullQuote = data?.quote;
+      if (!fullQuote) {
+        toast.error("Impossible de récupérer le devis");
+        return;
       }
+      sessionStorage.setItem('quotePurchaseOrderData', JSON.stringify({
+        sourceQuoteId: fullQuote.id,
+        purchaseOrderNumber: `${fullQuote.prefix || ''}${fullQuote.number || ''}`,
+        client: fullQuote.client,
+        items: fullQuote.items,
+        discount: fullQuote.discount,
+        discountType: fullQuote.discountType,
+        customFields: fullQuote.customFields,
+        shipping: fullQuote.shipping,
+        isReverseCharge: fullQuote.isReverseCharge,
+        retenueGarantie: fullQuote.retenueGarantie,
+        escompte: fullQuote.escompte,
+      }));
+      router.push('/dashboard/outils/bons-commande/new');
     } catch (error) {
-      toast.error("Erreur lors de la création du bon de commande");
+      toast.error("Erreur lors de la conversion en bon de commande");
     }
   };
 
-  const isLoading = changingStatus || isDeleting || convertingToPO;
+  const isLoading = changingStatus || isDeleting;
 
   // Logique pour déterminer quelles actions sont disponibles
   const canConvertToPO = quote.status === QUOTE_STATUS.COMPLETED;

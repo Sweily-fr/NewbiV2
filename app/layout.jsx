@@ -5,6 +5,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/src/components/theme-provider";
 import { ApolloWrapper } from "@/src/providers/apollo-provider";
 import { Toaster } from "@/src/components/ui/sonner";
+import { DevAnimationTrigger } from "@/src/components/dev-animation-trigger";
 // import CookieManager from "@/src/components/cookies/CookieManager";
 import "@/src/utils/clearApolloCache"; // Nettoyage du cache Apollo
 
@@ -114,9 +115,10 @@ export default function RootLayout({ children }) {
               (function() {
                 try {
                   const theme = localStorage.getItem('vite-ui-theme') || 'system';
-                  const isDashboard = window.location.pathname.startsWith('/dashboard');
-                  
-                  if (!isDashboard) {
+                  const path = window.location.pathname;
+                  const isDarkAllowed = path.startsWith('/dashboard') || path.startsWith('/create-workspace');
+
+                  if (!isDarkAllowed) {
                     document.documentElement.classList.add('light');
                     return;
                   }
@@ -162,6 +164,7 @@ export default function RootLayout({ children }) {
           </ThemeProvider>
         </ApolloWrapper>
         <Toaster />
+        <DevAnimationTrigger />
       </body>
     </html>
   );

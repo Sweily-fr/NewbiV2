@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useSession } from "@/src/lib/auth-client";
 import { authClient } from "@/src/lib/auth-client";
 import { toast } from "@/src/components/ui/sonner";
@@ -22,6 +22,12 @@ export function useDashboardLayoutSimple() {
   // États pour les données utilisateur (cache minimal)
   const [cachedUser, setCachedUser] = useState(null);
   const [cachedOrganization, setCachedOrganization] = useState(null);
+
+  // Refs pour empêcher les pollings multiples et les re-déclenchements
+  const stripePollingRef = useRef(null);
+  const hasHandledStripeReturn = useRef(false);
+  const hasHandledCancelReturn = useRef(false);
+  const hasHandledSubscriptionSuccess = useRef(false);
 
   // Protection contre l'erreur d'hydratation + chargement cache utilisateur
   useEffect(() => {
@@ -145,10 +151,7 @@ export function useDashboardLayoutSimple() {
       try {
         setIsLoading(true);
 
-        console.log(
-          "🔍 [SUBSCRIPTION] Fetching for organizationId:",
-          organizationId
-        );
+        // Fetch subscription silently
 
         // ✅ Utiliser l'API personnalisée qui récupère directement depuis MongoDB
         // (inclut les abonnements canceled, contrairement à Better Auth subscription.list)
@@ -157,7 +160,7 @@ export function useDashboardLayoutSimple() {
         );
         const data = await response.json();
 
-        console.log("🔍 [SUBSCRIPTION] Result:", data);
+        // Result received
 
         if (response.ok && data) {
           // Vérifier si l'abonnement est actif ou encore valide (canceled mais dans la période payée)
@@ -165,7 +168,7 @@ export function useDashboardLayoutSimple() {
 
           // Si pas d'abonnement ou abonnement expiré
           if (data.isDefault || data.status === "expired" || !data.status) {
-            console.log("🔍 [SUBSCRIPTION] Pas d'abonnement actif ou expiré");
+            // No active subscription
             activeSubscription = null;
           } else if (data.status === "active" || data.status === "trialing") {
             activeSubscription = data;
@@ -173,21 +176,11 @@ export function useDashboardLayoutSimple() {
             const periodEndDate = new Date(data.periodEnd);
             const now = new Date();
             if (periodEndDate > now) {
-              console.log(
-                "🔍 [SUBSCRIPTION] Abonnement annulé mais encore valide jusqu'au:",
-                periodEndDate.toLocaleDateString("fr-FR")
-              );
               activeSubscription = data;
             } else {
-              console.log("🔍 [SUBSCRIPTION] Abonnement annulé et expiré");
               activeSubscription = null;
             }
           }
-
-          console.log(
-            "🔍 [SUBSCRIPTION] Active subscription:",
-            activeSubscription
-          );
 
           setSubscription(activeSubscription);
 
@@ -225,7 +218,7 @@ export function useDashboardLayoutSimple() {
 
   // Polling automatique après retour de Stripe
   useEffect(() => {
-    if (!isHydrated) return;
+    if (!isHydrated || hasHandledStripeReturn.current) return;
 
     const urlParams = new URLSearchParams(window.location.search);
     const hasStripeSession = urlParams.get("session_id");
@@ -233,26 +226,23 @@ export function useDashboardLayoutSimple() {
       urlParams.get("subscription_success") === "true";
     const hasPaymentSuccess = urlParams.get("payment_success") === "true";
 
-    // ✅ Déclencher le polling si on revient de Stripe (session_id OU subscription_success OU payment_success)
     if (!hasStripeSession && !hasSubscriptionSuccess && !hasPaymentSuccess)
       return;
 
-    console.log("🔄 [POLLING] Démarrage du polling après retour Stripe...", {
-      hasStripeSession: !!hasStripeSession,
-      hasSubscriptionSuccess,
-      hasPaymentSuccess,
-    });
-
     // Attendre que l'organisation soit disponible
-    if (!session?.session?.activeOrganizationId) {
-      return;
-    }
+    if (!session?.session?.activeOrganizationId) return;
+
+    // Marquer comme traité AVANT de lancer le polling
+    hasHandledStripeReturn.current = true;
+
+    // Nettoyer l'URL immédiatement pour éviter re-déclenchement
+    window.history.replaceState({}, document.title, window.location.pathname);
+
+    console.log("🔄 [POLLING] Démarrage du polling après retour Stripe...");
 
     let attempts = 0;
-    const maxAttempts = 30; // 30 × 2s = 60 secondes max
-    let pollInterval;
+    const maxAttempts = 30;
 
-    // Fonction de polling - utilise l'API personnalisée
     const checkSubscription = async () => {
       attempts++;
       console.log(`🔄 [POLLING] Tentative ${attempts}/${maxAttempts}...`);
@@ -263,96 +253,66 @@ export function useDashboardLayoutSimple() {
         );
         const data = await response.json();
 
-        console.log(`🔍 [POLLING] Résultat:`, data);
-
         if (!response.ok) {
           console.error("❌ [POLLING] Erreur API:", data.error);
           return;
         }
 
-        // Vérifier si l'abonnement est actif
         const isActive = data.status === "active" || data.status === "trialing";
 
         if (isActive) {
-          clearInterval(pollInterval);
+          clearInterval(stripePollingRef.current);
+          stripePollingRef.current = null;
           console.log("✅ [POLLING] Abonnement trouvé!", data.plan);
 
-          // Mettre à jour l'état
           setSubscription(data);
 
-          // Mettre à jour le cache
           const cacheKey = `subscription-${session.session.activeOrganizationId}`;
           localStorage.setItem(
             cacheKey,
-            JSON.stringify({
-              data: data,
-              timestamp: Date.now(),
-            })
+            JSON.stringify({ data, timestamp: Date.now() })
           );
-
-          // Nettoyer l'URL
-          window.history.replaceState(
-            {},
-            document.title,
-            window.location.pathname
-          );
-
-          console.log("✅ [POLLING] Subscription mise à jour");
-        } else {
-          console.log(
-            `⏳ [POLLING] Pas d'abonnement actif trouvé (status: ${data.status}), nouvelle tentative...`
-          );
-          if (attempts >= maxAttempts) {
-            clearInterval(pollInterval);
-            console.warn(
-              "⚠️ [POLLING] Timeout - abonnement non trouvé après 30 tentatives"
-            );
-            // Nettoyer l'URL même en cas d'échec
-            window.history.replaceState(
-              {},
-              document.title,
-              window.location.pathname
-            );
-          }
+        } else if (attempts >= maxAttempts) {
+          clearInterval(stripePollingRef.current);
+          stripePollingRef.current = null;
+          console.warn("⚠️ [POLLING] Timeout après 30 tentatives");
         }
       } catch (error) {
         console.error("❌ [POLLING] Erreur:", error);
       }
     };
 
-    // Première vérification immédiate
     checkSubscription();
+    stripePollingRef.current = setInterval(checkSubscription, 1000);
 
-    // Puis polling toutes les 1 seconde (plus rapide)
-    pollInterval = setInterval(checkSubscription, 1000);
-
-    // Cleanup
     return () => {
-      if (pollInterval) {
-        clearInterval(pollInterval);
+      if (stripePollingRef.current) {
+        clearInterval(stripePollingRef.current);
+        stripePollingRef.current = null;
       }
     };
   }, [isHydrated, session?.session?.activeOrganizationId]);
 
   // Synchronisation et mise à jour après résiliation d'abonnement
   useEffect(() => {
-    if (!isHydrated) return;
+    if (!isHydrated || hasHandledCancelReturn.current) return;
 
     const urlParams = new URLSearchParams(window.location.search);
     const hasCancelSuccess = urlParams.get("cancel_success") === "true";
 
     if (!hasCancelSuccess) return;
+    if (!session?.session?.activeOrganizationId) return;
 
-    // Attendre que l'organisation et l'abonnement soient disponibles
-    if (!session?.session?.activeOrganizationId) {
-      return;
-    }
+    // Marquer comme traité AVANT la sync
+    hasHandledCancelReturn.current = true;
+
+    // Nettoyer l'URL immédiatement pour éviter re-déclenchement après reload
+    window.history.replaceState({}, document.title, window.location.pathname);
 
     console.log("🔄 Résiliation détectée, synchronisation avec Stripe...");
 
     const syncAndUpdate = async () => {
       try {
-        // D'abord, récupérer l'abonnement actuel pour avoir le stripeSubscriptionId
         const { data: subscriptions, error: listError } =
           await authClient.subscription.list({
             query: {
@@ -365,18 +325,11 @@ export function useDashboardLayoutSimple() {
           return;
         }
 
-        // Trouver l'abonnement (actif ou en cours d'annulation)
         const currentSubscription = subscriptions?.find(
           (sub) => sub.stripeSubscriptionId
         );
 
         if (currentSubscription?.stripeSubscriptionId) {
-          console.log(
-            "🔄 Synchronisation depuis Stripe:",
-            currentSubscription.stripeSubscriptionId
-          );
-
-          // Appeler l'API de synchronisation pour mettre à jour depuis Stripe
           const syncResponse = await fetch("/api/sync-subscription-status", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -387,10 +340,8 @@ export function useDashboardLayoutSimple() {
           });
 
           const syncData = await syncResponse.json();
-          console.log("✅ Synchronisation terminée:", syncData);
 
           if (syncData.success) {
-            // Mettre à jour l'abonnement local avec les nouvelles données
             const updatedSubscription = {
               ...currentSubscription,
               status: syncData.status,
@@ -400,7 +351,6 @@ export function useDashboardLayoutSimple() {
 
             setSubscription(updatedSubscription);
 
-            // Mettre à jour le cache
             const cacheKey = `subscription-${session.session.activeOrganizationId}`;
             localStorage.setItem(
               cacheKey,
@@ -412,50 +362,33 @@ export function useDashboardLayoutSimple() {
           }
         }
 
-        // Nettoyer l'URL
-        window.history.replaceState(
-          {},
-          document.title,
-          window.location.pathname
-        );
-
-        console.log("✅ Résiliation traitée, rechargement de la page...");
-
-        // Recharger la page pour mettre à jour l'interface
         setTimeout(() => {
           window.location.reload();
         }, 500);
       } catch (error) {
         console.error("❌ Erreur lors de la synchronisation:", error);
-        // Nettoyer l'URL même en cas d'erreur
-        window.history.replaceState(
-          {},
-          document.title,
-          window.location.pathname
-        );
         window.location.reload();
       }
     };
 
-    // Exécuter la synchronisation
     syncAndUpdate();
   }, [isHydrated, session?.session?.activeOrganizationId]);
 
   // Afficher un toast de succès pour un nouvel abonnement (upgrade)
   useEffect(() => {
-    if (!isHydrated) return;
+    if (!isHydrated || hasHandledSubscriptionSuccess.current) return;
 
     const urlParams = new URLSearchParams(window.location.search);
     const hasSubscriptionSuccess =
       urlParams.get("subscription_success") === "true";
 
     if (hasSubscriptionSuccess) {
+      hasHandledSubscriptionSuccess.current = true;
       toast.success("Abonnement activé avec succès !", {
         description:
           "Vous avez maintenant accès à toutes les fonctionnalités Pro.",
       });
 
-      // Nettoyer l'URL
       window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, [isHydrated]);
@@ -482,19 +415,16 @@ export function useDashboardLayoutSimple() {
     isHydrated,
   ]);
 
-  const completeOnboarding = async () => {
+  const completeOnboarding = useCallback(async () => {
     setOnboardingLoading(true);
 
     try {
-      // Marquer l'onboarding comme vu dans le user
       await authClient.updateUser({
         hasSeenOnboarding: true,
       });
 
-      // Fermer immédiatement le modal pour éviter qu'il se réaffiche
       setIsOnboardingOpen(false);
 
-      // Rafraîchir la session pour obtenir les nouvelles données
       await authClient.getSession({
         fetchOptions: {
           cache: "no-store",
@@ -505,19 +435,19 @@ export function useDashboardLayoutSimple() {
     } finally {
       setOnboardingLoading(false);
     }
-  };
+  }, []);
 
-  // Logique d'abonnement
-  const hasFeature = (feature) => {
+  // Logique d'abonnement — stabilisées avec useCallback
+  const hasFeature = useCallback((feature) => {
     if (!subscription) return false;
     return subscription.limits?.[feature] > 0;
-  };
+  }, [subscription]);
 
-  const getLimit = (feature) => {
+  const getLimit = useCallback((feature) => {
     return subscription?.limits?.[feature] || 0;
-  };
+  }, [subscription]);
 
-  const isActive = (requirePaidSubscription = false) => {
+  const isActive = useCallback((requirePaidSubscription = false) => {
     // 🔒 Si l'abonnement est en cours de chargement, vérifier le cache uniquement
     // Ne PAS autoriser l'accès par défaut (sécurité)
     if (isLoading && !subscription) {
@@ -542,7 +472,7 @@ export function useDashboardLayoutSimple() {
               }
             }
           }
-        } catch (e) {
+        } catch {
           // Ignorer les erreurs de cache
         }
       }
@@ -575,10 +505,10 @@ export function useDashboardLayoutSimple() {
     // Seuls les abonnements Stripe sont acceptés (active, trialing, canceled valide)
     // Les anciens utilisateurs avec trial organisation devront souscrire via Stripe
     return hasValidSubscription;
-  };
+  }, [subscription, isLoading, activeOrganization?.id, session?.session?.activeOrganizationId]);
 
   // Fonction de rafraîchissement simple
-  const refreshLayoutData = () => {
+  const refreshLayoutData = useCallback(() => {
     // Vider tous les caches et forcer un refetch
     try {
       // Cache d'abonnement
@@ -600,46 +530,58 @@ export function useDashboardLayoutSimple() {
     } catch (error) {
       console.warn("Erreur suppression caches:", error);
     }
-  };
+  }, [session?.session?.activeOrganizationId]);
 
   // Utiliser activeOrganization de Better Auth en priorité, sinon fallback vers cache
   const finalOrganization =
     activeOrganization || session?.user?.organization || cachedOrganization;
 
-  return {
-    // Données utilisateur (avec cache pour éviter les flashs)
-    user: session?.user || cachedUser,
-    organization: finalOrganization,
+  const user = session?.user || cachedUser;
+  const shouldShowOnboarding =
+    session?.user?.role === "owner" && !session?.user?.hasSeenOnboarding;
+  const combinedLoading = isLoading || sessionLoading || orgLoading;
+  const combinedInitialized = isInitialized && isHydrated && !orgLoading;
 
-    // Données d'abonnement
-    subscription,
-    hasFeature,
-    getLimit,
-    isActive,
-
-    // Onboarding
-    isOnboardingOpen,
-    setIsOnboardingOpen,
-    completeOnboarding,
-    skipOnboarding: completeOnboarding,
-    onboardingLoading,
-    shouldShowOnboarding:
-      session?.user?.role === "owner" && !session?.user?.hasSeenOnboarding,
-
-    // États de chargement
-    isLoading: isLoading || sessionLoading || orgLoading,
-    isInitialized: isInitialized && isHydrated && !orgLoading,
-    isHydrated,
-
-    // Fonctions de cache (simplifiées)
-    refreshLayoutData,
-    invalidateOrganizationCache: refreshLayoutData,
-
-    // Métadonnées de cache (désactivées)
-    cacheInfo: {
-      lastUpdate: null,
-      isFromCache: false,
-      cacheKey: null,
-    },
-  };
+  return useMemo(
+    () => ({
+      user,
+      organization: finalOrganization,
+      subscription,
+      hasFeature,
+      getLimit,
+      isActive,
+      isOnboardingOpen,
+      setIsOnboardingOpen,
+      completeOnboarding,
+      skipOnboarding: completeOnboarding,
+      onboardingLoading,
+      shouldShowOnboarding,
+      isLoading: combinedLoading,
+      isInitialized: combinedInitialized,
+      isHydrated,
+      refreshLayoutData,
+      invalidateOrganizationCache: refreshLayoutData,
+      cacheInfo: {
+        lastUpdate: null,
+        isFromCache: false,
+        cacheKey: null,
+      },
+    }),
+    [
+      user,
+      finalOrganization,
+      subscription,
+      hasFeature,
+      getLimit,
+      isActive,
+      isOnboardingOpen,
+      completeOnboarding,
+      onboardingLoading,
+      shouldShowOnboarding,
+      combinedLoading,
+      combinedInitialized,
+      isHydrated,
+      refreshLayoutData,
+    ]
+  );
 }

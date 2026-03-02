@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import {
   Bar,
   BarChart,
+  Cell,
   XAxis,
   YAxis,
   Tooltip,
@@ -15,15 +16,23 @@ import {
 import { ChartContainer } from "@/src/components/ui/chart";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { ToggleGroup, ToggleGroupItem } from "@/src/components/ui/toggle-group";
-import { BarChart2, Grid3X3 } from "lucide-react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/src/components/ui/table";
+import { BarChart2, Grid3X3, TableIcon } from "lucide-react";
 
 const chartConfig = {
   totalHT: { label: "CA HT", color: "#5b50ff" },
 };
 
-const TREEMAP_COLORS = [
-  "rgba(91, 80, 255, 1)", "rgba(91, 80, 255, 0.85)", "rgba(91, 80, 255, 0.7)", "rgba(91, 80, 255, 0.6)", "rgba(91, 80, 255, 0.5)",
-  "rgba(91, 80, 255, 0.42)", "rgba(91, 80, 255, 0.35)", "rgba(91, 80, 255, 0.3)", "rgba(91, 80, 255, 0.25)", "rgba(91, 80, 255, 0.2)",
+const BAR_COLORS = [
+  "#5b50ff", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6",
+  "#06b6d4", "#ec4899", "#14b8a6", "#f97316", "#6366f1",
 ];
 
 const formatCurrency = (value) =>
@@ -116,7 +125,7 @@ export function AnalyticsProductChart({ revenueByProduct, loading }) {
           : p.description,
       name: p.description,
       size: p.totalHT,
-      fill: TREEMAP_COLORS[i % TREEMAP_COLORS.length],
+      fill: BAR_COLORS[i % BAR_COLORS.length],
     }));
   }, [revenueByProduct]);
 
@@ -151,6 +160,9 @@ export function AnalyticsProductChart({ revenueByProduct, loading }) {
           <ToggleGroupItem value="treemap" aria-label="Treemap">
             <Grid3X3 className="h-4 w-4" />
           </ToggleGroupItem>
+          <ToggleGroupItem value="table" aria-label="Tableau">
+            <TableIcon className="h-4 w-4" />
+          </ToggleGroupItem>
         </ToggleGroup>
       </div>
       {viewType === "bar" ? (
@@ -159,6 +171,7 @@ export function AnalyticsProductChart({ revenueByProduct, loading }) {
             data={chartData}
             layout="vertical"
             margin={{ top: 5, right: 30, left: 0, bottom: 5 }}
+            barCategoryGap="15%"
           >
             <CartesianGrid strokeDasharray="3 3" horizontal={false} />
             <XAxis
@@ -177,15 +190,17 @@ export function AnalyticsProductChart({ revenueByProduct, loading }) {
             <Tooltip content={<CustomTooltip />} />
             <Bar
               dataKey="totalHT"
-              fill="#5b50ff"
               radius={[0, 4, 4, 0]}
-              barSize={24}
+              barSize={18}
             >
+              {chartData.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={entry.fill} />
+              ))}
               <LabelList dataKey="shortDesc" content={<BarLabel />} />
             </Bar>
           </BarChart>
         </ChartContainer>
-      ) : (
+      ) : viewType === "treemap" ? (
         <div className="h-[350px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <Treemap
@@ -197,6 +212,31 @@ export function AnalyticsProductChart({ revenueByProduct, loading }) {
               <Tooltip content={<CustomTooltip />} />
             </Treemap>
           </ResponsiveContainer>
+        </div>
+      ) : (
+        <div className="rounded-lg border overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Description</TableHead>
+                <TableHead className="text-right">CA HT</TableHead>
+                <TableHead className="text-right">Quantité vendue</TableHead>
+                <TableHead className="text-right">Factures</TableHead>
+                <TableHead className="text-right">Prix moyen</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {chartData.map((p, i) => (
+                <TableRow key={i}>
+                  <TableCell className="font-medium">{p.description}</TableCell>
+                  <TableCell className="text-right">{formatCurrency(p.totalHT)}</TableCell>
+                  <TableCell className="text-right">{p.totalQuantity}</TableCell>
+                  <TableCell className="text-right">{p.invoiceCount}</TableCell>
+                  <TableCell className="text-right">{formatCurrency(p.averageUnitPrice)}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </div>
       )}
     </div>

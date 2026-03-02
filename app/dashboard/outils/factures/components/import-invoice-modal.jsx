@@ -128,12 +128,12 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
     let quotaExceeded = false;
     let quotaErrorMessage = "";
 
-    // Configuration parallélisation - RÉDUIT pour éviter rate limiting Mistral
-    const PARALLEL_STREAMS = 3; // 3 streams max pour respecter les limites API Mistral
-    const DELAY_BETWEEN_STARTS = 2000; // 2s entre chaque nouveau stream
+    // Configuration parallélisation - Claude Vision n'a pas les mêmes limites que Mistral
+    const PARALLEL_STREAMS = 5; // 5 streams parallèles (Claude Vision supporte bien la concurrence)
+    const DELAY_BETWEEN_STARTS = 300; // 300ms entre chaque nouveau stream (juste pour éviter burst)
 
-    // Estimation du temps (~15s par facture avec 3 streams parallèles)
-    const estimatedSecondsPerFile = 15;
+    // Estimation du temps (~8s par facture avec 5 streams parallèles)
+    const estimatedSecondsPerFile = 8;
     const estimatedTotalSeconds = Math.ceil(
       (totalFiles / PARALLEL_STREAMS) * estimatedSecondsPerFile
     );

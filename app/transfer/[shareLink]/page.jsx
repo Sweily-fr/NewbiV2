@@ -39,6 +39,7 @@ export default function TransferPage() {
   const [isPasswordVerified, setIsPasswordVerified] = useState(false);
   const [previewFile, setPreviewFile] = useState(null);
   const [previewFileIndex, setPreviewFileIndex] = useState(0);
+  const [thumbnailError, setThumbnailError] = useState(false);
 
   // Ref pour annuler le téléchargement
   const downloadAbortRef = useRef(null);
@@ -264,21 +265,12 @@ export default function TransferPage() {
       const allFiles = transfer?.fileTransfer?.files || [];
       const hasWatermark = transfer?.fileTransfer?.hasWatermark;
 
-      // Filtrer les fichiers téléchargeables (exclure les images si filigrane)
-      const files = hasWatermark
-        ? allFiles.filter((f) => {
-            const imageTypes = [
-              "image/jpeg",
-              "image/png",
-              "image/gif",
-              "image/webp",
-              "image/bmp",
-            ];
-            const ext = (f.originalName || "").split(".").pop()?.toLowerCase();
-            const imageExts = ["jpg", "jpeg", "png", "gif", "webp", "bmp"];
-            return !imageTypes.includes(f.mimeType) && !imageExts.includes(ext);
-          })
-        : allFiles;
+      // Bloquer tous les fichiers si filigrane actif
+      if (hasWatermark) {
+        toast.error("Les fichiers de ce transfert sont protégés par un filigrane et ne peuvent pas être téléchargés.");
+        return;
+      }
+      const files = allFiles;
 
       // Si aucun fichier téléchargeable
       if (files.length === 0) {
@@ -452,7 +444,7 @@ export default function TransferPage() {
 
   // Fonction pour télécharger un fichier individuel (depuis le drawer)
   const downloadSingleFile = async (file) => {
-    const fileId = file.fileId || file.id || file._id;
+    const fileId = file.id || file.fileId || file._id;
     // Utiliser la fonction principale avec progression
     await downloadFile(fileId, file.originalName, file.size);
     setPreviewFile(null);
@@ -564,16 +556,9 @@ export default function TransferPage() {
 
   // Vérifier si un fichier est une image
   const isImageFile = (file) => {
-    const imageTypes = [
-      "image/jpeg",
-      "image/png",
-      "image/gif",
-      "image/webp",
-      "image/bmp",
-    ];
+    if (file?.mimeType?.startsWith("image/")) return true;
     const ext = (file.originalName || "").split(".").pop()?.toLowerCase();
-    const imageExts = ["jpg", "jpeg", "png", "gif", "webp", "bmp"];
-    return imageTypes.includes(file.mimeType) || imageExts.includes(ext);
+    return ["jpg", "jpeg", "png", "gif", "webp", "bmp", "heic", "heif", "svg", "tiff"].includes(ext);
   };
 
   // Vérifier si un fichier peut être prévisualisé
@@ -595,9 +580,9 @@ export default function TransferPage() {
     );
   };
 
-  // Vérifier si le téléchargement d'un fichier est bloqué (image avec filigrane)
+  // Vérifier si le téléchargement d'un fichier est bloqué (filigrane actif)
   const isDownloadBlocked = (file) => {
-    return transfer?.fileTransfer?.hasWatermark && isImageFile(file);
+    return !!transfer?.fileTransfer?.hasWatermark;
   };
 
   return (
@@ -720,30 +705,42 @@ export default function TransferPage() {
                     </div>
                   ) : (
                     <>
-                      {[
-                        "image/jpeg",
-                        "image/png",
-                        "image/gif",
-                        "image/webp",
-                      ].includes(
-                        transfer?.fileTransfer?.files?.[0]?.mimeType
-                      ) ||
-                      ["jpg", "jpeg", "png", "gif", "webp"].includes(
-                        transfer?.fileTransfer?.files?.[0]?.originalName
-                          ?.split(".")
-                          .pop()
-                          ?.toLowerCase()
-                      ) ? (
-                        <img
-                          src={`${(process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000").replace(/\/$/, "")}/api/files/preview/${transfer?.fileTransfer?.id}/${transfer?.fileTransfer?.files?.[0]?.fileId || transfer?.fileTransfer?.files?.[0]?.id}`}
-                          alt={transfer?.fileTransfer?.files?.[0]?.originalName}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <FileIcon className="w-16 h-16 text-gray-300" />
-                        </div>
-                      )}
+                      {(() => {
+                        const firstFile = transfer?.fileTransfer?.files?.[0];
+                        const previewApiUrl = `${(process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000").replace(/\/$/, "")}/api/files/preview/${transfer?.fileTransfer?.id}/${firstFile?.fileId || firstFile?.id}`;
+                        const isImg = firstFile?.mimeType?.startsWith("image/") ||
+                          ["jpg", "jpeg", "png", "gif", "webp", "heic", "heif", "bmp", "svg", "tiff"].includes(
+                            firstFile?.originalName?.split(".")?.pop()?.toLowerCase()
+                          );
+                        const isPdf = firstFile?.mimeType === "application/pdf" ||
+                          firstFile?.originalName?.split(".")?.pop()?.toLowerCase() === "pdf";
+
+                        if (isImg && !thumbnailError) {
+                          return (
+                            <img
+                              src={previewApiUrl}
+                              alt={firstFile?.originalName}
+                              className="w-full h-full object-cover"
+                              onError={() => setThumbnailError(true)}
+                            />
+                          );
+                        }
+                        if (isPdf && !thumbnailError) {
+                          return (
+                            <iframe
+                              src={previewApiUrl}
+                              className="w-full h-full pointer-events-none"
+                              title={firstFile?.originalName}
+                              onError={() => setThumbnailError(true)}
+                            />
+                          );
+                        }
+                        return (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <FileIcon className="w-16 h-16 text-gray-300" />
+                          </div>
+                        );
+                      })()}
                       {/* Bouton preview au centre */}
                       <button
                         onClick={() =>
@@ -829,45 +826,31 @@ export default function TransferPage() {
               {transfer?.fileTransfer?.hasWatermark && (
                 <div className="w-full px-5 py-2">
                   <p className="text-xs text-center text-amber-600 bg-amber-50 rounded-lg py-2 px-3">
-                    Les images de ce transfert sont protégées par un filigrane
-                    et ne peuvent pas être téléchargées.
+                    Les fichiers de ce transfert sont protégés par un filigrane
+                    et ne peuvent pas être téléchargés.
                   </p>
                 </div>
               )}
 
               {/* Bouton télécharger - masqué si filigrane et uniquement des images */}
-              {(() => {
-                const files = transfer?.fileTransfer?.files || [];
-                const hasWatermark = transfer?.fileTransfer?.hasWatermark;
-                const downloadableFiles = hasWatermark
-                  ? files.filter((f) => !isImageFile(f))
-                  : files;
-                const allBlocked =
-                  hasWatermark && downloadableFiles.length === 0;
-
-                // Ne pas afficher le bouton si tous les fichiers sont bloqués
-                if (allBlocked) {
-                  return null;
-                }
-
-                return (
-                  <div className="w-full px-5 py-5 text-center">
-                    <Button
-                      onClick={downloadAllFiles}
-                      disabled={isDownloading}
-                      className="text-white px-10 w-full rounded-xl"
-                    >
-                      {isDownloading ? (
-                        <LoaderCircle className="w-5 h-5 animate-spin" />
-                      ) : downloadableFiles.length > 1 ? (
-                        "Tout télécharger"
-                      ) : (
-                        "Télécharger"
-                      )}
-                    </Button>
-                  </div>
-                );
-              })()}
+              {/* Bouton télécharger - masqué si filigrane actif */}
+              {!transfer?.fileTransfer?.hasWatermark && (
+                <div className="w-full px-5 py-5 text-center">
+                  <Button
+                    onClick={downloadAllFiles}
+                    disabled={isDownloading}
+                    className="text-white px-10 w-full rounded-xl"
+                  >
+                    {isDownloading ? (
+                      <LoaderCircle className="w-5 h-5 animate-spin" />
+                    ) : (transfer?.fileTransfer?.files?.length || 0) > 1 ? (
+                      "Tout télécharger"
+                    ) : (
+                      "Télécharger"
+                    )}
+                  </Button>
+                </div>
+              )}
             </>
           )}
         </Card>

@@ -42,8 +42,8 @@ export function BankSyncOverlay({
                 transition={{ duration: 0.4, ease: "easeOut" }}
               >
                 <LoaderCircle
-                  className="h-16 w-16 text-[#fff] animate-spin"
-                  strokeWidth={1}
+                  className="size-9 text-white animate-spin"
+                  strokeWidth={0.5}
                 />
               </motion.div>
 

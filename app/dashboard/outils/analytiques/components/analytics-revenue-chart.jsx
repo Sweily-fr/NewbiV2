@@ -15,8 +15,8 @@ import { Skeleton } from "@/src/components/ui/skeleton";
 
 const chartConfig = {
   revenueHT: { label: "CA HT", color: "#10b981" },
-  expenseAmountHT: { label: "Dépenses HT", color: "#ef4444" },
-  grossMargin: { label: "Marge brute", color: "#5b50ff" },
+  expenseAmount: { label: "Dépenses HT", color: "#ef4444" },
+  grossMarginComputed: { label: "Marge brute", color: "#5b50ff" },
 };
 
 const formatCurrency = (value) =>
@@ -65,15 +65,15 @@ function CustomTooltip({ active, payload }) {
             <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
             Dépenses HT
           </span>
-          <span className="font-medium">{formatCurrency(data.expenseAmountHT)}</span>
+          <span className="font-medium">{formatCurrency(data.expenseAmount)}</span>
         </div>
         <div className="flex items-center justify-between gap-6 border-t pt-1 mt-1">
           <span className="flex items-center gap-2">
             <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "#5b50ff" }} />
             Marge brute
           </span>
-          <span className={`font-medium ${data.grossMargin >= 0 ? "text-emerald-600" : "text-red-600"}`}>
-            {formatCurrency(data.grossMargin)}
+          <span className={`font-medium ${data.grossMarginComputed >= 0 ? "text-emerald-600" : "text-red-600"}`}>
+            {formatCurrency(data.grossMarginComputed)}
           </span>
         </div>
       </div>
@@ -81,29 +81,49 @@ function CustomTooltip({ active, payload }) {
   );
 }
 
-export function AnalyticsRevenueChart({ monthlyRevenue, loading }) {
+export function AnalyticsRevenueChart({ monthlyRevenue, bankTransactions, loading }) {
   const chartData = useMemo(() => {
     if (!monthlyRevenue?.length) return [];
-    return monthlyRevenue.map((m) => ({
-      ...m,
-      monthLabel: formatMonthLabel(m.month),
-    }));
-  }, [monthlyRevenue]);
+
+    // Aggregate negative bank transactions by month as expenses
+    const bankExpenseByMonth = {};
+    (bankTransactions || []).forEach((t) => {
+      if (t.amount >= 0) return;
+      const rawDate = t.date || t.processedAt || t.createdAt;
+      if (!rawDate) return;
+      const d = new Date(rawDate);
+      if (isNaN(d.getTime())) return;
+      const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      bankExpenseByMonth[monthKey] = (bankExpenseByMonth[monthKey] || 0) + Math.abs(t.amount);
+    });
+
+    return monthlyRevenue.map((m) => {
+      const expenseFromModel = m.expenseAmountHT || 0;
+      const expenseFromBank = bankExpenseByMonth[m.month] || 0;
+      const expense = expenseFromModel > 0 ? expenseFromModel : expenseFromBank;
+      return {
+        ...m,
+        monthLabel: formatMonthLabel(m.month),
+        expenseAmount: expense,
+        grossMarginComputed: (m.revenueHT || 0) - expense,
+      };
+    });
+  }, [monthlyRevenue, bankTransactions]);
 
   if (loading) {
     return (
-      <div>
-        <h3 className="text-base font-medium mb-4">CA, Dépenses et Marge brute</h3>
-        <Skeleton className="h-[300px] w-full" />
+      <div className="flex flex-col min-h-0">
+        <h3 className="text-sm font-medium mb-4 shrink-0">CA, Dépenses et Marge brute</h3>
+        <Skeleton className="flex-1 min-h-[200px] w-full" />
       </div>
     );
   }
 
   if (!chartData.length) {
     return (
-      <div>
-        <h3 className="text-base font-medium mb-4">CA, Dépenses et Marge brute</h3>
-        <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+      <div className="flex flex-col min-h-0">
+        <h3 className="text-sm font-medium mb-4 shrink-0">CA, Dépenses et Marge brute</h3>
+        <div className="flex items-center justify-center flex-1 min-h-[200px] text-muted-foreground">
           Aucune donnée pour cette période
         </div>
       </div>
@@ -111,9 +131,9 @@ export function AnalyticsRevenueChart({ monthlyRevenue, loading }) {
   }
 
   return (
-    <div>
-      <h3 className="text-base font-medium mb-4">CA, Dépenses et Marge brute</h3>
-      <ChartContainer config={chartConfig} className="h-[300px] w-full">
+    <div className="flex flex-col min-h-0">
+      <h3 className="text-sm font-medium mb-4 shrink-0">CA, Dépenses et Marge brute</h3>
+      <ChartContainer config={chartConfig} className="flex-1 min-h-[200px] w-full">
         <ComposedChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} />
           <XAxis
@@ -121,6 +141,10 @@ export function AnalyticsRevenueChart({ monthlyRevenue, loading }) {
             tick={{ fontSize: 11 }}
             tickLine={false}
             axisLine={false}
+            interval={0}
+            angle={-45}
+            textAnchor="end"
+            height={50}
           />
           <YAxis
             tick={({ y, payload }) => (
@@ -141,15 +165,15 @@ export function AnalyticsRevenueChart({ monthlyRevenue, loading }) {
             barSize={20}
           />
           <Bar
-            dataKey="expenseAmountHT"
+            dataKey="expenseAmount"
             fill="#ef4444"
             fillOpacity={0.7}
             radius={[4, 4, 0, 0]}
             barSize={20}
           />
           <Line
-            type="monotone"
-            dataKey="grossMargin"
+            type="bump"
+            dataKey="grossMarginComputed"
             stroke="#5b50ff"
             strokeWidth={2}
             dot={false}

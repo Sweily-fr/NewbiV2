@@ -3,16 +3,7 @@ import { NextResponse } from "next/server";
 export async function GET(request) {
   try {
     const country = request.nextUrl.searchParams.get("country") || "FR";
-
-    // Récupérer le JWT depuis le header Authorization
-    const authHeader = request.headers.get("authorization");
-
-    if (!authHeader) {
-      return NextResponse.json(
-        { error: "Non authentifié - Token manquant" },
-        { status: 401 }
-      );
-    }
+    const cookie = request.headers.get("cookie") || "";
 
     // Proxy vers l'API backend
     const backendUrl = (
@@ -22,7 +13,7 @@ export async function GET(request) {
       `${backendUrl}/banking-connect/bridge/institutions?country=${country}`,
       {
         headers: {
-          Authorization: authHeader,
+          Cookie: cookie,
           "Content-Type": "application/json",
         },
       }

@@ -453,6 +453,12 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
       text = 'A réinitialisé le timer';
       return result();
     }
+    if (activity.type === 'manual_time_added') {
+      text = activity.description || 'A ajouté du temps manuellement';
+      // Capitaliser la première lettre
+      text = text.charAt(0).toUpperCase() + text.slice(1);
+      return result();
+    }
 
     // Complétion / réouverture
     if (activity.type === 'completed') {

@@ -135,8 +135,8 @@ function formatInvoiceForExport(invoice) {
   
   return {
     // Identification
-    "Numéro": invoice.prefix 
-      ? `${invoice.prefix}${invoice.number}` 
+    "Numéro": invoice.prefix
+      ? `${invoice.prefix}-${invoice.number}`
       : (invoice.number || ""),
     "N° Bon de commande": invoice.purchaseOrderNumber || "",
     
@@ -397,7 +397,7 @@ export function exportToFEC(invoices, dateRange = null) {
     
     const dateStr = format(issueDate, "yyyyMMdd");
     const validDateStr = createdAt ? format(createdAt, "yyyyMMdd") : dateStr;
-    const invoiceNumber = sanitizeFECField(invoice.prefix ? `${invoice.prefix}${invoice.number}` : invoice.number);
+    const invoiceNumber = sanitizeFECField(invoice.prefix ? `${invoice.prefix}-${invoice.number}` : invoice.number);
     const clientName = sanitizeFECField(invoice.client?.name || "Client inconnu");
     const totalTTC = parseFloat(invoice.finalTotalTTC) || 0;
     
@@ -707,7 +707,7 @@ export function exportToSage(invoices, dateRange = null) {
     if (!issueDate) return;
     
     const dateStr = format(issueDate, "ddMMyyyy");
-    const invoiceNumber = sanitizeSageField(invoice.prefix ? `${invoice.prefix}${invoice.number}` : invoice.number);
+    const invoiceNumber = sanitizeSageField(invoice.prefix ? `${invoice.prefix}-${invoice.number}` : invoice.number);
     const clientName = sanitizeSageField(invoice.client?.name || "Client inconnu");
     const clientCode = sanitizeSageField(invoice.client?.siret || invoiceNumber);
     const totalTTC = parseFloat(invoice.finalTotalTTC) || 0;
@@ -905,7 +905,7 @@ export function exportToCegid(invoices, dateRange = null) {
     if (!issueDate) return;
     
     const dateStr = format(issueDate, "dd/MM/yyyy");
-    const invoiceNumber = sanitizeCegidField(invoice.prefix ? `${invoice.prefix}${invoice.number}` : invoice.number);
+    const invoiceNumber = sanitizeCegidField(invoice.prefix ? `${invoice.prefix}-${invoice.number}` : invoice.number);
     const clientName = sanitizeCegidField(invoice.client?.name || "Client inconnu");
     const clientCode = sanitizeCegidField(invoice.client?.siret || "");
     const totalTTC = parseFloat(invoice.finalTotalTTC) || 0;

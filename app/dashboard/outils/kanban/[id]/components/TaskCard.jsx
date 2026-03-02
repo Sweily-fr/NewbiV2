@@ -9,6 +9,7 @@ import {
   AlignLeft,
   Paperclip,
   ZoomIn,
+  Building2,
 } from "lucide-react";
 import { TimerDisplay } from "./TimerDisplay";
 import { Button } from "@/src/components/ui/button";
@@ -38,11 +39,6 @@ import {
   TooltipTrigger,
   TooltipContent,
 } from "@/src/components/ui/tooltip";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/src/components/ui/popover";
 import { formatDateRelative } from "../../../../../../src/utils/kanbanHelpers";
 import { AvatarGroup } from "@/src/components/ui/user-avatar";
 import { useAssignedMembersInfo } from "@/src/hooks/useAssignedMembersInfo";
@@ -53,7 +49,6 @@ import { useAssignedMembersInfo } from "@/src/hooks/useAssignedMembersInfo";
  */
 const TaskCard = memo(function TaskCard({ task, onEdit, onDelete, index, isDragging }) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [showDescriptionPopover, setShowDescriptionPopover] = useState(false);
   const [showImagePreview, setShowImagePreview] = useState(false);
 
   // Récupérer les infos des membres assignés
@@ -85,6 +80,15 @@ const TaskCard = memo(function TaskCard({ task, onEdit, onDelete, index, isDragg
     }
   };
 
+  // Nom du client assigné
+  const clientDisplayName = useMemo(() => {
+    if (!task.client) return null;
+    if (task.client.type === 'INDIVIDUAL') {
+      return `${task.client.firstName || ''} ${task.client.lastName || task.client.name || ''}`.trim();
+    }
+    return task.client.name || null;
+  }, [task.client]);
+
   // Calcul de la progression - memoized
   const checklistProgress = useMemo(() => {
     if (!task.checklist || !Array.isArray(task.checklist) || task.checklist.length === 0) {
@@ -100,9 +104,11 @@ const TaskCard = memo(function TaskCard({ task, onEdit, onDelete, index, isDragg
 
   return (
     <>
+      <Tooltip delayDuration={400}>
+      <TooltipTrigger asChild>
       <div
         onClick={handleClick}
-        className={`bg-card text-card-foreground rounded-lg border border-border shadow-xs hover:shadow-sm hover:bg-accent/10 flex flex-col cursor-grab active:cursor-grabbing transition-opacity overflow-hidden ${
+        className={`bg-card text-card-foreground rounded-lg border border-border shadow-xs hover:shadow-sm hover:bg-accent/10 flex flex-col transition-opacity overflow-clip ${
           isDragging ? "opacity-50" : "opacity-100"
         }`}
       >
@@ -133,16 +139,9 @@ const TaskCard = memo(function TaskCard({ task, onEdit, onDelete, index, isDragg
         {/* En-tête avec titre et menu 3 points */}
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <h4 className="font-medium text-sm text-foreground truncate">
-                  {task.title}
-                </h4>
-              </TooltipTrigger>
-              <TooltipContent side="top" className="max-w-sm break-words">
-                {task.title}
-              </TooltipContent>
-            </Tooltip>
+            <h4 className="font-medium text-sm text-foreground truncate">
+              {task.title}
+            </h4>
           </div>
           
           {/* Menu 3 points en haut à droite */}
@@ -188,47 +187,32 @@ const TaskCard = memo(function TaskCard({ task, onEdit, onDelete, index, isDragg
                 }}
                 className="text-red-600 cursor-pointer"
               >
-                <Trash2 className="mr-2 h-3 w-3" />
+                <Trash2 className="mr-2 h-3 w-3 text-red-600" />
                 Supprimer
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
 
+        {/* Client assigné */}
+        {clientDisplayName && (
+          <div className="mt-1.5">
+            <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+              <Building2 className="h-3 w-3 flex-shrink-0" />
+              <span className="truncate">{clientDisplayName}</span>
+            </span>
+          </div>
+        )}
+
         {/* Pied de carte - Organisé sur 2 lignes */}
         <div className="mt-auto pt-2 sm:pt-3 space-y-1.5">
           {/* Ligne 1: Icônes (description, checklist) */}
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            {/* Icône description avec Popover */}
+            {/* Icône description */}
             {task.description && (
-              <Popover open={showDescriptionPopover} onOpenChange={setShowDescriptionPopover}>
-                <PopoverTrigger asChild>
-                  <div
-                    className="cursor-pointer text-muted-foreground/70 hover:text-foreground transition-colors"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowDescriptionPopover(!showDescriptionPopover);
-                    }}
-                  >
-                    <AlignLeft className="h-4 w-4" />
-                  </div>
-                </PopoverTrigger>
-                <PopoverContent className="w-80" side="top">
-                  <div className="space-y-2">
-                    <h4 className="font-medium text-sm">Description</h4>
-                    {/<[a-z][\s\S]*>/i.test(task.description) ? (
-                      <div
-                        className="text-sm text-muted-foreground break-words [&_b]:font-bold [&_i]:italic [&_u]:underline [&_blockquote]:border-l-2 [&_blockquote]:border-[#eeeff1] [&_blockquote]:pl-3 [&_pre]:bg-[#f8f9fa] [&_pre]:rounded [&_pre]:px-2 [&_pre]:py-1 [&_pre]:font-mono [&_pre]:text-xs [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:text-[#5a50ff] [&_a]:underline"
-                        dangerouslySetInnerHTML={{ __html: task.description }}
-                      />
-                    ) : (
-                      <p className="text-sm text-muted-foreground whitespace-pre-wrap break-words">
-                        {task.description}
-                      </p>
-                    )}
-                  </div>
-                </PopoverContent>
-              </Popover>
+              <div className="text-muted-foreground/70">
+                <AlignLeft className="h-4 w-4" />
+              </div>
             )}
 
             {/* Pièces jointes */}
@@ -320,6 +304,22 @@ const TaskCard = memo(function TaskCard({ task, onEdit, onDelete, index, isDragg
         </div>
         </div>
       </div>
+      </TooltipTrigger>
+      {task.description && (
+        <TooltipContent side="right" className="max-w-80 pointer-events-none">
+          {/<[a-z][\s\S]*>/i.test(task.description) ? (
+            <div
+              className="text-xs text-white/90 break-words line-clamp-8 [&_b]:font-bold [&_i]:italic [&_u]:underline [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4"
+              dangerouslySetInnerHTML={{ __html: task.description }}
+            />
+          ) : (
+            <p className="text-xs text-white/90 whitespace-pre-wrap break-words line-clamp-8">
+              {task.description}
+            </p>
+          )}
+        </TooltipContent>
+      )}
+      </Tooltip>
 
       {/* Dialog de prévisualisation d'image */}
       <Dialog open={showImagePreview} onOpenChange={setShowImagePreview}>
@@ -370,6 +370,7 @@ const TaskCard = memo(function TaskCard({ task, onEdit, onDelete, index, isDragg
     prevProps.task.columnId === nextProps.task.columnId &&
     prevProps.task.priority === nextProps.task.priority &&
     prevProps.task.dueDate === nextProps.task.dueDate &&
+    prevProps.task.clientId === nextProps.task.clientId &&
     prevProps.task.updatedAt === nextProps.task.updatedAt &&
     prevProps.isDragging === nextProps.isDragging &&
     JSON.stringify(prevProps.task.tags) === JSON.stringify(nextProps.task.tags) &&

@@ -81,6 +81,7 @@ export function ChartAreaInteractive({
   ...props
 }) {
   const isMobile = useIsMobile();
+  const chartId = React.useId();
   const [timeRange, setTimeRange] = React.useState("90d");
   const [customStartDate, setCustomStartDate] = React.useState("");
   const [customEndDate, setCustomEndDate] = React.useState("");
@@ -200,6 +201,16 @@ export function ChartAreaInteractive({
   // Les fragments <></> et ternaires cassent cette détection en production
   const renderChart = () => {
     const children = [
+      <defs key="gradients">
+        <linearGradient id={`fillDesktop-${chartId}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="5%" stopColor="var(--color-desktop)" stopOpacity={0.8} />
+          <stop offset="95%" stopColor="var(--color-desktop)" stopOpacity={0.1} />
+        </linearGradient>
+        <linearGradient id={`fillMobile-${chartId}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="5%" stopColor="var(--color-mobile)" stopOpacity={0.8} />
+          <stop offset="95%" stopColor="var(--color-mobile)" stopOpacity={0.1} />
+        </linearGradient>
+      </defs>,
       <CartesianGrid key="grid" vertical={false} />,
       <XAxis
         key="xaxis"
@@ -221,6 +232,7 @@ export function ChartAreaInteractive({
         tickLine={false}
         axisLine={false}
         tickMargin={8}
+        width={50}
         tickFormatter={(value) => {
           if (Math.abs(value) >= 1000) {
             return `${(value / 1000).toFixed(0)}k`;
@@ -252,11 +264,11 @@ export function ChartAreaInteractive({
         <Area
           key="mobile"
           dataKey="mobile"
-          type="monotone"
-          fill="var(--color-mobile)"
-          fillOpacity={0.15}
+          type="bump"
+          fill={`url(#fillMobile-${chartId})`}
+          fillOpacity={0.4}
           stroke="var(--color-mobile)"
-          strokeWidth={2}
+          strokeWidth={1.5}
           stackId="a"
           connectNulls
         />
@@ -267,11 +279,11 @@ export function ChartAreaInteractive({
       <Area
         key="desktop"
         dataKey="desktop"
-        type="monotone"
-        fill="var(--color-desktop)"
-        fillOpacity={0.15}
+        type="bump"
+        fill={`url(#fillDesktop-${chartId})`}
+        fillOpacity={0.4}
         stroke="var(--color-desktop)"
-        strokeWidth={2}
+        strokeWidth={1.5}
         stackId={!singleCurve && !hideMobileCurve ? "a" : undefined}
         connectNulls
       />
@@ -280,7 +292,7 @@ export function ChartAreaInteractive({
     return (
       <ComposedChart
         data={aggregatedData}
-        margin={{ left: 12, right: 12, top: 12, bottom: 12 }}
+        margin={{ left: -12, right: 12, top: 12, bottom: 12 }}
       >
         {children}
       </ComposedChart>
@@ -321,10 +333,10 @@ export function ChartAreaInteractive({
       <CardHeader>
         <CardTitle className="text-base font-normal">{title}</CardTitle>
         <CardDescription>
-          <span className="hidden @[540px]/card:block text-lg">
+          <span className="hidden @[540px]/card:block text-2xl font-medium text-foreground">
             {resolvedDescription}
           </span>
-          <span className="@[540px]/card:hidden">{computeDescription ? resolvedDescription : shortDescription}</span>
+          <span className="@[540px]/card:hidden text-2xl font-medium text-foreground">{computeDescription ? resolvedDescription : shortDescription}</span>
         </CardDescription>
         {showTimeRange && (
           <CardAction>
@@ -365,8 +377,16 @@ export function ChartAreaInteractive({
                     Période personnalisée
                   </DropdownMenuSubTrigger>
                   <DropdownMenuPortal>
-                    <DropdownMenuSubContent className="w-64 p-4">
-                      <div className="space-y-4">
+                    <DropdownMenuSubContent
+                      className="w-64 p-4"
+                      onPointerDownOutside={(e) => e.preventDefault()}
+                      onFocusOutside={(e) => e.preventDefault()}
+                    >
+                      <div
+                        className="space-y-4"
+                        onKeyDown={(e) => { if (e.key !== 'Escape') e.stopPropagation(); }}
+                        onPointerDown={(e) => e.stopPropagation()}
+                      >
                         <div className="space-y-2">
                           <Label className="text-xs font-medium">
                             Date de début
@@ -438,11 +458,11 @@ export function ChartAreaInteractive({
           </CardAction>
         )}
       </CardHeader>
-      <CardContent className="px-2 pt-4 pb-2 sm:px-6 sm:pt-6 sm:pb-4">
+      <CardContent className="px-2 pt-4 pb-2 sm:px-6 sm:pt-6 sm:pb-4 overflow-visible">
         <ChartContainer
           key={chartMountKey}
           config={config}
-          className="aspect-auto w-full"
+          className="aspect-auto w-full overflow-visible"
           style={{ height }}
         >
           {renderChart()}

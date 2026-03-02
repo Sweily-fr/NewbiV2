@@ -6,7 +6,7 @@
 import React, { useState, useCallback } from 'react';
 import { Button } from '@/src/components/ui/button';
 import { Progress } from '@/src/components/ui/progress';
-import { Building2, X, LoaderCircle, AlertCircle } from 'lucide-react';
+import { Building2, LoaderCircle, AlertCircle } from 'lucide-react';
 import { useCompanyLogoUpload } from '@/src/hooks/useCompanyLogoUpload';
 import { cn } from '@/src/lib/utils';
 
@@ -115,8 +115,8 @@ export function CompanyLogoUpload({
     return (
       <div className={cn('flex flex-col items-center gap-2', className)}>
         <div className="relative inline-flex">
-          <div className="border-input relative flex size-24 items-center justify-center overflow-hidden rounded-lg border border-dashed opacity-50">
-            <AlertCircle className="size-8 text-muted-foreground" />
+          <div className="relative flex size-20 items-center justify-center overflow-hidden rounded-2xl bg-muted opacity-50">
+            <AlertCircle className="size-6 text-muted-foreground" />
           </div>
         </div>
         <p className="text-muted-foreground text-xs text-center">
@@ -133,9 +133,9 @@ export function CompanyLogoUpload({
         <button
           type="button"
           className={cn(
-            "border-input hover:bg-accent/50 focus-visible:border-ring focus-visible:ring-ring/50 relative flex size-24 items-center justify-center overflow-hidden rounded-lg border border-dashed transition-colors outline-none focus-visible:ring-[3px] has-disabled:pointer-events-none has-disabled:opacity-50",
-            isDragging && "bg-accent/50",
-            displayImageUrl && "border-none",
+            "relative flex size-20 items-center justify-center overflow-hidden rounded-2xl border border-[#eeeff1] dark:border-[#232323] transition-colors outline-none focus-visible:ring-ring/50 focus-visible:ring-[3px] has-disabled:pointer-events-none has-disabled:opacity-50",
+            !displayImageUrl && "bg-muted hover:bg-muted/80",
+            isDragging && "ring-2 ring-[#5a50ff]/50",
             isUploading && "pointer-events-none opacity-50"
           )}
           onClick={openFileDialog}
@@ -150,32 +150,18 @@ export function CompanyLogoUpload({
             <LoaderCircle className="size-4 animate-spin opacity-60" />
           ) : displayImageUrl ? (
             <img
-              className="size-full object-contain"
+              className="size-full object-cover"
               src={displayImageUrl}
               alt=""
-              width={96}
-              height={96}
-              style={{ objectFit: "contain" }}
+              width={80}
+              height={80}
             />
           ) : (
             <div aria-hidden="true">
-              <Building2 className="size-8 opacity-60" />
+              <Building2 className="size-6 text-muted-foreground" />
             </div>
           )}
         </button>
-        
-        {/* Bouton de suppression */}
-        {displayImageUrl && !isUploading && (
-          <Button
-            type="button"
-            onClick={handleRemove}
-            size="icon"
-            className="border-background focus-visible:border-background absolute -top-1 -right-1 size-6 rounded-full border-2 shadow-none"
-            aria-label="Supprimer le logo"
-          >
-            <X className="size-3.5" />
-          </Button>
-        )}
         
         {/* Input file caché */}
         <input

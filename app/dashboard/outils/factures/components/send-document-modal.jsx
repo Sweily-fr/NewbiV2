@@ -28,6 +28,7 @@ import {
   useSendInvoiceEmail,
   useSendQuoteEmail,
   useSendCreditNoteEmail,
+  useSendPurchaseOrderEmail,
 } from "@/src/graphql/documentEmailQueries";
 import {
   useEmailSettings,
@@ -41,6 +42,7 @@ const DOCUMENT_LABELS = {
   invoice: { singular: "facture", article: "la", title: "Envoyer la facture" },
   quote: { singular: "devis", article: "le", title: "Envoyer le devis" },
   creditNote: { singular: "avoir", article: "l'", title: "Envoyer l'avoir" },
+  purchaseOrder: { singular: "bon de commande", article: "le", title: "Envoyer le bon de commande" },
 };
 
 // Récupérer le template sauvegardé depuis les paramètres email
@@ -54,6 +56,8 @@ function getSavedTemplate(emailSettings, documentType) {
       return emailSettings.quoteEmailTemplate || null;
     case "creditNote":
       return emailSettings.creditNoteEmailTemplate || null;
+    case "purchaseOrder":
+      return emailSettings.purchaseOrderEmailTemplate || null;
     default:
       return null;
   }
@@ -67,6 +71,8 @@ function getDefaultEmailContent(documentType, emailSettings) {
     subject = "Facture {documentNumber}";
   } else if (documentType === "quote") {
     subject = "Devis {documentNumber}";
+  } else if (documentType === "purchaseOrder") {
+    subject = "Bon de commande {documentNumber}";
   } else {
     subject = "Avoir {documentNumber}";
   }
@@ -85,6 +91,9 @@ function getDefaultEmailContent(documentType, emailSettings) {
   } else if (documentType === "invoice") {
     instruction =
       "Nous vous remercions de bien vouloir procéder au règlement selon les conditions indiquées.";
+  } else if (documentType === "purchaseOrder") {
+    instruction =
+      "N'hésitez pas à nous contacter pour toute question concernant ce bon de commande.";
   } else {
     instruction = "Cet avoir a été établi suite à votre demande.";
     invoiceRef = " relatif à la facture {invoiceNumber}";
@@ -142,6 +151,7 @@ export function SendDocumentModal({
   const [sendInvoiceEmail] = useSendInvoiceEmail();
   const [sendQuoteEmail] = useSendQuoteEmail();
   const [sendCreditNoteEmail] = useSendCreditNoteEmail();
+  const [sendPurchaseOrderEmail] = useSendPurchaseOrderEmail();
 
   // Valeurs par défaut (utilise les templates sauvegardés si disponibles)
   const defaultContent = getDefaultEmailContent(documentType, emailSettings);
@@ -208,6 +218,10 @@ export function SendDocumentModal({
         result = await sendQuoteEmail({
           variables: { workspaceId, input },
         });
+      } else if (documentType === "purchaseOrder") {
+        result = await sendPurchaseOrderEmail({
+          variables: { workspaceId, input },
+        });
       } else {
         result = await sendCreditNoteEmail({
           variables: { workspaceId, input },
@@ -232,6 +246,10 @@ export function SendDocumentModal({
             documentType === "creditNote"
               ? data.emailBody
               : emailSettings.creditNoteEmailTemplate || "",
+          purchaseOrderEmailTemplate:
+            documentType === "purchaseOrder"
+              ? data.emailBody
+              : emailSettings.purchaseOrderEmailTemplate || "",
         };
 
         // Sauvegarder en arrière-plan sans bloquer l'envoi
@@ -243,7 +261,7 @@ export function SendDocumentModal({
       }
 
       toast.success(
-        `${labels.singular.charAt(0).toUpperCase() + labels.singular.slice(1)} envoyée avec succès`
+        `${labels.singular.charAt(0).toUpperCase() + labels.singular.slice(1)} envoyé${documentType === "invoice" ? "e" : ""} avec succès`
       );
       onOpenChange(false);
       onSent?.();

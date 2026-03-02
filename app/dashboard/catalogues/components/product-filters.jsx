@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,13 +24,12 @@ export default function ProductFilters({
   uniqueCategories = [],
   table,
   className,
+  customFieldNames = {},
 }) {
   const [open, setOpen] = useState(false);
 
   // Calculer le nombre de filtres actifs
-  const activeFiltersCount = useMemo(() => {
-    return selectedCategories.length;
-  }, [selectedCategories.length]);
+  const activeFiltersCount = selectedCategories.length;
 
   // Gérer le toggle d'une catégorie
   const toggleCategory = (category) => {
@@ -59,27 +58,26 @@ export default function ProductFilters({
       ?.setFilterValue(newCategories.length ? newCategories : undefined);
   };
 
-  // Obtenir les colonnes cachables
-  const hideableColumns = useMemo(() => {
-    return table
-      .getAllColumns()
-      .filter(
-        (column) =>
-          typeof column.accessorFn !== "undefined" &&
-          column.getCanHide()
-      );
-  }, [table]);
+  // Obtenir les colonnes cachables (pas de useMemo : table est une ref stable,
+  // mais ses colonnes internes changent quand les custom fields sont mis à jour)
+  const hideableColumns = table
+    .getAllColumns()
+    .filter(
+      (column) =>
+        typeof column.accessorFn !== "undefined" &&
+        column.getCanHide()
+    );
 
   // Calculer le nombre de colonnes visibles
-  const visibleColumnsCount = hideableColumns.filter((column) => 
+  const visibleColumnsCount = hideableColumns.filter((column) =>
     column.getIsVisible()
   ).length;
 
   // Vérifier si toutes les colonnes sont visibles
-  const allColumnsVisible = hideableColumns.length > 0 && 
+  const allColumnsVisible = hideableColumns.length > 0 &&
     hideableColumns.every((column) => column.getIsVisible());
 
-  // Traductions des colonnes
+  // Traductions des colonnes (standards + custom fields)
   const columnTranslations = {
     name: "Nom",
     reference: "Référence",
@@ -88,6 +86,7 @@ export default function ProductFilters({
     unit: "Unité",
     category: "Catégorie",
     description: "Description",
+    ...customFieldNames,
   };
 
   return (
