@@ -22,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/src/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
 import { ArrowUpDown } from "lucide-react";
 import { Skeleton } from "@/src/components/ui/skeleton";
 
@@ -176,110 +177,124 @@ export function AnalyticsCrossTabTable({
 
   if (loading) {
     return (
-      <div>
-        <h3 className="text-base font-medium mb-4 px-4 sm:px-6">{title}</h3>
-        <Skeleton className="h-[300px] w-full" />
+      <div className="px-4 sm:px-6">
+        <Card className="shadow-xs flex flex-col min-h-0 py-4">
+          <CardHeader>
+            <CardTitle className="text-sm font-medium">{title}</CardTitle>
+          </CardHeader>
+          <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 overflow-visible flex-1">
+            <Skeleton className="min-h-[200px] w-full" />
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   if (!pivotedRows.length) {
     return (
-      <div>
-        <h3 className="text-base font-medium mb-4 px-4 sm:px-6">{title}</h3>
-        <div className="flex items-center justify-center h-[200px] text-muted-foreground">
-          Aucune donnée pour cette période
-        </div>
+      <div className="px-4 sm:px-6">
+        <Card className="shadow-xs flex flex-col min-h-0 py-4">
+          <CardHeader>
+            <CardTitle className="text-sm font-medium">{title}</CardTitle>
+          </CardHeader>
+          <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 flex items-center justify-center flex-1 min-h-[200px] text-muted-foreground">
+            Aucune donnée pour cette période
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="w-full">
-      <div className="flex items-center justify-between mb-4 px-4 sm:px-6">
-        <h3 className="text-base font-medium">{title}</h3>
-        <Select value={selectedValue} onValueChange={setSelectedValue}>
-          <SelectTrigger className="w-[160px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {valueOptions.map((opt) => (
-              <SelectItem key={opt.key} value={opt.key}>
-                {opt.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      <div className="overflow-x-auto w-full">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id} className="border-b border-t">
-                {headerGroup.headers.map((header, idx) => (
-                  <TableHead
-                    key={header.id}
-                    className={
-                      idx === 0
-                        ? "sticky left-0 bg-background z-10 min-w-[160px] pl-4 sm:pl-6"
-                        : idx === colCount - 1
-                          ? "min-w-[100px] pr-4 sm:pr-6"
-                          : "min-w-[100px]"
-                    }
-                  >
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(header.column.columnDef.header, header.getContext())}
-                  </TableHead>
+    <div className="px-4 sm:px-6">
+      <Card className="shadow-xs flex flex-col min-h-0 py-4">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">{title}</CardTitle>
+          <Select value={selectedValue} onValueChange={setSelectedValue}>
+            <SelectTrigger className="w-[160px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {valueOptions.map((opt) => (
+                <SelectItem key={opt.key} value={opt.key}>
+                  {opt.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </CardHeader>
+        <CardContent className="px-0 pt-4 pb-0">
+          <div className="overflow-x-auto w-full">
+            <Table>
+              <TableHeader>
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <TableRow key={headerGroup.id} className="border-b border-t">
+                    {headerGroup.headers.map((header, idx) => (
+                      <TableHead
+                        key={header.id}
+                        className={
+                          idx === 0
+                            ? "sticky left-0 bg-background z-10 min-w-[160px] pl-6"
+                            : idx === colCount - 1
+                              ? "min-w-[100px] pr-6"
+                              : "min-w-[100px]"
+                        }
+                      >
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(header.column.columnDef.header, header.getContext())}
+                      </TableHead>
+                    ))}
+                  </TableRow>
                 ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows.map((row) => (
-              <TableRow key={row.id}>
-                {row.getVisibleCells().map((cell, idx) => (
-                  <TableCell
-                    key={cell.id}
-                    className={
-                      idx === 0
-                        ? "sticky left-0 bg-background z-10 pl-4 sm:pl-6"
-                        : idx === colCount - 1
-                          ? "pr-4 sm:pr-6"
-                          : ""
-                    }
-                  >
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
+              </TableHeader>
+              <TableBody>
+                {table.getRowModel().rows.map((row) => (
+                  <TableRow key={row.id}>
+                    {row.getVisibleCells().map((cell, idx) => (
+                      <TableCell
+                        key={cell.id}
+                        className={
+                          idx === 0
+                            ? "sticky left-0 bg-background z-10 pl-6"
+                            : idx === colCount - 1
+                              ? "pr-6"
+                              : ""
+                        }
+                      >
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </TableCell>
+                    ))}
+                  </TableRow>
                 ))}
-              </TableRow>
-            ))}
-            {/* Totals row */}
-            {totalsRow && (
-              <TableRow className="bg-muted/50 font-semibold">
-                <TableCell className="sticky left-0 bg-muted/50 z-10 pl-4 sm:pl-6">
-                  <span className="font-semibold">Total</span>
-                </TableCell>
-                {months.map((m, idx) => (
-                  <TableCell
-                    key={m}
-                    className={idx === months.length - 1 && colCount === months.length + 2 ? "" : ""}
-                  >
-                    <span className="whitespace-nowrap tabular-nums font-semibold">
-                      {isCurrencyValue ? formatCurrency(totalsRow[m]) : totalsRow[m]}
-                    </span>
-                  </TableCell>
-                ))}
-                <TableCell className="pr-4 sm:pr-6">
-                  <span className="whitespace-nowrap tabular-nums font-bold">
-                    {isCurrencyValue ? formatCurrency(totalsRow._total) : totalsRow._total}
-                  </span>
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+                {/* Totals row */}
+                {totalsRow && (
+                  <TableRow className="bg-muted/50 font-semibold">
+                    <TableCell className="sticky left-0 bg-muted/50 z-10 pl-6">
+                      <span className="font-semibold">Total</span>
+                    </TableCell>
+                    {months.map((m, idx) => (
+                      <TableCell
+                        key={m}
+                        className={idx === months.length - 1 && colCount === months.length + 2 ? "" : ""}
+                      >
+                        <span className="whitespace-nowrap tabular-nums font-semibold">
+                          {isCurrencyValue ? formatCurrency(totalsRow[m]) : totalsRow[m]}
+                        </span>
+                      </TableCell>
+                    ))}
+                    <TableCell className="pr-6">
+                      <span className="whitespace-nowrap tabular-nums font-bold">
+                        {isCurrencyValue ? formatCurrency(totalsRow._total) : totalsRow._total}
+                      </span>
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

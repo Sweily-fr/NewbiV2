@@ -38,7 +38,7 @@ export function AnalyticsAlertBanner({ alerts }) {
   if (!alerts?.length) return null;
 
   return (
-    <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-4 sm:px-6">
       {alerts.map((alert, i) => {
         const config = SEVERITY_CONFIG[alert.severity] || SEVERITY_CONFIG.info;
         const Icon = config.icon;

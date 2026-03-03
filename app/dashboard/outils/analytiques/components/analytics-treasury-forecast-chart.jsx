@@ -12,6 +12,7 @@ import {
   Legend,
 } from "recharts";
 import { ChartContainer } from "@/src/components/ui/chart";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/src/components/ui/card";
 import { Skeleton } from "@/src/components/ui/skeleton";
 
 const chartConfig = {
@@ -104,36 +105,39 @@ export function AnalyticsTreasuryForecastChart({ forecastData, loading }) {
 
   if (loading) {
     return (
-      <div>
-        <h3 className="text-base font-medium mb-1">Prévisions de trésorerie</h3>
-        <p className="text-sm text-muted-foreground mb-4">
-          Réel vs prévu par mois avec évolution du solde
-        </p>
-        <Skeleton className="h-[300px] w-full" />
-      </div>
+      <Card className="shadow-xs flex flex-col min-h-0 py-4">
+        <CardHeader>
+          <CardTitle className="text-sm font-medium">Prévisions de trésorerie</CardTitle>
+        </CardHeader>
+        <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 overflow-visible flex-1">
+          <Skeleton className="min-h-[200px] w-full" />
+        </CardContent>
+      </Card>
     );
   }
 
   if (!chartData.length) {
     return (
-      <div>
-        <h3 className="text-base font-medium mb-1">Prévisions de trésorerie</h3>
-        <p className="text-sm text-muted-foreground mb-4">
-          Réel vs prévu par mois avec évolution du solde
-        </p>
-        <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+      <Card className="shadow-xs flex flex-col min-h-0 py-4">
+        <CardHeader>
+          <CardTitle className="text-sm font-medium">Prévisions de trésorerie</CardTitle>
+        </CardHeader>
+        <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 flex items-center justify-center flex-1 min-h-[200px] text-muted-foreground">
           Aucune donnée prévisionnelle disponible
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div>
-      <h3 className="text-base font-medium mb-1">Prévisions de trésorerie</h3>
-      <p className="text-sm text-muted-foreground mb-4">
-        Réel vs prévu par mois avec évolution du solde
-      </p>
+    <Card className="shadow-xs flex flex-col min-h-0 py-4">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <div>
+          <CardTitle className="text-sm font-medium">Prévisions de trésorerie</CardTitle>
+          <CardDescription className="text-xs mt-1">Réel vs prévu par mois</CardDescription>
+        </div>
+      </CardHeader>
+      <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 overflow-visible flex-1">
       <ChartContainer config={chartConfig} className="h-[300px] w-full">
         <ComposedChart
           data={chartData}
@@ -220,6 +224,7 @@ export function AnalyticsTreasuryForecastChart({ forecastData, loading }) {
           />
         </ComposedChart>
       </ChartContainer>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

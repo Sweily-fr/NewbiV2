@@ -11,6 +11,7 @@ import {
   Cell,
 } from "recharts";
 import { ChartContainer } from "@/src/components/ui/chart";
+import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
 import { Skeleton } from "@/src/components/ui/skeleton";
 
 const chartConfig = {
@@ -57,10 +58,14 @@ export function AnalyticsAgingChart({ agingBuckets, loading }) {
 
   if (loading) {
     return (
-      <div>
-        <h3 className="text-base font-medium mb-4">Ancienneté des créances</h3>
-        <Skeleton className="h-[300px] w-full" />
-      </div>
+      <Card className="shadow-xs flex flex-col min-h-0 py-4">
+        <CardHeader>
+          <CardTitle className="text-sm font-medium">Ancienneté des créances</CardTitle>
+        </CardHeader>
+        <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 overflow-visible flex-1">
+          <Skeleton className="min-h-[200px] w-full" />
+        </CardContent>
+      </Card>
     );
   }
 
@@ -68,18 +73,23 @@ export function AnalyticsAgingChart({ agingBuckets, loading }) {
 
   if (!hasData) {
     return (
-      <div>
-        <h3 className="text-base font-medium mb-4">Ancienneté des créances</h3>
-        <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+      <Card className="shadow-xs flex flex-col min-h-0 py-4">
+        <CardHeader>
+          <CardTitle className="text-sm font-medium">Ancienneté des créances</CardTitle>
+        </CardHeader>
+        <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 flex items-center justify-center flex-1 min-h-[200px] text-muted-foreground">
           Aucune créance en cours
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div>
-      <h3 className="text-base font-medium mb-4">Ancienneté des créances</h3>
+    <Card className="shadow-xs flex flex-col min-h-0 py-4">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">Ancienneté des créances</CardTitle>
+      </CardHeader>
+      <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 overflow-visible flex-1">
       <ChartContainer config={chartConfig} className="h-[300px] w-full">
         <BarChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -107,6 +117,7 @@ export function AnalyticsAgingChart({ agingBuckets, loading }) {
           </Bar>
         </BarChart>
       </ChartContainer>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

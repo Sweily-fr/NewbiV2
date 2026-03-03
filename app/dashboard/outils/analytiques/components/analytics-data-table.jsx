@@ -15,6 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/src/components/ui/table";
+import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
 import { ArrowUpDown } from "lucide-react";
 import { Skeleton } from "@/src/components/ui/skeleton";
 
@@ -161,69 +162,77 @@ function DataTableInner({ columns, data, title }) {
   const colCount = columns.length;
 
   return (
-    <div className="w-full">
-      {title && <h3 className="text-base font-medium mb-4 px-4 sm:px-6">{title}</h3>}
-      <Table>
-        <TableHeader>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <TableRow key={headerGroup.id} className="border-b border-t">
-              {headerGroup.headers.map((header, idx) => (
-                <TableHead
-                  key={header.id}
-                  className={
-                    idx === 0
-                      ? "pl-4 sm:pl-6"
-                      : idx === colCount - 1
-                        ? "pr-4 sm:pr-6"
-                        : ""
-                  }
-                >
-                  {header.isPlaceholder
-                    ? null
-                    : flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
-                      )}
-                </TableHead>
+    <div className="px-4 sm:px-6">
+      <Card className="shadow-xs flex flex-col min-h-0 py-4">
+        {title && (
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">{title}</CardTitle>
+          </CardHeader>
+        )}
+        <CardContent className="px-0 pt-4 pb-0">
+          <Table>
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id} className="border-b border-t">
+                  {headerGroup.headers.map((header, idx) => (
+                    <TableHead
+                      key={header.id}
+                      className={
+                        idx === 0
+                          ? "pl-6"
+                          : idx === colCount - 1
+                            ? "pr-6"
+                            : ""
+                      }
+                    >
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                    </TableHead>
+                  ))}
+                </TableRow>
               ))}
-            </TableRow>
-          ))}
-        </TableHeader>
-        <TableBody>
-          {table.getRowModel().rows?.length ? (
-            table.getRowModel().rows.map((row) => (
-              <TableRow key={row.id}>
-                {row.getVisibleCells().map((cell, idx) => (
+            </TableHeader>
+            <TableBody>
+              {table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow key={row.id}>
+                    {row.getVisibleCells().map((cell, idx) => (
+                      <TableCell
+                        key={cell.id}
+                        className={
+                          idx === 0
+                            ? "pl-6"
+                            : idx === colCount - 1
+                              ? "pr-6"
+                              : ""
+                        }
+                      >
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
                   <TableCell
-                    key={cell.id}
-                    className={
-                      idx === 0
-                        ? "pl-4 sm:pl-6"
-                        : idx === colCount - 1
-                          ? "pr-4 sm:pr-6"
-                          : ""
-                    }
+                    colSpan={columns.length}
+                    className="h-24 text-center text-muted-foreground"
                   >
-                    {flexRender(
-                      cell.column.columnDef.cell,
-                      cell.getContext()
-                    )}
+                    Aucune donnée
                   </TableCell>
-                ))}
-              </TableRow>
-            ))
-          ) : (
-            <TableRow>
-              <TableCell
-                colSpan={columns.length}
-                className="h-24 text-center text-muted-foreground"
-              >
-                Aucune donnée
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -231,9 +240,15 @@ function DataTableInner({ columns, data, title }) {
 export function AnalyticsClientTable({ revenueByClient, loading }) {
   if (loading) {
     return (
-      <div>
-        <h3 className="text-base font-medium mb-4 px-4 sm:px-6">Détail par client</h3>
-        <Skeleton className="h-[300px] w-full" />
+      <div className="px-4 sm:px-6">
+        <Card className="shadow-xs flex flex-col min-h-0 py-4">
+          <CardHeader>
+            <CardTitle className="text-sm font-medium">Détail par client</CardTitle>
+          </CardHeader>
+          <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 overflow-visible flex-1">
+            <Skeleton className="min-h-[200px] w-full" />
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -250,9 +265,15 @@ export function AnalyticsClientTable({ revenueByClient, loading }) {
 export function AnalyticsProductTable({ revenueByProduct, loading }) {
   if (loading) {
     return (
-      <div>
-        <h3 className="text-base font-medium mb-4 px-4 sm:px-6">Détail par produit / service</h3>
-        <Skeleton className="h-[300px] w-full" />
+      <div className="px-4 sm:px-6">
+        <Card className="shadow-xs flex flex-col min-h-0 py-4">
+          <CardHeader>
+            <CardTitle className="text-sm font-medium">Détail par produit / service</CardTitle>
+          </CardHeader>
+          <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 overflow-visible flex-1">
+            <Skeleton className="min-h-[200px] w-full" />
+          </CardContent>
+        </Card>
       </div>
     );
   }

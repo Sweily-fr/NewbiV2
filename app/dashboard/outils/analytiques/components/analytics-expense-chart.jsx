@@ -1,32 +1,24 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
 import {
   PieChart,
   Pie,
   Cell,
   Tooltip,
   Legend,
+  Label,
+  Line,
   Bar,
-  BarChart,
   XAxis,
   YAxis,
   CartesianGrid,
   ComposedChart,
 } from "recharts";
 import { ChartContainer } from "@/src/components/ui/chart";
+import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
 import { Skeleton } from "@/src/components/ui/skeleton";
-import { ToggleGroup, ToggleGroupItem } from "@/src/components/ui/toggle-group";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-  TableFooter,
-} from "@/src/components/ui/table";
-import { PieChartIcon, TableIcon } from "lucide-react";
+import { getTransactionCategory } from "@/lib/bank-categories-config";
 
 const CATEGORY_LABELS = {
   OFFICE_SUPPLIES: "Fournitures",
@@ -48,11 +40,69 @@ const CATEGORY_LABELS = {
   OTHER: "Autre",
 };
 
-const CATEGORY_COLORS = [
-  "rgba(91, 80, 255, 1)", "rgba(91, 80, 255, 0.9)", "rgba(91, 80, 255, 0.8)", "rgba(91, 80, 255, 0.7)", "rgba(91, 80, 255, 0.6)",
-  "rgba(91, 80, 255, 0.52)", "rgba(91, 80, 255, 0.45)", "rgba(91, 80, 255, 0.38)", "rgba(91, 80, 255, 0.32)", "rgba(91, 80, 255, 0.27)",
-  "rgba(91, 80, 255, 0.23)", "rgba(91, 80, 255, 0.2)", "rgba(91, 80, 255, 0.17)", "rgba(91, 80, 255, 0.15)", "rgba(91, 80, 255, 0.13)",
-  "rgba(91, 80, 255, 0.11)", "rgba(91, 80, 255, 0.09)",
+// Mapping des noms de catégories Bridge → enum interne
+const BANK_NAME_TO_CATEGORY = {
+  "Alimentation": "MEALS",
+  "Restaurants": "MEALS",
+  "Courses": "MEALS",
+  "Transport": "TRAVEL",
+  "Carburant": "TRAVEL",
+  "Transports en commun": "TRAVEL",
+  "Taxi/VTC": "TRAVEL",
+  "Parking": "TRAVEL",
+  "Logement": "RENT",
+  "Loyer": "RENT",
+  "Charges": "UTILITIES",
+  "Assurance habitation": "INSURANCE",
+  "Loisirs": "OTHER",
+  "Sorties": "OTHER",
+  "Voyages": "ACCOMMODATION",
+  "Sport": "OTHER",
+  "Santé": "SERVICES",
+  "Médecin": "SERVICES",
+  "Pharmacie": "SERVICES",
+  "Mutuelle": "INSURANCE",
+  "Shopping": "OTHER",
+  "Vêtements": "OTHER",
+  "High-tech": "HARDWARE",
+  "Maison": "OFFICE_SUPPLIES",
+  "Services": "SERVICES",
+  "Téléphone/Internet": "SUBSCRIPTIONS",
+  "Abonnements": "SUBSCRIPTIONS",
+  "Banque": "SERVICES",
+  "Impôts & Taxes": "TAXES",
+  "Impôt sur le revenu": "TAXES",
+  "Taxe foncière": "TAXES",
+  "Éducation": "TRAINING",
+  "Formation": "TRAINING",
+  "Livres": "TRAINING",
+  "Autre": "OTHER",
+  "Non catégorisé": "OTHER",
+};
+
+// Couleurs par catégorie (identiques au dashboard)
+const CATEGORY_COLORS_MAP = {
+  OFFICE_SUPPLIES: "#eab308",
+  TRAVEL: "rgba(90, 80, 255, 0.60)",
+  MEALS: "#f97316",
+  ACCOMMODATION: "#06b6d4",
+  SOFTWARE: "#3b82f6",
+  HARDWARE: "#64748b",
+  SERVICES: "#8b5cf6",
+  MARKETING: "#ec4899",
+  TAXES: "#a855f7",
+  RENT: "#ef4444",
+  UTILITIES: "#14b8a6",
+  SALARIES: "#f59e0b",
+  INSURANCE: "#6366f1",
+  MAINTENANCE: "#84cc16",
+  TRAINING: "#10b981",
+  SUBSCRIPTIONS: "#0ea5e9",
+  OTHER: "#A585DB",
+};
+
+const PAYMENT_COLORS = [
+  "#5b50ff", "#10b981", "#3b82f6", "#f59e0b", "#ef4444", "#a855f7", "#06b6d4",
 ];
 
 const PAYMENT_LABELS = {
@@ -80,7 +130,7 @@ const formatMonthLabel = (monthStr) => {
   return date
     .toLocaleDateString("fr-FR", { month: "short" })
     .replace(".", "")
-    .toUpperCase() + ` ${year.slice(2)}`;
+    .toUpperCase();
 };
 
 function CategoryTooltip({ active, payload }) {
@@ -132,27 +182,103 @@ function MonthlyTooltip({ active, payload }) {
           </span>
           <span className="font-medium">{formatCurrency(data.expenseAmount)}</span>
         </div>
+        <div className="flex items-center justify-between gap-6 border-t pt-1 mt-1">
+          <span className="flex items-center gap-2">
+            <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "#5b50ff" }} />
+            Marge brute
+          </span>
+          <span className={`font-medium ${data.grossMargin >= 0 ? "text-emerald-600" : "text-red-600"}`}>
+            {formatCurrency(data.grossMargin)}
+          </span>
+        </div>
       </div>
     </div>
   );
 }
 
-export function AnalyticsExpenseCategoryChart({ expenseByCategory, totalExpensesHT, totalExpensesTTC, loading }) {
-  const [viewType, setViewType] = useState("pie");
-
+export function AnalyticsExpenseCategoryChart({ expenseByCategory, totalExpensesHT, totalExpensesTTC, bankTransactions, loading }) {
   const chartData = useMemo(() => {
-    if (!expenseByCategory?.length) return [];
-    return expenseByCategory.map((c, i) => ({
+    // Aggregate bank transactions by mapped internal category
+    const bankByCategory = {};
+    (bankTransactions || []).forEach((t) => {
+      if (t.amount >= 0) return;
+      const bankCat = getTransactionCategory(t);
+      const internalKey = BANK_NAME_TO_CATEGORY[bankCat.name] || "OTHER";
+      if (!bankByCategory[internalKey]) {
+        bankByCategory[internalKey] = { amount: 0, count: 0 };
+      }
+      bankByCategory[internalKey].amount += Math.abs(t.amount);
+      bankByCategory[internalKey].count += 1;
+    });
+
+    const hasBankData = Object.keys(bankByCategory).length > 0;
+
+    // Check if expense model data is mostly "OTHER"
+    const expenseNonOther = (expenseByCategory || []).filter(
+      (c) => c.category !== "OTHER"
+    );
+    const expenseMostlyOther =
+      expenseNonOther.length === 0 && (expenseByCategory || []).length > 0;
+
+    const merged = {};
+
+    if (hasBankData && expenseMostlyOther) {
+      Object.entries(bankByCategory).forEach(([cat, data]) => {
+        merged[cat] = { category: cat, amount: data.amount, count: data.count };
+      });
+    } else if (expenseByCategory?.length) {
+      expenseByCategory.forEach((c) => {
+        merged[c.category] = {
+          category: c.category,
+          amount: c.amount,
+          count: c.count,
+        };
+      });
+      if (hasBankData && merged.OTHER) {
+        const otherAmount = merged.OTHER.amount;
+        const bankTotal = Object.values(bankByCategory).reduce(
+          (s, d) => s + d.amount,
+          0
+        );
+        if (bankTotal > 0) {
+          delete merged.OTHER;
+          Object.entries(bankByCategory).forEach(([cat, data]) => {
+            const scaled = (data.amount / bankTotal) * otherAmount;
+            if (merged[cat]) {
+              merged[cat].amount += scaled;
+              merged[cat].count += data.count;
+            } else {
+              merged[cat] = {
+                category: cat,
+                amount: scaled,
+                count: data.count,
+              };
+            }
+          });
+        }
+      }
+    } else if (hasBankData) {
+      Object.entries(bankByCategory).forEach(([cat, data]) => {
+        merged[cat] = { category: cat, amount: data.amount, count: data.count };
+      });
+    }
+
+    const result = Object.values(merged)
+      .filter((c) => c.amount > 0)
+      .sort((a, b) => b.amount - a.amount);
+
+    return result.map((c) => ({
       ...c,
-      name: CATEGORY_LABELS[c.category] || c.category,
-      fill: CATEGORY_COLORS[i % CATEGORY_COLORS.length],
+      amount: Math.round(c.amount * 100) / 100,
+      label: CATEGORY_LABELS[c.category] || c.category,
+      fill: CATEGORY_COLORS_MAP[c.category] || CATEGORY_COLORS_MAP.OTHER,
     }));
-  }, [expenseByCategory]);
+  }, [expenseByCategory, bankTransactions]);
 
   const chartConfig = useMemo(() => {
-    const cfg = {};
+    const cfg = { amount: { label: "Montant" } };
     chartData.forEach((c) => {
-      cfg[c.category] = { label: c.name, color: c.fill };
+      cfg[c.category] = { label: c.label, color: c.fill };
     });
     return cfg;
   }, [chartData]);
@@ -161,123 +287,117 @@ export function AnalyticsExpenseCategoryChart({ expenseByCategory, totalExpenses
     () => chartData.reduce((s, e) => s + e.amount, 0),
     [chartData]
   );
-  const totalCount = useMemo(
-    () => chartData.reduce((s, e) => s + e.count, 0),
-    [chartData]
-  );
 
   if (loading) {
     return (
-      <div>
-        <h3 className="text-base font-medium mb-4">Dépenses par catégorie</h3>
-        <Skeleton className="h-[300px] w-full" />
-      </div>
+      <Card className="shadow-xs flex flex-col min-h-0 py-4">
+        <CardHeader>
+          <CardTitle className="text-sm font-medium">Dépenses par catégorie</CardTitle>
+        </CardHeader>
+        <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 overflow-visible flex-1">
+          <Skeleton className="min-h-[200px] w-full" />
+        </CardContent>
+      </Card>
     );
   }
 
   if (!chartData.length) {
     return (
-      <div>
-        <h3 className="text-base font-medium mb-4">Dépenses par catégorie</h3>
-        <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+      <Card className="shadow-xs flex flex-col min-h-0 py-4">
+        <CardHeader>
+          <CardTitle className="text-sm font-medium">Dépenses par catégorie</CardTitle>
+        </CardHeader>
+        <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 flex items-center justify-center flex-1 min-h-[200px] text-muted-foreground">
           Aucune donnée
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-base font-medium">Dépenses par catégorie</h3>
-        <ToggleGroup type="single" value={viewType} onValueChange={(v) => v && setViewType(v)} size="sm">
-          <ToggleGroupItem value="pie" aria-label="Graphique">
-            <PieChartIcon className="h-4 w-4" />
-          </ToggleGroupItem>
-          <ToggleGroupItem value="table" aria-label="Tableau">
-            <TableIcon className="h-4 w-4" />
-          </ToggleGroupItem>
-        </ToggleGroup>
-      </div>
-
-      {viewType === "pie" ? (
-        <ChartContainer config={chartConfig} className="h-[300px] w-full">
-          <PieChart>
-            <Pie
-              data={chartData}
-              dataKey="amount"
-              nameKey="name"
-              cx="50%"
-              cy="50%"
-              outerRadius={100}
-              innerRadius={70}
-              paddingAngle={2}
+    <Card className="shadow-xs flex flex-col min-h-0 py-4">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">Dépenses par catégorie</CardTitle>
+      </CardHeader>
+      <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 overflow-visible flex-1">
+        <div className="flex items-center gap-8">
+          <div className="flex-shrink-0">
+            <ChartContainer
+              config={chartConfig}
+              className="aspect-square h-[280px] w-[280px]"
             >
-              {chartData.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.fill} />
-              ))}
-            </Pie>
-            <Tooltip content={<CategoryTooltip />} />
-            <Legend
-              formatter={(value) => (
-                <span className="text-xs">{value}</span>
-              )}
-            />
-          </PieChart>
-        </ChartContainer>
-      ) : (
-        <div className="rounded-lg border overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Catégorie</TableHead>
-                <TableHead className="text-right">Nombre</TableHead>
-                <TableHead className="text-right">Montant TTC</TableHead>
-                <TableHead className="text-right">% du total</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {chartData.map((e) => (
-                <TableRow key={e.category}>
-                  <TableCell className="font-medium">{e.name}</TableCell>
-                  <TableCell className="text-right">{e.count}</TableCell>
-                  <TableCell className="text-right">{formatCurrency(e.amount)}</TableCell>
-                  <TableCell className="text-right text-muted-foreground">
-                    {totalAmount > 0
-                      ? `${((e.amount / totalAmount) * 100).toFixed(1)}%`
-                      : "—"}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-            <TableFooter>
-              <TableRow>
-                <TableCell className="font-medium">Total</TableCell>
-                <TableCell className="text-right font-medium">{totalCount}</TableCell>
-                <TableCell className="text-right font-medium">{formatCurrency(totalAmount)}</TableCell>
-                <TableCell className="text-right font-medium">100%</TableCell>
-              </TableRow>
-              {totalExpensesHT != null && (
-                <>
-                  <TableRow>
-                    <TableCell colSpan={2} className="text-muted-foreground">Total HT</TableCell>
-                    <TableCell className="text-right font-medium">{formatCurrency(totalExpensesHT)}</TableCell>
-                    <TableCell />
-                  </TableRow>
-                  <TableRow>
-                    <TableCell colSpan={2} className="text-muted-foreground">TVA récupérable</TableCell>
-                    <TableCell className="text-right font-medium">
-                      {formatCurrency((totalExpensesTTC || 0) - (totalExpensesHT || 0))}
-                    </TableCell>
-                    <TableCell />
-                  </TableRow>
-                </>
-              )}
-            </TableFooter>
-          </Table>
+              <PieChart>
+                <Tooltip
+                  content={<CategoryTooltip />}
+                  cursor={false}
+                />
+                <Pie
+                  data={chartData}
+                  dataKey="amount"
+                  nameKey="label"
+                  innerRadius={90}
+                  outerRadius={125}
+                  paddingAngle={2}
+                  strokeWidth={0}
+                >
+                  <Label
+                    content={({ viewBox }) => {
+                      if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+                        return (
+                          <text
+                            x={viewBox.cx}
+                            y={viewBox.cy}
+                            textAnchor="middle"
+                            dominantBaseline="middle"
+                          >
+                            <tspan
+                              x={viewBox.cx}
+                              y={viewBox.cy}
+                              className="fill-foreground text-2xl font-normal"
+                            >
+                              {formatCurrency(totalAmount).replace(/\s/g, " ")}
+                            </tspan>
+                          </text>
+                        );
+                      }
+                    }}
+                  />
+                </Pie>
+              </PieChart>
+            </ChartContainer>
+          </div>
+
+          <div className="flex-1 space-y-3">
+            {chartData.slice(0, 5).map((item) => {
+              const percentage = ((item.amount / totalAmount) * 100).toFixed(1);
+              return (
+                <div key={item.category} className="flex items-center gap-3">
+                  <div
+                    className="h-2 w-2 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: item.fill }}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-normal text-foreground truncate">
+                      {item.label} ({percentage} %)
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+            {chartData.length > 5 && (
+              <div className="flex items-center gap-3">
+                <div className="h-2 w-2 rounded-full flex-shrink-0 bg-muted" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-normal text-muted-foreground">
+                    +{chartData.length - 5} autres catégories
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
-      )}
-    </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -300,10 +420,12 @@ export function AnalyticsRevenueVsExpenseChart({ monthlyRevenue, bankTransaction
     return monthlyRevenue.map((m) => {
       const expenseFromModel = m.expenseAmountHT || 0;
       const expenseFromBank = bankExpenseByMonth[m.month] || 0;
+      const expense = expenseFromModel > 0 ? expenseFromModel : expenseFromBank;
       return {
         ...m,
         monthLabel: formatMonthLabel(m.month),
-        expenseAmount: expenseFromModel > 0 ? expenseFromModel : expenseFromBank,
+        expenseAmount: expense,
+        grossMargin: m.grossMargin ?? ((m.revenueHT || 0) - expense),
       };
     });
   }, [monthlyRevenue, bankTransactions]);
@@ -311,60 +433,76 @@ export function AnalyticsRevenueVsExpenseChart({ monthlyRevenue, bankTransaction
   const chartConfig = {
     revenueHT: { label: "Revenus HT", color: "#10b981" },
     expenseAmount: { label: "Dépenses", color: "#ef4444" },
+    grossMargin: { label: "Marge brute", color: "#5b50ff" },
   };
 
   if (loading) {
     return (
-      <div>
-        <h3 className="text-base font-medium mb-4">Revenus vs Dépenses</h3>
-        <Skeleton className="h-[300px] w-full" />
-      </div>
+      <Card className="shadow-xs flex flex-col min-h-0 py-4">
+        <CardHeader>
+          <CardTitle className="text-sm font-medium">Revenus vs Dépenses</CardTitle>
+        </CardHeader>
+        <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 overflow-visible flex-1">
+          <Skeleton className="min-h-[200px] w-full" />
+        </CardContent>
+      </Card>
     );
   }
 
   if (!chartData.length) {
     return (
-      <div>
-        <h3 className="text-base font-medium mb-4">Revenus vs Dépenses</h3>
-        <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+      <Card className="shadow-xs flex flex-col min-h-0 py-4">
+        <CardHeader>
+          <CardTitle className="text-sm font-medium">Revenus vs Dépenses</CardTitle>
+        </CardHeader>
+        <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 flex items-center justify-center flex-1 min-h-[200px] text-muted-foreground">
           Aucune donnée
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div>
-      <h3 className="text-base font-medium mb-4">Revenus vs Dépenses</h3>
-      <ChartContainer config={chartConfig} className="h-[300px] w-full">
-        <ComposedChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" vertical={false} />
-          <XAxis
-            dataKey="monthLabel"
-            tick={{ fontSize: 11 }}
-            tickLine={false}
-            axisLine={false}
-            interval={0}
-            angle={-45}
-            textAnchor="end"
-            height={50}
-          />
-          <YAxis
-            tick={({ y, payload }) => (
-              <text x={0} y={y} textAnchor="start" dominantBaseline="middle" fontSize={11} className="fill-muted-foreground">
-                {`${(payload.value / 1000).toFixed(0)}k`}
-              </text>
-            )}
-            tickLine={false}
-            axisLine={false}
-            width={35}
-          />
-          <Tooltip content={<MonthlyTooltip />} />
-          <Bar dataKey="revenueHT" fill="#10b981" fillOpacity={0.8} radius={[4, 4, 0, 0]} barSize={20} />
-          <Bar dataKey="expenseAmount" fill="#ef4444" fillOpacity={0.7} radius={[4, 4, 0, 0]} barSize={20} />
-        </ComposedChart>
-      </ChartContainer>
-    </div>
+    <Card className="shadow-xs flex flex-col min-h-0 py-4">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">Revenus vs Dépenses</CardTitle>
+      </CardHeader>
+      <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 overflow-visible flex-1">
+        <ChartContainer config={chartConfig} className="flex-1 min-h-[350px] w-full">
+          <ComposedChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+            <XAxis
+              dataKey="monthLabel"
+              tick={{ fontSize: 11 }}
+              tickLine={false}
+              axisLine={false}
+              interval={0}
+            />
+            <YAxis
+              tick={({ y, payload }) => (
+                <text x={0} y={y} textAnchor="start" dominantBaseline="middle" fontSize={11} className="fill-muted-foreground">
+                  {`${(payload.value / 1000).toFixed(0)}k`}
+                </text>
+              )}
+              tickLine={false}
+              axisLine={false}
+              width={35}
+            />
+            <Tooltip content={<MonthlyTooltip />} />
+            <Bar dataKey="revenueHT" fill="#10b981" fillOpacity={0.8} radius={[4, 4, 0, 0]} barSize={20} />
+            <Bar dataKey="expenseAmount" fill="#ef4444" fillOpacity={0.7} radius={[4, 4, 0, 0]} barSize={20} />
+            <Line
+              type="bump"
+              dataKey="grossMargin"
+              stroke="#5b50ff"
+              strokeWidth={2}
+              dot={false}
+              activeDot={{ r: 5 }}
+            />
+          </ComposedChart>
+        </ChartContainer>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -374,7 +512,7 @@ export function AnalyticsPaymentMethodChart({ paymentMethodStats, loading }) {
     return paymentMethodStats.map((s, i) => ({
       ...s,
       name: PAYMENT_LABELS[s.method] || s.method,
-      fill: CATEGORY_COLORS[i % CATEGORY_COLORS.length],
+      fill: PAYMENT_COLORS[i % PAYMENT_COLORS.length],
     }));
   }, [paymentMethodStats]);
 
@@ -388,27 +526,36 @@ export function AnalyticsPaymentMethodChart({ paymentMethodStats, loading }) {
 
   if (loading) {
     return (
-      <div>
-        <h3 className="text-base font-medium mb-4">Méthodes de paiement</h3>
-        <Skeleton className="h-[300px] w-full" />
-      </div>
+      <Card className="shadow-xs flex flex-col min-h-0 py-4">
+        <CardHeader>
+          <CardTitle className="text-sm font-medium">Méthodes de paiement</CardTitle>
+        </CardHeader>
+        <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 overflow-visible flex-1">
+          <Skeleton className="min-h-[300px] w-full" />
+        </CardContent>
+      </Card>
     );
   }
 
   if (!chartData.length) {
     return (
-      <div>
-        <h3 className="text-base font-medium mb-4">Méthodes de paiement</h3>
-        <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+      <Card className="shadow-xs flex flex-col min-h-0 py-4">
+        <CardHeader>
+          <CardTitle className="text-sm font-medium">Méthodes de paiement</CardTitle>
+        </CardHeader>
+        <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 flex items-center justify-center flex-1 min-h-[300px] text-muted-foreground">
           Aucune donnée
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div>
-      <h3 className="text-base font-medium mb-4">Méthodes de paiement</h3>
+    <Card className="shadow-xs flex flex-col min-h-0 py-4">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">Méthodes de paiement</CardTitle>
+      </CardHeader>
+      <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 overflow-visible flex-1">
       <ChartContainer config={chartConfig} className="h-[300px] w-full">
         <PieChart>
           <Pie
@@ -448,6 +595,7 @@ export function AnalyticsPaymentMethodChart({ paymentMethodStats, loading }) {
           <Legend formatter={(value) => <span className="text-xs">{value}</span>} />
         </PieChart>
       </ChartContainer>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

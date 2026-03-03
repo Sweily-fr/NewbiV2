@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
 import {
   Bar,
   BarChart,
@@ -11,13 +11,12 @@ import {
   Legend,
 } from "recharts";
 import { ChartContainer } from "@/src/components/ui/chart";
+import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
 import { Skeleton } from "@/src/components/ui/skeleton";
-import { ToggleGroup, ToggleGroupItem } from "@/src/components/ui/toggle-group";
-import { Layers, Group } from "lucide-react";
 
 const chartConfig = {
   invoiceCount: { label: "Factures", color: "#5b50ff" },
-  expenseCount: { label: "Dépenses", color: "#5b50ff" },
+  expenseCount: { label: "Dépenses", color: "#f87171" },
 };
 
 const formatMonthLabel = (monthStr) => {
@@ -55,7 +54,7 @@ function CustomTooltip({ active, payload }) {
         </div>
         <div className="flex items-center justify-between gap-6">
           <span className="flex items-center gap-2">
-            <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "#5b50ff", opacity: 0.5 }} />
+            <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: "#f87171" }} />
             Dépenses
           </span>
           <span className="font-medium">{data.expenseCount}</span>
@@ -66,8 +65,6 @@ function CustomTooltip({ active, payload }) {
 }
 
 export function AnalyticsCountChart({ monthlyRevenue, loading }) {
-  const [stacked, setStacked] = useState("grouped");
-
   const chartData = useMemo(() => {
     if (!monthlyRevenue?.length) return [];
     return monthlyRevenue.map((m) => ({
@@ -78,39 +75,36 @@ export function AnalyticsCountChart({ monthlyRevenue, loading }) {
 
   if (loading) {
     return (
-      <div>
-        <h3 className="text-base font-medium mb-4">Nombre de documents</h3>
-        <Skeleton className="h-[300px] w-full" />
-      </div>
+      <Card className="shadow-xs flex flex-col min-h-0 py-4">
+        <CardHeader>
+          <CardTitle className="text-sm font-medium">Nombre de documents</CardTitle>
+        </CardHeader>
+        <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 overflow-visible flex-1">
+          <Skeleton className="min-h-[300px] w-full" />
+        </CardContent>
+      </Card>
     );
   }
 
   if (!chartData.length) {
     return (
-      <div>
-        <h3 className="text-base font-medium mb-4">Nombre de documents</h3>
-        <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+      <Card className="shadow-xs flex flex-col min-h-0 py-4">
+        <CardHeader>
+          <CardTitle className="text-sm font-medium">Nombre de documents</CardTitle>
+        </CardHeader>
+        <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 flex items-center justify-center flex-1 min-h-[300px] text-muted-foreground">
           Aucune donnée pour cette période
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     );
   }
 
-  const isStacked = stacked === "stacked";
-
   return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-base font-medium">Nombre de documents</h3>
-        <ToggleGroup type="single" value={stacked} onValueChange={(v) => v && setStacked(v)} size="sm">
-          <ToggleGroupItem value="grouped" aria-label="Groupé">
-            <Group className="h-4 w-4" />
-          </ToggleGroupItem>
-          <ToggleGroupItem value="stacked" aria-label="Empilé">
-            <Layers className="h-4 w-4" />
-          </ToggleGroupItem>
-        </ToggleGroup>
-      </div>
+    <Card className="shadow-xs flex flex-col min-h-0 py-4">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">Nombre de documents</CardTitle>
+      </CardHeader>
+      <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 overflow-visible flex-1">
       <ChartContainer config={chartConfig} className="h-[300px] w-full">
         <BarChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} />
@@ -133,30 +127,31 @@ export function AnalyticsCountChart({ monthlyRevenue, loading }) {
           />
           <Tooltip content={<CustomTooltip />} />
           <Legend
+            verticalAlign="top"
+            height={36}
+            iconType="circle"
+            iconSize={8}
             formatter={(value) => (
-              <span className="text-xs">
-                {value === "invoiceCount" ? "Factures" : "Dépenses"}
+              <span className="text-xs text-muted-foreground">
+                {chartConfig[value]?.label || value}
               </span>
             )}
           />
           <Bar
             dataKey="invoiceCount"
             fill="#5b50ff"
-            fillOpacity={0.8}
-            radius={isStacked ? [0, 0, 0, 0] : [4, 4, 0, 0]}
-            barSize={isStacked ? 24 : 16}
-            stackId={isStacked ? "a" : undefined}
+            radius={[4, 4, 0, 0]}
+            barSize={16}
           />
           <Bar
             dataKey="expenseCount"
-            fill="#5b50ff"
-            fillOpacity={0.4}
-            radius={isStacked ? [4, 4, 0, 0] : [4, 4, 0, 0]}
-            barSize={isStacked ? 24 : 16}
-            stackId={isStacked ? "a" : undefined}
+            fill="#f87171"
+            radius={[4, 4, 0, 0]}
+            barSize={16}
           />
         </BarChart>
       </ChartContainer>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
