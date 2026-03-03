@@ -4,32 +4,28 @@
 
 // Stratégies de cache optimisées par type de données
 export const CACHE_POLICIES = {
-  // Toutes les politiques utilisent maintenant network-only
+  // Données statiques (organisation, paramètres) — cache d'abord, réseau en arrière-plan
   STATIC: {
-    fetchPolicy: "network-only",
-    nextFetchPolicy: "network-only",
-    notifyOnNetworkStatusChange: true,
+    fetchPolicy: "cache-first",
+    nextFetchPolicy: "cache-first",
   },
-  
-  // Toutes les politiques utilisent maintenant network-only
+
+  // Données critiques (listes factures, clients) — cache + réseau pour fraîcheur
   CRITICAL: {
-    fetchPolicy: "network-only",
-    nextFetchPolicy: "network-only",
-    notifyOnNetworkStatusChange: true,
+    fetchPolicy: "cache-and-network",
+    nextFetchPolicy: "cache-first",
   },
-  
-  // Données en temps réel - toujours du réseau
+
+  // Données en temps réel (transactions, notifications) — toujours du réseau
   REALTIME: {
     fetchPolicy: "network-only",
     nextFetchPolicy: "network-only",
-    notifyOnNetworkStatusChange: true,
   },
-  
-  // Toutes les politiques utilisent maintenant network-only
+
+  // Données en lecture seule (stats, historique) — cache d'abord
   READONLY: {
-    fetchPolicy: "network-only",
-    nextFetchPolicy: "network-only",
-    notifyOnNetworkStatusChange: true,
+    fetchPolicy: "cache-first",
+    nextFetchPolicy: "cache-first",
   },
 };
 

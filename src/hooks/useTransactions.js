@@ -8,6 +8,9 @@ import { GET_TRANSACTIONS } from "../graphql/queries/banking";
 import { toast } from "@/src/components/ui/sonner";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 
+// Limite raisonnable pour le refetch après mutation (pas besoin de tout recharger)
+const REFETCH_LIMIT = 200;
+
 /**
  * Hook pour créer une transaction manuelle
  */
@@ -20,10 +23,9 @@ export const useCreateTransaction = () => {
       refetchQueries: [
         {
           query: GET_TRANSACTIONS,
-          variables: { workspaceId, limit: 5000 },
+          variables: { workspaceId, limit: REFETCH_LIMIT },
         },
       ],
-      awaitRefetchQueries: true,
     }
   );
 
@@ -70,10 +72,9 @@ export const useUpdateTransaction = () => {
       refetchQueries: [
         {
           query: GET_TRANSACTIONS,
-          variables: { workspaceId, limit: 5000 },
+          variables: { workspaceId, limit: REFETCH_LIMIT },
         },
       ],
-      awaitRefetchQueries: true,
     }
   );
 
@@ -116,10 +117,9 @@ export const useDeleteTransaction = () => {
       refetchQueries: [
         {
           query: GET_TRANSACTIONS,
-          variables: { workspaceId, limit: 5000 },
+          variables: { workspaceId, limit: REFETCH_LIMIT },
         },
       ],
-      awaitRefetchQueries: true,
     }
   );
 

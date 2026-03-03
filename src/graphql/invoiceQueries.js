@@ -488,15 +488,9 @@ export const DELETE_LINKED_INVOICE = gql`
   }
 `;
 
-export const CHECK_INVOICE_NUMBER = gql`
-  query CheckInvoiceNumber($workspaceId: ID!) {
-    invoices(workspaceId: $workspaceId, limit: 10000) {
-      invoices {
-        id
-        number
-        prefix
-      }
-    }
+export const CHECK_INVOICE_NUMBER_EXISTS = gql`
+  query CheckInvoiceNumberExists($workspaceId: ID!, $number: Int!, $prefix: String!, $excludeId: ID) {
+    checkInvoiceNumberExists(workspaceId: $workspaceId, number: $number, prefix: $prefix, excludeId: $excludeId)
   }
 `;
 
@@ -1238,7 +1232,7 @@ export const INVOICE_STATUS_COLORS = {
   [INVOICE_STATUS.CANCELED]: "bg-red-100 text-red-700 border-red-200",
 };
 
-// Hook pour vérifier si un numéro de facture existe déjà
+// Hook pour vérifier si un numéro de facture existe déjà (query serveur légère)
 export const useCheckInvoiceNumber = () => {
   const { workspaceId } = useRequiredWorkspace();
   const client = useApolloClient();
@@ -1251,42 +1245,20 @@ export const useCheckInvoiceNumber = () => {
 
       try {
         const { data } = await client.query({
-          query: CHECK_INVOICE_NUMBER,
-          variables: { workspaceId },
-          fetchPolicy: "network-only", // Toujours vérifier avec le serveur
+          query: CHECK_INVOICE_NUMBER_EXISTS,
+          variables: {
+            workspaceId,
+            number: parseInt(invoiceNumber, 10),
+            prefix: invoicePrefix || "",
+            excludeId: excludeId || undefined,
+          },
+          fetchPolicy: "network-only",
         });
 
-        console.log(
-          "[checkInvoiceNumber] Toutes les factures:",
-          data?.invoices?.invoices?.map((inv) => `${inv.prefix}${inv.number}`)
-        );
-        console.log("[checkInvoiceNumber] Recherche:", {
-          prefix: invoicePrefix,
-          number: invoiceNumber,
-        });
-        console.log("[checkInvoiceNumber] ExcludeId:", excludeId);
-
-        if (data?.invoices?.invoices) {
-          // Chercher une facture avec le même préfixe ET le même numéro (en excluant l'ID actuel si fourni)
-          const existingInvoice = data.invoices.invoices.find((invoice) => {
-            const matchesNumber = invoice.number === invoiceNumber;
-            const matchesPrefix = invoice.prefix === invoicePrefix;
-            const notExcluded = !excludeId || invoice.id !== excludeId;
-            console.log(
-              `[checkInvoiceNumber] Comparaison: "${invoice.prefix}${invoice.number}" === "${invoicePrefix}${invoiceNumber}" ? prefix:${matchesPrefix}, number:${matchesNumber}, notExcluded: ${notExcluded}`
-            );
-            return matchesNumber && matchesPrefix && notExcluded;
-          });
-
-          console.log("[checkInvoiceNumber] Facture trouvée:", existingInvoice);
-
-          return {
-            exists: !!existingInvoice,
-            invoice: existingInvoice || null,
-          };
-        }
-
-        return { exists: false, invoice: null };
+        return {
+          exists: !!data?.checkInvoiceNumberExists,
+          invoice: null,
+        };
       } catch (error) {
         console.error("Erreur lors de la vérification du numéro:", error);
         return { exists: false, invoice: null };
