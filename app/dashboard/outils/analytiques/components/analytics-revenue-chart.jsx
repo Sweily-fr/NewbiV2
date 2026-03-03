@@ -11,6 +11,7 @@ import {
   Tooltip,
 } from "recharts";
 import { ChartContainer } from "@/src/components/ui/chart";
+import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
 import { Skeleton } from "@/src/components/ui/skeleton";
 
 const chartConfig = {
@@ -34,7 +35,7 @@ const formatMonthLabel = (monthStr) => {
   return date
     .toLocaleDateString("fr-FR", { month: "short" })
     .replace(".", "")
-    .toUpperCase() + ` ${year.slice(2)}`;
+    .toUpperCase();
 };
 
 function CustomTooltip({ active, payload }) {
@@ -105,35 +106,44 @@ export function AnalyticsRevenueChart({ monthlyRevenue, bankTransactions, loadin
         ...m,
         monthLabel: formatMonthLabel(m.month),
         expenseAmount: expense,
-        grossMarginComputed: (m.revenueHT || 0) - expense,
+        grossMarginComputed: m.grossMargin ?? ((m.revenueHT || 0) - expense),
       };
     });
   }, [monthlyRevenue, bankTransactions]);
 
   if (loading) {
     return (
-      <div className="flex flex-col min-h-0">
-        <h3 className="text-sm font-medium mb-4 shrink-0">CA, Dépenses et Marge brute</h3>
-        <Skeleton className="flex-1 min-h-[200px] w-full" />
-      </div>
+      <Card className="shadow-xs flex flex-col min-h-0 py-4">
+        <CardHeader>
+          <CardTitle className="text-sm font-medium">CA, Dépenses et Marge brute</CardTitle>
+        </CardHeader>
+        <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 overflow-visible flex-1">
+          <Skeleton className="min-h-[200px] w-full" />
+        </CardContent>
+      </Card>
     );
   }
 
   if (!chartData.length) {
     return (
-      <div className="flex flex-col min-h-0">
-        <h3 className="text-sm font-medium mb-4 shrink-0">CA, Dépenses et Marge brute</h3>
-        <div className="flex items-center justify-center flex-1 min-h-[200px] text-muted-foreground">
+      <Card className="shadow-xs flex flex-col min-h-0 py-4">
+        <CardHeader>
+          <CardTitle className="text-sm font-medium">CA, Dépenses et Marge brute</CardTitle>
+        </CardHeader>
+        <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 flex items-center justify-center flex-1 min-h-[200px] text-muted-foreground">
           Aucune donnée pour cette période
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="flex flex-col min-h-0">
-      <h3 className="text-sm font-medium mb-4 shrink-0">CA, Dépenses et Marge brute</h3>
-      <ChartContainer config={chartConfig} className="flex-1 min-h-[200px] w-full">
+    <Card className="shadow-xs flex flex-col min-h-0 py-4">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">CA, Dépenses et Marge brute</CardTitle>
+      </CardHeader>
+      <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 overflow-visible flex-1">
+        <ChartContainer config={chartConfig} className="flex-1 min-h-[350px] w-full">
         <ComposedChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} />
           <XAxis
@@ -142,11 +152,9 @@ export function AnalyticsRevenueChart({ monthlyRevenue, bankTransactions, loadin
             tickLine={false}
             axisLine={false}
             interval={0}
-            angle={-45}
-            textAnchor="end"
-            height={50}
           />
           <YAxis
+            tickCount={6}
             tick={({ y, payload }) => (
               <text x={0} y={y} textAnchor="start" dominantBaseline="middle" fontSize={11} className="fill-muted-foreground">
                 {`${(payload.value / 1000).toFixed(0)}k`}
@@ -181,6 +189,7 @@ export function AnalyticsRevenueChart({ monthlyRevenue, bankTransactions, loadin
           />
         </ComposedChart>
       </ChartContainer>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

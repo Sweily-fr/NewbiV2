@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { PieChart, Pie, Cell, Tooltip, Legend } from "recharts";
 import { ChartContainer } from "@/src/components/ui/chart";
+import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
 import { Skeleton } from "@/src/components/ui/skeleton";
 
 const TYPE_LABELS = {
@@ -12,12 +13,12 @@ const TYPE_LABELS = {
 
 const TYPE_COLORS = {
   COMPANY: "#5b50ff",
-  INDIVIDUAL: "rgba(91, 80, 255, 0.45)",
+  INDIVIDUAL: "#10b981",
 };
 
 const chartConfig = {
   COMPANY: { label: "Entreprise", color: "#5b50ff" },
-  INDIVIDUAL: { label: "Particulier", color: "rgba(91, 80, 255, 0.45)" },
+  INDIVIDUAL: { label: "Particulier", color: "#10b981" },
 };
 
 const formatCurrency = (value) =>
@@ -88,27 +89,36 @@ export function AnalyticsClientTypeChart({ revenueByClient, loading }) {
 
   if (loading) {
     return (
-      <div>
-        <h3 className="text-base font-medium mb-4">Répartition par type client</h3>
-        <Skeleton className="h-[300px] w-full" />
-      </div>
+      <Card className="shadow-xs flex flex-col min-h-0 py-4">
+        <CardHeader>
+          <CardTitle className="text-sm font-medium">Répartition par type client</CardTitle>
+        </CardHeader>
+        <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 overflow-visible flex-1">
+          <Skeleton className="min-h-[300px] w-full" />
+        </CardContent>
+      </Card>
     );
   }
 
   if (!chartData.length) {
     return (
-      <div>
-        <h3 className="text-base font-medium mb-4">Répartition par type client</h3>
-        <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+      <Card className="shadow-xs flex flex-col min-h-0 py-4">
+        <CardHeader>
+          <CardTitle className="text-sm font-medium">Répartition par type client</CardTitle>
+        </CardHeader>
+        <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 flex items-center justify-center flex-1 min-h-[300px] text-muted-foreground">
           Aucune donnée pour cette période
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div>
-      <h3 className="text-base font-medium mb-4">Répartition par type client</h3>
+    <Card className="shadow-xs flex flex-col min-h-0 py-4">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">Répartition par type client</CardTitle>
+      </CardHeader>
+      <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 overflow-visible flex-1">
       <ChartContainer config={chartConfig} className="h-[300px] w-full">
         <PieChart>
           <Pie
@@ -129,6 +139,7 @@ export function AnalyticsClientTypeChart({ revenueByClient, loading }) {
           <Legend formatter={(value) => <span className="text-xs">{value}</span>} />
         </PieChart>
       </ChartContainer>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
