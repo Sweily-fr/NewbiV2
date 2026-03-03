@@ -211,7 +211,6 @@ export function NavMain({
               >
                 <ShoppingCart />
                 <span>Ventes</span>
-                <ChevronRight className="ml-auto h-4 w-4" />
               </SidebarMenuButton>
             </DropdownMenuTrigger>
             <DropdownMenuContent
@@ -305,7 +304,7 @@ export function NavMain({
           <div
             data-tutorial="nav-ventes"
             className={cn(
-              "flex items-center w-full rounded-md transition-colors",
+              "flex items-center w-full rounded-md transition-colors overflow-hidden",
               isVentesSubActive && "bg-sidebar-accent"
             )}
           >
@@ -394,7 +393,6 @@ export function NavMain({
               >
                 <Users />
                 <span>Clients</span>
-                <ChevronRight className="ml-auto h-4 w-4" />
               </SidebarMenuButton>
             </DropdownMenuTrigger>
             <DropdownMenuContent
@@ -467,7 +465,7 @@ export function NavMain({
         <SidebarMenuItem>
           <div
             className={cn(
-              "flex items-center w-full rounded-md transition-colors",
+              "flex items-center w-full rounded-md transition-colors overflow-hidden",
               isClientsSubActive && "bg-sidebar-accent"
             )}
           >
@@ -558,7 +556,6 @@ export function NavMain({
               >
                 <FolderKanban />
                 <span>Tâches</span>
-                <ChevronRight className="ml-auto h-4 w-4" />
               </SidebarMenuButton>
             </DropdownMenuTrigger>
             <DropdownMenuContent
@@ -798,7 +795,6 @@ export function NavMain({
               >
                 <IconComponent />
                 <span>{title}</span>
-                <ChevronRight className="ml-auto h-4 w-4" />
               </SidebarMenuButton>
             </DropdownMenuTrigger>
             <DropdownMenuContent
@@ -899,7 +895,7 @@ export function NavMain({
         <SidebarMenuItem>
           <div
             className={cn(
-              "flex items-center w-full rounded-md transition-colors",
+              "flex items-center w-full rounded-md transition-colors overflow-hidden",
               isSubActive && "bg-sidebar-accent"
             )}
           >
