@@ -9,6 +9,7 @@ import {
   TableRow,
 } from "@/src/components/ui/table";
 import { Badge } from "@/src/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { cn } from "@/src/lib/utils";
 
@@ -40,8 +41,14 @@ export function AnalyticsOverdueTable({ overdueInvoices, loading }) {
   if (loading) {
     return (
       <div className="px-4 sm:px-6">
-        <h3 className="text-base font-medium mb-4">Factures en retard</h3>
-        <Skeleton className="h-[200px] w-full" />
+        <Card className="shadow-xs flex flex-col min-h-0 py-4">
+          <CardHeader>
+            <CardTitle className="text-sm font-medium">Factures en retard</CardTitle>
+          </CardHeader>
+          <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 overflow-visible flex-1">
+            <Skeleton className="min-h-[120px] w-full" />
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -49,10 +56,14 @@ export function AnalyticsOverdueTable({ overdueInvoices, loading }) {
   if (!overdueInvoices?.length) {
     return (
       <div className="px-4 sm:px-6">
-        <h3 className="text-base font-medium mb-4">Factures en retard</h3>
-        <div className="flex items-center justify-center h-[120px] text-muted-foreground border rounded-lg">
-          Aucune facture en retard
-        </div>
+        <Card className="shadow-xs flex flex-col min-h-0 py-4">
+          <CardHeader>
+            <CardTitle className="text-sm font-medium">Factures en retard</CardTitle>
+          </CardHeader>
+          <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 flex items-center justify-center flex-1 min-h-[120px] text-muted-foreground">
+            Aucune facture en retard
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -61,45 +72,47 @@ export function AnalyticsOverdueTable({ overdueInvoices, loading }) {
 
   return (
     <div className="px-4 sm:px-6">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-base font-medium">Factures en retard</h3>
-        <span className="text-sm text-muted-foreground">
-          {overdueInvoices.length} facture{overdueInvoices.length > 1 ? "s" : ""} — {formatCurrency(totalOverdue)}
-        </span>
-      </div>
-      <div className="rounded-lg border overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Facture</TableHead>
-              <TableHead>Client</TableHead>
-              <TableHead className="text-right">Montant TTC</TableHead>
-              <TableHead>Échéance</TableHead>
-              <TableHead className="text-right">Retard</TableHead>
-              <TableHead>Sévérité</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {overdueInvoices.map((inv) => {
-              const severity = getSeverity(inv.daysOverdue);
-              return (
-                <TableRow key={inv.invoiceId}>
-                  <TableCell className="font-medium">{inv.invoiceNumber}</TableCell>
-                  <TableCell>{inv.clientName}</TableCell>
-                  <TableCell className="text-right font-medium">{formatCurrency(inv.totalTTC)}</TableCell>
-                  <TableCell>{formatDate(inv.dueDate)}</TableCell>
-                  <TableCell className="text-right">{inv.daysOverdue}j</TableCell>
-                  <TableCell>
-                    <Badge variant="secondary" className={cn("text-xs", severity.class)}>
-                      {severity.label}
-                    </Badge>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      </div>
+      <Card className="shadow-xs flex flex-col min-h-0 py-4">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Factures en retard</CardTitle>
+          <span className="text-xs text-muted-foreground">
+            {overdueInvoices.length} facture{overdueInvoices.length > 1 ? "s" : ""} — {formatCurrency(totalOverdue)}
+          </span>
+        </CardHeader>
+        <CardContent className="px-0 pt-4 pb-0">
+          <Table className="w-full">
+            <TableHeader>
+              <TableRow>
+                <TableHead className="pl-6">Facture</TableHead>
+                <TableHead>Client</TableHead>
+                <TableHead className="text-right">Montant TTC</TableHead>
+                <TableHead>Échéance</TableHead>
+                <TableHead className="text-right">Retard</TableHead>
+                <TableHead className="pr-6">Sévérité</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {overdueInvoices.map((inv) => {
+                const severity = getSeverity(inv.daysOverdue);
+                return (
+                  <TableRow key={inv.invoiceId}>
+                    <TableCell className="font-medium pl-6">{inv.invoiceNumber}</TableCell>
+                    <TableCell>{inv.clientName}</TableCell>
+                    <TableCell className="text-right font-medium">{formatCurrency(inv.totalTTC)}</TableCell>
+                    <TableCell>{formatDate(inv.dueDate)}</TableCell>
+                    <TableCell className="text-right">{inv.daysOverdue}j</TableCell>
+                    <TableCell className="pr-6">
+                      <Badge variant="secondary" className={cn("text-xs", severity.class)}>
+                        {severity.label}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 }

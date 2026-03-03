@@ -10,6 +10,7 @@ import {
   YAxis,
 } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/src/components/ui/chart";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/src/components/ui/card";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { Button } from "@/src/components/ui/button";
 import {
@@ -109,26 +110,24 @@ export function AnalyticsTreasuryBalanceChart({
 
   if (loading) {
     return (
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <Skeleton className="h-5 w-40 mb-2" />
-            <Skeleton className="h-4 w-28" />
-          </div>
-          <Skeleton className="h-8 w-28 rounded-md" />
-        </div>
-        <Skeleton className="h-[300px] w-full" />
-      </div>
+      <Card className="shadow-xs flex flex-col min-h-0 py-4">
+        <CardHeader>
+          <CardTitle className="text-sm font-medium">Solde de trésorerie</CardTitle>
+        </CardHeader>
+        <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 overflow-visible flex-1">
+          <Skeleton className="min-h-[200px] w-full" />
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
+    <Card className="shadow-xs flex flex-col min-h-0 py-4">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <div>
-          <h3 className="text-base font-medium mb-1">Solde de trésorerie</h3>
-          <p className="text-sm text-muted-foreground">
-            Évolution du solde avec entrées et sorties bancaires{" "}
+          <CardTitle className="text-sm font-medium">Solde de trésorerie</CardTitle>
+          <CardDescription className="text-xs mt-1">
+            Évolution du solde{" "}
             <span
               className={`font-medium ${
                 treasuryConsumption >= 0 ? "text-green-600" : "text-red-600"
@@ -137,7 +136,7 @@ export function AnalyticsTreasuryBalanceChart({
               ({treasuryConsumption >= 0 ? "+" : ""}
               {formatCurrency(treasuryConsumption)})
             </span>
-          </p>
+          </CardDescription>
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -166,7 +165,8 @@ export function AnalyticsTreasuryBalanceChart({
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-      </div>
+      </CardHeader>
+      <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 overflow-visible flex-1">
       <ChartContainer
         key={chartMountKey}
         config={chartConfig}
@@ -249,6 +249,7 @@ export function AnalyticsTreasuryBalanceChart({
           />
         </ComposedChart>
       </ChartContainer>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

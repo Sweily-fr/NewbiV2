@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
 import {
   Bar,
   BarChart,
@@ -10,21 +10,10 @@ import {
   Tooltip,
   CartesianGrid,
   LabelList,
-  Treemap,
-  ResponsiveContainer,
 } from "recharts";
 import { ChartContainer } from "@/src/components/ui/chart";
+import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
 import { Skeleton } from "@/src/components/ui/skeleton";
-import { ToggleGroup, ToggleGroupItem } from "@/src/components/ui/toggle-group";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/src/components/ui/table";
-import { BarChart2, Grid3X3, TableIcon } from "lucide-react";
 
 const chartConfig = {
   totalHT: { label: "CA HT", color: "#5b50ff" },
@@ -89,32 +78,7 @@ function BarLabel({ x, y, width, height, value }) {
   );
 }
 
-function TreemapContent({ x, y, width, height, name, fill }) {
-  if (width < 40 || height < 25) return null;
-  const displayName = name?.length > Math.floor(width / 7)
-    ? name.substring(0, Math.floor(width / 7) - 2) + "..."
-    : name;
-  return (
-    <g>
-      <rect x={x} y={y} width={width} height={height} fill={fill} rx={4} stroke="#fff" strokeWidth={2} />
-      <text
-        x={x + width / 2}
-        y={y + height / 2}
-        fill="#fff"
-        textAnchor="middle"
-        dominantBaseline="central"
-        fontSize={11}
-        fontWeight={500}
-      >
-        {displayName}
-      </text>
-    </g>
-  );
-}
-
 export function AnalyticsProductChart({ revenueByProduct, loading }) {
-  const [viewType, setViewType] = useState("bar");
-
   const chartData = useMemo(() => {
     if (!revenueByProduct?.length) return [];
     return revenueByProduct.slice(0, 10).map((p, i) => ({
@@ -131,41 +95,36 @@ export function AnalyticsProductChart({ revenueByProduct, loading }) {
 
   if (loading) {
     return (
-      <div>
-        <h3 className="text-base font-medium mb-4">Top produits / services</h3>
-        <Skeleton className="h-[350px] w-full" />
-      </div>
+      <Card className="shadow-xs flex flex-col min-h-0 py-4">
+        <CardHeader>
+          <CardTitle className="text-sm font-medium">Top produits / services</CardTitle>
+        </CardHeader>
+        <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 overflow-visible flex-1">
+          <Skeleton className="min-h-[200px] w-full" />
+        </CardContent>
+      </Card>
     );
   }
 
   if (!chartData.length) {
     return (
-      <div>
-        <h3 className="text-base font-medium mb-4">Top produits / services</h3>
-        <div className="flex items-center justify-center h-[350px] text-muted-foreground">
+      <Card className="shadow-xs flex flex-col min-h-0 py-4">
+        <CardHeader>
+          <CardTitle className="text-sm font-medium">Top produits / services</CardTitle>
+        </CardHeader>
+        <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 flex items-center justify-center flex-1 min-h-[200px] text-muted-foreground">
           Aucune donnée pour cette période
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-base font-medium">Top produits / services</h3>
-        <ToggleGroup type="single" value={viewType} onValueChange={(v) => v && setViewType(v)} size="sm">
-          <ToggleGroupItem value="bar" aria-label="Bar chart">
-            <BarChart2 className="h-4 w-4" />
-          </ToggleGroupItem>
-          <ToggleGroupItem value="treemap" aria-label="Treemap">
-            <Grid3X3 className="h-4 w-4" />
-          </ToggleGroupItem>
-          <ToggleGroupItem value="table" aria-label="Tableau">
-            <TableIcon className="h-4 w-4" />
-          </ToggleGroupItem>
-        </ToggleGroup>
-      </div>
-      {viewType === "bar" ? (
+    <Card className="shadow-xs flex flex-col min-h-0 py-4">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">Top produits / services</CardTitle>
+      </CardHeader>
+      <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 overflow-visible flex-1">
         <ChartContainer config={chartConfig} className="h-[350px] w-full">
           <BarChart
             data={chartData}
@@ -200,45 +159,7 @@ export function AnalyticsProductChart({ revenueByProduct, loading }) {
             </Bar>
           </BarChart>
         </ChartContainer>
-      ) : viewType === "treemap" ? (
-        <div className="h-[350px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <Treemap
-              data={chartData}
-              dataKey="size"
-              nameKey="name"
-              content={<TreemapContent />}
-            >
-              <Tooltip content={<CustomTooltip />} />
-            </Treemap>
-          </ResponsiveContainer>
-        </div>
-      ) : (
-        <div className="rounded-lg border overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Description</TableHead>
-                <TableHead className="text-right">CA HT</TableHead>
-                <TableHead className="text-right">Quantité vendue</TableHead>
-                <TableHead className="text-right">Factures</TableHead>
-                <TableHead className="text-right">Prix moyen</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {chartData.map((p, i) => (
-                <TableRow key={i}>
-                  <TableCell className="font-medium">{p.description}</TableCell>
-                  <TableCell className="text-right">{formatCurrency(p.totalHT)}</TableCell>
-                  <TableCell className="text-right">{p.totalQuantity}</TableCell>
-                  <TableCell className="text-right">{p.invoiceCount}</TableCell>
-                  <TableCell className="text-right">{formatCurrency(p.averageUnitPrice)}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      )}
-    </div>
+      </CardContent>
+    </Card>
   );
 }

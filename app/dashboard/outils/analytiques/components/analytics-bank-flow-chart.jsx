@@ -12,10 +12,11 @@ import {
   Legend,
 } from "recharts";
 import { ChartContainer } from "@/src/components/ui/chart";
+import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
 import { Skeleton } from "@/src/components/ui/skeleton";
 
 const chartConfig = {
-  invoiced: { label: "Facturé HT", color: "#5b50ff" },
+  invoiced: { label: "Facturé TTC", color: "#5b50ff" },
   collected: { label: "Encaissé bancaire", color: "#10b981" },
 };
 
@@ -31,12 +32,10 @@ const formatMonthLabel = (monthStr) => {
   if (!monthStr) return "";
   const [year, month] = monthStr.split("-");
   const date = new Date(parseInt(year), parseInt(month) - 1);
-  return (
-    date
-      .toLocaleDateString("fr-FR", { month: "short" })
-      .replace(".", "")
-      .toUpperCase() + ` ${year.slice(2)}`
-  );
+  return date
+    .toLocaleDateString("fr-FR", { month: "short" })
+    .replace(".", "")
+    .toUpperCase();
 };
 
 function CustomTooltip({ active, payload }) {
@@ -88,58 +87,62 @@ export function AnalyticsBankFlowChart({
   const chartData = useMemo(() => {
     if (!monthlyRevenue?.length) return [];
 
-    // Aggregate positive bank transactions by month
+    // Build set of valid months from monthlyRevenue to scope bank transactions
+    const validMonths = new Set(monthlyRevenue.map((m) => m.month));
+
+    // Aggregate positive completed bank transactions by month (only within date range)
     const bankByMonth = {};
     (bankTransactions || []).forEach((t) => {
-      if (t.amount <= 0) return;
+      if (t.amount <= 0 || t.status !== "completed") return;
       const rawDate = t.date || t.processedAt || t.createdAt;
       if (!rawDate) return;
       const d = new Date(rawDate);
       if (isNaN(d.getTime())) return;
       const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      if (!validMonths.has(monthKey)) return;
       bankByMonth[monthKey] = (bankByMonth[monthKey] || 0) + t.amount;
     });
 
     return monthlyRevenue.map((m) => ({
       month: m.month,
       monthLabel: formatMonthLabel(m.month),
-      invoiced: m.revenueHT || 0,
+      invoiced: m.revenueTTC || 0,
       collected: bankByMonth[m.month] || 0,
     }));
   }, [monthlyRevenue, bankTransactions]);
 
   if (loading) {
     return (
-      <div>
-        <h3 className="text-base font-medium mb-1">Facturé vs Encaissé</h3>
-        <p className="text-sm text-muted-foreground mb-4">
-          Comparaison entre le montant facturé et les entrées bancaires
-        </p>
-        <Skeleton className="h-[300px] w-full" />
-      </div>
+      <Card className="shadow-xs flex flex-col min-h-0 py-4">
+        <CardHeader>
+          <CardTitle className="text-sm font-medium">Facturé vs Encaissé</CardTitle>
+        </CardHeader>
+        <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 overflow-visible flex-1">
+          <Skeleton className="min-h-[200px] w-full" />
+        </CardContent>
+      </Card>
     );
   }
 
   if (!chartData.length) {
     return (
-      <div>
-        <h3 className="text-base font-medium mb-1">Facturé vs Encaissé</h3>
-        <p className="text-sm text-muted-foreground mb-4">
-          Comparaison entre le montant facturé et les entrées bancaires
-        </p>
-        <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+      <Card className="shadow-xs flex flex-col min-h-0 py-4">
+        <CardHeader>
+          <CardTitle className="text-sm font-medium">Facturé vs Encaissé</CardTitle>
+        </CardHeader>
+        <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 flex items-center justify-center flex-1 min-h-[200px] text-muted-foreground">
           Aucune donnée pour cette période
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div>
-      <h3 className="text-base font-medium mb-1">Facturé vs Encaissé</h3>
-      <p className="text-sm text-muted-foreground mb-4">
-        Comparaison entre le montant facturé et les entrées bancaires
-      </p>
+    <Card className="shadow-xs flex flex-col min-h-0 py-4">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">Facturé vs Encaissé</CardTitle>
+      </CardHeader>
+      <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 overflow-visible flex-1">
       <ChartContainer config={chartConfig} className="h-[300px] w-full">
         <ComposedChart
           data={chartData}
@@ -152,9 +155,6 @@ export function AnalyticsBankFlowChart({
             tickLine={false}
             axisLine={false}
             interval={0}
-            angle={-45}
-            textAnchor="end"
-            height={50}
           />
           <YAxis
             tick={({ y, payload }) => (
@@ -200,6 +200,7 @@ export function AnalyticsBankFlowChart({
           />
         </ComposedChart>
       </ChartContainer>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

@@ -1,20 +1,18 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
 import {
   Area,
-  AreaChart,
   Line,
-  LineChart,
+  ComposedChart,
   XAxis,
   YAxis,
   Tooltip,
   CartesianGrid,
 } from "recharts";
 import { ChartContainer } from "@/src/components/ui/chart";
+import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
 import { Skeleton } from "@/src/components/ui/skeleton";
-import { ToggleGroup, ToggleGroupItem } from "@/src/components/ui/toggle-group";
-import { AreaChartIcon, LineChart as LineChartIcon } from "lucide-react";
 
 const chartConfig = {
   cumulativeHT: { label: "CA cumulé HT", color: "#5b50ff" },
@@ -36,7 +34,7 @@ const formatMonthLabel = (monthStr) => {
   return date
     .toLocaleDateString("fr-FR", { month: "short" })
     .replace(".", "")
-    .toUpperCase() + ` ${year.slice(2)}`;
+    .toUpperCase();
 };
 
 function CustomTooltip({ active, payload }) {
@@ -79,15 +77,13 @@ function CustomTooltip({ active, payload }) {
 }
 
 export function AnalyticsCumulativeRevenueChart({ monthlyRevenue, loading }) {
-  const [chartType, setChartType] = useState("area");
-
   const chartData = useMemo(() => {
     if (!monthlyRevenue?.length) return [];
     let cumHT = 0;
     let cumTTC = 0;
     return monthlyRevenue.map((m) => {
-      cumHT += m.revenueHT;
-      cumTTC += m.revenueTTC;
+      cumHT += m.revenueHT || 0;
+      cumTTC += m.revenueTTC || 0;
       return {
         ...m,
         monthLabel: formatMonthLabel(m.month),
@@ -99,49 +95,48 @@ export function AnalyticsCumulativeRevenueChart({ monthlyRevenue, loading }) {
 
   if (loading) {
     return (
-      <div>
-        <h3 className="text-base font-medium mb-4">CA cumulé</h3>
-        <Skeleton className="h-[300px] w-full" />
-      </div>
+      <Card className="shadow-xs flex flex-col min-h-0 py-4">
+        <CardHeader>
+          <CardTitle className="text-sm font-medium">CA cumulé</CardTitle>
+        </CardHeader>
+        <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 overflow-visible flex-1">
+          <Skeleton className="min-h-[200px] w-full" />
+        </CardContent>
+      </Card>
     );
   }
 
   if (!chartData.length) {
     return (
-      <div>
-        <h3 className="text-base font-medium mb-4">CA cumulé</h3>
-        <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+      <Card className="shadow-xs flex flex-col min-h-0 py-4">
+        <CardHeader>
+          <CardTitle className="text-sm font-medium">CA cumulé</CardTitle>
+        </CardHeader>
+        <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 flex items-center justify-center flex-1 min-h-[200px] text-muted-foreground">
           Aucune donnée pour cette période
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     );
   }
 
-  const ChartComponent = chartType === "area" ? AreaChart : LineChart;
-
   return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-base font-medium">CA cumulé</h3>
-        <ToggleGroup type="single" value={chartType} onValueChange={(v) => v && setChartType(v)} size="sm">
-          <ToggleGroupItem value="area" aria-label="Area chart">
-            <AreaChartIcon className="h-4 w-4" />
-          </ToggleGroupItem>
-          <ToggleGroupItem value="line" aria-label="Line chart">
-            <LineChartIcon className="h-4 w-4" />
-          </ToggleGroupItem>
-        </ToggleGroup>
-      </div>
-      <ChartContainer config={chartConfig} className="h-[300px] w-full">
-        <ChartComponent data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+    <Card className="shadow-xs flex flex-col min-h-0 py-4">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">CA cumulé</CardTitle>
+      </CardHeader>
+      <CardContent className="px-2 pt-4 pb-0 sm:px-6 sm:pt-6 sm:pb-0 overflow-visible flex-1">
+        <ChartContainer config={chartConfig} className="flex-1 min-h-[350px] w-full">
+        <ComposedChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} />
           <XAxis
             dataKey="monthLabel"
             tick={{ fontSize: 11 }}
             tickLine={false}
             axisLine={false}
+            interval={0}
           />
           <YAxis
+            tickCount={6}
             tick={({ y, payload }) => (
               <text x={0} y={y} textAnchor="start" dominantBaseline="middle" fontSize={11} className="fill-muted-foreground">
                 {`${(payload.value / 1000).toFixed(0)}k`}
@@ -152,49 +147,26 @@ export function AnalyticsCumulativeRevenueChart({ monthlyRevenue, loading }) {
             width={35}
           />
           <Tooltip content={<CustomTooltip />} />
-          {chartType === "area" ? (
-            <>
-              <Area
-                type="monotone"
-                dataKey="cumulativeHT"
-                stroke="#5b50ff"
-                fill="#5b50ff"
-                fillOpacity={0.25}
-                strokeWidth={2}
-              />
-              <Area
-                type="monotone"
-                dataKey="cumulativeTTC"
-                stroke="#5b50ff"
-                fill="#5b50ff"
-                fillOpacity={0.1}
-                strokeWidth={2}
-                strokeOpacity={0.5}
-              />
-            </>
-          ) : (
-            <>
-              <Line
-                type="monotone"
-                dataKey="cumulativeHT"
-                stroke="#5b50ff"
-                strokeWidth={2}
-                dot={false}
-                activeDot={{ r: 5 }}
-              />
-              <Line
-                type="monotone"
-                dataKey="cumulativeTTC"
-                stroke="#5b50ff"
-                strokeWidth={2}
-                strokeOpacity={0.5}
-                dot={false}
-                activeDot={{ r: 5 }}
-              />
-            </>
-          )}
-        </ChartComponent>
+          <Area
+            type="bump"
+            dataKey="cumulativeHT"
+            stroke="#5b50ff"
+            fill="#5b50ff"
+            fillOpacity={0.25}
+            strokeWidth={1.5}
+          />
+          <Area
+            type="bump"
+            dataKey="cumulativeTTC"
+            stroke="#5b50ff"
+            fill="#5b50ff"
+            fillOpacity={0.1}
+            strokeWidth={1.5}
+            strokeOpacity={0.5}
+          />
+        </ComposedChart>
       </ChartContainer>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
