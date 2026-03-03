@@ -288,53 +288,42 @@ const cache = new InMemoryCache({
 });
 
 // ==================== CLIENT ====================
-let apolloClientInstance = null;
+const splitLink =
+  typeof window !== "undefined" && wsLink
+    ? split(
+        ({ query }) => {
+          const definition = getMainDefinition(query);
+          return (
+            definition.kind === "OperationDefinition" &&
+            definition.operation === "subscription"
+          );
+        },
+        wsLink,
+        from([authLink, errorLink, uploadLink])
+      )
+    : from([authLink, errorLink, uploadLink]);
 
-const createApolloClient = () => {
-  const splitLink =
-    typeof window !== "undefined" && wsLink
-      ? split(
-          ({ query }) => {
-            const definition = getMainDefinition(query);
-            return (
-              definition.kind === "OperationDefinition" &&
-              definition.operation === "subscription"
-            );
-          },
-          wsLink,
-          from([authLink, errorLink, uploadLink])
-        )
-      : from([authLink, errorLink, uploadLink]);
-
-  return new ApolloClient({
-    link: splitLink,
-    cache,
-    defaultOptions: {
-      watchQuery: {
-        fetchPolicy: "cache-and-network",
-        errorPolicy: "all",
-        notifyOnNetworkStatusChange: true,
-      },
-      query: {
-        fetchPolicy: "cache-and-network",
-        errorPolicy: "all",
-      },
-      mutate: {
-        errorPolicy: "all",
-        awaitRefetchQueries: true,
-      },
+// Instance unique — partagée par tout le frontend
+export const apolloClient = new ApolloClient({
+  link: splitLink,
+  cache,
+  defaultOptions: {
+    watchQuery: {
+      fetchPolicy: "cache-and-network",
+      errorPolicy: "all",
     },
-    devtools: {
-      enabled: process.env.NODE_ENV === "development",
+    query: {
+      fetchPolicy: "cache-and-network",
+      errorPolicy: "all",
     },
-  });
-};
+    mutate: {
+      errorPolicy: "all",
+    },
+  },
+  devtools: {
+    enabled: process.env.NODE_ENV === "development",
+  },
+});
 
-export const getApolloClient = async () => {
-  if (!apolloClientInstance) {
-    apolloClientInstance = createApolloClient();
-  }
-  return apolloClientInstance;
-};
-
-export const apolloClient = createApolloClient();
+// Backward compat — retourne la même instance unique
+export const getApolloClient = async () => apolloClient;

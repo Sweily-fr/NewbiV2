@@ -68,7 +68,7 @@ export function useDashboardLayoutSimple() {
         console.warn("Erreur sauvegarde cache utilisateur:", error);
       }
     }
-  }, [session?.user, isHydrated]);
+  }, [session?.user?.id, session?.user?.name, session?.user?.email, session?.user?.role, session?.user?.hasSeenOnboarding, session?.session?.activeOrganizationId, isHydrated]);
 
   // Cache minimal pour les données d'abonnement (éviter les flashs)
   useEffect(() => {
@@ -404,14 +404,13 @@ export function useDashboardLayoutSimple() {
     const hasSeenOnboarding = session.user.hasSeenOnboarding;
 
     // Afficher l'onboarding si l'utilisateur est owner et n'a jamais vu l'onboarding
-    // Ne pas ajouter isOnboardingOpen dans les dépendances pour éviter la boucle
     if (isOwner && !hasSeenOnboarding) {
       setIsOnboardingOpen(true);
     }
   }, [
-    session?.user,
     session?.user?.role,
     session?.user?.hasSeenOnboarding,
+    session?.user?.id,
     isHydrated,
   ]);
 

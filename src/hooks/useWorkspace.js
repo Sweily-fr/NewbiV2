@@ -70,7 +70,12 @@ export const useWorkspace = () => {
   }, [activeOrganization?.id, activeOrganization?.members]);
 
   // Utiliser l'organisation complète si disponible, sinon l'organisation active
-  const orgWithMembers = fullOrganization || activeOrganization;
+  // Stabilisé avec des deps primitives pour éviter les cascades de re-render
+  const orgWithMembers = useMemo(
+    () => fullOrganization || activeOrganization,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [fullOrganization?.id, fullOrganization?.members?.length, activeOrganization?.id, activeOrganization?.members?.length]
+  );
 
   // Stocker l'organizationId pour Apollo Client via module-level + localStorage
   const orgId = activeOrganization?.id;
@@ -108,16 +113,23 @@ export const useWorkspace = () => {
     }
   }, [members, userId]);
 
-  // Mémoriser le résultat pour éviter les re-renders inutiles
+  // Stabiliser la liste d'organisations (évite que la ref array change à chaque render)
+  const stableOrganizations = useMemo(
+    () => organizations || [],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [organizations?.length, organizations?.[0]?.id]
+  );
+
+  // Mémoriser le résultat avec des deps primitives pour éviter les re-renders inutiles
   return useMemo(
     () => ({
       workspaceId: activeOrganization?.id || null,
       organization: orgWithMembers,
       activeOrganization: orgWithMembers,
-      organizations: organizations || [],
+      organizations: stableOrganizations,
       loading,
     }),
-    [activeOrganization?.id, orgWithMembers, organizations, loading]
+    [activeOrganization?.id, orgWithMembers, stableOrganizations, loading]
   );
 };
 

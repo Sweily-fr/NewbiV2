@@ -1,49 +1,21 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { authClient } from "@/src/lib/auth-client";
+import { useState } from "react";
 import { TriangleAlert, RefreshCw } from "lucide-react";
 import { toast } from "@/src/components/ui/sonner";
+import { useEmailVerification } from "@/src/hooks/useEmailVerification";
 
 export function EmailVerificationBadgeHeader() {
-  const [isVisible, setIsVisible] = useState(false);
-  const [isVerified, setIsVerified] = useState(true);
+  const { isVerified, resendVerificationEmail } = useEmailVerification();
+  const [isVisible, setIsVisible] = useState(true);
   const [isResending, setIsResending] = useState(false);
-
-  useEffect(() => {
-    const checkEmailVerification = async () => {
-      try {
-        const { data: session } = await authClient.getSession();
-        const emailVerified = session?.user?.emailVerified;
-
-        setIsVerified(emailVerified);
-        setIsVisible(!emailVerified);
-      } catch (error) {
-        console.error("Erreur vérification email:", error);
-      }
-    };
-
-    checkEmailVerification();
-
-    // Vérifier toutes les 30 secondes si l'email a été vérifié
-    const interval = setInterval(checkEmailVerification, 30000);
-    return () => clearInterval(interval);
-  }, []);
 
   const handleResendEmail = async () => {
     if (isResending) return;
     setIsResending(true);
     try {
-      const { data: session } = await authClient.getSession();
-
-      if (session?.user?.email) {
-        await authClient.sendVerificationEmail({
-          email: session.user.email,
-          callbackURL: `${window.location.origin}/api/auth/verify-email`,
-        });
-
-        toast.success("Email de vérification renvoyé !");
-      }
+      await resendVerificationEmail();
+      toast.success("Email de vérification renvoyé !");
     } catch (error) {
       console.error("Erreur renvoi email:", error);
       toast.error("Erreur lors de l'envoi de l'email");

@@ -481,7 +481,13 @@ export function useNextPurchaseOrderNumber(prefix, options = {}) {
   };
 }
 
-// Hook pour vérifier si un numéro de bon de commande existe déjà
+const CHECK_PURCHASE_ORDER_NUMBER_EXISTS = gql`
+  query CheckPurchaseOrderNumberExists($workspaceId: ID!, $number: Int!, $prefix: String!, $excludeId: ID) {
+    checkPurchaseOrderNumberExists(workspaceId: $workspaceId, number: $number, prefix: $prefix, excludeId: $excludeId)
+  }
+`;
+
+// Hook pour vérifier si un numéro de bon de commande existe déjà (query serveur légère)
 export const useCheckPurchaseOrderNumber = () => {
   const { workspaceId } = useRequiredWorkspace();
   const client = useApolloClient();
@@ -494,26 +500,20 @@ export const useCheckPurchaseOrderNumber = () => {
 
       try {
         const { data } = await client.query({
-          query: GET_PURCHASE_ORDERS,
-          variables: { workspaceId, limit: 10000 },
+          query: CHECK_PURCHASE_ORDER_NUMBER_EXISTS,
+          variables: {
+            workspaceId,
+            number: parseInt(poNumber, 10),
+            prefix: poPrefix || "",
+            excludeId: excludeId || undefined,
+          },
           fetchPolicy: "network-only",
         });
 
-        if (data?.purchaseOrders?.purchaseOrders) {
-          const existing = data.purchaseOrders.purchaseOrders.find((po) => {
-            const matchesNumber = po.number === poNumber;
-            const matchesPrefix = po.prefix === poPrefix;
-            const notExcluded = !excludeId || po.id !== excludeId;
-            return matchesNumber && matchesPrefix && notExcluded;
-          });
-
-          return {
-            exists: !!existing,
-            purchaseOrder: existing || null,
-          };
-        }
-
-        return { exists: false, purchaseOrder: null };
+        return {
+          exists: !!data?.checkPurchaseOrderNumberExists,
+          purchaseOrder: null,
+        };
       } catch (error) {
         console.error(
           "Erreur lors de la vérification du numéro de bon de commande:",

@@ -67,9 +67,21 @@ export function useDashboardLayout() {
   // État pour éviter les appels multiples
   const isLoadingRef = useRef(false);
 
-  // Fonction pour charger et mettre en cache les données
+  // Refs stables pour accéder aux valeurs courantes sans recréer le callback
+  const sessionRef = useRef(session);
+  const cacheKeyRef = useRef(cacheKey);
+  const isHydratedRef = useRef(isHydrated);
+  useEffect(() => { sessionRef.current = session; }, [session]);
+  useEffect(() => { cacheKeyRef.current = cacheKey; }, [cacheKey]);
+  useEffect(() => { isHydratedRef.current = isHydrated; }, [isHydrated]);
+
+  // Fonction pour charger et mettre en cache les données — identité stable via useCallback([])
   const loadLayoutData = useCallback(async (forceRefresh = false) => {
-    if (!isHydrated || !session?.user || !session?.session?.activeOrganizationId) {
+    const currentSession = sessionRef.current;
+    const currentCacheKey = cacheKeyRef.current;
+    const currentIsHydrated = isHydratedRef.current;
+
+    if (!currentIsHydrated || !currentSession?.user || !currentSession?.session?.activeOrganizationId) {
       setIsLoading(false);
       return;
     }
@@ -85,13 +97,13 @@ export function useDashboardLayout() {
     try {
       // Récupérer les données d'abonnement
       const subscriptionData = await fetchSubscriptionData(
-        session.session.activeOrganizationId
+        currentSession.session.activeOrganizationId
       );
 
       // Mettre à jour le cache
       const newCachedData = {
-        user: session?.user,
-        organization: session?.user?.organization,
+        user: currentSession?.user,
+        organization: currentSession?.user?.organization,
         subscription: subscriptionData,
         lastUpdate: Date.now(),
       };
@@ -99,9 +111,9 @@ export function useDashboardLayout() {
       setCachedData(newCachedData);
 
       // Sauvegarder dans le localStorage pour persistance
-      if (cacheKey) {
+      if (currentCacheKey) {
         try {
-          localStorage.setItem(cacheKey, JSON.stringify(newCachedData));
+          localStorage.setItem(currentCacheKey, JSON.stringify(newCachedData));
         } catch (error) {
           console.warn('Impossible de sauvegarder en cache local:', error);
         }
@@ -114,7 +126,7 @@ export function useDashboardLayout() {
       setIsInitialized(true);
       isLoadingRef.current = false;
     }
-  }, [isHydrated, cacheKey]);
+  }, []);
 
   // Charger depuis le localStorage au démarrage
   useEffect(() => {
@@ -143,22 +155,22 @@ export function useDashboardLayout() {
     }
   }, [isHydrated, cacheKey, loadLayoutData]);
 
-  // Recharger si la session change significativement (simplifié)
+  // Recharger si la session change significativement (deps primitives uniquement)
   useEffect(() => {
     if (isInitialized && session?.user?.id) {
-      // Utiliser un timeout pour éviter les appels trop fréquents
       const timeoutId = setTimeout(() => {
-        loadLayoutData(true); // Force refresh
+        loadLayoutData(true);
       }, 100);
-      
+
       return () => clearTimeout(timeoutId);
     }
   }, [session?.user?.id, session?.user?.organization?.id, isInitialized, loadLayoutData]);
 
   // Fonction pour forcer le rafraîchissement du cache
   const refreshLayoutData = useCallback(() => {
-    if (cacheKey) {
-      localStorage.removeItem(cacheKey);
+    const currentCacheKey = cacheKeyRef.current;
+    if (currentCacheKey) {
+      localStorage.removeItem(currentCacheKey);
     }
     setCachedData({
       user: null,
@@ -167,7 +179,7 @@ export function useDashboardLayout() {
       lastUpdate: null,
     });
     loadLayoutData(true); // Force refresh
-  }, [cacheKey, loadLayoutData]);
+  }, [loadLayoutData]);
 
   // Fonction pour invalider le cache après mise à jour d'organisation
   const invalidateOrganizationCache = () => {

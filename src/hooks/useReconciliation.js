@@ -6,6 +6,7 @@
  */
 
 import { useState, useCallback } from "react";
+import { useReconciliationGraphQL as _useReconciliationGraphQL } from "./useReconciliationGraphQL";
 
 // Ré-exporter les hooks GraphQL avec les mêmes noms pour compatibilité
 export {
@@ -22,8 +23,7 @@ export {
  * Hook pour afficher les toasts de suggestion de rapprochement
  */
 export function useReconciliationToast() {
-  const { useReconciliationGraphQL } = require("./useReconciliationGraphQL");
-  const { suggestions, linkTransaction } = useReconciliationGraphQL();
+  const { suggestions, linkTransaction } = _useReconciliationGraphQL();
   const [shownSuggestions, setShownSuggestions] = useState(new Set());
 
   // Retourner les nouvelles suggestions non encore affichées

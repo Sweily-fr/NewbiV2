@@ -743,7 +743,13 @@ export const useConvertQuoteToInvoice = () => {
   return { convertToInvoice, loading };
 };
 
-// Hook pour vérifier si un numéro de devis existe déjà
+const CHECK_QUOTE_NUMBER_EXISTS = gql`
+  query CheckQuoteNumberExists($workspaceId: ID!, $number: Int!, $prefix: String!, $excludeId: ID) {
+    checkQuoteNumberExists(workspaceId: $workspaceId, number: $number, prefix: $prefix, excludeId: $excludeId)
+  }
+`;
+
+// Hook pour vérifier si un numéro de devis existe déjà (query serveur légère)
 export const useCheckQuoteNumber = () => {
   const { workspaceId } = useRequiredWorkspace();
   const client = useApolloClient();
@@ -756,42 +762,20 @@ export const useCheckQuoteNumber = () => {
 
       try {
         const { data } = await client.query({
-          query: GET_QUOTES,
-          variables: { workspaceId, limit: 1000 },
-          fetchPolicy: "network-only", // Toujours vérifier avec le serveur
+          query: CHECK_QUOTE_NUMBER_EXISTS,
+          variables: {
+            workspaceId,
+            number: parseInt(quoteNumber, 10),
+            prefix: quotePrefix || "",
+            excludeId: excludeId || undefined,
+          },
+          fetchPolicy: "network-only",
         });
 
-        console.log(
-          "[checkQuoteNumber] Tous les devis:",
-          data?.quotes?.quotes?.map((q) => `${q.prefix}${q.number}`)
-        );
-        console.log("[checkQuoteNumber] Recherche:", {
-          prefix: quotePrefix,
-          number: quoteNumber,
-        });
-        console.log("[checkQuoteNumber] ExcludeId:", excludeId);
-
-        if (data?.quotes?.quotes) {
-          // Chercher un devis avec le même préfixe ET le même numéro (en excluant l'ID actuel si fourni)
-          const existingQuote = data.quotes.quotes.find((quote) => {
-            const matchesNumber = quote.number === quoteNumber;
-            const matchesPrefix = quote.prefix === quotePrefix;
-            const notExcluded = !excludeId || quote.id !== excludeId;
-            console.log(
-              `[checkQuoteNumber] Comparaison: "${quote.prefix}${quote.number}" === "${quotePrefix}${quoteNumber}" ? prefix:${matchesPrefix}, number:${matchesNumber}, notExcluded: ${notExcluded}`
-            );
-            return matchesNumber && matchesPrefix && notExcluded;
-          });
-
-          console.log("[checkQuoteNumber] Devis trouvé:", existingQuote);
-
-          return {
-            exists: !!existingQuote,
-            quote: existingQuote || null,
-          };
-        }
-
-        return { exists: false, quote: null };
+        return {
+          exists: !!data?.checkQuoteNumberExists,
+          quote: null,
+        };
       } catch (error) {
         console.error(
           "Erreur lors de la vérification du numéro de devis:",

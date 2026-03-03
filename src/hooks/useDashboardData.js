@@ -69,7 +69,7 @@ export function useDashboardData() {
     error: transactionsError,
     refetch: refetchBankTransactions,
   } = useQuery(GET_TRANSACTIONS, {
-    variables: { workspaceId, limit: 5000 },
+    variables: { workspaceId, limit: 500 },
     fetchPolicy: "cache-and-network",
     skip: !workspaceId,
   });
@@ -100,22 +100,7 @@ export function useDashboardData() {
   const bankAccounts = accountsData?.bankingAccounts || [];
   const bankTransactions = transactionsData?.transactions || [];
 
-  // Debug: vérifier les données extraites
-  if (!bankLoading && workspaceId) {
-    console.warn("📊 [Dashboard] Données transactions:", {
-      hasData: !!transactionsData,
-      transactionsCount: bankTransactions.length,
-      hasError: !!transactionsError,
-      accountsCount: bankAccounts.length,
-      sampleTransaction: bankTransactions[0] ? {
-        id: bankTransactions[0].id,
-        date: bankTransactions[0].date,
-        dateType: typeof bankTransactions[0].date,
-        amount: bankTransactions[0].amount,
-        description: bankTransactions[0].description?.substring(0, 30),
-      } : null,
-    });
-  }
+  // Debug supprimé — console.warn dans la phase render causait du bruit en production
 
   // Calculer le solde total
   const bankBalance = useMemo(() => {

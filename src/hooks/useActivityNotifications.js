@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useSubscription } from "@apollo/client";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect } from "react";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import {
   GET_NOTIFICATIONS,
@@ -16,8 +16,6 @@ import {
 export const useActivityNotifications = (options = {}) => {
   const { limit = 50, offset = 0, unreadOnly = false } = options;
   const { workspaceId } = useWorkspace();
-  const lastUnreadCountRef = useRef(0);
-
   // Récupérer les notifications avec polling fallback
   const {
     data,
@@ -58,23 +56,14 @@ export const useActivityNotifications = (options = {}) => {
     }
   );
 
-  // Rafraîchir immédiatement quand une nouvelle notification arrive via WebSocket
+  // Rafraîchir quand une nouvelle notification arrive via WebSocket
+  // Un seul refetch suffit — pas besoin d'un 2ème effect sur le count
   useEffect(() => {
     if (subscriptionData?.notificationReceived) {
       refetch();
       refetchUnreadCount();
     }
   }, [subscriptionData, refetch, refetchUnreadCount]);
-
-  // Détecter les nouvelles notifications via polling et déclencher un refetch si nécessaire
-  useEffect(() => {
-    const currentUnreadCount = unreadCountData?.getUnreadNotificationsCount || 0;
-    if (currentUnreadCount > lastUnreadCountRef.current) {
-      // Nouvelles notifications détectées, rafraîchir la liste
-      refetch();
-    }
-    lastUnreadCountRef.current = currentUnreadCount;
-  }, [unreadCountData?.getUnreadNotificationsCount, refetch]);
 
   // Marquer une notification comme lue
   const markAsRead = useCallback(
