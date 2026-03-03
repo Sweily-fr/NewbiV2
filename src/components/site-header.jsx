@@ -1,32 +1,13 @@
 "use client";
-import React, { Suspense, useState, useEffect } from "react";
+import React, { Suspense } from "react";
 import { Separator } from "@/src/components/ui/separator";
 import { SidebarTrigger } from "@/src/components/ui/sidebar";
 import { EmailVerificationBadgeHeader } from "@/src/components/email-verification-badge-header";
 import { OrganizationSwitcherHeader } from "@/src/components/organization-switcher-header";
-import { authClient } from "@/src/lib/auth-client";
+import { useEmailVerification } from "@/src/hooks/useEmailVerification";
 
 function SiteHeaderContent() {
-  const [isEmailVerified, setIsEmailVerified] = useState(true);
-
-  // Vérifier l'état de vérification de l'email
-  useEffect(() => {
-    const checkEmailVerification = async () => {
-      try {
-        const { data: session } = await authClient.getSession();
-        setIsEmailVerified(session?.user?.emailVerified ?? true);
-      } catch (error) {
-        console.error("Erreur vérification email:", error);
-        setIsEmailVerified(true); // Par défaut, pas de fond amber en cas d'erreur
-      }
-    };
-
-    checkEmailVerification();
-
-    // Vérifier toutes les 30 secondes
-    const interval = setInterval(checkEmailVerification, 30000);
-    return () => clearInterval(interval);
-  }, []);
+  const { isVerified: isEmailVerified } = useEmailVerification();
 
   return (
     <header

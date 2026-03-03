@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useReconciliation } from "@/src/hooks/useReconciliation";
 import { useRouter } from "next/navigation";
 import { useToastManager } from "@/src/components/ui/toast-manager";
@@ -45,7 +45,7 @@ export function ReconciliationToastProvider({ children }) {
     error,
   } = useReconciliation();
   const toastManager = useToastManager();
-  const [shownSuggestions, setShownSuggestions] = useState(new Set());
+  const shownSuggestionsRef = useRef(new Set());
   const [ignoredSuggestions, setIgnoredSuggestions] = useState(new Set());
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -120,13 +120,15 @@ export function ReconciliationToastProvider({ children }) {
 
   // Afficher les toasts pour les nouvelles suggestions à haute confiance
   // Maintenant en pile (plusieurs toasts simultanés)
+  // Note: shownSuggestionsRef (ref) évite la boucle infinie — pas besoin de le lister en deps
   useEffect(() => {
     if (isProcessing) return;
 
+    const shownSet = shownSuggestionsRef.current;
     const newSuggestions = suggestions.filter(
       (s) =>
         s.confidence === "high" &&
-        !shownSuggestions.has(s.transaction.id) &&
+        !shownSet.has(s.transaction.id) &&
         !ignoredSuggestions.has(s.transaction.id) &&
         s.matchingInvoices.length > 0
     );
@@ -136,12 +138,8 @@ export function ReconciliationToastProvider({ children }) {
     const toastsToShow = newSuggestions.slice(0, maxToasts);
 
     if (toastsToShow.length > 0) {
-      // Marquer toutes les suggestions comme affichées
-      setShownSuggestions((prev) => {
-        const newSet = new Set(prev);
-        toastsToShow.forEach((s) => newSet.add(s.transaction.id));
-        return newSet;
-      });
+      // Marquer toutes les suggestions comme affichées (mutation du ref, pas de re-render)
+      toastsToShow.forEach((s) => shownSet.add(s.transaction.id));
 
       // Afficher chaque toast avec un léger délai pour l'effet d'empilement
       toastsToShow.forEach((suggestion, index) => {
@@ -186,7 +184,6 @@ export function ReconciliationToastProvider({ children }) {
     }
   }, [
     suggestions,
-    shownSuggestions,
     ignoredSuggestions,
     isProcessing,
     handleLink,
