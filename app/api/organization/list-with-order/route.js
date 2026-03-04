@@ -31,13 +31,39 @@ export async function GET() {
       .find({ _id: { $in: organizationIds } })
       .toArray();
 
-    // Fusionner les données : ajouter le champ order et role à chaque organisation
+    // Récupérer les abonnements de toutes les organisations en une seule requête
+    const orgIdStrings = organizationIds.map((id) => id.toString());
+    const subscriptions = await mongoDb
+      .collection("subscription")
+      .find({
+        $or: [
+          { referenceId: { $in: orgIdStrings } },
+          { organizationId: { $in: orgIdStrings } },
+        ],
+      })
+      .toArray();
+
+    // Créer un map orgId → subscription status
+    const subscriptionMap = {};
+    for (const sub of subscriptions) {
+      const orgId = (sub.referenceId || sub.organizationId)?.toString();
+      if (!orgId) continue;
+      const isActive = sub.status === "active" || sub.status === "trialing";
+      const isCanceledButValid =
+        sub.status === "canceled" &&
+        sub.periodEnd &&
+        new Date(sub.periodEnd) > new Date();
+      subscriptionMap[orgId] = isActive || isCanceledButValid ? "active" : "expired";
+    }
+
+    // Fusionner les données : ajouter le champ order, role et subscriptionStatus à chaque organisation
     const organizationsWithOrder = organizations.map((org) => {
+      const orgIdStr = org._id.toString();
       const member = members.find(
-        (m) => m.organizationId.toString() === org._id.toString()
+        (m) => m.organizationId.toString() === orgIdStr
       );
       return {
-        id: org._id.toString(),
+        id: orgIdStr,
         name: org.name,
         slug: org.slug,
         createdAt: org.createdAt,
@@ -46,6 +72,7 @@ export async function GET() {
         customIcon: org.customIcon,
         order: member?.order ?? 999, // Si pas d'ordre, mettre à la fin
         role: member?.role, // Ajouter le rôle de l'utilisateur
+        subscriptionStatus: subscriptionMap[orgIdStr] || "none",
       };
     });
 
