@@ -6,11 +6,29 @@ import { ObjectId } from "mongodb";
 import DashboardClientLayout from "./dashboard-client-layout";
 
 /**
- * Vérifie si l'utilisateur a un abonnement actif via son organisation
- * @param {string} userId - ID de l'utilisateur
- * @param {string|null} activeOrgId - ID de l'organisation active (optionnel)
- * @returns {Promise<{hasSubscription: boolean, reason?: string, organizationId?: string}>}
+ * Vérifie si une organisation donnée a un abonnement valide
+ * @param {string} orgId - ID de l'organisation
+ * @returns {Promise<boolean>}
  */
+async function hasValidSubscription(orgId) {
+  const subscription = await mongoDb.collection("subscription").findOne({
+    $or: [
+      { referenceId: orgId },
+      { organizationId: orgId },
+    ],
+  });
+
+  if (!subscription) return false;
+
+  const isActive = subscription.status === "active" || subscription.status === "trialing";
+  const isCanceledButValid =
+    subscription.status === "canceled" &&
+    subscription.periodEnd &&
+    new Date(subscription.periodEnd) > new Date();
+
+  return isActive || isCanceledButValid;
+}
+
 async function checkSubscription(userId, activeOrgId) {
   try {
     const userObjectId = new ObjectId(userId);
@@ -43,31 +61,49 @@ async function checkSubscription(userId, activeOrgId) {
 
     console.log(`[Dashboard Layout] Vérification abonnement pour org: ${organizationId}`);
 
-    // 2. Vérifier l'abonnement de l'organisation (recherche avec les deux formats d'ID)
-    const subscription = await mongoDb.collection("subscription").findOne({
-      $or: [
-        { referenceId: organizationId },
-        { organizationId: organizationId },
-      ],
-    });
+    // 2. Vérifier l'abonnement de l'organisation active
+    if (await hasValidSubscription(organizationId)) {
+      console.log(`[Dashboard Layout] Abonnement valide pour org active: ${organizationId}`);
+      return { hasSubscription: true, organizationId };
+    }
 
-    if (!subscription) {
-      console.log(`[Dashboard Layout] Aucun abonnement pour org: ${organizationId}`);
+    console.log(`[Dashboard Layout] Pas d'abonnement valide pour org active: ${organizationId}`);
+
+    // 3. Fallback: Chercher une autre organisation avec un abonnement valide
+    const allMembers = await mongoDb
+      .collection("member")
+      .find({ userId: userObjectId })
+      .toArray();
+
+    if (!allMembers || allMembers.length === 0) {
       return { hasSubscription: false, reason: "no_subscription", organizationId };
     }
 
-    console.log(`[Dashboard Layout] Abonnement trouvé - Status: ${subscription.status}`);
+    const rolePriority = { owner: 0, admin: 1, member: 2, viewer: 3, accountant: 2 };
+    allMembers.sort((a, b) => {
+      const priorityA = rolePriority[a.role] ?? 99;
+      const priorityB = rolePriority[b.role] ?? 99;
+      return priorityA - priorityB;
+    });
 
-    // 3. Vérifier si l'abonnement est valide
-    const isActive = subscription.status === "active" || subscription.status === "trialing";
+    for (const member of allMembers) {
+      const candidateOrgId = member.organizationId.toString();
+      if (candidateOrgId === organizationId) continue; // Déjà vérifiée
 
-    const isCanceledButValid =
-      subscription.status === "canceled" &&
-      subscription.periodEnd &&
-      new Date(subscription.periodEnd) > new Date();
+      if (await hasValidSubscription(candidateOrgId)) {
+        console.log(`[Dashboard Layout] Abonnement valide trouvé sur org: ${candidateOrgId}, auto-switch`);
 
-    if (isActive || isCanceledButValid) {
-      return { hasSubscription: true, organizationId };
+        // Mettre à jour toutes les sessions de l'utilisateur
+        const updateResult = await mongoDb.collection("session").updateMany(
+          { userId: userId },
+          { $set: { activeOrganizationId: candidateOrgId } }
+        );
+        console.log(
+          `[Dashboard Layout] ${updateResult.modifiedCount} session(s) updated with activeOrganizationId: ${candidateOrgId}`
+        );
+
+        return { hasSubscription: true, organizationId: candidateOrgId };
+      }
     }
 
     return { hasSubscription: false, reason: "subscription_expired", organizationId };
