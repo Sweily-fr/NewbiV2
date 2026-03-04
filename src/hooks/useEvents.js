@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useSubscription, gql } from "@apollo/client";
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef } from "react";
 import { GET_EVENTS, GET_EVENT } from "@/src/graphql/queries/event";
 import {
   CREATE_EVENT,
@@ -67,6 +67,23 @@ export const useEvents = (options = {}) => {
       refetchRef.current();
     }
   }, [subscriptionData]);
+
+  // Refetch when user returns to the tab (e.g. after adding event on phone)
+  const lastFocusRefetchRef = useRef(0);
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        const now = Date.now();
+        // Throttle: minimum 30s between refetches
+        if (now - lastFocusRefetchRef.current > 30_000) {
+          lastFocusRefetchRef.current = now;
+          refetchRef.current();
+        }
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
 
   return {
     events: data?.getEvents?.events || [],
@@ -204,6 +221,10 @@ export const useDeleteEvent = () => {
       });
 
       if (result.data?.deleteEvent?.success) {
+        const msg = result.data.deleteEvent.message || '';
+        if (msg.includes('échoué')) {
+          toast.warning(msg);
+        }
         return true;
       } else {
         toast.error(

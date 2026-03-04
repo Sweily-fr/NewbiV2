@@ -102,7 +102,7 @@ const providerLabels = {
 
 export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
   const { labels, getLabelForColor, updateLabels, updateLoading } = useCalendarColorLabels();
-  const isReadOnly = event?.isReadOnly || false;
+  const isExternalEvent = event?.source && event.source !== 'newbi';
 
   // State pour la modal d'édition/ajout d'étiquette
   const [labelDialogOpen, setLabelDialogOpen] = useState(false);
@@ -145,7 +145,7 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
   };
 
   const showSyncSection =
-    event?.id && !isReadOnly && activeConnections.length > 0;
+    event?.id && !isExternalEvent && activeConnections.length > 0;
 
   const handlePushEvent = async (connectionId) => {
     setPushingConnectionId(connectionId);
@@ -344,14 +344,12 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
             />
             <div>
               <SheetTitle className="text-base">
-                {isReadOnly
-                  ? "Détails de l'événement"
-                  : event?.id
-                    ? "Modifier l'événement"
-                    : "Nouvel événement"}
+                {event?.id
+                  ? "Modifier l'événement"
+                  : "Nouvel événement"}
               </SheetTitle>
               <SheetDescription className="text-xs">
-                {isReadOnly
+                {isExternalEvent
                   ? `Synchronisé depuis ${eventSource === "google" ? "Google Calendar" : eventSource === "microsoft" ? "Microsoft Outlook" : eventSource === "apple" ? "Apple Calendar" : "un calendrier externe"}`
                   : event?.id
                     ? "Modifiez les détails ci-dessous"
@@ -377,7 +375,7 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
             <Input
               id="title"
               value={title}
-              disabled={isReadOnly}
+
               onChange={(e) => {
                 setTitle(e.target.value);
                 if (fieldErrors.title) {
@@ -409,7 +407,7 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
                   Début
                 </span>
                 <Popover
-                  open={!isReadOnly && startDateOpen}
+                  open={startDateOpen}
                   onOpenChange={setStartDateOpen}
                 >
                   <PopoverTrigger asChild>
@@ -452,7 +450,7 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
                   <Select
                     value={startTime}
                     onValueChange={setStartTime}
-                    disabled={isReadOnly}
+      
                   >
                     <SelectTrigger className="h-8 w-24 text-xs">
                       <SelectValue placeholder="Heure" />
@@ -474,7 +472,7 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
                   Fin
                 </span>
                 <Popover
-                  open={!isReadOnly && endDateOpen}
+                  open={endDateOpen}
                   onOpenChange={setEndDateOpen}
                 >
                   <PopoverTrigger asChild>
@@ -515,7 +513,7 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
                   <Select
                     value={endTime}
                     onValueChange={setEndTime}
-                    disabled={isReadOnly}
+      
                   >
                     <SelectTrigger className="h-8 w-24 text-xs">
                       <SelectValue placeholder="Heure" />
@@ -536,7 +534,7 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
                 <Checkbox
                   id="all-day"
                   checked={allDay}
-                  disabled={isReadOnly}
+    
                   onCheckedChange={(checked) => setAllDay(checked === true)}
                   className="h-3.5 w-3.5"
                 />
@@ -556,7 +554,7 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
             <Input
               id="location"
               value={location}
-              disabled={isReadOnly}
+
               onChange={(e) => {
                 setLocation(e.target.value);
                 if (fieldErrors.location) {
@@ -583,7 +581,7 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
             <Textarea
               id="description"
               value={description}
-              disabled={isReadOnly}
+
               onChange={(e) => {
                 setDescription(e.target.value);
                 if (fieldErrors.description) {
@@ -608,8 +606,7 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
           </div>
 
           {/* Color label */}
-          {!isReadOnly && (
-            <div className="space-y-3">
+          <div className="space-y-3">
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Tag className="h-4 w-4" />
                 <span className="text-sm font-medium">Etiquette</span>
@@ -678,15 +675,12 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
                 )}
               </div>
             </div>
-          )}
 
           {/* Email reminder */}
-          {!isReadOnly && (
-            <EmailReminderToggle
-              value={emailReminder}
-              onChange={setEmailReminder}
-            />
-          )}
+          <EmailReminderToggle
+            value={emailReminder}
+            onChange={setEmailReminder}
+          />
 
           {/* Calendar sync section */}
           {showSyncSection && (
@@ -757,14 +751,7 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
         <SheetFooter className="mt-0 px-6 py-0">
           <Separator className="mb-4" />
           <div className="pb-4">
-          {isReadOnly ? (
-            <div className="flex w-full justify-end">
-              <Button variant="outline" onClick={onClose}>
-                Fermer
-              </Button>
-            </div>
-          ) : (
-            <div className="flex w-full items-center justify-between">
+          <div className="flex w-full items-center justify-between">
               {event?.id ? (
                 <Button
                   variant="ghost"
@@ -791,7 +778,6 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
                 </Button>
               </div>
             </div>
-          )}
           </div>
         </SheetFooter>
       </SheetContent>

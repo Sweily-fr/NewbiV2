@@ -90,12 +90,6 @@ export default function Component() {
 
   // Gestionnaire pour mettre à jour un événement
   const handleEventUpdate = async (updatedEvent) => {
-    // Ne pas permettre la mise à jour des événements en lecture seule
-    if (updatedEvent.isReadOnly) {
-      toast.error("Les événements externes ne peuvent pas être modifiés");
-      return;
-    }
-
     try {
       const result = await updateEvent({
         id: updatedEvent.id,
