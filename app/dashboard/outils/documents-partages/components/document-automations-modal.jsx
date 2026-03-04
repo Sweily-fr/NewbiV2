@@ -1,12 +1,10 @@
 'use client';
 
-import React, { useState, useMemo, useRef, useCallback } from 'react';
+import React, { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import { toast } from '@/src/components/ui/sonner';
 import { Button } from '@/src/components/ui/button';
 import { Switch } from '@/src/components/ui/switch';
-import { Input } from '@/src/components/ui/input';
 import { Label } from '@/src/components/ui/label';
-import { Badge } from '@/src/components/ui/badge';
 import {
   Dialog,
   DialogContent,
@@ -28,16 +26,30 @@ import {
   PopoverTrigger,
 } from '@/src/components/ui/popover';
 import {
+  Command,
+  CommandInput,
+  CommandList,
+  CommandEmpty,
+  CommandItem,
+} from '@/src/components/ui/command';
+import {
   Zap,
   Trash2,
   ArrowRight,
   Loader2,
-  Tag,
   Plus,
   Play,
+  Settings2,
+  FolderTree,
+  CalendarDays,
+  User,
+  Check,
+  ChevronsUpDown,
 } from 'lucide-react';
+import { cn } from '@/src/lib/utils';
 import { useWorkspace } from '@/src/hooks/useWorkspace';
 import { useSharedFolders } from '@/src/hooks/useSharedDocuments';
+import { useClients } from '@/src/hooks/useClients';
 import { useApolloClient } from '@apollo/client';
 import {
   useDocumentAutomations,
@@ -82,13 +94,8 @@ const TRIGGER_OPTIONS = [
   { value: 'TRANSACTION_RECEIPT', label: 'Justificatif de transaction', group: 'Transaction' },
 ];
 
-const SUBFOLDER_PATTERNS = [
-  { value: '{year}', label: 'Année (2026)' },
-  { value: '{month}', label: 'Mois (01)' },
-  { value: '{year}/{month}', label: 'Année/Mois' },
-  { value: '{clientName}', label: 'Nom du client' },
-  { value: '{year}/{clientName}', label: 'Année/Client' },
-];
+const CURRENT_YEAR = new Date().getFullYear();
+const YEAR_OPTIONS = Array.from({ length: CURRENT_YEAR - 2000 + 1 }, (_, i) => CURRENT_YEAR - i);
 
 // Retourne le label complet pour un trigger
 function getTriggerFullLabel(value) {
@@ -193,120 +200,215 @@ function FolderTreeSelect({ folders, value, onValueChange, placeholder }) {
   );
 }
 
-// Popover pour les réglages avancés d'une automatisation
-function SettingsPopover({ config, onSave }) {
+// Combobox client avec recherche intégrée dans le dropdown
+function ClientCombobox({ value, valueName, onSelect, clients, search, onSearchChange }) {
   const [open, setOpen] = useState(false);
-  const [createSubfolder, setCreateSubfolder] = useState(config?.createSubfolder || false);
-  const [subfolderPattern, setSubfolderPattern] = useState(config?.subfolderPattern || '{year}');
-  const [documentNaming, setDocumentNaming] = useState(config?.documentNaming || '{documentType}-{number}-{clientName}');
-  const [tags, setTags] = useState(config?.tags || []);
-  const [tagInput, setTagInput] = useState('');
-  const handleSave = () => {
-    onSave({
-      createSubfolder,
-      subfolderPattern,
-      documentNaming,
-      tags,
-      documentStatus: 'classified',
-    });
-    setOpen(false);
-  };
-
-  const handleAddTag = () => {
-    const tag = tagInput.trim();
-    if (tag && !tags.includes(tag)) {
-      setTags([...tags, tag]);
-      setTagInput('');
-    }
-  };
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="sm" className="text-xs" style={{ color: '#5b50ff' }}>
-          Options avancées
+        <button
+          role="combobox"
+          aria-expanded={open}
+          className={cn(
+            "flex h-8 w-full items-center justify-between rounded-lg border border-input bg-background px-2.5 text-xs",
+            "hover:bg-accent/50 transition-colors",
+            !value && "text-muted-foreground"
+          )}
+        >
+          {value ? (
+            <span className="flex items-center gap-1.5 truncate">
+              <User className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+              {valueName || 'Client'}
+            </span>
+          ) : (
+            <span>Sélectionner un client...</span>
+          )}
+          <ChevronsUpDown className="h-3 w-3 text-muted-foreground flex-shrink-0 ml-1" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start" sideOffset={4}>
+        <Command shouldFilter={false}>
+          <CommandInput
+            placeholder="Rechercher un client..."
+            value={search}
+            onValueChange={onSearchChange}
+            className="text-xs h-8"
+          />
+          <CommandList>
+            <CommandEmpty className="py-3 text-xs text-center">Aucun client trouvé</CommandEmpty>
+            {clients.map((c) => (
+              <CommandItem
+                key={c.id}
+                value={c.id}
+                onSelect={() => {
+                  onSelect(c.id, c.name);
+                  setOpen(false);
+                }}
+                className="text-xs"
+              >
+                <User className="h-3 w-3 text-muted-foreground" />
+                <span className="truncate">{c.name}</span>
+                {value === c.id && (
+                  <Check className="h-3 w-3 ml-auto text-[#5b50ff]" />
+                )}
+              </CommandItem>
+            ))}
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+// Popover pour les réglages avancés d'une automatisation
+function SettingsPopover({ config, onSave }) {
+  const [open, setOpen] = useState(false);
+  const [createSubfolder, setCreateSubfolder] = useState(config?.createSubfolder || false);
+  const [subfolderType, setSubfolderType] = useState(config?.subfolderPattern || 'year');
+  const [filterYear, setFilterYear] = useState(config?.filterYear || CURRENT_YEAR);
+  const [filterClientId, setFilterClientId] = useState(config?.filterClientId || '');
+  const [filterClientName, setFilterClientName] = useState(config?.filterClientName || '');
+  const [clientSearch, setClientSearch] = useState('');
+  const { clients } = useClients(1, 50, clientSearch);
+
+  // Re-sync state from config when popover opens
+  useEffect(() => {
+    if (open) {
+      setCreateSubfolder(config?.createSubfolder || false);
+      setSubfolderType(config?.subfolderPattern || 'year');
+      setFilterYear(config?.filterYear || CURRENT_YEAR);
+      setFilterClientId(config?.filterClientId || '');
+      setFilterClientName(config?.filterClientName || '');
+      setClientSearch('');
+    }
+  }, [open, config]);
+
+  const handleSave = () => {
+    onSave({
+      createSubfolder,
+      subfolderPattern: subfolderType,
+      filterYear: subfolderType === 'year' ? filterYear : null,
+      filterClientId: subfolderType === 'client' ? filterClientId : null,
+      filterClientName: subfolderType === 'client' ? filterClientName : null,
+    });
+    setOpen(false);
+  };
+
+  const hasAdvancedConfig = config?.createSubfolder;
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className={cn(
+            "h-8 w-8 flex-shrink-0",
+            hasAdvancedConfig
+              ? "text-[#5b50ff] hover:text-[#5b50ff] hover:bg-[#5b50ff]/10"
+              : "text-muted-foreground hover:text-foreground"
+          )}
+        >
+          <Settings2 className="h-4 w-4" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80" align="end">
-        <div className="space-y-4">
-          <p className="text-sm font-medium">Options avancées</p>
+      <PopoverContent className="w-80 p-0" align="end">
+        {/* Header */}
+        <div className="px-4 py-3 border-b">
+          <p className="text-sm font-medium flex items-center gap-2">
+            <Settings2 className="h-3.5 w-3.5 text-muted-foreground" />
+            Options avancées
+          </p>
+        </div>
 
-          {/* Sous-dossier */}
-          <div className="space-y-2">
+        <div className="p-4 space-y-4">
+          {/* Sous-dossier toggle */}
+          <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <Label className="text-xs">Sous-dossier auto</Label>
+              <Label className="text-xs font-medium flex items-center gap-1.5">
+                <FolderTree className="h-3 w-3 text-muted-foreground" />
+                Sous-dossier automatique
+              </Label>
               <Switch
                 checked={createSubfolder}
                 onCheckedChange={setCreateSubfolder}
                 className="data-[state=checked]:bg-[#5b50ff] scale-90"
               />
             </div>
+
             {createSubfolder && (
-              <Select value={subfolderPattern} onValueChange={setSubfolderPattern}>
-                <SelectTrigger className="h-8 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="z-[99]">
-                  {SUBFOLDER_PATTERNS.map((p) => (
-                    <SelectItem key={p.value} value={p.value} className="text-xs">{p.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          </div>
+              <div className="space-y-3 pl-0.5">
+                {/* Type selector as segmented control */}
+                <div className="flex rounded-lg border border-input overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setSubfolderType('year')}
+                    className={cn(
+                      "flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors",
+                      subfolderType === 'year'
+                        ? "bg-[#5b50ff] text-white"
+                        : "hover:bg-accent/50 text-muted-foreground"
+                    )}
+                  >
+                    <CalendarDays className="h-3 w-3" />
+                    Par année
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSubfolderType('client')}
+                    className={cn(
+                      "flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors border-l border-input",
+                      subfolderType === 'client'
+                        ? "bg-[#5b50ff] text-white"
+                        : "hover:bg-accent/50 text-muted-foreground"
+                    )}
+                  >
+                    <User className="h-3 w-3" />
+                    Par client
+                  </button>
+                </div>
 
-          {/* Nommage */}
-          <div className="space-y-1.5">
-            <Label className="text-xs">Nommage du fichier</Label>
-            <Input
-              value={documentNaming}
-              onChange={(e) => setDocumentNaming(e.target.value)}
-              className="h-8 text-xs font-mono"
-              placeholder="{documentType}-{number}-{clientName}"
-            />
-            <div className="flex gap-1 flex-wrap">
-              {['{documentType}', '{number}', '{clientName}'].map((v) => (
-                <Badge
-                  key={v}
-                  variant="secondary"
-                  className="text-[10px] cursor-pointer px-1 py-0"
-                  onClick={() => setDocumentNaming(documentNaming + v)}
-                >
-                  {v}
-                </Badge>
-              ))}
-            </div>
-          </div>
+                {/* Year selector */}
+                {subfolderType === 'year' && (
+                  <Select value={String(filterYear)} onValueChange={(v) => setFilterYear(Number(v))}>
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue placeholder="Année..." />
+                    </SelectTrigger>
+                    <SelectContent className="z-[99] max-h-60">
+                      {YEAR_OPTIONS.map((y) => (
+                        <SelectItem key={y} value={String(y)} className="text-xs">{y}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
 
-          {/* Tags */}
-          <div className="space-y-1.5">
-            <Label className="text-xs">Tags auto</Label>
-            <div className="flex gap-1">
-              <Input
-                value={tagInput}
-                onChange={(e) => setTagInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}
-                placeholder="Ajouter..."
-                className="h-8 text-xs flex-1"
-              />
-              <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={handleAddTag}>
-                <Plus className="w-3 h-3" />
-              </Button>
-            </div>
-            {tags.length > 0 && (
-              <div className="flex flex-wrap gap-1">
-                {tags.map((tag) => (
-                  <Badge key={tag} variant="secondary" className="text-[10px] gap-0.5 px-1.5 py-0">
-                    <Tag className="w-2.5 h-2.5" />
-                    {tag}
-                    <button type="button" onClick={() => setTags(tags.filter(t => t !== tag))} className="ml-0.5 hover:text-destructive">&times;</button>
-                  </Badge>
-                ))}
+                {/* Client combobox with integrated search */}
+                {subfolderType === 'client' && (
+                  <ClientCombobox
+                    value={filterClientId}
+                    valueName={filterClientName}
+                    clients={clients}
+                    search={clientSearch}
+                    onSearchChange={setClientSearch}
+                    onSelect={(id, name) => {
+                      setFilterClientId(id);
+                      setFilterClientName(name);
+                    }}
+                  />
+                )}
               </div>
             )}
           </div>
+        </div>
 
-          <Button onClick={handleSave} size="sm" className="w-full">
+        {/* Footer */}
+        <div className="px-4 py-3 border-t bg-muted/30">
+          <Button
+            onClick={handleSave}
+            size="sm"
+            className="w-full h-8 text-xs bg-[#5b50ff] hover:bg-[#4a40e6]"
+          >
             Enregistrer
           </Button>
         </div>
@@ -459,6 +561,9 @@ export default function DocumentAutomationsModal({ open, onOpenChange, onDocumen
           targetFolderId,
           createSubfolder: currentConfig.createSubfolder,
           subfolderPattern: currentConfig.subfolderPattern,
+          filterYear: currentConfig.filterYear,
+          filterClientId: currentConfig.filterClientId,
+          filterClientName: currentConfig.filterClientName,
           documentNaming: currentConfig.documentNaming,
           tags: currentConfig.tags,
           documentStatus: currentConfig.documentStatus,
