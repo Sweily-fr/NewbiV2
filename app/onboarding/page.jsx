@@ -102,8 +102,45 @@ function OnboardingContent() {
               router.push("/dashboard");
               return;
             } else {
+              // Avant d'afficher le plan, vérifier si une AUTRE org a un abonnement actif
               console.log(
-                "⚠️ [ONBOARDING] Utilisateur existant sans abonnement actif, affichage direct du choix de plan",
+                "⚠️ [ONBOARDING] Org active sans abonnement, vérification des autres orgs...",
+              );
+
+              const { data: allOrgs } = await authClient.organization.list();
+              if (allOrgs && allOrgs.length > 1) {
+                for (const org of allOrgs) {
+                  if (org.id === activeOrg.id) continue;
+                  try {
+                    const subRes = await fetch(
+                      `/api/organizations/${org.id}/subscription`
+                    );
+                    const subData = await subRes.json();
+                    const isActive =
+                      subData.status === "active" ||
+                      subData.status === "trialing" ||
+                      (subData.status === "canceled" &&
+                        subData.periodEnd &&
+                        new Date(subData.periodEnd) > new Date());
+
+                    if (isActive) {
+                      console.log(
+                        `✅ [ONBOARDING] Org ${org.id} a un abonnement actif, auto-switch`,
+                      );
+                      await authClient.organization.setActive({
+                        organizationId: org.id,
+                      });
+                      router.push("/dashboard");
+                      return;
+                    }
+                  } catch (e) {
+                    console.warn(`[ONBOARDING] Erreur vérif sub org ${org.id}:`, e);
+                  }
+                }
+              }
+
+              console.log(
+                "⚠️ [ONBOARDING] Aucune org avec abonnement actif, affichage choix de plan",
               );
 
               // ✅ C'est un utilisateur existant qui revient - on lui montre directement l'étape de paiement
@@ -178,12 +215,17 @@ function OnboardingContent() {
     }
 
     if (step) {
-      const stepNumber = parseInt(step, 10);
+      let stepNumber = parseInt(step, 10);
       if (stepNumber >= 1 && stepNumber <= totalSteps) {
+        // Returning users (org exists, sub expired) are locked to step 4
+        if (isReturningUser && stepNumber < 4) {
+          stepNumber = 4;
+          router.replace("/onboarding?step=4");
+        }
         setCurrentStep(stepNumber);
       }
     }
-  }, [searchParams]);
+  }, [searchParams, isReturningUser, router]);
   const [formData, setFormData] = useState({
     accountType: "", // 'business' ou 'accounting_firm'
     siren: "",
@@ -245,6 +287,7 @@ function OnboardingContent() {
   };
 
   const handleBack = () => {
+    if (isReturningUser) return; // Returning users can't go back from step 4
     if (currentStep > 1) {
       const prevStep = currentStep - 1;
       setCurrentStep(prevStep);

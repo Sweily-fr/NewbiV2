@@ -4,7 +4,6 @@ import * as React from "react";
 import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
 import {
   ChevronsUpDown,
-  Plus,
   Check,
   Search,
   Building2,
@@ -50,8 +49,11 @@ import {
   MapPin,
   Boxes,
   Globe,
+  Layers,
+  LayersPlus,
 } from "lucide-react";
 import { IconBuilding } from "@tabler/icons-react";
+import { useRouter } from "next/navigation";
 import { authClient } from "@/src/lib/auth-client";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { Badge } from "@/src/components/ui/badge";
@@ -59,6 +61,7 @@ import { Input } from "@/src/components/ui/input";
 import { toast } from "@/src/components/ui/sonner";
 import { apolloClient } from "@/src/lib/apolloClient";
 import { CreateWorkspaceModal } from "./create-workspace-modal";
+import { SettingsModal } from "./settings-modal";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -118,6 +121,7 @@ const getIconComponent = (iconName) => {
 };
 
 export function OrganizationSwitcherHeader() {
+  const router = useRouter();
   const { isActive } = useSubscription();
   const [searchQuery, setSearchQuery] = React.useState("");
   const debouncedSearchQuery = useDebouncedValue(searchQuery, 300);
@@ -125,6 +129,7 @@ export function OrganizationSwitcherHeader() {
   const [sortedOrganizations, setSortedOrganizations] = React.useState([]);
   const [organizationsLoading, setOrganizationsLoading] = React.useState(true);
   const [createWorkspaceOpen, setCreateWorkspaceOpen] = React.useState(false);
+  const [settingsModalOpen, setSettingsModalOpen] = React.useState(false);
   const [isOpen, setIsOpen] = React.useState(false);
 
   // Récupérer l'organisation active avec Better Auth
@@ -184,6 +189,10 @@ export function OrganizationSwitcherHeader() {
       return;
     }
 
+    // Vérifier si l'org cible a un abonnement actif
+    const targetOrg = sortedOrganizations.find((org) => org.id === organizationId);
+    const targetHasSubscription = targetOrg?.subscriptionStatus === "active";
+
     try {
       setIsChangingOrg(true);
       const oldWorkspaceId = activeOrganization?.id;
@@ -191,6 +200,13 @@ export function OrganizationSwitcherHeader() {
       await authClient.organization.setActive({
         organizationId,
       });
+
+      // Si l'org n'a pas d'abonnement actif, rediriger vers le pricing
+      if (!targetHasSubscription) {
+        setIsOpen(false);
+        router.push("/onboarding?step=4");
+        return;
+      }
 
       // Nettoyer le cache Apollo
       if (oldWorkspaceId) {
@@ -243,6 +259,8 @@ export function OrganizationSwitcherHeader() {
   }
 
   const currentOrganization = activeOrganization || sortedOrganizations[0];
+  const currentOrgData = sortedOrganizations.find((org) => org.id === currentOrganization?.id);
+  const currentSubStatus = currentOrgData?.subscriptionStatus || "none";
   const customColor = currentOrganization?.customColor || "#5b4fff";
   const customIconName = currentOrganization?.customIcon;
   const CustomIcon = customIconName ? getIconComponent(customIconName) : null;
@@ -260,13 +278,22 @@ export function OrganizationSwitcherHeader() {
             <span className="text-xs font-normal truncate max-w-[150px]">
               {currentOrganization.name}
             </span>
-            {/* Badge Pro */}
-            <Badge
-              variant="outline"
-              className="text-[8px] px-2.5 py-0 h-4 bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700"
-            >
-              PRO
-            </Badge>
+            {/* Badge statut abonnement */}
+            {currentSubStatus === "active" ? (
+              <Badge
+                variant="outline"
+                className="text-[8px] px-2.5 py-0 h-4 bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700"
+              >
+                PRO
+              </Badge>
+            ) : (
+              <Badge
+                variant="outline"
+                className="text-[8px] px-2.5 py-0 h-4 bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-950 dark:text-amber-400 dark:border-amber-800"
+              >
+                Expiré
+              </Badge>
+            )}
             {/* Bouton chevron avec hover */}
             <button className="p-1 rounded-md hover:bg-accent transition-colors cursor-pointer outline-none">
               <ChevronsUpDown className="h-3.5 w-3.5 text-muted-foreground" />
@@ -283,15 +310,21 @@ export function OrganizationSwitcherHeader() {
           <div className="flex items-center px-4 mb-1 border-b">
             <Search className="h-4 w-4 shrink-0 opacity-50" />
             <Input
-              placeholder="Rechercher une organisation..."
+              placeholder="Rechercher un espace..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="flex h-9 w-full rounded-md shadow-none bg-transparent py-3 text-sm outline-none placeholder:text-xs border-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+              className="flex h-9 w-full rounded-md shadow-none bg-transparent py-3 text-[13px] outline-none placeholder:text-[13px] border-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
             />
           </div>
 
           {/* Liste des organisations */}
           <div className="max-h-[200px] overflow-y-auto">
+            {filteredOrganizations.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-6 px-2 text-center">
+                <Search className="h-4 w-4 text-muted-foreground/50 mb-2" />
+                <p className="text-[13px] text-muted-foreground">Aucun résultat</p>
+              </div>
+            )}
             {filteredOrganizations.map((org) => {
               const orgColor = org.customColor || "#5b4fff";
               const orgIconName = org.customIcon;
@@ -300,25 +333,31 @@ export function OrganizationSwitcherHeader() {
                 : null;
               const isCurrentOrg = activeOrganization?.id === org.id;
 
+              const hasActiveSub = org.subscriptionStatus === "active";
+
               return (
                 <DropdownMenuItem
                   key={org.id}
                   onClick={() => handleSetActiveOrganization(org.id)}
                   disabled={isChangingOrg}
-                  className="flex items-center gap-2 px-2 py-2 cursor-pointer"
+                  className={`flex items-center gap-2 px-2 py-2 cursor-pointer rounded-sm ${isCurrentOrg ? "bg-accent" : ""}`}
                 >
-                  {/* <div
-                    className="flex size-5 items-center justify-center rounded-sm"
-                    style={{ backgroundColor: orgColor }}
-                  >
-                    {OrgIcon ? (
-                      <OrgIcon className="size-3 text-white" />
-                    ) : (
-                      <IconBuilding className="size-3 text-white" />
-                    )}
-                  </div> */}
-                  <span className="flex-1 text-xs truncate">{org.name}</span>
-                  {isCurrentOrg && <Check className="h-4 w-4 text-[#5b4fff]" />}
+                  <span className="flex-1 text-[13px] font-normal truncate">{org.name}</span>
+                  {hasActiveSub ? (
+                    <Badge
+                      variant="outline"
+                      className="text-[8px] px-2 py-0 h-4 bg-gray-100 text-gray-600 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700"
+                    >
+                      PRO
+                    </Badge>
+                  ) : (
+                    <Badge
+                      variant="outline"
+                      className="text-[8px] px-2 py-0 h-4 bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-950 dark:text-amber-400 dark:border-amber-800"
+                    >
+                      Expiré
+                    </Badge>
+                  )}
                 </DropdownMenuItem>
               );
             })}
@@ -326,31 +365,39 @@ export function OrganizationSwitcherHeader() {
 
           <DropdownMenuSeparator className="my-1" />
 
-          {/* Lien vers toutes les organisations */}
+          {/* Lien vers tous les espaces */}
           <DropdownMenuItem
-            className="flex items-center gap-2 px-2 py-2 cursor-pointer text-muted-foreground"
+            className="flex items-center gap-2 px-2 py-2 cursor-pointer rounded-sm"
             onClick={() => {
-              // Optionnel: rediriger vers une page de gestion des organisations
+              setIsOpen(false);
+              setSettingsModalOpen(true);
             }}
           >
-            <span className="text-xs">Toutes les organisations</span>
+            <Layers className="size-4 text-muted-foreground" />
+            <span className="text-[13px] font-normal">Tous les espaces</span>
           </DropdownMenuItem>
 
           <DropdownMenuSeparator className="my-1" />
 
-          {/* Créer une nouvelle organisation */}
+          {/* Créer un nouvel espace */}
           <DropdownMenuItem
             onClick={() => {
               setIsOpen(false);
-              setCreateWorkspaceOpen(true);
+              router.push("/create-workspace");
             }}
-            className="flex items-center gap-2 px-2 py-2 cursor-pointer"
+            className="flex items-center gap-2 px-2 py-2 cursor-pointer rounded-sm"
           >
-            <Plus className="h-4 w-4" />
-            <span className="text-xs">Nouvelle organisation</span>
+            <LayersPlus className="size-4 text-muted-foreground" />
+            <span className="text-[13px] font-normal">Nouveau espace</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      <SettingsModal
+        open={settingsModalOpen}
+        onOpenChange={setSettingsModalOpen}
+        initialTab="espaces"
+      />
 
       <CreateWorkspaceModal
         open={createWorkspaceOpen}

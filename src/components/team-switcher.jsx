@@ -9,6 +9,7 @@ import {
   UserCog,
   Users,
   Layers,
+  LayersPlus,
   LayoutGrid,
   Check,
   LogOut,
@@ -460,7 +461,7 @@ export function TeamSwitcher() {
                 onClick={() => router.push('/create-workspace')}
                 className="gap-2 p-2 rounded-sm cursor-pointer"
               >
-                <Layers className="size-4 text-muted-foreground" />
+                <LayersPlus className="size-4 text-muted-foreground" />
                 <span className="text-[13px] font-normal">Nouveau espace</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator className="bg-border" />
