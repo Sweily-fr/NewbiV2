@@ -18,6 +18,9 @@ const GET_DOCUMENT_AUTOMATIONS = gql`
         }
         createSubfolder
         subfolderPattern
+        filterYear
+        filterClientId
+        filterClientName
         documentNaming
         tags
         documentStatus
@@ -52,6 +55,9 @@ const GET_DOCUMENT_AUTOMATION = gql`
         }
         createSubfolder
         subfolderPattern
+        filterYear
+        filterClientId
+        filterClientName
         documentNaming
         tags
         documentStatus
@@ -105,6 +111,9 @@ const CREATE_DOCUMENT_AUTOMATION = gql`
         }
         createSubfolder
         subfolderPattern
+        filterYear
+        filterClientId
+        filterClientName
         documentNaming
         tags
         documentStatus
@@ -136,6 +145,9 @@ const UPDATE_DOCUMENT_AUTOMATION = gql`
         }
         createSubfolder
         subfolderPattern
+        filterYear
+        filterClientId
+        filterClientName
         documentNaming
         tags
         documentStatus

@@ -377,6 +377,30 @@ export async function POST(request, { params }) {
         member: result.member,
       });
     } else if (action === "reject") {
+      // Vérifier l'invitation avant de la rejeter
+      const { mongoDb } = await import("@/src/lib/mongodb");
+      const { ObjectId } = await import("mongodb");
+
+      const invitation = await mongoDb
+        .collection("invitation")
+        .findOne({ _id: new ObjectId(id) });
+
+      if (!invitation) {
+        return Response.json(
+          { error: "Invitation non trouvée" },
+          { status: 404 }
+        );
+      }
+
+      // Si l'invitation est expirée ou déjà traitée, la marquer comme rejetée directement
+      if (invitation.status !== "pending" || (invitation.expiresAt && new Date(invitation.expiresAt) < new Date())) {
+        await mongoDb.collection("invitation").updateOne(
+          { _id: new ObjectId(id) },
+          { $set: { status: "rejected" } }
+        );
+        return Response.json({ success: true });
+      }
+
       const result = await auth.api.rejectInvitation({
         headers: await headers(),
         body: { invitationId: id },
