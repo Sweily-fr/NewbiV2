@@ -122,20 +122,6 @@ const UniversalPreviewPDF = ({
   const isCreditNote = type === "creditNote";
   const isPurchaseOrder = type === "purchaseOrder";
 
-  // Debug: Log des données reçues pour les devis
-  useEffect(() => {
-    if (type === "quote") {
-      console.log("📄 UniversalPreviewPDF - Données reçues:", {
-        prefix: data.prefix,
-        number: data.number,
-        prefixType: typeof data.prefix,
-        numberType: typeof data.number,
-        prefixLength: data.prefix?.length,
-        numberLength: data.number?.length,
-      });
-    }
-  }, [data.prefix, data.number, type]);
-
   // Fonction pour calculer le scale dynamiquement
   useEffect(() => {
     if (!isMobile || !documentRef.current) return;

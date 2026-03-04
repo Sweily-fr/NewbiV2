@@ -39,9 +39,6 @@ const StripeConnectOnboarding = ({
   // Vérifier automatiquement le statut à l'ouverture du dialog si connecté
   React.useEffect(() => {
     if (isOpen && isConnected && !canReceivePayments) {
-      console.log(
-        "🔄 Vérification automatique du statut à l'ouverture du dialog..."
-      );
       checkAndUpdateAccountStatus();
     }
   }, [isOpen, isConnected, canReceivePayments, checkAndUpdateAccountStatus]);

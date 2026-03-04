@@ -1183,9 +1183,6 @@ export function useInvoiceEditor({
   const handleSave = useCallback(async () => {
     const currentFormData = getValues();
 
-    console.log("[handleSave] Form data before save:", currentFormData);
-    console.log("[handleSave] Prefix in form:", currentFormData.prefix);
-
     // Validation manuelle pour le brouillon (moins stricte)
     const errors = {};
 
@@ -1960,11 +1957,6 @@ export function useInvoiceEditor({
   // Fonction pour valider le numéro de facture en temps réel
   const validateInvoiceNumber = useCallback(
     async (invoiceNumber, invoicePrefix) => {
-      console.log("[validateInvoiceNumber] Validation:", {
-        prefix: invoicePrefix,
-        number: invoiceNumber,
-      });
-
       if (!invoiceNumber || invoiceNumber.trim() === "") {
         // Si le numéro est vide, supprimer l'erreur
         setValidationErrors((prevErrors) => {
@@ -1982,9 +1974,6 @@ export function useInvoiceEditor({
       const prefix = invoicePrefix || getValues("prefix");
 
       if (!prefix) {
-        console.log(
-          "[validateInvoiceNumber] ⚠️ Pas de préfixe, validation ignorée"
-        );
         return;
       }
 
@@ -1995,16 +1984,7 @@ export function useInvoiceEditor({
           invoiceId
         );
 
-        console.log("[validateInvoiceNumber] Résultat:", {
-          exists,
-          prefix,
-          number: invoiceNumber,
-        });
-
         if (exists) {
-          console.log(
-            "[validateInvoiceNumber] ❌ Numéro existe déjà, ajout de l'erreur"
-          );
           setValidationErrors((prevErrors) => {
             const newErrors = {
               ...prevErrors,
@@ -2013,16 +1993,9 @@ export function useInvoiceEditor({
                 canEdit: true,
               },
             };
-            console.log(
-              "[validateInvoiceNumber] Nouvelles erreurs:",
-              newErrors
-            );
             return newErrors;
           });
         } else {
-          console.log(
-            "[validateInvoiceNumber] ✅ Numéro valide, suppression de l'erreur"
-          );
           // Supprimer l'erreur si le numéro est valide
           setValidationErrors((prevErrors) => {
             if (prevErrors.invoiceNumber) {

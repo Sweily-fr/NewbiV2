@@ -84,17 +84,6 @@ export const useOrganizationInvitations = () => {
             return { success: false, error: result.reason };
           }
 
-          // Afficher un avertissement si c'est un siège payant
-          if (result.isPaid) {
-            console.log(
-              `💰 Siège payant: ${result.additionalCost}€/mois supplémentaire`
-            );
-            // Note: On pourrait ajouter une confirmation ici si nécessaire
-          }
-
-          console.log(
-            `✅ Limite vérifiée pour ${role}: canInvite=${result.canInvite}`
-          );
         } catch (limitError) {
           console.error("❌ Erreur vérification limite:", limitError);
           toast.error(
@@ -215,57 +204,28 @@ export const useOrganizationInvitations = () => {
       try {
         const orgId = organizationId || getUserOrganization()?.id;
 
-        console.log(
-          "🗑️ Suppression du membre:",
-          memberIdOrEmail,
-          "de l'org:",
-          orgId
-        );
-
         // 1. Supprimer le membre via Better Auth
         const { data, error } = await organization.removeMember({
           memberIdOrEmail,
           organizationId: orgId,
         });
 
-        console.log("📊 Résultat Better Auth removeMember:", { data, error });
-
         if (error) {
-          console.error("❌ Erreur Better Auth:", error);
           toast.error("Erreur lors de la suppression du membre");
           return { success: false, error };
         }
 
-        console.log("✅ Membre supprimé avec succès de Better Auth");
-
         // 2. Synchroniser la facturation des sièges (non-bloquant)
         try {
-          console.log(
-            `💳 Synchronisation facturation après suppression de membre`
-          );
-
           const response = await fetch("/api/billing/sync-seats", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ organizationId: orgId }),
           });
 
-          if (!response.ok) {
-            const errorData = await response.json();
-            console.warn(
-              "⚠️ Erreur sync facturation (non-bloquant):",
-              errorData
-            );
-          } else {
-            const result = await response.json();
-            console.log(`✅ Facturation synchronisée:`, result);
-          }
+          await response.json();
         } catch (billingError) {
           // Ne pas faire échouer la suppression si la facturation échoue
-          console.warn(
-            "⚠️ Erreur sync facturation (non-bloquant):",
-            billingError
-          );
         }
 
         toast.success("Membre supprimé avec succès");
@@ -351,14 +311,6 @@ export const useOrganizationInvitations = () => {
           return { success: false, error: "Aucune organisation trouvée" };
         }
 
-        console.log("🔄 Mise à jour du rôle:", {
-          memberId,
-          currentRole,
-          newRole,
-          orgId,
-          type: typeof memberId,
-        });
-
         // Vérifier les limites si changement vers comptable
         if (newRole === "accountant") {
           try {
@@ -386,9 +338,6 @@ export const useOrganizationInvitations = () => {
           }
         }
 
-        // Better Auth attend 'memberId' et 'role' comme paramètres
-        console.log("🔄 updateMemberRole params:", { memberId, role: newRole, orgId });
-
         const { data, error } = await organization.updateMemberRole({
           memberId: memberId,
           role: newRole,  // ✅ Better Auth utilise "role", pas "newRole"
@@ -396,18 +345,15 @@ export const useOrganizationInvitations = () => {
         });
 
         if (error) {
-          console.error("❌ Erreur updateMemberRole:", error);
           // Afficher le message d'erreur détaillé
           const errorMessage = error.message || error.error || error.statusText || "Erreur lors de la mise à jour du rôle";
           toast.error(errorMessage);
           return { success: false, error };
         }
 
-        console.log("✅ Rôle mis à jour avec succès:", data);
         toast.success("Rôle mis à jour avec succès");
         return { success: true, data };
       } catch (error) {
-        console.error("❌ Exception updateMemberRole:", error);
         toast.error(error.message || "Erreur lors de la mise à jour du rôle");
         return { success: false, error: error.message };
       }
@@ -428,7 +374,6 @@ export const useOrganizationInvitations = () => {
         }
 
         // Utiliser getFullOrganization pour récupérer membres et invitations
-        console.log(`🔍 getAllCollaborators - Demande pour orgId: ${orgId}`);
         const { data: fullOrg, error } = await organization.getFullOrganization(
           {
             organizationId: orgId,
@@ -437,47 +382,12 @@ export const useOrganizationInvitations = () => {
         );
 
         if (error) {
-          console.error(`❌ Erreur getFullOrganization:`, error);
           return { success: false, error };
         }
-
-        console.log(
-          `📋 Organisation récupérée: ${fullOrg?.name} (ID: ${fullOrg?.id})`
-        );
 
         // Récupérer TOUS les membres (y compris les owners)
         const allMembers = fullOrg?.members || [];
         const invitations = fullOrg?.invitations || [];
-
-        console.log(
-          `📊 getAllCollaborators pour "${fullOrg?.name}" - Membres:`,
-          allMembers.length
-        );
-        console.log(
-          "📊 getAllCollaborators - Invitations:",
-          invitations.length
-        );
-        console.log(
-          "📋 Détails membres:",
-          allMembers.map((m) => ({
-            email: m.email || m.user?.email,
-            role: m.role,
-            avatar: m.avatar || m.user?.avatar,
-            user: m.user ? "présent" : "absent",
-          }))
-        );
-
-        // Log détaillé de la structure du premier membre
-        if (allMembers.length > 0) {
-          console.log(
-            "🔍 Structure complète du premier membre:",
-            JSON.stringify(allMembers[0], null, 2)
-          );
-        }
-        console.log(
-          "📋 Détails invitations:",
-          invitations.map((i) => ({ email: i.email, status: i.status }))
-        );
 
         // Combiner membres et invitations avec un type pour les différencier
         const collaborators = [
@@ -487,8 +397,6 @@ export const useOrganizationInvitations = () => {
             type: "invitation",
           })),
         ];
-
-        console.log("✅ Total collaborateurs:", collaborators.length);
 
         return { success: true, data: collaborators };
       } catch (error) {

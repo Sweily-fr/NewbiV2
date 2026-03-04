@@ -84,10 +84,7 @@ export async function applyWatermark(file, options = {}) {
   return new Promise((resolve, reject) => {
     // Vérifier que c'est une image supportée
     if (!isSupportedImageType(file)) {
-      console.log(
-        `⚠️ Type d'image non supporté pour le filigrane: ${file.type}`
-      );
-      resolve(file); // Retourner le fichier original
+        resolve(file); // Retourner le fichier original
       return;
     }
 
@@ -165,7 +162,6 @@ export async function applyWatermark(file, options = {}) {
                 type: outputType,
                 lastModified: Date.now(),
               });
-              console.log(`✅ Filigrane appliqué sur: ${file.name}`);
               resolve(watermarkedFile);
             } else {
               console.error("❌ Échec de la conversion en blob");
@@ -415,7 +411,6 @@ export async function applyWatermarkToPdf(file, options = {}) {
       type: "application/pdf",
       lastModified: Date.now(),
     });
-    console.log(`✅ Filigrane appliqué sur PDF: ${file.name}`);
     return watermarkedFile;
   } catch (error) {
     console.error("❌ Erreur lors de l'application du filigrane PDF:", error);

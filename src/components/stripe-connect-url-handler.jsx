@@ -25,10 +25,6 @@ export function StripeConnectUrlHandler() {
     const stripeStep1Complete = searchParams.get("stripe_step1_complete");
 
     if (stripeStep1Complete === "true") {
-      console.log(
-        "🔔 Détection stripe_step1_complete - Ouverture modal étape 2"
-      );
-
       // Ouvrir le modal à l'étape 2
       setModalStep(2);
       setIsModalOpen(true);

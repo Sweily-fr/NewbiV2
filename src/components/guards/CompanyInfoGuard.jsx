@@ -49,8 +49,6 @@ export function CompanyInfoGuard({
 
     // Si pas authentifié, on peut soit rediriger soit permettre l'accès limité
     if (!isAuthenticated) {
-      console.warn("⚠️ CompanyInfoGuard: Utilisateur non authentifié");
-      // Pour l'instant, on permet l'accès pour diagnostiquer
       setIsLoading(false);
       return;
     }

@@ -27,43 +27,28 @@ const UniversalPDFDownloader = ({
   const handlePDFDownload = async () => {
     setIsGenerating(true);
     try {
-      console.log("Début génération PDF");
 
       if (!componentRef.current) {
         throw new Error("Référence du composant non trouvée");
       }
 
-      console.log("Capture de l'élément...");
-
-      // Debug: vérifier les données du logo
-      console.log("🖼️ Debug logo:", {
-        hasCompanyInfoLogo: !!data?.companyInfo?.logo,
-        companyInfoLogo: data?.companyInfo?.logo,
-        dataKeys: data ? Object.keys(data) : [],
-      });
-
       // Attendre que toutes les images soient chargées
       const images = componentRef.current.querySelectorAll("img");
-      console.log(`Nombre d'images trouvées: ${images.length}`);
 
       await Promise.all(
         Array.from(images).map((img) => {
           if (img.complete) {
-            console.log("Image déjà chargée:", img.src);
             return Promise.resolve();
           }
           return new Promise((resolve, reject) => {
             img.onload = () => {
-              console.log("Image chargée:", img.src);
               resolve();
             };
             img.onerror = () => {
-              console.warn("Erreur chargement image:", img.src);
               resolve(); // On continue même si une image échoue
             };
             // Timeout de sécurité
             setTimeout(() => {
-              console.warn("Timeout chargement image:", img.src);
               resolve();
             }, 3000);
           });
@@ -88,9 +73,6 @@ const UniversalPDFDownloader = ({
         },
       });
 
-      console.log("Capture réussie, JPEG dataURL obtenu");
-      console.log("DataURL length:", dataUrl?.length || 0);
-
       // Créer une image pour obtenir les vraies dimensions
       const img = new Image();
       await new Promise((resolve, reject) => {
@@ -98,8 +80,6 @@ const UniversalPDFDownloader = ({
         img.onerror = reject;
         img.src = dataUrl;
       });
-
-      console.log("Dimensions image:", img.width, "x", img.height);
 
       // Créer le PDF
       const pdf = new jsPDF({
@@ -117,17 +97,8 @@ const UniversalPDFDownloader = ({
       const imgWidthMM = pdfWidth;
       const imgHeightMM = (img.height * pdfWidth) / img.width;
 
-      console.log(
-        "Dimensions image dans PDF:",
-        imgWidthMM,
-        "x",
-        imgHeightMM,
-        "mm"
-      );
-
       // ===== DÉCOUPAGE INTELLIGENT =====
       if (imgHeightMM > pdfHeight) {
-        console.log("⚠️ Document multi-pages avec découpage intelligent");
 
         // Récupérer les positions des éléments à ne pas couper
         const protectedElements = componentRef.current.querySelectorAll(
@@ -146,13 +117,6 @@ const UniversalPDFDownloader = ({
           });
         });
 
-        console.log(`🔍 ${rowPositions.length} éléments protégés détectés`);
-        rowPositions.forEach((row, i) => {
-          console.log(
-            `  Élément ${i + 1}: top=${(row.top / 2).toFixed(0)}px, bottom=${(row.bottom / 2).toFixed(0)}px, height=${(row.height / 2).toFixed(0)}px`
-          );
-        });
-
         // Créer un canvas pour découper l'image
         const canvas = document.createElement("canvas");
         const ctx = canvas.getContext("2d");
@@ -160,12 +124,6 @@ const UniversalPDFDownloader = ({
         const canvasWidth = img.width;
         const pixelsPerMM = img.width / pdfWidth;
         const pageHeightPixels = pdfHeight * pixelsPerMM;
-
-        console.log("📐 Calculs:", {
-          pixelsPerMM: pixelsPerMM.toFixed(2),
-          pageHeightPixels: pageHeightPixels.toFixed(0) + "px",
-          pageHeightMM: pdfHeight + "mm",
-        });
 
         canvas.width = canvasWidth;
         canvas.height = pageHeightPixels;
@@ -185,13 +143,6 @@ const UniversalPDFDownloader = ({
             targetY = img.height;
           }
 
-          console.log(`\n📄 Page ${pageNumber + 1}:`);
-          console.log(`  Position actuelle: ${currentY.toFixed(0)}px`);
-          console.log(`  Cible initiale: ${targetY.toFixed(0)}px`);
-          console.log(
-            `  Hauteur page: ${(targetY - currentY).toFixed(0)}px (${((targetY - currentY) / pixelsPerMM).toFixed(1)}mm)`
-          );
-
           // Trouver les éléments dans cette plage
           const elementsInRange = rowPositions.filter(
             (row) =>
@@ -200,36 +151,17 @@ const UniversalPDFDownloader = ({
               (row.top < currentY && row.bottom > targetY) // Chevauche la plage
           );
 
-          console.log(`  ${elementsInRange.length} éléments dans cette plage`);
-
           // Trouver le dernier élément qui serait coupé
-          let needsAdjustment = false;
           for (const row of elementsInRange) {
             // Si l'élément commence avant targetY mais finit après
             if (row.top < targetY && row.bottom > targetY) {
               // Cet élément serait coupé, on ajuste targetY avant lui
               targetY = row.top;
-              needsAdjustment = true;
-              console.log(
-                `  ✂️ Élément coupé détecté ! Ajustement à ${targetY.toFixed(0)}px`
-              );
-              console.log(
-                `     (Élément: top=${row.top.toFixed(0)}px, bottom=${row.bottom.toFixed(0)}px)`
-              );
               break;
             }
           }
 
-          if (!needsAdjustment) {
-            console.log(
-              `  ✅ Aucune coupure détectée, on utilise toute la page`
-            );
-          }
-
           const sliceHeight = targetY - currentY;
-          console.log(
-            `  Hauteur finale: ${sliceHeight.toFixed(0)}px (${(sliceHeight / pixelsPerMM).toFixed(1)}mm)`
-          );
 
           // Remplir le canvas avec du blanc
           ctx.fillStyle = "#ffffff";
@@ -257,8 +189,6 @@ const UniversalPDFDownloader = ({
             heightMM: sliceHeight / pixelsPerMM,
           });
 
-          console.log(`  ✅ Page ${pageNumber + 1} générée`);
-
           currentY = targetY;
           pageNumber++;
 
@@ -271,7 +201,6 @@ const UniversalPDFDownloader = ({
 
         // Deuxième passe : ajouter les pages au PDF avec numérotation
         const totalPages = pages.length;
-        console.log(`\n📄 Total de ${totalPages} page(s) à ajouter au PDF`);
 
         pages.forEach((page, index) => {
           if (index > 0) {
@@ -297,13 +226,9 @@ const UniversalPDFDownloader = ({
           const textWidth = pdf.getTextWidth(pageText);
           pdf.text(pageText, pdfWidth - textWidth - 10, pdfHeight - 5); // À droite, 10mm de marge, 5mm du bas
 
-          console.log(
-            `✅ Page ${index + 1}/${totalPages} ajoutée au PDF (hauteur: ${page.heightMM.toFixed(1)}mm)`
-          );
         });
       } else {
         // Document sur une seule page
-        console.log("✅ Document sur une seule page");
         pdf.addImage(
           dataUrl,
           "JPEG",
@@ -316,8 +241,6 @@ const UniversalPDFDownloader = ({
         );
       }
 
-      console.log("Image(s) ajoutée(s) au PDF");
-
       // Déterminer le nom du fichier
       const documentType =
         type === "invoice" ? "facture" : type === "quote" ? "devis" : "avoir";
@@ -325,16 +248,13 @@ const UniversalPDFDownloader = ({
         filename || `${documentType}_${data.number || "document"}.pdf`;
 
       // Télécharger le PDF
-      console.log("Téléchargement du PDF:", fileName);
       pdf.save(fileName);
 
-      console.log("PDF téléchargé avec succès");
       toast.success("PDF téléchargé avec succès");
     } catch (error) {
       console.error("Erreur génération PDF:", error);
       toast.error(`Erreur: ${error.message}`);
     } finally {
-      console.log("Fin génération PDF");
       setIsGenerating(false);
     }
   };

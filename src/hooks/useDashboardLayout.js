@@ -44,7 +44,6 @@ export function useDashboardLayout() {
       });
 
       if (error) {
-        console.warn('Erreur récupération abonnement:', error);
         return null;
       }
 
@@ -52,7 +51,6 @@ export function useDashboardLayout() {
         (sub) => sub.status === "active" || sub.status === "trialing"
       ) || null;
     } catch (error) {
-      console.warn('Erreur lors de la récupération de l\'abonnement:', error);
       return null;
     }
   };
@@ -115,7 +113,6 @@ export function useDashboardLayout() {
         try {
           localStorage.setItem(currentCacheKey, JSON.stringify(newCachedData));
         } catch (error) {
-          console.warn('Impossible de sauvegarder en cache local:', error);
         }
       }
 
@@ -146,7 +143,6 @@ export function useDashboardLayout() {
         }
       }
     } catch (error) {
-      console.warn('Erreur lecture cache local:', error);
     }
 
     // Si pas de cache valide, charger les données

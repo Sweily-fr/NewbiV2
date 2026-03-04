@@ -17,7 +17,7 @@ export const useCustomSocialIcons = (signatureData, updateSignatureData) => {
    */
   const generateCustomSocialIcons = useCallback(async () => {
     if (!session?.user?.id) {
-      console.warn('⚠️ Session utilisateur manquant');
+
       return;
     }
 
@@ -203,7 +203,7 @@ export const useCustomSocialIcons = (signatureData, updateSignatureData) => {
    */
   const regenerateWithPermanentId = useCallback(async (permanentSignatureId) => {
     if (!permanentSignatureId || permanentSignatureId.startsWith('temp-')) {
-      console.warn('⚠️ ID permanent invalide pour la régénération');
+
       return;
     }
 

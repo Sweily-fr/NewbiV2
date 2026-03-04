@@ -139,24 +139,6 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
           const org = await getActiveOrganization();
           setOrganization(org);
 
-          console.log("📋 Chargement des paramètres de l'organisation:", {
-            headerNotes: org?.invoiceHeaderNotes || org?.documentHeaderNotes,
-            footerNotes: org?.invoiceFooterNotes || org?.documentFooterNotes,
-            termsAndConditions:
-              org?.invoiceTermsAndConditions || org?.documentTermsAndConditions,
-            showBankDetails: org?.showBankDetails,
-            appearance: {
-              textColor: org?.documentTextColor,
-              headerTextColor: org?.documentHeaderTextColor,
-              headerBgColor: org?.documentHeaderBgColor,
-            },
-            bankDetails: {
-              iban: org?.bankIban,
-              bic: org?.bankBic,
-              bankName: org?.bankName,
-            },
-          });
-
           // Préparer les valeurs initiales depuis l'organisation (même structure que l'éditeur)
           const formValues = {
             // Numérotation - préfixe par défaut (le numéro sera auto-rempli par le hook useInvoiceNumber)
@@ -202,8 +184,6 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
               headerBgColor: org?.invoiceHeaderBgColor || org?.documentHeaderBgColor || "#5b4fff",
             },
           };
-
-          console.log("📝 Valeurs initiales du formulaire:", formValues);
 
           setInitialValues(formValues);
           setDebouncedFormData(formValues);
@@ -256,7 +236,6 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
   // Réinitialiser le formulaire quand les valeurs initiales changent
   useEffect(() => {
     if (initialValues) {
-      console.log("🔄 Reset du formulaire avec les valeurs:", initialValues);
       form.reset(initialValues, { keepDefaultValues: false });
     }
   }, [initialValues, form]);
@@ -325,12 +304,6 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
         bankName: formValues.bankDetails?.bankName || "",
         showBankDetails: formValues.showBankDetails,
       };
-
-      console.log(
-        "💾 Sauvegarde des paramètres pour l'organisation:",
-        organization.id
-      );
-      console.log("💾 Données à sauvegarder:", updateData);
 
       await updateOrganization(organization.id, updateData);
 

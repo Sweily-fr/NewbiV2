@@ -28,8 +28,6 @@ export function Setup2FAModal({ isOpen, onClose }) {
   const [totpUri, setTotpUri] = useState(""); // Pour le QR code TOTP
   const [backupCodes, setBackupCodes] = useState([]); // Codes de secours
 
-  console.log("🔥 [Setup2FAModal] Composant monté, step:", step);
-
   const methods = [
     {
       id: "authenticator",
@@ -103,7 +101,6 @@ export function Setup2FAModal({ isOpen, onClose }) {
         toast.success("Code de vérification envoyé par e-mail");
       } else {
         // Pour l'authenticator TOTP
-        console.log("🔐 [2FA] Activation TOTP...");
         // ✅ Spécifier explicitement qu'on veut TOTP (QR code)
         const { data, error } = await authClient.twoFactor.enable({
           password: password,
@@ -112,8 +109,6 @@ export function Setup2FAModal({ isOpen, onClose }) {
           type: "totp",
         });
 
-        console.log("🔐 [2FA] Réponse:", { data, error });
-
         if (error) {
           console.error("❌ [2FA] Erreur:", error);
           toast.error(error.message || "Erreur lors de l'activation de la 2FA");
@@ -121,14 +116,12 @@ export function Setup2FAModal({ isOpen, onClose }) {
         }
 
         if (data && data.totpURI) {
-          console.log("✅ [2FA] TOTP URI reçu");
           setTotpUri(data.totpURI);
           setBackupCodes(data.backupCodes || []);
           toast.success("QR code généré ! Scannez-le avec votre application");
 
           // NE PAS passer à l'étape 3, rester à l'étape 2 pour afficher le QR code
           // L'utilisateur cliquera sur un bouton pour passer à l'étape 3
-          console.log("✅ [2FA] QR code affiché à l'étape 2");
           return; // Important : ne pas continuer
         } else {
           console.error("❌ [2FA] Pas de totpURI dans la réponse");
@@ -138,7 +131,6 @@ export function Setup2FAModal({ isOpen, onClose }) {
       }
 
       // Pour SMS et Email, passer à l'étape 3
-      console.log("✅ [2FA] Passage à l'étape 3");
       setStep(3);
     } catch (error) {
       toast.error("Erreur lors de la configuration");

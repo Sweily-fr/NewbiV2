@@ -211,7 +211,6 @@ export function NotificationsSection() {
         const result = await listInvitations();
 
         if (result.success) {
-          console.log("📤 Invitations envoyées:", result.data);
           setSentInvitations(result.data || []);
         } else {
           console.error(
@@ -506,10 +505,6 @@ export function NotificationsSection() {
           ) : (
             <div className="space-y-0 divide-y divide-border/50">
               {pendingInvitations.map((invitation) => {
-                // Log pour déboguer les données de l'invitation
-                console.log("📧 Données de l'invitation:", invitation);
-                console.log("📧 inviterEmail:", invitation.inviterEmail);
-
                 // Obtenir l'initiale de l'organisation
                 const initial = invitation.organizationName
                   ? invitation.organizationName.charAt(0).toUpperCase()

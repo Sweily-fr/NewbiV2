@@ -41,13 +41,10 @@ export const useStripeConnect = (organizationId) => {
       setError(null);
 
       try {
-        console.log("🔄 Début connexion Stripe Connect...");
-
         // 1. Créer le compte Stripe Connect s'il n'existe pas
         let accountId = stripeStatusData?.myStripeConnectAccount?.accountId;
 
         if (!accountId) {
-          console.log("➕ Création du compte Stripe Connect via GraphQL...");
           const { data: accountData } = await createStripeAccount();
 
           if (!accountData.createStripeConnectAccount.success) {
@@ -58,15 +55,10 @@ export const useStripeConnect = (organizationId) => {
           }
 
           accountId = accountData.createStripeConnectAccount.accountId;
-          console.log("✅ Compte créé:", accountId);
-        } else {
-          console.log("ℹ️ Compte existant:", accountId);
         }
 
         // 2. Générer le lien d'onboarding (Étape 1 : informations de base)
         const returnUrl = `${window.location.origin}/dashboard?stripe_step1_complete=true`;
-        console.log("🔗 Génération du lien d'onboarding (Étape 1)...");
-        console.log("📍 Return URL:", returnUrl);
 
         const { data: linkData } = await generateOnboardingLink({
           variables: {
@@ -74,8 +66,6 @@ export const useStripeConnect = (organizationId) => {
             returnUrl,
           },
         });
-
-        console.log("📋 Réponse GraphQL:", linkData);
 
         // Vérifier le succès
         if (!linkData.generateStripeOnboardingLink.success) {
@@ -87,10 +77,6 @@ export const useStripeConnect = (organizationId) => {
 
         // 3. Rediriger vers Stripe
         if (linkData.generateStripeOnboardingLink.url) {
-          console.log(
-            "🚀 Redirection vers Stripe:",
-            linkData.generateStripeOnboardingLink.url
-          );
           window.location.href = linkData.generateStripeOnboardingLink.url;
         }
       } catch (err) {
@@ -111,7 +97,6 @@ export const useStripeConnect = (organizationId) => {
   // Fonction pour déconnecter Stripe
   const disconnectStripe = useCallback(async () => {
     setIsLoading(true);
-    console.log("🔄 Début déconnexion Stripe Connect...");
 
     try {
       // Vérifier que l'utilisateur a un compte Stripe avant de tenter la déconnexion
@@ -222,8 +207,6 @@ export const useStripeConnect = (organizationId) => {
       const data = await response.json();
 
       if (data.success) {
-        console.log("✅ Statut Stripe Connect mis à jour:", data);
-        // Rafraîchir les données après la vérification
         await refetchStatus();
       } else {
         console.error("❌ Erreur mise à jour statut:", data.message);

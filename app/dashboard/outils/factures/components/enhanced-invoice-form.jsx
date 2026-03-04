@@ -317,12 +317,7 @@ export default function EnhancedInvoiceForm({
 
   // Fonction pour réinitialiser les articles (utilisée par InvoiceInfoSection)
   const resetItems = useCallback(() => {
-    console.log(
-      "📋 [RESET ITEMS] Réinitialisation des articles, items actuels:",
-      items.length
-    );
     replaceItems([]);
-    console.log("📋 [RESET ITEMS] Articles vidés");
   }, [replaceItems, items.length]);
 
   // Watch les données du formulaire

@@ -28,23 +28,13 @@ export function useOrganizationChange({
     if (currentOrgId && !isInitializedRef.current) {
       previousOrgIdRef.current = currentOrgId;
       isInitializedRef.current = true;
-      console.log("[useOrganizationChange] 🎯 Initialisation avec organisation:", currentOrgId);
     }
 
     // Écouter l'événement custom de changement d'organisation
     const handleOrganizationChange = (event) => {
-      const { previousOrgId, newOrgId } = event.detail;
-      
-      console.log("[useOrganizationChange] 📢 Événement organizationChanged reçu", {
-        previousOrgId,
-        newOrgId,
-        resourceId,
-        pathname,
-      });
+      const { newOrgId } = event.detail;
 
-      // Si on est sur une page de détail (avec resourceId), rediriger IMMÉDIATEMENT
       if (resourceId) {
-        console.log("[useOrganizationChange] ➡️ REDIRECTION IMMEDIATE vers", listUrl);
         router.push(listUrl);
       }
 

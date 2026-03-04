@@ -144,23 +144,6 @@ export default function InvoiceInfoSection({
     }
   );
 
-  // Debug: afficher les devis reçus
-  React.useEffect(() => {
-    if (quotesData?.quotes?.quotes) {
-      console.log(
-        "📋 [QUOTES SEARCH] Devis reçus:",
-        quotesData.quotes.quotes.map((q) => ({
-          id: q.id,
-          number: q.number,
-          prefix: q.prefix,
-          fullRef: q.prefix ? `${q.prefix}-${q.number}` : q.number,
-          finalTotalTTC: q.finalTotalTTC,
-          client: q.client?.name,
-        }))
-      );
-    }
-  }, [quotesData]);
-
   // Query pour rechercher les références de situation existantes
   const { data: situationRefsData, loading: loadingSituationRefs } = useQuery(
     GET_SITUATION_REFERENCES,
@@ -187,9 +170,6 @@ export default function InvoiceInfoSection({
       const reference = data.situationReference || data.purchaseOrderNumber;
 
       if (reference) {
-        console.log(
-          `🔍 Recherche des factures de situation pour la référence: ${reference}`
-        );
         fetchSituationInvoices({
           variables: {
             workspaceId,
@@ -229,14 +209,6 @@ export default function InvoiceInfoSection({
         ? `${quote.prefix}-${quote.number}`
         : quote.number;
 
-      console.log("📋 [QUOTE COPY] Devis récupéré:", {
-        quoteFullRef,
-        purchaseOrderNumber: data.purchaseOrderNumber,
-        match: quoteFullRef === data.purchaseOrderNumber,
-        itemsCount: quote.items?.length,
-        finalTotalTTC: quote.finalTotalTTC,
-      });
-
       // Vérifier que le devis récupéré correspond bien à la référence sélectionnée
       if (quoteFullRef !== data.purchaseOrderNumber) {
         return;
@@ -253,8 +225,6 @@ export default function InvoiceInfoSection({
         // Ne pas re-copier si les articles ont déjà été initialisés pour cette référence
         const currentRef = data.situationReference || data.purchaseOrderNumber;
         if (itemsInitializedForRef?.current === currentRef) return;
-
-        console.log("📋 [QUOTE COPY] Copie des articles:", quote.items);
 
         const copiedItems = quote.items.map((item) => ({
           description: item.description || "",
@@ -364,12 +334,6 @@ export default function InvoiceInfoSection({
           lastSituationInvoice.items &&
           lastSituationInvoice.items.length > 0
         ) {
-          console.log(
-            "📋 [SITUATION COPY] Copie des articles de la dernière facture de situation:",
-            lastSituationInvoice.items.length,
-            "articles"
-          );
-
           // Pré-remplir avec le pourcentage restant (ou 0 si pas de cumul)
           const itemProgress = !data.id && cumulativeProgress > 0 ? remaining : 0;
 
@@ -473,15 +437,6 @@ export default function InvoiceInfoSection({
             );
           }
 
-          console.log("💰 [SITUATION COPY] Informations complètes copiées:", {
-            escompte: lastSituationInvoice.escompte,
-            retenueGarantie: lastSituationInvoice.retenueGarantie,
-            isReverseCharge: lastSituationInvoice.isReverseCharge,
-            discount: lastSituationInvoice.discount,
-            discountType: lastSituationInvoice.discountType,
-            showBankDetails: lastSituationInvoice.showBankDetails,
-            clientPositionRight: lastSituationInvoice.clientPositionRight,
-          });
         }
 
         // Marquer comme initialisé pour cette référence

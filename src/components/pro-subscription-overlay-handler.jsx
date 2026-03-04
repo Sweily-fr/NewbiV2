@@ -15,8 +15,6 @@ export function ProSubscriptionOverlayHandler() {
       searchParams.get("subscription_success") === "true";
 
     if (paymentSuccess || subscriptionSuccess) {
-      console.log("🎉 Paiement réussi détecté, affichage de l'animation Pro");
-
       // Nettoyer l'URL des paramètres
       const cleanUrl = window.location.pathname;
       window.history.replaceState({}, "", cleanUrl);
@@ -32,7 +30,6 @@ export function ProSubscriptionOverlayHandler() {
 
   const handleAnimationComplete = () => {
     setShowAnimation(false);
-    console.log("✅ Animation Pro terminée");
   };
 
   return (

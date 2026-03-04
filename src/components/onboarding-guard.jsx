@@ -50,13 +50,10 @@ export default function OnboardingGuard({ children }) {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
               });
-              console.log("✅ [ONBOARDING GUARD] Migration automatique: onboardingCompleted mis à true");
             } catch (migrationError) {
-              console.warn("⚠️ [ONBOARDING GUARD] Erreur migration:", migrationError);
             }
           }
         } catch (error) {
-          console.warn("⚠️ [ONBOARDING GUARD] Erreur vérification abonnement:", error);
           setHasActiveSubscription(false);
         }
       }
@@ -88,10 +85,8 @@ export default function OnboardingGuard({ children }) {
     // Si l'onboarding n'est pas complété, rediriger
     // Mais attendre la vérification d'abonnement si nécessaire
     if (!hasSeenOnboarding) {
-      console.log("🎯 [ONBOARDING GUARD] Redirection vers /onboarding (hasSeenOnboarding=false)");
       router.push("/onboarding");
     } else if (organization && !orgOnboardingCompleted && hasCheckedSubscription && !hasActiveSubscription) {
-      console.log("🎯 [ONBOARDING GUARD] Redirection vers /onboarding (pas d'abonnement actif)");
       router.push("/onboarding");
     }
   }, [session, isPending, pathname, router, organization, orgLoading, hasActiveSubscription, hasCheckedSubscription]);

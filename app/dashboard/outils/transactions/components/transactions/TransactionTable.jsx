@@ -385,12 +385,10 @@ export default function TransactionTable({
     try {
       const date = new Date(dateValue);
       if (isNaN(date.getTime())) {
-        console.warn("Date invalide:", dateValue);
         return new Date().toISOString().split("T")[0];
       }
       return date.toISOString().split("T")[0];
     } catch (error) {
-      console.warn("Erreur de parsing de date:", dateValue, error);
       return new Date().toISOString().split("T")[0];
     }
   };

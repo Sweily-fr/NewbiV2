@@ -98,12 +98,7 @@ export const useFileTransferR2Multipart = (refetchTransfers) => {
     const totalParts = parts.length;
 
     try {
-      console.log(
-        `🚀 Début Multipart Upload NATIF: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB) en ${totalParts} parts de 50 MB`
-      );
-
       // Étape 1 : Démarrer le multipart et obtenir les URLs presigned
-      console.log(`📦 Démarrage multipart upload...`);
       const { data: startData, errors: startErrors } =
         await startMultipartUploadMutation({
           variables: {
@@ -129,8 +124,6 @@ export const useFileTransferR2Multipart = (refetchTransfers) => {
       }
 
       const { uploadId, key, presignedUrls } = startData.startMultipartUpload;
-      console.log(`✅ Multipart Upload démarré: ${uploadId}`);
-      console.log(`📋 ${presignedUrls.length} URLs presigned reçues`);
 
       // Étape 2 : Upload DIRECT des parts vers R2 en parallèle
       const uploadedParts = [];
@@ -183,17 +176,9 @@ export const useFileTransferR2Multipart = (refetchTransfers) => {
         const batchResults = await Promise.all(batchPromises);
         uploadedParts.push(...batchResults);
 
-        console.log(
-          `✅ Batch ${Math.floor(i / MAX_CONCURRENT_UPLOADS) + 1}/${Math.ceil(totalParts / MAX_CONCURRENT_UPLOADS)} uploadé (${uploadedParts.length}/${totalParts} parts)`
-        );
       }
 
-      console.log(
-        `✅ Toutes les parts uploadées: ${uploadedParts.length}/${totalParts}`
-      );
-
       // Étape 3 : Finaliser le multipart upload
-      console.log(`🔧 Finalisation du multipart upload...`);
       const { data: completeData, errors: completeErrors } =
         await completeMultipartUploadMutation({
           variables: {
@@ -219,13 +204,6 @@ export const useFileTransferR2Multipart = (refetchTransfers) => {
         console.error("❌ Échec finalisation:", completeData);
         throw new Error("Échec de la finalisation du multipart upload");
       }
-
-      console.log(
-        `✅ Multipart Upload complété: ${completeData.completeMultipartUpload.key}`
-      );
-      console.log(
-        `📊 Taille finale: ${(completeData.completeMultipartUpload.size / 1024 / 1024).toFixed(2)} MB`
-      );
 
       return fileId;
     } catch (error) {
@@ -306,17 +284,15 @@ export const useFileTransferR2Multipart = (refetchTransfers) => {
         // Appliquer le filigrane si l'option est activée
         let filesToUpload = validFiles;
         if (transferOptions.applyWatermark && transferOptions.watermarkText) {
-          console.log("🎨 Application du filigrane sur les images...");
           try {
             filesToUpload = await applyWatermarkToFiles(validFiles, {
               text: transferOptions.watermarkText,
               position: transferOptions.watermarkPosition || "diagonal",
               opacity: 0.25,
             });
-            console.log("✅ Filigrane appliqué avec succès");
           } catch (watermarkError) {
             console.error(
-              "⚠️ Erreur lors de l'application du filigrane:",
+              "Erreur lors de l'application du filigrane:",
               watermarkError
             );
             // Continuer avec les fichiers originaux en cas d'erreur
@@ -402,7 +378,6 @@ export const useFileTransferR2Multipart = (refetchTransfers) => {
       } catch (error) {
         // Vérifier si c'est une annulation
         if (error.name === "AbortError" || error.message === "Upload annulé") {
-          console.log("🚫 Upload annulé par l'utilisateur");
           setIsCancelled(true);
           toast.info("Transfert annulé");
           return null;
@@ -469,7 +444,6 @@ export const useFileTransferR2Multipart = (refetchTransfers) => {
    */
   const cancelTransfer = useCallback(() => {
     if (abortControllerRef.current) {
-      console.log("🚫 Annulation du transfert...");
       abortControllerRef.current.abort();
     }
   }, []);

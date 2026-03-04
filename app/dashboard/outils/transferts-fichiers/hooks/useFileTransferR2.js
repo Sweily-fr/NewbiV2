@@ -46,8 +46,6 @@ export const useFileTransferR2 = (refetchTransfers) => {
     const totalChunks = chunks.length;
 
     try {
-      console.log(`📦 Début upload: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB) en ${totalChunks} chunks`);
-      
       // Nombre de chunks à uploader en parallèle (réduit car chunks plus gros)
       const CONCURRENT_UPLOADS = 5;
       let uploadedCount = 0;
@@ -91,10 +89,8 @@ export const useFileTransferR2 = (refetchTransfers) => {
         // Attendre que tout le batch soit uploadé
         await Promise.all(batchPromises);
         
-        console.log(`✅ Batch ${Math.floor(i / CONCURRENT_UPLOADS) + 1}/${Math.ceil(totalChunks / CONCURRENT_UPLOADS)} uploadé`);
       }
 
-      console.log(`✅ Upload terminé: ${totalChunks} chunks uploadés`);
       return fileId;
     } catch (error) {
       console.error(`❌ Erreur upload R2 pour ${file.name}:`, error);

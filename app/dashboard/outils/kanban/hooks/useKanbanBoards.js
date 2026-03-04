@@ -41,7 +41,6 @@ export const useKanbanBoards = () => {
   // Attendre que la session soit chargée avant d'activer la subscription
   useEffect(() => {
     if (!sessionLoading && session?.user) {
-      console.log('✅ [useKanbanBoards] Session chargée, activation subscription');
       setIsReady(true);
     }
   }, [sessionLoading, session]);
@@ -60,8 +59,6 @@ export const useKanbanBoards = () => {
     onData: ({ data: subscriptionData, client }) => {
       if (subscriptionData?.data?.boardUpdated) {
         const { type, board, boardId } = subscriptionData.data.boardUpdated;
-        
-        console.log("🔄 [Kanban] Mise à jour temps réel:", type, board || boardId);
         
         // Mettre à jour le cache Apollo automatiquement
         const cache = client.cache;

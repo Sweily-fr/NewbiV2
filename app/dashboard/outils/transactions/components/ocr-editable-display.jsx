@@ -171,7 +171,6 @@ export default function OcrEditableDisplay({
         ? JSON.parse(ocrResult.financialAnalysis)
         : ocrResult?.financialAnalysis;
   } catch (error) {
-    console.warn("Erreur parsing analyse financière:", error);
   }
 
   // Initialiser les données éditables

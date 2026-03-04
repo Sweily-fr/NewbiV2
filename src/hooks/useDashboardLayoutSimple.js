@@ -46,7 +46,6 @@ export function useDashboardLayoutSimple() {
         }
       }
     } catch (error) {
-      console.warn("Erreur lecture cache utilisateur:", error);
     }
   }, []);
 
@@ -65,7 +64,6 @@ export function useDashboardLayoutSimple() {
         setCachedUser(session.user);
         setCachedOrganization(session.user.organization);
       } catch (error) {
-        console.warn("Erreur sauvegarde cache utilisateur:", error);
       }
     }
   }, [session?.user?.id, session?.user?.name, session?.user?.email, session?.user?.role, session?.user?.hasSeenOnboarding, session?.session?.activeOrganizationId, isHydrated]);
@@ -103,9 +101,6 @@ export function useDashboardLayoutSimple() {
       // Si on revient de Stripe, d'une résiliation ou d'un nouvel abonnement, vider le cache pour forcer le rechargement
       if (isReturningFromStripe) {
         localStorage.removeItem(cacheKey);
-        console.log(
-          "🗑️ Cache d'abonnement invalidé (retour Stripe/résiliation/nouvel abonnement)"
-        );
       }
 
       // Cache intelligent : 5 minutes + invalidation après paiement/résiliation
@@ -120,15 +115,10 @@ export function useDashboardLayoutSimple() {
             setSubscription(cachedSubscription);
             setIsLoading(false);
             setIsInitialized(true);
-            console.log(
-              "✅ Subscription chargée depuis le cache:",
-              organizationId
-            );
             return;
           }
         }
       } catch (error) {
-        console.warn("Erreur lecture cache abonnement:", error);
       }
     }
 
@@ -137,8 +127,7 @@ export function useDashboardLayoutSimple() {
       // ⚠️ IMPORTANT: Ne pas marquer comme "initialized" si on attend l'organisation
       // Cela permet d'attendre que l'organisation soit chargée après OAuth
       if (session?.user && !sessionLoading && !orgLoading) {
-        console.log("⏳ En attente de l'organisation après connexion OAuth...");
-        setIsLoading(true); // Garder le loading actif
+        setIsLoading(true);
         // Ne pas marquer comme initialized pour continuer à attendre
       } else {
         setIsLoading(false);
@@ -195,12 +184,10 @@ export function useDashboardLayoutSimple() {
                 })
               );
             } catch (error) {
-              console.warn("Erreur sauvegarde cache abonnement:", error);
             }
           }
         }
       } catch (error) {
-        console.warn("Erreur récupération abonnement:", error);
       } finally {
         setIsLoading(false);
         setIsInitialized(true);
@@ -238,14 +225,11 @@ export function useDashboardLayoutSimple() {
     // Nettoyer l'URL immédiatement pour éviter re-déclenchement
     window.history.replaceState({}, document.title, window.location.pathname);
 
-    console.log("🔄 [POLLING] Démarrage du polling après retour Stripe...");
-
     let attempts = 0;
     const maxAttempts = 30;
 
     const checkSubscription = async () => {
       attempts++;
-      console.log(`🔄 [POLLING] Tentative ${attempts}/${maxAttempts}...`);
 
       try {
         const response = await fetch(
@@ -263,7 +247,6 @@ export function useDashboardLayoutSimple() {
         if (isActive) {
           clearInterval(stripePollingRef.current);
           stripePollingRef.current = null;
-          console.log("✅ [POLLING] Abonnement trouvé!", data.plan);
 
           setSubscription(data);
 
@@ -275,7 +258,6 @@ export function useDashboardLayoutSimple() {
         } else if (attempts >= maxAttempts) {
           clearInterval(stripePollingRef.current);
           stripePollingRef.current = null;
-          console.warn("⚠️ [POLLING] Timeout après 30 tentatives");
         }
       } catch (error) {
         console.error("❌ [POLLING] Erreur:", error);
@@ -308,8 +290,6 @@ export function useDashboardLayoutSimple() {
 
     // Nettoyer l'URL immédiatement pour éviter re-déclenchement après reload
     window.history.replaceState({}, document.title, window.location.pathname);
-
-    console.log("🔄 Résiliation détectée, synchronisation avec Stripe...");
 
     const syncAndUpdate = async () => {
       try {
@@ -525,9 +505,7 @@ export function useDashboardLayoutSimple() {
       // Ne PAS réinitialiser subscription à null - garder l'ancienne valeur pendant le chargement
       // Le useEffect se chargera de refetch automatiquement
       setIsLoading(true);
-      console.log("✅ Caches vidés, refetch en cours...");
     } catch (error) {
-      console.warn("Erreur suppression caches:", error);
     }
   }, [session?.session?.activeOrganizationId]);
 

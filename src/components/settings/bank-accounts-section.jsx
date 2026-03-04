@@ -154,7 +154,6 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
         setIsConnected(data.isConnected || false);
       }
     } catch (err) {
-      console.warn("⚠️ Erreur vérification statut bancaire:", err.message);
     }
   };
 
@@ -183,7 +182,6 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
         setAccounts([]);
       }
     } catch (err) {
-      console.warn("⚠️ Erreur récupération comptes:", err.message);
       setAccounts([]);
     } finally {
       setIsLoading(false);
@@ -228,7 +226,6 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
         const { data: session } = await authClient.getSession();
         setIsEmailVerified(session?.user?.emailVerified ?? true);
       } catch (error) {
-        console.warn("Erreur vérification email:", error);
       }
     };
     checkEmailVerification();

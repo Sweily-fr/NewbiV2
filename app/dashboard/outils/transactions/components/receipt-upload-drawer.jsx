@@ -167,8 +167,6 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
       } catch (error) {
         console.error("❌ Erreur OCR:", error);
       }
-    } else {
-      console.warn("⚠️ Pas de fichier sélectionné");
     }
   }, [selectedFile, processDocument, workspaceId]);
 
@@ -180,7 +178,6 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
         try {
           analysis = JSON.parse(analysis);
         } catch (e) {
-          console.warn("⚠️ Impossible de parser financialAnalysis");
           return;
         }
       }
@@ -203,14 +200,6 @@ export function ReceiptUploadDrawer({ open, onOpenChange, onUploadSuccess }) {
           date = `${year}-${month}-${day}`;
         }
       }
-
-      console.log("🔍 Recherche correspondance:", {
-        amount,
-        rawDate,
-        date,
-        vendor,
-        transactionData,
-      });
 
       if (amount > 0) {
         await findMatchingTransaction({ amount, date, vendor });

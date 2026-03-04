@@ -22,9 +22,9 @@ function TooltipProvider({
   );
 }
 
-function Tooltip({ ...props }) {
+function Tooltip({ disableHoverableContent, ...props }) {
   return (
-    <TooltipProvider>
+    <TooltipProvider disableHoverableContent={disableHoverableContent}>
       <TooltipPrimitive.Root data-slot="tooltip" {...props} />
     </TooltipProvider>
   );

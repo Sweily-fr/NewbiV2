@@ -4,10 +4,6 @@
  */
 
 export function generateSignatureHTML(signatureData) {
-  console.log("🔥 GÉNÉRATEUR APPELÉ - standalone-signature-generator.js", {
-    orientation: signatureData.orientation,
-  });
-
   // Fonction helper pour obtenir l'espacement approprié (identique à spacing-helper.js)
   const getSpacing = (specificSpacing, fallbackSpacing = 12) => {
     let result;
@@ -78,11 +74,6 @@ export function generateSignatureHTML(signatureData) {
       detailedValue !== null &&
       detailedValue !== ""
     ) {
-      if (property === "textDecoration") {
-        console.log(
-          ` getTypography(${field}, textDecoration) = "${detailedValue}"`,
-        );
-      }
       return detailedValue;
     }
 

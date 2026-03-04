@@ -40,20 +40,9 @@ export default function Component({
   const router = useRouter();
 
   const openSettings = React.useCallback((tab = "preferences") => {
-    console.log("Opening settings with tab:", tab); // Debug
     setSettingsInitialTab(tab);
     setSettingsModalOpen(true);
   }, []);
-
-  // S'assurer que l'onglet initial est bien défini quand le modal s'ouvre
-  React.useEffect(() => {
-    if (settingsModalOpen) {
-      console.log(
-        "Settings modal opened with initial tab:",
-        settingsInitialTab
-      ); // Debug
-    }
-  }, [settingsModalOpen, settingsInitialTab]);
 
   const runCommand = React.useCallback((command) => {
     setOpen(false);
@@ -72,7 +61,6 @@ export default function Component({
     // Écouter l'événement d'ouverture du modal settings depuis le dashboard
     const handleOpenSettingsModal = (event) => {
       const { section } = event.detail;
-      console.log("🔧 Événement openSettingsModal reçu, section:", section);
       openSettings(section);
     };
 

@@ -45,7 +45,6 @@ export function useBankingConnection(workspaceId) {
         throw new Error("Erreur lors de la vérification du statut");
       }
     } catch (err) {
-      console.warn("⚠️ Erreur vérification statut bancaire:", err.message);
       setIsConnected(false);
       setAccountsCount(0);
       setHasAccounts(false);

@@ -48,11 +48,6 @@ class PDFLayoutAnalyzer {
       [data-critical]
     `);
 
-    console.log(`\n${"=".repeat(60)}`);
-    console.log(`📊 ANALYSE DE STRUCTURE PDF`);
-    console.log(`${"=".repeat(60)}`);
-    console.log(`Éléments détectés: ${allElements.length}`);
-
     const elementMap = [];
     const sections = {
       header: null,
@@ -90,8 +85,6 @@ class PDFLayoutAnalyzer {
       // Cataloguer par section
       this.categorizeElement(elementInfo, sections);
     });
-
-    this.logAnalysis(sections);
 
     return {
       elementMap,
@@ -141,27 +134,6 @@ class PDFLayoutAnalyzer {
   }
 
   /**
-   * Logger l'analyse pour debug
-   */
-  logAnalysis(sections) {
-    console.log(`\n📋 SECTIONS IDENTIFIÉES:`);
-    console.log(
-      `  ├─ Header: ${sections.header ? "✓" : "✗"} ${sections.header ? `(${(sections.header.height / this.pixelsPerMM).toFixed(1)}mm)` : ""}`
-    );
-    console.log(
-      `  ├─ Info client: ${sections.info ? "✓" : "✗"} ${sections.info ? `(${(sections.info.height / this.pixelsPerMM).toFixed(1)}mm)` : ""}`
-    );
-    console.log(
-      `  ├─ Table header: ${sections.tableHeader ? "✓" : "✗"} ${sections.tableHeader ? `(${(sections.tableHeader.height / this.pixelsPerMM).toFixed(1)}mm)` : ""}`
-    );
-    console.log(`  ├─ Articles: ${sections.items.length} items`);
-    console.log(`  ├─ Totaux: ${sections.totals.length} lignes`);
-    console.log(
-      `  └─ Footer: ${sections.footer ? "✓" : "✗"} ${sections.footer ? `(${(sections.footer.height / this.pixelsPerMM).toFixed(1)}mm)` : ""}`
-    );
-  }
-
-  /**
    * Calculer les pages avec pagination intelligente
    * Le footer sera toujours placé en bas de la dernière page
    */
@@ -177,22 +149,7 @@ class PDFLayoutAnalyzer {
     const tableHeaderHeight = sections.tableHeader?.height || 0;
     const infoHeight = sections.info?.height || 0;
 
-    console.log(`\n${"=".repeat(60)}`);
-    console.log(`📏 CALCUL DE PAGINATION`);
-    console.log(`${"=".repeat(60)}`);
-    console.log(
-      `Hauteur totale document: ${(totalHeight / this.pixelsPerMM).toFixed(0)}mm`
-    );
-    console.log(`Hauteur page A4: ${this.A4_HEIGHT_MM}mm`);
-    console.log(
-      `Hauteur utilisable: ${(this.availableHeight / this.pixelsPerMM).toFixed(0)}mm`
-    );
-    console.log(
-      `Hauteur footer: ${(footerHeight / this.pixelsPerMM).toFixed(1)}mm`
-    );
-
     // PAGE 1 : Header + Info + début items + Footer
-    console.log(`\n📄 PAGE 1 (première page)`);
 
     // Réserver le footer sur CHAQUE page (il sera répété)
     let page1UsableHeight =
@@ -200,22 +157,6 @@ class PDFLayoutAnalyzer {
     if (sections.tableHeader) {
       page1UsableHeight -= tableHeaderHeight;
     }
-
-    console.log(
-      `  Réservé header: ${(headerHeight / this.pixelsPerMM).toFixed(1)}mm`
-    );
-    console.log(
-      `  Réservé info: ${(infoHeight / this.pixelsPerMM).toFixed(1)}mm`
-    );
-    console.log(
-      `  Réservé table header: ${(tableHeaderHeight / this.pixelsPerMM).toFixed(1)}mm`
-    );
-    console.log(
-      `  Réservé footer: ${(footerHeight / this.pixelsPerMM).toFixed(1)}mm`
-    );
-    console.log(
-      `  ➜ Espace items: ${(page1UsableHeight / this.pixelsPerMM).toFixed(1)}mm`
-    );
 
     const page1StartY = 0;
     const page1ContentStart =
@@ -242,11 +183,6 @@ class PDFLayoutAnalyzer {
       totalsIncluded: false,
     });
 
-    console.log(`  ✓ ${page1Items.length} items inclus`);
-    console.log(
-      `  Fin ajustée: ${(page1AdjustedEnd / this.pixelsPerMM).toFixed(1)}mm`
-    );
-
     currentY = page1AdjustedEnd;
 
     // PAGES SUIVANTES
@@ -266,7 +202,6 @@ class PDFLayoutAnalyzer {
       currentY < totalHeight - footerHeight
     ) {
       pageNumber++;
-      console.log(`\n📄 PAGE ${pageNumber}`);
 
       // Réserver le footer sur TOUTES les pages
       const pageUsableHeight =
@@ -279,13 +214,6 @@ class PDFLayoutAnalyzer {
         currentY + (sections.tableHeader ? tableHeaderHeight : 0);
       let pageEndY = pageContentStart + pageUsableHeight;
 
-      console.log(
-        `  Espace disponible: ${(pageUsableHeight / this.pixelsPerMM).toFixed(1)}mm`
-      );
-      console.log(
-        `  Réservé footer: ${(footerHeight / this.pixelsPerMM).toFixed(1)}mm`
-      );
-
       // Items restants pour cette page
       const itemsForThisPage = sections.items.filter(
         (item) =>
@@ -295,9 +223,6 @@ class PDFLayoutAnalyzer {
       );
 
       if (itemsForThisPage.length === 0) {
-        console.log(
-          `  ℹ️ Plus d'items, création de la dernière page avec totaux + footer`
-        );
 
         // Dernière page : totaux + footer
         const totalsHeight = sections.totals.reduce(
@@ -363,17 +288,6 @@ class PDFLayoutAnalyzer {
         isLastPage: isLastPage,
       });
 
-      console.log(`  ✓ ${pageItems.length} items inclus`);
-      console.log(`  ✓ Footer inclus en bas de page`);
-      if (canIncludeTotals) {
-        console.log(`  ✓ Totaux inclus sur cette page`);
-      } else if (isLastPage) {
-        console.log(
-          `  ⚠️ Dernière page mais pas assez de place pour les totaux`
-        );
-        console.log(`  ➜ Une page supplémentaire sera créée pour les totaux`);
-      }
-
       itemsProcessed += pageItems.length;
       currentY = pageAdjustedEnd;
 
@@ -383,9 +297,6 @@ class PDFLayoutAnalyzer {
       // créer une page supplémentaire pour eux (avec footer)
       if (isLastPage) {
         pageNumber++;
-        console.log(
-          `\n📄 PAGE ${pageNumber} (page finale pour totaux + footer)`
-        );
 
         const totalsHeight = sections.totals.reduce(
           (sum, t) => sum + t.height,
@@ -409,8 +320,6 @@ class PDFLayoutAnalyzer {
           isLastPage: true,
         });
 
-        console.log(`  ✓ Totaux inclus`);
-        console.log(`  ✓ Footer inclus en bas de page`);
         break;
       }
 
@@ -420,10 +329,6 @@ class PDFLayoutAnalyzer {
         break;
       }
     }
-
-    console.log(`\n${"=".repeat(60)}`);
-    console.log(`✅ PAGINATION TERMINÉE: ${pages.length} page(s)`);
-    console.log(`${"=".repeat(60)}\n`);
 
     return pages;
   }
@@ -442,9 +347,6 @@ class PDFLayoutAnalyzer {
         if (item.bottom > endY) {
           if (!item.canBreak) {
             // Ne peut pas être coupé, on s'arrête avant
-            console.log(
-              `  ⚠️ Item ${item.itemIndex} serait coupé (${(item.height / this.pixelsPerMM).toFixed(1)}mm)`
-            );
             adjustedEndY = item.top - this.margins.itemSpacing;
             break;
           }
@@ -458,9 +360,6 @@ class PDFLayoutAnalyzer {
             (i) => i.itemIndex === item.itemIndex + 1
           );
           if (nextItem && nextItem.bottom > endY) {
-            console.log(
-              `  🔗 Item ${item.itemIndex} doit rester avec le suivant`
-            );
             adjustedEndY = item.top - this.margins.itemSpacing;
             itemsIncluded.pop();
             break;
@@ -474,7 +373,6 @@ class PDFLayoutAnalyzer {
 
     if (itemsIncluded.length === 0 && items.length > 0) {
       // Forcer l'inclusion du premier item même s'il dépasse
-      console.log(`  ⚠️ Forçage inclusion premier item`);
       itemsIncluded.push(items[0]);
       adjustedEndY = items[0].bottom + this.margins.itemSpacing;
     }
@@ -517,7 +415,6 @@ const UniversalPDFDownloaderWithFacturX = ({
       }
 
       const timeout = setTimeout(() => {
-        console.log("⏱️ Timeout images, on continue quand même");
         setIsReady(true);
       }, 5000);
 
@@ -526,11 +423,9 @@ const UniversalPDFDownloaderWithFacturX = ({
           if (img.complete) return Promise.resolve();
           return new Promise((resolve) => {
             img.onload = () => {
-              console.log("✓ Image chargée:", img.src.substring(0, 50));
               resolve();
             };
             img.onerror = () => {
-              console.warn("⚠️ Erreur image:", img.src.substring(0, 50));
               resolve();
             };
           });
@@ -538,7 +433,6 @@ const UniversalPDFDownloaderWithFacturX = ({
       ).then(() => {
         clearTimeout(timeout);
         setTimeout(() => {
-          console.log("✅ Toutes les images chargées");
           setIsReady(true);
         }, 300);
       });
@@ -554,9 +448,6 @@ const UniversalPDFDownloaderWithFacturX = ({
     setIsGenerating(true);
 
     try {
-      console.log("\n" + "=".repeat(70));
-      console.log("🚀 DÉBUT GÉNÉRATION PDF AVEC PAGINATION PRÉCISE");
-      console.log("=".repeat(70));
 
       if (!componentRef.current) {
         throw new Error("Référence du composant non trouvée");
@@ -569,11 +460,9 @@ const UniversalPDFDownloaderWithFacturX = ({
       const captureSection = async (selector, name, options = {}) => {
         const element = componentRef.current.querySelector(selector);
         if (!element) {
-          console.log(`⚠️ Section ${name} non trouvée`);
           return null;
         }
 
-        console.log(`📸 Capture de ${name}...`);
         const dataUrl = await domToJpeg(element, {
           quality: 0.98,
           backgroundColor: "#ffffff", // Toujours blanc pour que les rgba transparents soient visibles
@@ -589,13 +478,10 @@ const UniversalPDFDownloaderWithFacturX = ({
           img.src = dataUrl;
         });
 
-        console.log(`✅ ${name} capturé: ${img.width}x${img.height}px`);
         return { dataUrl, img, element };
       };
 
       // Capturer toutes les sections séparément
-      console.log("\n📸 CAPTURE DES SECTIONS SÉPARÉMENT");
-      console.log("=".repeat(60));
 
       const sections = {
         header: await captureSection('[data-pdf-section="header"]', "Header"),
@@ -627,7 +513,6 @@ const UniversalPDFDownloaderWithFacturX = ({
       };
 
       // Capturer chaque item individuellement
-      console.log("\n📸 Capture des items...");
       const itemElements =
         componentRef.current.querySelectorAll("[data-pdf-item]");
       for (let i = 0; i < itemElements.length; i++) {
@@ -639,8 +524,6 @@ const UniversalPDFDownloaderWithFacturX = ({
           sections.items.push(itemCapture);
         }
       }
-
-      console.log(`✅ ${sections.items.length} items capturés`);
 
       // Calculer les dimensions en mm
       const A4_WIDTH_MM = 210;
@@ -654,9 +537,6 @@ const UniversalPDFDownloaderWithFacturX = ({
       }
 
       const pixelsPerMM = referenceImg.width / A4_WIDTH_MM;
-      console.log(
-        `\n📐 Ratio: ${pixelsPerMM.toFixed(2)} pixels/mm (basé sur largeur ${referenceImg.width}px)`
-      );
 
       // Calculer les hauteurs en mm de chaque section
       const getHeightMM = (img) => (img ? img.height / pixelsPerMM : 0);
@@ -675,22 +555,7 @@ const UniversalPDFDownloaderWithFacturX = ({
         footer: getHeightMM(sections.footer?.img),
       };
 
-      console.log("\n📏 Hauteurs des sections (mm):");
-      console.log(`  Header: ${heights.header.toFixed(1)}mm`);
-      console.log(`  Info: ${heights.info.toFixed(1)}mm`);
-      console.log(`  Note d'en-tête: ${heights.headerNotes.toFixed(1)}mm`);
-      console.log(`  Montant du marché: ${heights.marketAmount.toFixed(1)}mm`);
-      console.log(`  Table header: ${heights.tableHeader.toFixed(1)}mm`);
-      console.log(`  Items: ${heights.items.length} items`);
-      console.log(`  Totaux: ${heights.totals.toFixed(1)}mm`);
-      console.log(
-        `  Récapitulatif situation: ${heights.situationRecap.toFixed(1)}mm`
-      );
-      console.log(`  Footer: ${heights.footer.toFixed(1)}mm`);
-
       // Calculer la pagination intelligente
-      console.log("\n📄 CALCUL DE LA PAGINATION");
-      console.log("=".repeat(60));
 
       const MARGIN_TOP = 10; // 10mm marge haute
       const MARGIN_BOTTOM = 0; // Pas de marge basse (pagination collée)
@@ -702,10 +567,6 @@ const UniversalPDFDownloaderWithFacturX = ({
 
       // Hauteur disponible pour les pages (avec pagination réservée)
       const AVAILABLE_HEIGHT = A4_HEIGHT_MM - MARGIN_TOP - PAGINATION_HEIGHT;
-
-      console.log(
-        `Hauteur disponible par page: ${AVAILABLE_HEIGHT.toFixed(1)}mm (pagination: ${PAGINATION_HEIGHT}mm)`
-      );
 
       // Construire les pages
       const pages = [];
@@ -766,10 +627,6 @@ const UniversalPDFDownloaderWithFacturX = ({
 
       // Ajouter les items un par un avec pagination intelligente
       // Les items utilisent TOUTE la hauteur disponible (pas de réservation footer)
-      console.log(`\n📦 Ajout des ${sections.items.length} items...`);
-      console.log(
-        `   Hauteur disponible pour items: ${AVAILABLE_HEIGHT.toFixed(1)}mm (sans réservation footer)`
-      );
 
       for (let i = 0; i < sections.items.length; i++) {
         const itemHeight = heights.items[i];
@@ -777,14 +634,9 @@ const UniversalPDFDownloaderWithFacturX = ({
           i < sections.items.length - 1 ? 0.5 : SECTION_SPACING;
         const totalHeight = itemHeight + itemSpacing;
 
-        console.log(
-          `  Item ${i + 1}: ${itemHeight.toFixed(1)}mm (page actuelle: ${currentPage.currentHeight.toFixed(1)}mm)`
-        );
-
         // Vérifier si l'item rentre sur la page actuelle (SANS réserver le footer)
         if (currentPage.currentHeight + totalHeight > AVAILABLE_HEIGHT) {
           // Item ne rentre pas, nouvelle page nécessaire
-          console.log(`    ➜ Nouvelle page nécessaire`);
           pages.push(currentPage);
           currentPage = {
             number: pages.length + 1,
@@ -801,9 +653,6 @@ const UniversalPDFDownloaderWithFacturX = ({
               spacing: 0,
             });
             currentPage.currentHeight += heights.tableHeader;
-            console.log(
-              `    + Table header répété (${heights.tableHeader.toFixed(1)}mm)`
-            );
           }
         }
 
@@ -816,13 +665,9 @@ const UniversalPDFDownloaderWithFacturX = ({
           itemIndex: i,
         });
         currentPage.currentHeight += totalHeight;
-        console.log(
-          `    ✓ Item ${i + 1} ajouté (hauteur totale page: ${currentPage.currentHeight.toFixed(1)}mm)`
-        );
       }
 
       // Ajouter totaux (ne peut pas être coupé)
-      console.log(`\n📊 Ajout des sections finales...`);
 
       // Calculer la hauteur totale des sections finales
       let totalFinalSectionsHeight = 0;
@@ -838,22 +683,6 @@ const UniversalPDFDownloaderWithFacturX = ({
         currentPage.currentHeight + totalFinalSectionsHeight + heights.footer <=
         AVAILABLE_HEIGHT;
 
-      if (everythingFitsOnCurrentPage) {
-        console.log(
-          `   ✅ Toutes les sections finales + footer rentrent sur cette page`
-        );
-        console.log(
-          `   ⚠️ Réservation de l'espace du footer (${heights.footer.toFixed(1)}mm)`
-        );
-      } else {
-        console.log(
-          `   ⚠️ Les sections finales ne rentrent pas toutes avec le footer`
-        );
-        console.log(
-          `   ➜ Utilisation de toute la hauteur disponible (pas de réservation footer)`
-        );
-      }
-
       if (sections.totals) {
         const totalHeight = heights.totals + SECTION_SPACING;
 
@@ -863,7 +692,6 @@ const UniversalPDFDownloaderWithFacturX = ({
           : currentPage.currentHeight + totalHeight;
 
         if (spaceCheck > AVAILABLE_HEIGHT) {
-          console.log(`  Totaux: nouvelle page nécessaire`);
           pages.push(currentPage);
           currentPage = {
             number: pages.length + 1,
@@ -871,14 +699,6 @@ const UniversalPDFDownloaderWithFacturX = ({
             currentHeight: 0,
           };
 
-          // Recalculer si tout rentre sur la nouvelle page
-          const newPageCheck =
-            totalFinalSectionsHeight + heights.footer <= AVAILABLE_HEIGHT;
-          if (newPageCheck) {
-            console.log(
-              `   ✅ Sur cette nouvelle page, tout rentre avec le footer`
-            );
-          }
         }
 
         currentPage.sections.push({
@@ -889,7 +709,6 @@ const UniversalPDFDownloaderWithFacturX = ({
           canBreak: false,
         });
         currentPage.currentHeight += totalHeight;
-        console.log(`  ✓ Totaux ajouté (${heights.totals.toFixed(1)}mm)`);
       }
 
       // Ajouter VAT exemption et terms (peuvent être coupés)
@@ -923,10 +742,6 @@ const UniversalPDFDownloaderWithFacturX = ({
           ? AVAILABLE_HEIGHT - currentPage.currentHeight - heights.footer
           : AVAILABLE_HEIGHT - currentPage.currentHeight;
 
-        console.log(
-          `  ${section.type}: ${section.height.toFixed(1)}mm (espace restant: ${spaceRemaining.toFixed(1)}mm)`
-        );
-
         if (section.height <= spaceRemaining) {
           // La section rentre entièrement
           currentPage.sections.push({
@@ -935,12 +750,8 @@ const UniversalPDFDownloaderWithFacturX = ({
             canBreak: true,
           });
           currentPage.currentHeight += section.height + SECTION_SPACING;
-          console.log(`    ✓ Section ajoutée entièrement`);
         } else {
           // La section doit être coupée
-          console.log(
-            `    ⚠️ Section trop longue, sera coupée sur plusieurs pages`
-          );
 
           // Ajouter la partie qui rentre sur la page actuelle
           if (spaceRemaining > 20) {
@@ -956,9 +767,6 @@ const UniversalPDFDownloaderWithFacturX = ({
               partialHeight: spaceRemaining - SECTION_SPACING,
             });
             currentPage.currentHeight += spaceRemaining;
-            console.log(
-              `    ✓ Partie 1 ajoutée (${(spaceRemaining - SECTION_SPACING).toFixed(1)}mm)`
-            );
 
             // Créer une nouvelle page pour le reste
             pages.push(currentPage);
@@ -981,9 +789,6 @@ const UniversalPDFDownloaderWithFacturX = ({
               partialHeight: remainingHeight,
             });
             currentPage.currentHeight += remainingHeight + SECTION_SPACING;
-            console.log(
-              `    ✓ Partie 2 ajoutée (${remainingHeight.toFixed(1)}mm)`
-            );
           } else {
             // Pas assez de place, mettre toute la section sur la page suivante
             pages.push(currentPage);
@@ -999,14 +804,12 @@ const UniversalPDFDownloaderWithFacturX = ({
               canBreak: true,
             });
             currentPage.currentHeight += section.height + SECTION_SPACING;
-            console.log(`    ✓ Section entière sur nouvelle page`);
           }
         }
       }
 
       // Ajouter le récapitulatif de situation si présent (sur une nouvelle page)
       if (sections.situationRecap && heights.situationRecap > 0) {
-        console.log(`\n📊 Ajout du récapitulatif de situation...`);
 
         // Le récapitulatif de situation doit être sur une nouvelle page
         pages.push(currentPage);
@@ -1024,15 +827,11 @@ const UniversalPDFDownloaderWithFacturX = ({
           canBreak: false,
         });
         currentPage.currentHeight += heights.situationRecap + SECTION_SPACING;
-        console.log(
-          `  ✓ Récapitulatif de situation ajouté (${heights.situationRecap.toFixed(1)}mm)`
-        );
       }
 
       // Vérifier si le footer rentre sur la page courante
       if (currentPage.currentHeight + heights.footer > AVAILABLE_HEIGHT) {
         // Pas assez de place pour le footer, créer une page dédiée
-        console.log(`⚠️ Footer ne rentre pas, création d'une page dédiée`);
         pages.push(currentPage);
         currentPage = {
           number: pages.length + 1,
@@ -1044,11 +843,7 @@ const UniversalPDFDownloaderWithFacturX = ({
       // Ajouter la dernière page
       pages.push(currentPage);
 
-      console.log(`✅ ${pages.length} page(s) calculée(s)`);
-
       // Créer le PDF
-      console.log("\n📄 ASSEMBLAGE DU PDF");
-      console.log("=".repeat(60));
       const pdf = new jsPDF({
         orientation: "portrait",
         unit: "mm",
@@ -1065,22 +860,11 @@ const UniversalPDFDownloaderWithFacturX = ({
           pdf.addPage();
         }
 
-        console.log(`\n📄 Page ${page.number}/${pages.length}`);
         let currentY = MARGIN_TOP;
 
         // Ajouter chaque section de la page avec marges
         for (const section of page.sections) {
           if (!section.data) continue;
-
-          if (section.isPartial) {
-            console.log(
-              `  + ${section.type} (PARTIEL: ${section.height.toFixed(1)}mm de ${section.partialStart.toFixed(1)}mm à ${(section.partialStart + section.partialHeight).toFixed(1)}mm)`
-            );
-          } else {
-            console.log(
-              `  + ${section.type} (${section.height.toFixed(1)}mm + ${section.spacing.toFixed(1)}mm spacing)`
-            );
-          }
 
           if (section.isPartial) {
             // Section partielle : utiliser un canvas pour découper
@@ -1171,9 +955,6 @@ const UniversalPDFDownloaderWithFacturX = ({
             "FAST"
           );
 
-          console.log(
-            `  + Footer collé à la pagination (${footerYPosition.toFixed(2)}mm)`
-          );
         }
 
         // Extraire la couleur du footer depuis data.appearance
@@ -1212,7 +993,6 @@ const UniversalPDFDownloaderWithFacturX = ({
         const textY = paginationY + paginationHeight / 2 + 1.5; // Centré avec padding équilibré
         pdf.text(pageText, A4_WIDTH_MM - textWidth - MARGIN_RIGHT, textY);
 
-        console.log(`  ✅ Page ${page.number} assemblée`);
       }
 
       // Nom du fichier
@@ -1226,11 +1006,8 @@ const UniversalPDFDownloaderWithFacturX = ({
           ? `${documentType}_${prefix}-${number}.pdf`
           : `${documentType}_${number}.pdf`);
 
-      console.log(`\n💾 Fichier: ${fileName}`);
-
       // Intégration Factur-X
       if (canUseFacturX) {
-        console.log("\n🔧 Tentative intégration Factur-X...");
         const validation = validateFacturXData(data);
 
         if (validation.isValid) {
@@ -1275,7 +1052,6 @@ const UniversalPDFDownloaderWithFacturX = ({
               document.body.removeChild(link);
               URL.revokeObjectURL(url);
 
-              console.log("✅ PDF Factur-X téléchargé avec succès");
               toast.success("PDF Factur-X téléchargé", {
                 description: `${pages.length} page(s) • PDF/A-3 + XML EN16931`,
                 icon: <FileCheck className="h-4 w-4" />,
@@ -1292,10 +1068,6 @@ const UniversalPDFDownloaderWithFacturX = ({
             });
           }
         } else {
-          console.warn(
-            "⚠️ Validation Factur-X échouée:",
-            validation.errors.slice(0, 3)
-          );
           toast.info("PDF standard", {
             description: "Données Factur-X incomplètes",
           });
@@ -1304,14 +1076,10 @@ const UniversalPDFDownloaderWithFacturX = ({
 
       // Téléchargement PDF standard
       pdf.save(fileName);
-      console.log("✅ PDF standard téléchargé");
       toast.success("PDF téléchargé avec succès", {
         description: `${pages.length} page(s) générée(s)`,
       });
 
-      console.log("\n" + "=".repeat(70));
-      console.log("✅ GÉNÉRATION TERMINÉE AVEC SUCCÈS");
-      console.log("=".repeat(70) + "\n");
     } catch (error) {
       console.error("\n" + "=".repeat(70));
       console.error("❌ ERREUR DE GÉNÉRATION");

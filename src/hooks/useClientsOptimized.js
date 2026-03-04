@@ -127,7 +127,6 @@ export const useCreateClientOptimized = () => {
               }
             });
           } catch (error) {
-            console.warn('⚠️ Erreur mise à jour cache CREATE_CLIENT:', error);
           }
         },
       });
@@ -219,7 +218,6 @@ export const useUpdateClientOptimized = () => {
               }
             });
           } catch (error) {
-            console.warn('⚠️ Erreur mise à jour cache UPDATE_CLIENT:', error);
           }
         },
       });
@@ -304,7 +302,6 @@ export const useDeleteClientOptimized = () => {
             // Nettoyer les références orphelines
             cache.gc();
           } catch (error) {
-            console.warn('⚠️ Erreur mise à jour cache DELETE_CLIENT:', error);
           }
         },
       });

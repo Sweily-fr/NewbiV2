@@ -357,15 +357,6 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
     try {
       setUpdatingRoleForMember(member.id);
 
-      console.log("🔄 Changement de rôle pour:", {
-        memberId: member.id,
-        email: member.email,
-        currentRole: member.role,
-        newRole,
-        type: member.type,
-        orgId: selectedOrg?.id,
-      });
-
       let result;
 
       if (member.type === "invitation") {

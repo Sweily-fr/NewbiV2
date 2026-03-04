@@ -52,9 +52,7 @@ export default function SignatureEditor({
 
   // Initialize default structure based on template
   const initializeFromTemplate = (template) => {
-    console.log("🎨 [SignatureEditor] Initializing root container for template:", template);
     const rootStructure = getDefaultBlocksForTemplate(template);
-    console.log("🎨 [SignatureEditor] Generated root container:", rootStructure);
     setRootContainer(rootStructure);
   };
 
@@ -63,24 +61,19 @@ export default function SignatureEditor({
     if (isEditMode && rootContainer && rootContainer.id) {
       // Si on est en mode édition et qu'on a un rootContainer, c'est qu'il a été restauré
       restoredFromContainerStructureRef.current = true;
-      console.log("🔄 [SignatureEditor] Marked as restored from containerStructure");
     }
   }, [isEditMode, rootContainer]);
 
   // Initialize when template changes - SAUF si on a restauré une structure sauvegardée
   useEffect(() => {
-    console.log("🔄 [SignatureEditor] useEffect triggered - templateId:", templateId, "lastTemplate:", lastTemplateRef.current, "rootContainer:", rootContainer?.id, "isEditMode:", isEditMode, "restoredFromContainerStructure:", restoredFromContainerStructureRef.current);
-
     // En mode édition avec une structure restaurée, ne pas réinitialiser
     if (isEditMode && restoredFromContainerStructureRef.current) {
-      console.log("⏭️ [SignatureEditor] Skipping reinitialization - using restored containerStructure");
       lastTemplateRef.current = templateId;
       return;
     }
 
     // Initialize if rootContainer is null OR if template has changed
     if (!rootContainer || lastTemplateRef.current !== templateId) {
-      console.log("✅ [SignatureEditor] Reinitializing for template:", templateId);
       initializeFromTemplate(templateId);
       lastTemplateRef.current = templateId;
     }

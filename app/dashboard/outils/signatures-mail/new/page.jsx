@@ -1958,7 +1958,7 @@ export default function NewSignaturePage() {
     setCopySuccess(false);
     try {
       const result = await copyToClipboard();
-      console.log('[handleCopyFromToolbar] Result:', result);
+
       if (result.success) {
         setCopySuccess(true);
         // Reset après 2 secondes

@@ -100,7 +100,6 @@ function TreeItemLabel({ item: propItem, children, className, ...props }) {
   const item = propItem || currentItem;
 
   if (!item) {
-    console.warn("TreeItemLabel: No item provided via props or context");
     return null;
   }
 

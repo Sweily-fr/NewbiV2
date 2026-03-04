@@ -230,8 +230,6 @@ const TaskActivityComponent = ({ task: initialTask, workspaceId, currentUser, bo
         commentInput.mentionedUserIds = mentionedUserIds;
       }
 
-      console.log('[Mention Debug] commentInput envoyé:', JSON.stringify(commentInput, null, 2));
-
       const result = await addComment({
         variables: {
           taskId,

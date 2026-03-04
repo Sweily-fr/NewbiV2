@@ -196,7 +196,6 @@ export function SendDocumentModal({
             .join("");
           pdfBase64 = btoa(binaryString);
         } catch (pdfError) {
-          console.warn("Erreur génération PDF côté client:", pdfError);
           // Continuer sans PDF - le backend essaiera de le générer
         }
       }

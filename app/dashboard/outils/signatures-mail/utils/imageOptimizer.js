@@ -84,11 +84,6 @@ export async function processImageBeforeUpload(file, options = {}) {
         sourceX = (img.width - minDimension) / 2;
         sourceY = (img.height - minDimension) / 2;
         
-        console.log("🔥 MODE COVER - Recadrage carré:", {
-          original: { width: img.width, height: img.height },
-          source: { x: sourceX, y: sourceY, width: sourceWidth, height: sourceHeight },
-          destination: { width: maxWidth, height: maxHeight }
-        });
       } else if (fit === 'contain') {
         // MODE CONTAIN : Contenir toute l'image
         const ratio = Math.min(maxWidth / img.width, maxHeight / img.height);
@@ -125,14 +120,6 @@ export async function processImageBeforeUpload(file, options = {}) {
       if (sharpen) {
         applySharpenFilter(ctx, canvas.width, canvas.height);
       }
-
-      console.log("🎨 Image optimisée:", {
-        original: { width: img.width, height: img.height },
-        source: { x: sourceX, y: sourceY, width: sourceWidth, height: sourceHeight },
-        canvas: { width: canvas.width, height: canvas.height },
-        destination: { x: offsetX, y: offsetY, width: destWidth, height: destHeight },
-        fit: fit
-      });
 
       // Convertir en blob
       canvas.toBlob(

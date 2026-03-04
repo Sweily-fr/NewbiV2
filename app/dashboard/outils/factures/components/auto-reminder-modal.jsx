@@ -100,9 +100,6 @@ Cordialement,
       // Séparer les données email des données de relance
       const { fromEmail, fromName, replyTo, ...reminderData } = data;
 
-      console.log("📤 Données de relance à sauvegarder:", reminderData);
-      console.log("📤 excludedClientIds:", reminderData.excludedClientIds);
-
       // Sauvegarder les paramètres email
       await updateEmailSettings({
         variables: {

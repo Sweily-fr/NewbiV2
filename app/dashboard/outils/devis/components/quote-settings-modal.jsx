@@ -134,19 +134,6 @@ export function QuoteSettingsModal({ open, onOpenChange }) {
           const org = await getActiveOrganization();
           setOrganization(org);
           
-          console.log("📋 Chargement des paramètres de l'organisation (devis):", {
-            headerNotes: org?.quoteHeaderNotes || org?.documentHeaderNotes,
-            footerNotes: org?.quoteFooterNotes || org?.documentFooterNotes,
-            termsAndConditions: org?.quoteTermsAndConditions || org?.documentTermsAndConditions,
-            showBankDetails: org?.showBankDetails,
-            primaryColor: org?.documentHeaderBgColor,
-            bankDetails: {
-              iban: org?.bankIban,
-              bic: org?.bankBic,
-              bankName: org?.bankName,
-            },
-          });
-          
           // Préparer les valeurs initiales depuis l'organisation (même structure que l'éditeur)
           const formValues = {
             // Numérotation - préfixe par défaut (le numéro sera auto-rempli par le hook useQuoteNumber)
@@ -186,8 +173,6 @@ export function QuoteSettingsModal({ open, onOpenChange }) {
             },
             clientPositionRight: org?.quoteClientPositionRight || false,
           };
-          
-          console.log("📝 Valeurs initiales du formulaire (devis):", formValues);
           
           setInitialValues(formValues);
           setDebouncedFormData(formValues);
@@ -304,9 +289,6 @@ export function QuoteSettingsModal({ open, onOpenChange }) {
         bankName: formValues.bankDetails?.bankName || "",
         showBankDetails: formValues.showBankDetails,
       };
-
-      console.log("💾 Sauvegarde des paramètres pour l'organisation (devis):", organization.id);
-      console.log("💾 Données à sauvegarder:", updateData);
 
       await updateOrganization(organization.id, updateData);
       

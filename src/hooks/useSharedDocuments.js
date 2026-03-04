@@ -747,7 +747,6 @@ export function useCreateDefaultFolders() {
   const createDefaultFolders = async (existingFolderNames = []) => {
     // Ne pas exécuter si workspaceId n'est pas disponible
     if (!workspaceId) {
-      console.warn("createDefaultFolders: workspaceId not available");
       return [];
     }
 

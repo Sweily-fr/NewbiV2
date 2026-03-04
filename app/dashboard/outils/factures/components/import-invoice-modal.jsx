@@ -288,7 +288,6 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
       try {
         await client.refetchQueries({ include: [GET_IMPORTED_INVOICES] });
       } catch (e) {
-        console.warn("⚠️ refetchQueries échoué:", e.message);
       }
       onImportSuccess?.();
     }

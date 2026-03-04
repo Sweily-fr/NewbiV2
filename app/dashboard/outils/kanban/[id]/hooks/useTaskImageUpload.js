@@ -191,7 +191,7 @@ export function useTaskImageUpload(taskId, workspaceId, boardId) {
               });
             }
           } catch (cacheError) {
-            console.warn('Erreur mise à jour cache Apollo:', cacheError);
+
           }
         }
         
@@ -258,7 +258,6 @@ export function useTaskImageUpload(taskId, workspaceId, boardId) {
             });
           }
         } catch (cacheError) {
-          console.warn('Erreur mise à jour cache Apollo:', cacheError);
         }
       }
       

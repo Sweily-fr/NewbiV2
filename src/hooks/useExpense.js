@@ -42,7 +42,6 @@ export const useExpense = () => {
         try {
           financialAnalysis = JSON.parse(financialAnalysis);
         } catch (e) {
-          console.warn("⚠️ Impossible de parser financialAnalysise:", e);
           financialAnalysis = null;
         }
       }

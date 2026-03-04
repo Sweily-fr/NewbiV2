@@ -154,7 +154,7 @@ export function ConvertToInvoiceModal({ open, onOpenChange, tasks, onConvert, ge
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-lg p-4 sm:p-6 max-h-[90dvh] flex flex-col">
+      <DialogContent className="sm:max-w-lg p-4 sm:p-6 max-h-[90dvh] flex flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle>
             Convertir en facture
@@ -279,7 +279,7 @@ export function ConvertToInvoiceModal({ open, onOpenChange, tasks, onConvert, ge
 
           {/* Liste des tâches - max ~3 visibles, flex-1 sur mobile pour remplir */}
           <ScrollArea className="max-h-[180px] sm:max-h-[228px] min-h-0 flex-1">
-            <div className="space-y-2 pr-3">
+            <div className="space-y-2 pr-3 min-w-0">
               {filteredTasks.length === 0 ? (
                 <div className="text-center py-6 text-sm text-muted-foreground">
                   Aucune tâche trouvée

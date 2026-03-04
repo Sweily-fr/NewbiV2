@@ -19,7 +19,6 @@ export function useColumnCollapse(boardId) {
         setCollapsedColumns(new Set(parsedData));
       }
     } catch (error) {
-      console.warn('Erreur lors du chargement des colonnes collapsées:', error);
       // En cas d'erreur, on repart avec un état vide
       setCollapsedColumns(new Set());
     }
@@ -30,7 +29,6 @@ export function useColumnCollapse(boardId) {
     try {
       localStorage.setItem(storageKey, JSON.stringify([...newCollapsedSet]));
     } catch (error) {
-      console.warn('Erreur lors de la sauvegarde des colonnes collapsées:', error);
     }
   }, [storageKey]);
 

@@ -20,7 +20,6 @@ export function ResourceNotFound({ listUrl, homeUrl = "/dashboard" }) {
   useEffect(() => {
     // Si une URL de liste est fournie, l'utiliser
     if (listUrl) {
-      console.log("🔄 Redirection vers:", listUrl);
       router.replace(listUrl);
       return;
     }
@@ -44,11 +43,9 @@ export function ResourceNotFound({ listUrl, homeUrl = "/dashboard" }) {
       }
 
       const parentUrl = "/" + pathSegments.join("/");
-      console.log("🔄 Redirection vers la page parent:", parentUrl);
       router.replace(parentUrl);
     } else {
       // Fallback: retour à la page d'accueil
-      console.log("🔄 Redirection vers la page d'accueil:", homeUrl);
       router.replace(homeUrl);
     }
   }, [pathname, listUrl, homeUrl, router]);

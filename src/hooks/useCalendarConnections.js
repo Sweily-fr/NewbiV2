@@ -9,7 +9,6 @@ import {
   PUSH_EVENT_TO_CALENDAR,
   UPDATE_AUTO_SYNC,
 } from "@/src/graphql/mutations/calendarConnection";
-import { GET_EVENTS } from "@/src/graphql/queries/event";
 import { toast } from "@/src/components/ui/sonner";
 
 /**
@@ -53,7 +52,7 @@ export const useAvailableCalendars = (connectionId, options = {}) => {
  */
 export const useConnectAppleCalendar = () => {
   const [connectMutation, { loading, error }] = useMutation(CONNECT_APPLE_CALENDAR, {
-    refetchQueries: [{ query: GET_CALENDAR_CONNECTIONS }, { query: GET_EVENTS }],
+    refetchQueries: ["GetCalendarConnections", "GetEvents"],
     awaitRefetchQueries: true,
   });
 
@@ -82,7 +81,7 @@ export const useConnectAppleCalendar = () => {
  */
 export const useDisconnectCalendar = () => {
   const [disconnectMutation, { loading, error }] = useMutation(DISCONNECT_CALENDAR, {
-    refetchQueries: [{ query: GET_CALENDAR_CONNECTIONS }, { query: GET_EVENTS }],
+    refetchQueries: ["GetCalendarConnections", "GetEvents"],
     awaitRefetchQueries: true,
   });
 
@@ -111,7 +110,8 @@ export const useDisconnectCalendar = () => {
  */
 export const useSyncCalendar = () => {
   const [syncMutation, { loading, error }] = useMutation(SYNC_CALENDAR, {
-    refetchQueries: [{ query: GET_CALENDAR_CONNECTIONS }, { query: GET_EVENTS }],
+    refetchQueries: ["GetCalendarConnections", "GetEvents"],
+    awaitRefetchQueries: true,
   });
 
   const sync = async (connectionId) => {
@@ -139,7 +139,8 @@ export const useSyncCalendar = () => {
  */
 export const useSyncAllCalendars = () => {
   const [syncAllMutation, { loading, error }] = useMutation(SYNC_ALL_CALENDARS, {
-    refetchQueries: [{ query: GET_CALENDAR_CONNECTIONS }, { query: GET_EVENTS }],
+    refetchQueries: ["GetCalendarConnections", "GetEvents"],
+    awaitRefetchQueries: true,
   });
 
   const syncAll = async () => {
@@ -167,7 +168,7 @@ export const useSyncAllCalendars = () => {
  */
 export const usePushEventToCalendar = () => {
   const [pushMutation, { loading, error }] = useMutation(PUSH_EVENT_TO_CALENDAR, {
-    refetchQueries: [{ query: GET_EVENTS }],
+    refetchQueries: ["GetEvents"],
   });
 
   const pushEvent = async (eventId, connectionId) => {
@@ -197,7 +198,7 @@ export const usePushEventToCalendar = () => {
  */
 export const useUpdateAutoSync = () => {
   const [updateMutation, { loading, error }] = useMutation(UPDATE_AUTO_SYNC, {
-    refetchQueries: [{ query: GET_CALENDAR_CONNECTIONS }],
+    refetchQueries: ["GetCalendarConnections"],
   });
 
   const updateAutoSync = async (connectionId, enabled) => {

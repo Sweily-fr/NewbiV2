@@ -191,15 +191,6 @@ export default function InvoiceSettingsView({
     setValue("prefix", value, { shouldValidate: true });
   };
 
-  // Debug: Log des couleurs reçues
-  useEffect(() => {
-    console.log("🎨 InvoiceSettingsView - Couleurs reçues:", {
-      textColor: data.appearance?.textColor,
-      headerTextColor: data.appearance?.headerTextColor,
-      headerBgColor: data.appearance?.headerBgColor,
-    });
-  }, [data.appearance]);
-
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showBankDetailsDialog, setShowBankDetailsDialog] = useState(false);

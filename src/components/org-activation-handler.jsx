@@ -25,9 +25,6 @@ export function OrgActivationHandler() {
       if (orgCreated === "true" && paymentSuccess === "true" && !hasProcessed) {
         // Marquer comme traité IMMÉDIATEMENT pour éviter les doublons
         sessionStorage.setItem("org_activation_processed", "true");
-        console.log(
-          "🔄 [ORG ACTIVATION] Activation de la nouvelle organisation..."
-        );
 
         try {
           // Attendre que le webhook crée l'organisation (max 5 secondes)
@@ -58,9 +55,6 @@ export function OrgActivationHandler() {
 
               if (diffMinutes < 2) {
                 newOrgId = newestOrg.id;
-                console.log(
-                  `✅ [ORG ACTIVATION] Nouvelle organisation trouvée: ${newOrgId}`
-                );
               }
             }
 
@@ -72,10 +66,6 @@ export function OrgActivationHandler() {
             await authClient.organization.setActive({
               organizationId: newOrgId,
             });
-
-            console.log(
-              `✅ [ORG ACTIVATION] Organisation activée: ${newOrgId}`
-            );
 
             // Nettoyer le sessionStorage
             sessionStorage.removeItem("pending_org_creation");
@@ -89,9 +79,6 @@ export function OrgActivationHandler() {
             // Nettoyer les paramètres de l'URL sans recharger
             router.replace("/dashboard");
           } else {
-            console.warn(
-              "⚠️ [ORG ACTIVATION] Organisation non trouvée après 5 secondes"
-            );
             sessionStorage.removeItem("org_activation_processed");
             toast.error("Erreur lors de l'activation de l'organisation", {
               description: "Veuillez rafraîchir la page.",

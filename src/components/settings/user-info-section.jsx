@@ -71,14 +71,9 @@ export default function UserInfoSection({ onTabChange }) {
   // Écouter l'événement de configuration Stripe complète
   useEffect(() => {
     const handleStripeConfigComplete = async () => {
-      console.log(
-        "🔄 Configuration Stripe complète - Rafraîchissement du statut"
-      );
       await refetchStatus();
 
-      // Attendre un peu et vérifier à nouveau (parfois Stripe met du temps à mettre à jour)
       setTimeout(async () => {
-        console.log("🔄 Deuxième vérification du statut Stripe");
         await refetchStatus();
       }, 2000);
     };
@@ -92,18 +87,6 @@ export default function UserInfoSection({ onTabChange }) {
       );
     };
   }, [refetchStatus]);
-
-  // Logger le statut Stripe pour déboguer
-  useEffect(() => {
-    if (stripeAccount) {
-      console.log("📊 Statut Stripe actuel:", {
-        accountId: stripeAccount.accountId,
-        isOnboarded: stripeAccount.isOnboarded,
-        chargesEnabled: stripeAccount.chargesEnabled,
-        canReceivePayments,
-      });
-    }
-  }, [stripeAccount, canReceivePayments]);
 
   // Gérer les paramètres de retour de Stripe (sauf stripe_step1_complete qui est géré globalement)
   useEffect(() => {

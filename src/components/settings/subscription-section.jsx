@@ -312,7 +312,6 @@ export function SubscriptionSection({
           localStorage.removeItem(`subscription-${activeOrgId}`);
           localStorage.removeItem("user-cache");
         } catch (e) {
-          console.warn("Erreur vidage cache:", e);
         }
         setTimeout(() => { window.location.reload(); }, 800);
       } else {

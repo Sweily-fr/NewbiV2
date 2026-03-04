@@ -133,9 +133,6 @@ function DashboardContent() {
 
     if (isFromBridge && workspaceId) {
       hasHandledBridgeReturn.current = true;
-      console.log(
-        "🏦 Retour de Bridge détecté, synchronisation des comptes..."
-      );
 
       // Afficher l'overlay de chargement immédiatement
       setIsBankSyncing(true);
@@ -155,7 +152,6 @@ function DashboardContent() {
 
           if (response.ok) {
             const data = await response.json();
-            console.log("✅ Sync bancaire terminée:", data);
             // Rafraîchir les données du dashboard
             refreshData();
           } else {
@@ -189,9 +185,6 @@ function DashboardContent() {
 
     if (isFromStripe && session?.user?.id) {
       hasHandledStripeReturn.current = true;
-      console.log(
-        "🔄 Retour de Stripe détecté sur dashboard, vérification du statut..."
-      );
 
       const timer = setTimeout(async () => {
         try {
@@ -199,15 +192,8 @@ function DashboardContent() {
           await checkAndUpdateAccountStatus();
           await refetchStatus();
 
-          console.log("✅ Statut Stripe Connect mis à jour");
-
           // Ouvrir le modal settings sur la section sécurité
           if (shouldOpenSettings) {
-            // Déclencher l'ouverture du modal settings
-            console.log(
-              "🔧 Ouverture du modal settings sur la section sécurité"
-            );
-
             // Dispatch d'un event pour ouvrir le modal settings
             window.dispatchEvent(
               new CustomEvent("openSettingsModal", {
@@ -304,24 +290,6 @@ function DashboardContent() {
       processExpensesWithBankForCharts(filteredPaidExpenses, filteredTransactions),
     [filteredPaidExpenses, filteredTransactions]
   );
-
-  // Debug: vérifier les données des graphiques entrées/sorties
-  console.warn("📊 [DASHBOARD] Chart data debug:", {
-    filteredTransactionsCount: filteredTransactions.length,
-    incomeDataPoints: incomeChartData.length,
-    incomeNonZero: incomeChartData.filter(d => d.desktop > 0).length,
-    incomeTotalDesktop: incomeChartData.reduce((sum, d) => sum + (d.desktop || 0), 0),
-    expenseDataPoints: expenseChartData.length,
-    expenseNonZero: expenseChartData.filter(d => d.desktop > 0).length,
-    expenseTotalDesktop: expenseChartData.reduce((sum, d) => sum + (d.desktop || 0), 0),
-    sampleIncomeData: incomeChartData.filter(d => d.desktop > 0).slice(0, 3),
-    sampleExpenseData: expenseChartData.filter(d => d.desktop > 0).slice(0, 3),
-    sampleTransactions: filteredTransactions.slice(0, 3).map(t => ({
-      amount: t.amount,
-      date: t.date,
-      description: t.description?.substring(0, 30),
-    })),
-  });
 
   // Utiliser les configurations importées
   const incomeChartConfig = getIncomeChartConfig();
@@ -628,7 +596,6 @@ function DashboardWithSearchParams() {
       searchParams.get("subscription_success") === "true";
 
     if (paymentSuccess || subscriptionSuccess) {
-      console.log("🎉 Paiement réussi détecté, affichage de l'animation Pro");
       setShowProAnimation(true);
       // Nettoyer l'URL des paramètres
       const cleanUrl = window.location.pathname;
@@ -638,7 +605,6 @@ function DashboardWithSearchParams() {
 
   const handleProAnimationComplete = () => {
     setShowProAnimation(false);
-    console.log("✅ Animation Pro terminée, dashboard accessible");
   };
 
   return (

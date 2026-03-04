@@ -35,16 +35,6 @@ const SignatureTemplate = ({
   const templateId = templateIdProp || signatureData.templateId || "template1";
   const spacings = signatureData.spacings ?? {};
 
-  // Debug: afficher le templateId reçu
-  console.log(
-    " [SignatureTemplate] templateId utilisé:",
-    templateId,
-    "prop:",
-    templateIdProp,
-    "signatureData:",
-    signatureData.templateId,
-  );
-
   // Props communs pour les composants
   const commonProps = {
     signatureData,

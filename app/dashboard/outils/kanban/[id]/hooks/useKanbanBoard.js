@@ -38,18 +38,12 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
     variables: { boardId: id, workspaceId },
     skip: !workspaceId || !id || !isSessionReady || isRedirecting,
     onData: ({ data: subscriptionData }) => {
-      console.log('📡 [Subscription] Données reçues:', subscriptionData?.data?.taskUpdated?.type, 'visitor:', subscriptionData?.data?.taskUpdated?.visitor);
       if (subscriptionData?.data?.taskUpdated) {
         const { type, task, taskId, visitor } = subscriptionData.data.taskUpdated;
         
         // Traiter immédiatement les mises à jour de profil visiteur
         if (type === 'VISITOR_PROFILE_UPDATED' && visitor) {
-          console.log('👤 [Subscription] Mise à jour profil visiteur détectée:', visitor.email, visitor.name);
-          // Refetch pour récupérer les données mises à jour depuis le serveur
-          // Les commentaires sont déjà mis à jour en base de données par le backend
-          refetch().then(() => {
-            console.log("✅ [Subscription] Board rechargé avec le nouveau profil visiteur:", visitor.name);
-          }).catch(error => {
+          refetch().catch(error => {
             console.error("❌ [Subscription] Erreur refetch après mise à jour profil visiteur:", error);
           });
           return; // Sortir après traitement
@@ -64,19 +58,13 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
               variables: { id, workspaceId }
             });
             
-            console.log("📝 [Subscription] Création tâche - Cache data:", cacheData?.board?.tasks?.length, "tâches");
-            
             if (cacheData?.board) {
               // Vérifier que la tâche n'existe pas déjà (ajoutée par la mutation update)
               const taskExists = (cacheData.board.tasks || []).some(
                 (t) => t.id === task.id
               );
-              if (taskExists) {
-                console.log("ℹ️ [Subscription] Tâche déjà dans le cache, skip:", task.title);
-              } else {
+              if (!taskExists) {
                 const newTasks = [...(cacheData.board.tasks || []), task];
-                console.log("✅ [Subscription] Ajout tâche au cache:", task.title, "- Total:", newTasks.length);
-
                 apolloClient.cache.writeQuery({
                   query: GET_BOARD,
                   variables: { id, workspaceId },
@@ -88,8 +76,6 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
                   }
                 });
               }
-            } else {
-              console.warn("⚠️ [Subscription] Cache board non trouvé pour id:", id, "workspaceId:", workspaceId);
             }
           } catch (error) {
             console.error("❌ [Subscription] Erreur mise à jour cache:", error);
@@ -139,8 +125,6 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
                 return (a.position || 0) - (b.position || 0);
               });
               
-              console.log("✅ [Subscription] Tâche déplacée - Mise à jour cache:", task.title, "→ position", task.position);
-              
               apolloClient.cache.writeQuery({
                 query: GET_BOARD,
                 variables: { id, workspaceId },
@@ -181,13 +165,6 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
                 }
               });
               
-              if (type === 'TIMER_STARTED') {
-                console.log("✅ [Subscription] Timer démarré dans le cache:", task.title);
-              } else if (type === 'TIMER_STOPPED') {
-                console.log("✅ [Subscription] Timer arrêté dans le cache:", task.title);
-              } else {
-                console.log("✅ [Subscription] Tâche mise à jour dans le cache:", task.title);
-              }
             }
           } catch (error) {
             console.error("❌ [Subscription] Erreur mise à jour cache (UPDATED/TIMER):", error);
@@ -227,8 +204,6 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
       if (subscriptionData?.data?.columnUpdated) {
         const { type, column, columnId } = subscriptionData.data.columnUpdated;
         
-        console.log("🔄 [Kanban] Mise à jour temps réel colonne:", type, column || columnId);
-        
         // Gestion des événements colonnes
         try {
           const cacheData = apolloClient.cache.readQuery({
@@ -240,8 +215,6 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
           
           // CREATED - Ajouter la nouvelle colonne
           if (type === 'CREATED' && column) {
-            console.log("✅ [Kanban] Colonne créée - Ajout au cache:", column.title);
-            
             // Vérifier si la colonne n'existe pas déjà
             const columnExists = cacheData.board.columns.some(c => c.id === column.id);
             if (!columnExists) {
@@ -260,8 +233,6 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
           
           // UPDATED - Mettre à jour la colonne existante
           else if (type === 'UPDATED' && column) {
-            console.log("✅ [Kanban] Colonne mise à jour - Mise à jour cache:", column.title);
-            
             apolloClient.cache.writeQuery({
               query: GET_BOARD,
               variables: { id, workspaceId },
@@ -278,8 +249,6 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
           
           // DELETED - Supprimer la colonne
           else if (type === 'DELETED' && columnId) {
-            console.log("✅ [Kanban] Colonne supprimée - Suppression du cache:", columnId);
-            
             apolloClient.cache.writeQuery({
               query: GET_BOARD,
               variables: { id, workspaceId },
@@ -294,16 +263,12 @@ export const useKanbanBoard = (id, isRedirecting = false) => {
           
           // REORDERED - Réorganiser les colonnes
           else if (type === 'REORDERED' && subscriptionData.data.columnUpdated.columns) {
-            console.log("🔄 [Kanban] Colonnes réorganisées - Mise à jour du cache");
-            
             const newColumnIds = subscriptionData.data.columnUpdated.columns;
             
             // Réorganiser les colonnes selon le nouvel ordre
             const reorderedColumns = newColumnIds.map(columnId => 
               cacheData.board.columns.find(col => col.id === columnId)
             ).filter(Boolean); // Filtrer les colonnes non trouvées
-            
-            console.log("✅ [Kanban] Nouvel ordre des colonnes:", reorderedColumns.map(c => c.title));
             
             apolloClient.cache.writeQuery({
               query: GET_BOARD,

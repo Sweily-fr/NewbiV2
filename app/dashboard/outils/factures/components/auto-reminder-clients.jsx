@@ -15,11 +15,6 @@ export default function AutoReminderClients() {
   // Récupérer la liste des clients
   const { clients, loading } = useClients();
 
-  console.log(
-    "👥 [AutoReminderClients] Clients chargés:",
-    clients?.map((c) => ({ id: c.id, name: c.name }))
-  );
-
   // Récupérer les clients exclus du formulaire
   const excludedClientIds = watch("excludedClientIds") || [];
 

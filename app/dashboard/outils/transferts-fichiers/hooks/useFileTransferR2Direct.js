@@ -44,9 +44,6 @@ export const useFileTransferR2Direct = (refetchTransfers) => {
    */
   const uploadChunkDirectToR2 = async (chunk, uploadUrl, chunkIndex) => {
     try {
-      console.log(`📤 Upload chunk ${chunkIndex} vers R2 (${(chunk.size / 1024 / 1024).toFixed(2)} MB)`);
-      console.log(`🔗 URL: ${uploadUrl.substring(0, 100)}...`);
-
       const response = await fetch(uploadUrl, {
         method: "PUT",
         body: chunk,
@@ -68,7 +65,6 @@ export const useFileTransferR2Direct = (refetchTransfers) => {
         );
       }
 
-      console.log(`✅ Chunk ${chunkIndex} uploadé avec succès`);
       return true;
     } catch (error) {
       console.error(`❌ Erreur upload chunk ${chunkIndex}:`, error);
@@ -87,12 +83,7 @@ export const useFileTransferR2Direct = (refetchTransfers) => {
     const totalChunks = chunks.length;
 
     try {
-      console.log(
-        `📦 Début upload DIRECT: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB) en ${totalChunks} chunks`
-      );
-
       // Étape 1 : Obtenir les URLs signées
-      console.log(`🔑 Demande de ${totalChunks} URLs signées...`);
       const { data: urlsData, errors: urlErrors } = await generatePresignedUrlsMutation({
         variables: {
           fileId: fileId,
@@ -112,8 +103,6 @@ export const useFileTransferR2Direct = (refetchTransfers) => {
       }
 
       const uploadUrls = urlsData.generatePresignedUploadUrls.uploadUrls;
-      console.log(`✅ ${uploadUrls.length} URLs signées reçues`);
-      console.log(`📋 Exemple d'URL:`, uploadUrls[0]?.uploadUrl?.substring(0, 150) + "...");
 
       // Étape 2 : Upload des chunks en parallèle vers R2
       const CONCURRENT_UPLOADS = 5;
@@ -153,12 +142,8 @@ export const useFileTransferR2Direct = (refetchTransfers) => {
 
         await Promise.all(batchPromises);
 
-        console.log(
-          `✅ Batch ${Math.floor(i / CONCURRENT_UPLOADS) + 1}/${Math.ceil(totalChunks / CONCURRENT_UPLOADS)} uploadé`
-        );
       }
 
-      console.log(`✅ Upload DIRECT terminé: ${totalChunks} chunks uploadés`);
       return fileId;
     } catch (error) {
       console.error(`❌ Erreur upload DIRECT pour ${file.name}:`, error);

@@ -80,7 +80,6 @@ export default function BankBalanceCard({
         setIsConnected(data.isConnected || false);
       }
     } catch (err) {
-      console.warn("⚠️ Erreur vérification statut bancaire:", err.message);
     }
   };
 
@@ -119,7 +118,6 @@ export default function BankBalanceCard({
         setLocalAccounts([]);
       }
     } catch (err) {
-      console.warn("⚠️ Erreur récupération comptes:", err.message);
       setLocalAccounts([]);
     } finally {
       setBankLoading(false);

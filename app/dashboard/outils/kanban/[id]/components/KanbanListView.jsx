@@ -249,7 +249,7 @@ function DraggableTaskRow({ task, column, onEditTask, index, children }) {
             gridTemplateColumns: '2.5fr 1fr 1fr 1fr 1fr 1fr 80px',
             gap: '2rem'
           }}
-          className={`grid px-2 py-1.5 items-center hover:bg-accent/5 cursor-grab active:cursor-grabbing group relative overflow-hidden border-b border-border/60 ${
+          className={`grid px-2 py-1.5 items-center cursor-grab active:cursor-grabbing group relative overflow-hidden border-b border-border/60 has-[.desc-trigger:hover]:bg-accent/5 ${
             snapshot.isDragging ? 'opacity-90 shadow-2xl bg-background border border-primary/40 rounded-lg z-[9999]' : ''
           }`}
           onClick={(e) => {
@@ -667,34 +667,26 @@ export function KanbanListView({
                                     </DropdownMenuContent>
                                   </DropdownMenu>
                                   <div className="flex-1 w-0 flex items-center gap-1 min-w-0">
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <p className="text-sm truncate font-normal text-foreground/90 group-hover:text-foreground">{task.title}</p>
-                                      </TooltipTrigger>
-                                      <TooltipContent side="top" className="max-w-sm break-words">
-                                        {task.title}
-                                      </TooltipContent>
-                                    </Tooltip>
+                                    <p className="text-sm truncate font-normal text-foreground/90">{task.title}</p>
                                     {task.description && (
-                                      <Popover>
-                                        <PopoverTrigger asChild>
+                                      <Tooltip delayDuration={200} disableHoverableContent>
+                                        <TooltipTrigger asChild>
                                           <button
-                                            className="cursor-pointer text-muted-foreground/70 hover:text-foreground transition-colors flex-shrink-0 ml-4"
+                                            className="desc-trigger cursor-pointer text-muted-foreground/70 hover:text-foreground transition-colors flex-shrink-0 ml-4"
                                             onClick={(e) => e.stopPropagation()}
-                                            title="Afficher la description"
                                           >
                                             <AlignLeft className="h-4 w-4" />
                                           </button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-80" side="top">
+                                        </TooltipTrigger>
+                                        <TooltipContent side="top" className="max-w-sm break-words">
                                           <div className="space-y-2">
-                                            <h4 className="font-medium text-sm">Description</h4>
-                                            <p className="text-sm text-muted-foreground whitespace-pre-wrap break-words">
+                                            <h4 className="font-medium text-sm text-white">{task.title}</h4>
+                                            <p className="text-xs text-white/90 whitespace-pre-wrap break-words">
                                               {task.description}
                                             </p>
                                           </div>
-                                        </PopoverContent>
-                                      </Popover>
+                                        </TooltipContent>
+                                      </Tooltip>
                                     )}
                                   </div>
                                 </div>

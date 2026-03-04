@@ -102,7 +102,6 @@ export function CompanyLogoUpload({
           }
         });
       } catch (e) {
-        console.warn("Erreur nettoyage storage UI:", e);
       }
     }
     

@@ -104,11 +104,9 @@ const TaskCard = memo(function TaskCard({ task, onEdit, onDelete, index, isDragg
 
   return (
     <>
-      <Tooltip delayDuration={400}>
-      <TooltipTrigger asChild>
       <div
         onClick={handleClick}
-        className={`bg-card text-card-foreground rounded-lg border border-border shadow-xs hover:shadow-sm hover:bg-accent/10 flex flex-col transition-opacity overflow-clip ${
+        className={`bg-card text-card-foreground rounded-lg border border-border shadow-xs flex flex-col transition-all overflow-clip has-[.desc-trigger:hover]:shadow-sm has-[.desc-trigger:hover]:bg-accent/10 ${
           isDragging ? "opacity-50" : "opacity-100"
         }`}
       >
@@ -208,11 +206,31 @@ const TaskCard = memo(function TaskCard({ task, onEdit, onDelete, index, isDragg
         <div className="mt-auto pt-2 sm:pt-3 space-y-1.5">
           {/* Ligne 1: Icônes (description, checklist) */}
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            {/* Icône description */}
+            {/* Icône description avec tooltip titre + description */}
             {task.description && (
-              <div className="text-muted-foreground/70">
-                <AlignLeft className="h-4 w-4" />
-              </div>
+              <Tooltip delayDuration={200} disableHoverableContent>
+                <TooltipTrigger asChild>
+                  <div className="desc-trigger text-muted-foreground/70 hover:text-foreground transition-colors cursor-pointer">
+                    <AlignLeft className="h-4 w-4" />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="right" className="max-w-80 pointer-events-none">
+                  <div className="space-y-2">
+                    <h4 className="font-medium text-sm text-white">{task.title}</h4>
+                    {/<[a-z][\s\S]*>/i.test(task.description) ? (
+                      <div
+                        className="text-xs break-words line-clamp-8 [&_b]:font-bold [&_i]:italic [&_u]:underline [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_*]:!text-inherit"
+                        style={{ color: 'rgba(255,255,255,0.9)' }}
+                        dangerouslySetInnerHTML={{ __html: task.description }}
+                      />
+                    ) : (
+                      <p className="text-xs text-white/90 whitespace-pre-wrap break-words line-clamp-8">
+                        {task.description}
+                      </p>
+                    )}
+                  </div>
+                </TooltipContent>
+              </Tooltip>
             )}
 
             {/* Pièces jointes */}
@@ -304,22 +322,6 @@ const TaskCard = memo(function TaskCard({ task, onEdit, onDelete, index, isDragg
         </div>
         </div>
       </div>
-      </TooltipTrigger>
-      {task.description && (
-        <TooltipContent side="right" className="max-w-80 pointer-events-none">
-          {/<[a-z][\s\S]*>/i.test(task.description) ? (
-            <div
-              className="text-xs text-white/90 break-words line-clamp-8 [&_b]:font-bold [&_i]:italic [&_u]:underline [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4"
-              dangerouslySetInnerHTML={{ __html: task.description }}
-            />
-          ) : (
-            <p className="text-xs text-white/90 whitespace-pre-wrap break-words line-clamp-8">
-              {task.description}
-            </p>
-          )}
-        </TooltipContent>
-      )}
-      </Tooltip>
 
       {/* Dialog de prévisualisation d'image */}
       <Dialog open={showImagePreview} onOpenChange={setShowImagePreview}>

@@ -436,11 +436,9 @@ export function applyTemplatePreset(currentData, templateId) {
   const preset = TEMPLATE_PRESETS[templateId];
 
   if (!preset) {
-    console.warn(`Preset non trouvé pour le template: ${templateId}`);
+
     return { ...currentData, templateId };
   }
-
-  console.log(`🎨 [PRESET] Application du preset pour: ${templateId}`);
 
   // Merger le preset avec les données actuelles
   // Le preset écrase les valeurs de style, mais conserve les données utilisateur (nom, email, etc.)

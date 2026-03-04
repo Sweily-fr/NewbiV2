@@ -130,22 +130,9 @@ export function AddTransactionDrawer({
   // Pré-remplir le formulaire si une transaction est fournie (mode édition)
   useEffect(() => {
     if (transaction && open) {
-      console.log("🔄 [DRAWER EDIT] Transaction reçue:", transaction);
-      console.log("🔄 [DRAWER EDIT] expenseType:", transaction.expenseType);
-      console.log(
-        "🔄 [DRAWER EDIT] assignedMember:",
-        transaction.assignedMember
-      );
-
       // Formater la date pour l'input date (format YYYY-MM-DD)
       let formattedDate = "";
       if (transaction.date) {
-        console.log(
-          "🔄 [DRAWER EDIT] Date brute:",
-          transaction.date,
-          typeof transaction.date
-        );
-
         // Cas 1: Objet MongoDB avec $date
         if (typeof transaction.date === "object" && transaction.date.$date) {
           const parsedDate = new Date(transaction.date.$date);
@@ -189,7 +176,6 @@ export function AddTransactionDrawer({
           }
         }
 
-        console.log("🔄 [DRAWER EDIT] Date formatée:", formattedDate);
       }
 
       const newFormData = {
@@ -285,14 +271,12 @@ export function AddTransactionDrawer({
   };
 
   const handleChange = (field) => (value) => {
-    console.log(`🔄 [DRAWER] Changement de ${field}:`, value);
     setFormData((prev) => {
       const newData = { ...prev, [field]: value };
       // Réinitialiser la catégorie quand le type change (EXPENSE <-> INCOME)
       if (field === "type" && prev.type !== value) {
         newData.category = "";
       }
-      console.log(`📝 [DRAWER] FormData mis à jour:`, newData);
       return newData;
     });
   };

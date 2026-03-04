@@ -77,16 +77,6 @@ export function SecuritySection({
     orgLoadingProp !== undefined ? orgLoadingProp : hookData.loading;
   const updateOrganization = hookData.updateOrganization;
 
-  // Debug: Vérifier quelle organisation est utilisée
-  useEffect(() => {
-    console.log("🔐 [SecuritySection] Organisation utilisée:", {
-      fromProps: !!orgProp,
-      orgId: organization?.id,
-      orgName: organization?.name,
-      companyName: organization?.companyName,
-    });
-  }, [organization, orgProp]);
-
   const { data: session, refetch: refetchSession } = useSession();
   const { session: user } = useUser();
 
@@ -131,7 +121,6 @@ export function SecuritySection({
           }
         }
       } catch (err) {
-        console.log("Erreur API client:", err);
         error = err;
       }
 
@@ -152,9 +141,6 @@ export function SecuritySection({
             error = null;
           }
         } catch (restError) {
-          console.log(
-            "🔍 API REST non disponible, utilisation des données client"
-          );
         }
       }
 

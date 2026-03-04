@@ -91,20 +91,6 @@ export function TreasuryChart({
     }
   };
 
-  console.log("📊 [TREASURY] Props reçues:", {
-    expensesCount: expenses.length,
-    invoicesCount: invoices.length,
-    bankTransactionsCount: bankTransactions.length,
-    initialBalance,
-    // Debug: afficher les 3 premières transactions pour voir le format
-    sampleTransactions: bankTransactions.slice(0, 3).map((t) => ({
-      date: t.date,
-      amount: t.amount,
-      description: t.description,
-      dateType: typeof t.date,
-    })),
-  });
-
   // Si initialBalance est 0 mais qu'il y a des transactions,
   // utiliser la somme des transactions comme solde estimé
   const effectiveBalance = useMemo(() => {
@@ -200,16 +186,6 @@ export function TreasuryChart({
         treasury: day.treasury,
       });
     }
-
-    console.log("📊 [TREASURY] Données calculées:", {
-      totalDays: chartData.length,
-      firstDay: chartData[0],
-      lastDay: chartData[chartData.length - 1],
-      daysWithIncome: chartData.filter((d) => d.income > 0).length,
-      daysWithExpenses: chartData.filter((d) => d.expenses > 0).length,
-      totalIncome: chartData.reduce((sum, d) => sum + d.income, 0),
-      totalExpenses: chartData.reduce((sum, d) => sum + d.expenses, 0),
-    });
 
     return chartData;
   }, [

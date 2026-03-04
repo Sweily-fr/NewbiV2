@@ -66,8 +66,6 @@ export function NavUser({ user }) {
 
   const handleLogout = async () => {
     try {
-      console.log("Déconnexion en cours - Clear du cache Apollo...");
-
       // Clear complet du cache Apollo pour éviter les fuites de données entre utilisateurs
       await apolloClient.clearStore();
 
@@ -76,8 +74,6 @@ export function NavUser({ user }) {
 
       // Vider tous les caches localStorage
       try {
-        console.log("🧹 Nettoyage des caches localStorage...");
-
         // Vider le cache utilisateur
         localStorage.removeItem("user-cache");
 
@@ -85,19 +81,14 @@ export function NavUser({ user }) {
         Object.keys(localStorage).forEach((key) => {
           if (key.startsWith("subscription-")) {
             localStorage.removeItem(key);
-            console.log(`🗑️ Cache supprimé: ${key}`);
           }
         });
-
-        console.log("✅ Caches localStorage nettoyés");
       } catch (cacheError) {
-        console.warn("⚠️ Erreur lors du nettoyage des caches:", cacheError);
       }
 
       await signOut({
         fetchOptions: {
           onSuccess: () => {
-            console.log("Déconnexion réussie - Tous les caches vidés");
             router.push("/");
           },
         },

@@ -725,10 +725,6 @@ function SignatureProviderContent({ children }) {
   useEffect(() => {
     if (isEditMode && signatureIdFromUrl) {
       // Mode édition avec ID dans l'URL - charger via GraphQL
-      console.log(
-        "🔍 [SIGNATURE_DATA] Mode édition avec ID:",
-        signatureIdFromUrl,
-      );
       setEditingSignatureId(signatureIdFromUrl);
       getSignature({ variables: { id: signatureIdFromUrl } });
     } else if (isEditMode) {
@@ -738,11 +734,6 @@ function SignatureProviderContent({ children }) {
 
         if (editingSignature) {
           const parsedData = JSON.parse(editingSignature);
-
-          console.log(
-            "🔍 [SIGNATURE_DATA] Données récupérées de localStorage (fallback):",
-            parsedData,
-          );
 
           // Merger les données existantes avec les données par défaut
           const mergedData = {
@@ -867,10 +858,6 @@ function SignatureProviderContent({ children }) {
 
           // Nettoyer localStorage après chargement
           localStorage.removeItem("editingSignature");
-        } else {
-          console.log(
-            "⚠️ [SIGNATURE_PROVIDER] Aucune donnée d'édition trouvée",
-          );
         }
       } catch (error) {
         console.error(
@@ -878,8 +865,6 @@ function SignatureProviderContent({ children }) {
           error,
         );
       }
-    } else {
-      console.log("📝 [SIGNATURE_PROVIDER] Mode création - données par défaut");
     }
   }, [isEditMode, signatureIdFromUrl, getSignature]);
 
@@ -941,10 +926,8 @@ function SignatureProviderContent({ children }) {
 
   // Fonction pour appliquer un preset de template (appelée depuis les pages)
   const applyTemplatePreset = React.useCallback((templateId) => {
-    console.log("🎨 [PRESET] Application du preset pour:", templateId);
     const presetData = applyPresetFunction(defaultSignatureData, templateId);
     setSignatureData(presetData);
-    console.log("✅ [PRESET] Preset appliqué:", presetData.templateId, "photoVisible:", presetData.photoVisible, "separatorVerticalEnabled:", presetData.separatorVerticalEnabled);
     return presetData;
   }, [defaultSignatureData]);
 
@@ -953,7 +936,6 @@ function SignatureProviderContent({ children }) {
     if (typeof window !== "undefined") {
       const newTemplate = sessionStorage.getItem("newSignatureTemplate");
       if (newTemplate) {
-        console.log("🎨 [SESSION] Template trouvé dans sessionStorage:", newTemplate);
         sessionStorage.removeItem("newSignatureTemplate");
         applyTemplatePreset(newTemplate);
         return true;
@@ -1302,7 +1284,6 @@ function SignatureProviderContent({ children }) {
   const deleteContainer = React.useCallback((containerId) => {
     // Don't allow deleting the root container
     if (rootContainer && rootContainer.id === containerId) {
-      console.warn('Cannot delete root container');
       return;
     }
     setRootContainer(prev => deleteContainerRecursive(prev, containerId));
@@ -1439,41 +1420,31 @@ function SignatureProviderContent({ children }) {
 
   // Move a container to a new parent
   const moveContainer = React.useCallback((containerId, newParentId, position = 'end') => {
-    console.log("🔄 [moveContainer] Called with:", { containerId, newParentId, position });
-
     if (!rootContainer) {
-      console.log("🔄 [moveContainer] No rootContainer, aborting");
       return;
     }
 
     // Can't move to itself
     if (containerId === newParentId) {
-      console.log("🔄 [moveContainer] Cannot move to itself, aborting");
       return;
     }
 
     // Find the container to move
     const containerToMove = findContainerById(rootContainer, containerId);
     if (!containerToMove) {
-      console.log("🔄 [moveContainer] Container not found:", containerId);
       return;
     }
 
     // Can't move a container into one of its descendants
     if (isDescendantOf(containerToMove, containerId, newParentId)) {
-      console.log("🔄 [moveContainer] Cannot move into descendant, aborting");
       return;
     }
 
-    console.log("🔄 [moveContainer] Moving container:", containerToMove);
-
     // Remove from current location
     let updatedRoot = deleteContainerRecursive(rootContainer, containerId);
-    console.log("🔄 [moveContainer] After delete:", updatedRoot);
 
     // Add to new parent
     updatedRoot = addChildToContainerRecursive(updatedRoot, newParentId, containerToMove, position);
-    console.log("🔄 [moveContainer] After add to new parent:", updatedRoot);
 
     setRootContainer(updatedRoot);
 
@@ -1569,7 +1540,6 @@ function SignatureProviderContent({ children }) {
   // Reorder containers within the same parent
   const reorderContainer = React.useCallback((draggedContainerId, targetContainerId, position) => {
     if (!rootContainer) return;
-    console.log("🔄 [reorderContainer] Called with:", { draggedContainerId, targetContainerId, position });
 
     // Find parent of both containers (they must have the same parent)
     const findParentOfContainer = (container, targetId, parent = null) => {
@@ -1589,13 +1559,10 @@ function SignatureProviderContent({ children }) {
 
     // Both containers must have the same parent
     if (!draggedParent || !targetParent || draggedParent.id !== targetParent.id) {
-      console.log("🔄 [reorderContainer] Different parents, using moveContainer instead");
       // If different parents, move into the target container
       moveContainer(draggedContainerId, targetContainerId);
       return;
     }
-
-    console.log("🔄 [reorderContainer] Same parent:", draggedParent.id);
 
     // Reorder within the parent
     const reorderInParent = (container) => {
@@ -1702,17 +1669,9 @@ function SignatureProviderContent({ children }) {
   // Cet effet restaure la disposition personnalisée des blocs sauvegardée
   useEffect(() => {
     if (isEditMode && signatureQueryData?.getEmailSignature) {
-      console.log("🔍 [SIGNATURE_DATA] Données GraphQL reçues - containerStructure:", signatureQueryData.getEmailSignature.containerStructure);
-      console.log("🔍 [SIGNATURE_DATA] Données GraphQL reçues - templateId:", signatureQueryData.getEmailSignature.templateId);
-      console.log("🔍 [SIGNATURE_DATA] Données GraphQL reçues - position:", signatureQueryData.getEmailSignature.position);
-      console.log("🔍 [SIGNATURE_DATA] Données GraphQL reçues - socialNetworks:", signatureQueryData.getEmailSignature.socialNetworks);
-
       if (signatureQueryData.getEmailSignature.containerStructure) {
         const savedContainerStructure = signatureQueryData.getEmailSignature.containerStructure;
-        console.log("🔄 [SIGNATURE_DATA] Restauration de la structure des conteneurs:", savedContainerStructure);
         setRootContainer(savedContainerStructure);
-      } else {
-        console.log("⚠️ [SIGNATURE_DATA] Aucune containerStructure sauvegardée, utilisation du template par défaut");
       }
     }
   }, [isEditMode, signatureQueryData]);

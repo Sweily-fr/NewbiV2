@@ -297,7 +297,6 @@ export const toastManager = {
     if (toastManagerInstance) {
       return toastManagerInstance.add(options);
     }
-    console.warn("ToastManager not initialized");
     return null;
   },
   close: (id) => {

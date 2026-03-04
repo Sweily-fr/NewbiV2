@@ -153,14 +153,6 @@ export function ExpenseCategoryChart({
   // Calculer les données du graphique par catégorie
   // MODE BANCAIRE PUR : Utiliser les transactions bancaires négatives
   const chartData = useMemo(() => {
-    console.log(
-      "📊 [ExpenseCategoryChart] Calcul des données - MODE BANCAIRE PUR"
-    );
-    console.log(
-      "📊 [ExpenseCategoryChart] Transactions bancaires:",
-      bankTransactions?.length || 0
-    );
-
     // Déterminer la période
     const now = new Date();
     let startDate, endDate;
@@ -196,11 +188,6 @@ export function ExpenseCategoryChart({
       return transactionDate >= startDate && transactionDate <= endDate;
     });
 
-    console.log(
-      "📊 [ExpenseCategoryChart] Transactions sorties filtrées:",
-      expenseTransactions.length
-    );
-
     // Agréger par catégorie en utilisant la fonction de bank-categories-config
     const categoryData = aggregateByCategory(expenseTransactions, false);
 
@@ -212,7 +199,6 @@ export function ExpenseCategoryChart({
       fill: cat.color,
     }));
 
-    console.log("📊 [ExpenseCategoryChart] Données du graphique:", result);
     return result;
   }, [bankTransactions, timeRange, customStartDate, customEndDate]);
 

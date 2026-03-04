@@ -158,7 +158,6 @@ export function TeamSwitcher() {
       
       // Si non authentifié (401), ne pas throw d'erreur - laisser le composant gérer
       if (response.status === 401) {
-        console.warn("Session expirée ou non authentifié");
         setSortedOrganizations([]);
         return;
       }
@@ -229,7 +228,6 @@ export function TeamSwitcher() {
           throw new Error("Erreur sauvegarde");
         }
 
-        console.log("✅ Ordre sauvegardé avec succès");
       } catch (error) {
         console.error("Erreur sauvegarde ordre:", error);
         // Restaurer l'ordre précédent en cas d'erreur
@@ -256,21 +254,14 @@ export function TeamSwitcher() {
     try {
       setIsChangingOrg(true);
       const oldWorkspaceId = activeOrganization?.id;
-      console.log("🔄 Changement d'organisation:", {
-        from: oldWorkspaceId,
-        to: organizationId,
-      });
 
       // 1. Changer d'organisation côté serveur avec Better Auth
       await authClient.organization.setActive({
         organizationId,
       });
 
-      console.log("✅ Organisation changée côté serveur");
-
       // 2. Nettoyer le cache Apollo pour l'ancienne organisation
       if (oldWorkspaceId) {
-        console.log("🗑️ Nettoyage du cache Apollo...");
 
         // Évict les queries spécifiques à l'ancienne organisation
         apolloClient.cache.evict({
@@ -292,7 +283,6 @@ export function TeamSwitcher() {
 
         // Garbage collection pour nettoyer les références orphelines
         apolloClient.cache.gc();
-        console.log("✅ Cache Apollo nettoyé");
       }
 
       // 3. Notification de succès
@@ -301,8 +291,6 @@ export function TeamSwitcher() {
       );
       const orgName = newOrg?.name || "l'organisation";
       toast.success(`Vous êtes sur l'espace ${orgName}`);
-
-      console.log("✅ Changement d'organisation terminé");
     } catch (error) {
       console.error("❌ Erreur changement d'organisation:", error);
       toast.error("Erreur lors du changement d'organisation");
@@ -932,7 +920,6 @@ function SortableOrganizationItem({
                 try {
                   // TODO: Implémenter la logique pour quitter l'organisation
                   // await authClient.organization.leave({ organizationId: org.id });
-                  console.log("Quitter l'organisation:", org.id);
                   setShowLeaveModal(false);
                   // Recharger les organisations
                   window.location.reload();

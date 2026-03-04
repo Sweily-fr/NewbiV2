@@ -32,7 +32,6 @@ export default function OcrResultsDisplay({ ocrResult, onValidate, isCreatingExp
         ? JSON.parse(ocrResult.financialAnalysis)
         : ocrResult.financialAnalysis;
   } catch (error) {
-    console.warn("Erreur parsing analyse financière:", error);
   }
 
   const transactionData = financialAnalysis?.transaction_data;

@@ -205,7 +205,6 @@ export function ShareBoardDialog({ boardId, boardTitle, workspaceId }) {
     onData: ({ data }) => {
       const payload = data?.data?.accessRequested;
       if (payload) {
-        console.log('📩 [ShareDialog] Nouvelle demande d\'accès:', payload);
         toast.info(`Nouvelle demande d'accès de ${payload.name || payload.email}`);
         setPendingRequestsCount(prev => prev + 1);
         refetch();
@@ -220,7 +219,6 @@ export function ShareBoardDialog({ boardId, boardTitle, workspaceId }) {
     onData: ({ data }) => {
       const payload = data?.data?.visitorPresence;
       if (payload) {
-        console.log('👤 [ShareDialog] Présence visiteur:', payload);
         if (payload.isConnected) {
           setConnectedVisitors(prev => {
             if (!prev.find(v => v.email === payload.email)) {

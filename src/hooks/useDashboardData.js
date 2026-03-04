@@ -69,7 +69,7 @@ export function useDashboardData() {
     error: transactionsError,
     refetch: refetchBankTransactions,
   } = useQuery(GET_TRANSACTIONS, {
-    variables: { workspaceId, limit: 500 },
+    variables: { workspaceId, limit: 5000 },
     fetchPolicy: "cache-and-network",
     skip: !workspaceId,
   });
@@ -99,8 +99,6 @@ export function useDashboardData() {
   // Extraire les données
   const bankAccounts = accountsData?.bankingAccounts || [];
   const bankTransactions = transactionsData?.transactions || [];
-
-  // Debug supprimé — console.warn dans la phase render causait du bruit en production
 
   // Calculer le solde total
   const bankBalance = useMemo(() => {

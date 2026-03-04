@@ -48,7 +48,6 @@ export function useGraphQLImageUpload({
           toast.success("Image de profil mise à jour avec succès");
           onUploadSuccess(imageUrl, data.uploadUserProfileImage);
         } catch (syncError) {
-          console.warn("Erreur synchronisation Better Auth:", syncError);
           // L'upload GraphQL a réussi, mais la sync Better Auth a échoué
           toast.success("Image uploadée (synchronisation partielle)");
           onUploadSuccess(imageUrl, data.uploadUserProfileImage);
@@ -82,7 +81,6 @@ export function useGraphQLImageUpload({
           toast.success("Image de profil supprimée");
           onDeleteSuccess();
         } catch (syncError) {
-          console.warn("Erreur synchronisation Better Auth:", syncError);
           // La suppression GraphQL a réussi, mais la sync Better Auth a échoué
           toast.success("Image supprimée (synchronisation partielle)");
           onDeleteSuccess();

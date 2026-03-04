@@ -30,12 +30,6 @@ export function useErrorHandler() {
       hideServerErrors = true
     } = options;
 
-    // Logger l'erreur pour le debug (seulement en développement)
-    if (logError && process.env.NODE_ENV === 'development') {
-      const errorMsg = typeof error === 'string' ? error : error?.message || 'Erreur inconnue';
-      console.warn(`[${context.toUpperCase()}] Erreur: ${errorMsg}`);
-    }
-
     // Obtenir le message utilisateur approprié
     const userMessage = customMessage || getErrorMessage(error, context);
 

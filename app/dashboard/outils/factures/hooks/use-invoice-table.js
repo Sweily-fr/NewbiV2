@@ -615,16 +615,6 @@ export function useInvoiceTable({
                 ? invoice.finalTotalVAT
                 : invoice.totalVAT || 0;
 
-            console.log("Invoice Table - Escompte calculation:", {
-              invoiceId: invoice.id,
-              finalTotalTTC: invoice.finalTotalTTC,
-              finalTotalHT: invoice.finalTotalHT,
-              finalTotalVAT: invoice.finalTotalVAT,
-              totalHT,
-              totalVAT,
-              escompteValue,
-            });
-
             // Appliquer l'escompte sur HT
             const escompteAmount = (totalHT * escompteValue) / 100;
             const htAfterEscompte = totalHT - escompteAmount;
@@ -633,12 +623,6 @@ export function useInvoiceTable({
               : (htAfterEscompte / totalHT) * totalVAT;
             amount = htAfterEscompte + tvaAfterEscompte;
 
-            console.log("Invoice Table - Result:", {
-              escompteAmount,
-              htAfterEscompte,
-              tvaAfterEscompte,
-              finalAmount: amount,
-            });
           }
 
           return (

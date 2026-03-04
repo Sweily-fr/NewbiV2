@@ -216,14 +216,6 @@ export function IncomeCategoryChart({
   // Calculer les données du graphique par catégorie
   // MODE BANCAIRE PUR : Utiliser les transactions bancaires positives
   const chartData = useMemo(() => {
-    console.log(
-      "📊 [IncomeCategoryChart] Calcul des données - MODE BANCAIRE PUR"
-    );
-    console.log(
-      "📊 [IncomeCategoryChart] Transactions bancaires:",
-      bankTransactions?.length || 0
-    );
-
     // Déterminer la période
     const now = new Date();
     let startDate, endDate;
@@ -259,11 +251,6 @@ export function IncomeCategoryChart({
       return transactionDate >= startDate && transactionDate <= endDate;
     });
 
-    console.log(
-      "📊 [IncomeCategoryChart] Transactions entrées filtrées:",
-      incomeTransactions.length
-    );
-
     // Agréger par catégorie en utilisant la fonction de bank-categories-config
     const categoryData = aggregateByCategory(incomeTransactions, true);
 
@@ -275,7 +262,6 @@ export function IncomeCategoryChart({
       fill: cat.color,
     }));
 
-    console.log("📊 [IncomeCategoryChart] Données du graphique:", result);
     return result;
   }, [bankTransactions, timeRange, customStartDate, customEndDate]);
 

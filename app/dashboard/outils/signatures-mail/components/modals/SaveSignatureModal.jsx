@@ -526,10 +526,6 @@ export default function SaveSignatureModal({ existingSignatureId = null }) {
     };
     const finalData = cleanGraphQLData(rawData);
 
-    // Debug: vérifier que containerStructure est bien inclus
-    console.log("💾 [SaveSignatureModal] rootContainer:", rootContainer);
-    console.log("💾 [SaveSignatureModal] containerStructure in finalData:", finalData.containerStructure);
-
     try {
       if (existingSignatureId) {
         await updateSignature({

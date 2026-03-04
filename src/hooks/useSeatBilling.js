@@ -16,7 +16,6 @@ export const useSeatBilling = () => {
    */
   const fetchBillingInfo = useCallback(async (organizationId) => {
     if (!organizationId) {
-      console.warn("⚠️ organizationId requis pour récupérer les infos de facturation");
       return null;
     }
 
@@ -59,8 +58,6 @@ export const useSeatBilling = () => {
 
     setLoading(true);
     try {
-      console.log(`🔄 Synchronisation manuelle des sièges pour ${organizationId}`);
-
       const response = await fetch("/api/billing/sync-seats", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -73,8 +70,7 @@ export const useSeatBilling = () => {
       }
 
       const result = await response.json();
-      
-      console.log(`✅ Synchronisation réussie:`, result);
+
       toast.success(result.message || "Facturation synchronisée avec succès");
       
       // Rafraîchir les infos de facturation

@@ -330,7 +330,7 @@ export default function FileUploadNew({
     const isFromStripe = urlParams.get("stripe_success") === "true";
 
     if (isFromStripe && user?.user?.id) {
-      console.log("🔄 Retour de Stripe détecté, vérification du statut...");
+
 
       const timer = setTimeout(async () => {
         try {
@@ -341,7 +341,7 @@ export default function FileUploadNew({
           const accountData = await response.json();
 
           if (accountData.success && accountData.accountId) {
-            console.log("📋 Account ID trouvé:", accountData.accountId);
+
 
             // Vérifier et mettre à jour le statut du compte
             const statusResponse = await fetch("/api/stripe/connect/status", {
@@ -354,7 +354,7 @@ export default function FileUploadNew({
             });
 
             const statusData = await statusResponse.json();
-            console.log("✅ Statut mis à jour:", statusData);
+
 
             // Refetch les données pour s'assurer qu'elles sont à jour
             await refetchStatus();

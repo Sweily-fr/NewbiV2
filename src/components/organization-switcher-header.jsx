@@ -142,7 +142,6 @@ export function OrganizationSwitcherHeader() {
       
       // Si non authentifié (401), ne pas throw d'erreur - laisser le composant gérer
       if (response.status === 401) {
-        console.warn("Session expirée ou non authentifié");
         setSortedOrganizations([]);
         return;
       }

@@ -14,7 +14,7 @@ export function useSignatureGenerator() {
 
   const generateHTML = useCallback(() => {
     if (!rootContainer) {
-      console.warn('[useSignatureGenerator] No rootContainer available');
+
       return '';
     }
 
@@ -54,7 +54,7 @@ export function useSignatureGenerator() {
     try {
       // Copier avec execCommand
       success = document.execCommand('copy');
-      console.log('[copyWithExecCommand] execCommand result:', success);
+
     } catch (error) {
       console.error('[copyWithExecCommand] execCommand error:', error);
     }
@@ -73,7 +73,7 @@ export function useSignatureGenerator() {
       return { success: false, message: "Aucune signature à copier" };
     }
 
-    console.log('[copyToClipboard] HTML length:', html.length);
+
 
     // Essayer d'abord avec execCommand (meilleure compatibilité email)
     const execSuccess = copyWithExecCommand(html);
@@ -82,7 +82,7 @@ export function useSignatureGenerator() {
       return { success: true, message: "Signature copiée !" };
     }
 
-    console.log('[copyToClipboard] execCommand failed, trying Clipboard API');
+
 
     // Fallback vers l'API Clipboard moderne
     try {

@@ -83,7 +83,6 @@ export function PricingModal({ isOpen, onClose }) {
           localStorage.removeItem(`subscription-${activeOrgId}`);
           localStorage.removeItem("user-cache");
         } catch (e) {
-          console.warn("Erreur vidage cache:", e);
         }
 
         // Recharger après un court délai

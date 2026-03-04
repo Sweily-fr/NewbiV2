@@ -121,12 +121,10 @@ export default function ContainerNode({
     setIsDragging(true);
     e.dataTransfer.setData("application/x-container-id", container.id);
     e.dataTransfer.effectAllowed = "move";
-    console.log("🚀 [ContainerNode] Drag started for container:", container.id);
   };
 
   const handleContainerDragEnd = () => {
     setIsDragging(false);
-    console.log("🛑 [ContainerNode] Drag ended for container:", container.id);
   };
 
   // ============ RESIZE HANDLERS (COMMENTED OUT FOR NOW) ============
@@ -225,12 +223,9 @@ export default function ContainerNode({
     setIsDragOver(false);
     setDropPosition(null);
 
-    console.log("📥 [ContainerNode] Drop received on container:", container.id, "position:", currentDropPosition);
-
     // Handle widget drop (from palette)
     const widgetId = e.dataTransfer.getData("application/x-widget-id");
     if (widgetId && onDrop) {
-      console.log("📥 [ContainerNode] Widget drop:", widgetId);
       onDrop(container.id, widgetId);
       return;
     }
@@ -240,11 +235,8 @@ export default function ContainerNode({
     if (containerId && containerId !== container.id) {
       // Use reorderContainer if we have a drop position (sibling reorder)
       if (currentDropPosition && onReorderContainer) {
-        console.log("📥 [ContainerNode] Reordering container", containerId, currentDropPosition, container.id);
         onReorderContainer(containerId, container.id, currentDropPosition);
       } else if (onMoveContainer) {
-        // Fall back to moving container into this one
-        console.log("📥 [ContainerNode] Moving container", containerId, "into", container.id);
         onMoveContainer(containerId, container.id);
       }
       return;
@@ -255,7 +247,6 @@ export default function ContainerNode({
     if (elementData && onMoveElement) {
       const [elementId, sourceContainerId] = elementData.split("::");
       if (sourceContainerId !== container.id) {
-        console.log("📥 [ContainerNode] Moving element", elementId, "from", sourceContainerId, "to", container.id);
         onMoveElement(elementId, sourceContainerId, container.id);
       }
     }

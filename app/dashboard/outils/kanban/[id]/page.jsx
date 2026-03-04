@@ -477,10 +477,6 @@ function KanbanBoardPageContent({ params }) {
   const previousWorkspaceIdRef = React.useRef(workspaceId);
   useEffect(() => {
     if (previousWorkspaceIdRef.current && workspaceId && previousWorkspaceIdRef.current !== workspaceId) {
-      console.log("[Kanban] 🔄 Changement de workspace détecté, redirection...", {
-        from: previousWorkspaceIdRef.current,
-        to: workspaceId,
-      });
       router.push("/dashboard/outils/kanban");
     }
     previousWorkspaceIdRef.current = workspaceId;

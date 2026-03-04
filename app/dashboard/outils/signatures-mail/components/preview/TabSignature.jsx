@@ -436,13 +436,6 @@ export function TabSignature({ existingSignatureId = null }) {
       }
     }
 
-    console.log(
-      "👤 TabSignature - Noms extraits - firstName:",
-      firstName,
-      "lastName:",
-      lastName,
-    );
-
     return {
       signatureName,
       // workspaceId, // Plus nécessaire - le backend filtre automatiquement par utilisateur
@@ -825,13 +818,6 @@ export function TabSignature({ existingSignatureId = null }) {
     // Nettoyer les données pour supprimer tous les champs __typename
     const finalData = cleanGraphQLData(rawData);
 
-    // Données prêtes pour l'envoi
-    console.log("📤 Données à envoyer:", {
-      detailedSpacing: finalData.detailedSpacing,
-      paddings: finalData.paddings,
-      spacings: finalData.spacings,
-    });
-
     try {
       if (existingSignatureId) {
         // Mise à jour d'une signature existante
@@ -880,12 +866,6 @@ export function TabSignature({ existingSignatureId = null }) {
   };
 
   const [activeTab, setActiveTab] = useState("tab-widgets");
-
-  // Debug: vérifier si le composant se rend plusieurs fois
-  console.log(
-    "🔍 TabSignature rendu - existingSignatureId:",
-    existingSignatureId,
-  );
 
   // Container system from context
   const {
