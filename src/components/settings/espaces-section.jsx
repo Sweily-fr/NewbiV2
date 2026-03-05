@@ -163,8 +163,12 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
     });
 
     const deduplicatedMembers = Array.from(emailMap.values());
-    // Exclure les owners
-    return deduplicatedMembers.filter((m) => m.role !== "owner");
+    // Trier : owners en premier
+    return deduplicatedMembers.sort((a, b) => {
+      if (a.role === "owner" && b.role !== "owner") return -1;
+      if (a.role !== "owner" && b.role === "owner") return 1;
+      return 0;
+    });
   };
 
   // Charger les organisations et compter les membres
@@ -235,7 +239,10 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
 
     const refreshSelectedOrgMembers = async () => {
       try {
-        setMembersLoading(true);
+        // Ne pas afficher le loader si on a déjà des données (refresh silencieux)
+        if (members.length === 0) {
+          setMembersLoading(true);
+        }
 
         const response = await fetch(
           `/api/organizations/${selectedOrg.id}/members`
@@ -295,7 +302,7 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
       let result;
       if (memberToDelete.type === "member") {
         // Supprimer le membre
-        result = await removeMember(memberToDelete.email);
+        result = await removeMember(memberToDelete.id, selectedOrg?.id);
 
         // Trouver et annuler l'invitation associée si elle existe
         if (result.success) {
@@ -741,7 +748,7 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
                           <span className="text-xs text-muted-foreground">—</span>
                         </TableCell>
                         <TableCell className="text-right">
-                          {canManageOrgSettings && (
+                          {canManageOrgSettings && member.role !== "owner" && (
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button
