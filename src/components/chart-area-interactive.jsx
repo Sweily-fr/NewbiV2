@@ -79,7 +79,7 @@ export function ChartAreaInteractive({
 }) {
   const isMobile = useIsMobile();
   const chartId = React.useId();
-  const [timeRange, setTimeRange] = React.useState("90d");
+  const [timeRange, setTimeRange] = React.useState("cumul-year");
   const [customStartDate, setCustomStartDate] = React.useState("");
   const [customEndDate, setCustomEndDate] = React.useState("");
   const [showCustomView, setShowCustomView] = React.useState(false);

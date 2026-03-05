@@ -52,7 +52,7 @@ export function IncomeCategoryChart({
   isLoading = false,
 }) {
   const isMobile = useIsMobile();
-  const [timeRange, setTimeRange] = useState("90d"); // 30d, 90d, 365d, custom
+  const [timeRange, setTimeRange] = useState("cumul-year"); // 30d, 90d, 365d, custom, cumul-year
   const [customStartDate, setCustomStartDate] = useState("");
   const [customEndDate, setCustomEndDate] = useState("");
   const [showCustomView, setShowCustomView] = useState(false);
