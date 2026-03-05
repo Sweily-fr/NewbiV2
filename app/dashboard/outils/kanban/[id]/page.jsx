@@ -1122,6 +1122,10 @@ function KanbanBoardPageContent({ params }) {
         getEffectiveSeconds={getEffectiveSeconds}
         columns={localColumns}
         members={members}
+        onOpenTask={(task) => {
+          setShowConvertModal(false);
+          openEditTaskModal(task);
+        }}
       />
     </div>
   );

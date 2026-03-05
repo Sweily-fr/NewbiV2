@@ -196,7 +196,7 @@ const dateFilterFn = (row, columnId, filterValue) => {
   return true;
 };
 
-export function useQuoteTable({ data = [], onRefetch }) {
+export function useQuoteTable({ data = [], onRefetch, onSendEmail }) {
   const [globalFilter, setGlobalFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState([]);
   const [clientFilter, setClientFilter] = useState([]);
@@ -498,12 +498,12 @@ export function useQuoteTable({ data = [], onRefetch }) {
       {
         id: "actions",
         header: () => <div className="text-right font-normal">Actions</div>,
-        cell: ({ row }) => <QuoteRowActions row={row} onRefetch={onRefetch} />,
+        cell: ({ row }) => <QuoteRowActions row={row} onRefetch={onRefetch} onSendEmail={onSendEmail} />,
         size: 60,
         enableHiding: false,
       },
     ],
-    [onRefetch] // Inclure onRefetch dans les dépendances
+    [onRefetch, onSendEmail] // Inclure toutes les dépendances
   );
 
   // Log des données pour débogage

@@ -18,6 +18,7 @@ import {
   Play,
   Truck,
   CalendarClock,
+  RotateCcw,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
@@ -146,6 +147,16 @@ export default function PurchaseOrderSidebar({
       if (onRefetch) onRefetch();
     } catch (error) {
       toast.error("Erreur lors de l'annulation du bon de commande");
+    }
+  };
+
+  const handleRevertToDraft = async () => {
+    try {
+      await changeStatus(purchaseOrder.id, PURCHASE_ORDER_STATUS.DRAFT);
+      toast.success("Bon de commande repassé en brouillon");
+      if (onRefetch) onRefetch();
+    } catch (error) {
+      toast.error("Erreur lors du passage en brouillon");
     }
   };
 
@@ -487,7 +498,7 @@ export default function PurchaseOrderSidebar({
               </Button>
             )}
 
-            {/* Status Actions - CONFIRMED: Start / Cancel */}
+            {/* Status Actions - CONFIRMED: Start / Revert to Draft / Cancel */}
             {isConfirmed && (
               <div className="flex flex-col space-y-2">
                 <Button
@@ -497,6 +508,15 @@ export default function PurchaseOrderSidebar({
                 >
                   <Play className="h-4 w-4 mr-2" />
                   Démarrer le traitement
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={handleRevertToDraft}
+                  disabled={isLoading}
+                  className="w-full"
+                >
+                  <RotateCcw className="h-4 w-4 mr-2" />
+                  Repasser en brouillon
                 </Button>
                 <Button
                   variant="outline"

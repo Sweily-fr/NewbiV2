@@ -1182,7 +1182,7 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
           session,
           existingPurchaseOrder
         );
-        input.status = "CONFIRMED";
+        input.status = "DRAFT";
 
         // Ajouter la référence au devis source si présente
         if (sourceQuoteIdRef.current) {
@@ -1200,7 +1200,7 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
             }
 
             if (!isAutoSave) {
-              toast.success("Bon de commande sauvegardé");
+              toast.success("Brouillon sauvegardé");
               router.push("/dashboard/outils/bons-commande");
             }
           }
@@ -1208,7 +1208,7 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
           result = await updatePurchaseOrder(purchaseOrderId, input);
 
           if (!isAutoSave) {
-            toast.success("Bon de commande sauvegardé");
+            toast.success("Brouillon sauvegardé");
             router.push("/dashboard/outils/bons-commande");
           }
         }
