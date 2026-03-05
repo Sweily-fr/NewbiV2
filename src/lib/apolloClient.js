@@ -1,4 +1,10 @@
-import { ApolloClient, InMemoryCache, from, split } from "@apollo/client";
+import {
+  ApolloClient,
+  InMemoryCache,
+  from,
+  split,
+  Observable,
+} from "@apollo/client";
 import { onError } from "@apollo/client/link/error";
 import { setContext } from "@apollo/client/link/context";
 import { WebSocketLink } from "@apollo/client/link/ws";
@@ -106,6 +112,34 @@ function clearCachedJWT() {
   _jwtExpiresAt = 0;
 }
 
+// DEBUG: Exposer des helpers pour tester l'expiration de session en local
+// ⚠️ À SUPPRIMER avant mise en production
+if (typeof window !== "undefined") {
+  window.__debugAuth = {
+    // Simule un JWT expiré → la prochaine requête GraphQL déclenchera le retry
+    expireJWT: () => {
+      _cachedJWT = "expired.invalid.token";
+      _jwtExpiresAt = Date.now() + 5 * 60 * 1000; // Le cache croit qu'il est valide
+      console.log("[DEBUG] JWT remplacé par un token invalide. La prochaine requête GraphQL déclenchera le flow de retry.");
+    },
+    // Vide le cache JWT → la prochaine requête ira chercher un nouveau JWT
+    clearJWT: () => {
+      clearCachedJWT();
+      console.log("[DEBUG] JWT cache vidé.");
+    },
+    // Affiche l'état actuel du cache JWT
+    status: () => {
+      console.log({
+        hasJWT: !!_cachedJWT,
+        expiresAt: _jwtExpiresAt ? new Date(_jwtExpiresAt).toISOString() : "none",
+        isExpired: _jwtExpiresAt ? Date.now() > _jwtExpiresAt : true,
+        isRedirecting,
+        isRetryingAuth,
+      });
+    },
+  };
+}
+
 // ==================== UPLOAD LINK ====================
 const uploadLink = createUploadLink({
   uri: process.env.NEXT_PUBLIC_API_URL
@@ -183,80 +217,91 @@ const authLink = setContext(async (_, { headers }) => {
 // ==================== ERROR LINK ====================
 let isRetryingAuth = false;
 
-const handleCriticalAuthError = async (operation, message) => {
-  if (isRetryingAuth || isRedirecting) return;
+const errorLink = onError(
+  ({ graphQLErrors, networkError, operation, forward }) => {
+    if (graphQLErrors) {
+      let hasCriticalError = false;
+      const processedMessages = new Set();
 
-  const isInitialLoad = operation.getContext().isInitialLoad;
-  if (isInitialLoad) return;
+      // Classifier les erreurs : critiques vs non-critiques
+      graphQLErrors.forEach((error) => {
+        const { message, extensions } = error;
+        const errorCode =
+          extensions?.code !== "INTERNAL_SERVER_ERROR"
+            ? extensions?.code
+            : extensions?.exception?.code || error.code;
+        const errorWithCode = { message, code: errorCode };
 
-  isRetryingAuth = true;
+        if (isCriticalError(errorWithCode)) {
+          hasCriticalError = true;
+        } else {
+          if (processedMessages.has(message)) return;
+          processedMessages.add(message);
 
-  // Invalider le JWT en cache pour forcer un re-fetch au prochain appel
-  clearCachedJWT();
+          const skipErrorToast = operation.getContext().skipErrorToast;
+          const isBoardNotFound =
+            message?.includes("Board not found") ||
+            message?.includes("board not found");
 
-  try {
-    // Vérifier si la session est encore valide (cookie)
-    const session = await authClient.getSession();
-    if (session?.data?.user) {
-      // Session valide — l'erreur était transitoire (JWT expiré mais session OK)
-      // Le prochain appel GraphQL récupérera un nouveau JWT automatiquement
-      return;
-    }
-
-    // Session réellement expirée
-    forceSessionExpiredRedirect("inactivity");
-  } catch {
-    // Erreur réseau — ne pas rediriger
-  } finally {
-    isRetryingAuth = false;
-  }
-};
-
-const errorLink = onError(({ graphQLErrors, networkError, operation }) => {
-  if (graphQLErrors) {
-    const processedMessages = new Set();
-
-    graphQLErrors.forEach((error) => {
-      const { message, extensions } = error;
-      const errorCode =
-        extensions?.code !== "INTERNAL_SERVER_ERROR"
-          ? extensions?.code
-          : extensions?.exception?.code || error.code;
-      const errorWithCode = { message, code: errorCode };
-
-      if (processedMessages.has(message)) return;
-      processedMessages.add(message);
-
-      const userMessage = getErrorMessage(errorWithCode, "generic");
-
-      if (isCriticalError(errorWithCode)) {
-        handleCriticalAuthError(operation, message);
-      } else {
-        const skipErrorToast = operation.getContext().skipErrorToast;
-        const isBoardNotFound =
-          message?.includes("Board not found") ||
-          message?.includes("board not found");
-
-        if (!skipErrorToast && !isBoardNotFound) {
-          toast.error(message || userMessage, { duration: 4000 });
+          if (!skipErrorToast && !isBoardNotFound) {
+            const userMessage = getErrorMessage(errorWithCode, "generic");
+            toast.error(message || userMessage, { duration: 4000 });
+          }
         }
-      }
-    });
-  }
-
-  if (networkError) {
-    const userMessage = getErrorMessage(networkError, "network");
-
-    if (networkError.message === "Failed to fetch") {
-      toast.error(userMessage, {
-        duration: 5000,
-        description: "Vérifiez votre connexion internet et réessayez",
       });
-    } else {
-      toast.warning(userMessage, { duration: 4000 });
+
+      // Erreur auth critique : retry transparent avec un nouveau JWT
+      if (hasCriticalError && !isRetryingAuth && !isRedirecting) {
+        const isInitialLoad = operation.getContext().isInitialLoad;
+        if (isInitialLoad) return;
+
+        isRetryingAuth = true;
+        clearCachedJWT();
+
+        // Retourner un Observable pour retry l'opération au lieu de propager l'erreur
+        return new Observable((observer) => {
+          authClient
+            .getSession()
+            .then((session) => {
+              if (!session?.data?.user) {
+                // Session réellement expirée — rediriger
+                forceSessionExpiredRedirect("inactivity");
+                observer.error(graphQLErrors[0]);
+                return;
+              }
+              // Session valide — retry la requête (authLink récupérera un nouveau JWT)
+              forward(operation).subscribe({
+                next: observer.next.bind(observer),
+                error: observer.error.bind(observer),
+                complete: observer.complete.bind(observer),
+              });
+            })
+            .catch(() => {
+              // Erreur réseau lors de la vérification — ne pas rediriger
+              // Propager l'erreur originale
+              observer.error(graphQLErrors[0]);
+            })
+            .finally(() => {
+              isRetryingAuth = false;
+            });
+        });
+      }
+    }
+
+    if (networkError) {
+      const userMessage = getErrorMessage(networkError, "network");
+
+      if (networkError.message === "Failed to fetch") {
+        toast.error(userMessage, {
+          duration: 5000,
+          description: "Vérifiez votre connexion internet et réessayez",
+        });
+      } else {
+        toast.warning(userMessage, { duration: 4000 });
+      }
     }
   }
-});
+);
 
 // ==================== CACHE ====================
 const cache = new InMemoryCache({

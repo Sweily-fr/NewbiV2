@@ -184,12 +184,24 @@ const nextConfig = {
       },
       {
         source: "/devis",
-        destination: "/produits/devis",
+        destination: "/produits/factures",
         permanent: true,
       },
       {
         source: "/signatures-email",
         destination: "/produits/signatures",
+        permanent: true,
+      },
+
+      // Pages produits supprimées
+      {
+        source: "/produits/devis",
+        destination: "/produits/factures",
+        permanent: true,
+      },
+      {
+        source: "/produits/transfer",
+        destination: "/produits/transfers",
         permanent: true,
       },
 
