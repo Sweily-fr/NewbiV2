@@ -302,7 +302,7 @@ export const useOrganizationInvitations = () => {
 
   // Renvoyer une invitation (annule l'ancienne et en crée une nouvelle)
   const resendInvitation = useCallback(
-    async (email, role, invitationId) => {
+    async (email, role, invitationId, { silent = false } = {}) => {
       try {
         // 1. Annuler l'ancienne invitation silencieusement
         if (invitationId) {
@@ -325,14 +325,14 @@ export const useOrganizationInvitations = () => {
         if (error) {
           const errorMessage =
             error.message || error.error || "Erreur lors du renvoi de l'invitation";
-          toast.error(errorMessage);
+          if (!silent) toast.error(errorMessage);
           return { success: false, error };
         }
 
-        toast.success(`Invitation renvoyée à ${email}`);
+        if (!silent) toast.success(`Invitation renvoyée à ${email}`);
         return { success: true, data };
       } catch (error) {
-        toast.error(error.message || "Erreur lors du renvoi de l'invitation");
+        if (!silent) toast.error(error.message || "Erreur lors du renvoi de l'invitation");
         return { success: false, error: error.message };
       }
     },
