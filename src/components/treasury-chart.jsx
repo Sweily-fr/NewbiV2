@@ -68,7 +68,7 @@ export function TreasuryChart({
   initialBalance = 0,
   isLoading = false,
 }) {
-  const [timeRange, setTimeRange] = useState("90d"); // 90d, 30d, 365d, 730d, custom
+  const [timeRange, setTimeRange] = useState("cumul-year"); // 90d, 30d, 365d, 730d, custom, cumul-year
   const [customStartDate, setCustomStartDate] = useState("");
   const [customEndDate, setCustomEndDate] = useState("");
   const [showCustomView, setShowCustomView] = useState(false);
