@@ -42,6 +42,19 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/src/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/src/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/src/components/ui/select";
 import { Badge } from "@/src/components/ui/badge";
 import {
   Avatar,
@@ -79,6 +92,9 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
     pending: true,
     suspended: true,
   });
+  const [roleChangeDialogOpen, setRoleChangeDialogOpen] = useState(false);
+  const [memberToChangeRole, setMemberToChangeRole] = useState(null);
+  const [selectedNewRole, setSelectedNewRole] = useState("");
 
   const { data: session } = useSession();
 
@@ -370,7 +386,7 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
 
       if (member.type === "invitation") {
         // Pour les invitations, annuler et re-inviter avec le nouveau rôle
-        result = await resendInvitation(member.email, newRole, member.id);
+        result = await resendInvitation(member.email, newRole, member.id, { silent: true });
       } else {
         // Pour les membres actifs, utiliser updateMemberRole de Better Auth
         result = await updateMemberRole(
@@ -382,8 +398,13 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
       }
 
       if (result.success) {
+        if (member.type === "invitation") {
+          toast.success("Rôle mis à jour avec succès");
+        }
         // Rafraîchir la liste des membres
         setRefreshTrigger((prev) => prev + 1);
+      } else if (member.type === "invitation") {
+        toast.error(result.error?.message || "Erreur lors du changement de rôle");
       }
     } catch (error) {
       console.error("Erreur lors du changement de rôle:", error);
@@ -735,10 +756,9 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
                                 <DropdownMenuItem
                                   className="cursor-pointer"
                                   onClick={() => {
-                                    const roles = ["owner", "admin", "member", "accountant", "viewer"];
-                                    const currentIndex = roles.indexOf(member.role);
-                                    const nextRole = roles[(currentIndex + 1) % roles.length];
-                                    handleRoleChange(member, nextRole);
+                                    setMemberToChangeRole(member);
+                                    setSelectedNewRole(member.role);
+                                    setRoleChangeDialogOpen(true);
                                   }}
                                 >
                                   <KeyRound className="h-4 w-4 mr-2" />
@@ -774,6 +794,105 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
         onSuccess={() => setRefreshTrigger((prev) => prev + 1)}
         organizationId={selectedOrg?.id}
       />
+
+      {/* Change Role Modal */}
+      <Dialog
+        open={roleChangeDialogOpen}
+        onOpenChange={(open) => {
+          setRoleChangeDialogOpen(open);
+          if (!open) {
+            setMemberToChangeRole(null);
+            setSelectedNewRole("");
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-[480px] p-1 gap-0 top-[40%] border-0 bg-[#efefef] dark:bg-[#1a1a1a] overflow-hidden rounded-2xl">
+          <div className="bg-background rounded-xl overflow-hidden ring-1 ring-black/[0.07] dark:ring-white/[0.1]">
+            <DialogHeader className="px-5 pt-4 pb-3 border-b border-border/40">
+              <DialogTitle className="text-sm font-medium flex items-center gap-2">
+                <KeyRound className="size-4" />
+                Changer le rôle
+              </DialogTitle>
+            </DialogHeader>
+
+            <div className="space-y-3 px-5 pt-3 pb-0">
+              <div className="flex items-center gap-3 px-3 py-2.5 bg-muted/50 rounded-lg border border-border/50">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={memberToChangeRole?.image} />
+                  <AvatarFallback className="text-xs bg-muted">
+                    {(memberToChangeRole?.name || memberToChangeRole?.email || "?")
+                      .charAt(0)
+                      .toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium truncate">
+                    {memberToChangeRole?.name || "Sans nom"}
+                  </p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {memberToChangeRole?.email}
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm text-muted-foreground">
+                  Nouveau rôle
+                </label>
+                <Select value={selectedNewRole} onValueChange={setSelectedNewRole}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue>{getRoleLabel(selectedNewRole)}</SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {["admin", "member", "accountant", "viewer"].map((r) => (
+                      <SelectItem key={r} value={r}>
+                        {getRoleLabel(r)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex justify-end border-t border-border/40 mt-3 px-5 py-3 -mx-5">
+                <div className="flex gap-2">
+                  <Button
+                    variant="ghost"
+                    className="cursor-pointer"
+                    onClick={() => {
+                      setRoleChangeDialogOpen(false);
+                      setMemberToChangeRole(null);
+                      setSelectedNewRole("");
+                    }}
+                  >
+                    Annuler
+                  </Button>
+                  <Button
+                    variant="primary"
+                    className="cursor-pointer"
+                    disabled={
+                      !selectedNewRole ||
+                      selectedNewRole === memberToChangeRole?.role ||
+                      updatingRoleForMember === memberToChangeRole?.id
+                    }
+                    onClick={async () => {
+                      if (memberToChangeRole && selectedNewRole) {
+                        setRoleChangeDialogOpen(false);
+                        await handleRoleChange(memberToChangeRole, selectedNewRole);
+                        setMemberToChangeRole(null);
+                        setSelectedNewRole("");
+                      }
+                    }}
+                  >
+                    {updatingRoleForMember === memberToChangeRole?.id
+                      ? "Mise à jour..."
+                      : "Confirmer"}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
