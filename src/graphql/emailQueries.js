@@ -12,6 +12,9 @@ export const GET_EMAIL_SETTINGS = gql`
       invoiceEmailTemplate
       quoteEmailTemplate
       creditNoteEmailTemplate
+      purchaseOrderEmailTemplate
+      useCustomFooter
+      customEmailFooter
       verified
       verifiedAt
       createdAt
@@ -32,6 +35,9 @@ export const UPDATE_EMAIL_SETTINGS = gql`
       invoiceEmailTemplate
       quoteEmailTemplate
       creditNoteEmailTemplate
+      purchaseOrderEmailTemplate
+      useCustomFooter
+      customEmailFooter
       verified
       verifiedAt
       createdAt
