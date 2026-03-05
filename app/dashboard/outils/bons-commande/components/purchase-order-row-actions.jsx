@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/src/components/ui/button";
 import { useRouter } from "next/navigation";
 import {
@@ -14,6 +14,7 @@ import {
   XCircle,
   Truck,
   Play,
+  RotateCcw,
 } from "lucide-react";
 import { ButtonGroup } from "@/src/components/ui/button-group";
 import {
@@ -29,7 +30,6 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/src/components/ui/dropdown-menu";
-import { SendDocumentModal } from "../../factures/components/send-document-modal";
 import {
   useChangePurchaseOrderStatus,
   useDeletePurchaseOrder,
@@ -41,36 +41,8 @@ import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { toast } from "@/src/components/ui/sonner";
 import PurchaseOrderSidebar from "./purchase-order-sidebar";
 
-// Fonction utilitaire pour formater les dates
-const formatDateForEmail = (dateValue) => {
-  if (!dateValue) return null;
-
-  try {
-    let date;
-    if (typeof dateValue === "number") {
-      date = new Date(dateValue);
-    } else if (typeof dateValue === "string") {
-      if (/^\d+$/.test(dateValue)) {
-        date = new Date(parseInt(dateValue, 10));
-      } else {
-        date = new Date(dateValue);
-      }
-    } else if (dateValue instanceof Date) {
-      date = dateValue;
-    } else {
-      return null;
-    }
-
-    if (isNaN(date.getTime())) return null;
-    return date.toLocaleDateString("fr-FR");
-  } catch {
-    return null;
-  }
-};
-
-export default function PurchaseOrderRowActions({ row, onRefetch }) {
+export default function PurchaseOrderRowActions({ row, onRefetch, onSendEmail }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [showSendEmailModal, setShowSendEmailModal] = useState(false);
   const router = useRouter();
   const purchaseOrder = row.original;
 
@@ -134,6 +106,16 @@ export default function PurchaseOrderRowActions({ row, onRefetch }) {
       if (onRefetch) onRefetch();
     } catch (error) {
       toast.error("Erreur lors de l'annulation");
+    }
+  };
+
+  const handleRevertToDraft = async () => {
+    try {
+      await changeStatus(purchaseOrder.id, PURCHASE_ORDER_STATUS.DRAFT);
+      toast.success("Bon de commande repassé en brouillon");
+      if (onRefetch) onRefetch();
+    } catch (error) {
+      toast.error("Erreur lors du passage en brouillon");
     }
   };
 
@@ -203,7 +185,7 @@ export default function PurchaseOrderRowActions({ row, onRefetch }) {
                     className="h-8 w-8 p-0 cursor-pointer"
                     onClick={(e) => {
                       e.stopPropagation();
-                      setShowSendEmailModal(true);
+                      onSendEmail?.(purchaseOrder);
                     }}
                   >
                     <Mail className="h-4 w-4" />
@@ -255,6 +237,10 @@ export default function PurchaseOrderRowActions({ row, onRefetch }) {
                     <Play className="mr-2 h-4 w-4" />
                     Démarrer le traitement
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleRevertToDraft} disabled={isLoading}>
+                    <RotateCcw className="mr-2 h-4 w-4" />
+                    Repasser en brouillon
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={handleCancel} disabled={isLoading}>
                     <XCircle className="mr-2 h-4 w-4" />
                     Annuler
@@ -305,22 +291,6 @@ export default function PurchaseOrderRowActions({ row, onRefetch }) {
         onRefetch={onRefetch}
       />
 
-      {/* Modal d'envoi par email */}
-      {showSendEmailModal && (
-        <SendDocumentModal
-          open={showSendEmailModal}
-          onOpenChange={setShowSendEmailModal}
-          documentId={purchaseOrder.id}
-          documentType="purchaseOrder"
-          documentNumber={`${purchaseOrder.prefix || "BC"}-${purchaseOrder.number}`}
-          clientName={purchaseOrder.client?.name}
-          clientEmail={purchaseOrder.client?.email}
-          totalAmount={new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(purchaseOrder.finalTotalTTC || purchaseOrder.totalTTC || 0)}
-          companyName={purchaseOrder.companyInfo?.name}
-          issueDate={formatDateForEmail(purchaseOrder.issueDate)}
-          onSent={() => setShowSendEmailModal(false)}
-        />
-      )}
     </>
   );
 }

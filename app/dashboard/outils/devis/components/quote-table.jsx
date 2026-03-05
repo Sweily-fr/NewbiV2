@@ -97,6 +97,7 @@ import { useQuoteTable } from "../hooks/use-quote-table";
 import QuoteRowActions from "./quote-row-actions";
 import QuoteFilters from "./quote-filters";
 import QuoteSidebar from "./quote-sidebar";
+import { SendDocumentModal } from "../../factures/components/send-document-modal";
 import { ImportQuoteModal } from "./import-quote-modal";
 import { ImportedQuoteSidebar } from "./imported-quote-sidebar";
 import { Skeleton } from "@/src/components/ui/skeleton";
@@ -113,6 +114,8 @@ export default function QuoteTable({ handleNewQuote, quoteIdToOpen, triggerImpor
   const [quoteToOpen, setQuoteToOpen] = useState(null);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [selectedImportedQuote, setSelectedImportedQuote] = useState(null);
+  // État pour la modal d'envoi par email - géré au niveau du tableau pour éviter les re-renders
+  const [sendEmailQuote, setSendEmailQuote] = useState(null);
 
   const {
     table,
@@ -130,6 +133,7 @@ export default function QuoteTable({ handleNewQuote, quoteIdToOpen, triggerImpor
   } = useQuoteTable({
     data: quotes || [],
     onRefetch: refetch,
+    onSendEmail: setSendEmailQuote,
   });
 
   // État pour les tabs de filtre rapide
@@ -876,6 +880,30 @@ export default function QuoteTable({ handleNewQuote, quoteIdToOpen, triggerImpor
         }}
         onUpdate={() => refetchImported()}
       />
+
+      {/* Modal d'envoi par email - géré au niveau du tableau pour éviter les re-renders */}
+      {sendEmailQuote && (
+        <SendDocumentModal
+          open={!!sendEmailQuote}
+          onOpenChange={(open) => !open && setSendEmailQuote(null)}
+          documentId={sendEmailQuote.id}
+          documentType="quote"
+          documentNumber={`${sendEmailQuote.prefix || "D"}-${sendEmailQuote.number}`}
+          clientName={sendEmailQuote.client?.name}
+          clientEmail={sendEmailQuote.client?.email}
+          totalAmount={new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(sendEmailQuote.finalTotalTTC || sendEmailQuote.totalTTC || 0)}
+          companyName={sendEmailQuote.companyInfo?.name}
+          issueDate={sendEmailQuote.issueDate ? (() => {
+            try {
+              const d = typeof sendEmailQuote.issueDate === "string" && /^\d+$/.test(sendEmailQuote.issueDate)
+                ? new Date(parseInt(sendEmailQuote.issueDate, 10))
+                : new Date(sendEmailQuote.issueDate);
+              return isNaN(d.getTime()) ? null : d.toLocaleDateString("fr-FR");
+            } catch { return null; }
+          })() : null}
+          onSent={() => setSendEmailQuote(null)}
+        />
+      )}
     </div>
   );
 }

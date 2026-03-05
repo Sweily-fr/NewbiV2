@@ -524,15 +524,13 @@ export default function EnhancedQuoteForm({
                 Annuler
               </Button>
 
-              {documentType !== "purchaseOrder" && (
-                <Button
-                  variant="outline"
-                  onClick={handleSaveDraft}
-                  disabled={!canEdit || saving}
-                >
-                  {saving ? "Sauvegarde..." : "Brouillon"}
-                </Button>
-              )}
+              <Button
+                variant="outline"
+                onClick={handleSaveDraft}
+                disabled={!canEdit || saving}
+              >
+                {saving ? "Sauvegarde..." : "Brouillon"}
+              </Button>
             </div>
 
             <div className="flex gap-3">

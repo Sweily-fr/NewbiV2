@@ -74,6 +74,7 @@ import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { usePurchaseOrderTable } from "../hooks/use-purchase-order-table";
 import PurchaseOrderRowActions from "./purchase-order-row-actions";
 import PurchaseOrderSidebar from "./purchase-order-sidebar";
+import { SendDocumentModal } from "../../factures/components/send-document-modal";
 import { ImportPurchaseOrderModal } from "./import-purchase-order-modal";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
@@ -86,6 +87,8 @@ export default function PurchaseOrderTable({ handleNewPurchaseOrder, poIdToOpen,
   const [canCreatePo, setCanCreatePo] = useState(false);
   const [poToOpen, setPoToOpen] = useState(null);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  // État pour la modal d'envoi par email - géré au niveau du tableau pour éviter les re-renders
+  const [sendEmailPO, setSendEmailPO] = useState(null);
 
   const {
     table,
@@ -99,6 +102,7 @@ export default function PurchaseOrderTable({ handleNewPurchaseOrder, poIdToOpen,
   } = usePurchaseOrderTable({
     data: purchaseOrders || [],
     onRefetch: refetch,
+    onSendEmail: setSendEmailPO,
   });
 
   // État pour les tabs de filtre rapide
@@ -686,6 +690,30 @@ export default function PurchaseOrderTable({ handleNewPurchaseOrder, poIdToOpen,
         open={isImportModalOpen}
         onOpenChange={setIsImportModalOpen}
       />
+
+      {/* Modal d'envoi par email - géré au niveau du tableau pour éviter les re-renders */}
+      {sendEmailPO && (
+        <SendDocumentModal
+          open={!!sendEmailPO}
+          onOpenChange={(open) => !open && setSendEmailPO(null)}
+          documentId={sendEmailPO.id}
+          documentType="purchaseOrder"
+          documentNumber={`${sendEmailPO.prefix || "BC"}-${sendEmailPO.number}`}
+          clientName={sendEmailPO.client?.name}
+          clientEmail={sendEmailPO.client?.email}
+          totalAmount={new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(sendEmailPO.finalTotalTTC || sendEmailPO.totalTTC || 0)}
+          companyName={sendEmailPO.companyInfo?.name}
+          issueDate={sendEmailPO.issueDate ? (() => {
+            try {
+              const d = typeof sendEmailPO.issueDate === "string" && /^\d+$/.test(sendEmailPO.issueDate)
+                ? new Date(parseInt(sendEmailPO.issueDate, 10))
+                : new Date(sendEmailPO.issueDate);
+              return isNaN(d.getTime()) ? null : d.toLocaleDateString("fr-FR");
+            } catch { return null; }
+          })() : null}
+          onSent={() => setSendEmailPO(null)}
+        />
+      )}
     </div>
   );
 }

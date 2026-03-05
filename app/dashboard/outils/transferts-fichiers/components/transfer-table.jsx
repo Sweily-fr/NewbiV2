@@ -418,6 +418,16 @@ export default function TransferTable({
   const [selectedTransfer, setSelectedTransfer] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
+  // Synchroniser selectedTransfer avec les données fraîches des transfers
+  useEffect(() => {
+    if (selectedTransfer && transfers) {
+      const updated = transfers.find((t) => t.id === selectedTransfer.id);
+      if (updated && updated !== selectedTransfer) {
+        setSelectedTransfer(updated);
+      }
+    }
+  }, [transfers]);
+
   // Notifier le parent du changement de sélection
   useEffect(() => {
     onSelectionChange?.({
@@ -432,10 +442,12 @@ export default function TransferTable({
     window.open(`/dashboard/outils/transferts-fichiers/${shareLink}`, "_blank");
   };
 
-  // Ouvrir le drawer de détail
+  // Ouvrir le drawer de détail et rafraîchir les données
   const openTransferDetail = (transfer) => {
     setSelectedTransfer(transfer);
     setDrawerOpen(true);
+    // Rafraîchir les données pour avoir le downloadCount et passwordProtected à jour
+    onRefresh?.();
   };
 
   const handleDeleteTransfer = async (transferId) => {
@@ -930,6 +942,7 @@ export default function TransferTable({
           setDrawerOpen(false);
           handleDeleteTransfer(transfer.id);
         }}
+        onRefresh={onRefresh}
       />
     </div>
   );

@@ -17,7 +17,6 @@ import {
   Mail,
   FileUp,
 } from "lucide-react";
-import { SendDocumentModal } from "./send-document-modal";
 import { ButtonGroup } from "@/src/components/ui/button-group";
 import {
   Tooltip,
@@ -43,36 +42,6 @@ import { usePermissions } from "@/src/hooks/usePermissions";
 // InvoiceSidebar est maintenant géré au niveau du tableau (InvoiceTable) pour éviter les re-renders
 import InvoiceMobileFullscreen from "./invoice-mobile-fullscreen";
 
-// Fonction utilitaire pour formater les dates
-const formatDateForEmail = (dateValue) => {
-  if (!dateValue) return null;
-
-  try {
-    let date;
-    // Si c'est un timestamp en millisecondes (nombre ou string de chiffres)
-    if (typeof dateValue === "number") {
-      date = new Date(dateValue);
-    } else if (typeof dateValue === "string") {
-      // Si c'est un timestamp en string
-      if (/^\d+$/.test(dateValue)) {
-        date = new Date(parseInt(dateValue, 10));
-      } else {
-        // Sinon c'est une date ISO ou autre format string
-        date = new Date(dateValue);
-      }
-    } else if (dateValue instanceof Date) {
-      date = dateValue;
-    } else {
-      return null;
-    }
-
-    if (isNaN(date.getTime())) return null;
-    return date.toLocaleDateString("fr-FR");
-  } catch {
-    return null;
-  }
-};
-
 export default function InvoiceRowActions({
   row,
   onRefetch,
@@ -80,12 +49,12 @@ export default function InvoiceRowActions({
   isClientExcluded = false,
   onOpenReminderSettings,
   onOpenSidebar, // Callback pour ouvrir la sidebar au niveau du tableau
+  onSendEmail, // Callback pour ouvrir la modal d'envoi au niveau du tableau
 }) {
   // OPTIMISÉ: Suppression de isSidebarOpen - géré au niveau du tableau pour éviter les re-renders
   const [isMobileFullscreenOpen, setIsMobileFullscreenOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [canCreateCreditNote, setCanCreateCreditNote] = useState(false);
-  const [showSendEmailModal, setShowSendEmailModal] = useState(false);
   const router = useRouter();
   const invoice = row.original;
   const { canCreate } = usePermissions();
@@ -264,7 +233,7 @@ export default function InvoiceRowActions({
                 <DropdownMenuItem
                   onClick={(e) => {
                     e.stopPropagation();
-                    setShowSendEmailModal(true);
+                    onSendEmail?.(invoice);
                   }}
                 >
                   <Mail className="mr-2 h-4 w-4" />
@@ -324,29 +293,6 @@ export default function InvoiceRowActions({
         />
       )}
 
-      {/* Modal d'envoi par email */}
-      {showSendEmailModal && (
-        <SendDocumentModal
-          open={showSendEmailModal}
-          onOpenChange={setShowSendEmailModal}
-          documentId={invoice.id}
-          documentType="invoice"
-          documentNumber={`${invoice.prefix || "F"}-${invoice.number}`}
-          clientName={invoice.client?.name}
-          clientEmail={invoice.client?.email}
-          totalAmount={new Intl.NumberFormat("fr-FR", {
-            style: "currency",
-            currency: "EUR",
-          }).format(invoice.finalTotalTTC || invoice.totalTTC || 0)}
-          companyName={invoice.companyInfo?.name}
-          issueDate={formatDateForEmail(invoice.issueDate)}
-          dueDate={formatDateForEmail(invoice.dueDate)}
-          onSent={() => {
-            setShowSendEmailModal(false);
-            // La notification est déjà gérée par la modal
-          }}
-        />
-      )}
     </>
   );
 }
