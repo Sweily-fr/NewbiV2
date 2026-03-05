@@ -361,11 +361,7 @@ export function TreasuryChart({
         <div className="flex flex-col gap-1">
           <CardTitle className="text-base font-normal">Trésorerie</CardTitle>
           <CardDescription>
-            <span
-              className={`text-2xl font-medium ${
-                treasuryConsumption >= 0 ? "text-green-600" : "text-red-600"
-              }`}
-            >
+            <span className="text-2xl font-medium text-foreground">
               {treasuryConsumption >= 0 ? "+" : ""}
               {formatCurrency(treasuryConsumption)}
             </span>
