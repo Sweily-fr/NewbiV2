@@ -23,41 +23,56 @@ const demoData = {
 // Fonction pour mettre en évidence les variables
 function highlightVariables(text, realData = {}) {
   if (!text) return [];
-  
+
   const regex = /\{(\w+)\}/g;
   const parts = [];
   let lastIndex = 0;
   let match;
-  
-  // Fusionner les données réelles avec les données de démo
+
   const data = { ...demoData, ...realData };
-  
+
   while ((match = regex.exec(text)) !== null) {
     if (match.index > lastIndex) {
       parts.push({ type: "text", content: text.slice(lastIndex, match.index) });
     }
-    
+
     const variableName = match[1];
     const value = data[variableName] || match[0];
-    
+
     parts.push({
       type: "variable",
       content: value,
       variable: match[0],
     });
-    
+
     lastIndex = regex.lastIndex;
   }
-  
+
   if (lastIndex < text.length) {
     parts.push({ type: "text", content: text.slice(lastIndex) });
   }
-  
+
   return parts;
 }
 
-export default function SendDocumentEmailPreview({ 
-  formData, 
+function VariableHighlight({ parts }) {
+  return parts.map((part, index) =>
+    part.type === "variable" ? (
+      <code
+        key={index}
+        className="px-1 py-0.5 text-[11px] rounded-md bg-muted/60 text-muted-foreground border border-border/40 font-mono"
+        title={part.variable}
+      >
+        {part.content}
+      </code>
+    ) : (
+      <span key={index}>{part.content}</span>
+    )
+  );
+}
+
+export default function SendDocumentEmailPreview({
+  formData,
   documentType = "invoice",
   documentNumber,
   clientName,
@@ -68,11 +83,10 @@ export default function SendDocumentEmailPreview({
   senderName,
   issueDate,
   dueDate,
-  invoiceNumber, // Numéro de la facture associée (pour les avoirs)
+  invoiceNumber,
 }) {
   const labels = DOCUMENT_LABELS[documentType] || DOCUMENT_LABELS.invoice;
-  
-  // Utiliser les vraies données si disponibles
+
   const displayData = useMemo(() => ({
     documentNumber: documentNumber || demoData.documentNumber,
     clientName: clientName || demoData.clientName,
@@ -82,7 +96,7 @@ export default function SendDocumentEmailPreview({
     companyName: companyName || demoData.companyName,
     invoiceNumber: invoiceNumber || demoData.invoiceNumber,
   }), [documentNumber, clientName, totalAmount, companyName, issueDate, dueDate, invoiceNumber]);
-  
+
   const fullSender = useMemo(() => {
     if (senderName && senderEmail) {
       return `${senderName} <${senderEmail}>`;
@@ -91,39 +105,36 @@ export default function SendDocumentEmailPreview({
   }, [senderName, senderEmail]);
 
   return (
-    <div className="bg-white dark:bg-[#1a1a1a] rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+    <div className="bg-white dark:bg-[#1a1a1a] rounded-xl overflow-hidden border border-[#e6e7ea] dark:border-[#2E2E32]">
       {/* Email Meta Header */}
-      <div className="px-4 md:px-6 py-4 space-y-3 md:space-y-2 text-sm border-b border-gray-200 dark:border-gray-700">
-        <div className="flex flex-col sm:flex-row sm:gap-4">
-          <span className="text-muted-foreground sm:w-24 text-xs sm:text-sm mb-0.5 sm:mb-0">De</span>
-          <span className="font-medium text-foreground text-xs sm:text-sm break-all">{fullSender}</span>
+      <div className="px-5 py-4 space-y-2 text-sm border-b border-[#e6e7ea] dark:border-[#2E2E32]">
+        <div className="flex gap-4">
+          <span className="text-muted-foreground w-20 text-xs shrink-0">De</span>
+          <span className="font-medium text-foreground text-xs break-all">{fullSender}</span>
         </div>
-        <div className="flex flex-col sm:flex-row sm:gap-4">
-          <span className="text-muted-foreground sm:w-24 text-xs sm:text-sm mb-0.5 sm:mb-0">À</span>
-          <span className="text-foreground text-xs sm:text-sm">{clientEmail || "client@exemple.fr"}</span>
+        <div className="flex gap-4">
+          <span className="text-muted-foreground w-20 text-xs shrink-0">À</span>
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="flex items-center justify-center size-5 rounded-full bg-[#5b50ff]/10 shrink-0">
+              <span className="text-[9px] font-medium text-[#5b50ff]">
+                {(clientName || "?").charAt(0).toUpperCase()}
+              </span>
+            </div>
+            <span className="text-foreground text-xs truncate">
+              {clientEmail || "client@exemple.fr"}
+            </span>
+          </div>
         </div>
-        <div className="flex flex-col sm:flex-row sm:gap-4">
-          <span className="text-muted-foreground sm:w-24 text-xs sm:text-sm mb-0.5 sm:mb-0">Objet</span>
-          <span className="font-medium text-foreground text-xs sm:text-sm">
-            {highlightVariables(formData?.emailSubject || "", displayData).map((part, index) => (
-              part.type === "variable" ? (
-                <span
-                  key={index}
-                  className="bg-[#5b50ff]/10 text-[#5b50ff] px-1 py-0.5 rounded text-xs"
-                  title={part.variable}
-                >
-                  {part.content}
-                </span>
-              ) : (
-                <span key={index}>{part.content}</span>
-              )
-            ))}
+        <div className="flex gap-4">
+          <span className="text-muted-foreground w-20 text-xs shrink-0">Objet</span>
+          <span className="font-medium text-foreground text-xs">
+            <VariableHighlight parts={highlightVariables(formData?.emailSubject || "", displayData)} />
           </span>
         </div>
-        <div className="flex flex-col sm:flex-row sm:gap-4">
-          <span className="text-muted-foreground sm:w-24 text-xs sm:text-sm mb-0.5 sm:mb-0">Pièce jointe</span>
-          <span className="text-[#5b50ff] flex items-center gap-1 text-xs sm:text-sm">
-            <Paperclip className="h-3 w-3" />
+        <div className="flex gap-4">
+          <span className="text-muted-foreground w-20 text-xs shrink-0">Pièce jointe</span>
+          <span className="text-muted-foreground flex items-center gap-1.5 text-xs">
+            <Paperclip className="size-3" />
             {displayData.documentNumber}.pdf
           </span>
         </div>
@@ -131,72 +142,60 @@ export default function SendDocumentEmailPreview({
 
       {/* Contenu principal */}
       <div className="px-6 py-6">
-        <h1 className="text-xl font-normal text-center text-gray-900 dark:text-white mb-4">
+        <h1 className="text-lg font-medium text-center text-foreground mb-5">
           {labels.title}
         </h1>
-        
+
         {/* Corps de l'email */}
         <div className="mb-6">
           {formData?.emailBody ? (
-            <div className="text-gray-600 dark:text-gray-300 text-sm leading-6 whitespace-pre-wrap">
-              {highlightVariables(formData.emailBody, displayData).map((part, index) => (
-                part.type === "variable" ? (
-                  <span
-                    key={index}
-                    className="bg-[#5b50ff]/10 text-[#5b50ff] px-1 py-0.5 rounded text-xs font-medium"
-                    title={part.variable}
-                  >
-                    {part.content}
-                  </span>
-                ) : (
-                  <span key={index}>{part.content}</span>
-                )
-              ))}
+            <div className="text-muted-foreground text-sm leading-6 whitespace-pre-wrap">
+              <VariableHighlight parts={highlightVariables(formData.emailBody, displayData)} />
             </div>
           ) : (
-            <p className="text-gray-400 dark:text-gray-500 text-sm italic">
+            <p className="text-muted-foreground/50 text-sm italic">
               Aperçu du contenu de l&apos;email...
             </p>
           )}
         </div>
 
         {/* Bloc détails document */}
-        <div className="bg-gray-50 dark:bg-[#252525] rounded-lg p-4 mb-6">
-          <h2 className="text-xs font-semibold text-gray-900 dark:text-white mb-3 uppercase tracking-wide">
-            DÉTAILS {labels.detailsTitle}
+        <div className="rounded-[9px] border border-[#e6e7ea] dark:border-[#2E2E32] p-4 mb-6">
+          <h2 className="text-[11px] font-medium text-muted-foreground mb-3 uppercase tracking-wider">
+            Détails {labels.detailsTitle.toLowerCase()}
           </h2>
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="text-gray-500 dark:text-gray-400">Numéro</span>
-              <span className="font-medium text-gray-900 dark:text-white">{displayData.documentNumber}</span>
+              <span className="text-muted-foreground">Numéro</span>
+              <span className="font-medium text-foreground">{displayData.documentNumber}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-gray-500 dark:text-gray-400">Montant total</span>
-              <span className="font-semibold text-gray-900 dark:text-white">{displayData.totalAmount}</span>
+              <span className="text-muted-foreground">Montant total</span>
+              <span className="font-semibold text-foreground">{displayData.totalAmount}</span>
             </div>
             {displayData.issueDate && (
               <div className="flex justify-between text-sm">
-                <span className="text-gray-500 dark:text-gray-400">Date</span>
-                <span className="font-medium text-gray-900 dark:text-white">{displayData.issueDate}</span>
+                <span className="text-muted-foreground">Date</span>
+                <span className="font-medium text-foreground">{displayData.issueDate}</span>
               </div>
             )}
             {documentType === "invoice" && displayData.dueDate && (
               <div className="flex justify-between text-sm">
-                <span className="text-gray-500 dark:text-gray-400">Date d&apos;échéance</span>
-                <span className="font-medium text-gray-900 dark:text-white">{displayData.dueDate}</span>
+                <span className="text-muted-foreground">Date d&apos;échéance</span>
+                <span className="font-medium text-foreground">{displayData.dueDate}</span>
               </div>
             )}
             {documentType === "creditNote" && displayData.invoiceNumber && (
               <div className="flex justify-between text-sm">
-                <span className="text-gray-500 dark:text-gray-400">Facture associée</span>
-                <span className="font-medium text-gray-900 dark:text-white">{displayData.invoiceNumber}</span>
+                <span className="text-muted-foreground">Facture associée</span>
+                <span className="font-medium text-foreground">{displayData.invoiceNumber}</span>
               </div>
             )}
           </div>
         </div>
 
         {/* Informations complémentaires */}
-        <div className="text-sm text-gray-600 dark:text-gray-300 space-y-3">
+        <div className="text-sm text-muted-foreground space-y-3">
           <p>{documentType === "invoice" ? "La" : documentType === "creditNote" ? "L'" : "Le"} {labels.singular} est {documentType === "invoice" ? "jointe" : "joint"} à cet email au format PDF.</p>
           <p>Pour toute question, n&apos;hésitez pas à nous contacter.</p>
           <p>
@@ -207,9 +206,14 @@ export default function SendDocumentEmailPreview({
       </div>
 
       {/* Footer */}
-      <div className="bg-gray-50 dark:bg-[#252525] px-6 py-4 text-center border-t border-gray-200 dark:border-gray-700">
-        <p className="text-xs text-gray-400 dark:text-gray-500">
-          {documentType === "invoice" ? "Cette facture" : documentType === "quote" ? "Ce devis" : documentType === "purchaseOrder" ? "Ce bon de commande" : "Cet avoir"} a été envoyé{documentType === "invoice" ? "e" : ""} par {displayData.companyName} depuis la plateforme Newbi Logiciel de gestion.
+      <div className="px-6 py-3 text-center border-t border-[#e6e7ea] dark:border-[#2E2E32]">
+        <p className="text-[11px] text-muted-foreground/60">
+          {formData?.useCustomFooter && formData?.customEmailFooter
+            ? <VariableHighlight parts={highlightVariables(formData.customEmailFooter, displayData)} />
+            : <>
+                {documentType === "invoice" ? "Cette facture" : documentType === "quote" ? "Ce devis" : documentType === "purchaseOrder" ? "Ce bon de commande" : "Cet avoir"} a été envoyé{documentType === "invoice" ? "e" : ""} par {displayData.companyName} depuis la plateforme Newbi Logiciel de gestion.
+              </>
+          }
         </p>
       </div>
     </div>

@@ -86,10 +86,10 @@ export const metadata = {
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "48x48" },
-      { url: "/icon.png", sizes: "any" },
-      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
     ],
-    apple: "/icon.png",
+    apple: "/apple-touch-icon.png",
     shortcut: "/favicon.ico",
   },
 };
@@ -108,7 +108,7 @@ export default function RootLayout({ children }) {
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="Newbi" />
         <meta name="theme-color" content="#5b4fff" />
-        <link rel="apple-touch-icon" href="/icon.png" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <script
           dangerouslySetInnerHTML={{
             __html: `

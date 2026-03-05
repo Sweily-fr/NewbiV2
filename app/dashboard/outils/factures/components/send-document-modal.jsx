@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useForm, FormProvider } from "react-hook-form";
-import { X, LoaderCircle, Send, Eye } from "lucide-react";
+import { X, LoaderCircle, Eye, CornerDownLeft } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import {
@@ -18,7 +18,6 @@ import {
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/src/components/ui/dialog";
@@ -160,6 +159,8 @@ export function SendDocumentModal({
     defaultValues: {
       emailSubject: defaultContent.subject,
       emailBody: defaultContent.body,
+      useCustomFooter: emailSettings?.useCustomFooter || false,
+      customEmailFooter: emailSettings?.customEmailFooter || "",
     },
   });
 
@@ -172,6 +173,8 @@ export function SendDocumentModal({
       reset({
         emailSubject: content.subject,
         emailBody: content.body,
+        useCustomFooter: emailSettings?.useCustomFooter || false,
+        customEmailFooter: emailSettings?.customEmailFooter || "",
       });
       setShowMobilePreview(false);
     }
@@ -250,6 +253,8 @@ export function SendDocumentModal({
             documentType === "purchaseOrder"
               ? data.emailBody
               : emailSettings.purchaseOrderEmailTemplate || "",
+          useCustomFooter: data.useCustomFooter || false,
+          customEmailFooter: data.customEmailFooter || "",
         };
 
         // Sauvegarder en arrière-plan sans bloquer l'envoi
@@ -329,20 +334,13 @@ export function SendDocumentModal({
         }}
       >
         <DialogContent
-          className="flex flex-col p-0 overflow-hidden !max-w-7xl !w-[calc(100vw-4rem)] h-[calc(100vh-4rem)]"
+          className="flex flex-col gap-0 p-0 overflow-hidden !max-w-7xl !w-[calc(100vw-4rem)] h-[calc(100vh-4rem)]"
           showCloseButton={false}
         >
           {/* Header */}
-          <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-700">
-            <DialogHeader className="text-left">
-              <DialogTitle className="text-left">{labels.title}</DialogTitle>
-              <DialogDescription className="text-left hidden sm:block">
-                Envoyez{" "}
-                {labels.article.endsWith("'")
-                  ? labels.article
-                  : `${labels.article} `}
-                {labels.singular} par email à votre client
-              </DialogDescription>
+          <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-border/40">
+            <DialogHeader>
+              <DialogTitle className="text-sm font-medium">{labels.title}</DialogTitle>
             </DialogHeader>
             <Button
               variant="ghost"
@@ -358,11 +356,11 @@ export function SendDocumentModal({
           <FormProvider {...methods}>
             <form
               onSubmit={handleSubmit(onSubmit)}
-              className="flex-1 flex overflow-hidden"
+              className="flex-1 min-h-0 flex overflow-hidden"
             >
               {/* Left Panel - Form */}
-              <div className="w-full lg:w-1/2 overflow-y-auto lg:border-r border-gray-200 dark:border-gray-700 flex flex-col">
-                <div className="flex-1 overflow-y-auto p-4 md:p-6">
+              <div className="w-full lg:w-1/2 overflow-y-auto lg:border-r border-border/40 flex flex-col">
+                <div className="flex-1 overflow-y-auto p-5">
                   <SendDocumentEmailForm
                     documentType={documentType}
                     clientEmail={clientEmail}
@@ -372,7 +370,7 @@ export function SendDocumentModal({
               </div>
 
               {/* Right Panel - Preview (hidden on mobile) */}
-              <div className="hidden lg:block w-1/2 overflow-y-auto p-6 bg-gray-50 dark:bg-[#252525]">
+              <div className="hidden lg:block w-1/2 overflow-y-auto p-5 bg-gray-50 dark:bg-[#252525]">
                 <SendDocumentEmailPreview
                   formData={watch()}
                   documentType={documentType}
@@ -392,28 +390,34 @@ export function SendDocumentModal({
           </FormProvider>
 
           {/* Footer */}
-          <div className="flex items-center justify-between gap-3 p-4 md:p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#252525]">
+          <div className="flex items-center justify-between border-t border-border/40 px-5 py-3">
             <Button
               type="button"
               variant="outline"
               onClick={handleSkip}
               disabled={isSending}
-              className="text-sm"
             >
               Ne pas envoyer
             </Button>
             <Button
-              type="submit"
+              variant="primary"
               onClick={handleSubmit(onSubmit)}
               disabled={isSending || !clientEmail}
-              className="gap-2 text-sm bg-[#5b50ff] hover:bg-[#4a41e0]"
+              className="gap-2"
             >
               {isSending ? (
-                <LoaderCircle className="h-4 w-4 animate-spin" />
+                <>
+                  <LoaderCircle className="size-4 animate-spin" />
+                  Envoi...
+                </>
               ) : (
-                <Send className="h-4 w-4" />
+                <>
+                  Envoyer au client
+                  <kbd className="inline-flex items-center justify-center size-5 rounded bg-white/20 ml-0.5">
+                    <CornerDownLeft className="size-3" />
+                  </kbd>
+                </>
               )}
-              Envoyer au client
             </Button>
           </div>
 

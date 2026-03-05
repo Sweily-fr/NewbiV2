@@ -102,39 +102,45 @@ function OnboardingContent() {
               router.push("/dashboard");
               return;
             } else {
-              // Avant d'afficher le plan, vérifier si une AUTRE org a un abonnement actif
-              console.log(
-                "⚠️ [ONBOARDING] Org active sans abonnement, vérification des autres orgs...",
-              );
+              // Si renew=true, l'utilisateur a volontairement choisi cette org expirée
+              // → ne pas auto-switch vers une autre org
+              const isRenewing = searchParams.get("renew") === "true";
 
-              const { data: allOrgs } = await authClient.organization.list();
-              if (allOrgs && allOrgs.length > 1) {
-                for (const org of allOrgs) {
-                  if (org.id === activeOrg.id) continue;
-                  try {
-                    const subRes = await fetch(
-                      `/api/organizations/${org.id}/subscription`
-                    );
-                    const subData = await subRes.json();
-                    const isActive =
-                      subData.status === "active" ||
-                      subData.status === "trialing" ||
-                      (subData.status === "canceled" &&
-                        subData.periodEnd &&
-                        new Date(subData.periodEnd) > new Date());
+              if (!isRenewing) {
+                // Avant d'afficher le plan, vérifier si une AUTRE org a un abonnement actif
+                console.log(
+                  "⚠️ [ONBOARDING] Org active sans abonnement, vérification des autres orgs...",
+                );
 
-                    if (isActive) {
-                      console.log(
-                        `✅ [ONBOARDING] Org ${org.id} a un abonnement actif, auto-switch`,
+                const { data: allOrgs } = await authClient.organization.list();
+                if (allOrgs && allOrgs.length > 1) {
+                  for (const org of allOrgs) {
+                    if (org.id === activeOrg.id) continue;
+                    try {
+                      const subRes = await fetch(
+                        `/api/organizations/${org.id}/subscription`
                       );
-                      await authClient.organization.setActive({
-                        organizationId: org.id,
-                      });
-                      router.push("/dashboard");
-                      return;
+                      const subData = await subRes.json();
+                      const isActive =
+                        subData.status === "active" ||
+                        subData.status === "trialing" ||
+                        (subData.status === "canceled" &&
+                          subData.periodEnd &&
+                          new Date(subData.periodEnd) > new Date());
+
+                      if (isActive) {
+                        console.log(
+                          `✅ [ONBOARDING] Org ${org.id} a un abonnement actif, auto-switch`,
+                        );
+                        await authClient.organization.setActive({
+                          organizationId: org.id,
+                        });
+                        router.push("/dashboard");
+                        return;
+                      }
+                    } catch (e) {
+                      console.warn(`[ONBOARDING] Erreur vérif sub org ${org.id}:`, e);
                     }
-                  } catch (e) {
-                    console.warn(`[ONBOARDING] Erreur vérif sub org ${org.id}:`, e);
                   }
                 }
               }

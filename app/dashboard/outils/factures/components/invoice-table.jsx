@@ -100,6 +100,7 @@ import InvoiceRowActions from "./invoice-row-actions";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import InvoiceFilters from "./invoice-filters";
 import InvoiceSidebar from "./invoice-sidebar";
+import { SendDocumentModal } from "./send-document-modal";
 import { ImportInvoiceModal } from "./import-invoice-modal";
 import { ImportedInvoiceSidebar } from "./imported-invoice-sidebar";
 import {
@@ -123,6 +124,8 @@ export default function InvoiceTable({
   const { canCreate } = usePermissions();
   const [canCreateInvoice, setCanCreateInvoice] = useState(false);
   const [invoiceToOpen, setInvoiceToOpen] = useState(null);
+  // État pour la modal d'envoi par email - géré au niveau du tableau pour éviter les re-renders
+  const [sendEmailInvoice, setSendEmailInvoice] = useState(null);
 
   // États pour les factures importées
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -198,6 +201,7 @@ export default function InvoiceTable({
     onOpenReminderSettings,
     excludedClientIds,
     onOpenSidebar: setInvoiceToOpen, // Passer la fonction pour ouvrir la sidebar au niveau du tableau
+    onSendEmail: setSendEmailInvoice, // Passer la fonction pour ouvrir la modal d'envoi au niveau du tableau
   });
 
   // État pour les tabs de filtre rapide
@@ -957,6 +961,41 @@ export default function InvoiceTable({
           setSelectedImportedInvoice(null);
         }}
       />
+
+      {/* Modal d'envoi par email - géré au niveau du tableau pour éviter les re-renders */}
+      {sendEmailInvoice && (
+        <SendDocumentModal
+          open={!!sendEmailInvoice}
+          onOpenChange={(open) => !open && setSendEmailInvoice(null)}
+          documentId={sendEmailInvoice.id}
+          documentType="invoice"
+          documentNumber={`${sendEmailInvoice.prefix || "F"}-${sendEmailInvoice.number}`}
+          clientName={sendEmailInvoice.client?.name}
+          clientEmail={sendEmailInvoice.client?.email}
+          totalAmount={new Intl.NumberFormat("fr-FR", {
+            style: "currency",
+            currency: "EUR",
+          }).format(sendEmailInvoice.finalTotalTTC || sendEmailInvoice.totalTTC || 0)}
+          companyName={sendEmailInvoice.companyInfo?.name}
+          issueDate={sendEmailInvoice.issueDate ? (() => {
+            try {
+              const d = typeof sendEmailInvoice.issueDate === "string" && /^\d+$/.test(sendEmailInvoice.issueDate)
+                ? new Date(parseInt(sendEmailInvoice.issueDate, 10))
+                : new Date(sendEmailInvoice.issueDate);
+              return isNaN(d.getTime()) ? null : d.toLocaleDateString("fr-FR");
+            } catch { return null; }
+          })() : null}
+          dueDate={sendEmailInvoice.dueDate ? (() => {
+            try {
+              const d = typeof sendEmailInvoice.dueDate === "string" && /^\d+$/.test(sendEmailInvoice.dueDate)
+                ? new Date(parseInt(sendEmailInvoice.dueDate, 10))
+                : new Date(sendEmailInvoice.dueDate);
+              return isNaN(d.getTime()) ? null : d.toLocaleDateString("fr-FR");
+            } catch { return null; }
+          })() : null}
+          onSent={() => setSendEmailInvoice(null)}
+        />
+      )}
     </div>
   );
 }

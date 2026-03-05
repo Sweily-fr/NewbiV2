@@ -19,7 +19,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
-import { Clock, Euro, Check, Search, Filter, X, Users } from "lucide-react";
+import { Clock, Euro, Check, Search, Filter, X, Users, ExternalLink } from "lucide-react";
 
 const formatCurrency = (amount) =>
   new Intl.NumberFormat("fr-FR", {
@@ -47,7 +47,7 @@ const getBillableHours = (totalSeconds, roundingOption) => {
   return hours;
 };
 
-export function ConvertToInvoiceModal({ open, onOpenChange, tasks, onConvert, getEffectiveSeconds, columns = [], members = [] }) {
+export function ConvertToInvoiceModal({ open, onOpenChange, tasks, onConvert, getEffectiveSeconds, columns = [], members = [], onOpenTask }) {
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [searchQuery, setSearchQuery] = useState("");
   const [filterMemberId, setFilterMemberId] = useState(null);
@@ -306,10 +306,29 @@ export function ConvertToInvoiceModal({ open, onOpenChange, tasks, onConvert, ge
                         checked={isSelected}
                         onCheckedChange={() => toggleTask(task.id)}
                         onClick={(e) => e.stopPropagation()}
-                        className="mt-0.5"
+                        className="mt-0.5 shrink-0"
                       />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs sm:text-sm font-medium truncate">{task.title}</p>
+                      <div className="flex-1 overflow-hidden">
+                        <div className="flex items-center gap-1.5">
+                          <p className="text-xs sm:text-sm font-medium" title={task.title}>
+                            {task.title.length > 45 ? task.title.slice(0, 45) + "..." : task.title}
+                          </p>
+                          {onOpenTask && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onOpenTask(task);
+                              }}
+                              className="shrink-0 p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                              title="Ouvrir la tâche"
+                            >
+                              <ExternalLink className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                          <span className="text-xs sm:text-sm font-semibold whitespace-nowrap shrink-0 ml-auto">
+                            {formatCurrency(price)}
+                          </span>
+                        </div>
                         <div className="flex items-center gap-2 sm:gap-3 mt-1 flex-wrap">
                           <span className="inline-flex items-center gap-1 text-[11px] sm:text-xs text-muted-foreground">
                             <Clock className="h-3 w-3 shrink-0" />
@@ -326,9 +345,6 @@ export function ConvertToInvoiceModal({ open, onOpenChange, tasks, onConvert, ge
                           )}
                         </div>
                       </div>
-                      <span className="text-xs sm:text-sm font-semibold whitespace-nowrap">
-                        {formatCurrency(price)}
-                      </span>
                     </div>
                   );
                 })

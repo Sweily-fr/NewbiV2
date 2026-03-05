@@ -112,7 +112,23 @@ export function TransferDetailDrawer({
   onOpenChange,
   onDelete,
   onRename,
+  onRefresh,
 }) {
+  // Copier le lien
+  const [copied, setCopied] = useState(false);
+  const inputRef = useRef(null);
+
+  // Download count local state (pour mise à jour instantanée)
+  const [localDownloadCount, setLocalDownloadCount] = useState(0);
+  useEffect(() => {
+    setLocalDownloadCount(transfer?.downloadCount || 0);
+  }, [transfer?.id, transfer?.downloadCount]);
+
+  // Lightbox state
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+
+  // Tous les hooks sont déclarés avant tout return conditionnel
   if (!transfer) return null;
 
   const firstFile = transfer.files?.[0];
@@ -123,20 +139,6 @@ export function TransferDetailDrawer({
 
   // Construire le lien de partage
   const shareUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/transfer/${transfer.shareLink}${transfer.accessKey ? `?key=${transfer.accessKey}` : ""}`;
-
-  // Copier le lien
-  const [copied, setCopied] = useState(false);
-  const inputRef = useRef(null);
-
-  // Download count local state (pour mise à jour instantanée)
-  const [localDownloadCount, setLocalDownloadCount] = useState(transfer.downloadCount || 0);
-  useEffect(() => {
-    setLocalDownloadCount(transfer.downloadCount || 0);
-  }, [transfer.id, transfer.downloadCount]);
-
-  // Lightbox state
-  const [lightboxOpen, setLightboxOpen] = useState(false);
-  const [lightboxIndex, setLightboxIndex] = useState(0);
 
   // Fichiers prévisualisables pour la navigation dans le lightbox
   const previewableFiles = transfer.files?.filter(isPreviewable) || [];
@@ -161,7 +163,7 @@ export function TransferDetailDrawer({
     setTimeout(() => setCopied(false), 1500);
   };
 
-  // Télécharger un fichier
+  // Télécharger un fichier via un lien <a> (plus fiable que window.open)
   const downloadFile = async (file) => {
     try {
       const apiUrl = (
@@ -169,10 +171,24 @@ export function TransferDetailDrawer({
       ).replace(/\/$/, "");
       const downloadUrl = `${apiUrl}/api/files/download/${transfer.id}/${file.fileId || file.id}`;
 
-      // Ouvrir le lien de téléchargement
-      window.open(downloadUrl, "_blank");
+      // Créer un lien temporaire pour déclencher le téléchargement
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      // Incrémenter le compteur local immédiatement
       setLocalDownloadCount((prev) => prev + 1);
       toast.success("Téléchargement démarré");
+
+      // Rafraîchir les données serveur après un court délai
+      // pour que le backend ait le temps d'incrémenter le compteur
+      setTimeout(() => {
+        onRefresh?.();
+      }, 2000);
     } catch (error) {
       console.error("Erreur téléchargement:", error);
       toast.error("Erreur lors du téléchargement");

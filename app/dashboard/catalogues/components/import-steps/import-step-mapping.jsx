@@ -415,11 +415,6 @@ export default function ImportStepMapping({
                     {cfm.fieldName}
                   </Badge>
                 </div>
-                {firstRow?.[cfm.headerIndex] && (
-                  <span className="text-[11px] text-muted-foreground">
-                    ex: {firstRow[cfm.headerIndex]}
-                  </span>
-                )}
               </div>
               <Button
                 variant="ghost"
@@ -456,11 +451,6 @@ export default function ImportStepMapping({
                 <div className="h-3.5 w-3.5 rounded-full border-2 border-muted-foreground/20 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
                   <span className="text-sm truncate block">{header}</span>
-                  {firstRow?.[index] && (
-                    <span className="text-[11px] text-muted-foreground">
-                      ex: {firstRow[index]}
-                    </span>
-                  )}
                 </div>
                 <div className="flex items-center gap-1.5 flex-shrink-0">
                   {isCreating ? (

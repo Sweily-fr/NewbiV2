@@ -190,7 +190,22 @@ export function NotificationsSection() {
           );
           setInvitations([]);
         } else {
-          setInvitations(data || []);
+          // Enrichir les invitations avec les détails (nom d'organisation, etc.)
+          const enriched = await Promise.all(
+            (data || []).map(async (inv) => {
+              try {
+                const res = await fetch(`/api/invitations/${inv.id}`);
+                if (res.ok) {
+                  const details = await res.json();
+                  return { ...inv, ...details };
+                }
+              } catch (e) {
+                // Silently fail, keep original data
+              }
+              return inv;
+            })
+          );
+          setInvitations(enriched);
         }
       } catch (error) {
         console.error("Erreur lors de la récupération des invitations:", error);
@@ -314,7 +329,21 @@ export function NotificationsSection() {
       if (error) {
         console.error("Erreur lors de la récupération des invitations:", error);
       } else {
-        setInvitations(data || []);
+        const enriched = await Promise.all(
+          (data || []).map(async (inv) => {
+            try {
+              const res = await fetch(`/api/invitations/${inv.id}`);
+              if (res.ok) {
+                const details = await res.json();
+                return { ...inv, ...details };
+              }
+            } catch (e) {
+              // Silently fail
+            }
+            return inv;
+          })
+        );
+        setInvitations(enriched);
       }
     } catch (error) {
       console.error("Erreur lors de la récupération des invitations:", error);
@@ -340,13 +369,17 @@ export function NotificationsSection() {
     e.stopPropagation();
 
     try {
-      const { data, error } = await authClient.organization.acceptInvitation({
-        invitationId,
+      const response = await fetch(`/api/invitations/${invitationId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "accept" }),
       });
 
-      if (error) {
-        toast.error("Erreur lors de l'acceptation de l'invitation");
-        console.error("Erreur:", error);
+      const result = await response.json();
+
+      if (!response.ok) {
+        toast.error(result.details || result.error || "Erreur lors de l'acceptation de l'invitation");
+        console.error("Erreur acceptation:", result);
       } else {
         toast.success("Invitation acceptée !");
         refetchInvitations();
@@ -364,13 +397,17 @@ export function NotificationsSection() {
     e.stopPropagation();
 
     try {
-      const { data, error } = await authClient.organization.rejectInvitation({
-        invitationId,
+      const response = await fetch(`/api/invitations/${invitationId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "reject" }),
       });
 
-      if (error) {
-        toast.error("Erreur lors du refus de l'invitation");
-        console.error("Erreur:", error);
+      const result = await response.json();
+
+      if (!response.ok) {
+        toast.error(result.details || result.error || "Erreur lors du refus de l'invitation");
+        console.error("Erreur refus:", result);
       } else {
         toast.success("Invitation refusée");
         refetchInvitations();
@@ -515,19 +552,21 @@ export function NotificationsSection() {
                   ? invitation.organizationName.charAt(0).toUpperCase()
                   : "O";
 
+                const isExpired = invitation.expiresAt && new Date(invitation.expiresAt) < new Date();
+
                 return (
                   <div
                     key={invitation.id}
-                    className="group py-4 px-2 hover:bg-muted/30 transition-colors"
+                    className={`group py-4 px-2 hover:bg-muted/30 transition-colors ${isExpired ? "opacity-60" : ""}`}
                   >
                     <div className="flex items-center gap-4">
                       {/* Avatar avec initiale */}
                       <div className="relative flex-shrink-0">
-                        <div className="size-10 rounded-full bg-[#5b4fff]/10 flex items-center justify-center text-sm font-medium text-[#5b4fff]">
+                        <div className={`size-10 rounded-full flex items-center justify-center text-sm font-medium ${isExpired ? "bg-muted text-muted-foreground" : "bg-[#5b4fff]/10 text-[#5b4fff]"}`}>
                           {initial}
                         </div>
                         {/* Point bleu pour les invitations non lues */}
-                        {!isRead(invitation.id) && (
+                        {!isExpired && !isRead(invitation.id) && (
                           <div className="absolute -top-0.5 -right-0.5 size-3 rounded-full bg-[#5b4eff] border-2 border-background"></div>
                         )}
                       </div>
@@ -549,32 +588,60 @@ export function NotificationsSection() {
                           {invitation.inviterEmail && (
                             <> • Invité par {invitation.inviterEmail}</>
                           )}
+                          {invitation.expiresAt && (
+                            <>
+                              {" • "}
+                              {isExpired ? (
+                                <span className="text-red-500">
+                                  Expirée le {new Date(invitation.expiresAt).toLocaleDateString("fr-FR")}
+                                </span>
+                              ) : (
+                                <span>
+                                  Expire le {new Date(invitation.expiresAt).toLocaleDateString("fr-FR")}
+                                </span>
+                              )}
+                            </>
+                          )}
                         </p>
                       </div>
 
                       {/* Actions */}
                       <div className="flex items-center gap-2 flex-shrink-0">
-                        <Button
-                          size="sm"
-                          type="button"
-                          onClick={(e) =>
-                            handleAcceptInvitation(e, invitation.id)
-                          }
-                          className="bg-[#5b4fff] text-white hover:bg-[#5b4fff]/90 cursor-pointer h-8 px-3 text-xs"
-                        >
-                          Accepter
-                        </Button>
-                        <Button
-                          size="sm"
-                          type="button"
-                          variant="ghost"
-                          className="hover:bg-red-100 hover:text-red-500 cursor-pointer h-8 px-3 text-xs"
-                          onClick={(e) =>
-                            handleRejectInvitation(e, invitation.id)
-                          }
-                        >
-                          Refuser
-                        </Button>
+                        {isExpired ? (
+                          <Button
+                            size="sm"
+                            type="button"
+                            variant="ghost"
+                            className="hover:bg-muted cursor-pointer h-8 w-8 p-0"
+                            onClick={(e) => handleDismiss(e, invitation.id)}
+                          >
+                            <XIcon className="w-4 h-4" />
+                          </Button>
+                        ) : (
+                          <>
+                            <Button
+                              size="sm"
+                              type="button"
+                              onClick={(e) =>
+                                handleAcceptInvitation(e, invitation.id)
+                              }
+                              className="bg-[#5b4fff] text-white hover:bg-[#5b4fff]/90 cursor-pointer h-8 px-3 text-xs"
+                            >
+                              Accepter
+                            </Button>
+                            <Button
+                              size="sm"
+                              type="button"
+                              variant="ghost"
+                              className="hover:bg-red-100 hover:text-red-500 cursor-pointer h-8 px-3 text-xs"
+                              onClick={(e) =>
+                                handleRejectInvitation(e, invitation.id)
+                              }
+                            >
+                              Refuser
+                            </Button>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>

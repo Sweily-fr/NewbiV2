@@ -208,6 +208,7 @@ export function useInvoiceTable({
   onOpenReminderSettings,
   excludedClientIds = [],
   onOpenSidebar, // Callback pour ouvrir la sidebar au niveau du tableau
+  onSendEmail, // Callback pour ouvrir la modal d'envoi au niveau du tableau
 }) {
   const [globalFilter, setGlobalFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState([]);
@@ -674,6 +675,7 @@ export function useInvoiceTable({
               isClientExcluded={isClientExcluded}
               onOpenReminderSettings={onOpenReminderSettings}
               onOpenSidebar={onOpenSidebar}
+              onSendEmail={onSendEmail}
             />
           );
         },
@@ -687,6 +689,7 @@ export function useInvoiceTable({
       onOpenReminderSettings,
       excludedClientIds,
       onOpenSidebar,
+      onSendEmail,
     ] // Inclure toutes les dépendances
   );
 

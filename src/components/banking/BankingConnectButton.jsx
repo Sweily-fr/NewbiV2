@@ -102,81 +102,85 @@ export default function BankingConnectButton() {
 
       {/* Modal de sélection de banque */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Connecter votre banque</DialogTitle>
-            <DialogDescription>
+        <DialogContent className="sm:max-w-md p-1 gap-0 border-0 bg-[#efefef] dark:bg-[#1a1a1a] overflow-hidden rounded-2xl">
+          <div className="bg-background rounded-xl overflow-hidden ring-1 ring-black/[0.07] dark:ring-white/[0.1]">
+          <DialogHeader className="px-5 pt-4 pb-3 border-b border-border/40">
+            <DialogTitle className="text-sm font-medium flex items-center gap-2">
+              <Landmark className="size-4" />
+              Connecter votre banque
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
               Sélectionnez votre banque pour synchroniser vos comptes
             </DialogDescription>
           </DialogHeader>
 
-          {/* Barre de recherche */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Rechercher une banque..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
-            />
-          </div>
+          <div className="px-5 pt-3 pb-4 space-y-3">
+            {/* Barre de recherche */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Rechercher une banque..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
 
-          {/* Liste des banques */}
-          <ScrollArea className="h-[300px] pr-4">
-            {isLoadingInstitutions ? (
-              <div className="flex items-center justify-center py-8">
-                <LoaderCircle className="h-6 w-6 animate-spin text-muted-foreground" />
-                <span className="ml-2 text-sm text-muted-foreground">
-                  Chargement des banques...
-                </span>
-              </div>
-            ) : filteredInstitutions.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                {searchQuery
-                  ? "Aucune banque trouvée"
-                  : "Aucune banque disponible"}
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {filteredInstitutions.map((institution) => (
-                  <button
-                    key={institution.id}
-                    onClick={() => handleSelectInstitution(institution)}
-                    disabled={isConnecting}
-                    className="w-full flex items-center gap-3 p-3 rounded-lg border hover:bg-accent hover:border-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {institution.logo ? (
-                      <img
-                        src={institution.logo}
-                        alt={institution.name}
-                        className="h-8 w-8 object-contain rounded"
-                      />
-                    ) : (
-                      <div className="h-8 w-8 rounded bg-muted flex items-center justify-center">
-                        <Building2 className="h-4 w-4 text-muted-foreground" />
+            {/* Liste des banques */}
+            <ScrollArea className="h-[300px] pr-4">
+              {isLoadingInstitutions ? (
+                <div className="flex items-center justify-center py-8">
+                  <LoaderCircle className="h-5 w-5 animate-spin text-muted-foreground/50" />
+                </div>
+              ) : filteredInstitutions.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  {searchQuery
+                    ? "Aucune banque trouvée"
+                    : "Aucune banque disponible"}
+                </div>
+              ) : (
+                <div className="space-y-1.5">
+                  {filteredInstitutions.map((institution) => (
+                    <button
+                      key={institution.id}
+                      onClick={() => handleSelectInstitution(institution)}
+                      disabled={isConnecting}
+                      className="w-full flex items-center gap-3 p-3 rounded-lg border border-border/50 hover:bg-accent hover:border-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {institution.logo ? (
+                        <img
+                          src={institution.logo}
+                          alt={institution.name}
+                          className="h-8 w-8 object-contain rounded"
+                        />
+                      ) : (
+                        <div className="h-8 w-8 rounded bg-muted flex items-center justify-center">
+                          <Building2 className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                      )}
+                      <div className="flex-1 text-left">
+                        <p className="text-sm font-medium">{institution.name}</p>
+                        {institution.bic && (
+                          <p className="text-xs text-muted-foreground">
+                            {institution.bic}
+                          </p>
+                        )}
                       </div>
-                    )}
-                    <div className="flex-1 text-left">
-                      <p className="text-sm font-medium">{institution.name}</p>
-                      {institution.bic && (
-                        <p className="text-xs text-muted-foreground">
-                          {institution.bic}
-                        </p>
-                      )}
-                    </div>
-                    {isConnecting &&
-                      selectedInstitution?.id === institution.id && (
-                        <LoaderCircle className="h-4 w-4 animate-spin" />
-                      )}
-                  </button>
-                ))}
-              </div>
-            )}
-          </ScrollArea>
+                      {isConnecting &&
+                        selectedInstitution?.id === institution.id && (
+                          <LoaderCircle className="h-4 w-4 animate-spin" />
+                        )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </ScrollArea>
 
-          {error && (
-            <p className="text-sm text-destructive text-center">{error}</p>
-          )}
+            {error && (
+              <p className="text-sm text-destructive text-center">{error}</p>
+            )}
+          </div>
+          </div>
         </DialogContent>
       </Dialog>
     </>

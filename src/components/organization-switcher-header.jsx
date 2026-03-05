@@ -204,7 +204,7 @@ export function OrganizationSwitcherHeader() {
       // Si l'org n'a pas d'abonnement actif, rediriger vers le pricing
       if (!targetHasSubscription) {
         setIsOpen(false);
-        router.push("/onboarding?step=4");
+        router.push("/onboarding?step=4&renew=true");
         return;
       }
 
