@@ -60,7 +60,6 @@ import { authClient } from "@/src/lib/auth-client";
 import { redirect } from "next/navigation";
 // Financial stats and bridge hooks removed
 import { useWorkspace } from "@/src/hooks/useWorkspace";
-import BankingConnectButton from "@/src/components/banking/BankingConnectButton";
 import BankBalanceCard from "@/src/components/banking/BankBalanceCard";
 import RecentTransactionsCard from "@/src/components/banking/RecentTransactionsCard";
 import { TreasuryChart } from "@/src/components/treasury-chart";
@@ -600,13 +599,11 @@ function DashboardContent() {
         {/* Graphiques de répartition par catégorie (MODE BANCAIRE PUR) */}
         <div className="flex flex-col md:flex-row gap-4 md:gap-6 w-full">
           <IncomeCategoryChart
-            invoices={paidInvoices}
             bankTransactions={filteredTransactions}
             className="shadow-xs w-full md:w-1/2"
             isLoading={categoryChartsLoading}
           />
           <ExpenseCategoryChart
-            expenses={paidExpenses}
             bankTransactions={filteredTransactions}
             className="shadow-xs w-full md:w-1/2"
             isLoading={categoryChartsLoading}
