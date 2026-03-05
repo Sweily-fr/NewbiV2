@@ -825,11 +825,17 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
             <div className="space-y-3 px-5 pt-3 pb-0">
               <div className="flex items-center gap-3 px-3 py-2.5 bg-muted/50 rounded-lg border border-border/50">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={memberToChangeRole?.image} />
-                  <AvatarFallback className="text-xs bg-muted">
-                    {(memberToChangeRole?.name || memberToChangeRole?.email || "?")
-                      .charAt(0)
-                      .toUpperCase()}
+                  <AvatarImage
+                    src={memberToChangeRole?.avatar}
+                    alt={memberToChangeRole?.name || memberToChangeRole?.email}
+                    className="object-cover"
+                  />
+                  <AvatarFallback className="bg-[#D1D5DB] text-[#364153] text-xs">
+                    {memberToChangeRole?.name
+                      ?.split(" ")
+                      .map((n) => n[0])
+                      .join("")
+                      .toUpperCase() || "?"}
                   </AvatarFallback>
                 </Avatar>
                 <div className="min-w-0">
