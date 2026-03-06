@@ -179,7 +179,7 @@ const dateFilterFn = (row, columnId, filterValue) => {
   return true;
 };
 
-export function usePurchaseOrderTable({ data = [], onRefetch, onSendEmail }) {
+export function usePurchaseOrderTable({ data = [], onRefetch, onSendEmail, onSaveAsTemplate }) {
   const [globalFilter, setGlobalFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState([]);
   const [clientFilter, setClientFilter] = useState([]);
@@ -406,12 +406,12 @@ export function usePurchaseOrderTable({ data = [], onRefetch, onSendEmail }) {
       {
         id: "actions",
         header: () => <div className="text-right font-normal">Actions</div>,
-        cell: ({ row }) => <PurchaseOrderRowActions row={row} onRefetch={onRefetch} onSendEmail={onSendEmail} />,
+        cell: ({ row }) => <PurchaseOrderRowActions row={row} onRefetch={onRefetch} onSendEmail={onSendEmail} onSaveAsTemplate={onSaveAsTemplate} />,
         size: 60,
         enableHiding: false,
       },
     ],
-    [onRefetch, onSendEmail]
+    [onRefetch, onSendEmail, onSaveAsTemplate]
   );
 
   // Log des donnees pour debogage

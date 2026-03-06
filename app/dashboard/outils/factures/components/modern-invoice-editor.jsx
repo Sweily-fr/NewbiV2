@@ -13,6 +13,9 @@ import {
   ChevronUp,
   AlertCircle,
   LoaderCircle,
+  BookTemplate,
+  Trash2,
+  SlidersHorizontal,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
@@ -32,6 +35,22 @@ import { QuickEditCompanyModal } from "@/src/components/invoice/quick-edit-compa
 import { useOrganizationChange } from "@/src/hooks/useOrganizationChange";
 import { ResourceNotFound } from "@/src/components/resource-not-found";
 import { SendDocumentModal } from "./send-document-modal";
+import { SaveInvoiceTemplateDialog } from "./SaveInvoiceTemplateDialog";
+import { useInvoiceTemplates, GET_INVOICE_TEMPLATES, DELETE_INVOICE_TEMPLATE } from "@/src/graphql/invoiceQueries";
+import { useMutation } from "@apollo/client";
+import { useWorkspace } from "@/src/hooks/useWorkspace";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/src/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/src/components/ui/popover";
 
 export default function ModernInvoiceEditor({
   mode = "create",
@@ -53,7 +72,19 @@ export default function ModernInvoiceEditor({
   const [previousSituationInvoices, setPreviousSituationInvoices] = useState(
     []
   );
+  const [showSaveTemplateDialog, setShowSaveTemplateDialog] = useState(false);
+  const [showManageTemplates, setShowManageTemplates] = useState(false);
+  const [selectedTemplateId, setSelectedTemplateId] = useState("none");
   const pdfRef = useRef(null);
+
+  // Template selector (create mode only)
+  const { workspaceId } = useWorkspace();
+  const { templates, loading: templatesLoading } = useInvoiceTemplates();
+  const [deleteTemplateMutation] = useMutation(DELETE_INVOICE_TEMPLATE, {
+    refetchQueries: [{ query: GET_INVOICE_TEMPLATES, variables: { workspaceId } }],
+    onCompleted: () => toast.success("Modèle supprimé"),
+    onError: () => toast.error("Erreur lors de la suppression du modèle"),
+  });
 
   // Récupérer l'organisation au chargement
   useEffect(() => {
@@ -233,6 +264,108 @@ export default function ModernInvoiceEditor({
     }
   };
 
+  // Champs préservés lors d'un changement de modèle (spécifiques à la facture en cours)
+  const getPreservedFields = () => {
+    const v = form.getValues();
+    return {
+      client: v.client,
+      companyInfo: v.companyInfo,
+      number: v.number,
+      issueDate: v.issueDate,
+      dueDate: v.dueDate,
+      status: v.status,
+      prefix: v.prefix,
+    };
+  };
+
+  // Valeurs par défaut d'une facture vierge — réutilise les paramètres globaux de l'organisation
+  // Même logique que le useEffect "create" dans use-invoice-editor.js (lignes 886-936)
+  const getBlankInvoiceFields = () => ({
+    items: [],
+    headerNotes: organization?.invoiceHeaderNotes || organization?.documentHeaderNotes || "",
+    footerNotes: organization?.invoiceFooterNotes || organization?.documentFooterNotes || "",
+    termsAndConditions: organization?.invoiceTermsAndConditions || organization?.documentTermsAndConditions || "",
+    termsAndConditionsLink: "",
+    termsAndConditionsLinkTitle: "",
+    customFields: [],
+    discount: 0,
+    discountType: "PERCENTAGE",
+    invoiceType: "standard",
+    appearance: {
+      textColor: organization?.invoiceTextColor || organization?.documentTextColor || "#000000",
+      headerTextColor: organization?.invoiceHeaderTextColor || organization?.documentHeaderTextColor || "#ffffff",
+      headerBgColor: organization?.invoiceHeaderBgColor || organization?.documentHeaderBgColor || "#5b50FF",
+    },
+    clientPositionRight: organization?.invoiceClientPositionRight || false,
+    isReverseCharge: false,
+    showBankDetails: organization?.showBankDetails || false,
+    bankDetails: {
+      iban: organization?.bankIban || "",
+      bic: organization?.bankBic || "",
+      bankName: organization?.bankName || "",
+    },
+    shipping: { billShipping: false, shippingAddress: null, shippingAmountHT: 0, shippingVatRate: 20 },
+    retenueGarantie: 0,
+    escompte: 0,
+    operationType: null,
+  });
+
+  // Handler pour appliquer un modèle au formulaire
+  const handleTemplateSelect = (templateId) => {
+    setSelectedTemplateId(templateId);
+    const preserved = getPreservedFields();
+
+    // "Aucun modèle" → remettre à zéro
+    if (!templateId || templateId === "none") {
+      form.reset({ ...preserved, ...getBlankInvoiceFields() }, { keepDefaultValues: false });
+      toast.success("Modèle retiré — facture remise à zéro");
+      return;
+    }
+
+    const template = templates.find((t) => t.id === templateId);
+    if (!template) return;
+
+    form.reset({
+      ...preserved,
+      items: template.items?.map((item) => ({
+        description: item.description,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        vatRate: item.vatRate,
+        unit: item.unit || '',
+        discount: item.discount || 0,
+        discountType: item.discountType || 'PERCENTAGE',
+        details: item.details || '',
+        vatExemptionText: item.vatExemptionText || '',
+        progressPercentage: item.progressPercentage != null ? item.progressPercentage : 100,
+      })) || [],
+      headerNotes: template.headerNotes ?? "",
+      footerNotes: template.footerNotes ?? "",
+      termsAndConditions: template.termsAndConditions ?? "",
+      termsAndConditionsLink: template.termsAndConditionsLink ?? "",
+      termsAndConditionsLinkTitle: template.termsAndConditionsLinkTitle ?? "",
+      customFields: template.customFields?.length ? template.customFields : [],
+      discount: template.discount ?? 0,
+      discountType: template.discountType ?? "PERCENTAGE",
+      invoiceType: template.invoiceType ?? "standard",
+      appearance: template.appearance ?? { textColor: "#000000", headerTextColor: "#ffffff", headerBgColor: "#5b50FF" },
+      clientPositionRight: template.clientPositionRight ?? false,
+      isReverseCharge: template.isReverseCharge ?? false,
+      showBankDetails: template.showBankDetails ?? false,
+      bankDetails: template.bankDetails ?? { iban: "", bic: "", bankName: "" },
+      shipping: template.shipping ?? { billShipping: false, shippingAddress: null, shippingAmountHT: 0, shippingVatRate: 20 },
+      retenueGarantie: template.retenueGarantie ?? 0,
+      escompte: template.escompte ?? 0,
+      operationType: template.operationType ?? null,
+    }, { keepDefaultValues: false });
+
+    toast.success(`Modèle "${template.name}" appliqué`);
+  };
+
+  const handleDeleteTemplate = async (templateId) => {
+    await deleteTemplateMutation({ variables: { id: templateId, workspaceId } });
+  };
+
   // Handler pour fermer la modal après envoi d'email
   const handleEmailModalClose = () => {
     setShowSendEmailModal(false);
@@ -292,6 +425,16 @@ export default function ModernInvoiceEditor({
                       <X className="h-4 w-4 text-muted-foreground" />
                     </Button>
 
+                    {!isCreating && invoiceId && (
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => setShowSaveTemplateDialog(true)}
+                        title="Sauvegarder comme modèle"
+                      >
+                        <BookTemplate className="w-4 h-4" />
+                      </Button>
+                    )}
                     <Button
                       variant="outline"
                       size="icon"
@@ -324,6 +467,54 @@ export default function ModernInvoiceEditor({
               </div>
             </div>
 
+            {/* Template selector (create mode only) */}
+            {isCreating && templates.length > 0 && (
+              <div className="flex items-center gap-2 mb-4">
+                <Select value={selectedTemplateId} onValueChange={handleTemplateSelect}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Appliquer un modèle..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Aucun modèle</SelectItem>
+                    {templates.map((t) => (
+                      <SelectItem key={t.id} value={t.id}>
+                        {t.name} ({t.items?.length || 0} article{(t.items?.length || 0) > 1 ? 's' : ''} — {t.invoiceType || 'standard'})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Popover open={showManageTemplates} onOpenChange={setShowManageTemplates}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="gap-2 font-normal">
+                      <SlidersHorizontal className="w-4 h-4" />
+                      Gérer les modèles
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-72" align="end">
+                    <div className="space-y-2">
+                      <h4 className="font-medium text-sm">Gérer les modèles</h4>
+                      {templates.length === 0 && (
+                        <p className="text-sm text-muted-foreground">Aucun modèle</p>
+                      )}
+                      {templates.map((t) => (
+                        <div key={t.id} className="flex items-center justify-between gap-2 py-1">
+                          <span className="text-sm truncate flex-1">{t.name}</span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-red-500 hover:text-red-600 hover:bg-red-50"
+                            onClick={() => handleDeleteTemplate(t.id)}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
+            )}
+
             {/* Enhanced Form ou Settings View */}
             <div className="flex-1 min-h-0 md:mr-2 flex flex-col">
               <div className="flex-1 min-h-0">
@@ -337,20 +528,11 @@ export default function ModernInvoiceEditor({
                       validationErrors={validationErrors}
                       setValidationErrors={setValidationErrors}
                       organization={organization}
-                      onSave={async () => {
-                        try {
-                          // Sauvegarder les paramètres dans l'organisation
-                          await saveSettingsToOrganization();
-                          setShowSettings(false);
-                          toast.success(
-                            "Paramètres sauvegardés dans l'organisation"
-                          );
-                        } catch (error) {
-                          toast.error(
-                            "Erreur lors de la sauvegarde des paramètres"
-                          );
-                        }
+                      onSave={() => {
+                        setShowSettings(false);
+                        toast.success("Paramètres appliqués à cette facture");
                       }}
+                      saveLabel="Appliquer à cette facture"
                     />
                   ) : (
                     <EnhancedInvoiceForm
@@ -420,6 +602,16 @@ export default function ModernInvoiceEditor({
         onOpenChange={setShowEditCompany}
         onCompanyUpdated={handleCompanyUpdated}
       />
+
+      {/* Dialog de sauvegarde comme modèle */}
+      {invoiceId && (
+        <SaveInvoiceTemplateDialog
+          invoiceId={invoiceId}
+          invoiceNumber={`${formData?.prefix || "F"}-${formData?.number || ""}`}
+          open={showSaveTemplateDialog}
+          onOpenChange={setShowSaveTemplateDialog}
+        />
+      )}
 
       {/* Modal d'envoi par email */}
       {createdInvoiceData && (
