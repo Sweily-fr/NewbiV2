@@ -12,7 +12,6 @@ import {
   Download,
   FileText,
   Info,
-  LayoutTemplate,
   ChevronDown,
 } from "lucide-react";
 import { Badge } from "@/src/components/ui/badge";
@@ -41,7 +40,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
-import { TemplateSelectorModal } from "@/src/components/document-templates/template-selector-modal";
 
 function InvoicesContent() {
   const router = useRouter();
@@ -49,7 +47,6 @@ function InvoicesContent() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isAutoReminderOpen, setIsAutoReminderOpen] = useState(false);
   const [invoiceIdToOpen, setInvoiceIdToOpen] = useState(null);
-  const [showTemplateSelector, setShowTemplateSelector] = useState(false);
 
   // Refs pour déclencher les actions depuis le header
   const [triggerImport, setTriggerImport] = useState(false);
@@ -256,10 +253,6 @@ function InvoicesContent() {
                     <Plus size={14} className="mr-2" />
                     Facture vierge
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setShowTemplateSelector(true)}>
-                    <LayoutTemplate size={14} className="mr-2" />
-                    Depuis un modèle
-                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -441,15 +434,6 @@ function InvoicesContent() {
         onOpenChange={setIsAutoReminderOpen}
       />
 
-      {/* Modal de sélection de modèle */}
-      <TemplateSelectorModal
-        open={showTemplateSelector}
-        onOpenChange={setShowTemplateSelector}
-        documentType="INVOICE"
-        onSelect={(template) => {
-          router.push(`/dashboard/outils/factures/new?templateId=${template.id}`);
-        }}
-      />
 
       {/* Modal d'envoi par email pour les nouvelles factures/avoirs */}
       {newDocumentData && (

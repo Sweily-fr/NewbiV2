@@ -3,7 +3,7 @@
 import { Suspense, useState, useEffect, useMemo } from "react";
 import { Button } from "@/src/components/ui/button";
 import { PermissionButton } from "@/src/components/rbac";
-import { Plus, Settings, Bell, ArrowRightFromLine, Download, LayoutTemplate, ChevronDown } from "lucide-react";
+import { Plus, Settings, Bell, ArrowRightFromLine, Download, ChevronDown } from "lucide-react";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import QuoteTable from "./components/quote-table";
 import { QuoteSettingsModal } from "./components/quote-settings-modal";
@@ -20,14 +20,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
-import { TemplateSelectorModal } from "@/src/components/document-templates/template-selector-modal";
 
 function QuotesContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [quoteIdToOpen, setQuoteIdToOpen] = useState(null);
-  const [showTemplateSelector, setShowTemplateSelector] = useState(false);
 
   // Refs pour déclencher les actions depuis le header
   const [triggerImport, setTriggerImport] = useState(false);
@@ -180,10 +178,6 @@ function QuotesContent() {
                     <Plus size={14} className="mr-2" />
                     Devis vierge
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setShowTemplateSelector(true)}>
-                    <LayoutTemplate size={14} className="mr-2" />
-                    Depuis un modèle
-                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -314,15 +308,6 @@ function QuotesContent() {
         onOpenChange={setIsSettingsOpen}
       />
 
-      {/* Modal de sélection de modèle */}
-      <TemplateSelectorModal
-        open={showTemplateSelector}
-        onOpenChange={setShowTemplateSelector}
-        documentType="QUOTE"
-        onSelect={(template) => {
-          router.push(`/dashboard/outils/devis/new?templateId=${template.id}`);
-        }}
-      />
 
       {/* Modal d'envoi par email pour les nouveaux devis */}
       {newQuoteData && (
