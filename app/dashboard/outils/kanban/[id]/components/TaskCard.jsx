@@ -39,9 +39,48 @@ import {
   TooltipTrigger,
   TooltipContent,
 } from "@/src/components/ui/tooltip";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/src/components/ui/popover";
 import { formatDateRelative } from "../../../../../../src/utils/kanbanHelpers";
 import { AvatarGroup } from "@/src/components/ui/user-avatar";
 import { useAssignedMembersInfo } from "@/src/hooks/useAssignedMembersInfo";
+
+function DescriptionPopover({ description }) {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <div
+          className="text-muted-foreground/70 hover:text-foreground transition-colors cursor-pointer"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <AlignLeft className="h-4 w-4" />
+        </div>
+      </PopoverTrigger>
+      <PopoverContent
+        className="w-80 p-3"
+        side="right"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="space-y-1">
+          <h4 className="font-medium text-sm">Description</h4>
+          {/<[a-z][\s\S]*>/i.test(description) ? (
+            <div
+              className="text-sm text-muted-foreground break-words line-clamp-8 [&_b]:font-bold [&_i]:italic [&_u]:underline [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4"
+              dangerouslySetInnerHTML={{ __html: description }}
+            />
+          ) : (
+            <p className="text-sm text-muted-foreground whitespace-pre-wrap break-words line-clamp-8">
+              {description}
+            </p>
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 /**
  * Composant TaskCard optimisé avec React.memo
@@ -104,8 +143,6 @@ const TaskCard = memo(function TaskCard({ task, onEdit, onDelete, index, isDragg
 
   return (
     <>
-      <Tooltip delayDuration={400}>
-      <TooltipTrigger asChild>
       <div
         onClick={handleClick}
         className={`bg-card text-card-foreground rounded-lg border border-border shadow-xs hover:shadow-sm hover:bg-accent/10 flex flex-col transition-opacity overflow-clip ${
@@ -210,9 +247,7 @@ const TaskCard = memo(function TaskCard({ task, onEdit, onDelete, index, isDragg
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             {/* Icône description */}
             {task.description && (
-              <div className="text-muted-foreground/70">
-                <AlignLeft className="h-4 w-4" />
-              </div>
+              <DescriptionPopover description={task.description} />
             )}
 
             {/* Pièces jointes */}
@@ -304,22 +339,6 @@ const TaskCard = memo(function TaskCard({ task, onEdit, onDelete, index, isDragg
         </div>
         </div>
       </div>
-      </TooltipTrigger>
-      {task.description && (
-        <TooltipContent side="right" className="max-w-80 pointer-events-none">
-          {/<[a-z][\s\S]*>/i.test(task.description) ? (
-            <div
-              className="text-xs text-white/90 break-words line-clamp-8 [&_b]:font-bold [&_i]:italic [&_u]:underline [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4"
-              dangerouslySetInnerHTML={{ __html: task.description }}
-            />
-          ) : (
-            <p className="text-xs text-white/90 whitespace-pre-wrap break-words line-clamp-8">
-              {task.description}
-            </p>
-          )}
-        </TooltipContent>
-      )}
-      </Tooltip>
 
       {/* Dialog de prévisualisation d'image */}
       <Dialog open={showImagePreview} onOpenChange={setShowImagePreview}>
