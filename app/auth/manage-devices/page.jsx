@@ -15,12 +15,7 @@ import {
   AlertDialogCancel,
   AlertDialogAction,
 } from "@/src/components/ui/alert-dialog";
-import {
-  Smartphone,
-  Monitor,
-  Tablet,
-  AlertTriangle,
-} from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 
 // Extract browser name from user agent string
 function parseBrowser(ua) {
@@ -57,6 +52,17 @@ function parseDevice(ua) {
   return { type: "desktop", name: "Ordinateur" };
 }
 
+// Extract OS name
+function parseOS(ua) {
+  if (!ua) return null;
+  if (ua.includes("Macintosh") || ua.includes("Mac OS")) return "macOS";
+  if (ua.includes("Windows")) return "Windows";
+  if (ua.includes("Linux") && !ua.includes("Android")) return "Linux";
+  if (ua.includes("Android")) return "Android";
+  if (ua.includes("iPhone") || ua.includes("iPad")) return "iOS";
+  return null;
+}
+
 // Format relative time
 function formatLastActivity(date) {
   if (!date) return null;
@@ -65,7 +71,7 @@ function formatLastActivity(date) {
   const diffMs = now - activityDate;
   const diffMins = Math.floor(diffMs / 60000);
 
-  if (diffMins < 1) return "À l'instant";
+  if (diffMins < 1) return "A l'instant";
   if (diffMins < 60) return `Il y a ${diffMins} min`;
 
   const diffHours = Math.floor(diffMins / 60);
@@ -73,15 +79,100 @@ function formatLastActivity(date) {
 
   const diffDays = Math.floor(diffHours / 24);
   if (diffDays === 1) return "Il y a 1 jour";
-  return `Il y a ${diffDays} jours`;
+  if (diffDays < 7) return `Il y a ${diffDays} jours`;
+
+  const diffWeeks = Math.floor(diffDays / 7);
+  if (diffWeeks === 1) return "Il y a 1 semaine";
+  return `Il y a ${diffWeeks} semaines`;
 }
 
-// Device icon component
+// Realistic device icon components matching the screenshot style
+function DesktopDeviceIcon() {
+  return (
+    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-900 border border-gray-200 dark:border-gray-700 flex items-center justify-center overflow-hidden">
+      <svg width="30" height="22" viewBox="0 0 30 21.5" fill="none" xmlns="http://www.w3.org/2000/svg">
+        {/* Screen */}
+        <rect x="2" y="0" width="26" height="17" rx="1.5" fill="#1a1a2e" />
+        <rect x="3.5" y="1.5" width="23" height="14" rx="0.5" fill="url(#sky-desktop)" />
+        {/* Cloud 1 */}
+        <ellipse cx="12" cy="7" rx="3" ry="1.8" fill="white" opacity="0.9" />
+        <ellipse cx="10.2" cy="7.5" rx="2" ry="1.2" fill="white" opacity="0.8" />
+        <ellipse cx="14" cy="7.3" rx="2.2" ry="1.4" fill="white" opacity="0.85" />
+        {/* Cloud 2 */}
+        <ellipse cx="22" cy="5.5" rx="2.5" ry="1.5" fill="white" opacity="0.7" />
+        <ellipse cx="20.5" cy="6" rx="1.8" ry="1" fill="white" opacity="0.65" />
+        {/* Base */}
+        <path d="M0 18.5h30l-2.5 3H2.5l-2.5-3z" fill="#c4c4c4" />
+        <rect x="0" y="17.5" width="30" height="1.2" rx="0.5" fill="#d4d4d4" />
+        {/* Trackpad */}
+        <rect x="11" y="18.5" width="8" height="0.5" rx="0.25" fill="#aaa" />
+        <defs>
+          <linearGradient id="sky-desktop" x1="15" y1="1" x2="15" y2="16" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#87CEEB" />
+            <stop offset="1" stopColor="#4DA6E0" />
+          </linearGradient>
+        </defs>
+      </svg>
+    </div>
+  );
+}
+
+function MobileDeviceIcon() {
+  return (
+    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-900 border border-gray-200 dark:border-gray-700 flex items-center justify-center overflow-hidden">
+      <svg width="18" height="30" viewBox="0 0 18 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+        {/* Phone body */}
+        <rect x="0" y="0" width="18" height="30" rx="3" fill="#1a1a2e" />
+        {/* Screen */}
+        <rect x="1.5" y="2.5" width="15" height="24" rx="1.5" fill="url(#sky-mobile)" />
+        {/* Cloud */}
+        <ellipse cx="9" cy="11" rx="3.5" ry="2" fill="white" opacity="0.9" />
+        <ellipse cx="6.8" cy="11.5" rx="2.2" ry="1.3" fill="white" opacity="0.8" />
+        <ellipse cx="11.5" cy="11.2" rx="2.5" ry="1.5" fill="white" opacity="0.85" />
+        {/* Small cloud */}
+        <ellipse cx="5.5" cy="7.5" rx="2" ry="1.2" fill="white" opacity="0.6" />
+        {/* Home indicator */}
+        <rect x="6" y="28" width="6" height="0.8" rx="0.4" fill="#555" />
+        <defs>
+          <linearGradient id="sky-mobile" x1="9" y1="2" x2="9" y2="27" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#87CEEB" />
+            <stop offset="1" stopColor="#4DA6E0" />
+          </linearGradient>
+        </defs>
+      </svg>
+    </div>
+  );
+}
+
+function TabletDeviceIcon() {
+  return (
+    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-gray-100 to-gray-50 dark:from-gray-800 dark:to-gray-900 border border-gray-200 dark:border-gray-700 flex items-center justify-center overflow-hidden">
+      <svg width="24" height="30" viewBox="0 0 24 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+        {/* Tablet body */}
+        <rect x="0" y="0" width="24" height="30" rx="2.5" fill="#1a1a2e" />
+        {/* Screen */}
+        <rect x="2" y="2.5" width="20" height="23" rx="1" fill="url(#sky-tablet)" />
+        {/* Cloud */}
+        <ellipse cx="12" cy="11" rx="3.5" ry="2" fill="white" opacity="0.9" />
+        <ellipse cx="9.5" cy="11.5" rx="2.2" ry="1.3" fill="white" opacity="0.8" />
+        <ellipse cx="14.8" cy="11.2" rx="2.5" ry="1.5" fill="white" opacity="0.85" />
+        {/* Home button */}
+        <circle cx="12" cy="27.5" r="1.2" fill="#555" />
+        <defs>
+          <linearGradient id="sky-tablet" x1="12" y1="2" x2="12" y2="26" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#87CEEB" />
+            <stop offset="1" stopColor="#4DA6E0" />
+          </linearGradient>
+        </defs>
+      </svg>
+    </div>
+  );
+}
+
 function DeviceIcon({ type }) {
-  const iconProps = { className: "h-5 w-5 text-gray-400", strokeWidth: 1.5 };
-  if (type === "mobile") return <Smartphone {...iconProps} />;
-  if (type === "tablet") return <Tablet {...iconProps} />;
-  return <Monitor {...iconProps} />;
+  if (type === "mobile") return <MobileDeviceIcon />;
+  if (type === "tablet") return <TabletDeviceIcon />;
+  return <DesktopDeviceIcon />;
 }
 
 function ManageDevicesContent() {
@@ -101,7 +192,7 @@ function ManageDevicesContent() {
         });
 
         if (!response.ok) {
-          throw new Error("Erreur lors de la récupération des sessions");
+          throw new Error("Erreur lors de la recuperation des sessions");
         }
 
         const sessionData = await response.json();
@@ -118,11 +209,13 @@ function ManageDevicesContent() {
           const transformedDevices = sessions.map((session, index) => {
             const device = parseDevice(session.userAgent);
             const browser = parseBrowser(session.userAgent);
-            const label = browser ? `${device.name} · ${browser}` : device.name;
+            const os = parseOS(session.userAgent);
 
             return {
               id: session.id || session.token || `device-${index}`,
-              label,
+              deviceName: device.name,
+              browser,
+              os,
               deviceType: device.type,
               lastActivity: formatLastActivity(session.updatedAt || session.createdAt),
               ip: session.ipAddress || session.ip || null,
@@ -177,14 +270,14 @@ function ManageDevicesContent() {
       });
 
       if (!response.ok) {
-        toast.error("Erreur lors de la révocation de la session");
+        toast.error("Erreur lors de la revocation de la session");
       } else {
-        toast.success("Session révoquée");
+        toast.success("Session revoquee");
         await activateOrganization();
         setTimeout(() => router.push("/dashboard"), 800);
       }
     } catch {
-      toast.error("Erreur lors de la révocation");
+      toast.error("Erreur lors de la revocation");
     } finally {
       setRevoking(null);
     }
@@ -199,16 +292,16 @@ function ManageDevicesContent() {
       });
 
       if (!response.ok) {
-        toast.error("Erreur lors de la déconnexion des autres sessions");
+        toast.error("Erreur lors de la deconnexion des autres sessions");
         return;
       }
 
       const result = await response.json();
-      toast.success(`${result.revokedCount} session(s) révoquée(s)`);
+      toast.success(`${result.revokedCount} session(s) revoquee(s)`);
       await activateOrganization();
       setTimeout(() => router.push("/dashboard"), 800);
     } catch {
-      toast.error("Erreur lors de la déconnexion");
+      toast.error("Erreur lors de la deconnexion");
     } finally {
       setRevoking(null);
     }
@@ -236,183 +329,239 @@ function ManageDevicesContent() {
 
   const dialogMessages = {
     "revoke-one": {
-      title: "Révoquer cette session ?",
-      description: "L'appareil sera immédiatement déconnecté de votre compte.",
+      title: "Revoquer cette session ?",
+      description: "L'appareil sera immediatement deconnecte de votre compte.",
     },
     "revoke-all": {
-      title: "Déconnecter les autres sessions ?",
-      description: "Toutes les autres sessions seront immédiatement révoquées. Seule votre session actuelle restera active.",
+      title: "Deconnecter les autres sessions ?",
+      description: "Toutes les autres sessions seront immediatement revoquees. Seule votre session actuelle restera active.",
     },
     cancel: {
-      title: "Se déconnecter ?",
-      description: "Vous serez déconnecté de cet appareil et redirigé vers la page de connexion.",
+      title: "Se deconnecter ?",
+      description: "Vous serez deconnecte de cet appareil et redirige vers la page de connexion.",
     },
   };
 
-  return (
-    <div className="min-h-screen bg-white dark:bg-[#0a0a0a] flex justify-center px-4 py-12 sm:py-20">
-      <div className="w-full max-w-[680px]">
+  // Build device label: "App de bureau sur macOS" / "App mobile"
+  function buildDeviceLabel(device) {
+    const typeLabels = {
+      desktop: "App de bureau",
+      mobile: "App mobile",
+      tablet: "Tablette",
+    };
+    const base = typeLabels[device.deviceType] || "Appareil";
+    if (device.os) return `${base} sur ${device.os}`;
+    return base;
+  }
 
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Sessions actives
-          </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Gérez les appareils connectés à votre compte.
-          </p>
+  const sessionsList = (
+    <>
+      {loading ? (
+        <div className="py-12 flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-2 border-gray-200 dark:border-gray-700 border-t-primary rounded-full animate-spin" />
+          <p className="text-sm text-muted-foreground">Chargement des sessions...</p>
         </div>
-
-        {/* Alert banner — only when multiple sessions */}
-        {hasMultipleSessions && !loading && (
-          <div className="mb-8 border-l-4 border-amber-400 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-500 rounded-r-lg py-3 px-4">
-            <div className="flex items-start gap-3">
-              <AlertTriangle className="h-4 w-4 text-amber-500 flex-shrink-0 mt-0.5" strokeWidth={2} />
-              <div>
-                <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
-                  Connexion simultanée détectée
-                </p>
-                <p className="text-sm text-amber-700 dark:text-amber-300 mt-1 leading-relaxed">
-                  Vous êtes déjà connecté sur un autre appareil. Pour éviter le partage de compte, une seule connexion est autorisée à la fois.
-                </p>
-                <a
-                  href="/dashboard/settings/members"
-                  className="text-sm font-medium text-amber-800 dark:text-amber-200 underline mt-2 inline-block transition-colors duration-150 hover:text-amber-900 dark:hover:text-amber-100"
-                >
-                  Besoin de collaborer ?
-                </a>
+      ) : devices.length === 0 ? (
+        <div className="py-12 text-center">
+          <p className="text-sm text-muted-foreground">
+            Aucune session active
+          </p>
+          <Button
+            onClick={() => router.push("/dashboard")}
+            variant="primary"
+            className="mt-4"
+          >
+            Continuer vers le dashboard
+          </Button>
+        </div>
+      ) : (
+        <>
+          {/* Alert banner */}
+          {hasMultipleSessions && (
+            <div className="mb-6 border border-amber-200 dark:border-amber-800/40 bg-amber-50/80 dark:bg-amber-950/20 rounded-lg py-3 px-4">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="h-4 w-4 text-amber-500 flex-shrink-0 mt-0.5" strokeWidth={2} />
+                <div>
+                  <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                    Connexion simultanee detectee
+                  </p>
+                  <p className="text-[13px] text-amber-700/80 dark:text-amber-300/80 mt-1 leading-relaxed">
+                    Vous etes deja connecte sur un autre appareil. Une seule connexion est autorisee a la fois.
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Sessions list */}
-        {loading ? (
-          <div className="py-16 text-center">
-            <p className="text-sm text-gray-400 dark:text-gray-500">Chargement des sessions...</p>
-          </div>
-        ) : devices.length === 0 ? (
-          <div className="py-16 text-center">
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Aucune session active
-            </p>
-            <Button
-              onClick={() => router.push("/dashboard")}
-              variant="primary"
-              className="mt-4"
-            >
-              Continuer vers le dashboard
-            </Button>
-          </div>
-        ) : (
-          <>
-            <div className="mb-6">
-              {devices.map((device) => {
-                const isCurrentSession = currentSessionToken && device.sessionToken === currentSessionToken;
+          {/* Device list */}
+          <div className="space-y-0">
+            {devices.map((device) => {
+              const isCurrentSession = currentSessionToken && device.sessionToken === currentSessionToken;
+              const label = buildDeviceLabel(device);
 
-                return (
-                  <div
-                    key={device.id}
-                    className="flex items-center justify-between py-4 border-b border-gray-100 dark:border-gray-800 last:border-b-0"
-                  >
-                    {/* Left side */}
-                    <div className="flex items-center gap-3 min-w-0 flex-1">
-                      <DeviceIcon type={device.deviceType} />
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-sm font-medium text-gray-900 dark:text-white">
-                            {device.label}
-                          </span>
-                          {isCurrentSession && (
-                            <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400">
-                              Cette session
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                          {device.lastActivity && (
-                            <span className="text-xs text-gray-500 dark:text-gray-400">
-                              {device.lastActivity}
-                            </span>
-                          )}
-                          {device.location && (
-                            <>
-                              <span className="text-xs text-gray-300 dark:text-gray-600">·</span>
-                              <span className="text-xs text-gray-500 dark:text-gray-400">
-                                {device.location}
-                              </span>
-                            </>
-                          )}
-                          {device.ip && (
-                            <>
-                              <span className="text-xs text-gray-300 dark:text-gray-600">·</span>
-                              <span className="text-xs text-gray-500 dark:text-gray-400">
-                                {device.ip}
-                              </span>
-                            </>
-                          )}
-                        </div>
-                      </div>
+              return (
+                <div
+                  key={device.id}
+                  className="flex items-center gap-4 py-4 border-b border-gray-100 dark:border-gray-800/60 last:border-b-0"
+                >
+                  <DeviceIcon type={device.deviceType} />
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-foreground">
+                        {label}
+                      </span>
                     </div>
-
-                    {/* Right side — revoke button */}
-                    {!isCurrentSession && (
-                      <button
-                        onClick={() => setConfirmDialog({ open: true, type: "revoke-one", sessionToken: device.sessionToken })}
-                        disabled={revoking === device.sessionToken}
-                        className="text-sm text-gray-400 hover:text-red-600 dark:text-gray-500 dark:hover:text-red-400 transition-colors duration-150 cursor-pointer ml-4 flex-shrink-0 disabled:opacity-50"
-                      >
-                        {revoking === device.sessionToken ? "Révocation..." : "Révoquer"}
-                      </button>
-                    )}
+                    <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                      {isCurrentSession ? (
+                        <>
+                          <span className="flex items-center gap-1 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
+                            Session active
+                          </span>
+                          {(device.location || device.ip) && (
+                            <>
+                              <span className="text-xs text-muted-foreground/40">&middot;</span>
+                              <span className="text-xs text-muted-foreground">{device.location || device.ip}</span>
+                            </>
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          {(device.location || device.ip) && (
+                            <span className="text-xs text-muted-foreground">{device.location || device.ip}</span>
+                          )}
+                          {(device.location || device.ip) && device.lastActivity && (
+                            <span className="text-xs text-muted-foreground/40">&middot;</span>
+                          )}
+                          {device.lastActivity && (
+                            <span className="text-xs text-muted-foreground">{device.lastActivity}</span>
+                          )}
+                        </>
+                      )}
+                    </div>
                   </div>
-                );
-              })}
-            </div>
 
-            {/* Action buttons */}
-            <div className="flex flex-col sm:flex-row sm:justify-end gap-3 pt-2">
-              {hasMultipleSessions ? (
-                <>
-                  <Button
-                    onClick={() => setConfirmDialog({ open: true, type: "cancel", sessionToken: null })}
-                    variant="outline"
-                    size="sm"
-                    disabled={revoking !== null}
-                    className="sm:w-auto"
-                  >
-                    Se déconnecter de cet appareil
-                  </Button>
-                  <Button
-                    onClick={() => setConfirmDialog({ open: true, type: "revoke-all", sessionToken: null })}
-                    variant="primary"
-                    size="sm"
-                    disabled={revoking !== null}
-                    className="sm:w-auto"
-                  >
-                    {revoking === "all" ? "Déconnexion..." : "Déconnecter les autres sessions"}
-                  </Button>
-                </>
-              ) : (
+                  {/* Revoke button */}
+                  {!isCurrentSession && (
+                    <button
+                      onClick={() => setConfirmDialog({ open: true, type: "revoke-one", sessionToken: device.sessionToken })}
+                      disabled={revoking === device.sessionToken}
+                      className="text-xs text-muted-foreground hover:text-red-600 dark:hover:text-red-400 transition-colors duration-150 cursor-pointer flex-shrink-0 disabled:opacity-50"
+                    >
+                      {revoking === device.sessionToken ? "..." : "Revoquer"}
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex flex-col sm:flex-row sm:justify-end gap-3 pt-6">
+            {hasMultipleSessions ? (
+              <>
                 <Button
-                  onClick={() => setConfirmDialog({ open: true, type: "revoke-all", sessionToken: null })}
+                  onClick={() => setConfirmDialog({ open: true, type: "cancel", sessionToken: null })}
                   variant="outline"
                   size="sm"
                   disabled={revoking !== null}
                   className="sm:w-auto"
                 >
-                  Révoquer toutes les autres sessions
+                  Se deconnecter
                 </Button>
-              )}
-            </div>
-          </>
-        )}
+                <Button
+                  onClick={() => setConfirmDialog({ open: true, type: "revoke-all", sessionToken: null })}
+                  variant="primary"
+                  size="sm"
+                  disabled={revoking !== null}
+                  className="sm:w-auto"
+                >
+                  {revoking === "all" ? "Deconnexion..." : "Garder cette session uniquement"}
+                </Button>
+              </>
+            ) : (
+              <Button
+                onClick={async () => {
+                  await activateOrganization();
+                  router.push("/dashboard");
+                }}
+                variant="primary"
+                size="sm"
+                className="sm:w-auto"
+              >
+                Continuer
+              </Button>
+            )}
+          </div>
+        </>
+      )}
+    </>
+  );
 
-        {/* Security info */}
-        <div className="mt-10 bg-gray-50 dark:bg-gray-900/30 rounded-lg p-4">
-          <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
-            Pour votre sécurité, si vous ne reconnaissez pas un appareil, révoquez sa session et changez votre mot de passe.
-          </p>
+  return (
+    <>
+      {/* Desktop Layout */}
+      <div className="hidden md:flex h-screen">
+        <div className="w-1/2 flex items-center justify-center p-8">
+          <div className="mx-auto sm:max-w-md w-full">
+            <h3 className="text-3xl font-medium text-foreground">
+              Sessions actives
+            </h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Gerez les appareils connectes a votre compte.
+            </p>
+
+            <div className="mt-8">
+              {sessionsList}
+            </div>
+
+            <p className="mt-8 text-xs text-muted-foreground/60 leading-relaxed">
+              Si vous ne reconnaissez pas un appareil, revoquez sa session et changez votre mot de passe.
+            </p>
+          </div>
+        </div>
+        <div className="w-1/2 p-2 flex items-center min-h-screen justify-center">
+          <div className="flex flex-col p-5 items-center justify-center w-full h-full rounded-lg bg-[#5A50FF]/30 relative">
+            <img
+              src="/illustrations/mobile-encryption.svg"
+              alt="Securite des appareils"
+              className="w-80 h-auto max-w-full"
+            />
+            <p className="mt-6 text-[15px] font-medium text-white/90 text-center max-w-xs">
+              Votre compte est protege. Une seule session active a la fois.
+            </p>
+            <img
+              src="/ni.svg"
+              alt="Newbi Logo"
+              className="absolute bottom-2 right-3 w-5 h-auto filter brightness-0 invert"
+              style={{ opacity: 0.9 }}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile Layout */}
+      <div className="md:hidden min-h-screen bg-background flex flex-col">
+        <div className="pt-10 flex justify-center">
+          <img src="/newbiLetter.png" alt="Newbi" className="h-5 w-auto object-contain" />
+        </div>
+
+        <div className="flex-1 flex items-start justify-center px-6 pt-8">
+          <div className="w-full max-w-sm">
+            <h3 className="text-2xl font-medium text-foreground text-center mb-1">
+              Sessions actives
+            </h3>
+            <p className="text-sm text-muted-foreground text-center mb-8">
+              Gerez les appareils connectes a votre compte.
+            </p>
+
+            {sessionsList}
+
+            <p className="mt-8 text-xs text-muted-foreground/60 leading-relaxed text-center">
+              Si vous ne reconnaissez pas un appareil, revoquez sa session et changez votre mot de passe.
+            </p>
+          </div>
         </div>
       </div>
 
@@ -433,12 +582,12 @@ function ManageDevicesContent() {
               onClick={onConfirmAction}
               className={confirmDialog.type === "cancel" ? "" : "bg-red-600 hover:bg-red-700 text-white"}
             >
-              {confirmDialog.type === "cancel" ? "Se déconnecter" : "Confirmer"}
+              {confirmDialog.type === "cancel" ? "Se deconnecter" : "Confirmer"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </>
   );
 }
 
@@ -446,8 +595,8 @@ export default function ManageDevicesPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-white dark:bg-[#0a0a0a] flex items-center justify-center">
-          <p className="text-sm text-gray-400">Chargement...</p>
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <p className="text-sm text-muted-foreground">Chargement...</p>
         </div>
       }
     >
