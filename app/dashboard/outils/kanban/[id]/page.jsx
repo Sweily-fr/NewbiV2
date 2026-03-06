@@ -325,10 +325,12 @@ function KanbanBoardPageContent({ params }) {
   const projectTotalPrice = useMemo(() => {
     return billableTasks.reduce((sum, task) => {
       const tt = task.timeTracking;
-      const hours = getEffectiveSeconds(tt) / 3600;
-      let billableHours = hours;
-      if (tt.roundingOption === 'up') billableHours = Math.ceil(hours);
-      else if (tt.roundingOption === 'down') billableHours = Math.floor(hours);
+      const totalSec = getEffectiveSeconds(tt);
+      const h = Math.floor(totalSec / 3600);
+      const m = Math.floor((totalSec % 3600) / 60);
+      let billableHours = h + m / 60;
+      if (tt.roundingOption === 'up') billableHours = Math.ceil(billableHours);
+      else if (tt.roundingOption === 'down') billableHours = Math.floor(billableHours);
       return sum + (billableHours * tt.hourlyRate);
     }, 0);
   }, [billableTasks, getEffectiveSeconds]);
@@ -344,10 +346,12 @@ function KanbanBoardPageContent({ params }) {
   const handleConvertToInvoice = React.useCallback((selectedTasks) => {
     const items = selectedTasks.map(task => {
       const tt = task.timeTracking;
-      const hours = getEffectiveSeconds(tt) / 3600;
-      let billableHours = hours;
-      if (tt.roundingOption === 'up') billableHours = Math.ceil(hours);
-      else if (tt.roundingOption === 'down') billableHours = Math.floor(hours);
+      const totalSec = getEffectiveSeconds(tt);
+      const h = Math.floor(totalSec / 3600);
+      const m = Math.floor((totalSec % 3600) / 60);
+      let billableHours = h + m / 60;
+      if (tt.roundingOption === 'up') billableHours = Math.ceil(billableHours);
+      else if (tt.roundingOption === 'down') billableHours = Math.floor(billableHours);
       return {
         description: task.title,
         details: stripHtml(task.description),

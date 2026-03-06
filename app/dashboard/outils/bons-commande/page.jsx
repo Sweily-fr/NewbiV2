@@ -3,7 +3,7 @@
 import { Suspense, useState, useEffect, useMemo } from "react";
 import { Button } from "@/src/components/ui/button";
 import { PermissionButton } from "@/src/components/rbac";
-import { Plus, Settings, Download, ArrowRightFromLine } from "lucide-react";
+import { Plus, Settings, Download, ArrowRightFromLine, LayoutTemplate, ChevronDown } from "lucide-react";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import PurchaseOrderTable from "./components/purchase-order-table";
 import PurchaseOrderExportButton from "./components/purchase-order-export-button";
@@ -14,6 +14,13 @@ import { CompanyInfoGuard } from "@/src/components/company-info-guard";
 import { usePurchaseOrders, PURCHASE_ORDER_STATUS } from "@/src/graphql/purchaseOrderQueries";
 import { useToastManager } from "@/src/components/ui/toast-manager";
 import { SendDocumentModal } from "@/app/dashboard/outils/factures/components/send-document-modal";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/src/components/ui/dropdown-menu";
+import { TemplateSelectorModal } from "@/src/components/document-templates/template-selector-modal";
 
 function PurchaseOrdersContent() {
   const router = useRouter();
@@ -23,6 +30,7 @@ function PurchaseOrdersContent() {
   // Ref pour déclencher l'import depuis le header
   const [triggerImport, setTriggerImport] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [showTemplateSelector, setShowTemplateSelector] = useState(false);
 
   // Toast manager et modal d'envoi
   const toastManager = useToastManager();
@@ -145,14 +153,33 @@ function PurchaseOrdersContent() {
               Importer
             </Button>
             <PurchaseOrderExportButton purchaseOrders={purchaseOrders} iconOnly={false} />
-            <Button
-              variant="primary"
-              onClick={handleNewPurchaseOrder}
-              className="cursor-pointer"
-            >
-              <Plus size={14} strokeWidth={2} aria-hidden="true" />
-              Nouveau bon de commande
-            </Button>
+            <div className="flex items-center">
+              <Button
+                variant="primary"
+                onClick={handleNewPurchaseOrder}
+                className="cursor-pointer rounded-r-none"
+              >
+                <Plus size={14} strokeWidth={2} aria-hidden="true" />
+                Nouveau bon de commande
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="primary" className="rounded-l-none border-l border-primary-foreground/20 px-2">
+                    <ChevronDown size={14} />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={handleNewPurchaseOrder}>
+                    <Plus size={14} className="mr-2" />
+                    Bon de commande vierge
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setShowTemplateSelector(true)}>
+                    <LayoutTemplate size={14} className="mr-2" />
+                    Depuis un modèle
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
         </div>
 
@@ -289,6 +316,16 @@ function PurchaseOrdersContent() {
       <PurchaseOrderSettingsModal
         open={isSettingsOpen}
         onOpenChange={setIsSettingsOpen}
+      />
+
+      {/* Modal de sélection de modèle */}
+      <TemplateSelectorModal
+        open={showTemplateSelector}
+        onOpenChange={setShowTemplateSelector}
+        documentType="PURCHASE_ORDER"
+        onSelect={(template) => {
+          router.push(`/dashboard/outils/bons-commande/new?templateId=${template.id}`);
+        }}
       />
     </>
   );

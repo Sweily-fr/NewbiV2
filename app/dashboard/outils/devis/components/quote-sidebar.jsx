@@ -141,7 +141,7 @@ export default function QuoteSidebar({
     try {
       sessionStorage.setItem('quotePurchaseOrderData', JSON.stringify({
         sourceQuoteId: quote.id,
-        purchaseOrderNumber: `${quote.prefix || ''}${quote.number || ''}`,
+        purchaseOrderNumber: `${quote.prefix || ''}-${quote.number || ''}`,
         client: quote.client,
         items: quote.items,
         discount: quote.discount,
@@ -182,7 +182,7 @@ export default function QuoteSidebar({
   const handleConvertToInvoice = () => {
     sessionStorage.setItem('quoteInvoiceData', JSON.stringify({
       sourceQuoteId: quote.id,
-      purchaseOrderNumber: `${quote.prefix || ''}${quote.number || ''}`,
+      purchaseOrderNumber: `${quote.prefix || ''}-${quote.number || ''}`,
       client: quote.client,
       items: quote.items,
       discount: quote.discount,
@@ -201,7 +201,7 @@ export default function QuoteSidebar({
     const vatRate = 20;
     const unitPriceHT = amount / (1 + vatRate / 100);
     const remainingAmount = calculateRemainingAmount();
-    const quoteRef = `${quote.prefix || ''}${quote.number || ''}`;
+    const quoteRef = `${quote.prefix || ''}-${quote.number || ''}`;
 
     let description;
     if (isDeposit) {

@@ -7,6 +7,7 @@ export const QUOTE_FRAGMENT = gql`
     id
     number
     prefix
+    projectReference
     status
     issueDate
     validUntil

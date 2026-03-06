@@ -158,7 +158,7 @@ export default function QuoteRowActions({ row, onRefetch, onSendEmail, onSaveAsT
       }
       sessionStorage.setItem('quoteInvoiceData', JSON.stringify({
         sourceQuoteId: fullQuote.id,
-        purchaseOrderNumber: `${fullQuote.prefix || ''}${fullQuote.number || ''}`,
+        purchaseOrderNumber: `${fullQuote.prefix || ''}-${fullQuote.number || ''}`,
         client: fullQuote.client,
         items: fullQuote.items,
         discount: fullQuote.discount,
@@ -189,7 +189,7 @@ export default function QuoteRowActions({ row, onRefetch, onSendEmail, onSaveAsT
       }
       sessionStorage.setItem('quotePurchaseOrderData', JSON.stringify({
         sourceQuoteId: fullQuote.id,
-        purchaseOrderNumber: `${fullQuote.prefix || ''}${fullQuote.number || ''}`,
+        purchaseOrderNumber: `${fullQuote.prefix || ''}-${fullQuote.number || ''}`,
         client: fullQuote.client,
         items: fullQuote.items,
         discount: fullQuote.discount,

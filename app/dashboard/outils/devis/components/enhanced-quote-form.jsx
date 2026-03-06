@@ -231,6 +231,7 @@ export default function EnhancedQuoteForm({
   onStepChange,
   onEditClient,
   documentType = "quote",
+  mode = "create",
 }) {
   const { watch, setValue, getValues, control } = useFormContext();
   const data = watch();
@@ -562,7 +563,11 @@ export default function EnhancedQuoteForm({
                     disabled={!isStep2Valid() || !canEdit || saving}
                     className="px-6"
                   >
-                    {saving ? "Création..." : documentType === "purchaseOrder" ? "Créer le bon de commande" : "Créer le devis"}
+                    {saving
+                      ? (mode === "edit" ? "Mise à jour..." : "Création...")
+                      : documentType === "purchaseOrder"
+                        ? (mode === "edit" ? "Modifier le bon de commande" : "Créer le bon de commande")
+                        : (mode === "edit" ? "Modifier le devis" : "Créer le devis")}
                   </Button>
                 </>
               )}
