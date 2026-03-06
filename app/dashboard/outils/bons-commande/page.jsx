@@ -3,7 +3,7 @@
 import { Suspense, useState, useEffect, useMemo } from "react";
 import { Button } from "@/src/components/ui/button";
 import { PermissionButton } from "@/src/components/rbac";
-import { Plus, Settings, Download, ArrowRightFromLine, LayoutTemplate, ChevronDown } from "lucide-react";
+import { Plus, Settings, Download, ArrowRightFromLine, ChevronDown } from "lucide-react";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import PurchaseOrderTable from "./components/purchase-order-table";
 import PurchaseOrderExportButton from "./components/purchase-order-export-button";
@@ -20,7 +20,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
-import { TemplateSelectorModal } from "@/src/components/document-templates/template-selector-modal";
 
 function PurchaseOrdersContent() {
   const router = useRouter();
@@ -30,7 +29,6 @@ function PurchaseOrdersContent() {
   // Ref pour déclencher l'import depuis le header
   const [triggerImport, setTriggerImport] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [showTemplateSelector, setShowTemplateSelector] = useState(false);
 
   // Toast manager et modal d'envoi
   const toastManager = useToastManager();
@@ -173,10 +171,6 @@ function PurchaseOrdersContent() {
                     <Plus size={14} className="mr-2" />
                     Bon de commande vierge
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setShowTemplateSelector(true)}>
-                    <LayoutTemplate size={14} className="mr-2" />
-                    Depuis un modèle
-                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -318,15 +312,6 @@ function PurchaseOrdersContent() {
         onOpenChange={setIsSettingsOpen}
       />
 
-      {/* Modal de sélection de modèle */}
-      <TemplateSelectorModal
-        open={showTemplateSelector}
-        onOpenChange={setShowTemplateSelector}
-        documentType="PURCHASE_ORDER"
-        onSelect={(template) => {
-          router.push(`/dashboard/outils/bons-commande/new?templateId=${template.id}`);
-        }}
-      />
     </>
   );
 }
