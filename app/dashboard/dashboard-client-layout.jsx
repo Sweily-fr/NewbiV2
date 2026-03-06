@@ -36,6 +36,128 @@ import { TutorialOverlay } from "@/src/components/tutorial/tutorial-overlay";
 import { SignatureSidebarRight } from "@/src/components/signature-sidebar-right";
 import { BottomNavBar } from "@/src/components/bottom-nav-bar";
 import { PwaInstallBanner } from "@/src/components/pwa-install-banner";
+import { SessionGateProvider } from "@/src/contexts/session-gate-context";
+import { apolloClient } from "@/src/lib/apolloClient";
+import { gql } from "@apollo/client";
+
+// Panel de debug pour tester l'expiration de session (dev uniquement)
+function SessionDebugPanel() {
+  const [open, setOpen] = useState(false);
+  const [status, setStatus] = useState(null);
+
+  const refreshStatus = () => {
+    if (window.__debugAuth) {
+      const hasJWT = !!window.__debugAuth._getState?.() || "use status()";
+      window.__debugAuth.status();
+      setStatus("voir console");
+    }
+  };
+
+  if (!open) {
+    return (
+      <button
+        onClick={() => { setOpen(true); refreshStatus(); }}
+        className="fixed bottom-20 right-4 z-[9999] h-10 w-10 rounded-full bg-red-600 text-white text-xs font-bold shadow-lg hover:bg-red-700 flex items-center justify-center md:bottom-4"
+        title="Session Debug"
+      >
+        S
+      </button>
+    );
+  }
+
+  return (
+    <div className="fixed bottom-20 right-4 z-[9999] w-72 rounded-xl border border-red-500/30 bg-zinc-950 p-3 shadow-2xl text-xs text-white md:bottom-4">
+      <div className="flex items-center justify-between mb-3">
+        <span className="font-semibold text-red-400">Session Debug</span>
+        <button onClick={() => setOpen(false)} className="text-zinc-500 hover:text-white">
+          X
+        </button>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        {/* Test 1 : JWT expire mais session cookie valide → doit retry sans erreur */}
+        <button
+          onClick={() => {
+            window.__debugAuth?.expireJWT();
+            setStatus("JWT invalide. Navigue ou fais une action pour voir le retry.");
+          }}
+          className="rounded-lg bg-orange-600 px-3 py-2 text-left hover:bg-orange-700"
+        >
+          <div className="font-medium">Expirer le JWT</div>
+          <div className="text-orange-200/70 mt-0.5">Cookie valide, doit retry sans toast</div>
+        </button>
+
+        {/* Test 2 : Vider le cache JWT → la prochaine requete en redemande un */}
+        <button
+          onClick={() => {
+            window.__debugAuth?.clearJWT();
+            setStatus("Cache JWT vide. Prochain appel redemandera un JWT.");
+          }}
+          className="rounded-lg bg-yellow-600 px-3 py-2 text-left hover:bg-yellow-700"
+        >
+          <div className="font-medium">Vider cache JWT</div>
+          <div className="text-yellow-200/70 mt-0.5">Force re-generation JWT</div>
+        </button>
+
+        {/* Test 3 : Simuler session expiree (cookie + JWT) → doit rediriger */}
+        <button
+          onClick={async () => {
+            // Expirer le JWT
+            window.__debugAuth?.expireJWT();
+            // Supprimer le cookie session (same-origin)
+            document.cookie = "better-auth.session_token=; Max-Age=0; path=/;";
+            document.cookie = "__Secure-better-auth.session_token=; Max-Age=0; path=/; secure;";
+            // Deconnecter via Better Auth
+            try {
+              await authClient.signOut();
+            } catch {}
+            setStatus("Session detruite. Prochain appel GraphQL → redirection.");
+          }}
+          className="rounded-lg bg-red-600 px-3 py-2 text-left hover:bg-red-700"
+        >
+          <div className="font-medium">Detruire la session</div>
+          <div className="text-red-200/70 mt-0.5">Cookie + JWT + signOut → doit rediriger</div>
+        </button>
+
+        {/* Test 4 : Forcer une requete GraphQL pour declencher le flow */}
+        <button
+          onClick={() => {
+            apolloClient.query({
+              query: gql`query { me { _id email } }`,
+              fetchPolicy: "network-only",
+            }).then((r) => {
+              setStatus(`OK: ${r.data?.me?.email || "pas de data"}`);
+            }).catch((e) => {
+              setStatus(`Erreur: ${e.message?.substring(0, 60)}`);
+            });
+          }}
+          className="rounded-lg bg-blue-600 px-3 py-2 text-left hover:bg-blue-700"
+        >
+          <div className="font-medium">Lancer query "me"</div>
+          <div className="text-blue-200/70 mt-0.5">Teste le flow auth avec l'etat actuel</div>
+        </button>
+
+        {/* Afficher le statut */}
+        <button
+          onClick={() => {
+            window.__debugAuth?.status();
+            setStatus("voir console (F12)");
+          }}
+          className="rounded-lg bg-zinc-700 px-3 py-2 text-left hover:bg-zinc-600"
+        >
+          <div className="font-medium">Voir statut auth</div>
+          <div className="text-zinc-400 mt-0.5">Log dans la console</div>
+        </button>
+      </div>
+
+      {status && (
+        <div className="mt-2 rounded-lg bg-zinc-800 px-2 py-1.5 text-zinc-300 break-all">
+          {status}
+        </div>
+      )}
+    </div>
+  );
+}
 
 // Composant interne qui utilise le contexte
 function DashboardContent({ children }) {
@@ -162,7 +284,9 @@ function DashboardContent({ children }) {
         <SiteHeader />
         <div className="flex flex-1 flex-col overflow-y-auto">
           <div className="flex flex-1 flex-col gap-2 pb-[calc(5rem+env(safe-area-inset-bottom,0px))] md:pb-0">
-            {children}
+            <SessionGateProvider>
+              {children}
+            </SessionGateProvider>
           </div>
         </div>
       </SidebarInset>
@@ -251,22 +375,8 @@ function DashboardContent({ children }) {
         />
       )}
 
-      {/* Bouton de test pour le modal (à retirer en production) */}
-      {/* {process.env.NODE_ENV === "development" && (
-        <button
-          onClick={() => {
-            window.history.pushState(
-              {},
-              "",
-              "/dashboard?subscription_success=true&payment_success=true"
-            );
-            window.location.reload();
-          }}
-          className="fixed bottom-4 right-4 z-50 bg-[#5b4fff] hover:bg-[#5b4fff]/90 text-white px-4 py-2 rounded-lg shadow-lg text-xs font-medium"
-        >
-          Test Modal Success
-        </button>
-      )} */}
+      {/* Panel de debug session — dev uniquement */}
+      {process.env.NODE_ENV === "development" && <SessionDebugPanel />}
     </SidebarProvider>
   );
 }
