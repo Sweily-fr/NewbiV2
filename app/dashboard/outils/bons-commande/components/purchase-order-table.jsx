@@ -75,6 +75,7 @@ import { usePurchaseOrderTable } from "../hooks/use-purchase-order-table";
 import PurchaseOrderRowActions from "./purchase-order-row-actions";
 import PurchaseOrderSidebar from "./purchase-order-sidebar";
 import { SendDocumentModal } from "../../factures/components/send-document-modal";
+import { SavePurchaseOrderTemplateDialog } from "./SavePurchaseOrderTemplateDialog";
 import { ImportPurchaseOrderModal } from "./import-purchase-order-modal";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
@@ -86,6 +87,7 @@ export default function PurchaseOrderTable({ handleNewPurchaseOrder, poIdToOpen,
   const { canCreate } = usePermissions();
   const [canCreatePo, setCanCreatePo] = useState(false);
   const [poToOpen, setPoToOpen] = useState(null);
+  const [templatePurchaseOrder, setTemplatePurchaseOrder] = useState(null);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   // État pour la modal d'envoi par email - géré au niveau du tableau pour éviter les re-renders
   const [sendEmailPO, setSendEmailPO] = useState(null);
@@ -103,6 +105,7 @@ export default function PurchaseOrderTable({ handleNewPurchaseOrder, poIdToOpen,
     data: purchaseOrders || [],
     onRefetch: refetch,
     onSendEmail: setSendEmailPO,
+    onSaveAsTemplate: setTemplatePurchaseOrder,
   });
 
   // État pour les tabs de filtre rapide
@@ -456,7 +459,8 @@ export default function PurchaseOrderTable({ handleNewPurchaseOrder, poIdToOpen,
                         e.target.closest('[role="checkbox"]') ||
                         e.target.closest("[data-actions-cell]") ||
                         e.target.closest('button[role="combobox"]') ||
-                        e.target.closest('[role="menu"]')
+                        e.target.closest('[role="menu"]') ||
+                        e.target.closest('[role="dialog"]')
                       ) {
                         return;
                       }
@@ -712,6 +716,16 @@ export default function PurchaseOrderTable({ handleNewPurchaseOrder, poIdToOpen,
             } catch { return null; }
           })() : null}
           onSent={() => setSendEmailPO(null)}
+        />
+      )}
+
+      {/* Dialog de sauvegarde comme modèle */}
+      {templatePurchaseOrder && (
+        <SavePurchaseOrderTemplateDialog
+          purchaseOrderId={templatePurchaseOrder.id}
+          purchaseOrderNumber={`${templatePurchaseOrder.prefix || "BC"}-${templatePurchaseOrder.number}`}
+          open={!!templatePurchaseOrder}
+          onOpenChange={(open) => { if (!open) setTemplatePurchaseOrder(null); }}
         />
       )}
     </div>

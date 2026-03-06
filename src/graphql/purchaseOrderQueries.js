@@ -151,14 +151,36 @@ export const PURCHASE_ORDER_LIST_FRAGMENT = gql`
     totalHT
     totalVAT
     totalTTC
+    discount
+    discountType
+    discountAmount
     finalTotalHT
     finalTotalVAT
     finalTotalTTC
     isReverseCharge
+    items {
+      description
+      quantity
+      unitPrice
+      vatRate
+      unit
+      discount
+      discountType
+      progressPercentage
+    }
     client {
       id
       name
       email
+      type
+      siret
+      vatNumber
+      address {
+        street
+        city
+        postalCode
+        country
+      }
       hasDifferentShippingAddress
       shippingAddress {
         fullName
@@ -172,6 +194,18 @@ export const PURCHASE_ORDER_LIST_FRAGMENT = gql`
       textColor
       headerTextColor
       headerBgColor
+    }
+    shipping {
+      billShipping
+      shippingAddress {
+        fullName
+        street
+        city
+        postalCode
+        country
+      }
+      shippingAmountHT
+      shippingVatRate
     }
     createdAt
     updatedAt
@@ -789,6 +823,106 @@ export const PURCHASE_ORDER_STATUS_LABELS = {
   [PURCHASE_ORDER_STATUS.IN_PROGRESS]: "En cours",
   [PURCHASE_ORDER_STATUS.DELIVERED]: "Livré",
   [PURCHASE_ORDER_STATUS.CANCELED]: "Annulé",
+};
+
+// ==================== PURCHASE ORDER TEMPLATES ====================
+
+export const GET_PURCHASE_ORDER_TEMPLATES = gql`
+  query GetPurchaseOrderTemplates($workspaceId: ID) {
+    purchaseOrderTemplates(workspaceId: $workspaceId) {
+      id
+      name
+      description
+      items {
+        description
+        quantity
+        unitPrice
+        vatRate
+        unit
+        discount
+        discountType
+        details
+        vatExemptionText
+        progressPercentage
+      }
+      headerNotes
+      footerNotes
+      termsAndConditions
+      termsAndConditionsLink
+      termsAndConditionsLinkTitle
+      customFields {
+        key
+        value
+      }
+      discount
+      discountType
+      appearance {
+        textColor
+        headerTextColor
+        headerBgColor
+      }
+      clientPositionRight
+      isReverseCharge
+      showBankDetails
+      shipping {
+        billShipping
+        shippingAddress {
+          fullName
+          street
+          city
+          postalCode
+          country
+        }
+        shippingAmountHT
+        shippingVatRate
+      }
+      prefix
+      retenueGarantie
+      escompte
+      sourcePurchaseOrderId
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const SAVE_PURCHASE_ORDER_AS_TEMPLATE = gql`
+  mutation SavePurchaseOrderAsTemplate($input: SavePurchaseOrderAsTemplateInput!, $workspaceId: ID) {
+    savePurchaseOrderAsTemplate(input: $input, workspaceId: $workspaceId) {
+      id
+      name
+      description
+      createdAt
+    }
+  }
+`;
+
+export const DELETE_PURCHASE_ORDER_TEMPLATE = gql`
+  mutation DeletePurchaseOrderTemplate($id: ID!, $workspaceId: ID) {
+    deletePurchaseOrderTemplate(id: $id, workspaceId: $workspaceId)
+  }
+`;
+
+// Hook pour récupérer les modèles de bon de commande
+export const usePurchaseOrderTemplates = () => {
+  const { workspaceId } = useRequiredWorkspace();
+
+  const { data, loading, error, refetch } = useQuery(GET_PURCHASE_ORDER_TEMPLATES, {
+    variables: { workspaceId },
+    skip: !workspaceId,
+    fetchPolicy: "cache-and-network",
+    errorPolicy: "all",
+  });
+
+  return useMemo(
+    () => ({
+      templates: data?.purchaseOrderTemplates || [],
+      loading,
+      error,
+      refetch,
+    }),
+    [data?.purchaseOrderTemplates, loading, error, refetch]
+  );
 };
 
 // Couleurs pour les statuts

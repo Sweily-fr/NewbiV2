@@ -1217,7 +1217,7 @@ const UniversalPDFDownloaderWithFacturX = ({
 
       // Nom du fichier
       const documentType =
-        type === "invoice" ? "facture" : type === "quote" ? "devis" : "avoir";
+        type === "invoice" ? "facture" : type === "quote" ? "devis" : type === "purchaseOrder" ? "bon-de-commande" : "avoir";
       const number = data.number || "document";
       const prefix = data.prefix || "";
       const fileName =

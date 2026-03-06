@@ -357,6 +357,58 @@ export default function QuoteSidebar({
               )}
             </div>
 
+            {/* Adresse de livraison */}
+            {(() => {
+              const shippingData = quote.shipping;
+              if (shippingData?.shippingAddress && shippingData?.billShipping) {
+                return (
+                  <div className="space-y-2.5">
+                    <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Adresse de livraison</h3>
+                    <div className="text-sm text-muted-foreground">
+                      {shippingData.shippingAddress.fullName && (
+                        <p className="font-medium text-foreground">{shippingData.shippingAddress.fullName}</p>
+                      )}
+                      {shippingData.shippingAddress.street && (
+                        <p>{shippingData.shippingAddress.street}</p>
+                      )}
+                      {(shippingData.shippingAddress.postalCode || shippingData.shippingAddress.city) && (
+                        <p>
+                          {shippingData.shippingAddress.postalCode}{shippingData.shippingAddress.postalCode && shippingData.shippingAddress.city && " "}{shippingData.shippingAddress.city}
+                        </p>
+                      )}
+                      {shippingData.shippingAddress.country && (
+                        <p>{shippingData.shippingAddress.country}</p>
+                      )}
+                    </div>
+                  </div>
+                );
+              }
+              if (quote.client?.hasDifferentShippingAddress && quote.client?.shippingAddress) {
+                return (
+                  <div className="space-y-2.5">
+                    <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Adresse de livraison</h3>
+                    <div className="text-sm text-muted-foreground">
+                      {quote.client.shippingAddress.fullName && (
+                        <p className="font-medium text-foreground">{quote.client.shippingAddress.fullName}</p>
+                      )}
+                      {quote.client.shippingAddress.street && (
+                        <p>{quote.client.shippingAddress.street}</p>
+                      )}
+                      {(quote.client.shippingAddress.postalCode || quote.client.shippingAddress.city) && (
+                        <p>
+                          {quote.client.shippingAddress.postalCode}{quote.client.shippingAddress.postalCode && quote.client.shippingAddress.city && " "}{quote.client.shippingAddress.city}
+                        </p>
+                      )}
+                      {quote.client.shippingAddress.country && (
+                        <p>{quote.client.shippingAddress.country}</p>
+                      )}
+                    </div>
+                  </div>
+                );
+              }
+              return null;
+            })()}
+
             {/* Dates */}
             <div className="space-y-2.5">
               <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Dates</h3>

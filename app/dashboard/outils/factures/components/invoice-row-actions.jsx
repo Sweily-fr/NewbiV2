@@ -16,6 +16,7 @@ import {
   CalendarSync,
   Mail,
   FileUp,
+  BookTemplate,
 } from "lucide-react";
 import { ButtonGroup } from "@/src/components/ui/button-group";
 import {
@@ -50,6 +51,7 @@ export default function InvoiceRowActions({
   onOpenReminderSettings,
   onOpenSidebar, // Callback pour ouvrir la sidebar au niveau du tableau
   onSendEmail, // Callback pour ouvrir la modal d'envoi au niveau du tableau
+  onSaveAsTemplate, // Callback pour ouvrir le dialog de template au niveau du tableau
 }) {
   // OPTIMISÉ: Suppression de isSidebarOpen - géré au niveau du tableau pour éviter les re-renders
   const [isMobileFullscreenOpen, setIsMobileFullscreenOpen] = useState(false);
@@ -187,6 +189,15 @@ export default function InvoiceRowActions({
             <DropdownMenuItem onClick={handleView}>
               <Eye className="mr-2 h-4 w-4" />
               Voir
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={(e) => {
+                e.stopPropagation();
+                onSaveAsTemplate?.(invoice);
+              }}
+            >
+              <BookTemplate className="mr-2 h-4 w-4" />
+              Sauv. modèle
             </DropdownMenuItem>
             {invoice.status === INVOICE_STATUS.DRAFT && (
               <DropdownMenuItem onClick={handleEdit}>

@@ -40,7 +40,7 @@ import {
 } from "@/src/graphql/purchaseOrderQueries";
 import { toast } from "@/src/components/ui/sonner";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
-import UniversalPDFDownloader from "@/src/components/pdf/UniversalPDFDownloader";
+import UniversalPDFDownloaderWithFacturX from "@/src/components/pdf/UniversalPDFDownloaderWithFacturX";
 
 export default function PurchaseOrderSidebar({
   isOpen,
@@ -263,7 +263,7 @@ export default function PurchaseOrderSidebar({
             <div className="flex items-center gap-2">
               {/* Bouton PDF - masque pour les brouillons */}
               {purchaseOrder.status !== PURCHASE_ORDER_STATUS.DRAFT && (
-                <UniversalPDFDownloader data={purchaseOrder} type="purchaseOrder" />
+                <UniversalPDFDownloaderWithFacturX data={purchaseOrder} type="purchaseOrder" enableFacturX={false} />
               )}
               <Button
                 variant="ghost"
@@ -323,6 +323,58 @@ export default function PurchaseOrderSidebar({
                 </p>
               )}
             </div>
+
+            {/* Adresse de livraison */}
+            {(() => {
+              const shippingData = purchaseOrder.shipping;
+              if (shippingData?.shippingAddress && shippingData?.billShipping) {
+                return (
+                  <div className="space-y-2.5">
+                    <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Adresse de livraison</h3>
+                    <div className="text-sm text-muted-foreground">
+                      {shippingData.shippingAddress.fullName && (
+                        <p className="font-medium text-foreground">{shippingData.shippingAddress.fullName}</p>
+                      )}
+                      {shippingData.shippingAddress.street && (
+                        <p>{shippingData.shippingAddress.street}</p>
+                      )}
+                      {(shippingData.shippingAddress.postalCode || shippingData.shippingAddress.city) && (
+                        <p>
+                          {shippingData.shippingAddress.postalCode}{shippingData.shippingAddress.postalCode && shippingData.shippingAddress.city && " "}{shippingData.shippingAddress.city}
+                        </p>
+                      )}
+                      {shippingData.shippingAddress.country && (
+                        <p>{shippingData.shippingAddress.country}</p>
+                      )}
+                    </div>
+                  </div>
+                );
+              }
+              if (purchaseOrder.client?.hasDifferentShippingAddress && purchaseOrder.client?.shippingAddress) {
+                return (
+                  <div className="space-y-2.5">
+                    <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Adresse de livraison</h3>
+                    <div className="text-sm text-muted-foreground">
+                      {purchaseOrder.client.shippingAddress.fullName && (
+                        <p className="font-medium text-foreground">{purchaseOrder.client.shippingAddress.fullName}</p>
+                      )}
+                      {purchaseOrder.client.shippingAddress.street && (
+                        <p>{purchaseOrder.client.shippingAddress.street}</p>
+                      )}
+                      {(purchaseOrder.client.shippingAddress.postalCode || purchaseOrder.client.shippingAddress.city) && (
+                        <p>
+                          {purchaseOrder.client.shippingAddress.postalCode}{purchaseOrder.client.shippingAddress.postalCode && purchaseOrder.client.shippingAddress.city && " "}{purchaseOrder.client.shippingAddress.city}
+                        </p>
+                      )}
+                      {purchaseOrder.client.shippingAddress.country && (
+                        <p>{purchaseOrder.client.shippingAddress.country}</p>
+                      )}
+                    </div>
+                  </div>
+                );
+              }
+              return null;
+            })()}
 
             {/* Dates */}
             <div className="space-y-2.5">

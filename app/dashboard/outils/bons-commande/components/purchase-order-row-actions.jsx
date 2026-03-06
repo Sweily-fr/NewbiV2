@@ -15,6 +15,7 @@ import {
   Truck,
   Play,
   RotateCcw,
+  BookTemplate,
 } from "lucide-react";
 import { ButtonGroup } from "@/src/components/ui/button-group";
 import {
@@ -41,7 +42,34 @@ import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { toast } from "@/src/components/ui/sonner";
 import PurchaseOrderSidebar from "./purchase-order-sidebar";
 
-export default function PurchaseOrderRowActions({ row, onRefetch, onSendEmail }) {
+// Fonction utilitaire pour formater les dates
+const formatDateForEmail = (dateValue) => {
+  if (!dateValue) return null;
+
+  try {
+    let date;
+    if (typeof dateValue === "number") {
+      date = new Date(dateValue);
+    } else if (typeof dateValue === "string") {
+      if (/^\d+$/.test(dateValue)) {
+        date = new Date(parseInt(dateValue, 10));
+      } else {
+        date = new Date(dateValue);
+      }
+    } else if (dateValue instanceof Date) {
+      date = dateValue;
+    } else {
+      return null;
+    }
+
+    if (isNaN(date.getTime())) return null;
+    return date.toLocaleDateString("fr-FR");
+  } catch {
+    return null;
+  }
+};
+
+export default function PurchaseOrderRowActions({ row, onRefetch, onSendEmail, onSaveAsTemplate }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const router = useRouter();
   const purchaseOrder = row.original;
@@ -213,6 +241,15 @@ export default function PurchaseOrderRowActions({ row, onRefetch, onSendEmail })
               <DropdownMenuItem onClick={handleView}>
                 <Eye className="mr-2 h-4 w-4" />
                 Voir
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSaveAsTemplate?.(purchaseOrder);
+                }}
+              >
+                <BookTemplate className="mr-2 h-4 w-4" />
+                Sauv. modèle
               </DropdownMenuItem>
               {isDraft && (
                 <DropdownMenuItem onClick={handleEdit}>
