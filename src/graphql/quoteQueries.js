@@ -7,6 +7,7 @@ export const QUOTE_FRAGMENT = gql`
     id
     number
     prefix
+    projectReference
     status
     issueDate
     validUntil
@@ -148,14 +149,36 @@ export const QUOTE_LIST_FRAGMENT = gql`
     totalHT
     totalVAT
     totalTTC
+    discount
+    discountType
+    discountAmount
     finalTotalHT
     finalTotalVAT
     finalTotalTTC
     isReverseCharge
+    items {
+      description
+      quantity
+      unitPrice
+      vatRate
+      unit
+      discount
+      discountType
+      progressPercentage
+    }
     client {
       id
       name
       email
+      type
+      siret
+      vatNumber
+      address {
+        street
+        city
+        postalCode
+        country
+      }
       hasDifferentShippingAddress
       shippingAddress {
         fullName
@@ -169,6 +192,18 @@ export const QUOTE_LIST_FRAGMENT = gql`
       textColor
       headerTextColor
       headerBgColor
+    }
+    shipping {
+      billShipping
+      shippingAddress {
+        fullName
+        street
+        city
+        postalCode
+        country
+      }
+      shippingAmountHT
+      shippingVatRate
     }
     createdAt
     updatedAt
@@ -825,6 +860,106 @@ export const DISCOUNT_TYPE_LABELS = {
 export const CLIENT_TYPE_LABELS = {
   [CLIENT_TYPE.INDIVIDUAL]: "Particulier",
   [CLIENT_TYPE.COMPANY]: "Entreprise",
+};
+
+// ==================== QUOTE TEMPLATES ====================
+
+export const GET_QUOTE_TEMPLATES = gql`
+  query GetQuoteTemplates($workspaceId: ID) {
+    quoteTemplates(workspaceId: $workspaceId) {
+      id
+      name
+      description
+      items {
+        description
+        quantity
+        unitPrice
+        vatRate
+        unit
+        discount
+        discountType
+        details
+        vatExemptionText
+        progressPercentage
+      }
+      headerNotes
+      footerNotes
+      termsAndConditions
+      termsAndConditionsLink
+      termsAndConditionsLinkTitle
+      customFields {
+        key
+        value
+      }
+      discount
+      discountType
+      appearance {
+        textColor
+        headerTextColor
+        headerBgColor
+      }
+      clientPositionRight
+      isReverseCharge
+      showBankDetails
+      shipping {
+        billShipping
+        shippingAddress {
+          fullName
+          street
+          city
+          postalCode
+          country
+        }
+        shippingAmountHT
+        shippingVatRate
+      }
+      prefix
+      retenueGarantie
+      escompte
+      sourceQuoteId
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const SAVE_QUOTE_AS_TEMPLATE = gql`
+  mutation SaveQuoteAsTemplate($input: SaveQuoteAsTemplateInput!, $workspaceId: ID) {
+    saveQuoteAsTemplate(input: $input, workspaceId: $workspaceId) {
+      id
+      name
+      description
+      createdAt
+    }
+  }
+`;
+
+export const DELETE_QUOTE_TEMPLATE = gql`
+  mutation DeleteQuoteTemplate($id: ID!, $workspaceId: ID) {
+    deleteQuoteTemplate(id: $id, workspaceId: $workspaceId)
+  }
+`;
+
+// Hook pour récupérer les modèles de devis
+export const useQuoteTemplates = () => {
+  const { workspaceId } = useRequiredWorkspace();
+
+  const { data, loading, error, refetch } = useQuery(GET_QUOTE_TEMPLATES, {
+    variables: { workspaceId },
+    skip: !workspaceId,
+    fetchPolicy: "cache-and-network",
+    errorPolicy: "all",
+  });
+
+  return useMemo(
+    () => ({
+      templates: data?.quoteTemplates || [],
+      loading,
+      error,
+      refetch,
+    }),
+    [data?.quoteTemplates, loading, error, refetch]
+  );
 };
 
 // Couleurs pour les statuts

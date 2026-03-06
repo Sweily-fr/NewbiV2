@@ -98,6 +98,7 @@ import QuoteRowActions from "./quote-row-actions";
 import QuoteFilters from "./quote-filters";
 import QuoteSidebar from "./quote-sidebar";
 import { SendDocumentModal } from "../../factures/components/send-document-modal";
+import { SaveQuoteTemplateDialog } from "./SaveQuoteTemplateDialog";
 import { ImportQuoteModal } from "./import-quote-modal";
 import { ImportedQuoteSidebar } from "./imported-quote-sidebar";
 import { Skeleton } from "@/src/components/ui/skeleton";
@@ -112,6 +113,7 @@ export default function QuoteTable({ handleNewQuote, quoteIdToOpen, triggerImpor
   const [canCreateQuote, setCanCreateQuote] = useState(false);
   const [canExportQuote, setCanExportQuote] = useState(false);
   const [quoteToOpen, setQuoteToOpen] = useState(null);
+  const [templateQuote, setTemplateQuote] = useState(null);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [selectedImportedQuote, setSelectedImportedQuote] = useState(null);
   // État pour la modal d'envoi par email - géré au niveau du tableau pour éviter les re-renders
@@ -134,6 +136,7 @@ export default function QuoteTable({ handleNewQuote, quoteIdToOpen, triggerImpor
     data: quotes || [],
     onRefetch: refetch,
     onSendEmail: setSendEmailQuote,
+    onSaveAsTemplate: setTemplateQuote,
   });
 
   // État pour les tabs de filtre rapide
@@ -594,7 +597,8 @@ export default function QuoteTable({ handleNewQuote, quoteIdToOpen, triggerImpor
                         e.target.closest('[role="checkbox"]') ||
                         e.target.closest("[data-actions-cell]") ||
                         e.target.closest('button[role="combobox"]') ||
-                        e.target.closest('[role="menu"]')
+                        e.target.closest('[role="menu"]') ||
+                        e.target.closest('[role="dialog"]')
                       ) {
                         return;
                       }
@@ -902,6 +906,16 @@ export default function QuoteTable({ handleNewQuote, quoteIdToOpen, triggerImpor
             } catch { return null; }
           })() : null}
           onSent={() => setSendEmailQuote(null)}
+        />
+      )}
+
+      {/* Dialog de sauvegarde comme modèle */}
+      {templateQuote && (
+        <SaveQuoteTemplateDialog
+          quoteId={templateQuote.id}
+          quoteNumber={`${templateQuote.prefix || "D"}-${templateQuote.number}`}
+          open={!!templateQuote}
+          onOpenChange={(open) => { if (!open) setTemplateQuote(null); }}
         />
       )}
     </div>

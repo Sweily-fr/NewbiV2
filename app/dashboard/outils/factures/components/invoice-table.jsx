@@ -101,6 +101,7 @@ import { Skeleton } from "@/src/components/ui/skeleton";
 import InvoiceFilters from "./invoice-filters";
 import InvoiceSidebar from "./invoice-sidebar";
 import { SendDocumentModal } from "./send-document-modal";
+import { SaveInvoiceTemplateDialog } from "./SaveInvoiceTemplateDialog";
 import { ImportInvoiceModal } from "./import-invoice-modal";
 import { ImportedInvoiceSidebar } from "./imported-invoice-sidebar";
 import {
@@ -126,6 +127,7 @@ export default function InvoiceTable({
   const [invoiceToOpen, setInvoiceToOpen] = useState(null);
   // État pour la modal d'envoi par email - géré au niveau du tableau pour éviter les re-renders
   const [sendEmailInvoice, setSendEmailInvoice] = useState(null);
+  const [templateInvoice, setTemplateInvoice] = useState(null);
 
   // États pour les factures importées
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -202,6 +204,7 @@ export default function InvoiceTable({
     excludedClientIds,
     onOpenSidebar: setInvoiceToOpen, // Passer la fonction pour ouvrir la sidebar au niveau du tableau
     onSendEmail: setSendEmailInvoice, // Passer la fonction pour ouvrir la modal d'envoi au niveau du tableau
+    onSaveAsTemplate: setTemplateInvoice, // Passer la fonction pour ouvrir le dialog de template
   });
 
   // État pour les tabs de filtre rapide
@@ -528,12 +531,13 @@ export default function InvoiceTable({
                     onClick={(e) => {
                       // Ignorer les clics provenant de portals React (modals, dropdowns)
                       if (!e.currentTarget.contains(e.target)) return;
-                      // Ne pas ouvrir la sidebar si on clique sur la checkbox ou les actions
+                      // Ne pas ouvrir la sidebar si on clique sur la checkbox, les actions, un menu ou un dialog
                       if (
                         e.target.closest('[role="checkbox"]') ||
                         e.target.closest("[data-actions-cell]") ||
                         e.target.closest('button[role="combobox"]') ||
-                        e.target.closest('[role="menu"]')
+                        e.target.closest('[role="menu"]') ||
+                        e.target.closest('[role="dialog"]')
                       ) {
                         return;
                       }
@@ -938,6 +942,16 @@ export default function InvoiceTable({
           isOpen={!!invoiceToOpen}
           onClose={() => setInvoiceToOpen(null)}
           onRefetch={refetch}
+        />
+      )}
+
+      {/* Dialog de sauvegarde comme modèle — state au niveau du tableau */}
+      {templateInvoice && (
+        <SaveInvoiceTemplateDialog
+          invoiceId={templateInvoice.id}
+          invoiceNumber={`${templateInvoice.prefix || "F"}-${templateInvoice.number}`}
+          open={!!templateInvoice}
+          onOpenChange={(open) => { if (!open) setTemplateInvoice(null); }}
         />
       )}
 

@@ -49,6 +49,7 @@ export default function QuoteSettingsView({
   onCloseAttempt,
   documentType = "quote",
   validateNumberExists,
+  saveLabel = "Enregistrer les modifications",
 }) {
   const isPurchaseOrder = documentType === "purchaseOrder";
   const documentLabel = isPurchaseOrder ? "bon de commande" : "devis";
@@ -766,7 +767,7 @@ export default function QuoteSettingsView({
             onClick={handleSaveClick}
             disabled={!canEdit}
           >
-            Enregistrer les modifications
+            {saveLabel}
           </Button>
         </div>
       </div>

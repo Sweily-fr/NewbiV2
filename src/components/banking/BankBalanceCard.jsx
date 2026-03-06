@@ -23,14 +23,14 @@ import {
 } from "@/src/components/ui/avatar";
 import { Landmark, LoaderCircle, Search, Building2, Plus, Eye, EyeOff } from "lucide-react";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useImperativeHandle, forwardRef } from "react";
 import { toast } from "@/src/components/ui/sonner";
 import { findBank } from "@/lib/banks-config";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { usePermissions } from "@/src/hooks/usePermissions";
 
 
-export default function BankBalanceCard({
+function BankBalanceCardInner({
   className,
   expenses = [],
   invoices = [],
@@ -39,7 +39,7 @@ export default function BankBalanceCard({
   bankAccounts: propBankAccounts,
   bankBalance: propBankBalance,
   isLoading = false,
-}) {
+}, ref) {
   const { workspaceId } = useWorkspace();
   const { subscription } = useSubscription();
   const { getUserRole } = usePermissions();
@@ -188,6 +188,10 @@ export default function BankBalanceCard({
     setSearchQuery("");
     setSelectedBank(null);
   };
+
+  useImperativeHandle(ref, () => ({
+    openConnectModal: handleOpenModal,
+  }));
 
   // Connecter avec la banque sélectionnée
   const handleSelectBank = async (bank) => {
@@ -655,3 +659,6 @@ export default function BankBalanceCard({
     </Card>
   );
 }
+
+const BankBalanceCard = forwardRef(BankBalanceCardInner);
+export default BankBalanceCard;

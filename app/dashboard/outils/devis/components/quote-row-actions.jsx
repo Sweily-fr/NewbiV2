@@ -14,6 +14,7 @@ import {
   FileCheck,
   Mail,
   ShoppingCart,
+  BookTemplate,
 } from "lucide-react";
 import { ButtonGroup } from "@/src/components/ui/button-group";
 import {
@@ -41,7 +42,37 @@ import { toast } from "@/src/components/ui/sonner";
 import QuoteSidebar from "./quote-sidebar";
 import QuoteMobileFullscreen from "./quote-mobile-fullscreen";
 
-export default function QuoteRowActions({ row, onRefetch, onSendEmail }) {
+// Fonction utilitaire pour formater les dates
+const formatDateForEmail = (dateValue) => {
+  if (!dateValue) return null;
+
+  try {
+    let date;
+    // Si c'est un timestamp en millisecondes (nombre ou string de chiffres)
+    if (typeof dateValue === "number") {
+      date = new Date(dateValue);
+    } else if (typeof dateValue === "string") {
+      // Si c'est un timestamp en string
+      if (/^\d+$/.test(dateValue)) {
+        date = new Date(parseInt(dateValue, 10));
+      } else {
+        // Sinon c'est une date ISO ou autre format string
+        date = new Date(dateValue);
+      }
+    } else if (dateValue instanceof Date) {
+      date = dateValue;
+    } else {
+      return null;
+    }
+
+    if (isNaN(date.getTime())) return null;
+    return date.toLocaleDateString("fr-FR");
+  } catch {
+    return null;
+  }
+};
+
+export default function QuoteRowActions({ row, onRefetch, onSendEmail, onSaveAsTemplate }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isMobileFullscreenOpen, setIsMobileFullscreenOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -127,7 +158,7 @@ export default function QuoteRowActions({ row, onRefetch, onSendEmail }) {
       }
       sessionStorage.setItem('quoteInvoiceData', JSON.stringify({
         sourceQuoteId: fullQuote.id,
-        purchaseOrderNumber: `${fullQuote.prefix || ''}${fullQuote.number || ''}`,
+        purchaseOrderNumber: `${fullQuote.prefix || ''}-${fullQuote.number || ''}`,
         client: fullQuote.client,
         items: fullQuote.items,
         discount: fullQuote.discount,
@@ -158,7 +189,7 @@ export default function QuoteRowActions({ row, onRefetch, onSendEmail }) {
       }
       sessionStorage.setItem('quotePurchaseOrderData', JSON.stringify({
         sourceQuoteId: fullQuote.id,
-        purchaseOrderNumber: `${fullQuote.prefix || ''}${fullQuote.number || ''}`,
+        purchaseOrderNumber: `${fullQuote.prefix || ''}-${fullQuote.number || ''}`,
         client: fullQuote.client,
         items: fullQuote.items,
         discount: fullQuote.discount,
@@ -238,6 +269,15 @@ export default function QuoteRowActions({ row, onRefetch, onSendEmail }) {
             <DropdownMenuItem onClick={handleView}>
               <Eye className="mr-2 h-4 w-4" />
               Voir
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={(e) => {
+                e.stopPropagation();
+                onSaveAsTemplate?.(quote);
+              }}
+            >
+              <BookTemplate className="mr-2 h-4 w-4" />
+              Sauv. modèle
             </DropdownMenuItem>
             {(quote.status === QUOTE_STATUS.DRAFT || quote.status === QUOTE_STATUS.PENDING) && (
               <DropdownMenuItem onClick={handleEdit}>

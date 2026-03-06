@@ -1,6 +1,7 @@
 "use client";
 
 import Head from "next/head";
+import { Avatar, AvatarImage, AvatarFallback } from "@/src/components/ui/avatar";
 import { ChartAreaInteractive } from "@/src/components/chart-area-interactive";
 import { ChartRadarGridCircle } from "@/src/components/chart-radar-grid-circle";
 import { ChartBarMultiple } from "@/src/components/ui/bar-charts";
@@ -39,7 +40,6 @@ import {
   TrendingDown,
   Building2,
   ChevronsUpDown,
-  Check,
 } from "lucide-react";
 import {
   Popover,
@@ -118,6 +118,9 @@ function DashboardContent() {
 
   // État pour l'overlay de synchronisation bancaire
   const [isBankSyncing, setIsBankSyncing] = useState(false);
+
+  // Ref pour ouvrir le modal de connexion bancaire
+  const bankBalanceRef = useRef(null);
 
   // Refs pour empêcher les useEffects de se re-déclencher
   const hasHandledBridgeReturn = useRef(false);
@@ -369,11 +372,11 @@ function DashboardContent() {
                 {cacheInfo.isFromCache && " (cache)"}
               </p>
             )}
-          {/* Filtre de compte bancaire */}
-          {(bankAccounts || []).length > 0 && (
+          {/* Filtre de compte bancaire ou bouton connecter */}
+          {(bankAccounts || []).length > 0 ? (
             <Popover open={accountPopoverOpen} onOpenChange={setAccountPopoverOpen}>
               <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2 font-normal">
+                <Button variant="outline" size="sm" className="gap-2 font-medium">
                   <Landmark className="size-3.5" />
                   <span className="truncate max-w-[150px]">
                     {selectedAccountLabel}
@@ -381,26 +384,24 @@ function DashboardContent() {
                   <ChevronsUpDown className="h-3.5 w-3.5 text-muted-foreground" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-80 rounded-lg p-0" align="start" sideOffset={8}>
+              <PopoverContent className="w-80 rounded-xl border shadow-md p-1" align="end" sideOffset={8}>
                 <Command>
                   <CommandList>
                     <CommandEmpty>Aucun compte trouvé.</CommandEmpty>
-                    <CommandGroup>
+                    <CommandGroup className="space-y-0.5">
                       <CommandItem
                         value="all"
                         onSelect={() => {
                           setSelectedAccountId("all");
                           setAccountPopoverOpen(false);
                         }}
-                        className="flex items-center gap-2 px-2 py-2 cursor-pointer"
+                        className={cn(
+                          "gap-2 p-2 rounded-lg cursor-pointer",
+                          selectedAccountId === "all" && "bg-accent"
+                        )}
                       >
-                        <span className="flex-1 text-xs truncate">Tous les comptes</span>
-                        <Check
-                          className={cn(
-                            "h-4 w-4 text-[#5b4fff]",
-                            selectedAccountId === "all" ? "opacity-100" : "opacity-0"
-                          )}
-                        />
+                        <Landmark className="size-4 text-muted-foreground flex-shrink-0" />
+                        <span className="flex-1 text-[13px] font-normal truncate">Tous les comptes</span>
                       </CommandItem>
                       {(bankAccounts || []).map((account) => {
                         const accountName = account.name || account.institutionName || account.bankName || "Compte";
@@ -414,33 +415,35 @@ function DashboardContent() {
                               setSelectedAccountId(account.id);
                               setAccountPopoverOpen(false);
                             }}
-                            className="flex items-center gap-2 px-2 py-2 cursor-pointer"
+                            className={cn(
+                              "gap-2 p-2 rounded-lg cursor-pointer",
+                              isSelected && "bg-accent"
+                            )}
                           >
-                            <div className="flex items-center gap-2 flex-1 min-w-0">
-                              {account.institutionLogo ? (
-                                <img
+                            {account.institutionLogo ? (
+                              <Avatar className="h-7 w-7 ring-1 ring-border bg-white flex-shrink-0">
+                                <AvatarImage
                                   src={account.institutionLogo}
-                                  alt=""
-                                  className="h-5 w-5 rounded-sm object-contain flex-shrink-0"
+                                  alt={accountName}
+                                  className="object-contain p-0.5"
                                 />
-                              ) : (
-                                <Landmark className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-                              )}
-                              <div className="flex flex-col min-w-0">
-                                <span className="truncate text-xs">{accountName}{lastIban}</span>
-                                {account.balance?.current != null && (
-                                  <span className="text-[10px] text-muted-foreground">
-                                    {formatCurrency(account.balance.current)}
-                                  </span>
-                                )}
+                                <AvatarFallback className="text-xs bg-white">
+                                  <Landmark className="h-3.5 w-3.5 text-muted-foreground" />
+                                </AvatarFallback>
+                              </Avatar>
+                            ) : (
+                              <div className="h-7 w-7 rounded-full border border-border flex items-center justify-center flex-shrink-0">
+                                <Landmark className="h-3.5 w-3.5 text-muted-foreground" />
                               </div>
-                            </div>
-                            <Check
-                              className={cn(
-                                "h-4 w-4 text-[#5b4fff]",
-                                isSelected ? "opacity-100" : "opacity-0"
+                            )}
+                            <div className="flex flex-col min-w-0 flex-1">
+                              <span className="truncate text-[13px] font-normal">{accountName}{lastIban}</span>
+                              {account.balance?.current != null && (
+                                <span className="text-[10px] text-muted-foreground">
+                                  {formatCurrency(account.balance.current)}
+                                </span>
                               )}
-                            />
+                            </div>
                           </CommandItem>
                         );
                       })}
@@ -449,6 +452,16 @@ function DashboardContent() {
                 </Command>
               </PopoverContent>
             </Popover>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2 font-medium"
+              onClick={() => bankBalanceRef.current?.openConnectModal()}
+            >
+              <Landmark className="size-3.5" />
+              Connecter un compte bancaire
+            </Button>
           )}
         </div>
         {/* Barre de recherche et actions rapides temporairement désactivées */}
@@ -538,6 +551,7 @@ function DashboardContent() {
         </div> */}
         <div className="flex flex-col md:flex-row gap-4 md:gap-6 w-full">
           <BankBalanceCard
+            ref={bankBalanceRef}
             className="shadow-xs w-full md:w-1/2"
             expenses={paidExpenses}
             invoices={paidInvoices}

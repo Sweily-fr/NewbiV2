@@ -41,10 +41,12 @@ const formatTime = (seconds) => {
 };
 
 const getBillableHours = (totalSeconds, roundingOption) => {
-  const hours = totalSeconds / 3600;
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const hours = h + m / 60;
   if (roundingOption === "up") return Math.ceil(hours);
   if (roundingOption === "down") return Math.floor(hours);
-  return hours;
+  return Math.round(hours * 100) / 100;
 };
 
 export function ConvertToInvoiceModal({ open, onOpenChange, tasks, onConvert, getEffectiveSeconds, columns = [], members = [], onOpenTask }) {

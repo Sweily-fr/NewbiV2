@@ -1171,6 +1171,113 @@ export const useDeleteLinkedInvoice = () => {
   return { deleteLinkedInvoice, loading };
 };
 
+// ==================== INVOICE TEMPLATES ====================
+
+export const GET_INVOICE_TEMPLATES = gql`
+  query GetInvoiceTemplates($workspaceId: ID) {
+    invoiceTemplates(workspaceId: $workspaceId) {
+      id
+      name
+      description
+      items {
+        description
+        quantity
+        unitPrice
+        vatRate
+        unit
+        discount
+        discountType
+        details
+        vatExemptionText
+        progressPercentage
+      }
+      headerNotes
+      footerNotes
+      termsAndConditions
+      termsAndConditionsLink
+      termsAndConditionsLinkTitle
+      customFields {
+        key
+        value
+      }
+      discount
+      discountType
+      invoiceType
+      appearance {
+        textColor
+        headerTextColor
+        headerBgColor
+      }
+      clientPositionRight
+      isReverseCharge
+      showBankDetails
+      bankDetails {
+        iban
+        bic
+        bankName
+      }
+      shipping {
+        billShipping
+        shippingAddress {
+          fullName
+          street
+          city
+          postalCode
+          country
+        }
+        shippingAmountHT
+        shippingVatRate
+      }
+      prefix
+      retenueGarantie
+      escompte
+      operationType
+      sourceInvoiceId
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const SAVE_INVOICE_AS_TEMPLATE = gql`
+  mutation SaveInvoiceAsTemplate($input: SaveInvoiceAsTemplateInput!, $workspaceId: ID) {
+    saveInvoiceAsTemplate(input: $input, workspaceId: $workspaceId) {
+      id
+      name
+      description
+      createdAt
+    }
+  }
+`;
+
+export const DELETE_INVOICE_TEMPLATE = gql`
+  mutation DeleteInvoiceTemplate($id: ID!, $workspaceId: ID) {
+    deleteInvoiceTemplate(id: $id, workspaceId: $workspaceId)
+  }
+`;
+
+// Hook pour récupérer les modèles de facture
+export const useInvoiceTemplates = () => {
+  const { workspaceId } = useRequiredWorkspace();
+
+  const { data, loading, error, refetch } = useQuery(GET_INVOICE_TEMPLATES, {
+    variables: { workspaceId },
+    skip: !workspaceId,
+    fetchPolicy: "cache-and-network",
+    errorPolicy: "all",
+  });
+
+  return useMemo(
+    () => ({
+      templates: data?.invoiceTemplates || [],
+      loading,
+      error,
+      refetch,
+    }),
+    [data?.invoiceTemplates, loading, error, refetch]
+  );
+};
+
 // ==================== CONSTANTES ====================
 
 export const INVOICE_STATUS = {

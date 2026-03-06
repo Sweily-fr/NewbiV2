@@ -209,6 +209,7 @@ export function useInvoiceTable({
   excludedClientIds = [],
   onOpenSidebar, // Callback pour ouvrir la sidebar au niveau du tableau
   onSendEmail, // Callback pour ouvrir la modal d'envoi au niveau du tableau
+  onSaveAsTemplate, // Callback pour ouvrir le dialog de template au niveau du tableau
 }) {
   const [globalFilter, setGlobalFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState([]);
@@ -676,6 +677,7 @@ export function useInvoiceTable({
               onOpenReminderSettings={onOpenReminderSettings}
               onOpenSidebar={onOpenSidebar}
               onSendEmail={onSendEmail}
+              onSaveAsTemplate={onSaveAsTemplate}
             />
           );
         },
@@ -690,6 +692,7 @@ export function useInvoiceTable({
       excludedClientIds,
       onOpenSidebar,
       onSendEmail,
+      onSaveAsTemplate,
     ] // Inclure toutes les dépendances
   );
 

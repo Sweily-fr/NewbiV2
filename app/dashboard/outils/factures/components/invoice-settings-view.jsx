@@ -82,6 +82,7 @@ export default function InvoiceSettingsView({
   validationErrors = {},
   setValidationErrors,
   organization,
+  saveLabel = "Enregistrer les modifications",
 }) {
   const {
     watch,
@@ -1036,7 +1037,7 @@ export default function InvoiceSettingsView({
             onClick={handleSaveClick}
             disabled={!canEdit}
           >
-            Enregistrer les modifications
+            {saveLabel}
           </Button>
         </div>
       </div>

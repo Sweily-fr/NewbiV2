@@ -1173,8 +1173,12 @@ const UniversalPreviewPDF = ({
                               whiteSpace: "nowrap",
                             }}
                           >
-                            {parseFloat(Number(item.quantity).toFixed(4))}
-                            {item.unit ? ` ${item.unit}` : ""}
+                            {item.unit === "heure" ? (() => {
+                              const qty = parseFloat(item.quantity) || 0;
+                              const hrs = Math.floor(qty);
+                              const mins = Math.round((qty - hrs) * 60);
+                              return mins > 0 ? `${hrs}h${String(mins).padStart(2, "0")}min` : `${hrs}h`;
+                            })() : <>{parseFloat(Number(item.quantity).toFixed(4))}{item.unit ? ` ${item.unit}` : ""}</>}
                           </td>
                           <td
                             className="pt-3 pb-3 px-2 text-right dark:text-[#0A0A0A] align-top"

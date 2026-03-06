@@ -1201,8 +1201,8 @@ export const REJECT_ACCESS_REQUEST = gql`
 
 // Mutation pour ajouter un commentaire externe
 export const ADD_EXTERNAL_COMMENT = gql`
-  mutation AddExternalComment($token: String!, $taskId: ID!, $content: String!, $visitorEmail: String!) {
-    addExternalComment(token: $token, taskId: $taskId, content: $content, visitorEmail: $visitorEmail) {
+  mutation AddExternalComment($token: String!, $taskId: ID!, $content: String!, $visitorEmail: String!, $images: [CommentImageInput!]) {
+    addExternalComment(token: $token, taskId: $taskId, content: $content, visitorEmail: $visitorEmail, images: $images) {
       success
       message
       task {

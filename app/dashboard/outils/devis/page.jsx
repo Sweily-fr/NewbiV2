@@ -3,7 +3,7 @@
 import { Suspense, useState, useEffect, useMemo } from "react";
 import { Button } from "@/src/components/ui/button";
 import { PermissionButton } from "@/src/components/rbac";
-import { Plus, Settings, Bell, ArrowRightFromLine, Download } from "lucide-react";
+import { Plus, Settings, Bell, ArrowRightFromLine, Download, ChevronDown } from "lucide-react";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import QuoteTable from "./components/quote-table";
 import { QuoteSettingsModal } from "./components/quote-settings-modal";
@@ -14,6 +14,12 @@ import { CompanyInfoGuard } from "@/src/components/company-info-guard";
 import { useQuotes, QUOTE_STATUS } from "@/src/graphql/quoteQueries";
 import { useToastManager } from "@/src/components/ui/toast-manager";
 import { SendDocumentModal } from "@/app/dashboard/outils/factures/components/send-document-modal";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/src/components/ui/dropdown-menu";
 
 function QuotesContent() {
   const router = useRouter();
@@ -152,14 +158,29 @@ function QuotesContent() {
               Importer
             </Button>
             <QuoteExportButton quotes={quotes} iconOnly={false} />
-            <Button
-              variant="primary"
-              onClick={handleNewQuote}
-              className="cursor-pointer"
-            >
-              <Plus size={14} strokeWidth={2} aria-hidden="true" />
-              Nouveau devis
-            </Button>
+            <div className="flex items-center">
+              <Button
+                variant="primary"
+                onClick={handleNewQuote}
+                className="cursor-pointer rounded-r-none"
+              >
+                <Plus size={14} strokeWidth={2} aria-hidden="true" />
+                Nouveau devis
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="primary" className="rounded-l-none border-l border-primary-foreground/20 px-2">
+                    <ChevronDown size={14} />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={handleNewQuote}>
+                    <Plus size={14} className="mr-2" />
+                    Devis vierge
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
         </div>
 
@@ -286,6 +307,7 @@ function QuotesContent() {
         open={isSettingsOpen}
         onOpenChange={setIsSettingsOpen}
       />
+
 
       {/* Modal d'envoi par email pour les nouveaux devis */}
       {newQuoteData && (

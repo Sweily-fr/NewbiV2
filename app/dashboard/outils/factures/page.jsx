@@ -12,6 +12,7 @@ import {
   Download,
   FileText,
   Info,
+  ChevronDown,
 } from "lucide-react";
 import { Badge } from "@/src/components/ui/badge";
 import {
@@ -33,6 +34,12 @@ import { useImportedInvoices } from "@/src/graphql/importedInvoiceQueries";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { useToastManager } from "@/src/components/ui/toast-manager";
 import { SendDocumentModal } from "./components/send-document-modal";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/src/components/ui/dropdown-menu";
 
 function InvoicesContent() {
   const router = useRouter();
@@ -226,14 +233,29 @@ function InvoicesContent() {
               Importer
             </Button>
             <InvoiceExportButton invoices={invoices} iconOnly={false} />
-            <Button
-              variant="primary"
-              onClick={handleNewInvoice}
-              className="cursor-pointer"
-            >
-              <Plus size={14} strokeWidth={2} aria-hidden="true" />
-              Nouvelle facture
-            </Button>
+            <div className="flex items-center">
+              <Button
+                variant="primary"
+                onClick={handleNewInvoice}
+                className="cursor-pointer rounded-r-none"
+              >
+                <Plus size={14} strokeWidth={2} aria-hidden="true" />
+                Nouvelle facture
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="primary" className="rounded-l-none border-l border-primary-foreground/20 px-2">
+                    <ChevronDown size={14} />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={handleNewInvoice}>
+                    <Plus size={14} className="mr-2" />
+                    Facture vierge
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
         </div>
 
@@ -411,6 +433,7 @@ function InvoicesContent() {
         open={isAutoReminderOpen}
         onOpenChange={setIsAutoReminderOpen}
       />
+
 
       {/* Modal d'envoi par email pour les nouvelles factures/avoirs */}
       {newDocumentData && (

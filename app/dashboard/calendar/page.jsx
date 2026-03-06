@@ -62,6 +62,7 @@ export default function Component() {
       isReadOnly: event.isReadOnly || false,
       externalEventId: event.externalEventId,
       externalCalendarLinks: event.externalCalendarLinks || [],
+      emailReminder: event.emailReminder || null,
     }));
 
     return transformed;

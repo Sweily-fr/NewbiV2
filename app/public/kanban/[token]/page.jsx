@@ -736,7 +736,7 @@ function PublicTaskCard({ task, onEdit }) {
               <PopoverContent className="w-80" side="top">
                 <div className="space-y-2">
                   <h4 className="font-medium text-sm">Description</h4>
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap break-words">{task.description}</p>
+                  <div className="text-sm text-muted-foreground whitespace-pre-wrap break-words prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: task.description }} />
                 </div>
               </PopoverContent>
             </Popover>
@@ -960,20 +960,28 @@ function PublicTaskActivity({ task, visitorEmail, visitorProfile, token, onComme
         setUploadingImages(false);
       }
 
-      // Construire le contenu du commentaire avec les images
+      // Construire le contenu du commentaire
       let commentContent = newComment.trim();
-      if (uploadedImageUrls.length > 0) {
-        const imageMarkdown = uploadedImageUrls.map(img => `![${img.fileName}](${img.url})`).join('\n');
-        commentContent = commentContent ? `${commentContent}\n\n${imageMarkdown}` : imageMarkdown;
-      }
 
-      if (!commentContent) {
+      if (!commentContent && uploadedImageUrls.length === 0) {
         toast.error("Veuillez ajouter du texte ou des images");
         return;
       }
 
       const result = await addExternalComment({
-        variables: { token, taskId: task.id, content: commentContent, visitorEmail }
+        variables: {
+          token,
+          taskId: task.id,
+          content: commentContent || "",
+          visitorEmail,
+          images: uploadedImageUrls.length > 0 ? uploadedImageUrls.map(img => ({
+            id: img.id,
+            key: img.key,
+            url: img.url,
+            fileName: img.fileName,
+            contentType: img.contentType
+          })) : undefined
+        }
       });
       if (result.data?.addExternalComment?.success) {
         setNewComment("");
@@ -1467,7 +1475,7 @@ function PublicListView({ columns, tasksByColumn, onEditTask }) {
                                   <PopoverContent className="w-80" side="top">
                                     <div className="space-y-2">
                                       <h4 className="font-medium text-sm">Description</h4>
-                                      <p className="text-sm text-muted-foreground whitespace-pre-wrap break-words">{task.description}</p>
+                                      <div className="text-sm text-muted-foreground whitespace-pre-wrap break-words prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: task.description }} />
                                     </div>
                                   </PopoverContent>
                                 </Popover>
@@ -2150,9 +2158,10 @@ function PublicTaskModal({ task, isOpen, onClose, columns, visitorEmail, visitor
               {task.description && (
                 <div className="space-y-2">
                   <Label className="text-sm font-normal">Description</Label>
-                  <div className="w-full min-h-[100px] bg-muted/30 text-foreground border border-input rounded-md px-3 py-2 whitespace-pre-wrap">
-                    {task.description}
-                  </div>
+                  <div
+                    className="w-full min-h-[100px] bg-muted/30 text-foreground border border-input rounded-md px-3 py-2 whitespace-pre-wrap prose prose-sm max-w-none"
+                    dangerouslySetInnerHTML={{ __html: task.description }}
+                  />
                 </div>
               )}
 
@@ -2496,9 +2505,10 @@ function PublicTaskModal({ task, isOpen, onClose, columns, visitorEmail, visitor
                 {task.description && (
                   <div className="space-y-2">
                     <Label className="text-sm font-normal">Description</Label>
-                    <div className="w-full min-h-[80px] bg-muted/30 text-foreground border border-input rounded-md px-3 py-2 whitespace-pre-wrap text-sm">
-                      {task.description}
-                    </div>
+                    <div
+                      className="w-full min-h-[80px] bg-muted/30 text-foreground border border-input rounded-md px-3 py-2 whitespace-pre-wrap text-sm prose prose-sm max-w-none"
+                      dangerouslySetInnerHTML={{ __html: task.description }}
+                    />
                   </div>
                 )}
 

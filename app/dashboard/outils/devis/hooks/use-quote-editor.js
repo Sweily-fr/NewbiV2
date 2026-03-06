@@ -868,6 +868,23 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
           setValue("addressCity", companyInfo.address.city || "", { shouldDirty: false });
           setValue("addressZipCode", companyInfo.address.postalCode || "", { shouldDirty: false });
           setValue("addressCountry", companyInfo.address.country || "France", { shouldDirty: false });
+        } else if (typeof companyInfo.address === "string" && companyInfo.address) {
+          // L'adresse est stockée comme une chaîne formatée (street\npostalCode city\ncountry)
+          const lines = companyInfo.address.split("\n").map(l => l.trim()).filter(Boolean);
+          if (lines.length >= 1) setValue("addressStreet", lines[0], { shouldDirty: false });
+          if (lines.length >= 2) {
+            // Ligne 2 peut être "75001 Paris" ou juste "Paris"
+            const cityLine = lines[1];
+            const postalMatch = cityLine.match(/^(\d{4,5})\s+(.+)$/);
+            if (postalMatch) {
+              setValue("addressZipCode", postalMatch[1], { shouldDirty: false });
+              setValue("addressCity", postalMatch[2], { shouldDirty: false });
+            } else {
+              setValue("addressCity", cityLine, { shouldDirty: false });
+            }
+          }
+          if (lines.length >= 3) setValue("addressCountry", lines[2], { shouldDirty: false });
+          else setValue("addressCountry", "France", { shouldDirty: false });
         }
       }
     }
@@ -1625,7 +1642,7 @@ function getInitialFormData(mode, initialData, session) {
     // Informations du devis
     prefix: "",
     number: "",
-    reference: "",
+    projectReference: "",
     issueDate: today,
     validUntil: validUntil,
     status: "DRAFT",
@@ -1858,7 +1875,7 @@ function transformQuoteToFormData(quote) {
   return {
     prefix: quote.prefix || "",
     number: quote.number || "",
-    reference: quote.reference || "",
+    projectReference: quote.projectReference || "",
     issueDate: issueDate,
     validUntil: validUntil,
     status: quote.status || "DRAFT",
@@ -1901,7 +1918,8 @@ function transformQuoteToFormData(quote) {
       capitalSocial: quote.companyInfo?.capitalSocial || "",
       vatPaymentCondition: quote.companyInfo?.vatPaymentCondition || "",
       transactionCategory: quote.companyInfo?.transactionCategory || "",
-      // Formatage cohérent de l'adresse pour l'affichage dans le PDF
+      // Conserver l'adresse structurée pour la synchronisation avec les champs plats
+      // Le PDF sait gérer les deux formats (string et object)
       address: (() => {
         if (!quote.companyInfo?.address) return "";
 
@@ -1909,19 +1927,14 @@ function transformQuoteToFormData(quote) {
           return quote.companyInfo.address;
         }
 
-        // Créer un tableau avec les parties de l'adresse et filtrer les vides
-        const addressParts = [
-          quote.companyInfo.address.street,
-          quote.companyInfo.address.additional,
-          quote.companyInfo.address.postalCode
-            ? quote.companyInfo.address.postalCode +
-              " " +
-              (quote.companyInfo.address.city || "")
-            : quote.companyInfo.address.city,
-          quote.companyInfo.address.country,
-        ].filter(Boolean); // Enlève les valeurs vides du tableau
-
-        return addressParts.join("\n");
+        // Retourner l'objet structuré pour permettre la synchronisation des champs plats
+        return {
+          street: quote.companyInfo.address.street || "",
+          additional: quote.companyInfo.address.additional || "",
+          postalCode: quote.companyInfo.address.postalCode || "",
+          city: quote.companyInfo.address.city || "",
+          country: quote.companyInfo.address.country || "",
+        };
       })(),
       // Assurer que bankDetails a toujours la même structure
       bankDetails: quote.companyInfo?.bankDetails
@@ -2000,6 +2013,9 @@ function transformQuoteToFormData(quote) {
           headerBgColor: "#5b50FF",
         },
     
+    // Auto-liquidation
+    isReverseCharge: quote.isReverseCharge || false,
+
     // Position du client dans le PDF
     clientPositionRight: quote.clientPositionRight || false,
 
@@ -2342,6 +2358,7 @@ function transformFormDataToInput(
   return {
     ...(shouldSendPrefix && { prefix: prefixToSend }),
     ...(numberToSend !== undefined && { number: numberToSend }),
+    projectReference: formData.projectReference || "",
     // Utiliser les dates formatées avec des valeurs par défaut sécurisées
     issueDate: finalIssueDate,
     validUntil: finalValidUntil,

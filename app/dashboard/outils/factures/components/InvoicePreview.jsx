@@ -454,7 +454,12 @@ export default function InvoicePreview({ data = {}, className = "", status }) {
                         textAlign: "center",
                       }}
                     >
-                      {item.quantity || 1} {item.unit || ""}
+                      {item.unit === "heure" ? (() => {
+                        const qty = item.quantity || 0;
+                        const hrs = Math.floor(qty);
+                        const mins = Math.round((qty - hrs) * 60);
+                        return mins > 0 ? `${hrs}h${String(mins).padStart(2, "0")}min` : `${hrs}h`;
+                      })() : `${item.quantity || 1} ${item.unit || ""}`}
                     </td>
                     <td
                       style={{
