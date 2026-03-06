@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
-import { Calendar, ChevronLeft, ChevronRight, Flag, Users, Clock, MoreHorizontal } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight, Flag, Users, Clock, MoreHorizontal, AlignLeft } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { UserAvatar } from "@/src/components/ui/user-avatar";
@@ -23,6 +23,11 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/src/components/ui/tooltip";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/src/components/ui/popover";
 import { cn } from "@/src/lib/utils";
 import { useAssignedMembersInfo } from "@/src/hooks/useAssignedMembersInfo";
 import { format, addDays, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, parseISO, differenceInDays, startOfDay, isWithinInterval, getWeek } from "date-fns";
@@ -661,7 +666,7 @@ export function KanbanGanttView({
                   <div
                     key={task.id}
                     className={cn(
-                      "h-[45px] cursor-pointer transition-all group overflow-x-auto scrollbar-hide",
+                      "h-[45px] cursor-pointer transition-all group overflow-hidden",
                       hoveredTaskId === task.id ? "bg-primary/2" : "hover:bg-accent/5"
                     )}
                     onClick={() => onEditTask(task)}
@@ -672,14 +677,45 @@ export function KanbanGanttView({
                       msOverflowStyle: 'none'
                     }}
                   >
-                    <div className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 h-full min-w-max">
+                    <div className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 h-full min-w-0">
                       <div
                         className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full flex-shrink-0"
                         style={{ backgroundColor: task.column.color }}
                       />
-                      <div className="text-[10px] sm:text-xs font-medium whitespace-nowrap group-hover:text-primary transition-colors truncate max-w-[80px] sm:max-w-none">
-                        {task.title}
+                      <div className="text-[10px] sm:text-xs font-medium group-hover:text-primary transition-colors truncate min-w-0">
+                        {task.title.length > 25 ? `${task.title.slice(0, 25)}...` : task.title}
                       </div>
+                      {task.description && (
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <div
+                              className="text-muted-foreground/70 hover:text-foreground transition-colors cursor-pointer flex-shrink-0 ml-2"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <AlignLeft className="h-3.5 w-3.5" />
+                            </div>
+                          </PopoverTrigger>
+                          <PopoverContent
+                            className="w-80 p-3"
+                            side="right"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <div className="space-y-1">
+                              <h4 className="font-medium text-sm">Description</h4>
+                              {/<[a-z][\s\S]*>/i.test(task.description) ? (
+                                <div
+                                  className="text-sm text-muted-foreground break-words line-clamp-8 [&_b]:font-bold [&_i]:italic [&_u]:underline [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4"
+                                  dangerouslySetInnerHTML={{ __html: task.description }}
+                                />
+                              ) : (
+                                <p className="text-sm text-muted-foreground whitespace-pre-wrap break-words line-clamp-8">
+                                  {task.description}
+                                </p>
+                              )}
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                      )}
                       <div className="flex items-center gap-1.5 flex-shrink-0">
                         {task.priority && task.priority.toLowerCase() !== 'none' && (
                           <Flag className={cn(

@@ -28,6 +28,40 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { MemberSelector } from "./MemberSelector";
 
+function DescriptionHoverPopover({ description }) {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <span
+          className="cursor-pointer text-muted-foreground/70 hover:text-foreground transition-colors flex-shrink-0 ml-4"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <AlignLeft className="h-4 w-4" />
+        </span>
+      </PopoverTrigger>
+      <PopoverContent
+        className="w-80 p-3"
+        side="top"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="space-y-1">
+          <h4 className="font-medium text-sm">Description</h4>
+          {/<[a-z][\s\S]*>/i.test(description) ? (
+            <div
+              className="text-sm text-muted-foreground break-words line-clamp-8 [&_b]:font-bold [&_i]:italic [&_u]:underline [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4"
+              dangerouslySetInnerHTML={{ __html: description }}
+            />
+          ) : (
+            <p className="text-sm text-muted-foreground whitespace-pre-wrap break-words line-clamp-8">
+              {description}
+            </p>
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 /**
  * Composant pour sélectionner les membres assignés avec un bouton de mise à jour
  */
@@ -667,34 +701,9 @@ export function KanbanListView({
                                     </DropdownMenuContent>
                                   </DropdownMenu>
                                   <div className="flex-1 w-0 flex items-center gap-1 min-w-0">
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <p className="text-sm truncate font-normal text-foreground/90 group-hover:text-foreground">{task.title}</p>
-                                      </TooltipTrigger>
-                                      <TooltipContent side="top" className="max-w-sm break-words">
-                                        {task.title}
-                                      </TooltipContent>
-                                    </Tooltip>
+                                    <p className="text-sm truncate font-normal text-foreground/90 max-w-[200px]">{task.title}</p>
                                     {task.description && (
-                                      <Popover>
-                                        <PopoverTrigger asChild>
-                                          <button
-                                            className="cursor-pointer text-muted-foreground/70 hover:text-foreground transition-colors flex-shrink-0 ml-4"
-                                            onClick={(e) => e.stopPropagation()}
-                                            title="Afficher la description"
-                                          >
-                                            <AlignLeft className="h-4 w-4" />
-                                          </button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-80" side="top">
-                                          <div className="space-y-2">
-                                            <h4 className="font-medium text-sm">Description</h4>
-                                            <p className="text-sm text-muted-foreground whitespace-pre-wrap break-words">
-                                              {task.description}
-                                            </p>
-                                          </div>
-                                        </PopoverContent>
-                                      </Popover>
+                                      <DescriptionHoverPopover description={task.description} />
                                     )}
                                   </div>
                                 </div>
