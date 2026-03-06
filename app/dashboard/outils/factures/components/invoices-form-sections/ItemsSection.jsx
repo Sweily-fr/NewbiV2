@@ -34,6 +34,26 @@ import {
 import PercentageSliderInput from "@/src/components/percentage-slider-input";
 // Utilisation du composant ProductSearchCombobox défini dans enhanced-invoice-form.jsx
 
+// Convertir une quantité décimale en { hours, minutes }
+const decimalToHM = (decimal) => {
+  const total = Math.max(0, decimal || 0);
+  const hours = Math.floor(total);
+  const minutes = Math.round((total - hours) * 60);
+  return { hours, minutes: minutes >= 60 ? 59 : minutes };
+};
+
+// Convertir { hours, minutes } en décimal pour le calcul
+const hmToDecimal = (hours, minutes) => {
+  return Math.max(0, (parseInt(hours) || 0)) + Math.max(0, Math.min(59, parseInt(minutes) || 0)) / 60;
+};
+
+// Formater une quantité décimale en "Xh Ymin"
+const formatHourMinute = (decimal) => {
+  const { hours, minutes } = decimalToHM(decimal);
+  if (minutes === 0) return `${hours}h`;
+  return `${hours}h${String(minutes).padStart(2, "0")}min`;
+};
+
 // Fonction utilitaire pour calculer le total d'un article en prenant en compte la remise et l'avancement
 const calculateItemTotal = (
   quantity,
@@ -303,8 +323,7 @@ export default function ItemsSection({
                           <div className="text-sm mt-1 space-y-1">
                             <div className="flex items-center gap-2 text-muted-foreground">
                               <span className="font-normal">
-                                {quantity}
-                                {unit ? ` ${unit}` : ""}
+                                {unit === "heure" ? formatHourMinute(quantity) : `${quantity}${unit ? ` ${unit}` : ""}`}
                               </span>
                               <span className="font-normal">•</span>
                               <span className="font-normal">
@@ -518,38 +537,71 @@ export default function ItemsSection({
                                         },
                                       }),
                                 }}
-                                render={({ field }) => (
+                                render={({ field }) => {
+                                  const currentUnit = watch(`items.${index}.unit`);
+                                  const recalcTotal = (newQuantity) => {
+                                    field.onChange(newQuantity);
+                                    const unitPrice = watch(`items.${index}.unitPrice`) || 0;
+                                    const discount = watch(`items.${index}.discount`) || 0;
+                                    const discountType = watch(`items.${index}.discountType`) || "percentage";
+                                    const progressPercentage = watch(`items.${index}.progressPercentage`) ?? 100;
+                                    const total = calculateItemTotal(newQuantity, unitPrice, discount, discountType, progressPercentage);
+                                    setValue(`items.${index}.total`, total, { shouldDirty: true });
+                                  };
+
+                                  if (currentUnit === "heure") {
+                                    const { hours: h, minutes: m } = decimalToHM(field.value);
+                                    return (
+                                      <div className="flex items-center gap-1.5">
+                                        <div className="relative flex-1">
+                                          <input
+                                            type="number"
+                                            min={0}
+                                            value={h}
+                                            onChange={(e) => {
+                                              const newH = Math.max(0, parseInt(e.target.value) || 0);
+                                              recalcTotal(hmToDecimal(newH, m));
+                                            }}
+                                            onBlur={() => { field.onBlur(); unmarkFieldAsEditing?.(index, "quantity"); }}
+                                            onFocus={() => markFieldAsEditing?.(index, "quantity")}
+                                            disabled={!canEdit || isItemFieldLocked}
+                                            className={`w-full h-8 rounded-[9px] border border-[#e6e7ea] hover:border-[#D1D3D8] dark:border-[#2E2E32] dark:hover:border-[#44444A] bg-transparent px-2 pr-6 text-center text-sm font-medium tabular-nums outline-none transition-[border] duration-[80ms] ${
+                                              errors?.items?.[index]?.quantity || hasFieldError(index, "quantity") ? "border-destructive" : ""
+                                            }`}
+                                          />
+                                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">h</span>
+                                        </div>
+                                        <div className="relative flex-1">
+                                          <input
+                                            type="number"
+                                            min={0}
+                                            max={59}
+                                            value={m}
+                                            onChange={(e) => {
+                                              const newM = Math.max(0, Math.min(59, parseInt(e.target.value) || 0));
+                                              recalcTotal(hmToDecimal(h, newM));
+                                            }}
+                                            onBlur={() => { field.onBlur(); unmarkFieldAsEditing?.(index, "quantity"); }}
+                                            onFocus={() => markFieldAsEditing?.(index, "quantity")}
+                                            disabled={!canEdit || isItemFieldLocked}
+                                            className={`w-full h-8 rounded-[9px] border border-[#e6e7ea] hover:border-[#D1D3D8] dark:border-[#2E2E32] dark:hover:border-[#44444A] bg-transparent px-2 pr-8 text-center text-sm font-medium tabular-nums outline-none transition-[border] duration-[80ms] ${
+                                              errors?.items?.[index]?.quantity || hasFieldError(index, "quantity") ? "border-destructive" : ""
+                                            }`}
+                                          />
+                                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">min</span>
+                                        </div>
+                                      </div>
+                                    );
+                                  }
+
+                                  return (
                                   <QuantityInput
                                     id={`item-quantity-${index}`}
                                     value={field.value}
                                     onChange={(e) => {
                                       const newQuantity =
                                         parseFloat(e.target.value) || 1;
-                                      field.onChange(newQuantity);
-
-                                      // Recalculer le total
-                                      const unitPrice =
-                                        watch(`items.${index}.unitPrice`) || 0;
-                                      const discount =
-                                        watch(`items.${index}.discount`) || 0;
-                                      const discountType =
-                                        watch(`items.${index}.discountType`) ||
-                                        "percentage";
-                                      const progressPercentage =
-                                        watch(
-                                          `items.${index}.progressPercentage`
-                                        ) ?? 100;
-
-                                      const total = calculateItemTotal(
-                                        newQuantity,
-                                        unitPrice,
-                                        discount,
-                                        discountType,
-                                        progressPercentage
-                                      );
-                                      setValue(`items.${index}.total`, total, {
-                                        shouldDirty: true,
-                                      });
+                                      recalcTotal(newQuantity);
                                     }}
                                     onBlur={() => {
                                       field.onBlur();
@@ -566,7 +618,8 @@ export default function ItemsSection({
                                         : ""
                                     }`}
                                   />
-                                )}
+                                  );
+                                }}
                               />
                               {errors?.items?.[index]?.quantity && (
                                 <p className="text-xs text-destructive">

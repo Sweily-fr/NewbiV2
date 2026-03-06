@@ -198,7 +198,6 @@ export default function OcrEditableDisplay({
           financialAnalysis.transaction_data?.category
         ),
         subcategory: financialAnalysis.transaction_data?.subcategory || "",
-        status: financialAnalysis.transaction_data?.status || "paid",
         payment_method: normalizePaymentMethod(
           financialAnalysis.transaction_data?.payment_method
         ),
@@ -273,7 +272,6 @@ export default function OcrEditableDisplay({
         financialAnalysis.transaction_data?.category
       ),
       subcategory: financialAnalysis.transaction_data?.subcategory || "",
-      status: financialAnalysis.transaction_data?.status || "paid",
       payment_method: normalizePaymentMethod(
         financialAnalysis.transaction_data?.payment_method
       ),

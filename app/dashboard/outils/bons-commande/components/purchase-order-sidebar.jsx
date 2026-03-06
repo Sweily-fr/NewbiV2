@@ -164,7 +164,7 @@ export default function PurchaseOrderSidebar({
     const po = purchaseOrder;
     sessionStorage.setItem('purchaseOrderInvoiceData', JSON.stringify({
       sourcePurchaseOrderId: po.id,
-      purchaseOrderNumber: `${po.prefix || ''}${po.number || ''}`,
+      purchaseOrderNumber: `${po.prefix || ''}-${po.number || ''}`,
       client: po.client,
       items: po.items,
       discount: po.discount,

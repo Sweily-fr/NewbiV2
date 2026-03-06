@@ -12,6 +12,8 @@ import {
   Download,
   FileText,
   Info,
+  LayoutTemplate,
+  ChevronDown,
 } from "lucide-react";
 import { Badge } from "@/src/components/ui/badge";
 import {
@@ -33,6 +35,13 @@ import { useImportedInvoices } from "@/src/graphql/importedInvoiceQueries";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { useToastManager } from "@/src/components/ui/toast-manager";
 import { SendDocumentModal } from "./components/send-document-modal";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/src/components/ui/dropdown-menu";
+import { TemplateSelectorModal } from "@/src/components/document-templates/template-selector-modal";
 
 function InvoicesContent() {
   const router = useRouter();
@@ -40,6 +49,7 @@ function InvoicesContent() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isAutoReminderOpen, setIsAutoReminderOpen] = useState(false);
   const [invoiceIdToOpen, setInvoiceIdToOpen] = useState(null);
+  const [showTemplateSelector, setShowTemplateSelector] = useState(false);
 
   // Refs pour déclencher les actions depuis le header
   const [triggerImport, setTriggerImport] = useState(false);
@@ -226,14 +236,33 @@ function InvoicesContent() {
               Importer
             </Button>
             <InvoiceExportButton invoices={invoices} iconOnly={false} />
-            <Button
-              variant="primary"
-              onClick={handleNewInvoice}
-              className="cursor-pointer"
-            >
-              <Plus size={14} strokeWidth={2} aria-hidden="true" />
-              Nouvelle facture
-            </Button>
+            <div className="flex items-center">
+              <Button
+                variant="primary"
+                onClick={handleNewInvoice}
+                className="cursor-pointer rounded-r-none"
+              >
+                <Plus size={14} strokeWidth={2} aria-hidden="true" />
+                Nouvelle facture
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="primary" className="rounded-l-none border-l border-primary-foreground/20 px-2">
+                    <ChevronDown size={14} />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={handleNewInvoice}>
+                    <Plus size={14} className="mr-2" />
+                    Facture vierge
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setShowTemplateSelector(true)}>
+                    <LayoutTemplate size={14} className="mr-2" />
+                    Depuis un modèle
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
         </div>
 
@@ -410,6 +439,16 @@ function InvoicesContent() {
       <AutoReminderModal
         open={isAutoReminderOpen}
         onOpenChange={setIsAutoReminderOpen}
+      />
+
+      {/* Modal de sélection de modèle */}
+      <TemplateSelectorModal
+        open={showTemplateSelector}
+        onOpenChange={setShowTemplateSelector}
+        documentType="INVOICE"
+        onSelect={(template) => {
+          router.push(`/dashboard/outils/factures/new?templateId=${template.id}`);
+        }}
       />
 
       {/* Modal d'envoi par email pour les nouvelles factures/avoirs */}

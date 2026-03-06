@@ -155,7 +155,7 @@ export default function QuotePreview({ data = {}, className = "", status }) {
               <p style={{ margin: "2px 0" }}>
                 N°{" "}
                 {data.number
-                  ? `${data.prefix || ""}${data.number}`
+                  ? `${data.prefix || ""}-${data.number}`
                   : "DRAFT-" + Math.random().toString(36).substr(2, 9)}
               </p>
               <p style={{ margin: "2px 0" }}>

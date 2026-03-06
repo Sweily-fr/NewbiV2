@@ -54,6 +54,13 @@ export const GET_EVENTS = gql`
           externalEventId
           calendarConnectionId
         }
+        emailReminder {
+          enabled
+          anticipation
+          sentAt
+          status
+          scheduledFor
+        }
         createdAt
         updatedAt
       }
@@ -86,6 +93,13 @@ export const GET_EVENT = gql`
           }
           finalTotalTTC
           status
+        }
+        emailReminder {
+          enabled
+          anticipation
+          sentAt
+          status
+          scheduledFor
         }
         createdAt
         updatedAt

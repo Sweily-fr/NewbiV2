@@ -491,18 +491,17 @@ export function TransferDetailDrawer({
                   </p>
 
                   {/* Prévisualiser */}
-                  <button className="w-full flex items-center justify-between px-5 py-3 hover:bg-gray-50 transition-colors border-b border-gray-200">
+                  <div className="w-full flex items-center px-5 py-3 border-b border-gray-200">
                     <div className="flex items-center gap-3">
                       <Eye className="w-4 h-4 text-gray-500" />
                       <span className="text-xs text-gray-700">
                         Prévisualiser et télécharger
                       </span>
                     </div>
-                    <ChevronDown className="w-4 h-4 text-gray-400" />
-                  </button>
+                  </div>
 
                   {/* Mot de passe */}
-                  <button className="w-full flex items-center justify-between px-5 py-3 hover:bg-gray-50 transition-colors border-b border-gray-200">
+                  <div className="w-full flex items-center px-5 py-3 border-b border-gray-200">
                     <div className="flex items-center gap-3">
                       <Lock className="w-4 h-4 text-gray-500" />
                       <span className="text-xs text-gray-700">
@@ -511,11 +510,10 @@ export function TransferDetailDrawer({
                           : "Aucun mot de passe défini"}
                       </span>
                     </div>
-                    <ChevronDown className="w-4 h-4 text-gray-400" />
-                  </button>
+                  </div>
 
                   {/* Prix */}
-                  <button className="w-full flex items-center justify-between px-5 py-3 hover:bg-gray-50 transition-colors">
+                  <div className="w-full flex items-center px-5 py-3">
                     <div className="flex items-center gap-3">
                       <Euro className="w-4 h-4 text-gray-500" />
                       <span className="text-xs text-gray-700">
@@ -524,8 +522,7 @@ export function TransferDetailDrawer({
                           : "Aucun prix défini"}
                       </span>
                     </div>
-                    <ChevronDown className="w-4 h-4 text-gray-400" />
-                  </button>
+                  </div>
                 </div>
 
                 {/* Prévisualisation */}

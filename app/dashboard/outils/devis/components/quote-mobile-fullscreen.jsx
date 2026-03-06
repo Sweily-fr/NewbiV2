@@ -109,7 +109,7 @@ export default function QuoteMobileFullscreen({
   const handleConvertToInvoice = () => {
     sessionStorage.setItem('quoteInvoiceData', JSON.stringify({
       sourceQuoteId: quote.id,
-      purchaseOrderNumber: `${quote.prefix || ''}${quote.number || ''}`,
+      purchaseOrderNumber: `${quote.prefix || ''}-${quote.number || ''}`,
       client: quote.client,
       items: quote.items,
       discount: quote.discount,
@@ -128,7 +128,7 @@ export default function QuoteMobileFullscreen({
     try {
       sessionStorage.setItem('quotePurchaseOrderData', JSON.stringify({
         sourceQuoteId: quote.id,
-        purchaseOrderNumber: `${quote.prefix || ''}${quote.number || ''}`,
+        purchaseOrderNumber: `${quote.prefix || ''}-${quote.number || ''}`,
         client: quote.client,
         items: quote.items,
         discount: quote.discount,
