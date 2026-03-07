@@ -118,6 +118,7 @@ export default function InvoiceTable({
   onOpenReminderSettings,
   triggerImport,
   onImportTriggered,
+  onFilteredDataChange,
 }) {
   const router = useRouter();
   const inputRef = useRef(null);
@@ -206,6 +207,16 @@ export default function InvoiceTable({
     onSendEmail: setSendEmailInvoice, // Passer la fonction pour ouvrir la modal d'envoi au niveau du tableau
     onSaveAsTemplate: setTemplateInvoice, // Passer la fonction pour ouvrir le dialog de template
   });
+
+  // Notifier le parent des données filtrées pour les KPIs
+  const filterKey = JSON.stringify({ globalFilter, statusFilter, clientFilter, dateFilter: dateFilter ? { from: dateFilter.from?.getTime(), to: dateFilter.to?.getTime() } : null });
+  const dataLength = combinedInvoices.length;
+  useEffect(() => {
+    if (onFilteredDataChange) {
+      const rows = table.getFilteredRowModel().rows;
+      onFilteredDataChange(rows.map((row) => row.original));
+    }
+  }, [table, onFilteredDataChange, filterKey, dataLength]);
 
   // État pour les tabs de filtre rapide
   const [activeTab, setActiveTab] = useState("all");

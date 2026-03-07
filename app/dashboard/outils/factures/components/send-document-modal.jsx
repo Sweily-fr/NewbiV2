@@ -159,6 +159,8 @@ export function SendDocumentModal({
     defaultValues: {
       emailSubject: defaultContent.subject,
       emailBody: defaultContent.body,
+      ccEmails: [],
+      bccEmails: [],
       useCustomFooter: emailSettings?.useCustomFooter || false,
       customEmailFooter: emailSettings?.customEmailFooter || "",
     },
@@ -173,6 +175,8 @@ export function SendDocumentModal({
       reset({
         emailSubject: content.subject,
         emailBody: content.body,
+        ccEmails: [],
+        bccEmails: [],
         useCustomFooter: emailSettings?.useCustomFooter || false,
         customEmailFooter: emailSettings?.customEmailFooter || "",
       });
@@ -209,6 +213,8 @@ export function SendDocumentModal({
         emailSubject: data.emailSubject,
         emailBody: data.emailBody,
         recipientEmail: clientEmail,
+        ccEmails: data.ccEmails?.filter((e) => e && e.trim()) || [],
+        bccEmails: data.bccEmails?.filter((e) => e && e.trim()) || [],
         pdfBase64,
       };
 

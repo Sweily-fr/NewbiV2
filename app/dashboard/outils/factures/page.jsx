@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState, useEffect, useMemo } from "react";
+import { Suspense, useState, useEffect, useMemo, useCallback } from "react";
 import { Button } from "@/src/components/ui/button";
 import { PermissionButton } from "@/src/components/rbac";
 import {
@@ -29,9 +29,7 @@ import InvoiceExportButton from "./components/invoice-export-button";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
 import { CompanyInfoGuard } from "@/src/components/company-info-guard";
-import { useInvoices, INVOICE_STATUS } from "@/src/graphql/invoiceQueries";
-import { useImportedInvoices } from "@/src/graphql/importedInvoiceQueries";
-import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
+import { INVOICE_STATUS } from "@/src/graphql/invoiceQueries";
 import { useToastManager } from "@/src/components/ui/toast-manager";
 import { SendDocumentModal } from "./components/send-document-modal";
 import {
@@ -126,12 +124,13 @@ function InvoicesContent() {
     router.push("/dashboard/outils/factures/new");
   };
 
-  // Récupérer les factures pour les stats
-  const { invoices, loading: invoicesLoading } = useInvoices();
-  const { workspaceId } = useRequiredWorkspace();
-  const { importedInvoices, loading: importedLoading } = useImportedInvoices(workspaceId);
+  // Données filtrées remontées depuis InvoiceTable
+  const [filteredData, setFilteredData] = useState(null);
+  const handleFilteredDataChange = useCallback((data) => {
+    setFilteredData(data);
+  }, []);
 
-  // Calculer les statistiques
+  // Calculer les statistiques à partir des données filtrées
   const invoiceStats = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -141,26 +140,35 @@ function InvoicesContent() {
     let overdueAmount = 0;
     let overdueCount = 0;
 
-    // Factures de vente (créées dans Newbi)
-    if (invoices && invoices.length > 0) {
-      invoices.forEach((invoice) => {
-        const invoiceAmount = invoice.finalTotalHT ?? invoice.totalHT ?? 0;
+    if (!filteredData) return { totalBilled, totalPaid, overdueAmount, overdueCount };
 
-        // Exclure les brouillons du CA facturé
-        if (invoice.status !== INVOICE_STATUS.DRAFT) {
+    filteredData.forEach((item) => {
+      if (item._type === "imported") {
+        // Factures importées (OCR)
+        const amount = item.totalHT ?? 0;
+        if (item.status === "VALIDATED" || item.status === "COMPLETED") {
+          totalBilled += amount;
+        }
+        if (item.status === "COMPLETED") {
+          totalPaid += amount;
+        }
+        return;
+      } else {
+        // Factures normales
+        const invoiceAmount = item.finalTotalHT ?? item.totalHT ?? 0;
+
+        if (item.status !== INVOICE_STATUS.DRAFT) {
           totalBilled += invoiceAmount;
         }
 
-        // CA payé = factures terminées
-        if (invoice.status === INVOICE_STATUS.COMPLETED) {
+        if (item.status === INVOICE_STATUS.COMPLETED) {
           totalPaid += invoiceAmount;
         }
 
-        // Factures en retard = en attente + date d'échéance dépassée (vente uniquement)
-        if (invoice.status === INVOICE_STATUS.PENDING && invoice.dueDate) {
-          const dueDateValue = typeof invoice.dueDate === 'string' && /^\d+$/.test(invoice.dueDate)
-            ? parseInt(invoice.dueDate, 10)
-            : invoice.dueDate;
+        if (item.status === INVOICE_STATUS.PENDING && item.dueDate) {
+          const dueDateValue = typeof item.dueDate === 'string' && /^\d+$/.test(item.dueDate)
+            ? parseInt(item.dueDate, 10)
+            : item.dueDate;
           const dueDate = new Date(dueDateValue);
           dueDate.setHours(0, 0, 0, 0);
           if (dueDate < today) {
@@ -168,19 +176,8 @@ function InvoicesContent() {
             overdueCount++;
           }
         }
-      });
-    }
-
-    // Factures importées (OCR) — incluses dans CA facturé et CA payé, pas dans les retards
-    if (importedInvoices && importedInvoices.length > 0) {
-      importedInvoices.forEach((imported) => {
-        if (imported.status !== "VALIDATED") return;
-        const amount = imported.totalHT ?? 0;
-
-        totalBilled += amount;
-        totalPaid += amount;
-      });
-    }
+      }
+    });
 
     return {
       totalBilled,
@@ -188,7 +185,7 @@ function InvoicesContent() {
       overdueAmount,
       overdueCount,
     };
-  }, [invoices, importedInvoices]);
+  }, [filteredData]);
 
   // Formater les montants
   const formatAmount = (amount) => {
@@ -232,7 +229,7 @@ function InvoicesContent() {
               <Download size={14} strokeWidth={1.5} aria-hidden="true" />
               Importer
             </Button>
-            <InvoiceExportButton invoices={invoices} iconOnly={false} />
+            <InvoiceExportButton invoices={filteredData} iconOnly={false} />
             <div className="flex items-center">
               <Button
                 variant="primary"
@@ -285,7 +282,7 @@ function InvoicesContent() {
               </div>
               <div className="flex items-baseline gap-1">
                 <span className="text-lg font-medium tracking-tight">
-                  {invoicesLoading || importedLoading
+                  {filteredData === null
                     ? "..."
                     : `${formatAmount(invoiceStats.totalBilled)} €`}
                 </span>
@@ -316,7 +313,7 @@ function InvoicesContent() {
               </div>
               <div className="flex items-baseline gap-1">
                 <span className="text-lg font-medium tracking-tight">
-                  {invoicesLoading || importedLoading
+                  {filteredData === null
                     ? "..."
                     : `${formatAmount(invoiceStats.totalPaid)} €`}
                 </span>
@@ -352,7 +349,7 @@ function InvoicesContent() {
             </div>
             <div className="flex items-baseline gap-1">
               <span className="text-lg font-medium tracking-tight">
-                {invoicesLoading
+                {filteredData === null
                   ? "..."
                   : `${formatAmount(invoiceStats.overdueAmount)} €`}
               </span>
@@ -369,6 +366,7 @@ function InvoicesContent() {
             onOpenReminderSettings={() => setIsAutoReminderOpen(true)}
             triggerImport={triggerImport}
             onImportTriggered={() => setTriggerImport(false)}
+            onFilteredDataChange={handleFilteredDataChange}
           />
         </Suspense>
       </div>

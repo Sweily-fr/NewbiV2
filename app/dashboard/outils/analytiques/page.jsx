@@ -115,6 +115,7 @@ export default function AnalytiquesPage() {
     dateRange?.endDate
   );
 
+
   // Bank data
   const {
     bankTransactions,
