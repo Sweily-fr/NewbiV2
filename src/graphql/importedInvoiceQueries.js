@@ -308,6 +308,7 @@ export const PURCHASE_EXTRA_OCR_IMPORTS = gql`
 export const IMPORTED_INVOICE_STATUS_LABELS = {
   PENDING_REVIEW: "À vérifier",
   VALIDATED: "Validée",
+  COMPLETED: "Encaissée",
   REJECTED: "Rejetée",
   ARCHIVED: "Archivée",
 };
@@ -315,6 +316,7 @@ export const IMPORTED_INVOICE_STATUS_LABELS = {
 export const IMPORTED_INVOICE_STATUS_COLORS = {
   PENDING_REVIEW: "bg-amber-100 text-amber-700 border-amber-200",
   VALIDATED: "bg-emerald-100 text-emerald-700 border-emerald-200",
+  COMPLETED: "bg-blue-100 text-blue-700 border-blue-200",
   REJECTED: "bg-red-100 text-red-700 border-red-200",
   ARCHIVED: "bg-gray-100 text-gray-700 border-gray-200",
 };
