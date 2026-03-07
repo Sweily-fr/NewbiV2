@@ -221,11 +221,6 @@ export default function SendDocumentEmailPreview({
         {/* Informations complémentaires */}
         <div className="text-sm text-muted-foreground space-y-3">
           <p>{documentType === "invoice" ? "La" : documentType === "creditNote" ? "L'" : "Le"} {labels.singular} est {documentType === "invoice" ? "jointe" : "joint"} à cet email au format PDF.</p>
-          <p>Pour toute question, n&apos;hésitez pas à nous contacter.</p>
-          <p>
-            Cordialement,<br />
-            L&apos;équipe {displayData.companyName}
-          </p>
         </div>
       </div>
 
