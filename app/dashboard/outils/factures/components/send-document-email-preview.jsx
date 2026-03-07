@@ -125,6 +125,30 @@ export default function SendDocumentEmailPreview({
             </span>
           </div>
         </div>
+        {formData?.ccEmails?.length > 0 && (
+          <div className="flex gap-4">
+            <span className="text-muted-foreground w-20 text-xs shrink-0">Cc</span>
+            <div className="flex flex-wrap gap-1">
+              {formData.ccEmails.map((email) => (
+                <span key={email} className="text-xs text-foreground bg-[#5b50ff]/10 text-[#5b50ff] px-1.5 py-0.5 rounded-md font-medium">
+                  {email}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+        {formData?.bccEmails?.length > 0 && (
+          <div className="flex gap-4">
+            <span className="text-muted-foreground w-20 text-xs shrink-0">Cci</span>
+            <div className="flex flex-wrap gap-1">
+              {formData.bccEmails.map((email) => (
+                <span key={email} className="text-xs bg-orange-500/10 text-orange-600 dark:text-orange-400 px-1.5 py-0.5 rounded-md font-medium">
+                  {email}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
         <div className="flex gap-4">
           <span className="text-muted-foreground w-20 text-xs shrink-0">Objet</span>
           <span className="font-medium text-foreground text-xs">
@@ -197,11 +221,6 @@ export default function SendDocumentEmailPreview({
         {/* Informations complémentaires */}
         <div className="text-sm text-muted-foreground space-y-3">
           <p>{documentType === "invoice" ? "La" : documentType === "creditNote" ? "L'" : "Le"} {labels.singular} est {documentType === "invoice" ? "jointe" : "joint"} à cet email au format PDF.</p>
-          <p>Pour toute question, n&apos;hésitez pas à nous contacter.</p>
-          <p>
-            Cordialement,<br />
-            L&apos;équipe {displayData.companyName}
-          </p>
         </div>
       </div>
 
