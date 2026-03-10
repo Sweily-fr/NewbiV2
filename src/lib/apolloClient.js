@@ -346,9 +346,25 @@ const errorLink = onError(
     }
 
     if (networkError) {
+      const msg = networkError.message || "";
+
+      // Erreurs de chunk stale (deploiement Vercel) : ne pas afficher de toast,
+      // le listener global dans layout.jsx va auto-reload la page.
+      const isChunkError =
+        msg.includes("Unexpected token") ||
+        msg.includes("ChunkLoadError") ||
+        msg.includes("Loading chunk") ||
+        msg.includes("dynamically imported module") ||
+        msg.includes("ERR_CONNECTION_CLOSED");
+
+      if (isChunkError) {
+        // Silencieux — le auto-reload va s'en charger
+        return;
+      }
+
       const userMessage = getErrorMessage(networkError, "network");
 
-      if (networkError.message === "Failed to fetch") {
+      if (msg === "Failed to fetch") {
         toast.error(userMessage, {
           duration: 5000,
           description: "Vérifiez votre connexion internet et réessayez",
