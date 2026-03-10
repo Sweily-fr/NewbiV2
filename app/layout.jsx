@@ -114,27 +114,45 @@ export default function RootLayout({ children }) {
             __html: `
               (function() {
                 try {
-                  const theme = localStorage.getItem('vite-ui-theme') || 'system';
-                  const path = window.location.pathname;
-                  const isDarkAllowed = path.startsWith('/dashboard') || path.startsWith('/create-workspace');
+                  var theme = localStorage.getItem('vite-ui-theme') || 'system';
+                  var path = window.location.pathname;
+                  var isDarkAllowed = path.startsWith('/dashboard') || path.startsWith('/create-workspace');
 
                   if (!isDarkAllowed) {
                     document.documentElement.classList.add('light');
                     return;
                   }
-                  
+
                   if (theme === 'system') {
-                    const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                    var systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
                     document.documentElement.classList.add(systemTheme);
                   } else {
                     document.documentElement.classList.add(theme);
                   }
                 } catch (e) {
-                  // Fallback en cas d'erreur
-                  const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-                  document.documentElement.classList.add(systemTheme);
+                  var st = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                  document.documentElement.classList.add(st);
                 }
               })();
+
+              // Detecter les erreurs de chunks stale (apres un nouveau deploiement Vercel).
+              // Auto-reload la page au lieu d'afficher une erreur cryptique.
+              window.addEventListener('error', function(e) {
+                var msg = (e.message || '') + ' ' + (e.filename || '');
+                var isChunk = msg.indexOf('Unexpected token') !== -1 ||
+                              msg.indexOf('ChunkLoadError') !== -1 ||
+                              msg.indexOf('Loading chunk') !== -1 ||
+                              msg.indexOf('dynamically imported module') !== -1;
+                if (isChunk) {
+                  var key = 'chunk_reload_' + window.location.pathname;
+                  var last = sessionStorage.getItem(key);
+                  var now = Date.now();
+                  if (!last || now - parseInt(last, 10) > 30000) {
+                    sessionStorage.setItem(key, now.toString());
+                    window.location.reload();
+                  }
+                }
+              });
             `,
           }}
         />
