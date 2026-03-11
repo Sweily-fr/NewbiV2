@@ -251,6 +251,20 @@ export const GET_QUOTES = gql`
   ${QUOTE_LIST_FRAGMENT}
 `;
 
+// Query légère pour le calcul de numérotation (ne charge que prefix/number/status)
+export const GET_QUOTE_NUMBERS = gql`
+  query GetQuoteNumbers($workspaceId: ID!) {
+    quotes(workspaceId: $workspaceId, limit: 1000) {
+      quotes {
+        id
+        prefix
+        number
+        status
+      }
+    }
+  }
+`;
+
 export const GET_LAST_QUOTE_PREFIX = gql`
   query GetLastQuotePrefix($workspaceId: ID!) {
     quotes(workspaceId: $workspaceId, limit: 1, page: 1) {
@@ -779,7 +793,7 @@ export const useConvertQuoteToInvoice = () => {
 };
 
 const CHECK_QUOTE_NUMBER_EXISTS = gql`
-  query CheckQuoteNumberExists($workspaceId: ID!, $number: Int!, $prefix: String!, $excludeId: ID) {
+  query CheckQuoteNumberExists($workspaceId: ID!, $number: String!, $prefix: String!, $excludeId: ID) {
     checkQuoteNumberExists(workspaceId: $workspaceId, number: $number, prefix: $prefix, excludeId: $excludeId)
   }
 `;
@@ -800,7 +814,7 @@ export const useCheckQuoteNumber = () => {
           query: CHECK_QUOTE_NUMBER_EXISTS,
           variables: {
             workspaceId,
-            number: parseInt(quoteNumber, 10),
+            number: String(quoteNumber),
             prefix: quotePrefix || "",
             excludeId: excludeId || undefined,
           },

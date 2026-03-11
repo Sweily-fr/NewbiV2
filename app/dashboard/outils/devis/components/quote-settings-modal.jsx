@@ -9,6 +9,7 @@ import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import { toast } from "@/src/components/ui/sonner";
 import { updateOrganization, getActiveOrganization } from "@/src/lib/organization-client";
 import { generateQuotePrefix } from "@/src/utils/quoteUtils";
+import { useQuoteNumber } from "../hooks/use-quote-number";
 
 // Données de démonstration pour la preview
 const getDemoQuoteData = (formData, organization) => {
@@ -124,6 +125,8 @@ export function QuoteSettingsModal({ open, onOpenChange }) {
   const [debouncedFormData, setDebouncedFormData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [initialValues, setInitialValues] = useState(null);
+  const [currentPrefix, setCurrentPrefix] = useState("");
+  const { validateQuoteNumber, hasDocumentsForPrefix } = useQuoteNumber(currentPrefix);
 
   // Charger les données de l'organisation dès l'ouverture
   useEffect(() => {
@@ -133,19 +136,6 @@ export function QuoteSettingsModal({ open, onOpenChange }) {
           setIsLoading(true);
           const org = await getActiveOrganization();
           setOrganization(org);
-          
-          console.log("📋 Chargement des paramètres de l'organisation (devis):", {
-            headerNotes: org?.quoteHeaderNotes || org?.documentHeaderNotes,
-            footerNotes: org?.quoteFooterNotes || org?.documentFooterNotes,
-            termsAndConditions: org?.quoteTermsAndConditions || org?.documentTermsAndConditions,
-            showBankDetails: org?.showBankDetails,
-            primaryColor: org?.documentHeaderBgColor,
-            bankDetails: {
-              iban: org?.bankIban,
-              bic: org?.bankBic,
-              bankName: org?.bankName,
-            },
-          });
           
           // Préparer les valeurs initiales depuis l'organisation (même structure que l'éditeur)
           const formValues = {
@@ -186,8 +176,6 @@ export function QuoteSettingsModal({ open, onOpenChange }) {
             },
             clientPositionRight: org?.quoteClientPositionRight || false,
           };
-          
-          console.log("📝 Valeurs initiales du formulaire (devis):", formValues);
           
           setInitialValues(formValues);
           setDebouncedFormData(formValues);
@@ -247,6 +235,13 @@ export function QuoteSettingsModal({ open, onOpenChange }) {
   // Observer tous les changements du formulaire
   const formData = form.watch();
 
+  // Suivre le préfixe pour la validation de numérotation
+  useEffect(() => {
+    if (formData?.prefix && formData.prefix !== currentPrefix) {
+      setCurrentPrefix(formData.prefix);
+    }
+  }, [formData?.prefix, currentPrefix]);
+
   // Debounce pour la preview (évite les saccades)
   useEffect(() => {
     if (!isLoading && formData) {
@@ -269,6 +264,16 @@ export function QuoteSettingsModal({ open, onOpenChange }) {
         return;
       }
       
+      // Valider le numéro de devis si un préfixe existant a des documents
+      if (formValues.number && hasDocumentsForPrefix) {
+        const validation = validateQuoteNumber(formValues.number);
+        if (!validation.isValid) {
+          toast.error(validation.message);
+          setIsSaving(false);
+          return;
+        }
+      }
+
       // Préparer les données pour la mise à jour
       const updateData = {
         // Informations de l'entreprise
@@ -305,9 +310,6 @@ export function QuoteSettingsModal({ open, onOpenChange }) {
         showBankDetails: formValues.showBankDetails,
       };
 
-      console.log("💾 Sauvegarde des paramètres pour l'organisation (devis):", organization.id);
-      console.log("💾 Données à sauvegarder:", updateData);
-
       await updateOrganization(organization.id, updateData);
       
       toast.success("Paramètres enregistrés avec succès");
@@ -343,16 +345,22 @@ export function QuoteSettingsModal({ open, onOpenChange }) {
               </Button>
             </div>
 
-            {/* Settings Form */}
+            {/* Settings Form - affiché uniquement quand l'org est chargée */}
             <div className="flex-1 min-h-0 md:mr-2 flex flex-col">
               <div className="flex-1 min-h-0">
-                <FormProvider {...form}>
-                  <QuoteSettingsView
-                    canEdit={true}
-                    onCancel={() => onOpenChange(false)}
-                    onSave={handleSave}
-                  />
-                </FormProvider>
+                {isLoading ? (
+                  <div className="flex items-center justify-center h-full">
+                    <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                ) : (
+                  <FormProvider {...form}>
+                    <QuoteSettingsView
+                      canEdit={true}
+                      onCancel={() => onOpenChange(false)}
+                      onSave={handleSave}
+                    />
+                  </FormProvider>
+                )}
               </div>
             </div>
           </div>

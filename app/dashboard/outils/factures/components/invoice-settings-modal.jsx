@@ -12,6 +12,7 @@ import {
   getActiveOrganization,
 } from "@/src/lib/organization-client";
 import { generateInvoicePrefix } from "@/src/utils/invoiceUtils";
+import { useInvoiceNumber } from "../hooks/use-invoice-number";
 
 // Données de démonstration pour la preview
 const getDemoInvoiceData = (formData, organization) => {
@@ -129,6 +130,8 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
   const [debouncedFormData, setDebouncedFormData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [initialValues, setInitialValues] = useState(null);
+  const [currentPrefix, setCurrentPrefix] = useState("");
+  const { validateInvoiceNumber, hasDocumentsForPrefix } = useInvoiceNumber(currentPrefix);
 
   // Charger les données de l'organisation dès l'ouverture
   useEffect(() => {
@@ -138,24 +141,6 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
           setIsLoading(true);
           const org = await getActiveOrganization();
           setOrganization(org);
-
-          console.log("📋 Chargement des paramètres de l'organisation:", {
-            headerNotes: org?.invoiceHeaderNotes || org?.documentHeaderNotes,
-            footerNotes: org?.invoiceFooterNotes || org?.documentFooterNotes,
-            termsAndConditions:
-              org?.invoiceTermsAndConditions || org?.documentTermsAndConditions,
-            showBankDetails: org?.showBankDetails,
-            appearance: {
-              textColor: org?.documentTextColor,
-              headerTextColor: org?.documentHeaderTextColor,
-              headerBgColor: org?.documentHeaderBgColor,
-            },
-            bankDetails: {
-              iban: org?.bankIban,
-              bic: org?.bankBic,
-              bankName: org?.bankName,
-            },
-          });
 
           // Préparer les valeurs initiales depuis l'organisation (même structure que l'éditeur)
           const formValues = {
@@ -202,8 +187,6 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
               headerBgColor: org?.invoiceHeaderBgColor || org?.documentHeaderBgColor || "#5b4fff",
             },
           };
-
-          console.log("📝 Valeurs initiales du formulaire:", formValues);
 
           setInitialValues(formValues);
           setDebouncedFormData(formValues);
@@ -256,13 +239,19 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
   // Réinitialiser le formulaire quand les valeurs initiales changent
   useEffect(() => {
     if (initialValues) {
-      console.log("🔄 Reset du formulaire avec les valeurs:", initialValues);
       form.reset(initialValues, { keepDefaultValues: false });
     }
   }, [initialValues, form]);
 
   // Observer tous les changements du formulaire
   const formData = form.watch();
+
+  // Suivre le préfixe pour la validation de numérotation
+  useEffect(() => {
+    if (formData?.prefix && formData.prefix !== currentPrefix) {
+      setCurrentPrefix(formData.prefix);
+    }
+  }, [formData?.prefix, currentPrefix]);
 
   // Debounce pour la preview (évite les saccades)
   useEffect(() => {
@@ -284,6 +273,16 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
         toast.error("Aucune organisation active");
         setIsSaving(false);
         return;
+      }
+
+      // Valider le numéro de facture si un préfixe existant a des documents
+      if (formValues.number && hasDocumentsForPrefix) {
+        const validation = validateInvoiceNumber(formValues.number);
+        if (!validation.isValid) {
+          toast.error(validation.message);
+          setIsSaving(false);
+          return;
+        }
       }
 
       // Préparer les données pour la mise à jour
@@ -326,12 +325,6 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
         showBankDetails: formValues.showBankDetails,
       };
 
-      console.log(
-        "💾 Sauvegarde des paramètres pour l'organisation:",
-        organization.id
-      );
-      console.log("💾 Données à sauvegarder:", updateData);
-
       await updateOrganization(organization.id, updateData);
 
       toast.success("Paramètres enregistrés avec succès");
@@ -369,17 +362,23 @@ export function InvoiceSettingsModal({ open, onOpenChange }) {
               </Button>
             </div>
 
-            {/* Settings Form */}
+            {/* Settings Form - affiché uniquement quand l'org est chargée pour éviter le flicker */}
             <div className="flex-1 min-h-0 md:mr-2 flex flex-col">
               <div className="flex-1 min-h-0">
-                <FormProvider {...form}>
-                  <InvoiceSettingsView
-                    canEdit={true}
-                    onCancel={() => onOpenChange(false)}
-                    onSave={handleSave}
-                    organization={organization}
-                  />
-                </FormProvider>
+                {isLoading ? (
+                  <div className="flex items-center justify-center h-full">
+                    <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                ) : (
+                  <FormProvider {...form}>
+                    <InvoiceSettingsView
+                      canEdit={true}
+                      onCancel={() => onOpenChange(false)}
+                      onSave={handleSave}
+                      organization={organization}
+                    />
+                  </FormProvider>
+                )}
               </div>
             </div>
           </div>

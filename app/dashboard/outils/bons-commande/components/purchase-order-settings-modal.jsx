@@ -9,6 +9,7 @@ import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import { toast } from "@/src/components/ui/sonner";
 import { updateOrganization, getActiveOrganization } from "@/src/lib/organization-client";
 import { generatePurchaseOrderPrefix } from "@/src/utils/quoteUtils";
+import { usePurchaseOrderNumber } from "../hooks/use-purchase-order-number";
 
 // Données de démonstration pour la preview des bons de commande
 const getDemoPurchaseOrderData = (formData, organization) => {
@@ -119,6 +120,8 @@ export function PurchaseOrderSettingsModal({ open, onOpenChange }) {
   const [debouncedFormData, setDebouncedFormData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [initialValues, setInitialValues] = useState(null);
+  const [currentPrefix, setCurrentPrefix] = useState("");
+  const { validateNumber, hasDocumentsForPrefix } = usePurchaseOrderNumber(currentPrefix);
 
   // Charger les données de l'organisation dès l'ouverture
   useEffect(() => {
@@ -225,6 +228,13 @@ export function PurchaseOrderSettingsModal({ open, onOpenChange }) {
   // Observer tous les changements du formulaire
   const formData = form.watch();
 
+  // Suivre le préfixe pour la validation de numérotation
+  useEffect(() => {
+    if (formData?.prefix && formData.prefix !== currentPrefix) {
+      setCurrentPrefix(formData.prefix);
+    }
+  }, [formData?.prefix, currentPrefix]);
+
   // Debounce pour la preview
   useEffect(() => {
     if (!isLoading && formData) {
@@ -245,6 +255,16 @@ export function PurchaseOrderSettingsModal({ open, onOpenChange }) {
         toast.error("Aucune organisation active");
         setIsSaving(false);
         return;
+      }
+
+      // Valider le numéro de bon de commande si un préfixe existant a des documents
+      if (formValues.number && hasDocumentsForPrefix) {
+        const validation = validateNumber(formValues.number);
+        if (!validation.isValid) {
+          toast.error(validation.message);
+          setIsSaving(false);
+          return;
+        }
       }
 
       // Préparer les données pour la mise à jour
@@ -318,17 +338,23 @@ export function PurchaseOrderSettingsModal({ open, onOpenChange }) {
               </Button>
             </div>
 
-            {/* Settings Form */}
+            {/* Settings Form - affiché uniquement quand l'org est chargée */}
             <div className="flex-1 min-h-0 md:mr-2 flex flex-col">
               <div className="flex-1 min-h-0">
-                <FormProvider {...form}>
-                  <QuoteSettingsView
-                    canEdit={true}
-                    onCancel={() => onOpenChange(false)}
-                    onSave={handleSave}
-                    documentType="purchaseOrder"
-                  />
-                </FormProvider>
+                {isLoading ? (
+                  <div className="flex items-center justify-center h-full">
+                    <LoaderCircle className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                ) : (
+                  <FormProvider {...form}>
+                    <QuoteSettingsView
+                      canEdit={true}
+                      onCancel={() => onOpenChange(false)}
+                      onSave={handleSave}
+                      documentType="purchaseOrder"
+                    />
+                  </FormProvider>
+                )}
               </div>
             </div>
           </div>
