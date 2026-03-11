@@ -24,10 +24,20 @@ export function useInvoiceEditor({
   mode,
   invoiceId,
   initialData,
-  organization,
+  organization: organizationProp,
 }) {
   const router = useRouter();
-  // const autosaveTimeoutRef = useRef(null); // DISABLED - Auto-save removed
+
+  // Charger l'organisation en interne si la prop n'est pas encore disponible
+  const [internalOrganization, setInternalOrganization] = useState(null);
+  useEffect(() => {
+    if (!organizationProp) {
+      getActiveOrganization().then(org => {
+        if (org) setInternalOrganization(org);
+      }).catch(() => {});
+    }
+  }, [organizationProp]);
+  const organization = organizationProp || internalOrganization;
 
   // Auth hook pour récupérer les données utilisateur
   const { session } = useUser();
@@ -51,6 +61,7 @@ export function useInvoiceEditor({
   const {
     nextInvoiceNumber,
     isLoading: numberLoading,
+    hasDocumentsForPrefix,
   } = useInvoiceNumber(currentPrefix);
 
   const { createInvoice, loading: creating } = useCreateInvoice();
@@ -819,34 +830,52 @@ export function useInvoiceEditor({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shippingData, isFormInitialized]);
 
-  // Initialize form data when invoice loads
+  // Initialize form data when invoice loads (une seule fois par facture)
+  const invoiceLoadedRef = useRef(null);
   useEffect(() => {
     if (existingInvoice && mode !== "create") {
+      if (invoiceLoadedRef.current === existingInvoice.id) return;
+      invoiceLoadedRef.current = existingInvoice.id;
+
       const invoiceData = transformInvoiceToFormData(existingInvoice);
+
+      // Pour les brouillons, vider le numéro DRAFT-xxx — le useEffect séquentiel le remplira
+      if (existingInvoice.status === "DRAFT") {
+        invoiceData.number = "";
+        // Mettre à jour le prefix immédiatement pour que useInvoiceNumber query le bon prefix
+        if (invoiceData.prefix) {
+          setCurrentPrefix(invoiceData.prefix);
+        }
+      }
 
       reset(invoiceData);
 
-      // Les données sont maintenant chargées dans le formulaire
-      // Marquer le formulaire comme initialisé après un court délai pour s'assurer que tous les setValue sont terminés
       setTimeout(() => {
         setIsFormInitialized(true);
       }, 100);
     }
-  }, [existingInvoice, mode, reset, getValues]);
+  }, [existingInvoice, mode, reset]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Set next invoice number for new invoices
-  // Utiliser un ref pour ne pas écraser le numéro quand loading toggle
-  const prevNextInvoiceNumberRef = useRef(null);
+  // Set next invoice number for new invoices and draft editing
+  // Source unique de vérité pour le numéro de facture
   useEffect(() => {
-    if (mode === "create" && nextInvoiceNumber && !numberLoading) {
-      // Seulement si nextInvoiceNumber a réellement changé
-      if (prevNextInvoiceNumberRef.current !== nextInvoiceNumber) {
-        const formattedNumber = String(nextInvoiceNumber).padStart(4, '0');
-        setValue("number", formattedNumber, { shouldValidate: false, shouldDirty: false });
-        prevNextInvoiceNumberRef.current = nextInvoiceNumber;
-      }
+    if (!isFormInitialized || numberLoading || !nextInvoiceNumber) return;
+
+    const isDraftEdit = mode === "edit" && existingInvoice?.status === "DRAFT";
+    if (mode !== "create" && !isDraftEdit) return;
+
+    const formattedNumber = String(nextInvoiceNumber).padStart(4, '0');
+    const currentNumber = getValues("number");
+
+    if (hasDocumentsForPrefix) {
+      // Préfixe existant → toujours forcer le numéro séquentiel
+      setValue("number", formattedNumber, { shouldValidate: false, shouldDirty: false });
+    } else if (!currentNumber || currentNumber.startsWith("DRAFT-") || currentNumber === "0001") {
+      // Nouveau préfixe → utiliser invoiceStartNumber de l'org si disponible, sinon "0001"
+      const startNumber = organization?.invoiceStartNumber || formattedNumber;
+      setValue("number", startNumber, { shouldValidate: false, shouldDirty: false });
     }
-  }, [mode, nextInvoiceNumber, numberLoading, setValue]);
+  }, [mode, isFormInitialized, nextInvoiceNumber, numberLoading, hasDocumentsForPrefix, existingInvoice?.status]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-remplir companyInfo avec les données de l'organisation
   useEffect(() => {
@@ -936,8 +965,8 @@ export function useInvoiceEditor({
         setValue("prefix", organization.invoicePrefix, { shouldDirty: false });
       }
 
-      // Note: le numéro séquentiel est géré par l'effet nextInvoiceNumber
-      // Le startNumber de l'org est uniquement utilisé dans la vue paramètres (invoice-settings-view)
+      // Le numéro est géré par le useEffect nextInvoiceNumber (plus bas)
+      // qui prend en compte hasDocumentsForPrefix et invoiceStartNumber
 
       // Marquer le formulaire comme initialisé après un court délai pour s'assurer que tous les setValue sont terminés
       setTimeout(() => {
@@ -1183,8 +1212,6 @@ export function useInvoiceEditor({
   const handleSave = useCallback(async () => {
     const currentFormData = getValues();
 
-    console.log("[handleSave] Form data before save:", currentFormData);
-    console.log("[handleSave] Prefix in form:", currentFormData.prefix);
 
     // Validation manuelle pour le brouillon (moins stricte)
     const errors = {};
@@ -1925,9 +1952,6 @@ export function useInvoiceEditor({
         bankName: currentFormData.bankDetails?.bankName || currentFormData.companyInfo?.bankName || "",
         invoiceClientPositionRight:
           currentFormData.clientPositionRight || false,
-        // Préfixe et numéro de départ
-        invoicePrefix: currentFormData.prefix || "",
-        invoiceStartNumber: currentFormData.number || "",
         // Informations de l'entreprise
         companyName: currentFormData.companyName || "",
         companyEmail: currentFormData.companyEmail || "",
@@ -1960,13 +1984,7 @@ export function useInvoiceEditor({
   // Fonction pour valider le numéro de facture en temps réel
   const validateInvoiceNumber = useCallback(
     async (invoiceNumber, invoicePrefix) => {
-      console.log("[validateInvoiceNumber] Validation:", {
-        prefix: invoicePrefix,
-        number: invoiceNumber,
-      });
-
       if (!invoiceNumber || invoiceNumber.trim() === "") {
-        // Si le numéro est vide, supprimer l'erreur
         setValidationErrors((prevErrors) => {
           if (prevErrors.invoiceNumber) {
             const newErrors = { ...prevErrors };
@@ -1978,15 +1996,9 @@ export function useInvoiceEditor({
         return;
       }
 
-      // Si pas de préfixe fourni, récupérer depuis le formulaire
       const prefix = invoicePrefix || getValues("prefix");
 
-      if (!prefix) {
-        console.log(
-          "[validateInvoiceNumber] ⚠️ Pas de préfixe, validation ignorée"
-        );
-        return;
-      }
+      if (!prefix) return;
 
       try {
         const { exists } = await checkInvoiceNumber(
@@ -1995,35 +2007,15 @@ export function useInvoiceEditor({
           invoiceId
         );
 
-        console.log("[validateInvoiceNumber] Résultat:", {
-          exists,
-          prefix,
-          number: invoiceNumber,
-        });
-
         if (exists) {
-          console.log(
-            "[validateInvoiceNumber] ❌ Numéro existe déjà, ajout de l'erreur"
-          );
-          setValidationErrors((prevErrors) => {
-            const newErrors = {
-              ...prevErrors,
-              invoiceNumber: {
-                message: `Le numéro de facture ${prefix}-${invoiceNumber} existe déjà. Veuillez en choisir un autre.`,
-                canEdit: true,
-              },
-            };
-            console.log(
-              "[validateInvoiceNumber] Nouvelles erreurs:",
-              newErrors
-            );
-            return newErrors;
-          });
+          setValidationErrors((prevErrors) => ({
+            ...prevErrors,
+            invoiceNumber: {
+              message: `Le numéro de facture ${prefix}-${invoiceNumber} existe déjà. Veuillez en choisir un autre.`,
+              canEdit: true,
+            },
+          }));
         } else {
-          console.log(
-            "[validateInvoiceNumber] ✅ Numéro valide, suppression de l'erreur"
-          );
-          // Supprimer l'erreur si le numéro est valide
           setValidationErrors((prevErrors) => {
             if (prevErrors.invoiceNumber) {
               const newErrors = { ...prevErrors };

@@ -1,9 +1,11 @@
+export const _getNow = () => new Date();
+
 /**
  * Generates an invoice prefix based on the current date
  * @param {Date} [date] - Optional date to use (defaults to current date)
  * @returns {string} Formatted invoice prefix (e.g., "F-072025" for July 2025)
  */
-export const generateInvoicePrefix = (date = new Date()) => {
+export const generateInvoicePrefix = (date = _getNow()) => {
   const month = String(date.getMonth() + 1).padStart(2, '0'); // 0-11 → 01-12
   const year = date.getFullYear();
   return `F-${month}${year}`;
@@ -50,7 +52,7 @@ export const formatInvoicePrefix = (month, year) => {
  * @returns {{month: string, year: string}} Object with current month (01-12) and year (YYYY)
  */
 export const getCurrentMonthYear = () => {
-  const now = new Date();
+  const now = _getNow();
   return {
     month: String(now.getMonth() + 1).padStart(2, '0'),
     year: String(now.getFullYear())

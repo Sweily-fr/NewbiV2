@@ -72,66 +72,38 @@ export default function QuoteSettingsView({
   // Champ numéro éditable uniquement si aucun document finalisé n'existe pour ce préfixe
   const isFirstDocument = !numberHook.hasDocumentsForPrefix;
 
-  // Auto-initialiser le préfixe et le numéro au montage uniquement (pas en continu)
-  const prefixInitializedRef = useRef(false);
-  const numberInitializedRef = useRef(false);
-  const userEditedNumberRef = useRef(false);
-  const prevPrefixRef = useRef(data.prefix);
-
+  // Auto-initialiser le préfixe si vide (au montage uniquement)
   useEffect(() => {
-    if (!prefixInitializedRef.current && !data.prefix) {
+    if (!data.prefix) {
       const defaultPrefix = isPurchaseOrder
         ? generatePurchaseOrderPrefix()
         : generateQuotePrefix();
       setValue("prefix", defaultPrefix, { shouldValidate: false });
-      prefixInitializedRef.current = true;
-    } else if (data.prefix) {
-      prefixInitializedRef.current = true;
     }
-  }, [data.prefix, isPurchaseOrder, setValue]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Réinitialiser le flag d'édition manuelle quand le préfixe change
+  // Synchroniser le numéro depuis le hook de numérotation
   useEffect(() => {
-    if (prevPrefixRef.current !== data.prefix) {
-      userEditedNumberRef.current = false;
-      prevPrefixRef.current = data.prefix;
-    }
-  }, [data.prefix]);
+    if (isLoadingNumber || !nextNumber) return;
+    const formattedNumber = String(nextNumber).padStart(4, "0");
 
-  useEffect(() => {
-    if (!numberInitializedRef.current && !data.number && nextNumber && !isLoadingNumber) {
-      const defaultNumber = String(nextNumber).padStart(4, "0");
-      setValue("number", defaultNumber, { shouldValidate: false });
-      numberInitializedRef.current = true;
-    } else if (!numberInitializedRef.current && data.number) {
-      numberInitializedRef.current = true;
-      // Si le numéro vient de l'org (déjà défini au montage), le protéger contre l'auto-update
-      userEditedNumberRef.current = true;
-    }
-  }, [data.number, nextNumber, isLoadingNumber, setValue]);
-
-  // Mettre à jour le numéro quand nextNumber change (déclenché par changement de préfixe)
-  // Ne pas écraser si l'utilisateur a manuellement modifié le numéro
-  useEffect(() => {
-    if (numberInitializedRef.current && nextNumber && !isLoadingNumber && !userEditedNumberRef.current) {
-      const formattedNumber = String(nextNumber).padStart(4, "0");
+    if (!isFirstDocument) {
+      // Préfixe existant → forcer le numéro séquentiel (champ verrouillé)
+      setValue("number", formattedNumber, { shouldValidate: false });
+    } else if (!data.number) {
+      // Nouveau préfixe, champ vide → proposer le défaut
       setValue("number", formattedNumber, { shouldValidate: false });
     }
-  }, [nextNumber, isLoadingNumber, setValue]);
-
-  // Synchroniser le numéro dans le formulaire quand le champ est désactivé (numérotation séquentielle)
-  // Garantit que data.number reflète toujours nextNumber pour le PDF
-  useEffect(() => {
-    if (!isFirstDocument && nextNumber && !isLoadingNumber) {
-      const formattedNumber = String(nextNumber).padStart(4, "0");
-      setValue("number", formattedNumber, { shouldValidate: false });
-    }
-  }, [isFirstDocument, nextNumber, isLoadingNumber, setValue]);
+  }, [nextNumber, isLoadingNumber, isFirstDocument]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Handle prefix changes with auto-fill for MM and AAAA
   const handlePrefixChange = (e) => {
     const value = e.target.value;
     const cursorPosition = e.target.selectionStart;
+
+    // Réinitialiser le numéro au défaut quand le préfixe change
+    // Le useEffect écrasera avec le séquentiel si le préfixe a des documents
+    setValue("number", "0001", { shouldValidate: false });
 
     // Auto-fill MM (month)
     if (value.includes("MM")) {
@@ -392,19 +364,13 @@ export default function QuoteSettingsView({
                   <div className="space-y-1">
                     <Input
                       id="quote-number"
-                      value={
-                        data.number ||
-                        (nextNumber && !isLoadingNumber
-                          ? String(nextNumber).padStart(4, "0")
-                          : "")
-                      }
+                      value={data.number || ""}
                       disabled={!isFirstDocument}
                       readOnly={!isFirstDocument}
                       tabIndex={isFirstDocument ? 0 : -1}
                       onFocus={isFirstDocument ? undefined : (e) => e.target.blur()}
                       onChange={isFirstDocument ? (e) => {
                         const val = e.target.value.replace(/[^0-9]/g, "");
-                        userEditedNumberRef.current = true;
                         setValue("number", val, { shouldValidate: false });
                         if (numberDuplicateError) setNumberDuplicateError(null);
                       } : () => {}}

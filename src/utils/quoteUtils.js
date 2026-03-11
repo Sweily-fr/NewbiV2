@@ -1,9 +1,11 @@
+import { _getNow } from './invoiceUtils';
+
 /**
  * Generates a quote prefix based on the current date
  * @param {Date} [date] - Optional date to use (defaults to current date)
  * @returns {string} Formatted quote prefix (e.g., "D-022025" for February 2025)
  */
-export const generateQuotePrefix = (date = new Date()) => {
+export const generateQuotePrefix = (date = _getNow()) => {
   const month = String(date.getMonth() + 1).padStart(2, '0'); // 0-11 → 01-12
   const year = date.getFullYear();
   return `D-${month}${year}`;
@@ -50,7 +52,7 @@ export const formatQuotePrefix = (month, year) => {
  * @returns {{month: string, year: string}} Object with current month (01-12) and year (YYYY)
  */
 export const getCurrentMonthYear = () => {
-  const now = new Date();
+  const now = _getNow();
   return {
     month: String(now.getMonth() + 1).padStart(2, '0'),
     year: String(now.getFullYear())

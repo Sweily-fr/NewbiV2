@@ -43,6 +43,7 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
     validateQuoteNumber,
     isLoading: numberLoading,
     hasExistingQuotes,
+    hasDocumentsForPrefix,
   } = useQuoteNumber(currentPrefix);
 
   const { createQuote, loading: creating } = useCreateQuote();
@@ -710,33 +711,47 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
     return () => clearTimeout(timeoutId);
   }, [watchedCustomFields, isFormInitialized]);
 
-  // Initialize form data when quote loads
+  // Initialize form data when quote loads (une seule fois par devis)
+  const quoteLoadedRef = useRef(null);
   useEffect(() => {
     if (existingQuote && mode !== "create") {
+      if (quoteLoadedRef.current === existingQuote.id) return;
+      quoteLoadedRef.current = existingQuote.id;
+
       const quoteData = transformQuoteToFormData(existingQuote);
 
+      if (existingQuote.status === "DRAFT") {
+        quoteData.number = "";
+        if (quoteData.prefix) {
+          setCurrentPrefix(quoteData.prefix);
+        }
+      }
+
       reset(quoteData);
-      
-      // Marquer le formulaire comme initialisé après un court délai pour s'assurer que tous les setValue sont terminés
+
       setTimeout(() => {
         setIsFormInitialized(true);
       }, 100);
     }
-  }, [existingQuote, mode, reset, getValues]);
+  }, [existingQuote, mode, reset]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Set next quote number for new quotes
-  // Utiliser un ref pour ne pas écraser le numéro quand loading toggle
-  const prevNextQuoteNumberRef = useRef(null);
+  // Set next quote number for new quotes and draft editing
   useEffect(() => {
-    if (mode === "create" && nextQuoteNumber && !numberLoading) {
-      // Seulement si nextQuoteNumber a réellement changé
-      if (prevNextQuoteNumberRef.current !== nextQuoteNumber) {
-        const formattedNumber = String(nextQuoteNumber).padStart(4, '0');
-        setValue("number", formattedNumber, { shouldValidate: false, shouldDirty: false });
-        prevNextQuoteNumberRef.current = nextQuoteNumber;
-      }
+    if (!isFormInitialized || numberLoading || !nextQuoteNumber) return;
+
+    const isDraftEdit = mode === "edit" && existingQuote?.status === "DRAFT";
+    if (mode !== "create" && !isDraftEdit) return;
+
+    const formattedNumber = String(nextQuoteNumber).padStart(4, '0');
+    const currentNumber = getValues("number");
+
+    if (hasDocumentsForPrefix) {
+      setValue("number", formattedNumber, { shouldValidate: false, shouldDirty: false });
+    } else if (!currentNumber || currentNumber.startsWith("DRAFT-") || currentNumber === "0001") {
+      const startNumber = organization?.quoteStartNumber || formattedNumber;
+      setValue("number", startNumber, { shouldValidate: false, shouldDirty: false });
     }
-  }, [mode, nextQuoteNumber, numberLoading, setValue]);
+  }, [mode, isFormInitialized, nextQuoteNumber, numberLoading, hasDocumentsForPrefix, existingQuote?.status]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Effet pour charger les données d'organisation au démarrage
   useEffect(() => {
@@ -827,8 +842,8 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
               setValue("prefix", organization.quotePrefix, { shouldDirty: false });
             }
 
-            // Note: le numéro séquentiel est géré par l'effet nextQuoteNumber
-            // Le startNumber de l'org est uniquement utilisé dans la vue paramètres (quote-settings-view)
+            // Le numéro est géré par le useEffect nextQuoteNumber (plus haut)
+            // qui prend en compte hasDocumentsForPrefix et quoteStartNumber
 
             // Synchroniser les champs plats pour CompanyInfoSettingsSection dans la vue paramètres
             setValue("companyName", organization.companyName || "", { shouldDirty: false });
@@ -1552,9 +1567,6 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
         bankBic: currentFormData.bankDetails?.bic || currentFormData.companyInfo?.bankDetails?.bic || "",
         bankName: currentFormData.bankDetails?.bankName || currentFormData.companyInfo?.bankDetails?.bankName || "",
         quoteClientPositionRight: currentFormData.clientPositionRight || false,
-        // Préfixe et numéro de départ
-        quotePrefix: currentFormData.prefix || "",
-        quoteStartNumber: currentFormData.number || "",
         // Informations de l'entreprise
         companyName: currentFormData.companyName || "",
         companyEmail: currentFormData.companyEmail || "",

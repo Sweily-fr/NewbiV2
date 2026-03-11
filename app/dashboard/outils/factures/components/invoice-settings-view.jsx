@@ -105,64 +105,35 @@ export default function InvoiceSettingsView({
   // Champ numéro éditable uniquement si aucune facture finalisée n'existe pour ce préfixe
   const isFirstInvoice = !hasDocumentsForPrefix;
 
-  // Auto-initialiser le préfixe et le numéro au montage uniquement (pas en continu)
-  const prefixInitializedRef = useRef(false);
-  const numberInitializedRef = useRef(false);
-  const userEditedNumberRef = useRef(false);
-  const prevPrefixRef = useRef(data.prefix);
-
+  // Auto-initialiser le préfixe si vide (au montage uniquement)
   useEffect(() => {
-    if (!prefixInitializedRef.current && !data.prefix) {
-      const defaultPrefix = generateInvoicePrefix();
-      setValue("prefix", defaultPrefix, { shouldValidate: false });
-      prefixInitializedRef.current = true;
-    } else if (data.prefix) {
-      prefixInitializedRef.current = true;
+    if (!data.prefix) {
+      setValue("prefix", generateInvoicePrefix(), { shouldValidate: false });
     }
-  }, [data.prefix, setValue]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Réinitialiser le flag d'édition manuelle quand le préfixe change
+  // Synchroniser le numéro depuis le hook de numérotation
   useEffect(() => {
-    if (prevPrefixRef.current !== data.prefix) {
-      userEditedNumberRef.current = false;
-      prevPrefixRef.current = data.prefix;
-    }
-  }, [data.prefix]);
+    if (isLoadingInvoiceNumber || !nextInvoiceNumber) return;
+    const formattedNumber = String(nextInvoiceNumber).padStart(4, "0");
 
-  useEffect(() => {
-    if (!numberInitializedRef.current && !data.number && nextInvoiceNumber && !isLoadingInvoiceNumber) {
-      const defaultNumber = String(nextInvoiceNumber).padStart(4, "0");
-      setValue("number", defaultNumber, { shouldValidate: false });
-      numberInitializedRef.current = true;
-    } else if (!numberInitializedRef.current && data.number) {
-      numberInitializedRef.current = true;
-      // Si le numéro vient de l'org (déjà défini au montage), le protéger contre l'auto-update
-      userEditedNumberRef.current = true;
-    }
-  }, [data.number, nextInvoiceNumber, isLoadingInvoiceNumber, setValue]);
-
-  // Mettre à jour le numéro quand nextInvoiceNumber change (déclenché par changement de préfixe)
-  // Ne pas écraser si l'utilisateur a manuellement modifié le numéro
-  useEffect(() => {
-    if (numberInitializedRef.current && nextInvoiceNumber && !isLoadingInvoiceNumber && !userEditedNumberRef.current) {
-      const formattedNumber = String(nextInvoiceNumber).padStart(4, "0");
+    if (hasDocumentsForPrefix) {
+      // Préfixe existant → forcer le numéro séquentiel (champ verrouillé)
+      setValue("number", formattedNumber, { shouldValidate: false });
+    } else if (!data.number) {
+      // Nouveau préfixe, champ vide → proposer le défaut
       setValue("number", formattedNumber, { shouldValidate: false });
     }
-  }, [nextInvoiceNumber, isLoadingInvoiceNumber, setValue]);
-
-  // Synchroniser le numéro dans le formulaire quand le champ est désactivé (numérotation séquentielle)
-  // Garantit que data.number reflète toujours nextInvoiceNumber pour le PDF
-  useEffect(() => {
-    if (!isFirstInvoice && nextInvoiceNumber && !isLoadingInvoiceNumber) {
-      const formattedNumber = String(nextInvoiceNumber).padStart(4, "0");
-      setValue("number", formattedNumber, { shouldValidate: false });
-    }
-  }, [isFirstInvoice, nextInvoiceNumber, isLoadingInvoiceNumber, setValue]);
+  }, [nextInvoiceNumber, isLoadingInvoiceNumber, hasDocumentsForPrefix]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Gérer le changement de préfixe avec auto-fill pour MM et AAAA
   const handlePrefixChange = (e) => {
     const value = e.target.value;
     const cursorPosition = e.target.selectionStart;
+
+    // Réinitialiser le numéro au défaut quand le préfixe change
+    // Le useEffect écrasera avec le séquentiel si le préfixe a des documents
+    setValue("number", "0001", { shouldValidate: false });
 
     // Auto-fill MM (month)
     if (value.includes("MM")) {
@@ -191,15 +162,6 @@ export default function InvoiceSettingsView({
     // Default behavior
     setValue("prefix", value, { shouldValidate: true });
   };
-
-  // Debug: Log des couleurs reçues
-  useEffect(() => {
-    console.log("🎨 InvoiceSettingsView - Couleurs reçues:", {
-      textColor: data.appearance?.textColor,
-      headerTextColor: data.appearance?.headerTextColor,
-      headerBgColor: data.appearance?.headerBgColor,
-    });
-  }, [data.appearance]);
 
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -559,19 +521,13 @@ export default function InvoiceSettingsView({
                   <div className="space-y-1">
                     <Input
                       id="invoice-number"
-                      value={
-                        data.number ||
-                        (nextInvoiceNumber
-                          ? String(nextInvoiceNumber).padStart(4, "0")
-                          : "")
-                      }
+                      value={data.number || ""}
                       disabled={!isFirstInvoice}
                       readOnly={!isFirstInvoice}
                       tabIndex={isFirstInvoice ? 0 : -1}
                       onFocus={isFirstInvoice ? undefined : (e) => e.target.blur()}
                       onChange={isFirstInvoice ? (e) => {
                         const val = e.target.value.replace(/[^0-9]/g, "");
-                        userEditedNumberRef.current = true;
                         setValue("number", val, { shouldValidate: false });
                         if (numberDuplicateError) setNumberDuplicateError(null);
                       } : () => {}}
@@ -604,7 +560,7 @@ export default function InvoiceSettingsView({
                     )}
                     <p className="text-xs text-muted-foreground">
                       {isFirstInvoice
-                        ? "Première facture — vous pouvez choisir le numéro de départ."
+                        ? "Nouveau préfixe — vous pouvez choisir le numéro de départ."
                         : "Numéro attribué automatiquement de manière séquentielle."
                       }
                     </p>
