@@ -748,8 +748,13 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
     if (hasDocumentsForPrefix) {
       setValue("number", formattedNumber, { shouldValidate: false, shouldDirty: false });
     } else if (!currentNumber || currentNumber.startsWith("DRAFT-") || currentNumber === "0001") {
-      const startNumber = organization?.quoteStartNumber || formattedNumber;
-      setValue("number", startNumber, { shouldValidate: false, shouldDirty: false });
+      // Charger l'organisation pour récupérer le numéro de départ personnalisé
+      getActiveOrganization().then((org) => {
+        const startNumber = org?.quoteStartNumber || formattedNumber;
+        setValue("number", startNumber, { shouldValidate: false, shouldDirty: false });
+      }).catch(() => {
+        setValue("number", formattedNumber, { shouldValidate: false, shouldDirty: false });
+      });
     }
   }, [mode, isFormInitialized, nextQuoteNumber, numberLoading, hasDocumentsForPrefix, existingQuote?.status]); // eslint-disable-line react-hooks/exhaustive-deps
 
