@@ -309,9 +309,9 @@ export default function ItemsSection({
                                   "La description doit contenir au moins 2 caractères",
                               },
                               maxLength: {
-                                value: 255,
+                                value: 2000,
                                 message:
-                                  "La description ne doit pas dépasser 255 caractères",
+                                  "La description ne doit pas dépasser 2000 caractères",
                               },
                             })}
                             placeholder="Décrivez votre produit ou service"

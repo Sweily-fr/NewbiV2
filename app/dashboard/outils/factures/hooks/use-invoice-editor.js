@@ -577,8 +577,8 @@ export function useInvoiceEditor({
             if (!item.description || item.description.trim() === "") {
               itemErrors.push("description manquante");
               fields.push("description");
-            } else if (item.description.length > 255) {
-              itemErrors.push("description trop longue (max 255 caractères)");
+            } else if (item.description.length > 2000) {
+              itemErrors.push("description trop longue (max 2000 caractères)");
               fields.push("description");
             } else if (
               !/^[A-Za-zÀ-ÖØ-öø-ÿ0-9\s\.,;:!?@#$%&*()\[\]\-_+='"/\\]+$/.test(
@@ -592,8 +592,8 @@ export function useInvoiceEditor({
             }
 
             // Valider les détails si présents (optionnel mais limité à 500 caractères)
-            if (item.details && item.details.length > 500) {
-              itemErrors.push("détails trop longs (max 500 caractères)");
+            if (item.details && item.details.length > 2000) {
+              itemErrors.push("détails trop longs (max 2000 caractères)");
               fields.push("details");
             }
 

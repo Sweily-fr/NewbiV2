@@ -239,6 +239,12 @@ export function getErrorMessage(error, context = 'generic') {
     return ERROR_MESSAGES.VALIDATION.INVALID_VAT;
   }
   
+  // Erreurs de validation Mongoose remontées proprement
+  if (errorCode === 'VALIDATION_ERROR' || ERROR_PATTERNS.MONGO_VALIDATION.test(errorMessage)) {
+    // Retourner un message générique user-friendly selon le contexte
+    return getContextualValidationMessage(context);
+  }
+
   // Erreurs contextuelles
   if (lowerMessage.includes('existe déjà') || lowerMessage.includes('already exists')) {
     return getContextualDuplicateMessage(context);
@@ -257,6 +263,26 @@ export function getErrorMessage(error, context = 'generic') {
   
   // Messages contextuels par défaut
   return getContextualDefaultMessage(context);
+}
+
+/**
+ * Retourne un message de validation contextuel
+ */
+function getContextualValidationMessage(context) {
+  switch (context) {
+    case 'invoice':
+      return "Veuillez vérifier les informations de la facture et réessayer.";
+    case 'quote':
+      return "Veuillez vérifier les informations du devis et réessayer.";
+    case 'creditNote':
+      return "Veuillez vérifier les informations de l'avoir et réessayer.";
+    case 'purchaseOrder':
+      return "Veuillez vérifier les informations du bon de commande et réessayer.";
+    case 'client':
+      return ERROR_MESSAGES.CLIENT.INVALID_DATA;
+    default:
+      return ERROR_MESSAGES.GENERIC.INVALID_REQUEST;
+  }
 }
 
 /**

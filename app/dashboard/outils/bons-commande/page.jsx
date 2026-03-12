@@ -3,7 +3,7 @@
 import { Suspense, useState, useEffect, useMemo } from "react";
 import { Button } from "@/src/components/ui/button";
 import { PermissionButton } from "@/src/components/rbac";
-import { Plus, Settings, Download, ArrowRightFromLine, ChevronDown } from "lucide-react";
+import { Plus, Settings, Download, ArrowRightFromLine } from "lucide-react";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import PurchaseOrderTable from "./components/purchase-order-table";
 import PurchaseOrderExportButton from "./components/purchase-order-export-button";
@@ -14,12 +14,6 @@ import { CompanyInfoGuard } from "@/src/components/company-info-guard";
 import { usePurchaseOrders, PURCHASE_ORDER_STATUS } from "@/src/graphql/purchaseOrderQueries";
 import { useToastManager } from "@/src/components/ui/toast-manager";
 import { SendDocumentModal } from "@/app/dashboard/outils/factures/components/send-document-modal";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/src/components/ui/dropdown-menu";
 
 function PurchaseOrdersContent() {
   const router = useRouter();
@@ -151,29 +145,14 @@ function PurchaseOrdersContent() {
               Importer
             </Button>
             <PurchaseOrderExportButton purchaseOrders={purchaseOrders} iconOnly={false} />
-            <div className="flex items-center">
-              <Button
-                variant="primary"
-                onClick={handleNewPurchaseOrder}
-                className="cursor-pointer rounded-r-none"
-              >
-                <Plus size={14} strokeWidth={2} aria-hidden="true" />
-                Nouveau bon de commande
-              </Button>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="primary" className="rounded-l-none border-l border-primary-foreground/20 px-2">
-                    <ChevronDown size={14} />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={handleNewPurchaseOrder}>
-                    <Plus size={14} className="mr-2" />
-                    Bon de commande vierge
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+            <Button
+              variant="primary"
+              onClick={handleNewPurchaseOrder}
+              className="cursor-pointer"
+            >
+              <Plus size={14} strokeWidth={2} aria-hidden="true" />
+              Nouveau bon de commande
+            </Button>
           </div>
         </div>
 
