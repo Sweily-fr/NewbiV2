@@ -7,6 +7,8 @@ import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
 import { useStripeConnect } from "@/src/hooks/useStripeConnect";
 import { useBankingConnection } from "@/src/hooks/useBankingConnection";
+import { usePennylane } from "@/src/hooks/usePennylane";
+import { useInstalledApps } from "@/src/hooks/useInstalledApps";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
 import { useActiveOrganization } from "@/src/lib/organization-client";
 import { usePermissions } from "@/src/hooks/usePermissions";
@@ -39,6 +41,12 @@ import {
   Info,
   Plus,
   ExternalLink,
+  RefreshCw,
+  Eye,
+  EyeOff,
+  Loader2,
+  Download,
+  Trash2,
 } from "lucide-react";
 
 const BRANDFETCH_CDN = "https://cdn.brandfetch.io";
@@ -58,7 +66,7 @@ const CATEGORIES = [
 
 // Applications - données statiques avec logos Brandfetch CDN
 const APPLICATIONS = [
-  // ── Installées (vraies intégrations du projet) ──
+  // ── Apps avec intégration disponible ──
   {
     id: "stripe",
     name: "Stripe",
@@ -68,7 +76,6 @@ const APPLICATIONS = [
     category: "payment",
     logo: `${BRANDFETCH_CDN}/stripe.com/w/400/h/400`,
     logoBg: "#635BFF",
-    installed: true,
     verified: true,
     website: "https://stripe.com",
     docs: "https://docs.stripe.com",
@@ -83,13 +90,11 @@ const APPLICATIONS = [
     category: "banking",
     logo: `${BRANDFETCH_CDN}/bridgeapi.io/w/400/h/400`,
     logoBg: "#0047FF",
-    installed: true,
     verified: true,
     website: "https://bridgeapi.io",
     docs: "https://docs.bridgeapi.io",
     support: "https://bridgeapi.io/contact",
   },
-  // ── À venir ──
   {
     id: "pennylane",
     name: "Pennylane",
@@ -99,13 +104,12 @@ const APPLICATIONS = [
     category: "accounting",
     logo: `${BRANDFETCH_CDN}/pennylane.com/w/400/h/400`,
     logoBg: "#1A1A3E",
-    installed: false,
     verified: true,
-    comingSoon: true,
     website: "https://pennylane.com",
-    docs: "https://pennylane.com/documentation",
+    docs: "https://pennylane.readme.io",
     support: "https://pennylane.com/contact",
   },
+  // ── À venir ──
   {
     id: "qonto",
     name: "Qonto",
@@ -341,6 +345,11 @@ function AppCard({ app, onClick }) {
           bientôt
         </span>
       )}
+      {!app.comingSoon && app.installed && (
+        <span className="absolute top-3 right-3 px-2 py-0.5 text-[10px] font-medium bg-[#5A50FF]/10 border border-[#5A50FF]/20 text-[#5A50FF] dark:bg-[#5A50FF]/20 dark:border-[#5A50FF]/30 rounded-md">
+          Installée
+        </span>
+      )}
       <div className="flex items-start gap-3 w-full">
         <AppLogo src={app.logo} name={app.name} bgColor={app.logoBg} />
         <div className="flex-1 min-w-0">
@@ -419,9 +428,279 @@ function InstalledAppRow({ app, onClick }) {
   );
 }
 
+// ── Panneau de connexion Pennylane ──
+
+function PennylaneConnectionPanel({ app, isConnected, connectionDetail, actions }) {
+  const [apiToken, setApiToken] = useState("");
+  const [showToken, setShowToken] = useState(false);
+  const [testResult, setTestResult] = useState(null);
+  const [isTesting, setIsTesting] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState(null);
+
+  const handleTest = async () => {
+    if (!apiToken.trim()) return;
+    setIsTesting(true);
+    setTestResult(null);
+    const result = await actions.onTestConnection(apiToken.trim());
+    setTestResult(result);
+    setIsTesting(false);
+  };
+
+  const handleConnect = async () => {
+    if (!apiToken.trim()) return;
+    const result = await actions.onConnect(apiToken.trim());
+    if (result.success) {
+      setApiToken("");
+      setTestResult(null);
+    }
+  };
+
+  const handleSyncAll = async () => {
+    setIsSyncing(true);
+    setSyncResult(null);
+    const result = await actions.onSyncAll();
+    setSyncResult(result);
+    setIsSyncing(false);
+  };
+
+  if (isConnected) {
+    return (
+      <div className="space-y-4">
+        {/* Statut connexion */}
+        <div className="flex-shrink-0 flex items-center justify-between gap-6 bg-[#f8f9fa] dark:bg-[#141414] border border-[#eeeff1] dark:border-[#232323] rounded-xl px-3 py-2.5 w-full min-h-[44px] overflow-hidden">
+          <div className="flex items-center gap-3">
+            <AppLogo src={app.logo} name={app.name} size="xs" bgColor={app.logoBg} />
+            <div>
+              <p className="text-sm font-medium text-[#505154] dark:text-gray-400">
+                {connectionDetail || "Pennylane connecté"}
+              </p>
+              {actions.lastSyncAt && (
+                <p className="text-[11px] text-gray-400 mt-0.5">
+                  Dernière sync : {new Date(actions.lastSyncAt).toLocaleString("fr-FR")}
+                </p>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {actions.syncStatus === "IN_PROGRESS" && (
+              <span className="px-2 py-0.5 text-[10px] font-medium bg-blue-50 border border-blue-200 text-blue-600 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-400 rounded-md flex-shrink-0 flex items-center gap-1">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                Sync en cours
+              </span>
+            )}
+            {actions.syncStatus === "ERROR" && (
+              <span className="px-2 py-0.5 text-[10px] font-medium bg-red-50 border border-red-200 text-red-600 dark:bg-red-900/20 dark:border-red-800 dark:text-red-400 rounded-md flex-shrink-0">
+                Erreur
+              </span>
+            )}
+            <span className="px-2 py-0.5 text-[11px] font-medium bg-green-50 border border-green-200 text-green-600 dark:bg-green-900/20 dark:border-green-800 dark:text-green-400 rounded-md flex-shrink-0">
+              Active
+            </span>
+          </div>
+        </div>
+
+        {/* Stats */}
+        {actions.account?.stats && (
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-[#f8f9fa] dark:bg-[#141414] border border-[#eeeff1] dark:border-[#232323] rounded-xl px-3 py-2.5">
+              <p className="text-[11px] text-gray-400 mb-0.5">Factures synchronisées</p>
+              <p className="text-lg font-semibold">{actions.account.stats.invoicesSynced}</p>
+            </div>
+            <div className="bg-[#f8f9fa] dark:bg-[#141414] border border-[#eeeff1] dark:border-[#232323] rounded-xl px-3 py-2.5">
+              <p className="text-[11px] text-gray-400 mb-0.5">Dépenses synchronisées</p>
+              <p className="text-lg font-semibold">{actions.account.stats.expensesSynced}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Sync automatique */}
+        {actions.account?.autoSync && (
+          <div className="space-y-2">
+            <h4 className="text-xs font-medium text-gray-500">Synchronisation automatique</h4>
+            <div className="space-y-1.5">
+              {[
+                { key: "invoices", label: "Factures envoyées / payées" },
+                { key: "expenses", label: "Dépenses approuvées" },
+                { key: "clients", label: "Nouveaux clients" },
+              ].map(({ key, label }) => (
+                <label
+                  key={key}
+                  className="flex items-center justify-between gap-2 px-3 py-2 bg-[#f8f9fa] dark:bg-[#141414] border border-[#eeeff1] dark:border-[#232323] rounded-lg cursor-pointer"
+                >
+                  <span className="text-sm text-[#505154] dark:text-gray-400">{label}</span>
+                  <input
+                    type="checkbox"
+                    checked={actions.account.autoSync[key]}
+                    onChange={(e) =>
+                      actions.onUpdateAutoSync({ [key]: e.target.checked })
+                    }
+                    disabled={!actions.canManage}
+                    className="h-4 w-4 rounded border-gray-300 text-[#5A50FF] focus:ring-[#5A50FF] cursor-pointer"
+                  />
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Erreur de sync */}
+        {actions.account?.syncError && (
+          <div className="px-3 py-2 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-lg">
+            <p className="text-xs text-red-600 dark:text-red-400">{actions.account.syncError}</p>
+          </div>
+        )}
+
+        {/* Résultat sync */}
+        {syncResult && (
+          <div className={`px-3 py-2 rounded-lg border ${syncResult.success ? "bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800" : "bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800"}`}>
+            <p className={`text-xs ${syncResult.success ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
+              {syncResult.message}
+              {syncResult.success && syncResult.invoicesSynced != null && (
+                <> — {syncResult.invoicesSynced} facture{syncResult.invoicesSynced > 1 ? "s" : ""}, {syncResult.expensesSynced} dépense{syncResult.expensesSynced > 1 ? "s" : ""}</>
+              )}
+            </p>
+          </div>
+        )}
+
+        {/* Actions */}
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            size="sm"
+            onClick={handleSyncAll}
+            disabled={isSyncing || actions.syncStatus === "IN_PROGRESS" || !actions.canManage}
+            className="bg-[#1A1A3E] hover:bg-[#2a2a5e] text-white cursor-pointer"
+          >
+            {isSyncing ? (
+              <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+            ) : (
+              <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
+            )}
+            {isSyncing ? "Synchronisation..." : "Synchroniser maintenant"}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={actions.onDisconnect}
+            disabled={actions.isLoading || !actions.canManage}
+            className="cursor-pointer text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300"
+          >
+            {actions.isLoading ? "..." : "Déconnecter"}
+          </Button>
+        </div>
+
+        {!actions.canManage && (
+          <p className="text-xs text-amber-600 dark:text-amber-400">
+            Seuls les propriétaires et administrateurs peuvent gérer Pennylane
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  // Non connecté — formulaire de connexion
+  return (
+    <div className="space-y-3">
+      <div className="space-y-2">
+        <label className="text-xs font-medium text-gray-500">
+          Clé API Pennylane
+        </label>
+        <p className="text-[11px] text-gray-400">
+          Générez votre clé dans Pennylane → Paramètres → API & intégrations
+        </p>
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <Input
+              type={showToken ? "text" : "password"}
+              placeholder="Collez votre clé API Pennylane"
+              value={apiToken}
+              onChange={(e) => {
+                setApiToken(e.target.value);
+                setTestResult(null);
+              }}
+              disabled={!actions.canManage}
+              className="pr-10 font-mono text-xs"
+            />
+            <button
+              type="button"
+              onClick={() => setShowToken(!showToken)}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
+              {showToken ? (
+                <EyeOff className="w-3.5 h-3.5" />
+              ) : (
+                <Eye className="w-3.5 h-3.5" />
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Résultat du test */}
+      {testResult && (
+        <div className={`px-3 py-2 rounded-lg border ${testResult.success ? "bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800" : "bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800"}`}>
+          <p className={`text-xs ${testResult.success ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
+            {testResult.success
+              ? `Connexion réussie${testResult.companyName ? ` — ${testResult.companyName}` : ""}`
+              : testResult.message}
+          </p>
+        </div>
+      )}
+
+      {/* Erreur */}
+      {actions.error && !testResult && (
+        <div className="px-3 py-2 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-lg">
+          <p className="text-xs text-red-600 dark:text-red-400">{actions.error}</p>
+        </div>
+      )}
+
+      {/* Boutons */}
+      <div className="flex items-center gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={handleTest}
+          disabled={!apiToken.trim() || isTesting || !actions.canManage}
+          className="cursor-pointer"
+        >
+          {isTesting ? (
+            <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+          ) : (
+            <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
+          )}
+          {isTesting ? "Test..." : "Tester"}
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          onClick={handleConnect}
+          disabled={!apiToken.trim() || actions.isLoading || !actions.canManage}
+          className="bg-[#1A1A3E] hover:bg-[#2a2a5e] text-white cursor-pointer"
+        >
+          {actions.isLoading ? (
+            <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+          ) : (
+            <Plus className="w-3.5 h-3.5 mr-1.5" />
+          )}
+          {actions.isLoading ? "Connexion..." : "Connecter"}
+        </Button>
+      </div>
+
+      {!actions.canManage && (
+        <p className="text-xs text-amber-600 dark:text-amber-400">
+          Seuls les propriétaires et administrateurs peuvent connecter Pennylane
+        </p>
+      )}
+    </div>
+  );
+}
+
 // ── Vue détail d'une app installée ──
 
-function AppDetailView({ app, onBack, isConnected, connectionDetail, stripeActions, bankingActions }) {
+function AppDetailView({ app, onBack, isConnected, connectionDetail, stripeActions, bankingActions, pennylaneActions, isInstalled, onInstall, onUninstall, installLoading, uninstallLoading, canManage }) {
   return (
     <div className="space-y-6">
       {/* Back */}
@@ -451,28 +730,73 @@ function AppDetailView({ app, onBack, isConnected, connectionDetail, stripeActio
               {app.verified && (
                 <BadgeCheck className="w-4 h-4 text-[#5A50FF] fill-[#5A50FF] stroke-white" />
               )}
-              {isConnected ? (
-                <span className="px-2 py-0.5 text-[11px] font-medium bg-green-50 border border-green-200 text-green-600 dark:bg-green-900/20 dark:border-green-800 dark:text-green-400 rounded-md">
-                  Connectée
-                </span>
-              ) : (
-                <span className="px-2 py-0.5 text-[11px] font-medium bg-amber-50 border border-amber-200 text-amber-600 dark:bg-amber-900/20 dark:border-amber-800 dark:text-amber-400 rounded-md">
-                  Non connectée
-                </span>
-              )}
+              {isInstalled ? (
+                isConnected ? (
+                  <span className="px-2 py-0.5 text-[11px] font-medium bg-green-50 border border-green-200 text-green-600 dark:bg-green-900/20 dark:border-green-800 dark:text-green-400 rounded-md">
+                    Connectée
+                  </span>
+                ) : (
+                  <span className="px-2 py-0.5 text-[11px] font-medium bg-amber-50 border border-amber-200 text-amber-600 dark:bg-amber-900/20 dark:border-amber-800 dark:text-amber-400 rounded-md">
+                    Non connectée
+                  </span>
+                )
+              ) : null}
             </div>
             <p className="text-sm text-gray-400 mt-1">{app.description}</p>
           </div>
         </div>
+
+        {/* Install / Uninstall button */}
+        {!app.comingSoon && (
+          <div className="flex-shrink-0">
+            {isInstalled ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => onUninstall(app.id)}
+                disabled={uninstallLoading || !canManage}
+                className="cursor-pointer text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300"
+                title={!canManage ? "Réservé aux owners et admins" : ""}
+              >
+                {uninstallLoading ? (
+                  <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                ) : (
+                  <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+                )}
+                Désinstaller
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => onInstall(app.id)}
+                disabled={installLoading || !canManage}
+                className="bg-[#5b4eff] hover:bg-[#4a3eee] text-white cursor-pointer"
+                title={!canManage ? "Réservé aux owners et admins" : ""}
+              >
+                {installLoading ? (
+                  <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                ) : (
+                  <Download className="w-3.5 h-3.5 mr-1.5" />
+                )}
+                Installer
+              </Button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Tabs */}
-      <TabsNew defaultValue="connexions">
+      <TabsNew defaultValue={isInstalled ? "connexions" : "a-propos"}>
         <TabsNewList className="px-0 sm:px-0">
-          <TabsNewTrigger value="connexions">Connexions</TabsNewTrigger>
+          {isInstalled && (
+            <TabsNewTrigger value="connexions">Connexions</TabsNewTrigger>
+          )}
           <TabsNewTrigger value="a-propos">À propos</TabsNewTrigger>
         </TabsNewList>
 
+        {isInstalled && (
         <TabsNewContent value="connexions" className="mt-6">
           <div className="space-y-4">
             <div>
@@ -621,8 +945,18 @@ function AppDetailView({ app, onBack, isConnected, connectionDetail, stripeActio
               </>
             )}
 
+            {/* ── Pennylane ── */}
+            {app.id === "pennylane" && pennylaneActions && (
+              <PennylaneConnectionPanel
+                app={app}
+                isConnected={isConnected}
+                connectionDetail={connectionDetail}
+                actions={pennylaneActions}
+              />
+            )}
+
             {/* ── Autres apps (générique) ── */}
-            {app.id !== "stripe" && app.id !== "bridge" && (
+            {app.id !== "stripe" && app.id !== "bridge" && app.id !== "pennylane" && (
               <>
                 {isConnected ? (
                   <div className="flex-shrink-0 flex items-center justify-between gap-6 bg-[#f8f9fa] dark:bg-[#141414] border border-[#eeeff1] dark:border-[#232323] rounded-xl px-3 py-2.5 w-full min-h-[44px] overflow-hidden">
@@ -658,6 +992,7 @@ function AppDetailView({ app, onBack, isConnected, connectionDetail, stripeActio
             )}
           </div>
         </TabsNewContent>
+        )}
 
         <TabsNewContent value="a-propos" className="mt-6">
           <div className="flex gap-10">
@@ -872,6 +1207,16 @@ export function ApplicationsSection() {
   const organizationId = organization?.id;
   const { isOwner, isAdmin } = usePermissions();
   const canManageStripeConnect = isOwner() || isAdmin();
+  const canManageApps = isOwner() || isAdmin();
+
+  // Apps installées depuis la BDD
+  const {
+    isInstalled: isAppInstalled,
+    installApp,
+    uninstallApp,
+    installLoading,
+    uninstallLoading,
+  } = useInstalledApps(organizationId);
 
   const {
     isConnected: isStripeConnected,
@@ -892,6 +1237,21 @@ export function ApplicationsSection() {
     isLoading: isBankingLoading,
     disconnectBank,
   } = useBankingConnection(workspaceId);
+
+  const {
+    isConnected: isPennylaneConnected,
+    syncStatus: pennylaneSyncStatus,
+    lastSyncAt: pennylaneLastSyncAt,
+    isLoading: isPennylaneLoading,
+    account: pennylaneAccount,
+    testConnection: testPennylaneConnection,
+    connect: connectPennylane,
+    disconnect: disconnectPennylane,
+    updateAutoSync: updatePennylaneAutoSync,
+    syncAll: syncAllToPennylane,
+    error: pennylaneError,
+    clearError: clearPennylaneError,
+  } = usePennylane(activeOrganization?.id || organizationId);
 
   // Écouter l'événement de configuration Stripe complète
   useEffect(() => {
@@ -925,12 +1285,14 @@ export function ApplicationsSection() {
     }
   }, [refetchStripeStatus]);
 
-  // Enrichir les apps avec le statut de connexion réel
+  // Enrichir les apps avec le statut de connexion réel + installé depuis BDD
   const appsWithStatus = useMemo(() => {
     return APPLICATIONS.map((app) => {
+      const installed = isAppInstalled(app.id);
       if (app.id === "stripe") {
         return {
           ...app,
+          installed,
           connected: isStripeConnected,
           connectionDetail: stripeCanReceive
             ? "Paiements actifs"
@@ -942,15 +1304,26 @@ export function ApplicationsSection() {
       if (app.id === "bridge") {
         return {
           ...app,
+          installed,
           connected: isBankingConnected,
           connectionDetail: isBankingConnected
             ? `${bankingAccountsCount} compte${bankingAccountsCount > 1 ? "s" : ""} connecté${bankingAccountsCount > 1 ? "s" : ""}`
             : null,
         };
       }
-      return { ...app, connected: false };
+      if (app.id === "pennylane") {
+        return {
+          ...app,
+          installed,
+          connected: isPennylaneConnected,
+          connectionDetail: isPennylaneConnected
+            ? pennylaneAccount?.companyName || "Compte connecté"
+            : null,
+        };
+      }
+      return { ...app, installed, connected: false };
     });
-  }, [isStripeConnected, stripeCanReceive, isBankingConnected, bankingAccountsCount]);
+  }, [isStripeConnected, stripeCanReceive, isBankingConnected, bankingAccountsCount, isPennylaneConnected, pennylaneAccount, isAppInstalled]);
 
   const installedApps = appsWithStatus.filter((app) => app.installed);
 
@@ -1010,19 +1383,47 @@ export function ApplicationsSection() {
     onDisconnect: () => disconnectBank({ provider: bankingProvider }),
   };
 
+  // Actions Pennylane pour la vue détail
+  const pennylaneActions = {
+    canManage: canManageStripeConnect, // même permission owner/admin
+    isLoading: isPennylaneLoading,
+    account: pennylaneAccount,
+    syncStatus: pennylaneSyncStatus,
+    lastSyncAt: pennylaneLastSyncAt,
+    error: pennylaneError,
+    clearError: clearPennylaneError,
+    onTestConnection: testPennylaneConnection,
+    onConnect: connectPennylane,
+    onDisconnect: disconnectPennylane,
+    onUpdateAutoSync: updatePennylaneAutoSync,
+    onSyncAll: syncAllToPennylane,
+  };
+
+  // Toujours récupérer l'app fraîche depuis appsWithStatus (pour refléter install/uninstall)
+  const currentApp = selectedApp
+    ? appsWithStatus.find((a) => a.id === selectedApp.id) || selectedApp
+    : null;
+
   // ── Vue détail app ──
-  if (view === "app-detail" && selectedApp) {
+  if (view === "app-detail" && currentApp) {
     return (
       <>
         <AppDetailView
-          app={selectedApp}
-          isConnected={selectedApp.connected}
-          connectionDetail={selectedApp.connectionDetail}
+          app={currentApp}
+          isConnected={currentApp.connected}
+          connectionDetail={currentApp.connectionDetail}
+          isInstalled={currentApp.installed}
+          onInstall={installApp}
+          onUninstall={uninstallApp}
+          installLoading={installLoading}
+          uninstallLoading={uninstallLoading}
+          canManage={canManageApps}
           stripeActions={stripeActions}
           bankingActions={bankingActions}
+          pennylaneActions={pennylaneActions}
           onBack={() => {
             setSelectedApp(null);
-            setView("installed-list");
+            setView("main");
           }}
         />
         {/* Modal d'onboarding Stripe */}
@@ -1087,7 +1488,7 @@ export function ApplicationsSection() {
             </button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
-            {installedApps.slice(0, 4).map((app) => (
+            {installedApps.slice(0, 2).map((app) => (
               <InstalledAppChip
                 key={app.id}
                 app={app}

@@ -24,7 +24,7 @@ export default function DeleteListDialog({ open, onOpenChange, workspaceId, list
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[480px] p-5">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <AlertCircle className="w-5 h-5 text-red-600" />
@@ -44,7 +44,7 @@ export default function DeleteListDialog({ open, onOpenChange, workspaceId, list
           </p>
         </div>
 
-        <div className="flex justify-end gap-2 mt-6">
+        <div className="flex justify-end gap-2 -mx-5 px-5 pt-3 -mb-5 pb-3 border-t border-[#EEEFF1]">
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}

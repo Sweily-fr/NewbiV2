@@ -100,10 +100,7 @@ export default function OnboardingGuard({ children }) {
   if (isPending || orgLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center space-y-4">
-          <LoaderCircle className="h-8 w-8 animate-spin text-primary mx-auto" />
-          <p className="text-sm text-muted-foreground">Chargement...</p>
-        </div>
+        <LoaderCircle className="h-6 w-6 animate-spin text-primary" />
       </div>
     );
   }

@@ -16,7 +16,7 @@ import {
   User,
   Landmark,
   Zap,
-  Puzzle,
+  LayoutGrid,
   DollarSign,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/src/components/ui/dialog";
@@ -450,7 +450,7 @@ export function SettingsModal({
     {
       title: "Intégrations",
       items: [
-        { id: "applications", label: "Applications", icon: Puzzle },
+        { id: "applications", label: "Applications", icon: LayoutGrid },
         {
           id: "comptes-bancaires",
           label: "Comptes bancaires",
