@@ -749,12 +749,12 @@ export function InformationsLegalesSection({
           <div className="mb-8 mt-2">
             <Callout type="neutral" noMargin>
               <p>
-                <span className="font-medium">Facturation électronique</span>
+                <span className="font-medium text-sm">Facturation électronique</span>
                 <br />
-                Ces informations sont essentielles pour la conformité de vos
+                <span className="text-xs">Ces informations sont essentielles pour la conformité de vos
                 factures électroniques. Elles apparaissent sur chaque document
                 émis et sont requises par la réglementation française en matière
-                de facturation électronique.
+                de facturation électronique.</span>
               </p>
             </Callout>
           </div>
