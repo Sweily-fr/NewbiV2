@@ -3,9 +3,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import {
-  Building2,
+  Boxes,
   CreditCard,
-  FileText,
+  Scale,
   Shield,
   Settings,
   Settings2,
@@ -16,6 +16,8 @@ import {
   User,
   Landmark,
   Zap,
+  LayoutGrid,
+  DollarSign,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/src/components/ui/dialog";
 import {
@@ -53,6 +55,7 @@ import { NotificationsSection } from "./settings/notifications-section";
 import { MobileSettingsModal } from "./settings/mobile/mobile-settings-modal";
 import { usePermissions } from "@/src/hooks/usePermissions";
 import { BankAccountsSection } from "./settings/bank-accounts-section";
+import { ApplicationsSection } from "./settings/applications-section";
 // DÉSACTIVÉ: SuperPDP API pas encore active
 // import { EInvoicingSection } from "./settings/e-invoicing-section";
 
@@ -219,6 +222,8 @@ export function SettingsModal({
 
       // Transformer les données pour Better Auth
       const transformedData = {
+        // Nom de l'organisation (Better Auth core field)
+        name: sanitizeInput(formData.name || ""),
         // Informations générales
         companyName: sanitizeInput(formData.name || ""),
         companyEmail: sanitizeInput(formData.email || ""),
@@ -389,6 +394,8 @@ export function SettingsModal({
       //   return (
       //     <EInvoicingSection canManageOrgSettings={canManageOrgSettings} />
       //   );
+      case "applications":
+        return <ApplicationsSection />;
       case "personnes":
         return <PersonnesSection />;
       case "user-info":
@@ -408,12 +415,8 @@ export function SettingsModal({
   const sections = [
     {
       items: [
+        { id: "notifications", label: "Notifications", icon: Bell },
         { id: "preferences", label: "Préférences", icon: Settings2 },
-        {
-          id: "notifications",
-          label: "Notifications",
-          icon: Bell,
-        },
       ],
     },
     {
@@ -428,45 +431,38 @@ export function SettingsModal({
         {
           id: "informations-legales",
           label: "Informations légales",
-          icon: FileText,
-        },
-        {
-          id: "comptes-bancaires",
-          label: "Comptes bancaires",
-          icon: Landmark,
+          icon: Scale,
         },
         { id: "securite", label: "Sécurité", icon: Shield },
-        // DÉSACTIVÉ: SuperPDP API pas encore active
-        // {
-        //   id: "facturation-electronique",
-        //   label: "Facturation électronique",
-        //   icon: Zap,
-        //   isNew: true,
-        // },
       ],
     },
     {
-      title: "Gestion",
+      title: "Membres",
       items: [
-        {
-          id: "personnes",
-          label: "Accès",
-          icon: Users,
-          disabled: true,
-        },
         {
           id: "espaces",
           label: "Espaces",
-          icon: Building2,
+          icon: Boxes,
           disabled: !isActive(),
         },
       ],
     },
     {
-      title: "Préférences",
+      title: "Intégrations",
+      items: [
+        { id: "applications", label: "Applications", icon: LayoutGrid },
+        {
+          id: "comptes-bancaires",
+          label: "Comptes bancaires",
+          icon: Landmark,
+        },
+      ],
+    },
+    {
+      title: "Facturation",
       items: [
         { id: "subscription", label: "Abonnement", icon: Crown },
-        { id: "facturation", label: "Facturation", icon: CreditCard },
+        { id: "facturation", label: "Facturation", icon: DollarSign },
       ],
     },
   ];
@@ -519,9 +515,9 @@ export function SettingsModal({
             Paramètres de l'application
           </DialogTitle>
 
-          <form onSubmit={handleSubmit(handleSaveAll)}>
+          <form onSubmit={handleSubmit(handleSaveAll)} className="h-full overflow-hidden">
             {/* Desktop Layout */}
-            <div className="flex h-full">
+            <div className="flex h-full overflow-hidden">
               {/* Sidebar Desktop */}
               <div className="w-60 bg-gray-50 dark:bg-[#171717] overflow-y-auto max-h-[92vh]">
                 <div className="p-4">
@@ -577,7 +573,7 @@ export function SettingsModal({
                                   !item.disabled && handleTabChange(item.id)
                                 }
                                 disabled={item.disabled}
-                                className={`w-full text-left px-2 py-1.5 text-[13.5px] rounded-md transition-colors flex items-center gap-3 ${
+                                className={`w-full text-left px-2 py-1.5 text-[13px] rounded-md transition-colors flex items-center gap-3 ${
                                   item.disabled
                                     ? "cursor-not-allowed opacity-50"
                                     : "cursor-pointer"
@@ -617,20 +613,13 @@ export function SettingsModal({
               </div>
 
               {/* Content Area Desktop */}
-              <div className="flex-1 bg-white dark:bg-[#0A0A0A] flex flex-col">
-                <div
-                  className="flex-1 overflow-y-auto"
-                  style={{
-                    height: "calc(88vh - 80px)",
-                    maxHeight: "calc(88vh - 58px)",
-                    overflowY: "scroll",
-                  }}
-                >
+              <div className="flex-1 bg-white dark:bg-[#0A0A0A] flex flex-col min-h-0">
+                <div className="flex-1 overflow-y-auto min-h-0">
                   <div className="p-12 pb-6">{renderContent()}</div>
                 </div>
 
                 {/* Fixed Footer with Buttons */}
-                <div className="border-t bg-white dark:bg-[#0A0A0A] p-4 flex justify-end gap-3">
+                <div className="border-t bg-white dark:bg-[#0A0A0A] px-4 py-2.5 flex justify-end gap-3">
                   <Button
                     type="button"
                     variant="outline"

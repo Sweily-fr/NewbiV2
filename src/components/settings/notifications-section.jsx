@@ -28,6 +28,7 @@ import {
   FileText,
   Sparkles,
   Loader2,
+  LoaderCircle,
 } from "lucide-react";
 import { authClient } from "@/src/lib/auth-client";
 import { toast } from "@/src/components/ui/sonner";
@@ -35,7 +36,7 @@ import { useOrganizationInvitations } from "@/src/hooks/useOrganizationInvitatio
 import { useNotificationPreferences } from "@/src/hooks/useNotificationPreferences";
 import { useActivityNotifications } from "@/src/hooks/useActivityNotifications";
 import Link from "next/link";
-import { ClipboardList, ExternalLink } from "lucide-react";
+import { AtSign, Activity, ExternalLink } from "lucide-react";
 
 // Configuration des catégories de notifications Phase 1
 const notificationCategories = {
@@ -461,23 +462,10 @@ export function NotificationsSection() {
 
   return (
     <div className="space-y-6">
-      {/* Titre avec bouton "Tout marquer comme lu" */}
-      <div className="flex items-center justify-between">
-        <div className="flex-1 hidden md:block">
-          <h2 className="text-lg font-medium mb-1">Notifications</h2>
-          <Separator className="bg-[#eeeff1] dark:bg-[#232323]" />
-        </div>
-        {(unreadInvitationsCount > 0 || unreadSentInvitationsCount > 0) && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={markAllAsRead}
-            className="cursor-pointer text-xs"
-          >
-            <CheckCheck className="w-4 h-4 mr-2" />
-            Tout marquer comme lu
-          </Button>
-        )}
+      {/* Titre */}
+      <div className="hidden md:block">
+        <h2 className="text-lg font-medium mb-1">Notifications</h2>
+        <Separator className="bg-[#eeeff1] dark:bg-[#232323]" />
       </div>
 
       {/* Tabs pour les différents types de notifications */}
@@ -488,16 +476,13 @@ export function NotificationsSection() {
             className="gap-1 md:gap-2 font-normal flex-col md:flex-row py-2 md:py-1.5 text-xs md:text-sm"
           >
             <div className="flex items-center gap-1 relative">
-              <Mail className="w-4 h-4" />
+              <AtSign className="w-4 h-4" />
               <span className="hidden sm:inline">Invitations</span>
               {/* Point violet sur mobile, badge sur desktop */}
               {unreadInvitationsCount > 0 && (
-                <>
-                  <span className="absolute -top-1 -right-1 w-2 h-2 bg-[#5b4fff] rounded-full sm:hidden"></span>
-                  <span className="hidden sm:inline bg-[#5b4fff]/70 text-white text-xs rounded-md px-1.5 py-0.5 ml-1">
-                    {unreadInvitationsCount}
-                  </span>
-                </>
+                <span className="text-[10px] leading-none bg-gray-100 dark:bg-gray-800 text-muted-foreground rounded px-1 py-0.5">
+                  {unreadInvitationsCount}
+                </span>
               )}
             </div>
           </TabsTrigger>
@@ -506,16 +491,13 @@ export function NotificationsSection() {
             className="gap-1 md:gap-2 font-normal flex-col md:flex-row py-2 md:py-1.5 text-xs md:text-sm"
           >
             <div className="flex items-center gap-1 relative">
-              <ClipboardList className="w-4 h-4" />
+              <Activity className="w-4 h-4" />
               <span className="hidden sm:inline">Activité</span>
               {/* Point violet sur mobile, badge sur desktop */}
               {activityUnreadCount > 0 && (
-                <>
-                  <span className="absolute -top-1 -right-1 w-2 h-2 bg-[#5b4fff] rounded-full sm:hidden"></span>
-                  <span className="hidden sm:inline bg-[#5b4eff] text-white text-xs rounded-md px-1.5 py-0.5 ml-1">
-                    {activityUnreadCount}
-                  </span>
-                </>
+                <span className="text-[10px] leading-none bg-gray-100 dark:bg-gray-800 text-muted-foreground rounded px-1 py-0.5">
+                  {activityUnreadCount}
+                </span>
               )}
             </div>
           </TabsTrigger>
@@ -531,118 +513,109 @@ export function NotificationsSection() {
         </TabsList>
 
         {/* Contenu: Invitations */}
-        <TabsContent value="invitations" className="space-y-2 mt-6">
+        <TabsContent value="invitations" className="mt-6">
+          {(unreadInvitationsCount > 0 || unreadSentInvitationsCount > 0) && (
+            <div className="flex justify-end mb-3">
+              <button
+                type="button"
+                onClick={markAllAsRead}
+                className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+              >
+                <CheckCheck className="w-3.5 h-3.5" />
+                Tout marquer comme lu
+              </button>
+            </div>
+          )}
           {loading ? (
-            <div className="text-center py-8 text-sm text-muted-foreground">
-              Chargement des invitations...
+            <div className="flex items-center justify-center py-12">
+              <LoaderCircle className="h-5 w-5 animate-spin text-gray-400" />
             </div>
           ) : pendingInvitations.length === 0 ? (
-            <div className="text-center py-8 text-sm text-muted-foreground">
-              Aucune invitation en attente
+            <div className="flex flex-col items-center justify-center py-10">
+              <div className="w-10 h-10 rounded-xl bg-[#fbfbfb] dark:bg-[#1a1a1a] border border-[#eeeff1] dark:border-[#232323] flex items-center justify-center mb-3">
+                <Mail className="h-5 w-5 text-gray-400" />
+              </div>
+              <p className="text-sm font-medium mb-0.5">Aucune invitation</p>
+              <p className="text-xs text-gray-400">Vous n'avez pas d'invitation en attente.</p>
             </div>
           ) : (
-            <div className="space-y-0 divide-y divide-border/50">
-              {pendingInvitations.map((invitation) => {
-                // Log pour déboguer les données de l'invitation
-                console.log("📧 Données de l'invitation:", invitation);
-                console.log("📧 inviterEmail:", invitation.inviterEmail);
-
-                // Obtenir l'initiale de l'organisation
+            <div>
+              {pendingInvitations.map((invitation, index) => {
                 const initial = invitation.organizationName
                   ? invitation.organizationName.charAt(0).toUpperCase()
                   : "O";
-
                 const isExpired = invitation.expiresAt && new Date(invitation.expiresAt) < new Date();
+                const unread = !isExpired && !isRead(invitation.id);
+                const isLast = index === pendingInvitations.length - 1;
 
                 return (
                   <div
                     key={invitation.id}
-                    className={`group py-4 px-2 hover:bg-muted/30 transition-colors ${isExpired ? "opacity-60" : ""}`}
+                    className={`group flex items-center gap-3 hover:bg-[#f9f9f9] dark:hover:bg-[#1a1a1a] hover:rounded-lg transition-all duration-75 ${isExpired ? "opacity-50" : ""} ${!isLast ? "border-b border-[#eeeff1] dark:border-[#232323]" : ""}`}
+                    style={{ padding: "12px 16px 12px 12px" }}
                   >
-                    <div className="flex items-center gap-4">
-                      {/* Avatar avec initiale */}
-                      <div className="relative flex-shrink-0">
-                        <div className={`size-10 rounded-full flex items-center justify-center text-sm font-medium ${isExpired ? "bg-muted text-muted-foreground" : "bg-[#5b4fff]/10 text-[#5b4fff]"}`}>
-                          {initial}
-                        </div>
-                        {/* Point bleu pour les invitations non lues */}
-                        {!isExpired && !isRead(invitation.id) && (
-                          <div className="absolute -top-0.5 -right-0.5 size-3 rounded-full bg-[#5b4eff] border-2 border-background"></div>
-                        )}
+                    {/* Avatar */}
+                    <div className="relative flex-shrink-0">
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-medium ${isExpired ? "bg-gray-100 dark:bg-[#2c2c2c] text-gray-400" : "bg-[#5b4fff]/10 text-[#5b4fff]"}`}>
+                        {initial}
                       </div>
+                      {unread && (
+                        <div className="absolute -top-0.5 -left-0.5 w-2.5 h-2.5 rounded-full bg-[#5b4eff] border-2 border-white dark:border-[#141414]" />
+                      )}
+                    </div>
 
-                      {/* Contenu */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-baseline gap-2">
-                          <p className="text-sm text-foreground truncate">
-                            <span className="font-normal">
-                              Invitation à rejoindre
-                            </span>{" "}
-                            <span className="font-medium">
-                              {invitation.organizationName}
-                            </span>
-                          </p>
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          Rôle: {invitation.role}
-                          {invitation.inviterEmail && (
-                            <> • Invité par {invitation.inviterEmail}</>
-                          )}
-                          {invitation.expiresAt && (
-                            <>
-                              {" • "}
-                              {isExpired ? (
-                                <span className="text-red-500">
-                                  Expirée le {new Date(invitation.expiresAt).toLocaleDateString("fr-FR")}
-                                </span>
-                              ) : (
-                                <span>
-                                  Expire le {new Date(invitation.expiresAt).toLocaleDateString("fr-FR")}
-                                </span>
-                              )}
-                            </>
-                          )}
-                        </p>
-                      </div>
-
-                      {/* Actions */}
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        {isExpired ? (
-                          <Button
-                            size="sm"
-                            type="button"
-                            variant="ghost"
-                            className="hover:bg-muted cursor-pointer h-8 w-8 p-0"
-                            onClick={(e) => handleDismiss(e, invitation.id)}
-                          >
-                            <XIcon className="w-4 h-4" />
-                          </Button>
-                        ) : (
+                    {/* Contenu */}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm truncate">
+                        <span className="font-normal text-gray-500 dark:text-gray-400">Rejoindre</span>{" "}
+                        <span className="font-medium">{invitation.organizationName}</span>
+                      </p>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className="text-xs text-gray-400 capitalize">{invitation.role}</span>
+                        {invitation.inviterEmail && (
                           <>
-                            <Button
-                              size="sm"
-                              type="button"
-                              onClick={(e) =>
-                                handleAcceptInvitation(e, invitation.id)
-                              }
-                              className="bg-[#5b4fff] text-white hover:bg-[#5b4fff]/90 cursor-pointer h-8 px-3 text-xs"
-                            >
-                              Accepter
-                            </Button>
-                            <Button
-                              size="sm"
-                              type="button"
-                              variant="ghost"
-                              className="hover:bg-red-100 hover:text-red-500 cursor-pointer h-8 px-3 text-xs"
-                              onClick={(e) =>
-                                handleRejectInvitation(e, invitation.id)
-                              }
-                            >
-                              Refuser
-                            </Button>
+                            <span className="text-[10px] text-gray-300 dark:text-gray-600">•</span>
+                            <span className="text-xs text-gray-400 truncate">{invitation.inviterEmail}</span>
+                          </>
+                        )}
+                        {isExpired && (
+                          <>
+                            <span className="text-[10px] text-gray-300 dark:text-gray-600">•</span>
+                            <span className="text-xs text-red-400">Expirée</span>
                           </>
                         )}
                       </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      {isExpired ? (
+                        <button
+                          type="button"
+                          onClick={(e) => handleDismiss(e, invitation.id)}
+                          className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                        >
+                          <XIcon className="w-3.5 h-3.5" />
+                        </button>
+                      ) : (
+                        <>
+                          <Button
+                            size="sm"
+                            type="button"
+                            onClick={(e) => handleAcceptInvitation(e, invitation.id)}
+                            className="bg-[#5b4fff] text-white hover:bg-[#4a40ee] cursor-pointer h-7 px-2.5 text-xs"
+                          >
+                            Accepter
+                          </Button>
+                          <button
+                            type="button"
+                            onClick={(e) => handleRejectInvitation(e, invitation.id)}
+                            className="text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors px-1"
+                          >
+                            <XIcon className="w-3.5 h-3.5" />
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
                 );
@@ -651,138 +624,104 @@ export function NotificationsSection() {
           )}
         </TabsContent>
 
-        {/* Contenu: Activité - Notifications d'assignation de tâches */}
-        <TabsContent value="activity" className="space-y-2 mt-6">
-          {/* Bouton tout marquer comme lu pour les activités */}
+        {/* Contenu: Activité */}
+        <TabsContent value="activity" className="mt-6">
           {activityUnreadCount > 0 && (
-            <div className="flex justify-end">
-              <Button
-                variant="ghost"
-                size="sm"
+            <div className="flex justify-end mb-3">
+              <button
+                type="button"
                 onClick={markAllActivityAsRead}
-                className="cursor-pointer text-xs"
+                className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
               >
-                <CheckCheck className="w-4 h-4 mr-2" />
+                <CheckCheck className="w-3.5 h-3.5" />
                 Tout marquer comme lu
-              </Button>
+              </button>
             </div>
           )}
           {activityLoading ? (
-            <div className="text-center py-8 text-sm text-muted-foreground">
-              Chargement des notifications...
+            <div className="flex items-center justify-center py-12">
+              <LoaderCircle className="h-5 w-5 animate-spin text-gray-400" />
             </div>
           ) : activityNotifications.length === 0 ? (
-            <div className="text-center py-8 text-sm text-muted-foreground">
-              <ClipboardList className="w-12 h-12 mx-auto mb-3 text-muted-foreground/50" />
-              <p>Aucune notification d&apos;activité</p>
-              <p className="text-xs mt-1">Les assignations et mentions apparaîtront ici</p>
+            <div className="flex flex-col items-center justify-center py-10">
+              <div className="w-10 h-10 rounded-xl bg-[#fbfbfb] dark:bg-[#1a1a1a] border border-[#eeeff1] dark:border-[#232323] flex items-center justify-center mb-3">
+                <Activity className="h-5 w-5 text-gray-400" />
+              </div>
+              <p className="text-sm font-medium mb-0.5">Aucune activité</p>
+              <p className="text-xs text-gray-400">Les assignations et mentions apparaîtront ici.</p>
             </div>
           ) : (
-            <div className="space-y-0 divide-y divide-border/50">
-              {activityNotifications.map((notification) => {
-                // Obtenir l'initiale de l'acteur
+            <div>
+              {activityNotifications.map((notification, index) => {
                 const initial = notification.data?.actorName
                   ? notification.data.actorName.charAt(0).toUpperCase()
                   : "?";
+                const isLast = index === activityNotifications.length - 1;
 
                 return (
                   <div
                     key={notification.id}
-                    className="group py-4 px-2 hover:bg-muted/30 transition-colors cursor-pointer"
+                    className={`group flex items-center gap-3 hover:bg-[#f9f9f9] dark:hover:bg-[#1a1a1a] hover:rounded-lg cursor-pointer transition-all duration-75 ${!isLast ? "border-b border-[#eeeff1] dark:border-[#232323]" : ""}`}
+                    style={{ padding: "12px 16px 12px 12px" }}
                     onClick={() => {
-                      if (!notification.read) {
-                        markActivityAsRead(notification.id);
-                      }
+                      if (!notification.read) markActivityAsRead(notification.id);
                     }}
                   >
-                    <div className="flex items-center gap-4">
-                      {/* Avatar de l'acteur */}
-                      <div className="relative flex-shrink-0">
-                        {notification.data?.actorImage ? (
-                          <img
-                            src={notification.data.actorImage}
-                            alt={notification.data.actorName}
-                            className="size-10 rounded-full object-cover"
-                          />
-                        ) : (
-                          <div className="size-10 rounded-full bg-[#5b4fff]/10 flex items-center justify-center text-sm font-medium text-[#5b4fff]">
-                            {initial}
-                          </div>
-                        )}
-                        {/* Point bleu pour les notifications non lues */}
-                        {!notification.read && (
-                          <div className="absolute -top-0.5 -right-0.5 size-3 rounded-full bg-[#5b4eff] border-2 border-background"></div>
-                        )}
-                      </div>
-
-                      {/* Contenu */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-baseline gap-2">
-                          <p className="text-sm text-foreground">
-                            <span className="font-medium">
-                              {notification.data?.actorName || "Quelqu'un"}
-                            </span>{" "}
-                            {notification.type === "MENTION" ? (
-                              <>
-                                <span className="font-normal">
-                                  vous a mentionné dans un commentaire sur
-                                </span>{" "}
-                                <span className="font-medium">
-                                  {notification.data?.taskTitle || "une tâche"}
-                                </span>
-                              </>
-                            ) : (
-                              <>
-                                <span className="font-normal">
-                                  vous a assigné à
-                                </span>{" "}
-                                <span className="font-medium">
-                                  {notification.data?.taskTitle || "une tâche"}
-                                </span>
-                              </>
-                            )}
-                          </p>
+                    {/* Avatar */}
+                    <div className="relative flex-shrink-0">
+                      {notification.data?.actorImage ? (
+                        <img
+                          src={notification.data.actorImage}
+                          alt={notification.data.actorName}
+                          className="w-8 h-8 rounded-lg object-cover"
+                        />
+                      ) : (
+                        <div className="w-8 h-8 rounded-lg bg-[#5b4fff]/10 flex items-center justify-center text-xs font-medium text-[#5b4fff]">
+                          {initial}
                         </div>
-                        <div className="flex items-center gap-2 mt-1 flex-wrap">
-                          <p className="text-xs text-muted-foreground">
-                            📋 {notification.data?.boardName || "Tableau"}
-                          </p>
-                          {notification.data?.columnName && (
-                            <>
-                              <span className="text-xs text-muted-foreground">•</span>
-                              <p className="text-xs text-muted-foreground">
-                                📁 {notification.data?.columnName}
-                              </p>
-                            </>
-                          )}
-                        </div>
-                      </div>
+                      )}
+                      {!notification.read && (
+                        <div className="absolute -top-0.5 -left-0.5 w-2.5 h-2.5 rounded-full bg-[#5b4eff] border-2 border-white dark:border-[#141414]" />
+                      )}
+                    </div>
 
-                      {/* Actions */}
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        {notification.data?.url && (
-                          <Link
-                            href={notification.data.url}
-                            className="opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <Button
-                              size="sm"
-                              type="button"
-                              className="bg-[#5b4fff] text-white hover:bg-[#5b4fff]/90 cursor-pointer h-7 px-2 text-xs"
-                            >
-                              <ExternalLink className="w-3 h-3 mr-1" />
-                              Voir
-                            </Button>
-                          </Link>
+                    {/* Contenu */}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm truncate">
+                        <span className="font-medium">{notification.data?.actorName || "Quelqu'un"}</span>{" "}
+                        <span className="font-normal text-gray-500 dark:text-gray-400">
+                          {notification.type === "MENTION" ? "vous a mentionné sur" : "vous a assigné à"}
+                        </span>{" "}
+                        <span className="font-medium">{notification.data?.taskTitle || "une tâche"}</span>
+                      </p>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className="text-xs text-gray-400">{notification.data?.boardName || "Tableau"}</span>
+                        {notification.data?.columnName && (
+                          <>
+                            <span className="text-[10px] text-gray-300 dark:text-gray-600">•</span>
+                            <span className="text-xs text-gray-400">{notification.data?.columnName}</span>
+                          </>
                         )}
-                        <span className="text-xs text-muted-foreground">
-                          {new Date(notification.createdAt).toLocaleDateString("fr-FR", {
-                            day: "numeric",
-                            month: "short",
-                          })}
-                        </span>
                       </div>
+                    </div>
+
+                    {/* Date + action */}
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      {notification.data?.url && (
+                        <Link
+                          href={notification.data.url}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <ExternalLink className="w-3.5 h-3.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" />
+                        </Link>
+                      )}
+                      <span className="text-xs text-gray-400">
+                        {new Date(notification.createdAt).toLocaleDateString("fr-FR", {
+                          day: "numeric",
+                          month: "short",
+                        })}
+                      </span>
                     </div>
                   </div>
                 );

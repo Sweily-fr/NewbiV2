@@ -260,6 +260,20 @@ export const GET_NEXT_INVOICE_NUMBER = gql`
   }
 `;
 
+// Query légère pour le calcul de numérotation (ne charge que prefix/number/status)
+export const GET_INVOICE_NUMBERS = gql`
+  query GetInvoiceNumbers($workspaceId: ID!) {
+    invoices(workspaceId: $workspaceId, limit: 1000) {
+      invoices {
+        id
+        prefix
+        number
+        status
+      }
+    }
+  }
+`;
+
 export const GET_LAST_INVOICE_PREFIX = gql`
   query GetLastInvoicePrefix($workspaceId: ID!) {
     invoices(workspaceId: $workspaceId, limit: 1, page: 1) {
@@ -489,7 +503,7 @@ export const DELETE_LINKED_INVOICE = gql`
 `;
 
 export const CHECK_INVOICE_NUMBER_EXISTS = gql`
-  query CheckInvoiceNumberExists($workspaceId: ID!, $number: Int!, $prefix: String!, $excludeId: ID) {
+  query CheckInvoiceNumberExists($workspaceId: ID!, $number: String!, $prefix: String!, $excludeId: ID) {
     checkInvoiceNumberExists(workspaceId: $workspaceId, number: $number, prefix: $prefix, excludeId: $excludeId)
   }
 `;
@@ -1355,7 +1369,7 @@ export const useCheckInvoiceNumber = () => {
           query: CHECK_INVOICE_NUMBER_EXISTS,
           variables: {
             workspaceId,
-            number: parseInt(invoiceNumber, 10),
+            number: String(invoiceNumber),
             prefix: invoicePrefix || "",
             excludeId: excludeId || undefined,
           },

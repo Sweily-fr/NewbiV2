@@ -286,13 +286,13 @@ export function CoordonneesBancairesSection({
           {/* Information de sécurité */}
           <Callout type="neutral" noMargin>
             <p>
-              <span className="font-medium">
+              <span className="font-medium text-sm">
                 Sécurité des données bancaires
               </span>
               <br />
-              Vos informations bancaires sont chiffrées et stockées de manière
+              <span className="text-xs">Vos informations bancaires sont chiffrées et stockées de manière
               sécurisée. Elles ne seront utilisées que pour les virements et
-              facturations.
+              facturations.</span>
             </p>
           </Callout>
         </div>

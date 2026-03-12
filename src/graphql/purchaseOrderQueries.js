@@ -264,6 +264,20 @@ export const GET_PURCHASE_ORDERS = gql`
   ${PURCHASE_ORDER_LIST_FRAGMENT}
 `;
 
+// Query légère pour le calcul de numérotation
+export const GET_PURCHASE_ORDER_NUMBERS = gql`
+  query GetPurchaseOrderNumbers($workspaceId: ID!) {
+    purchaseOrders(workspaceId: $workspaceId, limit: 1000) {
+      purchaseOrders {
+        id
+        prefix
+        number
+        status
+      }
+    }
+  }
+`;
+
 export const GET_PURCHASE_ORDER = gql`
   query GetPurchaseOrder($workspaceId: ID!, $id: ID!) {
     purchaseOrder(workspaceId: $workspaceId, id: $id) {
@@ -516,7 +530,7 @@ export function useNextPurchaseOrderNumber(prefix, options = {}) {
 }
 
 const CHECK_PURCHASE_ORDER_NUMBER_EXISTS = gql`
-  query CheckPurchaseOrderNumberExists($workspaceId: ID!, $number: Int!, $prefix: String!, $excludeId: ID) {
+  query CheckPurchaseOrderNumberExists($workspaceId: ID!, $number: String!, $prefix: String!, $excludeId: ID) {
     checkPurchaseOrderNumberExists(workspaceId: $workspaceId, number: $number, prefix: $prefix, excludeId: $excludeId)
   }
 `;
@@ -537,7 +551,7 @@ export const useCheckPurchaseOrderNumber = () => {
           query: CHECK_PURCHASE_ORDER_NUMBER_EXISTS,
           variables: {
             workspaceId,
-            number: parseInt(poNumber, 10),
+            number: String(poNumber),
             prefix: poPrefix || "",
             excludeId: excludeId || undefined,
           },

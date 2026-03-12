@@ -19,9 +19,19 @@ import { usePurchaseOrderNumber } from "./use-purchase-order-number";
 
 // const AUTOSAVE_DELAY = 30000; // 30 seconds - DISABLED
 
-export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, organization }) {
+export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, organization: organizationProp }) {
   const router = useRouter();
-  // const autosaveTimeoutRef = useRef(null); // DISABLED - Auto-save removed
+
+  // Charger l'organisation en interne si la prop n'est pas encore disponible
+  const [internalOrganization, setInternalOrganization] = useState(null);
+  useEffect(() => {
+    if (!organizationProp) {
+      getActiveOrganization().then(org => {
+        if (org) setInternalOrganization(org);
+      }).catch(() => {});
+    }
+  }, [organizationProp]);
+  const organization = organizationProp || internalOrganization;
 
   // Auth hook pour récupérer les données utilisateur
   const { session } = useUser();
@@ -42,6 +52,7 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
     validateNumber: validatePurchaseOrderNumber,
     isLoading: numberLoading,
     hasExistingOrders,
+    hasDocumentsForPrefix,
   } = usePurchaseOrderNumber(currentPrefix);
 
   const { createPurchaseOrder, loading: creating } = useCreatePurchaseOrder();
@@ -703,33 +714,47 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
     return () => clearTimeout(timeoutId);
   }, [watchedCustomFields, isFormInitialized]);
 
-  // Initialize form data when purchase order loads
+  // Initialize form data when purchase order loads (une seule fois par bon)
+  const orderLoadedRef = useRef(null);
   useEffect(() => {
     if (existingPurchaseOrder && mode !== "create") {
+      if (orderLoadedRef.current === existingPurchaseOrder.id) return;
+      orderLoadedRef.current = existingPurchaseOrder.id;
+
       const orderData = transformPurchaseOrderToFormData(existingPurchaseOrder);
+
+      if (existingPurchaseOrder.status === "DRAFT") {
+        orderData.number = "";
+        if (orderData.prefix) {
+          setCurrentPrefix(orderData.prefix);
+        }
+      }
 
       reset(orderData);
 
-      // Marquer le formulaire comme initialisé après un court délai pour s'assurer que tous les setValue sont terminés
       setTimeout(() => {
         setIsFormInitialized(true);
       }, 100);
     }
-  }, [existingPurchaseOrder, mode, reset, getValues]);
+  }, [existingPurchaseOrder, mode, reset]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Set next purchase order number for new orders
-  // Utiliser un ref pour ne pas écraser le numéro quand loading toggle
-  const prevNextPONumberRef = useRef(null);
+  // Set next purchase order number for new orders and draft editing
   useEffect(() => {
-    if (mode === "create" && nextPurchaseOrderNumber && !numberLoading) {
-      // Seulement si nextPurchaseOrderNumber a réellement changé
-      if (prevNextPONumberRef.current !== nextPurchaseOrderNumber) {
-        const formattedNumber = String(nextPurchaseOrderNumber).padStart(4, '0');
-        setValue("number", formattedNumber, { shouldValidate: false, shouldDirty: false });
-        prevNextPONumberRef.current = nextPurchaseOrderNumber;
-      }
+    if (!isFormInitialized || numberLoading || !nextPurchaseOrderNumber) return;
+
+    const isDraftEdit = mode === "edit" && existingPurchaseOrder?.status === "DRAFT";
+    if (mode !== "create" && !isDraftEdit) return;
+
+    const formattedNumber = String(nextPurchaseOrderNumber).padStart(4, '0');
+    const currentNumber = getValues("number");
+
+    if (hasDocumentsForPrefix) {
+      setValue("number", formattedNumber, { shouldValidate: false, shouldDirty: false });
+    } else if (!currentNumber || currentNumber.startsWith("DRAFT-") || currentNumber === "0001") {
+      const startNumber = organization?.purchaseOrderStartNumber || formattedNumber;
+      setValue("number", startNumber, { shouldValidate: false, shouldDirty: false });
     }
-  }, [mode, nextPurchaseOrderNumber, numberLoading, setValue]);
+  }, [mode, isFormInitialized, nextPurchaseOrderNumber, numberLoading, hasDocumentsForPrefix, existingPurchaseOrder?.status]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Mettre à jour companyInfo quand organization est chargée
   useEffect(() => {
@@ -811,8 +836,8 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
         setValue("prefix", organization.purchaseOrderPrefix, { shouldDirty: false });
       }
 
-      // Note: le numéro séquentiel est géré par l'effet nextPurchaseOrderNumber
-      // Le startNumber de l'org est uniquement utilisé dans la vue paramètres (purchase-order-settings-view)
+      // Le numéro est géré par le useEffect nextPurchaseOrderNumber (plus haut)
+      // qui prend en compte hasDocumentsForPrefix et purchaseOrderStartNumber
 
       // Synchroniser les champs plats pour CompanyInfoSettingsSection dans la vue paramètres
       setValue("companyName", organization.companyName || organization.name || "", { shouldDirty: false });
@@ -1563,9 +1588,6 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
         bankBic: currentFormData.bankDetails?.bic || currentFormData.companyInfo?.bankDetails?.bic || "",
         bankName: currentFormData.bankDetails?.bankName || currentFormData.companyInfo?.bankDetails?.bankName || "",
         purchaseOrderClientPositionRight: currentFormData.clientPositionRight || false,
-        // Préfixe et numéro de départ
-        purchaseOrderPrefix: currentFormData.prefix || "",
-        purchaseOrderStartNumber: currentFormData.number || "",
         // Informations de l'entreprise
         companyName: currentFormData.companyName || "",
         companyEmail: currentFormData.companyEmail || "",

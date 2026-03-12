@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { authClient } from "@/src/lib/auth-client";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
-import { toast } from "sonner";
+import { toast } from "@/src/components/ui/sonner";
 
 export function useStripeInvoices() {
   const [invoices, setInvoices] = useState([]);
@@ -77,7 +77,7 @@ export function useStripeInvoices() {
     } catch (err) {
       console.error("Erreur lors de la récupération des factures Stripe:", err);
       setError(err.message);
-      toast.error("Impossible de charger les factures");
+      toast.error("Impossible de charger les factures d'abonnement");
     } finally {
       setLoading(false);
     }
