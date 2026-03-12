@@ -3,14 +3,12 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
 import { Button } from "@/src/components/ui/button";
-import { Badge } from "@/src/components/ui/badge";
 import { Separator } from "@/src/components/ui/separator";
 import { Input } from "@/src/components/ui/input";
 import { ScrollArea } from "@/src/components/ui/scroll-area";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/src/components/ui/dialog";
@@ -31,8 +29,6 @@ import {
   Search,
   Building2,
   LoaderCircle,
-  CheckCircle2,
-  XCircle,
   Trash2,
   RefreshCw,
   Crown,
@@ -418,397 +414,351 @@ export function BankAccountsSection({ canManageOrgSettings = true }) {
   const getAccountStatus = (account) => {
     const status = account.status?.toLowerCase() || "active";
     if (status === "active" || status === "ok") {
-      return { label: "Actif", variant: "success", icon: CheckCircle2 };
+      return { label: "Actif", variant: "success" };
     }
     if (status === "error" || status === "disconnected") {
-      return { label: "Erreur", variant: "destructive", icon: XCircle };
+      return { label: "Erreur", variant: "destructive" };
     }
-    return { label: "En attente", variant: "secondary", icon: LoaderCircle };
+    return { label: "En attente", variant: "secondary" };
   };
 
   return (
     <div className="space-y-8">
+      {/* Header */}
       <div>
-        <h2 className="text-lg font-medium mb-1">Comptes bancaires</h2>
+        <h2 className="text-lg font-medium mb-1 hidden md:block">
+          Comptes bancaires
+        </h2>
+        <p className="text-sm text-gray-400 mb-3 hidden md:block">
+          Gérez vos connexions bancaires et synchronisez vos transactions.
+        </p>
         <Separator className="hidden md:block bg-[#eeeff1] dark:bg-[#232323]" />
-        {!canManageOrgSettings && (
-          <div className="mt-4">
-            <Callout type="warning" noMargin>
-              <p>
-                Vous n'avez pas la permission de gérer les comptes bancaires.
-                Seuls les <strong>owners</strong> et <strong>admins</strong>{" "}
-                peuvent effectuer ces modifications.
-              </p>
-            </Callout>
-          </div>
-        )}
-        {!isEmailVerified && (
-          <div className="mt-4">
-            <Callout type="warning" noMargin>
-              <div className="flex items-center gap-2">
-                <MailWarning className="h-4 w-4 flex-shrink-0" />
-                <p>
-                  Veuillez vérifier votre adresse email avant de pouvoir connecter un compte bancaire.
-                  Consultez votre boîte de réception pour le lien de vérification.
-                </p>
-              </div>
-            </Callout>
-          </div>
-        )}
       </div>
 
-      {/* En-tête avec compteur et actions */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <Landmark className="h-5 w-5 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">
-              {connectedBanksCount}/{bankConnectionLimit} connexion
-              {bankConnectionLimit > 1 ? "s" : ""} utilisée
-              {connectedBanksCount > 1 ? "s" : ""}
-            </span>
-          </div>
-          {subscription?.plan && (
-            <Badge variant="outline" className="text-xs">
-              {subscription.plan}
-            </Badge>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          {accounts.length > 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleRefresh}
-              disabled={isLoading}
-              className="font-normal"
-            >
-              <RefreshCw
-                className={`h-4 w-4 mr-1 ${isLoading ? "animate-spin" : ""}`}
-              />
-              Synchroniser
-            </Button>
-          )}
-          {canAddBankAccount ? (
-            <Button
-              size="sm"
-              onClick={handleOpenModal}
-              disabled={!canManageOrgSettings || isConnecting || !isEmailVerified}
-              className="font-normal"
-            >
-              {isConnecting ? (
-                <LoaderCircle className="h-4 w-4 animate-spin mr-1" />
-              ) : (
-                <Plus className="h-4 w-4 mr-1" />
-              )}
-              Ajouter un compte
-            </Button>
-          ) : (
-            <Button
-              size="sm"
-              variant="outline"
-              disabled
-              className="font-normal"
-            >
-              <Crown className="h-4 w-4 mr-1 text-amber-500" />
-              Limite atteinte
-            </Button>
-          )}
-        </div>
-      </div>
+      {/* Alertes */}
+      {!canManageOrgSettings && (
+        <Callout type="warning" noMargin>
+          <p className="text-xs">
+            Seuls les <strong>owners</strong> et <strong>admins</strong> peuvent gérer les comptes bancaires.
+          </p>
+        </Callout>
+      )}
+      {!isEmailVerified && (
+        <Callout type="warning" noMargin>
+          <p className="text-xs">
+            Veuillez vérifier votre adresse email avant de connecter un compte bancaire.
+          </p>
+        </Callout>
+      )}
 
-      {/* État de chargement */}
+      {/* Bloc comptes connectés */}
       {isLoading ? (
         <div className="flex items-center justify-center py-12">
-          <LoaderCircle className="h-6 w-6 animate-spin text-muted-foreground" />
-          <span className="ml-2 text-sm text-muted-foreground">
-            Chargement des comptes...
-          </span>
+          <LoaderCircle className="h-5 w-5 animate-spin text-gray-400" />
         </div>
       ) : accounts.length === 0 ? (
-        /* État vide */
-        <div className="border border-dashed rounded-lg p-8 text-center">
-          <Landmark className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
-          <h3 className="text-sm font-medium mb-2">
-            Aucun compte bancaire connecté
+        <div className="flex flex-col items-center justify-center py-10 px-6">
+          <div className="w-10 h-10 rounded-xl bg-[#fbfbfb] dark:bg-[#1a1a1a] border border-[#eeeff1] dark:border-[#232323] flex items-center justify-center mb-4">
+            <Landmark className="h-5 w-5 text-gray-400" />
+          </div>
+          <h3 className="text-sm font-medium mb-1">
+            Aucun compte connecté
           </h3>
-          <p className="text-xs text-muted-foreground mb-4 max-w-sm mx-auto">
-            Connectez votre compte bancaire pour synchroniser automatiquement
-            vos transactions et suivre vos finances en temps réel.
+          <p className="text-xs text-gray-400 mb-4 text-center max-w-xs">
+            Connectez votre banque pour synchroniser automatiquement vos transactions.
           </p>
           <Button
+            size="sm"
             onClick={handleOpenModal}
             disabled={!canManageOrgSettings || !isEmailVerified}
-            className="font-normal bg-[#5b4eff] hover:bg-[#4a3ecc]"
+            className="bg-[#5b4eff] hover:bg-[#4a3ecc] text-white cursor-pointer"
           >
-            <Landmark className="h-4 w-4 mr-2" />
-            Connecter un compte bancaire
+            <Plus className="h-3.5 w-3.5 mr-1.5" />
+            Connecter une banque
           </Button>
         </div>
       ) : (
-        /* Liste des comptes - Style Qonto */
-        <div className="space-y-3">
-          {accounts.map((account, index) => {
-            const bankLogo = getAccountBankLogo(account);
-            const bankName = getAccountBankName(account);
-            const status = getAccountStatus(account);
-            const StatusIcon = status.icon;
-            const accountId = account._id || account.id || `account-${index}`;
-            const isIbanVisible = visibleIbans[accountId];
-            const balance =
-              typeof account.balance === "object"
-                ? account.balance?.current || account.balance?.available || 0
-                : account.balance || 0;
-
-            return (
-              <div
-                key={accountId}
-                className="group border rounded-xl p-4 hover:border-[#5b4eff]/30 hover:bg-accent/30 transition-all"
-              >
-                <div className="flex items-start gap-4">
-                  {/* Logo de la banque */}
-                  <div className="flex-shrink-0">
-                    {bankLogo ? (
-                      <img
-                        src={bankLogo}
-                        alt={bankName}
-                        className="h-12 w-12 rounded-lg object-contain bg-white border p-1"
-                        onError={(e) => {
-                          e.target.style.display = "none";
-                          e.target.nextSibling.style.display = "flex";
-                        }}
-                      />
-                    ) : null}
-                    <div
-                      className="h-12 w-12 rounded-lg bg-muted items-center justify-center border"
-                      style={{ display: bankLogo ? "none" : "flex" }}
-                    >
-                      <Building2 className="h-6 w-6 text-muted-foreground" />
-                    </div>
-                  </div>
-
-                  {/* Informations du compte */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h4 className="text-sm font-medium truncate">
-                        {bankName}
-                      </h4>
-                      <Badge
-                        variant={
-                          status.variant === "success"
-                            ? "default"
-                            : status.variant
-                        }
-                        className={`text-[10px] px-1.5 py-0 ${
-                          status.variant === "success"
-                            ? "bg-green-50 text-green-600 border-green-200"
-                            : ""
-                        }`}
-                      >
-                        <StatusIcon className="h-3 w-3 mr-0.5" />
-                        {status.label}
-                      </Badge>
-                    </div>
-
-                    {/* Nom du compte */}
-                    <p className="text-xs text-muted-foreground mb-2">
-                      {account.name || account.bankName || "Compte courant"}
-                    </p>
-
-                    {/* IBAN avec toggle */}
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground font-mono">
-                        IBAN:{" "}
-                        {formatIban(
-                          account.iban || account.raw?.iban,
-                          isIbanVisible,
-                        )}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => toggleIbanVisibility(accountId)}
-                        className="text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        {isIbanVisible ? (
-                          <EyeOff className="h-3.5 w-3.5" />
-                        ) : (
-                          <Eye className="h-3.5 w-3.5" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Solde et actions */}
-                  <div className="flex flex-col items-end gap-2">
-                    <div className="text-right">
-                      <p className="text-lg font-semibold">
-                        {formatCurrency(balance, account.currency || "EUR")}
-                      </p>
-                      <p className="text-[10px] text-muted-foreground">
-                        Solde actuel
-                      </p>
-                    </div>
-
-                    {/* Bouton de déconnexion */}
-                    {canManageOrgSettings && (
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            disabled={disconnectingAccountId === accountId}
-                            className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10"
-                          >
-                            {disconnectingAccountId === accountId ? (
-                              <LoaderCircle className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <Trash2 className="h-4 w-4" />
-                            )}
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>
-                              Déconnecter ce compte ?
-                            </AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Cette action supprimera la connexion avec{" "}
-                              <strong>{bankName}</strong>. Vos données de
-                              transactions seront conservées mais ne seront plus
-                              synchronisées.
-                              {account.raw?.item_id && (
-                                <span className="block mt-2 text-amber-600 dark:text-amber-400">
-                                  Note : Si plusieurs comptes sont liés à cette
-                                  connexion bancaire, ils seront tous
-                                  déconnectés.
-                                </span>
-                              )}
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Annuler</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => handleDisconnect(account)}
-                              disabled={disconnectingAccountId !== null}
-                              className="bg-destructive hover:bg-destructive/90"
-                            >
-                              {disconnectingAccountId === accountId
-                                ? "Déconnexion..."
-                                : "Déconnecter"}
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    )}
-                  </div>
-                </div>
+        <div className="space-y-6">
+          {/* Section comptes — même style que le bloc "Installées" des apps */}
+          <div className="flex flex-col gap-3 p-3 w-full bg-[#fbfbfb] dark:bg-[#141414] border border-[#eeeff1] dark:border-[#232323] rounded-2xl">
+            <div className="flex items-center justify-between w-full px-2">
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-medium">Comptes connectés</h3>
+                <span className="text-xs text-gray-400">
+                  {connectedBanksCount}/{bankConnectionLimit}
+                </span>
               </div>
-            );
-          })}
-        </div>
-      )}
+              <div className="flex items-center gap-1.5">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleRefresh}
+                  disabled={isLoading}
+                  className="text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 h-7 px-2 cursor-pointer"
+                >
+                  <RefreshCw
+                    className={`h-3 w-3 mr-1 ${isLoading ? "animate-spin" : ""}`}
+                  />
+                  Synchroniser
+                </Button>
+                {canAddBankAccount ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleOpenModal}
+                    disabled={!canManageOrgSettings || isConnecting || !isEmailVerified}
+                    className="text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 h-7 px-2 cursor-pointer"
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    Ajouter
+                  </Button>
+                ) : (
+                  <span className="text-[10px] text-amber-500 flex items-center gap-1 px-2">
+                    <Crown className="h-3 w-3" />
+                    Limite
+                  </span>
+                )}
+              </div>
+            </div>
 
-      {/* Message pour upgrade si limite atteinte */}
-      {!canAddBankAccount && accounts.length > 0 && (
-        <div className="mt-4 p-4 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg">
-          <div className="flex items-start gap-3">
-            <Crown className="h-5 w-5 text-amber-500 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
-                Limite de connexions atteinte
-              </p>
-              <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
-                Votre abonnement {subscription?.plan || "actuel"} permet{" "}
-                {bankConnectionLimit} connexion
-                {bankConnectionLimit > 1 ? "s" : ""} bancaire
-                {bankConnectionLimit > 1 ? "s" : ""}. Passez à un plan supérieur
-                pour connecter plus de comptes.
-              </p>
+            {/* Liste des comptes */}
+            <div className="space-y-2">
+              {accounts.map((account, index) => {
+                const bankLogo = getAccountBankLogo(account);
+                const bankName = getAccountBankName(account);
+                const status = getAccountStatus(account);
+                const accountId = account._id || account.id || `account-${index}`;
+                const isIbanVisible = visibleIbans[accountId];
+                const balance =
+                  typeof account.balance === "object"
+                    ? account.balance?.current || account.balance?.available || 0
+                    : account.balance || 0;
+
+                return (
+                  <div
+                    key={accountId}
+                    className="group flex items-center justify-between gap-3 bg-white dark:bg-[#141414] border border-[#eeeff1] dark:border-[#232323] hover:bg-[#f9f9f9] dark:hover:bg-[#1a1a1a] rounded-2xl w-full transition-colors duration-75"
+                    style={{ padding: "12px 18px 12px 12px" }}
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      {/* Logo banque */}
+                      <div className="relative flex-shrink-0 w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center bg-white dark:bg-[#1a1a1a] border border-[#eeeff1] dark:border-[#232323]">
+                        {bankLogo ? (
+                          <img
+                            src={bankLogo}
+                            alt={bankName}
+                            className="w-full h-full object-contain p-0.5"
+                            onError={(e) => {
+                              e.target.style.display = "none";
+                              if (e.target.nextSibling) e.target.nextSibling.style.display = "flex";
+                            }}
+                          />
+                        ) : null}
+                        <div
+                          className="w-full h-full items-center justify-center"
+                          style={{ display: bankLogo ? "none" : "flex" }}
+                        >
+                          <Landmark className="h-4 w-4 text-gray-400" />
+                        </div>
+                      </div>
+
+                      {/* Infos */}
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <h4 className="text-sm font-medium truncate">{bankName}</h4>
+                          {status.variant === "success" ? (
+                            <span className="px-2 py-0.5 text-[10px] font-medium bg-green-50 border border-green-200 text-green-600 dark:bg-green-900/20 dark:border-green-800 dark:text-green-400 rounded-md">
+                              Actif
+                            </span>
+                          ) : status.variant === "destructive" ? (
+                            <span className="px-2 py-0.5 text-[10px] font-medium bg-red-50 border border-red-200 text-red-500 dark:bg-red-900/20 dark:border-red-800 dark:text-red-400 rounded-md">
+                              Erreur
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 text-[10px] font-medium bg-gray-100 border border-gray-200 text-gray-500 dark:bg-[#2c2c2c] dark:border-[#3c3c3c] dark:text-gray-400 rounded-md">
+                              En attente
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <p className="text-xs text-gray-400 truncate">
+                            {account.name || account.bankName || "Compte courant"}
+                          </p>
+                          <span className="text-[10px] text-gray-300 dark:text-gray-600">•</span>
+                          <span className="text-xs text-gray-400 font-mono">
+                            {formatIban(account.iban || account.raw?.iban, isIbanVisible)}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => toggleIbanVisibility(accountId)}
+                            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                          >
+                            {isIbanVisible ? (
+                              <EyeOff className="h-3 w-3" />
+                            ) : (
+                              <Eye className="h-3 w-3" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Droite : solde + delete */}
+                    <div className="flex items-center gap-3 flex-shrink-0">
+                      <div className="text-right">
+                        <p className="text-sm font-semibold">
+                          {formatCurrency(balance, account.currency || "EUR")}
+                        </p>
+                      </div>
+
+                      {canManageOrgSettings && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <button
+                              type="button"
+                              disabled={disconnectingAccountId === accountId}
+                              className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 hover:text-red-500 dark:hover:text-red-400"
+                            >
+                              {disconnectingAccountId === accountId ? (
+                                <LoaderCircle className="h-3.5 w-3.5 animate-spin" />
+                              ) : (
+                                <Trash2 className="h-3.5 w-3.5" />
+                              )}
+                            </button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>
+                                Déconnecter ce compte ?
+                              </AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Cette action supprimera la connexion avec{" "}
+                                <strong>{bankName}</strong>. Vos données de
+                                transactions seront conservées mais ne seront plus
+                                synchronisées.
+                                {account.raw?.item_id && (
+                                  <span className="block mt-2 text-amber-600 dark:text-amber-400">
+                                    Note : Si plusieurs comptes sont liés à cette
+                                    connexion bancaire, ils seront tous
+                                    déconnectés.
+                                  </span>
+                                )}
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Annuler</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleDisconnect(account)}
+                                disabled={disconnectingAccountId !== null}
+                                className="bg-destructive hover:bg-destructive/90"
+                              >
+                                {disconnectingAccountId === accountId
+                                  ? "Déconnexion..."
+                                  : "Déconnecter"}
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
+
+          {/* Limite atteinte */}
+          {!canAddBankAccount && (
+            <div className="flex items-center gap-3 bg-[#f8f9fa] dark:bg-[#141414] border border-[#eeeff1] dark:border-[#232323] rounded-xl px-3 py-2.5">
+              <Crown className="h-4 w-4 text-amber-500 flex-shrink-0" />
+              <p className="text-xs text-gray-400">
+                Limite de {bankConnectionLimit} connexion{bankConnectionLimit > 1 ? "s" : ""} atteinte ({subscription?.plan}). Passez à un plan supérieur pour en ajouter.
+              </p>
+            </div>
+          )}
         </div>
       )}
 
       {/* Modal de sélection de banque */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-md max-h-[80vh]">
-          <DialogHeader>
-            <DialogTitle>Connecter votre banque</DialogTitle>
-            <DialogDescription>
-              Sélectionnez votre banque pour synchroniser vos comptes (
-              {connectedBanksCount}/{bankConnectionLimit} connexions utilisées)
-            </DialogDescription>
-          </DialogHeader>
+        <DialogContent className="sm:max-w-xl p-1 gap-0 top-[40%] border-0 bg-[#efefef] dark:bg-[#1a1a1a] overflow-hidden rounded-2xl">
+          <div className="bg-background rounded-xl overflow-hidden ring-1 ring-black/[0.07] dark:ring-white/[0.1]">
+            <DialogHeader className="px-5 pt-4 pb-3 border-b border-border/40">
+              <DialogTitle className="text-sm font-medium flex items-center gap-2">
+                <Landmark className="size-4" />
+                Connecter votre banque
+              </DialogTitle>
+            </DialogHeader>
 
-          {/* Barre de recherche */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Rechercher une banque..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
-            />
+            <div className="px-5 pt-3 pb-3 space-y-3">
+              {/* Barre de recherche */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Rechercher une banque..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+
+              {/* Liste des banques */}
+              <ScrollArea className="h-[350px]">
+                {isLoadingInstitutions ? (
+                  <div className="flex items-center justify-center py-10">
+                    <LoaderCircle className="h-5 w-5 animate-spin text-muted-foreground/50" />
+                  </div>
+                ) : filteredInstitutions.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground text-sm">
+                    {searchQuery
+                      ? "Aucune banque trouvée"
+                      : "Aucune banque disponible"}
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    {filteredInstitutions.map((bank) => (
+                      <button
+                        type="button"
+                        key={bank.id}
+                        onClick={() => handleSelectBank(bank)}
+                        disabled={isConnecting}
+                        className="w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {bank.logo ? (
+                          <img
+                            src={bank.logo}
+                            alt={bank.name}
+                            className="h-8 w-8 object-contain rounded"
+                            onError={(e) => {
+                              e.target.style.display = "none";
+                              e.target.nextSibling.style.display = "flex";
+                            }}
+                          />
+                        ) : null}
+                        <div
+                          className="h-8 w-8 rounded bg-muted items-center justify-center"
+                          style={{ display: bank.logo ? "none" : "flex" }}
+                        >
+                          <Building2 className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                        <div className="flex-1 text-left">
+                          <p className="text-sm font-medium">{bank.name}</p>
+                          {bank.groupName && bank.groupName !== bank.name && (
+                            <p className="text-xs text-muted-foreground">
+                              {bank.groupName}
+                            </p>
+                          )}
+                        </div>
+                        {isConnecting && selectedBank?.id === bank.id && (
+                          <LoaderCircle className="h-4 w-4 animate-spin" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </ScrollArea>
+            </div>
           </div>
-
-          {/* Liste des banques */}
-          <ScrollArea className="h-[350px] pr-4">
-            {isLoadingInstitutions ? (
-              <div className="flex items-center justify-center py-8">
-                <LoaderCircle className="h-6 w-6 animate-spin text-muted-foreground" />
-                <span className="ml-2 text-sm text-muted-foreground">
-                  Chargement des banques...
-                </span>
-              </div>
-            ) : filteredInstitutions.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                {searchQuery
-                  ? "Aucune banque trouvée"
-                  : "Aucune banque disponible"}
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {filteredInstitutions.map((bank) => (
-                  <button
-                    type="button"
-                    key={bank.id}
-                    onClick={() => handleSelectBank(bank)}
-                    disabled={isConnecting}
-                    className="w-full flex items-center gap-3 p-3 rounded-lg border hover:bg-accent hover:border-[#5b4eff]/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {bank.logo ? (
-                      <img
-                        src={bank.logo}
-                        alt={bank.name}
-                        className="h-8 w-8 object-contain rounded"
-                        onError={(e) => {
-                          e.target.style.display = "none";
-                          e.target.nextSibling.style.display = "flex";
-                        }}
-                      />
-                    ) : null}
-                    <div
-                      className="h-8 w-8 rounded bg-muted items-center justify-center"
-                      style={{ display: bank.logo ? "none" : "flex" }}
-                    >
-                      <Building2 className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                    <div className="flex-1 text-left">
-                      <p className="text-sm font-medium">{bank.name}</p>
-                      {bank.groupName && bank.groupName !== bank.name && (
-                        <p className="text-xs text-muted-foreground">
-                          {bank.groupName}
-                        </p>
-                      )}
-                    </div>
-                    {isConnecting && selectedBank?.id === bank.id && (
-                      <LoaderCircle className="h-4 w-4 animate-spin" />
-                    )}
-                  </button>
-                ))}
-              </div>
-            )}
-          </ScrollArea>
         </DialogContent>
       </Dialog>
     </div>

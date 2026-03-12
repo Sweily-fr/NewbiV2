@@ -7,7 +7,7 @@ import {
   MoreHorizontal,
   Trash2,
   Search,
-  Building2,
+  Boxes,
   ChevronRight,
   ArrowLeft,
   SlidersHorizontal,
@@ -508,7 +508,7 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
                         <TableCell className="py-2">
                           <div className="flex items-center gap-3">
                             <div className="h-7 w-7 rounded-md bg-muted flex items-center justify-center">
-                              <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+                              <Boxes className="h-3.5 w-3.5 text-muted-foreground" />
                             </div>
                             <span className="font-normal text-sm">{org.name}</span>
                           </div>
@@ -582,7 +582,7 @@ export default function EspacesSection({ canManageOrgSettings = true }) {
               </Button>
               <div className="flex items-center gap-2.5">
                 <div className="h-7 w-7 rounded-md bg-[#5b4fff]/10 flex items-center justify-center">
-                  <Building2 className="h-3 w-3 text-[#5b4fff]" />
+                  <Boxes className="h-3 w-3 text-[#5b4fff]" />
                 </div>
                 <div className="flex items-baseline gap-2">
                   <h3 className="text-lg font-medium">{selectedOrg?.name}</h3>

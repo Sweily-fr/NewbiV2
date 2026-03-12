@@ -21,7 +21,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/src/components/ui/dialog";
 import {
   AlertDialog,
@@ -68,29 +67,15 @@ export function SecuritySection({
   orgLoading: orgLoadingProp,
   canManageOrgSettings = true,
 }) {
-  const [showOrganizationModal, setShowOrganizationModal] = useState(false);
-
   // Utiliser l'organisation passée en props si disponible, sinon utiliser le hook
   const hookData = useActiveOrganization();
   const organization = orgProp || hookData.organization;
   const orgLoading =
     orgLoadingProp !== undefined ? orgLoadingProp : hookData.loading;
-  const updateOrganization = hookData.updateOrganization;
-
-  // Debug: Vérifier quelle organisation est utilisée
-  useEffect(() => {
-    console.log("🔐 [SecuritySection] Organisation utilisée:", {
-      fromProps: !!orgProp,
-      orgId: organization?.id,
-      orgName: organization?.name,
-      companyName: organization?.companyName,
-    });
-  }, [organization, orgProp]);
 
   const { data: session, refetch: refetchSession } = useSession();
   const { session: user } = useUser();
 
-  const [organizationForm, setOrganizationForm] = useState({});
   const [securitySettings, setSecuritySettings] = useState({
     mfaRequired: false,
     sessionDuration: 30,
@@ -322,37 +307,6 @@ export function SecuritySection({
     }
   }, [session?.user]);
 
-  const handleOrganizationChange = async () => {
-    if (!organizationForm.organizationName.trim()) {
-      toast.error("Veuillez saisir un nom d'organisation");
-      return;
-    }
-
-    try {
-      await updateOrganization(
-        {
-          name: organizationForm.organizationName.trim(),
-        },
-        {
-          onSuccess: () => {
-            toast.success("Nom de l'organisation modifié avec succès");
-            setShowOrganizationModal(false);
-            setOrganizationForm({ organizationName: "" });
-          },
-          onError: (error) => {
-            console.error("Erreur lors de la mise à jour:", error);
-            toast.error(
-              "Erreur lors de la modification du nom de l'organisation"
-            );
-          },
-        }
-      );
-    } catch (error) {
-      console.error("Erreur lors de la mise à jour:", error);
-      toast.error("Erreur lors de la modification du nom de l'organisation");
-    }
-  };
-
   const revokeSession = async (deviceId) => {
     await handleLogoutDevice(deviceId);
   };
@@ -527,88 +481,6 @@ export function SecuritySection({
             </Callout>
           </div>
         )}
-
-        <div className="space-y-6 mt-4 md:mt-8">
-          {/* Titre section Identité */}
-          <div>
-            <h3 className="text-sm font-medium mb-2">Identité</h3>
-            <Separator className="bg-[#eeeff1] dark:bg-[#232323]" />
-          </div>
-
-          {/* Modification nom de l'organisation */}
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <h4 className="text-sm font-normal mb-1">
-                Nom de l'organisation
-              </h4>
-              <p className="text-xs text-gray-400">
-                {orgLoading
-                  ? "Chargement..."
-                  : organization?.name || "Aucune organisation"}{" "}
-                •{" "}
-                <Dialog
-                  open={showOrganizationModal}
-                  onOpenChange={setShowOrganizationModal}
-                >
-                  <DialogTrigger asChild>
-                    <button
-                      type="button"
-                      className="text-gray-400 underline hover:text-gray-600 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                      disabled={orgLoading || !canManageOrgSettings}
-                      title={
-                        !canManageOrgSettings
-                          ? "Seuls les owners et admins peuvent modifier"
-                          : ""
-                      }
-                    >
-                      Modifier
-                    </button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>
-                        Modifier le nom de l'organisation
-                      </DialogTitle>
-                      <DialogDescription>
-                        Changez le nom qui apparaît dans votre espace de travail
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div>
-                        <Label htmlFor="organizationName">
-                          Nom de l'organisation
-                        </Label>
-                        <Input
-                          id="organizationName"
-                          type="text"
-                          value={organizationForm.organizationName}
-                          onChange={(e) =>
-                            setOrganizationForm((prev) => ({
-                              ...prev,
-                              organizationName: e.target.value,
-                            }))
-                          }
-                          placeholder="Nom de votre organisation"
-                        />
-                      </div>
-                    </div>
-                    <DialogFooter>
-                      <Button
-                        variant="outline"
-                        onClick={() => setShowOrganizationModal(false)}
-                      >
-                        Annuler
-                      </Button>
-                      <Button onClick={handleOrganizationChange}>
-                        Enregistrer
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-              </p>
-            </div>
-          </div>
-        </div>
 
         {/* Section Authentification 2FA */}
         <div className="space-y-6 mt-8">
