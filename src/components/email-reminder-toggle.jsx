@@ -18,18 +18,46 @@ import {
   TooltipTrigger,
 } from "@/src/components/ui/tooltip";
 
+const ANTICIPATION_OPTIONS = {
+  regular: [
+    { value: "5m", label: "5 minutes avant" },
+    { value: "10m", label: "10 minutes avant" },
+    { value: "15m", label: "15 minutes avant" },
+    { value: "1h", label: "1 heure avant" },
+    { value: "3h", label: "3 heures avant" },
+    { value: "1d", label: "1 jour avant" },
+    { value: "3d", label: "3 jours avant" },
+  ],
+  allDay: [
+    { value: "1d", label: "1 jour avant" },
+    { value: "3d", label: "3 jours avant" },
+  ],
+};
+
 /**
  * Composant pour activer/désactiver les rappels email sur une tâche
  */
-export function EmailReminderToggle({ value, onChange, disabled = false }) {
+export function EmailReminderToggle({ value, onChange, disabled = false, allDay = false }) {
   const [enabled, setEnabled] = useState(value?.enabled || false);
   const [anticipation, setAnticipation] = useState(value?.anticipation || null);
+
+  const options = allDay ? ANTICIPATION_OPTIONS.allDay : ANTICIPATION_OPTIONS.regular;
 
   // Synchroniser avec les valeurs externes
   useEffect(() => {
     setEnabled(value?.enabled || false);
     setAnticipation(value?.anticipation || null);
   }, [value]);
+
+  // Si on passe en allDay et que l'anticipation sélectionnée n'est plus valide, reset
+  useEffect(() => {
+    if (allDay && anticipation && !options.some((o) => o.value === anticipation)) {
+      setAnticipation(null);
+      if (enabled) {
+        onChange({ enabled, anticipation: null });
+      }
+    }
+  }, [allDay]);
 
   // Gérer le changement d'activation
   const handleEnabledChange = (checked) => {
@@ -111,7 +139,7 @@ export function EmailReminderToggle({ value, onChange, disabled = false }) {
               htmlFor="anticipation"
               className="text-xs text-muted-foreground"
             >
-              Rappel anticipé (optionnel)
+              Quand envoyer le rappel ?
             </Label>
           </div>
           <Select
@@ -120,20 +148,23 @@ export function EmailReminderToggle({ value, onChange, disabled = false }) {
             disabled={disabled}
           >
             <SelectTrigger id="anticipation" className="h-9 text-sm">
-              <SelectValue placeholder="Aucun" />
+              <SelectValue placeholder="À l'échéance" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="none">Aucun</SelectItem>
-              <SelectItem value="1h">1 heure avant</SelectItem>
-              <SelectItem value="3h">3 heures avant</SelectItem>
-              <SelectItem value="1d">1 jour avant</SelectItem>
-              <SelectItem value="3d">3 jours avant</SelectItem>
+              <SelectItem value="none">À l'échéance</SelectItem>
+              {options.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
           <p className="text-xs text-muted-foreground">
             {anticipation
-              ? `Vous recevrez un email ${getAnticipationLabel(anticipation)} et à l'échéance`
-              : "Vous recevrez un email uniquement à l'échéance"}
+              ? `Vous recevrez un email ${getAnticipationLabel(anticipation)}`
+              : allDay
+                ? "Vous recevrez un email à 9h00 le jour de l'événement"
+                : "Vous recevrez un email au début de l'événement"}
           </p>
         </div>
       )}
@@ -144,6 +175,9 @@ export function EmailReminderToggle({ value, onChange, disabled = false }) {
 // Helper pour les labels d'anticipation
 function getAnticipationLabel(anticipation) {
   const labels = {
+    "5m": "5 minutes avant",
+    "10m": "10 minutes avant",
+    "15m": "15 minutes avant",
     "1h": "1 heure avant",
     "3h": "3 heures avant",
     "1d": "1 jour avant",
