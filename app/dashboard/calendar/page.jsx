@@ -81,7 +81,7 @@ export default function Component() {
         location: event.location,
         type: "MANUAL",
         emailReminder: event.emailReminder?.enabled
-          ? { enabled: true, anticipation: event.emailReminder.anticipation || null }
+          ? { enabled: true, anticipation: event.emailReminder.anticipation || null, echeance: event.emailReminder.echeance || null }
           : undefined,
       };
       await createEvent(input);
@@ -111,7 +111,7 @@ export default function Component() {
         location: updatedEvent.location,
         type: updatedEvent.type || "MANUAL",
         emailReminder: updatedEvent.emailReminder
-          ? { enabled: updatedEvent.emailReminder.enabled, anticipation: updatedEvent.emailReminder.anticipation || null }
+          ? { enabled: updatedEvent.emailReminder.enabled, anticipation: updatedEvent.emailReminder.anticipation || null, echeance: updatedEvent.emailReminder.echeance || null }
           : undefined,
       });
     } catch (error) {
