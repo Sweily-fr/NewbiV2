@@ -43,9 +43,8 @@ export const useClient = (id) => {
 
 export const useCreateClient = () => {
   const { workspaceId } = useWorkspace();
-  const { handleMutationError } = useErrorHandler();
-  
-  const [createClient, { loading, error }] = useMutation(CREATE_CLIENT, {
+
+  const [createClientMutation, { loading, error }] = useMutation(CREATE_CLIENT, {
     update: (cache, { data: { createClient: newClient } }) => {
       try {
         // Lire la query existante
@@ -76,18 +75,27 @@ export const useCreateClient = () => {
       { query: GET_CLIENT_LISTS, variables: { workspaceId } }
     ],
     awaitRefetchQueries: false,
-    onCompleted: () => {
-      toast.success('Client créé avec succès');
-    },
-    onError: (error) => {
-      handleMutationError(error, 'create', 'client');
-    },
   });
 
   return {
     createClient: async (input) => {
-      const result = await createClient({ variables: { workspaceId, input } });
-      return result?.data?.createClient;
+      try {
+        const result = await createClientMutation({ variables: { workspaceId, input } });
+        if (result?.data?.createClient) {
+          toast.success('Client créé avec succès');
+        }
+        return result?.data?.createClient;
+      } catch (error) {
+        // Extraire l'erreur GraphQL pour la propager avec les bonnes infos
+        const graphQLError = error.graphQLErrors?.[0];
+        if (graphQLError) {
+          const enhancedError = new Error(graphQLError.message);
+          enhancedError.extensions = graphQLError.extensions;
+          enhancedError.code = graphQLError.extensions?.code;
+          throw enhancedError;
+        }
+        throw error;
+      }
     },
     loading,
     error,
@@ -96,9 +104,8 @@ export const useCreateClient = () => {
 
 export const useUpdateClient = () => {
   const { workspaceId } = useWorkspace();
-  const { handleMutationError } = useErrorHandler();
-  
-  const [updateClient, { loading, error }] = useMutation(UPDATE_CLIENT, {
+
+  const [updateClientMutation, { loading, error }] = useMutation(UPDATE_CLIENT, {
     update: (cache, { data: { updateClient: updatedClient } }) => {
       // Mettre à jour le client dans le cache GET_CLIENT
       cache.writeQuery({
@@ -134,18 +141,27 @@ export const useUpdateClient = () => {
         // Si la query n'existe pas dans le cache, on l'ignore
       }
     },
-    onCompleted: () => {
-      toast.success('Client modifié avec succès');
-    },
-    onError: (error) => {
-      handleMutationError(error, 'update', 'client');
-    },
   });
 
   return {
     updateClient: async (id, input) => {
-      const result = await updateClient({ variables: { workspaceId, id, input } });
-      return result?.data?.updateClient;
+      try {
+        const result = await updateClientMutation({ variables: { workspaceId, id, input } });
+        if (result?.data?.updateClient) {
+          toast.success('Client modifié avec succès');
+        }
+        return result?.data?.updateClient;
+      } catch (error) {
+        // Extraire l'erreur GraphQL pour la propager avec les bonnes infos
+        const graphQLError = error.graphQLErrors?.[0];
+        if (graphQLError) {
+          const enhancedError = new Error(graphQLError.message);
+          enhancedError.extensions = graphQLError.extensions;
+          enhancedError.code = graphQLError.extensions?.code;
+          throw enhancedError;
+        }
+        throw error;
+      }
     },
     loading,
     error,

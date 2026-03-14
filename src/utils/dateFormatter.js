@@ -3,6 +3,21 @@
  */
 
 /**
+ * Formate une date au format YYYY-MM-DD en utilisant le fuseau horaire local.
+ * Remplace le pattern `date.toISOString().split("T")[0]` qui convertit en UTC
+ * et décale la date d'un jour entre minuit et 1h du matin (UTC+1).
+ * @param {Date} [date=new Date()] - La date à formater
+ * @returns {string} - Date formatée en YYYY-MM-DD (timezone locale)
+ */
+export const formatLocalDate = (date = new Date()) => {
+  const d = date instanceof Date && !isNaN(date.getTime()) ? date : new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+/**
  * Formate une date en format français court (jj/mm/aaaa)
  * @param {string|number|Date} dateValue - La date à formater
  * @returns {string} - Date formatée en français (ex: 15/01/2024)

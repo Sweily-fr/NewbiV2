@@ -114,6 +114,7 @@ export const QUOTE_FRAGMENT = gql`
     showBankDetails
     clientPositionRight
     isReverseCharge
+    operationType
     createdBy {
       id
       email

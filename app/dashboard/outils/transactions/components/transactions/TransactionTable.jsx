@@ -42,6 +42,7 @@ import { multiColumnFilterFn } from "./filters/multiColumnFilterFn";
 import { mapCategoryToEnum, mapPaymentMethodToEnum } from "./utils/mappers";
 import { MobileToolbar } from "./components/MobileToolbar";
 import { MobileTable } from "./components/MobileTable";
+import { formatLocalDate } from "@/src/utils/dateFormatter";
 
 // UI Components
 import { Button } from "@/src/components/ui/button";
@@ -374,7 +375,7 @@ export default function TransactionTable({
 
   // Fonction utilitaire pour formater les dates de manière sécurisée
   const safeFormatDate = (dateValue) => {
-    if (!dateValue) return new Date().toISOString().split("T")[0];
+    if (!dateValue) return formatLocalDate();
 
     // Si c'est déjà une string au format YYYY-MM-DD
     if (typeof dateValue === "string" && /^\d{4}-\d{2}-\d{2}/.test(dateValue)) {
@@ -386,12 +387,12 @@ export default function TransactionTable({
       const date = new Date(dateValue);
       if (isNaN(date.getTime())) {
         console.warn("Date invalide:", dateValue);
-        return new Date().toISOString().split("T")[0];
+        return formatLocalDate();
       }
-      return date.toISOString().split("T")[0];
+      return formatLocalDate(date);
     } catch (error) {
       console.warn("Erreur de parsing de date:", dateValue, error);
-      return new Date().toISOString().split("T")[0];
+      return formatLocalDate();
     }
   };
 

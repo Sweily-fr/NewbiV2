@@ -115,6 +115,7 @@ export const PURCHASE_ORDER_FRAGMENT = gql`
     showBankDetails
     clientPositionRight
     isReverseCharge
+    operationType
     createdBy {
       id
       email

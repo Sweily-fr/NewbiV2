@@ -1089,7 +1089,6 @@ export function NavMain({
     // Déterminer l'attribut data-tutorial selon le titre
     const getTutorialAttribute = () => {
       if (item.title === "Dashboard") return "nav-dashboard";
-      if (item.title === "Transactions") return "nav-transactions";
       return undefined;
     };
 
@@ -1134,15 +1133,18 @@ export function NavMain({
           {items.map((item) => renderSimpleItem(item))}
 
           {/* Menu Finances (Transactions + Prévision) */}
-          {navFinances.length > 0 &&
-            renderCollapsibleMenu(
-              "Finances",
-              Landmark,
-              navFinances,
-              isFinancesOpen,
-              setIsFinancesOpen,
-              isFinancesSubActive
-            )}
+          {navFinances.length > 0 && (
+            <div data-tutorial="nav-finances">
+              {renderCollapsibleMenu(
+                "Finances",
+                Landmark,
+                navFinances,
+                isFinancesOpen,
+                setIsFinancesOpen,
+                isFinancesSubActive
+              )}
+            </div>
+          )}
 
           {/* Menu Ventes avec sous-menus et actions rapides */}
           {navVentes.length > 0 && (() => {

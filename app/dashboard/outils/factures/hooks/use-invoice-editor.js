@@ -13,6 +13,7 @@ import {
 } from "@/src/graphql/invoiceQueries";
 import { useInvoiceNumber } from "./use-invoice-number";
 import { useUser } from "@/src/lib/auth/hooks";
+import { formatLocalDate } from "@/src/utils/dateFormatter";
 import {
   updateOrganization,
   getActiveOrganization,
@@ -947,6 +948,13 @@ export function useInvoiceEditor({
           ""
       );
       setValue("showBankDetails", organization.showBankDetails || false);
+      // Nom du bénéficiaire (pour auto-entrepreneurs)
+      setValue(
+        "beneficiaryNameType",
+        organization.beneficiaryNameType ||
+          (organization.legalForm === "Auto-entrepreneur" ? "fullName" : "companyName")
+      );
+      setValue("userName", session?.user?.name || "");
       // Synchroniser les bankDetails au niveau top-level (utilisé par la preview)
       if (organization.bankIban || organization.bankBic || organization.bankName) {
         setValue("bankDetails", {
@@ -2101,7 +2109,7 @@ function getInitialFormData(mode, initialData, session, organization) {
   const defaultData = {
     prefix: organization?.invoicePrefix || "",
     number: "",
-    issueDate: new Date().toISOString().split("T")[0],
+    issueDate: formatLocalDate(),
     dueDate: null,
     status: "DRAFT",
     client: null,
@@ -2122,6 +2130,11 @@ function getInitialFormData(mode, initialData, session, organization) {
     globalProgressPercentage: 100, // Pourcentage global pour le mode uniforme
     // Récupérer les données bancaires si elles existent dans la facture
     showBankDetails: organization?.showBankDetails || false,
+    // Nom du bénéficiaire
+    beneficiaryNameType:
+      organization?.beneficiaryNameType ||
+      (organization?.legalForm === "Auto-entrepreneur" ? "fullName" : "companyName"),
+    userName: session?.user?.name || "",
     bankDetails: {
       iban: "",
       bic: "",
@@ -2202,7 +2215,7 @@ function transformInvoiceToFormData(invoice) {
         const timestamp = parseInt(dateValue, 10);
         const date = new Date(timestamp);
         if (!isNaN(date.getTime())) {
-          const formatted = date.toISOString().split("T")[0];
+          const formatted = formatLocalDate(date);
 
           return formatted;
         }
@@ -2214,7 +2227,7 @@ function transformInvoiceToFormData(invoice) {
         return null;
       }
 
-      const formatted = date.toISOString().split("T")[0];
+      const formatted = formatLocalDate(date);
       return formatted;
     } catch (error) {
       return null;
@@ -2226,7 +2239,7 @@ function transformInvoiceToFormData(invoice) {
     number: invoice.number || "",
     issueDate:
       transformDate(invoice.issueDate, "issueDate") ||
-      new Date().toISOString().split("T")[0],
+      formatLocalDate(),
     dueDate: transformDate(invoice.dueDate, "dueDate"),
     status: invoice.status || "DRAFT",
     client: invoice.client || null,
@@ -2447,7 +2460,7 @@ function transformFormDataToInput(formData, previousStatus = null) {
   let issueDate = formData.issueDate;
   if (previousStatus === "DRAFT" && formData.status === "PENDING") {
     // Mettre à jour la date d'émission à la date actuelle
-    issueDate = new Date().toISOString().split("T")[0];
+    issueDate = formatLocalDate();
   }
 
   // Helper pour s'assurer qu'on n'envoie jamais null pour les dates obligatoires

@@ -42,6 +42,7 @@ import { toast } from "@/src/components/ui/sonner";
 import { usePermissions } from "@/src/hooks/usePermissions";
 // InvoiceSidebar est maintenant géré au niveau du tableau (InvoiceTable) pour éviter les re-renders
 import InvoiceMobileFullscreen from "./invoice-mobile-fullscreen";
+import { formatLocalDate } from "@/src/utils/dateFormatter";
 
 export default function InvoiceRowActions({
   row,
@@ -126,7 +127,7 @@ export default function InvoiceRowActions({
 
   const handleMarkAsPaid = async () => {
     try {
-      const today = new Date().toISOString().split("T")[0];
+      const today = formatLocalDate();
       await markAsPaid(invoice.id, today);
       toast.success("Facture marquée comme payée");
       if (onRefetch) onRefetch();

@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { formatLocalDate } from "@/src/utils/dateFormatter";
 
 export const useKanbanSearch = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -58,7 +59,7 @@ export const useKanbanSearch = () => {
                 month: "long",
                 year: "numeric",
               }),
-              dueDate.toISOString().split("T")[0],
+              formatLocalDate(dueDate),
             ];
 
             if (

@@ -29,6 +29,7 @@ import { useRouter } from "next/navigation";
 import { usePermissions } from "@/src/hooks/usePermissions";
 import UniversalPreviewPDF from "@/src/components/pdf/UniversalPreviewPDF";
 import UniversalPDFDownloaderWithFacturX from "@/src/components/pdf/UniversalPDFDownloaderWithFacturX";
+import { formatLocalDate } from "@/src/utils/dateFormatter";
 
 export default function InvoiceMobileFullscreen({
   isOpen,
@@ -156,7 +157,7 @@ export default function InvoiceMobileFullscreen({
 
   const handleMarkAsPaid = async () => {
     try {
-      const today = new Date().toISOString().split("T")[0];
+      const today = formatLocalDate();
       await markAsPaid(invoice.id, today);
       toast.success("Facture marquée comme payée");
       if (onRefetch) onRefetch();

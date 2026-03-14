@@ -20,7 +20,7 @@ import {
 import { toast } from "@/src/components/ui/sonner";
 import { cn } from "@/src/lib/utils";
 
-export default function ClientContactsForm({ contacts = [], onChange }) {
+export default function ClientContactsForm({ contacts = [], onChange, contactErrors = {} }) {
   const [expandedContact, setExpandedContact] = useState(null);
   const [newContact, setNewContact] = useState({
     position: "",
@@ -46,29 +46,29 @@ export default function ClientContactsForm({ contacts = [], onChange }) {
 
   const validateContact = (contact) => {
     const newErrors = {};
-    
+
     if (!contact.firstName && !contact.lastName) {
       newErrors.name = "Le prénom ou le nom est requis";
     }
-    
+
     if (!contact.email && !contact.phone) {
       newErrors.contact = "Un email ou un téléphone est requis";
     }
-    
+
     if (contact.email && !validateEmail(contact.email)) {
       newErrors.email = "Email invalide";
     }
-    
+
     if (contact.phone && !validatePhone(contact.phone)) {
       newErrors.phone = "Téléphone invalide";
     }
-    
+
     return newErrors;
   };
 
   const handleAddContact = () => {
     const validationErrors = validateContact(newContact);
-    
+
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
       return;
@@ -99,7 +99,7 @@ export default function ClientContactsForm({ contacts = [], onChange }) {
   };
 
   const handleUpdateContact = (contactId, field, value) => {
-    const updatedContacts = contacts.map(c => 
+    const updatedContacts = contacts.map(c =>
       c.id === contactId ? { ...c, [field]: value } : c
     );
     onChange(updatedContacts);
@@ -111,6 +111,9 @@ export default function ClientContactsForm({ contacts = [], onChange }) {
     }
     return contact.firstName || contact.lastName || "Contact sans nom";
   };
+
+  // Récupérer les erreurs pour un contact spécifique (provenant du parent lors de la soumission)
+  const getContactError = (contactId) => contactErrors[contactId] || {};
 
   return (
     <div className="space-y-4 mt-6 pt-4 border-t col-span-2">
@@ -143,122 +146,154 @@ export default function ClientContactsForm({ contacts = [], onChange }) {
       {/* Liste des contacts existants */}
       {contacts.length > 0 && (
         <div className="space-y-2">
-          {contacts.map((contact) => (
-            <div
-              key={contact.id}
-              className="border rounded-lg overflow-hidden"
-            >
+          {contacts.map((contact) => {
+            const cErrors = getContactError(contact.id);
+            const hasErrors = Object.keys(cErrors).length > 0;
+
+            return (
               <div
-                className="flex items-center justify-between p-3 cursor-pointer hover:bg-muted/50"
-                onClick={() => setExpandedContact(expandedContact === contact.id ? null : contact.id)}
+                key={contact.id}
+                className={cn(
+                  "border rounded-lg overflow-hidden",
+                  hasErrors && "border-red-500"
+                )}
               >
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center justify-center size-8 rounded-full bg-primary/10">
-                    <User className="h-4 w-4 text-primary" />
+                <div
+                  className="flex items-center justify-between p-3 cursor-pointer hover:bg-muted/50"
+                  onClick={() => setExpandedContact(expandedContact === contact.id ? null : contact.id)}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={cn(
+                      "flex items-center justify-center size-8 rounded-full",
+                      hasErrors ? "bg-red-100 dark:bg-red-950/30" : "bg-primary/10"
+                    )}>
+                      <User className={cn("h-4 w-4", hasErrors ? "text-red-500" : "text-primary")} />
+                    </div>
+                    <div>
+                      <span className="font-medium text-sm">
+                          {getContactDisplayName(contact)}
+                        </span>
+                      {contact.position && (
+                        <span className="text-xs text-muted-foreground ml-2">
+                          — {contact.position}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <div>
-                    <span className="font-medium text-sm">
-                        {getContactDisplayName(contact)}
-                      </span>
-                    {contact.position && (
-                      <span className="text-xs text-muted-foreground ml-2">
-                        — {contact.position}
-                      </span>
+                  <div className="flex items-center gap-2">
+                    {contact.email && (
+                      <Badge
+                        variant="outline"
+                        className="text-xs cursor-pointer hover:bg-muted"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigator.clipboard.writeText(contact.email);
+                          toast.success("Email copié");
+                        }}
+                      >
+                        <Mail className="h-3 w-3 mr-1" />
+                        {contact.email}
+                        <Copy className="h-3 w-3 ml-1 opacity-50" />
+                      </Badge>
+                    )}
+                    {expandedContact === contact.id ? (
+                      <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
                     )}
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  {contact.email && (
-                    <Badge 
-                      variant="outline" 
-                      className="text-xs cursor-pointer hover:bg-muted"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigator.clipboard.writeText(contact.email);
-                        toast.success("Email copié");
-                      }}
-                    >
-                      <Mail className="h-3 w-3 mr-1" />
-                      {contact.email}
-                      <Copy className="h-3 w-3 ml-1 opacity-50" />
-                    </Badge>
-                  )}
-                  {expandedContact === contact.id ? (
-                    <ChevronUp className="h-4 w-4 text-muted-foreground" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                  )}
-                </div>
-              </div>
 
-              {/* Détails du contact (expandable) */}
-              {expandedContact === contact.id && (
-                <div className="p-3 pt-0 space-y-3 border-t bg-muted/30">
-                  <div className="grid grid-cols-2 gap-3 pt-3">
-                    <div className="space-y-1.5">
-                      <Label className="text-xs font-normal text-muted-foreground">Poste</Label>
-                      <Input
-                        value={contact.position || ""}
-                        onChange={(e) => handleUpdateContact(contact.id, "position", e.target.value)}
-                        placeholder="Ex: Directeur commercial"
-                        className="h-8 text-sm"
-                      />
+                {/* Erreurs du contact (visibles même quand replié) */}
+                {hasErrors && expandedContact !== contact.id && (
+                  <div className="px-3 pb-2">
+                    {Object.values(cErrors).map((errMsg, i) => (
+                      <p key={i} className="text-xs text-red-500">{errMsg}</p>
+                    ))}
+                  </div>
+                )}
+
+                {/* Détails du contact (expandable) */}
+                {expandedContact === contact.id && (
+                  <div className="p-3 pt-0 space-y-3 border-t bg-muted/30">
+                    <div className="grid grid-cols-2 gap-3 pt-3">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-normal text-muted-foreground">Poste</Label>
+                        <Input
+                          value={contact.position || ""}
+                          onChange={(e) => handleUpdateContact(contact.id, "position", e.target.value)}
+                          placeholder="Ex: Directeur commercial"
+                          className="h-8 text-sm"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-normal text-muted-foreground">Prénom</Label>
+                        <Input
+                          value={contact.firstName || ""}
+                          onChange={(e) => handleUpdateContact(contact.id, "firstName", e.target.value)}
+                          placeholder="Prénom"
+                          className={cn("h-8 text-sm", cErrors.name && "border-red-500")}
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-normal text-muted-foreground">Nom</Label>
+                        <Input
+                          value={contact.lastName || ""}
+                          onChange={(e) => handleUpdateContact(contact.id, "lastName", e.target.value)}
+                          placeholder="Nom"
+                          className={cn("h-8 text-sm", cErrors.name && "border-red-500")}
+                        />
+                      </div>
+                      {cErrors.name && (
+                        <p className="col-span-2 text-xs text-red-500">{cErrors.name}</p>
+                      )}
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-normal text-muted-foreground">Email</Label>
+                        <Input
+                          type="email"
+                          value={contact.email || ""}
+                          onChange={(e) => handleUpdateContact(contact.id, "email", e.target.value)}
+                          placeholder="email@exemple.com"
+                          className={cn("h-8 text-sm", (cErrors.email || cErrors.contact) && "border-red-500")}
+                        />
+                        {cErrors.email && (
+                          <p className="text-xs text-red-500">{cErrors.email}</p>
+                        )}
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-normal text-muted-foreground">Téléphone</Label>
+                        <Input
+                          type="tel"
+                          value={contact.phone || ""}
+                          onChange={(e) => handleUpdateContact(contact.id, "phone", e.target.value)}
+                          placeholder="06 12 34 56 78"
+                          className={cn("h-8 text-sm", (cErrors.phone || cErrors.contact) && "border-red-500")}
+                        />
+                        {cErrors.phone && (
+                          <p className="text-xs text-red-500">{cErrors.phone}</p>
+                        )}
+                      </div>
+                      {cErrors.contact && (
+                        <p className="col-span-2 text-xs text-red-500">{cErrors.contact}</p>
+                      )}
                     </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs font-normal text-muted-foreground">Prénom</Label>
-                      <Input
-                        value={contact.firstName || ""}
-                        onChange={(e) => handleUpdateContact(contact.id, "firstName", e.target.value)}
-                        placeholder="Prénom"
-                        className="h-8 text-sm"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs font-normal text-muted-foreground">Nom</Label>
-                      <Input
-                        value={contact.lastName || ""}
-                        onChange={(e) => handleUpdateContact(contact.id, "lastName", e.target.value)}
-                        placeholder="Nom"
-                        className="h-8 text-sm"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs font-normal text-muted-foreground">Email</Label>
-                      <Input
-                        type="email"
-                        value={contact.email || ""}
-                        onChange={(e) => handleUpdateContact(contact.id, "email", e.target.value)}
-                        placeholder="email@exemple.com"
-                        className="h-8 text-sm"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs font-normal text-muted-foreground">Téléphone</Label>
-                      <Input
-                        type="tel"
-                        value={contact.phone || ""}
-                        onChange={(e) => handleUpdateContact(contact.id, "phone", e.target.value)}
-                        placeholder="06 12 34 56 78"
-                        className="h-8 text-sm"
-                      />
+                    <div className="flex items-center justify-end pt-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleRemoveContact(contact.id)}
+                        className="h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                      >
+                        <Trash2 className="h-3 w-3 mr-1" />
+                        Supprimer
+                      </Button>
                     </div>
                   </div>
-                  <div className="flex items-center justify-end pt-2">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleRemoveContact(contact.id)}
-                      className="h-7 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
-                    >
-                      <Trash2 className="h-3 w-3 mr-1" />
-                      Supprimer
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 
