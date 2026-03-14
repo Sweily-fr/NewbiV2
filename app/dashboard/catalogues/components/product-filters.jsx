@@ -155,7 +155,7 @@ export default function ProductFilters({
                       checked={selectedCategories.includes(category)}
                       className="mr-2 pointer-events-none"
                     />
-                    <span>{category}</span>
+                    <span>{category || "Aucune catégorie"}</span>
                   </div>
                 ))}
               </>

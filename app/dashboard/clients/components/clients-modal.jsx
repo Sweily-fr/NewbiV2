@@ -143,6 +143,7 @@ export default function ClientsModal({
   const [pendingNotes, setPendingNotes] = useState([]);
   const [customFieldValues, setCustomFieldValues] = useState({});
   const [clientContacts, setClientContacts] = useState([]);
+  const [contactErrors, setContactErrors] = useState({});
   const [isReminderDialogOpen, setIsReminderDialogOpen] = useState(false);
   const clientType = watch("type");
   const isInternational = watch("isInternational");
@@ -461,15 +462,57 @@ export default function ClientsModal({
     }
   };
 
+  // Valider tous les contacts avant soumission
+  const validateAllContacts = () => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const phoneRegex = /^[\d\s\-+().]{6,20}$/;
+    const allErrors = {};
+    let hasErrors = false;
+
+    clientContacts.forEach((contact) => {
+      const contactErr = {};
+
+      if (!contact.firstName && !contact.lastName) {
+        contactErr.name = "Le prénom ou le nom est requis";
+      }
+
+      if (!contact.email && !contact.phone) {
+        contactErr.contact = "Un email ou un téléphone est requis";
+      }
+
+      if (contact.email && !emailRegex.test(contact.email)) {
+        contactErr.email = "Email invalide";
+      }
+
+      if (contact.phone && !phoneRegex.test(contact.phone)) {
+        contactErr.phone = "Téléphone invalide";
+      }
+
+      if (Object.keys(contactErr).length > 0) {
+        allErrors[contact.id] = contactErr;
+        hasErrors = true;
+      }
+    });
+
+    setContactErrors(allErrors);
+    return hasErrors;
+  };
+
   const onSubmit = async (formData) => {
     try {
       // Validation finale avant soumission
       const hasFormErrors = Object.keys(errors).length > 0;
       const hasCustomErrors = Object.keys(customErrors).length > 0;
+      const hasContactErrors = clientType === "COMPANY" && validateAllContacts();
 
-      if (hasFormErrors || hasCustomErrors) {
+      if (hasFormErrors || hasCustomErrors || hasContactErrors) {
+        const errorMessages = [];
+        if (hasFormErrors) errorMessages.push("des champs du formulaire");
+        if (hasCustomErrors) errorMessages.push("des champs personnalisés");
+        if (hasContactErrors) errorMessages.push("des contacts additionnels");
+
         toast.error(
-          "Veuillez corriger les erreurs avant de soumettre le formulaire"
+          `Veuillez corriger les erreurs dans ${errorMessages.join(" et ")}`
         );
         return;
       }
@@ -570,13 +613,15 @@ export default function ClientsModal({
         });
       }
       setCustomErrors({});
+      setContactErrors({});
       setHasDifferentShipping(false);
       setShowCompanySearch(false);
       setCompanyQuery("");
       setCompanies([]);
     } catch (error) {
-      // La notification d'erreur est déjà gérée par le hook useCreateClient/useUpdateClient
-      // Ne pas afficher de notification supplémentaire ici
+      // Afficher une toast d'erreur précise
+      const message = error.message || "Une erreur est survenue";
+      toast.error(isEditing ? `Impossible de modifier le client : ${message}` : `Impossible de créer le client : ${message}`);
       // Ne pas fermer le modal en cas d'erreur
     }
   };
@@ -1244,7 +1289,14 @@ export default function ClientsModal({
                     {clientType === "COMPANY" && (
                       <ClientContactsForm
                         contacts={clientContacts}
-                        onChange={setClientContacts}
+                        onChange={(contacts) => {
+                          setClientContacts(contacts);
+                          // Réinitialiser les erreurs de contacts quand l'utilisateur modifie
+                          if (Object.keys(contactErrors).length > 0) {
+                            setContactErrors({});
+                          }
+                        }}
+                        contactErrors={contactErrors}
                       />
                     )}
 
@@ -1949,7 +2001,13 @@ export default function ClientsModal({
                     {clientType === "COMPANY" && (
                       <ClientContactsForm
                         contacts={clientContacts}
-                        onChange={setClientContacts}
+                        onChange={(contacts) => {
+                          setClientContacts(contacts);
+                          if (Object.keys(contactErrors).length > 0) {
+                            setContactErrors({});
+                          }
+                        }}
+                        contactErrors={contactErrors}
                       />
                     )}
 

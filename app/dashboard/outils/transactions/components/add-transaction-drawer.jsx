@@ -54,6 +54,7 @@ import { useDocumentUpload } from "@/src/hooks/useDocumentUpload";
 import CategorySearchSelect from "./category-search-select";
 import { Calendar } from "@/src/components/ui/calendar-rac";
 import { DateInput } from "@/src/components/ui/datefield-rac";
+import { formatLocalDate } from "@/src/utils/dateFormatter";
 
 export function AddTransactionDrawer({
   open,
@@ -66,7 +67,7 @@ export function AddTransactionDrawer({
     type: "EXPENSE", // Défaut à EXPENSE pour les dépenses
     amount: "",
     category: "",
-    date: new Date().toISOString().split("T")[0],
+    date: formatLocalDate(),
     description: "",
     paymentMethod: "CARD",
     vendor: "",
@@ -150,7 +151,7 @@ export function AddTransactionDrawer({
         if (typeof transaction.date === "object" && transaction.date.$date) {
           const parsedDate = new Date(transaction.date.$date);
           if (!isNaN(parsedDate.getTime())) {
-            formattedDate = parsedDate.toISOString().split("T")[0];
+            formattedDate = formatLocalDate(parsedDate);
           }
         }
         // Cas 2: String
@@ -164,12 +165,12 @@ export function AddTransactionDrawer({
             if (!isNaN(timestamp) && timestamp > 1000000000000) {
               // C'est un timestamp en millisecondes
               const parsedDate = new Date(timestamp);
-              formattedDate = parsedDate.toISOString().split("T")[0];
+              formattedDate = formatLocalDate(parsedDate);
             } else {
               // Essayer de parser comme une date normale (ISO string)
               const parsedDate = new Date(transaction.date);
               if (!isNaN(parsedDate.getTime())) {
-                formattedDate = parsedDate.toISOString().split("T")[0];
+                formattedDate = formatLocalDate(parsedDate);
               }
             }
           }
@@ -178,14 +179,14 @@ export function AddTransactionDrawer({
         else if (typeof transaction.date === "number") {
           const dateObj = new Date(transaction.date);
           if (!isNaN(dateObj.getTime())) {
-            formattedDate = dateObj.toISOString().split("T")[0];
+            formattedDate = formatLocalDate(dateObj);
           }
         }
         // Cas 4: Objet Date
         else {
           const dateObj = new Date(transaction.date);
           if (!isNaN(dateObj.getTime())) {
-            formattedDate = dateObj.toISOString().split("T")[0];
+            formattedDate = formatLocalDate(dateObj);
           }
         }
 
@@ -222,7 +223,7 @@ export function AddTransactionDrawer({
         type: "EXPENSE",
         amount: "",
         category: "",
-        date: new Date().toISOString().split("T")[0],
+        date: formatLocalDate(),
         description: "",
         paymentMethod: "CARD",
         vendor: "",
@@ -244,7 +245,7 @@ export function AddTransactionDrawer({
         type: "EXPENSE", // Cohérence avec le défaut
         amount: "",
         category: "",
-        date: new Date().toISOString().split("T")[0],
+        date: formatLocalDate(),
         description: "",
         paymentMethod: "CARD",
         vendor: "",
@@ -270,7 +271,7 @@ export function AddTransactionDrawer({
       type: "EXPENSE",
       amount: "",
       category: "",
-      date: new Date().toISOString().split("T")[0],
+      date: formatLocalDate(),
       description: "",
       paymentMethod: "CARD",
       vendor: "",

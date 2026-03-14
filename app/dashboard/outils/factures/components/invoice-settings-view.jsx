@@ -42,6 +42,7 @@ import {
 } from "@/src/components/ui/alert-dialog";
 import { BankDetailsDialog } from "@/src/components/bank-details-dialog";
 import CompanyInfoSettingsSection from "@/src/components/settings/company-info-settings-section";
+import { Switch } from "@/src/components/ui/switch";
 
 // Fonction de validation de l'IBAN
 const validateIBAN = (value) => {
@@ -690,6 +691,45 @@ export default function InvoiceSettingsView({
                         pour faciliter les paiements de vos clients.
                       </AlertDescription>
                     </Alert>
+                  </div>
+                )}
+
+              {/* Choix du nom du bénéficiaire pour les auto-entrepreneurs */}
+              {data.showBankDetails &&
+                organization?.legalForm === "Auto-entrepreneur" && (
+                  <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                    <div className="grid gap-1.5 leading-none">
+                      <Label
+                        htmlFor="beneficiary-name-type"
+                        className="text-sm font-light leading-none"
+                      >
+                        Nom du bénéficiaire
+                      </Label>
+                      <p className="text-xs text-muted-foreground">
+                        {data.beneficiaryNameType === "fullName"
+                          ? "Nom complet affiché sur la facture"
+                          : "Nom d'entreprise affiché sur la facture"}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">
+                        {data.beneficiaryNameType === "fullName"
+                          ? "Nom complet"
+                          : "Nom d'entreprise"}
+                      </span>
+                      <Switch
+                        id="beneficiary-name-type"
+                        checked={data.beneficiaryNameType === "fullName"}
+                        onCheckedChange={(checked) => {
+                          setValue(
+                            "beneficiaryNameType",
+                            checked ? "fullName" : "companyName",
+                            { shouldDirty: true }
+                          );
+                        }}
+                        disabled={!canEdit}
+                      />
+                    </div>
                   </div>
                 )}
             </CardContent>

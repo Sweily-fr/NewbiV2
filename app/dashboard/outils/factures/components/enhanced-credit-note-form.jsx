@@ -23,6 +23,7 @@ import {
   Package,
   CheckIcon,
   ChevronDownIcon,
+  Info,
 } from "lucide-react";
 import { useQuery } from "@apollo/client";
 import { GET_PRODUCTS } from "@/src/graphql/queries/products";
@@ -56,6 +57,11 @@ import {
   SelectValue,
 } from "@/src/components/ui/select";
 import { Badge } from "@/src/components/ui/badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/src/components/ui/tooltip";
 import { Separator } from "@/src/components/ui/separator";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import { Calendar as CalendarComponent } from "@/src/components/ui/calendar";
@@ -472,6 +478,45 @@ export default function EnhancedCreditNoteForm({
                         />
                       </PopoverContent>
                     </Popover>
+                  </div>
+                  {/* Nature de l'opération (obligatoire 2026) */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
+                        Nature de l'opération
+                      </Label>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent
+                          side="top"
+                          className="max-w-[280px] sm:max-w-xs"
+                        >
+                          <p>
+                            Mention obligatoire pour la facturation électronique (réforme
+                            2026). Indique si le document concerne une livraison de biens,
+                            une prestation de services, ou les deux.
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                    <Select
+                      value={formData.operationType || ""}
+                      onValueChange={(value) => {
+                        setValue("operationType", value);
+                      }}
+                      disabled={!canEdit}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Sélectionner la nature" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="LB">Livraison de biens</SelectItem>
+                        <SelectItem value="PS">Prestation de services</SelectItem>
+                        <SelectItem value="LBPS">Mixte - Biens et services</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </CardContent>
               </Card>

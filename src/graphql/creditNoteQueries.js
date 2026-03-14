@@ -31,6 +31,7 @@ export const CREDIT_NOTE_FRAGMENT = gql`
     finalTotalVAT
     finalTotalTTC
     showBankDetails
+    operationType
     createdAt
     updatedAt
     client {

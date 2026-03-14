@@ -1,8 +1,9 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useTutorial } from "@/src/contexts/tutorial-context";
+import { useSidebar } from "@/src/components/ui/sidebar";
 import { tutorialSteps } from "./tutorial-steps";
 
 // Import dynamique de Joyride pour éviter les erreurs SSR
@@ -101,6 +102,20 @@ export function TutorialOverlay() {
     completeTutorial,
     isLoading,
   } = useTutorial();
+
+  const { open: sidebarOpen, setOpen: setSidebarOpen } = useSidebar();
+  const sidebarWasOpen = useRef(sidebarOpen);
+
+  // Forcer la sidebar ouverte pendant le tutoriel
+  useEffect(() => {
+    if (isRunning) {
+      sidebarWasOpen.current = sidebarOpen;
+      setSidebarOpen(true);
+    } else if (sidebarWasOpen.current !== undefined) {
+      // Restaurer l'état précédent quand le tutoriel se termine
+      setSidebarOpen(sidebarWasOpen.current);
+    }
+  }, [isRunning]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleJoyrideCallback = useCallback(
     (data) => {
