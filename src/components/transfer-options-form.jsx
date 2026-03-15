@@ -73,7 +73,7 @@ const TransferOptionsForm = ({ options, onOptionsChange, className }) => {
         </CardContent>
       </Card>
 
-      {/* Options de paiement — désactivé temporairement, à remettre plus tard
+      {/* Options de paiement */}
       <Card>
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center space-x-2 text-lg">
@@ -154,7 +154,6 @@ const TransferOptionsForm = ({ options, onOptionsChange, className }) => {
           )}
         </CardContent>
       </Card>
-      */}
 
       {/* Options de notification */}
       <Card>

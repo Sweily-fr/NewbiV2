@@ -62,7 +62,6 @@ import {
 import {
   formatDateToFrench,
   formatDateTimeToFrench,
-  formatLocalDate,
 } from "@/src/utils/dateFormatter";
 import { findMerchant } from "@/lib/merchants-config";
 import { getCategoryConfig } from "@/lib/category-icons-config";
@@ -300,7 +299,7 @@ export function TransactionDetailDrawer({
     type: "EXPENSE",
     amount: "",
     category: "",
-    date: formatLocalDate(),
+    date: new Date().toISOString().split("T")[0],
     description: "",
     paymentMethod: "CARD",
     vendor: "",
@@ -329,7 +328,7 @@ export function TransactionDetailDrawer({
         type: "EXPENSE",
         amount: "",
         category: "",
-        date: formatLocalDate(),
+        date: new Date().toISOString().split("T")[0],
         description: "",
         paymentMethod: "CARD",
         vendor: "",
@@ -340,17 +339,17 @@ export function TransactionDetailDrawer({
       setSelectedFile(null);
     } else if (transaction) {
       // Mode visualisation/édition: pré-remplir avec les données
-      let formattedDate = formatLocalDate();
+      let formattedDate = new Date().toISOString().split("T")[0];
       if (transaction.date) {
         if (typeof transaction.date === "object" && transaction.date.$date) {
-          formattedDate = formatLocalDate(new Date(transaction.date.$date));
+          formattedDate = new Date(transaction.date.$date).toISOString().split("T")[0];
         } else if (typeof transaction.date === "string") {
           if (transaction.date.match(/^\d{4}-\d{2}-\d{2}$/)) {
             formattedDate = transaction.date;
           } else {
             const parsedDate = new Date(transaction.date);
             if (!isNaN(parsedDate.getTime())) {
-              formattedDate = formatLocalDate(parsedDate);
+              formattedDate = parsedDate.toISOString().split("T")[0];
             }
           }
         }

@@ -8,7 +8,6 @@ import {
 import { GET_EXPENSES } from "../graphql/queries/expense";
 import { useRequiredWorkspace } from "./useWorkspace";
 import { mapCategoryToEnum } from "@/app/dashboard/outils/transactions/components/transactions/utils/mappers";
-import { formatLocalDate } from "@/src/utils/dateFormatter";
 
 /**
  * Hook pour la gestion des dépenses
@@ -79,7 +78,7 @@ export const useExpense = () => {
             }
           }
           // Fallback vers la date actuelle si invalide ou manquante
-          return formatLocalDate();
+          return new Date().toISOString().split("T")[0];
         })(),
         vendor: transactionData.vendor_name || "",
         vendorVatNumber:

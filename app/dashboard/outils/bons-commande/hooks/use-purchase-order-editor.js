@@ -16,7 +16,6 @@ import {
   usePurchaseOrder,
 } from "@/src/graphql/purchaseOrderQueries";
 import { usePurchaseOrderNumber } from "./use-purchase-order-number";
-import { formatLocalDate } from "@/src/utils/dateFormatter";
 
 // const AUTOSAVE_DELAY = 30000; // 30 seconds - DISABLED
 
@@ -914,7 +913,6 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
           if (q.shipping) setValue('shipping', q.shipping);
           if (q.purchaseOrderNumber) setValue('purchaseOrderNumber', q.purchaseOrderNumber);
           if (q.isReverseCharge != null) setValue('isReverseCharge', q.isReverseCharge);
-          if (q.operationType != null) setValue('operationType', q.operationType);
           if (q.retenueGarantie != null) setValue('retenueGarantie', q.retenueGarantie);
           if (q.escompte != null) setValue('escompte', q.escompte);
         } catch (e) {
@@ -1665,8 +1663,8 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
 
 // Helper functions
 function getInitialFormData(mode, initialData, session, organization) {
-  const today = formatLocalDate();
-  const defaultValidUntil = formatLocalDate(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000));
+  const today = new Date().toISOString().split("T")[0];
+  const defaultValidUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
 
   // Auto-remplissage du companyInfo avec les données d'organisation
   const addressString = organization
@@ -1752,9 +1750,6 @@ function getInitialFormData(mode, initialData, session, organization) {
 
     // Position du client dans le PDF
     clientPositionRight: organization?.purchaseOrderClientPositionRight || false,
-
-    // Nature de l'opération
-    operationType: null,
 
     // Livraison
     shipping: {
@@ -1900,7 +1895,7 @@ function transformPurchaseOrderToFormData(purchaseOrder) {
           // Fallback : issueDate + 30 jours si validUntil n'existe pas
           const base = issueDate ? new Date(issueDate) : new Date();
           base.setDate(base.getDate() + 30);
-          return formatLocalDate(base);
+          return base.toISOString().split("T")[0];
         })(),
     deliveryDate: deliveryDate,
     status: purchaseOrder.status || "DRAFT",
@@ -2159,24 +2154,24 @@ function transformFormDataToInput(
 
   let issueDate = formData.issueDate;
   if (previousStatus === "DRAFT" && formData.status === "CONFIRMED") {
-    issueDate = formatLocalDate();
+    issueDate = new Date().toISOString().split("T")[0];
   }
 
   // S'assurer qu'on a toujours une date d'émission valide
   if (!issueDate) {
-    issueDate = formatLocalDate();
+    issueDate = new Date().toISOString().split("T")[0];
   } else {
     // S'assurer que la date est au bon format
     try {
       const d = new Date(issueDate);
       if (isNaN(d.getTime())) {
-        issueDate = formatLocalDate();
+        issueDate = new Date().toISOString().split("T")[0];
       } else {
         // Reformater pour s'assurer du format YYYY-MM-DD
-        issueDate = formatLocalDate(d);
+        issueDate = d.toISOString().split("T")[0];
       }
     } catch (e) {
-      issueDate = formatLocalDate();
+      issueDate = new Date().toISOString().split("T")[0];
     }
   }
 
@@ -2190,7 +2185,7 @@ function transformFormDataToInput(
       } else {
         const d = new Date(formData.deliveryDate);
         if (!isNaN(d.getTime())) {
-          deliveryDate = formatLocalDate(d);
+          deliveryDate = d.toISOString().split("T")[0];
         }
       }
     } catch (e) {
@@ -2324,7 +2319,6 @@ function transformFormDataToInput(
       : null,
     isReverseCharge: formData.isReverseCharge || false,
     clientPositionRight: formData.clientPositionRight || false,
-    ...(formData.operationType && { operationType: formData.operationType }),
   };
 }
 

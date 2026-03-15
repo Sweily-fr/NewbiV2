@@ -27,13 +27,13 @@ export const tutorialSteps = [
     placement: "right",
     title: "Tableau de bord",
   },
-  // Étape 4 : Navigation principale - Finances
+  // Étape 4 : Navigation principale - Transactions
   {
-    target: '[data-tutorial="nav-finances"]',
+    target: '[data-tutorial="nav-transactions"]',
     content:
-      "Le menu Finances regroupe vos transactions bancaires synchronisées, vos prévisions et vos mouvements financiers.",
+      "Consultez toutes vos transactions bancaires synchronisées et gérez vos mouvements financiers.",
     placement: "right",
-    title: "Finances",
+    title: "Transactions",
   },
   // Étape 5 : Menu utilisateur
   {

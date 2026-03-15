@@ -72,7 +72,7 @@ export default function UserInfoSection({ onTabChange }) {
       await updateUser(updateData, {
         onSuccess: () => {
           toast.success(
-            `${fieldName === "name" ? "Nom complet" : "Nom"} mis à jour`
+            `${fieldName === "name" ? "Prénom" : "Nom"} mis à jour`
           );
           refetch();
         },
@@ -127,12 +127,12 @@ export default function UserInfoSection({ onTabChange }) {
                   htmlFor="name"
                   className="text-sm text-muted-foreground gap-1"
                 >
-                  Nom complet
+                  Prénom
                 </Label>
                 <Input
                   id="name"
                   type="text"
-                  placeholder="Nom complet"
+                  placeholder="Prénom"
                   defaultValue={session?.user?.name || ""}
                   className="mt-2"
                   {...register("name")}

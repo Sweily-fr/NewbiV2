@@ -17,7 +17,6 @@ import {
   useCheckQuoteNumber,
 } from "@/src/graphql/quoteQueries";
 import { useQuoteNumber } from "./use-quote-number";
-import { formatLocalDate } from "@/src/utils/dateFormatter";
 
 // const AUTOSAVE_DELAY = 30000; // 30 seconds - DISABLED
 
@@ -1648,13 +1647,13 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
 
 // Helper functions
 function getInitialFormData(mode, initialData, session) {
-  const today = formatLocalDate();
+  const today = new Date().toISOString().split("T")[0];
 
   // Utiliser la valeur validUntil existante si elle est disponible
   // sinon définir une date par défaut (aujourd'hui + 30 jours)
   const validUntil =
     initialData?.validUntil ||
-    formatLocalDate(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000));
+    new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
 
   const baseData = {
     // Informations du devis
@@ -1713,9 +1712,6 @@ function getInitialFormData(mode, initialData, session) {
 
     // Position du client dans le PDF
     clientPositionRight: false,
-
-    // Nature de l'opération
-    operationType: null,
 
     // Livraison
     shipping: {
@@ -2040,9 +2036,6 @@ function transformQuoteToFormData(quote) {
     // Position du client dans le PDF
     clientPositionRight: quote.clientPositionRight || false,
 
-    // Nature de l'opération
-    operationType: quote.operationType || null,
-
     // Livraison
     shipping: quote.shipping
       ? {
@@ -2157,24 +2150,24 @@ function transformFormDataToInput(
 
   let issueDate = formData.issueDate;
   if (previousStatus === "DRAFT" && formData.status === "PENDING") {
-    issueDate = formatLocalDate();
+    issueDate = new Date().toISOString().split("T")[0];
   }
 
   // S'assurer qu'on a toujours une date d'émission valide
   if (!issueDate) {
-    issueDate = formatLocalDate();
+    issueDate = new Date().toISOString().split("T")[0];
   } else {
     // S'assurer que la date est au bon format
     try {
       const d = new Date(issueDate);
       if (isNaN(d.getTime())) {
-        issueDate = formatLocalDate();
+        issueDate = new Date().toISOString().split("T")[0];
       } else {
         // Reformater pour s'assurer du format YYYY-MM-DD
-        issueDate = formatLocalDate(d);
+        issueDate = d.toISOString().split("T")[0];
       }
     } catch (e) {
-      issueDate = formatLocalDate();
+      issueDate = new Date().toISOString().split("T")[0];
     }
   }
 
@@ -2310,8 +2303,8 @@ function transformFormDataToInput(
 
     return {
       ...formData,
-      issueDate: formatLocalDate(today),
-      validUntil: formatLocalDate(defaultValidUntil),
+      issueDate: today.toISOString().split("T")[0],
+      validUntil: defaultValidUntil.toISOString().split("T")[0],
       status: formData.status || "DRAFT",
     };
   }
@@ -2454,7 +2447,6 @@ function transformFormDataToInput(
       : null,
     isReverseCharge: formData.isReverseCharge || false,
     clientPositionRight: formData.clientPositionRight || false,
-    ...(formData.operationType && { operationType: formData.operationType }),
   };
 }
 

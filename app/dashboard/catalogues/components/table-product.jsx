@@ -847,7 +847,7 @@ export default function TableProduct({ handleAddProduct, hideHeaderButtons = fal
                           htmlFor={`mobile-${id}-${i}`}
                           className="flex grow justify-between gap-2 font-normal"
                         >
-                          {value || "Aucune catégorie"}{" "}
+                          {value}{" "}
                           <span className="text-muted-foreground ms-2 text-xs">
                             {categoryCounts.get(value)}
                           </span>

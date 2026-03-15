@@ -51,7 +51,7 @@ const scrollbarStyles = `
 `;
 
 // AuthModal Component - Nouveau système d'authentification avec mot de passe optionnel
-function AuthModal({ isOpen, token, shareLinkName, onSuccess, onBanned }) {
+function AuthModal({ isOpen, token, onSuccess, onBanned }) {
   const [step, setStep] = useState('email'); // 'email' | 'password' | 'create_account'
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -170,7 +170,7 @@ function AuthModal({ isOpen, token, shareLinkName, onSuccess, onBanned }) {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Eye className="h-5 w-5 text-primary" />
-            {step === 'email' && (shareLinkName ? `Accès privé → ${shareLinkName}` : "Accès au tableau Kanban")}
+            {step === 'email' && "Accès au tableau Kanban"}
             {step === 'password' && "Connexion"}
             {step === 'create_account' && "Créer votre profil"}
           </DialogTitle>
@@ -377,7 +377,7 @@ function AuthModal({ isOpen, token, shareLinkName, onSuccess, onBanned }) {
 }
 
 // Ancien EmailModal conservé pour compatibilité (sera supprimé plus tard)
-function EmailModal({ isOpen, onSubmit, loading, error, shareLinkName }) {
+function EmailModal({ isOpen, onSubmit, loading, error }) {
   const [email, setEmail] = useState("");
   const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
@@ -387,7 +387,7 @@ function EmailModal({ isOpen, onSubmit, loading, error, shareLinkName }) {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Eye className="h-5 w-5 text-primary" />
-            {shareLinkName ? `Accès privé → ${shareLinkName}` : "Accès au tableau Kanban"}
+            Accès au tableau Kanban
           </DialogTitle>
           <DialogDescription>Veuillez renseigner votre adresse email pour accéder à ce tableau.</DialogDescription>
         </DialogHeader>
@@ -2712,7 +2712,6 @@ export default function PublicKanbanPage({ params }) {
   const [accessError, setAccessError] = useState(null);
   const [isBanned, setIsBanned] = useState(false);
   const [banReason, setBanReason] = useState(null);
-  const [shareLinkName, setShareLinkName] = useState(null);
   const [boardData, setBoardData] = useState(null);
   const [permissions, setPermissions] = useState(null);
   const [selectedTask, setSelectedTask] = useState(null);
@@ -2844,15 +2843,13 @@ export default function PublicKanbanPage({ params }) {
     const initSession = async () => {
       if (!token) return;
       
-      // Valider le token d'abord (retourne le nom du lien si valide, null sinon)
+      // Valider le token d'abord
       const tokenResult = await validateToken({ variables: { token } });
-      const linkName = tokenResult.data?.validatePublicToken;
-      if (!linkName) {
+      if (!tokenResult.data?.validatePublicToken) {
         setAccessError("Ce lien de partage n'est plus valide ou a expiré.");
         setIsInitializing(false);
         return;
       }
-      setShareLinkName(linkName);
       
       // Vérifier si on a une session UserInvited stockée (nouveau système)
       try {
@@ -3188,12 +3185,11 @@ export default function PublicKanbanPage({ params }) {
 
   return (
     <div className="min-h-screen bg-background">
-      <AuthModal
-        isOpen={showAuthModal}
-        token={token}
-        shareLinkName={shareLinkName}
-        onSuccess={handleAuthSuccess}
-        onBanned={handleAuthBanned}
+      <AuthModal 
+        isOpen={showAuthModal} 
+        token={token} 
+        onSuccess={handleAuthSuccess} 
+        onBanned={handleAuthBanned} 
       />
       <ProfileModal isOpen={showProfileModal} onClose={() => setShowProfileModal(false)} visitorProfile={visitorProfile} onSave={handleProfileSave} loading={updatingProfile} token={token} visitorEmail={visitorEmail} />
       

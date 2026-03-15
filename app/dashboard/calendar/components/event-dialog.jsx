@@ -685,7 +685,6 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
             <EmailReminderToggle
               value={emailReminder}
               onChange={setEmailReminder}
-              allDay={allDay}
             />
           )}
 

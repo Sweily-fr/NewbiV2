@@ -11,7 +11,7 @@ function SiteHeaderContent() {
 
   return (
     <header
-      className={`shrink-0 border-b transition-[width,height] ease-linear sticky top-0 z-30 w-full bg-background`}
+      className={`shrink-0 border-b transition-[width,height] ease-linear sticky top-0 z-30 w-full ${!isEmailVerified ? "bg-amber-500/10 dark:bg-amber-500/10" : "bg-background"}`}
       style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
     >
       <div className="flex h-10 items-center gap-1 px-4 lg:gap-2 lg:px-6">

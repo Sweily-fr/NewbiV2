@@ -55,7 +55,6 @@ import { cn } from "@/src/lib/utils";
 import {
   generateInvoicePrefix,
 } from "@/src/utils/invoiceUtils";
-import { formatLocalDate } from "@/src/utils/dateFormatter";
 import {
   useLastInvoicePrefix,
   GET_SITUATION_INVOICES_BY_QUOTE_REF,
@@ -513,7 +512,7 @@ export default function InvoiceInfoSection({
       const today = new Date();
       const dueDate = new Date(today);
       dueDate.setDate(today.getDate() + 30);
-      setValue("dueDate", formatLocalDate(dueDate), {
+      setValue("dueDate", dueDate.toISOString().split("T")[0], {
         shouldValidate: true,
       });
     }
@@ -542,7 +541,7 @@ export default function InvoiceInfoSection({
   // Set default issue date to today if not already set
   React.useEffect(() => {
     if (!data.issueDate) {
-      const today = formatLocalDate();
+      const today = new Date().toISOString().split("T")[0];
       setValue("issueDate", today, { shouldValidate: true });
     }
   }, [data.issueDate, setValue]);
@@ -753,7 +752,7 @@ export default function InvoiceInfoSection({
                     const issueDate = new Date(data.issueDate || new Date());
                     const dueDate = new Date(issueDate);
                     dueDate.setDate(dueDate.getDate() + days);
-                    setValue("dueDate", formatLocalDate(dueDate), {
+                    setValue("dueDate", dueDate.toISOString().split("T")[0], {
                       shouldDirty: true,
                       shouldValidate: true,
                     });

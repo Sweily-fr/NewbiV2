@@ -19,7 +19,6 @@ export const CREATE_EVENT = gql`
         emailReminder {
           enabled
           anticipation
-          echeance
           status
           scheduledFor
         }
@@ -48,7 +47,6 @@ export const UPDATE_EVENT = gql`
         emailReminder {
           enabled
           anticipation
-          echeance
           status
           scheduledFor
         }

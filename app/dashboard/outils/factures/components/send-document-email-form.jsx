@@ -78,13 +78,6 @@ export default function SendDocumentEmailForm({
     }
   };
 
-  const handleEmailBlur = (type, input, setInput, setError) => {
-    const email = input.trim();
-    if (email) {
-      addEmail(type, email, setInput, setError);
-    }
-  };
-
   return (
     <div className="space-y-4">
       {/* Destinataire */}
@@ -167,13 +160,11 @@ export default function SendDocumentEmailForm({
                 if (ccError) setCcError("");
               }}
               onKeyDown={(e) => handleEmailKeyDown(e, "cc", ccInput, setCcInput, setCcError)}
-              onBlur={() => handleEmailBlur("cc", ccInput, setCcInput, setCcError)}
               placeholder="email@exemple.com"
               className="flex-1 min-w-[120px] bg-transparent text-sm outline-none placeholder:text-[rgba(0,0,0,0.35)] dark:placeholder:text-[rgba(255,255,255,0.35)]"
             />
             <button
               type="button"
-              onMouseDown={(e) => e.preventDefault()}
               onClick={() => addEmail("cc", ccInput, setCcInput, setCcError)}
               disabled={!ccInput.trim()}
               className="shrink-0 flex items-center justify-center size-6 rounded-md bg-[#5b50ff] text-white hover:bg-[#4a41e0] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
@@ -187,7 +178,7 @@ export default function SendDocumentEmailForm({
           )}
           {!ccError && ccEmails.length === 0 && (
             <p className="text-[11px] text-muted-foreground">
-              Tapez un email puis appuyez sur Entrée, cliquez sur + ou quittez le champ
+              Tapez un email puis appuyez sur Entrée ou cliquez sur +
             </p>
           )}
         </div>
@@ -236,13 +227,11 @@ export default function SendDocumentEmailForm({
                 if (bccError) setBccError("");
               }}
               onKeyDown={(e) => handleEmailKeyDown(e, "bcc", bccInput, setBccInput, setBccError)}
-              onBlur={() => handleEmailBlur("bcc", bccInput, setBccInput, setBccError)}
               placeholder="email@exemple.com"
               className="flex-1 min-w-[120px] bg-transparent text-sm outline-none placeholder:text-[rgba(0,0,0,0.35)] dark:placeholder:text-[rgba(255,255,255,0.35)]"
             />
             <button
               type="button"
-              onMouseDown={(e) => e.preventDefault()}
               onClick={() => addEmail("bcc", bccInput, setBccInput, setBccError)}
               disabled={!bccInput.trim()}
               className="shrink-0 flex items-center justify-center size-6 rounded-md bg-[#5b50ff] text-white hover:bg-[#4a41e0] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
@@ -256,7 +245,7 @@ export default function SendDocumentEmailForm({
           )}
           {!bccError && bccEmails.length === 0 && (
             <p className="text-[11px] text-muted-foreground">
-              Tapez un email puis appuyez sur Entrée, cliquez sur + ou quittez le champ
+              Tapez un email puis appuyez sur Entrée ou cliquez sur +
             </p>
           )}
         </div>

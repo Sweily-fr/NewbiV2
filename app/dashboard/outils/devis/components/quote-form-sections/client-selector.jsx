@@ -12,7 +12,6 @@ import {
   Check,
   Pencil,
   Globe,
-  AlertCircle,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/src/components/ui/card";
@@ -93,7 +92,6 @@ export default function ClientSelector({
 
   // État pour suivre les erreurs de validation
   const [formErrors, setFormErrors] = useState({});
-  const [createError, setCreateError] = useState(null);
 
   const [newClientForm, setNewClientForm] = useState(() => ({
     type: "INDIVIDUAL",
@@ -232,9 +230,34 @@ export default function ClientSelector({
     return type === "COMPANY" ? Building : User;
   };
 
+  // Validation automatique avec debounce quand le formulaire change
+  useEffect(() => {
+    // Ne valider que si le formulaire manuel est affiché
+    if (!createDialogOpen) return;
+
+    // Ne pas valider si le formulaire est vide (état initial)
+    const isFormEmpty =
+      !newClientForm.name &&
+      !newClientForm.email &&
+      !newClientForm.firstName &&
+      !newClientForm.lastName &&
+      !newClientForm.address.street &&
+      !newClientForm.address.city;
+    if (isFormEmpty) return;
+
+    // Debounce de 500ms
+    const timeoutId = setTimeout(() => {
+      validateForm();
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [newClientForm, createDialogOpen]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Nettoyer les erreurs quand on quitte le formulaire de nouveau client
   useEffect(() => {
+    // Si on n'est pas sur l'onglet "new" ou si le formulaire manuel n'est pas affiché
     if (activeTab !== "new" || !createDialogOpen) {
+      // Supprimer les erreurs de validation globales
       if (setValidationErrors) {
         setValidationErrors((prev) => {
           const newErrors = { ...prev };
@@ -242,8 +265,8 @@ export default function ClientSelector({
           return newErrors;
         });
       }
+      // Nettoyer aussi les erreurs locales
       setFormErrors({});
-      setCreateError(null);
     }
   }, [activeTab, createDialogOpen, setValidationErrors]);
 
@@ -430,18 +453,16 @@ export default function ClientSelector({
 
   // Création du client (applyToInvoice = true pour "Créer et appliquer")
   const handleCreateClient = async (applyToInvoice = true) => {
-    setCreateError(null);
-
     const isValid = validateForm();
     if (!isValid) {
-      setCreateError("Veuillez corriger les erreurs dans le formulaire.");
+      toast.error("Veuillez corriger les erreurs dans le formulaire");
       return;
     }
 
     const clientsList = Array.isArray(clients) ? clients : clients?.items || [];
     const emailExists = clientsList.some(
       (client) =>
-        client.email?.toLowerCase() === newClientForm.email.toLowerCase()
+        client.email.toLowerCase() === newClientForm.email.toLowerCase()
     );
 
     if (emailExists) {
@@ -449,7 +470,7 @@ export default function ClientSelector({
         ...prev,
         email: "Cet email est déjà utilisé par un autre client",
       }));
-      setCreateError("Un client avec cet email existe déjà.");
+      toast.error("Un client avec cet email existe déjà");
       return;
     }
 
@@ -506,45 +527,50 @@ export default function ClientSelector({
         );
       }
     } catch (error) {
-      const msg = error?.message || "";
+      let errorMessage =
+        "Une erreur est survenue lors de la création du client";
 
-      if (
-        error?.extensions?.code === "ALREADY_EXISTS" ||
-        error?.code === "ALREADY_EXISTS" ||
-        msg.toLowerCase().includes("existe déjà") ||
-        msg.toLowerCase().includes("email existe") ||
-        msg.includes("409")
+      if (error.message.includes("Network Error")) {
+        errorMessage =
+          "Erreur de connexion au serveur. Vérifiez votre connexion Internet.";
+      } else if (
+        error.message.includes("400") ||
+        error.message.includes("Validation Error") ||
+        error.message.includes("ClientInput")
       ) {
-        setCreateError(
-          "Un client avec cet email existe déjà. Veuillez utiliser un email différent ou sélectionner ce client dans la liste."
-        );
+        errorMessage =
+          "Erreur de validation. Vérifiez que tous les champs sont correctement remplis.";
+      } else if (
+        error.message.includes("409") ||
+        error.message.toLowerCase().includes("existe déjà") ||
+        error.message.toLowerCase().includes("email existe") ||
+        error.extensions?.code === "ALREADY_EXISTS" ||
+        error.code === "ALREADY_EXISTS"
+      ) {
+        errorMessage =
+          "Un client avec cet email existe déjà. Veuillez utiliser un email différent ou sélectionner ce client dans la liste.";
         setFormErrors((prev) => ({
           ...prev,
           email: "Cet email est déjà utilisé par un autre client",
         }));
-      } else if (msg.includes("Network Error")) {
-        setCreateError(
-          "Erreur de connexion au serveur. Vérifiez votre connexion Internet."
-        );
       } else if (
-        msg.includes("400") ||
-        msg.includes("Validation Error") ||
-        msg.includes("ClientInput")
+        error.message.includes("401") ||
+        error.message.includes("403")
       ) {
-        setCreateError(
-          "Erreur de validation. Vérifiez que tous les champs sont correctement remplis."
-        );
-      } else if (msg.includes("401") || msg.includes("403")) {
-        setCreateError(
-          "Vous n'avez pas les droits nécessaires pour effectuer cette action."
-        );
-      } else if (msg.includes("500")) {
-        setCreateError("Erreur serveur. Veuillez réessayer plus tard.");
-      } else {
-        setCreateError(
-          "Une erreur est survenue lors de la création du client."
-        );
+        errorMessage =
+          "Vous n'avez pas les droits nécessaires pour effectuer cette action.";
+      } else if (error.message.includes("500")) {
+        errorMessage = "Erreur serveur. Veuillez réessayer plus tard.";
       }
+
+      toast.error(errorMessage, {
+        duration: 5000,
+        position: "top-center",
+        action: {
+          label: "Fermer",
+          onClick: () => {},
+        },
+      });
     }
   };
 
@@ -565,7 +591,6 @@ export default function ClientSelector({
       notes: "",
     });
     setFormErrors({});
-    setCreateError(null);
   };
 
   const handleSwitchToNewClient = () => {
@@ -990,12 +1015,6 @@ export default function ClientSelector({
           </DialogHeader>
 
           <div className="flex-1 overflow-y-auto px-6 py-5">
-          {createError && (
-            <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 dark:border-red-900/50 dark:bg-red-950/50 p-3 mb-5">
-              <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400 mt-0.5 shrink-0" />
-              <p className="text-sm text-red-700 dark:text-red-300">{createError}</p>
-            </div>
-          )}
           <div className="space-y-5">
             {/* Type de client */}
             <div className="space-y-2">

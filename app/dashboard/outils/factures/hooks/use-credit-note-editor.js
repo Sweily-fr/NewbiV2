@@ -14,7 +14,6 @@ import {
 import { useInvoice } from "@/src/graphql/invoiceQueries";
 import { useUser } from "@/src/lib/auth/hooks";
 import { useCreditNoteNumber } from "./use-credit-note-number";
-import { formatLocalDate } from "@/src/utils/dateFormatter";
 
 export function useCreditNoteEditor({
   mode,
@@ -381,7 +380,7 @@ function getInitialFormData(
     creditType: CREDIT_TYPE.CORRECTION,
     reason: "",
     status: "CREATED",
-    issueDate: formatLocalDate(),
+    issueDate: new Date().toISOString().split("T")[0],
     refundMethod: REFUND_METHOD.NEXT_INVOICE,
     headerNotes: "",
     footerNotes: "",
@@ -406,7 +405,6 @@ function getInitialFormData(
       headerBgColor: "#3b82f6",
     },
     clientPositionRight: false,
-    operationType: null,
     ...initialData,
   };
 }
@@ -423,7 +421,7 @@ function transformInvoiceToCreditNoteFormData(
     creditType: CREDIT_TYPE.CORRECTION,
     reason: "",
     status: "CREATED",
-    issueDate: formatLocalDate(),
+    issueDate: new Date().toISOString().split("T")[0],
     refundMethod: REFUND_METHOD.NEXT_INVOICE,
     headerNotes: invoice.headerNotes || "",
     footerNotes: invoice.footerNotes || "",
@@ -457,7 +455,6 @@ function transformInvoiceToCreditNoteFormData(
       headerBgColor: "#3b82f6",
     },
     clientPositionRight: invoice.clientPositionRight || false,
-    operationType: invoice.operationType || null,
   };
 }
 
@@ -469,11 +466,11 @@ function transformCreditNoteToFormData(creditNote) {
     reason: creditNote.reason || "",
     status: creditNote.status || "CREATED",
     issueDate: (() => {
-      if (!creditNote.issueDate) return formatLocalDate();
+      if (!creditNote.issueDate) return new Date().toISOString().split("T")[0];
       const date = new Date(creditNote.issueDate);
       return isNaN(date.getTime())
-        ? formatLocalDate()
-        : formatLocalDate(date);
+        ? new Date().toISOString().split("T")[0]
+        : date.toISOString().split("T")[0];
     })(),
     refundMethod: creditNote.refundMethod || REFUND_METHOD.NEXT_INVOICE,
     headerNotes: creditNote.headerNotes || "",
@@ -499,7 +496,6 @@ function transformCreditNoteToFormData(creditNote) {
       headerBgColor: "#3b82f6",
     },
     clientPositionRight: creditNote.clientPositionRight || false,
-    operationType: creditNote.operationType || null,
   };
 }
 
@@ -609,7 +605,6 @@ function transformFormDataToInput(formData, originalInvoiceId) {
     bankDetails: cleanedData.bankDetails,
     appearance: cleanedData.appearance,
     clientPositionRight: cleanedData.clientPositionRight || false,
-    ...(cleanedData.operationType && { operationType: cleanedData.operationType }),
     // Exclude calculated fields - these are computed on the backend
     // totalHT, totalVAT, finalTotalHT, finalTotalTTC, discountAmount
   };

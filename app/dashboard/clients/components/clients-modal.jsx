@@ -26,7 +26,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  VisuallyHidden,
 } from "@/src/components/ui/dialog";
 import { Label } from "@/src/components/ui/label";
 import { Input } from "@/src/components/ui/input";
@@ -144,7 +143,6 @@ export default function ClientsModal({
   const [pendingNotes, setPendingNotes] = useState([]);
   const [customFieldValues, setCustomFieldValues] = useState({});
   const [clientContacts, setClientContacts] = useState([]);
-  const [contactErrors, setContactErrors] = useState({});
   const [isReminderDialogOpen, setIsReminderDialogOpen] = useState(false);
   const clientType = watch("type");
   const isInternational = watch("isInternational");
@@ -463,57 +461,15 @@ export default function ClientsModal({
     }
   };
 
-  // Valider tous les contacts avant soumission
-  const validateAllContacts = () => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const phoneRegex = /^[\d\s\-+().]{6,20}$/;
-    const allErrors = {};
-    let hasErrors = false;
-
-    clientContacts.forEach((contact) => {
-      const contactErr = {};
-
-      if (!contact.firstName && !contact.lastName) {
-        contactErr.name = "Le prénom ou le nom est requis";
-      }
-
-      if (!contact.email && !contact.phone) {
-        contactErr.contact = "Un email ou un téléphone est requis";
-      }
-
-      if (contact.email && !emailRegex.test(contact.email)) {
-        contactErr.email = "Email invalide";
-      }
-
-      if (contact.phone && !phoneRegex.test(contact.phone)) {
-        contactErr.phone = "Téléphone invalide";
-      }
-
-      if (Object.keys(contactErr).length > 0) {
-        allErrors[contact.id] = contactErr;
-        hasErrors = true;
-      }
-    });
-
-    setContactErrors(allErrors);
-    return hasErrors;
-  };
-
   const onSubmit = async (formData) => {
     try {
       // Validation finale avant soumission
       const hasFormErrors = Object.keys(errors).length > 0;
       const hasCustomErrors = Object.keys(customErrors).length > 0;
-      const hasContactErrors = clientType === "COMPANY" && validateAllContacts();
 
-      if (hasFormErrors || hasCustomErrors || hasContactErrors) {
-        const errorMessages = [];
-        if (hasFormErrors) errorMessages.push("des champs du formulaire");
-        if (hasCustomErrors) errorMessages.push("des champs personnalisés");
-        if (hasContactErrors) errorMessages.push("des contacts additionnels");
-
+      if (hasFormErrors || hasCustomErrors) {
         toast.error(
-          `Veuillez corriger les erreurs dans ${errorMessages.join(" et ")}`
+          "Veuillez corriger les erreurs avant de soumettre le formulaire"
         );
         return;
       }
@@ -614,15 +570,13 @@ export default function ClientsModal({
         });
       }
       setCustomErrors({});
-      setContactErrors({});
       setHasDifferentShipping(false);
       setShowCompanySearch(false);
       setCompanyQuery("");
       setCompanies([]);
     } catch (error) {
-      // Afficher une toast d'erreur précise
-      const message = error.message || "Une erreur est survenue";
-      toast.error(isEditing ? `Impossible de modifier le client : ${message}` : `Impossible de créer le client : ${message}`);
+      // La notification d'erreur est déjà gérée par le hook useCreateClient/useUpdateClient
+      // Ne pas afficher de notification supplémentaire ici
       // Ne pas fermer le modal en cas d'erreur
     }
   };
@@ -635,8 +589,6 @@ export default function ClientsModal({
         </Button>
       </DialogTrigger>
       <DialogContent
-        showCloseButton={!isMobile}
-        aria-describedby={isMobile ? undefined : undefined}
         className={`flex flex-col p-0 overflow-hidden ${
           isMobile
             ? "!fixed !inset-0 !w-screen !max-w-none !m-0 !rounded-none !translate-x-0 !translate-y-0"
@@ -1292,14 +1244,7 @@ export default function ClientsModal({
                     {clientType === "COMPANY" && (
                       <ClientContactsForm
                         contacts={clientContacts}
-                        onChange={(contacts) => {
-                          setClientContacts(contacts);
-                          // Réinitialiser les erreurs de contacts quand l'utilisateur modifie
-                          if (Object.keys(contactErrors).length > 0) {
-                            setContactErrors({});
-                          }
-                        }}
-                        contactErrors={contactErrors}
+                        onChange={setClientContacts}
                       />
                     )}
 
@@ -1351,32 +1296,17 @@ export default function ClientsModal({
         ) : (
           // Mode mobile : Onglets (création et édition)
           <Tabs defaultValue="form" className="flex flex-col h-full gap-0">
-            {/* DialogTitle caché pour l'accessibilité (Radix exige un DialogTitle) */}
-            <VisuallyHidden>
-              <DialogTitle>{client ? "Modifier le client" : "Ajouter un client"}</DialogTitle>
-            </VisuallyHidden>
-            {/* Header sticky avec X pour fermer — même pattern que devis */}
-            <div className="sticky top-0 z-10 bg-background border-b">
-              <div className="flex items-start justify-between p-4">
-                <div className="flex flex-col gap-1">
-                  <h2 className="text-lg font-normal">
-                    {client ? "Modifier le client" : "Ajouter un client"}
-                  </h2>
-                  <p className="text-sm text-muted-foreground">
-                    {client
-                      ? "Modifiez les informations du client"
-                      : "Créez un nouveau client pour votre entreprise"}
-                  </p>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => onOpenChange(false)}
-                  className="h-8 w-8"
-                >
-                  <X className="h-5 w-5" />
-                </Button>
-              </div>
+            <div className="flex-shrink-0 p-6 pb-4 border-b">
+              <DialogHeader>
+                <DialogTitle className="text-left">
+                  {client ? "Modifier le client" : "Ajouter un client"}
+                </DialogTitle>
+                <DialogDescription className="text-left">
+                  {client
+                    ? "Modifiez les informations du client"
+                    : "Créez un nouveau client pour votre entreprise"}
+                </DialogDescription>
+              </DialogHeader>
             </div>
 
             <TabsList className="flex-shrink-0 grid w-full grid-cols-2 rounded-none border-b py-1.5 px-4">
@@ -1388,12 +1318,12 @@ export default function ClientsModal({
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="form" className="flex-1 overflow-hidden m-0 flex flex-col min-h-0">
+            <TabsContent value="form" className="flex-1 overflow-hidden m-0">
               <form
                 onSubmit={handleSubmit(onSubmit)}
                 className="flex flex-col h-full"
               >
-                <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4 pb-32">
+                <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
                   <div className="space-y-4">
                     {/* Type de client + Localisation côte à côte */}
                     <div className="flex items-start gap-3">
@@ -2019,13 +1949,7 @@ export default function ClientsModal({
                     {clientType === "COMPANY" && (
                       <ClientContactsForm
                         contacts={clientContacts}
-                        onChange={(contacts) => {
-                          setClientContacts(contacts);
-                          if (Object.keys(contactErrors).length > 0) {
-                            setContactErrors({});
-                          }
-                        }}
-                        contactErrors={contactErrors}
+                        onChange={setClientContacts}
                       />
                     )}
 
@@ -2038,17 +1962,18 @@ export default function ClientsModal({
                   </div>
                 </div>
 
-                {/* Footer fixed bottom — même pattern que devis */}
                 <div
-                  className="fixed bottom-0 left-0 right-0 flex gap-3 px-4 py-3 border-t bg-background"
-                  style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
+                  className="flex-shrink-0 flex gap-3 px-6 border-t bg-background"
+                  style={{
+                    paddingTop: "1rem",
+                    paddingBottom: "calc(1rem + env(safe-area-inset-bottom))",
+                  }}
                 >
                   <Button
                     type="button"
-                    variant="outline"
+                    variant="secondary"
                     onClick={() => onOpenChange(false)}
-                    className="flex-1 font-normal"
-                    size="sm"
+                    className="flex-1"
                   >
                     Annuler
                   </Button>
@@ -2059,8 +1984,7 @@ export default function ClientsModal({
                       Object.keys(errors).length > 0 ||
                       Object.keys(customErrors).length > 0
                     }
-                    className="flex-1 font-normal"
-                    size="sm"
+                    className="flex-1"
                   >
                     {loading
                       ? "Enregistrement..."

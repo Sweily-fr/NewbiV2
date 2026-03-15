@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { toast } from '@/src/components/ui/sonner';
 import { Button } from '@/src/components/ui/button';
 import { Badge } from '@/src/components/ui/badge';
-import { Checkbox } from '@/src/components/ui/checkbox';
 import { Edit2, Trash2, Users, MoreHorizontal, ChevronFirstIcon, ChevronLastIcon, ChevronLeftIcon, ChevronRightIcon, List } from 'lucide-react';
 import { Empty, EmptyMedia, EmptyHeader, EmptyTitle, EmptyDescription, EmptyContent } from '@/src/components/ui/empty';
 import {
@@ -96,21 +95,30 @@ export default function ClientListsView({ workspaceId, lists, onListsUpdated, se
       {
         id: 'select',
         header: ({ table }) => {
-          const allSelected = table.getIsAllRowsSelected();
-          const someSelected = table.getIsSomeRowsSelected();
+          const checkboxRef = React.useRef(null);
+          React.useEffect(() => {
+            if (checkboxRef.current) {
+              checkboxRef.current.indeterminate = table.getIsSomeRowsSelected() && !table.getIsAllRowsSelected();
+            }
+          }, [table.getIsSomeRowsSelected(), table.getIsAllRowsSelected()]);
           return (
-            <Checkbox
-              checked={allSelected || (someSelected && "indeterminate")}
-              onCheckedChange={(value) => table.toggleAllRowsSelected(!!value)}
-              aria-label="Sélectionner tout"
+            <input
+              ref={checkboxRef}
+              type="checkbox"
+              checked={table.getIsAllRowsSelected()}
+              onChange={table.getToggleAllRowsSelectedHandler()}
+              className="cursor-pointer"
+              role="checkbox"
             />
           );
         },
         cell: ({ row }) => (
-          <Checkbox
+          <input
+            type="checkbox"
             checked={row.getIsSelected()}
-            onCheckedChange={(value) => row.toggleSelected(!!value)}
-            aria-label="Sélectionner la ligne"
+            onChange={row.getToggleSelectedHandler()}
+            className="cursor-pointer"
+            role="checkbox"
           />
         ),
         size: 40,

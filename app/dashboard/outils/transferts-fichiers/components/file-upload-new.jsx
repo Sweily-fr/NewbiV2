@@ -758,8 +758,9 @@ export default function FileUploadNew({
             </Select>
           </div>
 
-          {/* Separator + Payment — désactivé temporairement, à remettre plus tard
           <Separator />
+
+          {/* Payment */}
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <IconCreditCard className="size-4 text-muted-foreground" />
@@ -821,7 +822,9 @@ export default function FileUploadNew({
                       }
                       onChange={(e) => {
                         const value = e.target.value;
+                        // Permettre seulement les chiffres, points et virgules
                         if (value === "" || /^[0-9]*[.,]?[0-9]*$/.test(value)) {
+                          // Remplacer la virgule par un point pour le parsing
                           const normalizedValue = value.replace(",", ".");
                           handleOptionChange(
                             "paymentAmount",
@@ -838,6 +841,28 @@ export default function FileUploadNew({
                     </span>
                   </div>
                 </div>
+                {/* <div className="space-y-2">
+                  <Label className="text-sm font-normal">Montant</Label>
+                  <div className="relative">
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={transferOptions.paymentAmount}
+                      onChange={(e) =>
+                        handleOptionChange(
+                          "paymentAmount",
+                          parseFloat(e.target.value) || 0
+                        )
+                      }
+                      placeholder="0.00"
+                      className="pr-8"
+                    />
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                      <span className="text-muted-foreground text-sm">€</span>
+                    </div>
+                  </div>
+                </div> */}
                 {stripeConnected && !canReceivePayments && (
                   <Callout type="info" noMargin>
                     <h4 className="text-sm font-medium mb-2">
@@ -864,9 +889,6 @@ export default function FileUploadNew({
               </div>
             )}
           </div>
-
-          <Separator />
-          */}
 
           <Separator />
 
@@ -1022,11 +1044,11 @@ export default function FileUploadNew({
                 checked={transferOptions.applyWatermark}
                 onCheckedChange={(checked) => {
                   handleOptionChange("applyWatermark", checked);
-                  // Désactiver le paiement si filigrane activé — désactivé temporairement
-                  // if (checked && transferOptions.requirePayment) {
-                  //   handleOptionChange("requirePayment", false);
-                  //   handleOptionChange("paymentAmount", 0);
-                  // }
+                  // Désactiver le paiement si filigrane activé
+                  if (checked && transferOptions.requirePayment) {
+                    handleOptionChange("requirePayment", false);
+                    handleOptionChange("paymentAmount", 0);
+                  }
                 }}
                 disabled={watermarkableCount === 0}
                 className="data-[state=checked]:bg-[#5a50ff] scale-75 cursor-pointer"

@@ -34,7 +34,6 @@ import {
 } from "@/src/graphql/kanbanQueries";
 import Column from "./Column";
 import AddColumnDialog from "./AddColumnDialog";
-import { formatLocalDate } from "@/src/utils/dateFormatter";
 
 const Board = () => {
   const { id } = useParams();
@@ -434,7 +433,7 @@ const Board = () => {
                   try {
                     const date = new Date(dateString);
                     // Formater en YYYY-MM-DD pour une comparaison précise
-                    return formatLocalDate(date);
+                    return date.toISOString().split("T")[0];
                   } catch (e) {
                     return "";
                   }

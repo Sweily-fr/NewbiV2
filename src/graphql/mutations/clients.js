@@ -40,11 +40,9 @@ export const CREATE_CLIENT = gql`
         fieldId
         value
       }
-      assignedMembers
       isBlocked
       blockedAt
       blockedReason
-      hasDocuments
       notes {
         id
         content
@@ -122,11 +120,9 @@ export const UPDATE_CLIENT = gql`
         fieldId
         value
       }
-      assignedMembers
       isBlocked
       blockedAt
       blockedReason
-      hasDocuments
       notes {
         id
         content
