@@ -26,6 +26,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  VisuallyHidden,
 } from "@/src/components/ui/dialog";
 import { Label } from "@/src/components/ui/label";
 import { Input } from "@/src/components/ui/input";
@@ -634,6 +635,8 @@ export default function ClientsModal({
         </Button>
       </DialogTrigger>
       <DialogContent
+        showCloseButton={!isMobile}
+        aria-describedby={isMobile ? undefined : undefined}
         className={`flex flex-col p-0 overflow-hidden ${
           isMobile
             ? "!fixed !inset-0 !w-screen !max-w-none !m-0 !rounded-none !translate-x-0 !translate-y-0"
@@ -1348,17 +1351,32 @@ export default function ClientsModal({
         ) : (
           // Mode mobile : Onglets (création et édition)
           <Tabs defaultValue="form" className="flex flex-col h-full gap-0">
-            <div className="flex-shrink-0 p-6 pb-4 border-b">
-              <DialogHeader>
-                <DialogTitle className="text-left">
-                  {client ? "Modifier le client" : "Ajouter un client"}
-                </DialogTitle>
-                <DialogDescription className="text-left">
-                  {client
-                    ? "Modifiez les informations du client"
-                    : "Créez un nouveau client pour votre entreprise"}
-                </DialogDescription>
-              </DialogHeader>
+            {/* DialogTitle caché pour l'accessibilité (Radix exige un DialogTitle) */}
+            <VisuallyHidden>
+              <DialogTitle>{client ? "Modifier le client" : "Ajouter un client"}</DialogTitle>
+            </VisuallyHidden>
+            {/* Header sticky avec X pour fermer — même pattern que devis */}
+            <div className="sticky top-0 z-10 bg-background border-b">
+              <div className="flex items-start justify-between p-4">
+                <div className="flex flex-col gap-1">
+                  <h2 className="text-lg font-normal">
+                    {client ? "Modifier le client" : "Ajouter un client"}
+                  </h2>
+                  <p className="text-sm text-muted-foreground">
+                    {client
+                      ? "Modifiez les informations du client"
+                      : "Créez un nouveau client pour votre entreprise"}
+                  </p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => onOpenChange(false)}
+                  className="h-8 w-8"
+                >
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
             </div>
 
             <TabsList className="flex-shrink-0 grid w-full grid-cols-2 rounded-none border-b py-1.5 px-4">
@@ -1370,12 +1388,12 @@ export default function ClientsModal({
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="form" className="flex-1 overflow-hidden m-0">
+            <TabsContent value="form" className="flex-1 overflow-hidden m-0 flex flex-col min-h-0">
               <form
                 onSubmit={handleSubmit(onSubmit)}
                 className="flex flex-col h-full"
               >
-                <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+                <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4 pb-32">
                   <div className="space-y-4">
                     {/* Type de client + Localisation côte à côte */}
                     <div className="flex items-start gap-3">
@@ -2020,18 +2038,17 @@ export default function ClientsModal({
                   </div>
                 </div>
 
+                {/* Footer fixed bottom — même pattern que devis */}
                 <div
-                  className="flex-shrink-0 flex gap-3 px-6 border-t bg-background"
-                  style={{
-                    paddingTop: "1rem",
-                    paddingBottom: "calc(1rem + env(safe-area-inset-bottom))",
-                  }}
+                  className="fixed bottom-0 left-0 right-0 flex gap-3 px-4 py-3 border-t bg-background"
+                  style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
                 >
                   <Button
                     type="button"
-                    variant="secondary"
+                    variant="outline"
                     onClick={() => onOpenChange(false)}
-                    className="flex-1"
+                    className="flex-1 font-normal"
+                    size="sm"
                   >
                     Annuler
                   </Button>
@@ -2042,7 +2059,8 @@ export default function ClientsModal({
                       Object.keys(errors).length > 0 ||
                       Object.keys(customErrors).length > 0
                     }
-                    className="flex-1"
+                    className="flex-1 font-normal"
+                    size="sm"
                   >
                     {loading
                       ? "Enregistrement..."
