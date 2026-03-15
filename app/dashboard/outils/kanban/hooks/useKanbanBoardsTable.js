@@ -102,7 +102,7 @@ export function useKanbanBoardsTable({
             onClick={(e) => e.stopPropagation()}
           />
         ),
-        size: 28,
+        size: 44,
         enableSorting: false,
         enableHiding: false,
       },

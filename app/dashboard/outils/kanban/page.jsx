@@ -422,20 +422,23 @@ function KanbanPageContent() {
               <thead>
                 {table.getHeaderGroups().map((headerGroup) => (
                   <tr key={headerGroup.id}>
-                    {headerGroup.headers.map((header, index, arr) => (
-                      <th
-                        key={header.id}
-                        style={{ width: header.getSize() }}
-                        className={`h-10 p-2 text-left align-middle font-normal text-xs text-muted-foreground ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
-                      >
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
-                      </th>
-                    ))}
+                    {headerGroup.headers.map((header, index, arr) => {
+                      const isTitle = header.column.id === "title";
+                      return (
+                        <th
+                          key={header.id}
+                          style={isTitle ? undefined : { width: header.getSize() }}
+                          className={`h-10 p-2 text-left align-middle font-normal text-xs text-muted-foreground ${isTitle ? "overflow-hidden" : ""} ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
+                        >
+                          {header.isPlaceholder
+                            ? null
+                            : flexRender(
+                                header.column.columnDef.header,
+                                header.getContext()
+                              )}
+                        </th>
+                      );
+                    })}
                   </tr>
                 ))}
               </thead>
@@ -465,18 +468,21 @@ function KanbanPageContent() {
                         );
                       }}
                     >
-                      {row.getVisibleCells().map((cell, index, arr) => (
-                        <td
-                          key={cell.id}
-                          style={{ width: cell.column.getSize() }}
-                          className={`p-2 align-middle text-sm ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
-                        >
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext()
-                          )}
-                        </td>
-                      ))}
+                      {row.getVisibleCells().map((cell, index, arr) => {
+                        const isTitle = cell.column.id === "title";
+                        return (
+                          <td
+                            key={cell.id}
+                            style={isTitle ? undefined : { width: cell.column.getSize() }}
+                            className={`p-2 align-middle text-sm ${isTitle ? "overflow-hidden" : ""} ${index === 0 ? "pl-4 sm:pl-6" : ""} ${index === arr.length - 1 ? "pr-4 sm:pr-6" : ""}`}
+                          >
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext()
+                            )}
+                          </td>
+                        );
+                      })}
                     </tr>
                   ))
                 ) : (

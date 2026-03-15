@@ -75,8 +75,8 @@ export default function ClientDetailTabs({
           text-shadow: 0.015em 0 currentColor, -0.015em 0 currentColor;
         }
       `}</style>
-      <div className="flex-shrink-0 border-b border-[#eeeff1] dark:border-[#232323] pt-2 pb-[9px]">
-        <TabsList className="h-auto rounded-none bg-transparent p-0 w-full justify-start px-4 sm:px-6 gap-1.5">
+      <div className="flex-shrink-0 border-b border-[#eeeff1] dark:border-[#232323] pt-2 pb-[9px] overflow-x-auto scrollbar-none">
+        <TabsList className="h-auto rounded-none bg-transparent p-0 w-max min-w-full justify-start px-4 sm:px-6 gap-1.5">
           <TabsTrigger value="activity" className={tabTriggerClass}>
             <Activity className="h-3.5 w-3.5" />
             Activité
