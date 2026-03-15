@@ -566,7 +566,7 @@ export function NotificationsSection() {
 
                     {/* Contenu */}
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm truncate">
+                      <p className="text-sm truncate max-w-[600px]">
                         <span className="font-normal text-gray-500 dark:text-gray-400">Rejoindre</span>{" "}
                         <span className="font-medium">{invitation.organizationName}</span>
                       </p>
@@ -687,7 +687,7 @@ export function NotificationsSection() {
 
                     {/* Contenu */}
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm truncate">
+                      <p className="text-sm truncate max-w-[600px]">
                         <span className="font-medium">{notification.data?.actorName || "Quelqu'un"}</span>{" "}
                         <span className="font-normal text-gray-500 dark:text-gray-400">
                           {notification.type === "MENTION" ? "vous a mentionné sur" : "vous a assigné à"}

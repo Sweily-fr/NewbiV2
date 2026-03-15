@@ -118,6 +118,21 @@ const UniversalPreviewPDF = ({
   const [scale, setScale] = useState(1);
   const [containerHeight, setContainerHeight] = useState("auto");
 
+  // Résoudre le nom du bénéficiaire selon le paramètre de l'organisation
+  const resolvedBeneficiaryName = (() => {
+    // Déterminer le type depuis les données ou l'organisation
+    const nameType =
+      data.beneficiaryNameType ||
+      organization?.beneficiaryNameType ||
+      (organization?.legalForm === "Auto-entrepreneur" ? "fullName" : "companyName");
+    // Déterminer le nom complet de l'utilisateur
+    const fullName = data.userName || session?.user?.name || "";
+    if (nameType === "fullName" && fullName) {
+      return fullName;
+    }
+    return data.companyInfo?.name || "";
+  })();
+
   // Déterminer si c'est un avoir (credit note)
   const isCreditNote = type === "creditNote";
   const isPurchaseOrder = type === "purchaseOrder";
@@ -738,6 +753,26 @@ const UniversalPreviewPDF = ({
                       </span>
                     </div>
                   </>
+                )}
+                {data.operationType && (
+                  <div
+                    className="flex justify-end"
+                    style={{ fontSize: "10px" }}
+                  >
+                    <span className="font-medium w-38 dark:text-[#0A0A0A] mr-2">
+                      Nature de l'opération:
+                    </span>
+                    <span className="dark:text-[#0A0A0A]">
+                      {(() => {
+                        const labels = {
+                          LB: "Livraison de biens",
+                          PS: "Prestation de services",
+                          LBPS: "Mixte - Biens et services",
+                        };
+                        return labels[data.operationType] || data.operationType;
+                      })()}
+                    </span>
+                  </div>
                 )}
               </div>
             </div>
@@ -2435,7 +2470,7 @@ const UniversalPreviewPDF = ({
                       Nom du bénéficiaire
                     </span>
                     <span className="font-normal">
-                      {data.companyInfo?.name || "Sweily"}
+                      {resolvedBeneficiaryName || "Sweily"}
                     </span>
                   </div>
                   <div className="flex">

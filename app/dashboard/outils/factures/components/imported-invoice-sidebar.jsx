@@ -42,7 +42,7 @@ import {
   AlertTriangle,
   Loader2,
 } from "lucide-react";
-import { formatDateToFrench } from "@/src/utils/dateFormatter";
+import { formatDateToFrench, formatLocalDate } from "@/src/utils/dateFormatter";
 import {
   IMPORTED_INVOICE_STATUS_LABELS,
   IMPORTED_INVOICE_STATUS_COLORS,
@@ -58,7 +58,7 @@ const formatDateForInput = (dateValue) => {
   try {
     const d = /^\d+$/.test(dateValue) ? new Date(parseInt(dateValue, 10)) : new Date(dateValue);
     if (isNaN(d.getTime())) return "";
-    return d.toISOString().split("T")[0];
+    return formatLocalDate(d);
   } catch {
     return "";
   }

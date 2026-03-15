@@ -51,6 +51,7 @@ import UniversalPDFDownloaderWithFacturX from "@/src/components/pdf/UniversalPDF
 import CreditNoteMobileFullscreen from "./credit-note-mobile-fullscreen";
 import { useReconciliationForSidebar } from "@/src/hooks/useReconciliation";
 import { ScrollArea } from "@/src/components/ui/scroll-area";
+import { formatLocalDate } from "@/src/utils/dateFormatter";
 
 export default function InvoiceSidebar({
   isOpen,
@@ -469,7 +470,7 @@ export default function InvoiceSidebar({
 
   const handleMarkAsPaid = async () => {
     try {
-      const today = new Date().toISOString().split("T")[0];
+      const today = formatLocalDate();
       await markAsPaid(invoice.id, today);
       toast.success("Facture marquée comme payée");
       if (onRefetch) onRefetch();

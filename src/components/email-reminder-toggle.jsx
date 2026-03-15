@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Bell, Clock } from "lucide-react";
+import { Bell, Clock, CalendarClock } from "lucide-react";
 import { Label } from "@/src/components/ui/label";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import {
@@ -21,35 +21,75 @@ import {
 /**
  * Composant pour activer/désactiver les rappels email sur une tâche
  */
-export function EmailReminderToggle({ value, onChange, disabled = false }) {
+export function EmailReminderToggle({ value, onChange, disabled = false, allDay = false }) {
   const [enabled, setEnabled] = useState(value?.enabled || false);
   const [anticipation, setAnticipation] = useState(value?.anticipation || null);
+  const [echeance, setEcheance] = useState(value?.echeance || null);
 
   // Synchroniser avec les valeurs externes
   useEffect(() => {
     setEnabled(value?.enabled || false);
     setAnticipation(value?.anticipation || null);
+    setEcheance(value?.echeance || null);
   }, [value]);
 
-  // Gérer le changement d'activation
+  // Si on passe en allDay et que l'anticipation sélectionnée n'est plus valide, reset
+  useEffect(() => {
+    if (allDay) {
+      const validAllDay = [null, "1d", "3d"];
+      if (anticipation && !validAllDay.includes(anticipation)) {
+        setAnticipation(null);
+        onChange({ enabled, anticipation: null, echeance: null });
+      }
+      // Pas d'échéance pour les événements allDay
+      if (echeance) {
+        setEcheance(null);
+      }
+    }
+  }, [allDay]);
+
+  const emitChange = (updates) => {
+    const next = {
+      enabled,
+      anticipation,
+      echeance: allDay ? null : echeance,
+      ...updates,
+    };
+    onChange(next);
+  };
+
   const handleEnabledChange = (checked) => {
     setEnabled(checked);
-    onChange({
+    emitChange({
       enabled: checked,
       anticipation: checked ? anticipation : null,
+      echeance: checked ? echeance : null,
     });
   };
 
-  // Gérer le changement d'anticipation
-  const handleAnticipationChange = (newAnticipation) => {
-    const finalAnticipation =
-      newAnticipation === "none" ? null : newAnticipation;
-    setAnticipation(finalAnticipation);
-    onChange({
-      enabled,
-      anticipation: finalAnticipation,
-    });
+  const handleAnticipationChange = (val) => {
+    const v = val === "none" ? null : val;
+    setAnticipation(v);
+    emitChange({ anticipation: v });
   };
+
+  const handleEcheanceChange = (val) => {
+    const v = val === "none" ? null : val;
+    setEcheance(v);
+    emitChange({ echeance: v });
+  };
+
+  const anticipationOptions = allDay
+    ? [
+        { value: "1d", label: "1 jour avant" },
+        { value: "3d", label: "3 jours avant" },
+      ]
+    : [
+        { value: "1h", label: "1 heure avant" },
+        { value: "3h", label: "3 heures avant" },
+        { value: "1d", label: "1 jour avant" },
+        { value: "3d", label: "3 jours avant" },
+      ];
 
   return (
     <div className="space-y-4 rounded-lg border p-4 bg-muted/30">
@@ -104,36 +144,65 @@ export function EmailReminderToggle({ value, onChange, disabled = false }) {
       </div>
 
       {enabled && (
-        <div className="space-y-2 pl-6">
-          <div className="flex items-center space-x-2">
-            <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-            <Label
-              htmlFor="anticipation"
-              className="text-xs text-muted-foreground"
+        <div className="space-y-4 pl-6">
+          {/* Rappel anticipé */}
+          <div className="space-y-2">
+            <div className="flex items-center space-x-2">
+              <CalendarClock className="h-3.5 w-3.5 text-muted-foreground" />
+              <Label className="text-xs text-muted-foreground">
+                Rappel anticipé
+              </Label>
+            </div>
+            <Select
+              value={anticipation || "none"}
+              onValueChange={handleAnticipationChange}
+              disabled={disabled}
             >
-              Rappel anticipé (optionnel)
-            </Label>
+              <SelectTrigger className="h-9 text-sm">
+                <SelectValue placeholder="Aucun" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Aucun</SelectItem>
+                {anticipationOptions.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-          <Select
-            value={anticipation || "none"}
-            onValueChange={handleAnticipationChange}
-            disabled={disabled}
-          >
-            <SelectTrigger id="anticipation" className="h-9 text-sm">
-              <SelectValue placeholder="Aucun" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">Aucun</SelectItem>
-              <SelectItem value="1h">1 heure avant</SelectItem>
-              <SelectItem value="3h">3 heures avant</SelectItem>
-              <SelectItem value="1d">1 jour avant</SelectItem>
-              <SelectItem value="3d">3 jours avant</SelectItem>
-            </SelectContent>
-          </Select>
+
+          {/* À l'échéance — uniquement pour les événements non allDay */}
+          {!allDay && (
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2">
+                <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                <Label className="text-xs text-muted-foreground">
+                  À l'échéance
+                </Label>
+              </div>
+              <Select
+                value={echeance || "none"}
+                onValueChange={handleEcheanceChange}
+                disabled={disabled}
+              >
+                <SelectTrigger className="h-9 text-sm">
+                  <SelectValue placeholder="Aucun" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Aucun</SelectItem>
+                  <SelectItem value="0m">Au début de l'événement</SelectItem>
+                  <SelectItem value="5m">5 minutes avant</SelectItem>
+                  <SelectItem value="10m">10 minutes avant</SelectItem>
+                  <SelectItem value="15m">15 minutes avant</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {/* Résumé */}
           <p className="text-xs text-muted-foreground">
-            {anticipation
-              ? `Vous recevrez un email ${getAnticipationLabel(anticipation)} et à l'échéance`
-              : "Vous recevrez un email uniquement à l'échéance"}
+            {getSummary(anticipation, echeance, allDay)}
           </p>
         </div>
       )}
@@ -141,13 +210,28 @@ export function EmailReminderToggle({ value, onChange, disabled = false }) {
   );
 }
 
-// Helper pour les labels d'anticipation
-function getAnticipationLabel(anticipation) {
-  const labels = {
-    "1h": "1 heure avant",
-    "3h": "3 heures avant",
-    "1d": "1 jour avant",
-    "3d": "3 jours avant",
-  };
-  return labels[anticipation] || "";
+function getSummary(anticipation, echeance, allDay) {
+  const parts = [];
+
+  if (anticipation) {
+    const labels = {
+      "1h": "1 heure avant",
+      "3h": "3 heures avant",
+      "1d": "1 jour avant",
+      "3d": "3 jours avant",
+    };
+    parts.push(labels[anticipation]);
+  }
+
+  if (!allDay && echeance) {
+    const labels = { "0m": "au début de l'événement", "5m": "5 min avant", "10m": "10 min avant", "15m": "15 min avant" };
+    parts.push(labels[echeance]);
+  }
+
+  if (allDay && !anticipation) {
+    parts.push("à 9h00 le jour de l'événement");
+  }
+
+  if (parts.length === 0) return "Aucun rappel ne sera envoyé";
+  return `Vous recevrez un email ${parts.join(" et ")}`;
 }

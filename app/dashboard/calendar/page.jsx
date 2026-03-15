@@ -80,7 +80,9 @@ export default function Component() {
         color: event.color || "sky",
         location: event.location,
         type: "MANUAL",
-        emailReminder: event.emailReminder?.enabled ? event.emailReminder : undefined,
+        emailReminder: event.emailReminder?.enabled
+          ? { enabled: true, anticipation: event.emailReminder.anticipation || null, echeance: event.emailReminder.echeance || null }
+          : undefined,
       };
       await createEvent(input);
     } catch (error) {
@@ -108,7 +110,9 @@ export default function Component() {
         color: updatedEvent.color,
         location: updatedEvent.location,
         type: updatedEvent.type || "MANUAL",
-        emailReminder: updatedEvent.emailReminder,
+        emailReminder: updatedEvent.emailReminder
+          ? { enabled: updatedEvent.emailReminder.enabled, anticipation: updatedEvent.emailReminder.anticipation || null, echeance: updatedEvent.emailReminder.echeance || null }
+          : undefined,
       });
     } catch (error) {
       console.error("Erreur lors de la mise à jour de l'événement:", error);

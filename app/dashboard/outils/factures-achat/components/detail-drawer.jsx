@@ -57,6 +57,7 @@ import {
   useReconciliationSuggestions,
   useReconcilePurchaseInvoice,
 } from "@/src/hooks/usePurchaseInvoices";
+import { formatLocalDate } from "@/src/utils/dateFormatter";
 
 const STATUS_OPTIONS = [
   { value: "TO_PROCESS", label: "À traiter" },
@@ -181,7 +182,7 @@ export function PurchaseInvoiceDetailDrawer({
       const parseDate = (val) => {
         if (!val) return "";
         const d = new Date(val);
-        return isNaN(d.getTime()) ? "" : d.toISOString().split("T")[0];
+        return isNaN(d.getTime()) ? "" : formatLocalDate(d);
       };
       setForm({
         supplierName: invoice.supplierName || "",
@@ -204,7 +205,7 @@ export function PurchaseInvoiceDetailDrawer({
       setForm({
         supplierName: "",
         invoiceNumber: "",
-        issueDate: new Date().toISOString().split("T")[0],
+        issueDate: formatLocalDate(),
         dueDate: "",
         amountHT: "",
         amountTVA: "",
