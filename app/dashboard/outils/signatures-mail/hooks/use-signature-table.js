@@ -388,7 +388,7 @@ const SIGNATURE_UPDATED_SUBSCRIPTION = gql`
 // Hook pour récupérer les signatures
 export const useSignatures = () => {
   const { data, loading: queryLoading, error: queryError, refetch } = useQuery(GET_MY_EMAIL_SIGNATURES, {
-    fetchPolicy: "network-only",
+    fetchPolicy: "cache-and-network",
     notifyOnNetworkStatusChange: true,
   });
 

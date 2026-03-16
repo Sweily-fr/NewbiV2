@@ -1,50 +1,33 @@
 import { useMemo } from 'react';
 import { useQuery } from '@apollo/client';
-import { GET_QUOTE_NUMBERS, QUOTE_STATUS } from "@/src/graphql/quoteQueries";
+import { GET_NEXT_QUOTE_NUMBER } from "@/src/graphql/quoteQueries";
 import { useRequiredWorkspace } from '@/src/hooks/useWorkspace';
 
 export const useQuoteNumber = (prefix) => {
   const { workspaceId, loading: workspaceLoading } = useRequiredWorkspace();
 
-  const { data, loading, error } = useQuery(GET_QUOTE_NUMBERS, {
-    variables: { workspaceId },
+  const { data, loading, error } = useQuery(GET_NEXT_QUOTE_NUMBER, {
+    variables: { workspaceId, prefix },
     fetchPolicy: 'cache-and-network',
-    skip: !workspaceId,
+    skip: !workspaceId || !prefix,
   });
 
   const computed = useMemo(() => {
-    const quotes = data?.quotes?.quotes;
-    if (!quotes) {
+    const nextNumberStr = data?.nextQuoteNumber;
+    if (!nextNumberStr) {
       return { lastNumber: 0, anyDocumentsExist: false, hasDocumentsForPrefix: false };
     }
 
-    const finalizedQuotes = quotes.filter(quote => {
-      return quote.status !== QUOTE_STATUS.DRAFT
-        && quote.number
-        && quote.number.trim() !== '';
-    });
-
-    const anyDocumentsExist = finalizedQuotes.some(quote =>
-      /^\d+$/.test(quote.number) && parseInt(quote.number, 10) > 0
-    );
-
-    if (!prefix) {
-      return { lastNumber: 0, anyDocumentsExist, hasDocumentsForPrefix: false };
-    }
-
-    const numbers = finalizedQuotes
-      .filter(quote => quote.prefix === prefix)
-      .map(quote => /^\d+$/.test(quote.number) ? parseInt(quote.number, 10) : null)
-      .filter(num => num !== null && num > 0);
-
-    const lastNumber = numbers.length > 0 ? Math.max(...numbers) : 0;
+    const numericPart = nextNumberStr.replace(/\D/g, '');
+    const nextNum = parseInt(numericPart, 10) || 1;
+    const lastNumber = nextNum - 1;
 
     return {
       lastNumber,
-      anyDocumentsExist,
-      hasDocumentsForPrefix: numbers.length > 0,
+      anyDocumentsExist: lastNumber > 0,
+      hasDocumentsForPrefix: lastNumber > 0,
     };
-  }, [data, prefix]);
+  }, [data]);
 
   const isLoading = loading || workspaceLoading;
   const nextQuoteNumber = computed.lastNumber + 1;

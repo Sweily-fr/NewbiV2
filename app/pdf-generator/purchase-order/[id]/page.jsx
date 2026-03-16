@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
 import UniversalPreviewPDF from '@/src/components/pdf/UniversalPreviewPDF';
 import { domToJpeg } from 'modern-screenshot';
-import jsPDF from 'jspdf';
+// jsPDF importé dynamiquement pour réduire la taille du bundle
 
 export default function PurchaseOrderPDFGeneratorPage() {
   const params = useParams();
@@ -94,6 +94,7 @@ export default function PurchaseOrderPDFGeneratorPage() {
         img.src = dataUrl;
       });
 
+      const { default: jsPDF } = await import('jspdf');
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',

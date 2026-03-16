@@ -124,7 +124,7 @@ function SessionDebugPanel() {
           onClick={() => {
             apolloClient.query({
               query: gql`query { me { _id email } }`,
-              fetchPolicy: "network-only",
+              fetchPolicy: "cache-and-network",
             }).then((r) => {
               setStatus(`OK: ${r.data?.me?.email || "pas de data"}`);
             }).catch((e) => {

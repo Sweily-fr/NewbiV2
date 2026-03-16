@@ -109,12 +109,12 @@ export default function InvoiceInfoSection({
     fetchSituationInvoices,
     { data: situationData, loading: loadingSituation },
   ] = useLazyQuery(GET_SITUATION_INVOICES_BY_QUOTE_REF, {
-    fetchPolicy: "network-only",
+    fetchPolicy: "cache-and-network",
   });
 
   // Query pour récupérer le devis par son numéro (pour le total du contrat)
   const [fetchQuoteByNumber, { data: quoteData, loading: loadingQuote }] =
-    useLazyQuery(GET_QUOTE_BY_NUMBER, { fetchPolicy: "network-only" });
+    useLazyQuery(GET_QUOTE_BY_NUMBER, { fetchPolicy: "cache-and-network" });
 
   // State pour la recherche de références
   const [referenceSearchOpen, setReferenceSearchOpen] = React.useState(false);
@@ -140,7 +140,7 @@ export default function InvoiceInfoSection({
         limit: 10,
       },
       skip: !referenceSearchOpen || !workspaceId,
-      fetchPolicy: "network-only",
+      fetchPolicy: "cache-and-network",
     }
   );
 
@@ -170,7 +170,7 @@ export default function InvoiceInfoSection({
         search: debouncedSearchTerm || undefined,
       },
       skip: !referenceSearchOpen || !workspaceId,
-      fetchPolicy: "network-only",
+      fetchPolicy: "cache-and-network",
     }
   );
 

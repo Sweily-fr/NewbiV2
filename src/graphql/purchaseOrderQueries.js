@@ -385,7 +385,7 @@ export const useLastPurchaseOrderPrefix = () => {
   const { data, loading, error } = useQuery(GET_LAST_PURCHASE_ORDER_PREFIX, {
     variables: { workspaceId },
     skip: !workspaceId,
-    fetchPolicy: "network-only",
+    fetchPolicy: "cache-and-network",
     errorPolicy: "all",
   });
 
@@ -476,7 +476,7 @@ export const usePurchaseOrder = (id) => {
   const { data, loading, error, refetch } = useQuery(GET_PURCHASE_ORDER, {
     variables: { workspaceId, id },
     skip: !id || !workspaceId,
-    fetchPolicy: "network-only",
+    fetchPolicy: "cache-and-network",
     errorPolicy: "all",
   });
 
@@ -499,7 +499,7 @@ export const usePurchaseOrderStats = () => {
   const { data, loading, error, refetch } = useQuery(GET_PURCHASE_ORDER_STATS, {
     variables: { workspaceId },
     skip: !workspaceId,
-    fetchPolicy: "network-only",
+    fetchPolicy: "cache-and-network",
     errorPolicy: "all",
   });
 
@@ -555,7 +555,7 @@ export const useCheckPurchaseOrderNumber = () => {
             prefix: poPrefix || "",
             excludeId: excludeId || undefined,
           },
-          fetchPolicy: "network-only",
+          fetchPolicy: "cache-and-network",
         });
 
         return {

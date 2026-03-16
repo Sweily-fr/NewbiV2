@@ -1,50 +1,33 @@
 import { useMemo } from 'react';
 import { useQuery } from '@apollo/client';
-import { GET_PURCHASE_ORDER_NUMBERS, PURCHASE_ORDER_STATUS } from "@/src/graphql/purchaseOrderQueries";
+import { GET_NEXT_PURCHASE_ORDER_NUMBER } from "@/src/graphql/purchaseOrderQueries";
 import { useRequiredWorkspace } from '@/src/hooks/useWorkspace';
 
 export const usePurchaseOrderNumber = (prefix) => {
   const { workspaceId, loading: workspaceLoading } = useRequiredWorkspace();
 
-  const { data, loading, error } = useQuery(GET_PURCHASE_ORDER_NUMBERS, {
-    variables: { workspaceId },
+  const { data, loading, error } = useQuery(GET_NEXT_PURCHASE_ORDER_NUMBER, {
+    variables: { workspaceId, prefix },
     fetchPolicy: 'cache-and-network',
-    skip: !workspaceId,
+    skip: !workspaceId || !prefix,
   });
 
   const computed = useMemo(() => {
-    const orders = data?.purchaseOrders?.purchaseOrders;
-    if (!orders) {
+    const nextNumberStr = data?.nextPurchaseOrderNumber;
+    if (!nextNumberStr) {
       return { lastNumber: 0, anyDocumentsExist: false, hasDocumentsForPrefix: false };
     }
 
-    const finalizedOrders = orders.filter(po => {
-      return po.status !== PURCHASE_ORDER_STATUS.DRAFT
-        && po.number
-        && po.number.trim() !== '';
-    });
-
-    const anyDocumentsExist = finalizedOrders.some(po =>
-      /^\d+$/.test(po.number) && parseInt(po.number, 10) > 0
-    );
-
-    if (!prefix) {
-      return { lastNumber: 0, anyDocumentsExist, hasDocumentsForPrefix: false };
-    }
-
-    const numbers = finalizedOrders
-      .filter(po => po.prefix === prefix)
-      .map(po => /^\d+$/.test(po.number) ? parseInt(po.number, 10) : null)
-      .filter(num => num !== null && num > 0);
-
-    const lastNumber = numbers.length > 0 ? Math.max(...numbers) : 0;
+    const numericPart = nextNumberStr.replace(/\D/g, '');
+    const nextNum = parseInt(numericPart, 10) || 1;
+    const lastNumber = nextNum - 1;
 
     return {
       lastNumber,
-      anyDocumentsExist,
-      hasDocumentsForPrefix: numbers.length > 0,
+      anyDocumentsExist: lastNumber > 0,
+      hasDocumentsForPrefix: lastNumber > 0,
     };
-  }, [data, prefix]);
+  }, [data]);
 
   const isLoading = loading || workspaceLoading;
   const nextNumber = computed.lastNumber + 1;

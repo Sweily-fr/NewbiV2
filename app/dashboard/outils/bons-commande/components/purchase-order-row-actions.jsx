@@ -152,7 +152,7 @@ export default function PurchaseOrderRowActions({ row, onRefetch, onSendEmail, o
       const { data } = await apolloClient.query({
         query: GET_PURCHASE_ORDER,
         variables: { workspaceId, id: purchaseOrder.id },
-        fetchPolicy: "network-only",
+        fetchPolicy: "cache-and-network",
       });
       const po = data?.purchaseOrder;
       if (!po) {
