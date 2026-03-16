@@ -18,6 +18,8 @@ import { CalendarConnectionCard } from "./calendar-connection-card";
 import { AppleCredentialsDialog } from "./apple-credentials-dialog";
 import { useSession } from "@/src/lib/auth-client";
 import { cn } from "@/src/lib/utils";
+import { getPlanLimits } from "@/src/lib/plan-limits";
+import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 
 const providers = [
   {
@@ -68,6 +70,11 @@ export function CalendarConnectionsPanel() {
   const [connecting, setConnecting] = useState(null);
   const { data: sessionData } = useSession();
   const isReady = !!sessionData?.user;
+  const { subscription } = useSubscription();
+  const planLimits = getPlanLimits(subscription?.plan);
+  const calendarLimit = planLimits.calendarConnections;
+  const isUnlimited = calendarLimit === -1;
+  const limitReached = !isUnlimited && connections.length >= calendarLimit;
 
   const connectedProviders = new Set(
     connections.filter((c) => c.status !== "disconnected").map((c) => c.provider)
@@ -149,7 +156,9 @@ export function CalendarConnectionsPanel() {
                   <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Connectes
                   </h3>
-                  <span className="text-xs text-muted-foreground">{connections.length}/3</span>
+                  <span className="text-xs text-muted-foreground">
+                    {connections.length}/{isUnlimited ? "∞" : calendarLimit}
+                  </span>
                 </div>
                 <div className="space-y-2">
                   {connections.map((connection) => (
@@ -171,12 +180,22 @@ export function CalendarConnectionsPanel() {
                   <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider px-1">
                     Ajouter
                   </h3>
+                  {limitReached && (
+                    <div className="rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-900/50 dark:bg-amber-950/20 p-3">
+                      <p className="text-xs text-amber-800 dark:text-amber-300">
+                        Limite atteinte ({connections.length}/{calendarLimit} calendrier{calendarLimit > 1 ? "s" : ""}).{" "}
+                        {subscription?.plan?.toLowerCase() === "freelance"
+                          ? "Passez au plan PME pour connecter plus de calendriers."
+                          : "Passez au plan Entreprise pour des connexions illimitees."}
+                      </p>
+                    </div>
+                  )}
                   <div className="space-y-1.5">
                     {availableProviders.map((provider) => (
                       <button
                         key={provider.id}
                         onClick={() => handleCalendarConnect(provider.id)}
-                        disabled={connecting === provider.id || !isReady}
+                        disabled={connecting === provider.id || !isReady || limitReached}
                         className="flex w-full items-center gap-3 rounded-xl border border-border/60 bg-card p-3 text-left transition-all hover:border-border hover:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <div className={cn("flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border shadow-sm", provider.iconBg)}>
@@ -201,7 +220,7 @@ export function CalendarConnectionsPanel() {
             )}
 
             {/* All connected state */}
-            {availableProviders.length === 0 && connections.length >= 3 && (
+            {availableProviders.length === 0 && connections.length >= providers.length && (
               <>
                 <Separator />
                 <div className="flex flex-col items-center gap-2 py-4 text-center">

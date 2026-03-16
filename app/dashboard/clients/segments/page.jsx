@@ -47,6 +47,8 @@ import {
   EmptyContent,
 } from "@/src/components/ui/empty";
 import { ProRouteGuard } from "@/src/components/pro-route-guard";
+import { useSubscription } from "@/src/contexts/dashboard-layout-context";
+import { getPlanLimits } from "@/src/lib/plan-limits";
 import { useOrganizationInvitations } from "@/src/hooks/useOrganizationInvitations";
 import {
   useClientSegments,
@@ -71,6 +73,7 @@ import {
   ChevronsLeft,
   ChevronsRight,
   Search,
+  Lock,
 } from "lucide-react";
 
 // Field definitions for the rule builder
@@ -601,6 +604,10 @@ function SegmentDetailView({ segment, onBack }) {
 // ==================== Main Page ====================
 function SegmentsContent() {
   const router = useRouter();
+  const { subscription } = useSubscription();
+  const planLimits = getPlanLimits(subscription?.plan);
+  const canUseSegments = planLimits.clientSegments;
+
   const { segments, loading, refetch } = useClientSegments();
   const { createSegment, loading: creating } = useCreateClientSegment();
   const { updateSegment, loading: updating } = useUpdateClientSegment();
@@ -638,6 +645,34 @@ function SegmentsContent() {
         segment={viewingSegment}
         onBack={() => setViewingSegment(null)}
       />
+    );
+  }
+
+  // Freelance plan: show upgrade message
+  if (!canUseSegments) {
+    return (
+      <div className="flex flex-col h-[calc(100vh-64px)] overflow-hidden">
+        <div className="px-4 sm:px-6 pt-4 sm:pt-6">
+          <h1 className="text-2xl font-medium mb-0">Segments</h1>
+          <p className="text-muted-foreground text-sm mt-1">
+            Créez des segments dynamiques pour cibler vos contacts.
+          </p>
+        </div>
+        <div className="flex-1 flex items-center justify-center min-h-[400px]">
+          <Empty>
+            <EmptyMedia variant="icon">
+              <Lock />
+            </EmptyMedia>
+            <EmptyHeader>
+              <EmptyTitle>Fonctionnalité réservée au plan PME</EmptyTitle>
+              <EmptyDescription>
+                Les segments dynamiques vous permettent de cibler automatiquement vos contacts selon des critères avancés.
+                Passez au plan PME ou Entreprise pour y accéder.
+              </EmptyDescription>
+            </EmptyHeader>
+          </Empty>
+        </div>
+      </div>
     );
   }
 

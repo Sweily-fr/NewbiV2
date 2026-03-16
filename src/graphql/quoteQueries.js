@@ -27,6 +27,8 @@ export const QUOTE_FRAGMENT = gql`
     finalTotalVAT
     finalTotalTTC
     discountAmount
+    signatureStatus
+    signingUrl
     createdAt
     updatedAt
     client {

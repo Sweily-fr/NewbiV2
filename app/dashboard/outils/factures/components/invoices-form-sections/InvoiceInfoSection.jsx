@@ -566,7 +566,7 @@ export default function InvoiceInfoSection({
   return (
     <>
       {/* Section Informations de la facture */}
-      <Card className="shadow-none p-0 border-none bg-transparent mt-8">
+      <Card className="shadow-none p-0 border-none bg-transparent">
         <CardHeader className="p-0">
           <CardTitle className="flex items-center gap-2 font-medium text-lg">
             Informations de la facture
@@ -787,7 +787,7 @@ export default function InvoiceInfoSection({
       </Card>
 
       {/* Section Type de facture - Séparée */}
-      <Card className="shadow-none p-0 mb-8 border-none bg-transparent mt-8">
+      <Card className="shadow-none p-0 border-none bg-transparent">
         <CardHeader className="p-0">
           <CardTitle className="flex items-center gap-2 font-medium text-lg">
             Type de facture

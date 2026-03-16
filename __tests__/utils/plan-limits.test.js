@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   PLAN_LIMITS,
   SEAT_PRICE,
+  getSeatPrice,
   getPlanLimits,
   canInviteUsers,
   canAddPaidSeats,
@@ -21,8 +22,21 @@ describe('PLAN_LIMITS constants', () => {
     expect(plan.workspaces).toBe(1);
     expect(plan.bankAccounts).toBe(1);
     expect(plan.storage).toBe(50);
-    expect(plan.projects).toBe(50);
-    expect(plan.invoices).toBe(500);
+    expect(plan.fileTransferMaxGB).toBe(5);
+    expect(plan.availableRoles).toEqual(["accountant"]);
+    expect(plan.exports).toEqual(["csv", "excel"]);
+    expect(plan.esignature).toBe(false);
+    expect(plan.documentAutomations).toBe(0);
+    expect(plan.clientAutomations).toBe(false);
+    expect(plan.crmEmailAutomations).toBe(false);
+    expect(plan.advancedAnalytics).toBe(false);
+    expect(plan.forecastMonths).toBe(0);
+    expect(plan.customFields).toBe(3);
+    expect(plan.clientSegments).toBe(false);
+    expect(plan.calendarConnections).toBe(1);
+    expect(plan.documentTemplates).toBe(3);
+    expect(plan.customSmtp).toBe(false);
+    expect(plan.eInvoicing).toBe(true);
   });
 
   it('pme plan has correct limits', () => {
@@ -34,8 +48,21 @@ describe('PLAN_LIMITS constants', () => {
     expect(plan.workspaces).toBe(1);
     expect(plan.bankAccounts).toBe(3);
     expect(plan.storage).toBe(200);
-    expect(plan.projects).toBe(200);
-    expect(plan.invoices).toBe(2000);
+    expect(plan.fileTransferMaxGB).toBe(15);
+    expect(plan.availableRoles).toEqual(["member", "accountant", "admin"]);
+    expect(plan.exports).toEqual(["csv", "excel", "fec"]);
+    expect(plan.esignature).toBe("ses");
+    expect(plan.documentAutomations).toBe(5);
+    expect(plan.clientAutomations).toBe(true);
+    expect(plan.crmEmailAutomations).toBe(false);
+    expect(plan.advancedAnalytics).toBe(true);
+    expect(plan.forecastMonths).toBe(6);
+    expect(plan.customFields).toBe(10);
+    expect(plan.clientSegments).toBe(true);
+    expect(plan.calendarConnections).toBe(3);
+    expect(plan.documentTemplates).toBe(10);
+    expect(plan.customSmtp).toBe(false);
+    expect(plan.eInvoicing).toBe(true);
   });
 
   it('entreprise plan has correct limits', () => {
@@ -47,12 +74,40 @@ describe('PLAN_LIMITS constants', () => {
     expect(plan.workspaces).toBe(1);
     expect(plan.bankAccounts).toBe(5);
     expect(plan.storage).toBe(500);
-    expect(plan.projects).toBe(500);
-    expect(plan.invoices).toBe(5000);
+    expect(plan.fileTransferMaxGB).toBe(50);
+    expect(plan.availableRoles).toEqual(["member", "accountant", "admin", "viewer"]);
+    expect(plan.exports).toEqual(["csv", "excel", "fec", "sage", "cegid"]);
+    expect(plan.esignature).toBe("qes");
+    expect(plan.documentAutomations).toBe(-1);
+    expect(plan.clientAutomations).toBe(true);
+    expect(plan.crmEmailAutomations).toBe(true);
+    expect(plan.advancedAnalytics).toBe(true);
+    expect(plan.forecastMonths).toBe(24);
+    expect(plan.customFields).toBe(-1);
+    expect(plan.clientSegments).toBe(true);
+    expect(plan.calendarConnections).toBe(-1);
+    expect(plan.documentTemplates).toBe(-1);
+    expect(plan.customSmtp).toBe(true);
+    expect(plan.eInvoicing).toBe(true);
+    expect(plan.eInvoicingArchival).toBe(true);
   });
 
   it('SEAT_PRICE should be 7.49', () => {
     expect(SEAT_PRICE).toBe(7.49);
+  });
+});
+
+describe('getSeatPrice', () => {
+  it('returns 7.49 for pme plan', () => {
+    expect(getSeatPrice('pme')).toBe(7.49);
+  });
+
+  it('returns 5.99 for entreprise plan', () => {
+    expect(getSeatPrice('entreprise')).toBe(5.99);
+  });
+
+  it('falls back to SEAT_PRICE for freelance (no seatPrice defined)', () => {
+    expect(getSeatPrice('freelance')).toBe(SEAT_PRICE);
   });
 });
 

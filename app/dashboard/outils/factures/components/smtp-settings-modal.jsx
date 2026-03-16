@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { X, LoaderCircle, CheckCircle2, AlertCircle, Mail } from "lucide-react";
+import { X, LoaderCircle, CheckCircle2, AlertCircle, Mail, Lock } from "lucide-react";
+import { useSubscription } from "@/src/contexts/dashboard-layout-context";
+import { getPlanLimits } from "@/src/lib/plan-limits";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Label } from "@/src/components/ui/label";
@@ -15,6 +17,10 @@ import {
 } from "@/src/graphql/smtpQueries";
 
 export function SmtpSettingsModal({ open, onOpenChange }) {
+  const { subscription } = useSubscription();
+  const planLimits = getPlanLimits(subscription?.plan);
+  const canUseCustomSmtp = planLimits.customSmtp;
+
   const [isSaving, setIsSaving] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
 
@@ -133,6 +139,21 @@ export function SmtpSettingsModal({ open, onOpenChange }) {
         {/* Content */}
         <form onSubmit={handleSubmit(onSubmit)} className="flex-1 overflow-y-auto p-6">
           <div className="space-y-6">
+            {/* Upgrade banner si plan non autorisé */}
+            {!canUseCustomSmtp && (
+              <div className="p-4 rounded-lg border border-amber-200 bg-amber-50">
+                <div className="flex items-center gap-2">
+                  <Lock className="h-4 w-4 text-amber-600" />
+                  <span className="text-sm font-medium text-amber-800">
+                    Le SMTP personnalisé est disponible avec le plan Entreprise
+                  </span>
+                </div>
+                <p className="text-xs text-amber-700 mt-1">
+                  Passez au plan Entreprise pour configurer votre propre serveur SMTP et personnaliser l'envoi de vos emails.
+                </p>
+              </div>
+            )}
+
             {/* Activation */}
             <div className="flex items-center justify-between p-4 border rounded-lg">
               <div className="space-y-0.5">
@@ -147,6 +168,7 @@ export function SmtpSettingsModal({ open, onOpenChange }) {
                 id="enabled"
                 checked={enabled}
                 onCheckedChange={(checked) => setValue("enabled", checked)}
+                disabled={!canUseCustomSmtp}
               />
             </div>
 
@@ -192,7 +214,7 @@ export function SmtpSettingsModal({ open, onOpenChange }) {
                     id="smtpHost"
                     placeholder="smtp.example.com"
                     {...register("smtpHost", { required: enabled })}
-                    disabled={!enabled}
+                    disabled={!enabled || !canUseCustomSmtp}
                   />
                 </div>
 
@@ -205,7 +227,7 @@ export function SmtpSettingsModal({ open, onOpenChange }) {
                     type="number"
                     placeholder="587"
                     {...register("smtpPort", { valueAsNumber: true, required: enabled })}
-                    disabled={!enabled}
+                    disabled={!enabled || !canUseCustomSmtp}
                   />
                 </div>
               </div>
@@ -215,7 +237,7 @@ export function SmtpSettingsModal({ open, onOpenChange }) {
                   id="smtpSecure"
                   checked={smtpSecure}
                   onCheckedChange={(checked) => setValue("smtpSecure", checked)}
-                  disabled={!enabled}
+                  disabled={!enabled || !canUseCustomSmtp}
                 />
                 <Label htmlFor="smtpSecure" className="text-sm">
                   Connexion sécurisée (SSL/TLS) - Port 465
@@ -230,7 +252,7 @@ export function SmtpSettingsModal({ open, onOpenChange }) {
                   id="smtpUser"
                   placeholder="user@example.com"
                   {...register("smtpUser", { required: enabled })}
-                  disabled={!enabled}
+                  disabled={!enabled || !canUseCustomSmtp}
                 />
               </div>
 
@@ -243,7 +265,7 @@ export function SmtpSettingsModal({ open, onOpenChange }) {
                   type="password"
                   placeholder={settingsData?.getSmtpSettings?.id ? "••••••••" : "Mot de passe"}
                   {...register("smtpPassword")}
-                  disabled={!enabled}
+                  disabled={!enabled || !canUseCustomSmtp}
                 />
                 <p className="text-xs text-muted-foreground">
                   {settingsData?.getSmtpSettings?.id
@@ -263,7 +285,7 @@ export function SmtpSettingsModal({ open, onOpenChange }) {
                   type="email"
                   placeholder="noreply@example.com"
                   {...register("fromEmail", { required: enabled })}
-                  disabled={!enabled}
+                  disabled={!enabled || !canUseCustomSmtp}
                 />
               </div>
 
@@ -273,7 +295,7 @@ export function SmtpSettingsModal({ open, onOpenChange }) {
                   id="fromName"
                   placeholder="Mon Entreprise"
                   {...register("fromName")}
-                  disabled={!enabled}
+                  disabled={!enabled || !canUseCustomSmtp}
                 />
               </div>
             </div>
@@ -286,7 +308,7 @@ export function SmtpSettingsModal({ open, onOpenChange }) {
             type="button"
             variant="outline"
             onClick={handleTestConnection}
-            disabled={!enabled || isTesting || loadingSettings}
+            disabled={!enabled || !canUseCustomSmtp || isTesting || loadingSettings}
             className="gap-2"
           >
             {isTesting && <LoaderCircle className="h-4 w-4 animate-spin" />}
@@ -305,7 +327,7 @@ export function SmtpSettingsModal({ open, onOpenChange }) {
             <Button
               type="submit"
               onClick={handleSubmit(onSubmit)}
-              disabled={isSaving || loadingSettings}
+              disabled={isSaving || loadingSettings || !canUseCustomSmtp}
               className="gap-2"
             >
               {isSaving && <LoaderCircle className="h-4 w-4 animate-spin" />}

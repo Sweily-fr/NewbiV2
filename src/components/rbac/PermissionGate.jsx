@@ -128,3 +128,11 @@ export function MemberOnly({ children, fallback = null }) {
 export function AccountantOnly({ children, fallback = null }) {
   return <RoleGate roles="accountant" fallback={fallback}>{children}</RoleGate>;
 }
+
+/**
+ * Composant ViewerOnly
+ * Affiche son contenu uniquement pour les viewers
+ */
+export function ViewerOnly({ children, fallback = null }) {
+  return <RoleGate roles="viewer" fallback={fallback}>{children}</RoleGate>;
+}
