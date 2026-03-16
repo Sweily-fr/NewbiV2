@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useForm, FormProvider } from "react-hook-form";
-import { X, LoaderCircle, Settings, Users, Eye } from "lucide-react";
+import { X, LoaderCircle, Settings, Users, Eye, CornerDownLeft } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { toast } from "@/src/components/ui/sonner";
 import {
@@ -11,6 +11,12 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/src/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/src/components/ui/dialog";
 import AutoReminderForm from "./auto-reminder-form";
 import AutoReminderPreview from "./auto-reminder-preview";
 import AutoReminderClients from "./auto-reminder-clients";
@@ -100,9 +106,6 @@ Cordialement,
       // Séparer les données email des données de relance
       const { fromEmail, fromName, replyTo, ...reminderData } = data;
 
-      console.log("📤 Données de relance à sauvegarder:", reminderData);
-      console.log("📤 excludedClientIds:", reminderData.excludedClientIds);
-
       // Sauvegarder les paramètres email
       await updateEmailSettings({
         variables: {
@@ -136,18 +139,19 @@ Cordialement,
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="relative w-full h-full md:max-w-7xl md:h-[90vh] bg-white dark:bg-[#1a1a1a] md:rounded-lg shadow-xl flex flex-col">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent
+        className="gap-0 p-1 overflow-hidden !max-w-7xl !w-[calc(100vw-4rem)] h-[calc(100vh-4rem)] border-0 bg-[#efefef] dark:bg-[#1a1a1a] rounded-2xl"
+        showCloseButton={false}
+      >
+        <div className="flex flex-col h-full bg-background rounded-xl overflow-hidden ring-1 ring-black/[0.07] dark:ring-white/[0.1]">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-700">
-          <div>
-            <h2 className="text-lg md:text-xl font-medium text-gray-900 dark:text-white">
+        <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-border/40">
+          <DialogHeader>
+            <DialogTitle className="text-sm font-medium">
               Relances automatiques
-            </h2>
-            <p className="text-xs md:text-sm text-muted-foreground mt-1 hidden sm:block">
-              Configurez les relances automatiques pour vos factures impayées
-            </p>
-          </div>
+            </DialogTitle>
+          </DialogHeader>
           <Button
             variant="ghost"
             size="icon"
@@ -162,16 +166,16 @@ Cordialement,
         <FormProvider {...methods}>
           <form
             onSubmit={handleSubmit(onSubmit)}
-            className="flex-1 flex overflow-hidden"
+            className="flex-1 min-h-0 flex overflow-hidden"
           >
             {/* Left Panel - Tabs (full width on mobile) */}
-            <div className="w-full lg:w-1/2 overflow-y-auto lg:border-r border-gray-200 dark:border-gray-700 flex flex-col">
+            <div className="w-full lg:w-1/2 lg:border-r border-border/40 flex flex-col min-h-0">
               <Tabs
                 value={activeTab}
                 onValueChange={setActiveTab}
-                className="flex-1 flex flex-col"
+                className="flex-1 flex flex-col min-h-0"
               >
-                <div className="px-4 md:px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <div className="px-5 py-3 border-b border-border/40 shrink-0">
                   <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger
                       value="settings"
@@ -196,46 +200,56 @@ Cordialement,
 
                 <TabsContent
                   value="settings"
-                  className="flex-1 overflow-y-auto p-4 md:p-6 mt-0"
+                  className="flex-1 overflow-y-auto p-5 mt-0"
                 >
                   <AutoReminderForm isSmtpConfigured={true} />
                 </TabsContent>
 
                 <TabsContent
                   value="clients"
-                  className="flex-1 overflow-y-auto p-4 md:p-6 mt-0"
+                  className="flex-1 overflow-y-auto p-5 mt-0"
                 >
                   <AutoReminderClients />
                 </TabsContent>
               </Tabs>
             </div>
 
-            {/* Right Panel - Preview (hidden on mobile, shown via floating button) */}
-            <div className="hidden lg:block w-1/2 overflow-y-auto p-6 bg-gray-50 dark:bg-[#252525]">
+            {/* Right Panel - Preview (hidden on mobile) */}
+            <div className="hidden lg:block w-1/2 overflow-y-auto p-5 bg-gray-50 dark:bg-[#252525]">
               <AutoReminderPreview formData={watch()} />
             </div>
           </form>
         </FormProvider>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 p-4 md:p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#252525]">
+        <div className="flex items-center justify-between border-t border-border/40 px-5 py-3">
           <Button
             type="button"
             variant="outline"
             onClick={() => onOpenChange(false)}
             disabled={isSaving}
-            className="text-sm"
           >
             Annuler
           </Button>
           <Button
-            type="submit"
+            variant="primary"
             onClick={handleSubmit(onSubmit)}
             disabled={isSaving}
-            className="gap-2 text-sm"
+            className="gap-2"
           >
-            {isSaving && <LoaderCircle className="h-4 w-4 animate-spin" />}
-            Enregistrer
+            {isSaving ? (
+              <>
+                <LoaderCircle className="size-4 animate-spin" />
+                Sauvegarde...
+              </>
+            ) : (
+              <>
+                Enregistrer
+                <kbd className="inline-flex items-center justify-center size-5 rounded bg-white/20 ml-0.5">
+                  <CornerDownLeft className="size-3" />
+                </kbd>
+              </>
+            )}
           </Button>
         </div>
 
@@ -253,9 +267,9 @@ Cordialement,
         {showMobilePreview && (
           <div className="lg:hidden fixed inset-0 z-[60] bg-white dark:bg-[#1a1a1a] flex flex-col">
             {/* Preview Header */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Aperçu de l'email
+            <div className="flex items-center justify-between p-4 border-b border-border/40">
+              <h3 className="text-sm font-medium">
+                Aperçu de l&apos;email
               </h3>
               <Button
                 variant="ghost"
@@ -272,7 +286,8 @@ Cordialement,
             </div>
           </div>
         )}
-      </div>
-    </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

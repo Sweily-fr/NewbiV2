@@ -1,499 +1,406 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { Check, MoveRight, PhoneCall } from "lucide-react";
-import { Badge } from "@/src/components/ui/badge";
-import { Button } from "@/src/components/ui/button";
+import { Check, MoveRight, ChevronDown, Info } from "lucide-react";
+
+// Icônes SVG
+const CheckIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="text-gray-900 dark:text-gray-100">
+    <path d="M7 0.5C10.5899 0.5 13.5 3.41015 13.5 7C13.5 10.5899 10.5899 13.5 7 13.5C3.41015 13.5 0.5 10.5899 0.5 7C0.5 3.41015 3.41015 0.5 7 0.5ZM9.77734 4.58398C9.54758 4.43081 9.23716 4.49289 9.08398 4.72266L6.65332 8.36914C6.5595 8.50987 6.35573 8.51869 6.25 8.38672L4.89062 6.6875C4.71812 6.47187 4.40313 6.43687 4.1875 6.60938C3.97187 6.78188 3.93687 7.09687 4.10938 7.3125L5.46875 9.01172C5.99728 9.67219 7.01611 9.6277 7.48535 8.92383L9.91602 5.27734C10.0692 5.04758 10.0071 4.73716 9.77734 4.58398Z" fill="currentColor" />
+  </svg>
+);
+
+const XIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 14 14" className="text-gray-300 dark:text-gray-600">
+    <path d="M10.6469 2.64673C10.8421 2.45147 11.1586 2.45147 11.3539 2.64673C11.5488 2.84202 11.549 3.1586 11.3539 3.35376L7.7074 6.99927L11.3539 10.6458C11.5491 10.841 11.5491 11.1585 11.3539 11.3538C11.1586 11.549 10.8411 11.549 10.6459 11.3538L6.99939 7.70728L3.35388 11.3538C3.15871 11.5488 2.84208 11.5487 2.64685 11.3538C2.45159 11.1585 2.45159 10.841 2.64685 10.6458L6.29236 6.99927L2.64685 3.35376C2.45159 3.1585 2.45159 2.84199 2.64685 2.64673C2.84211 2.45147 3.15862 2.45147 3.35388 2.64673L7.00037 6.29224L10.6469 2.64673Z" fill="currentColor" />
+  </svg>
+);
+
+// Plans config
+const plans = [
+  {
+    id: "freelance",
+    name: "Freelance",
+    monthly: "17,99€",
+    annual: "16,19€",
+    priceSuffix: "/mois, TTC",
+    annualTotal: "157,56€/an",
+    cta: "Essayer gratuitement",
+    highlighted: false,
+  },
+  {
+    id: "pme",
+    name: "TPE",
+    monthly: "48,99€",
+    annual: "44,09€",
+    priceSuffix: "/mois, TTC",
+    annualTotal: "529,08€/an",
+    cta: "Essayer gratuitement",
+    highlighted: true,
+    badge: "Populaire",
+  },
+  {
+    id: "entreprise",
+    name: "Entreprise",
+    monthly: "94,99€",
+    annual: "85,49€",
+    priceSuffix: "/mois, TTC",
+    annualTotal: "1 025,88€/an",
+    cta: "Essayer gratuitement",
+    highlighted: false,
+  },
+];
+
+// Sections de features
+const featureSections = [
+  {
+    title: "Général",
+    features: [
+      { name: "Utilisateurs inclus", tooltip: "Nombre d'utilisateurs inclus dans votre plan", freelance: "1 utilisateur", pme: "Jusqu'à 10", entreprise: "Jusqu'à 25" },
+      { name: "Comptables gratuits", tooltip: "Invitez un comptable sans frais supplémentaires", freelance: "1", pme: "3", entreprise: "5" },
+      { name: "Utilisateurs supplémentaires", tooltip: "Ajoutez des collaborateurs au-delà de votre limite", freelance: false, pme: "7,49€/mois", entreprise: "5,99€/mois" },
+      { name: "Rôles & permissions", tooltip: "Contrôlez les accès de votre équipe avec différents rôles", freelance: "Owner seul", pme: "3 rôles", entreprise: "5 rôles" },
+      { name: "Stockage documents", tooltip: "Espace de stockage pour vos documents et fichiers", freelance: "50 Go", pme: "200 Go", entreprise: "500 Go" },
+      { name: "Création d'organisation", tooltip: "Créez et gérez votre organisation", freelance: true, pme: true, entreprise: true },
+    ],
+  },
+  {
+    title: "Facturation",
+    features: [
+      { name: "Factures & Devis", tooltip: "Créez et gérez vos factures et devis professionnels", freelance: true, pme: true, entreprise: true },
+      { name: "Relance automatique impayés", tooltip: "Automatisez vos relances de factures impayées", freelance: false, pme: true, entreprise: true },
+      { name: "Exports comptables", tooltip: "Exportez vos données au format comptable", freelance: "CSV / Excel", pme: "CSV / Excel / FEC", entreprise: "Tous formats" },
+      { name: "E-signature devis", tooltip: "Faites signer vos devis électroniquement", freelance: false, pme: "Simple (SES)", entreprise: "Qualifiée (QES)" },
+      { name: "Facturation électronique", tooltip: "Factur-X et conformité réglementaire 2026", freelance: true, pme: true, entreprise: true },
+      { name: "Archivage légal", tooltip: "Archivage légal conforme pour vos factures électroniques", freelance: false, pme: false, entreprise: true },
+      { name: "Modèles de documents", tooltip: "Sauvegardez des modèles de factures et devis réutilisables", freelance: "3", pme: "10", entreprise: "Illimité" },
+    ],
+  },
+  {
+    title: "Gestion",
+    features: [
+      { name: "CRM client", tooltip: "Gérez vos relations clients efficacement", freelance: true, pme: true, entreprise: true },
+      { name: "Catalogue produits", tooltip: "Créez votre catalogue de produits et services", freelance: true, pme: true, entreprise: true },
+      { name: "OCR des reçus", tooltip: "Numérisez automatiquement vos dépenses par photo", freelance: "50/mois", pme: true, entreprise: true },
+      { name: "Connexion bancaire", tooltip: "Synchronisez vos comptes bancaires automatiquement", freelance: "1 compte", pme: "3 comptes", entreprise: "5 comptes" },
+      { name: "Gestion de trésorerie", tooltip: "Suivez votre trésorerie en temps réel", freelance: true, pme: true, entreprise: true },
+      { name: "Gestion des projets", tooltip: "Organisez vos projets avec des tableaux Kanban", freelance: true, pme: true, entreprise: true },
+      { name: "Transfert de fichier", tooltip: "Partagez vos fichiers volumineux en toute sécurité", freelance: "5 Go", pme: "15 Go", entreprise: "50 Go" },
+      { name: "Signature de mail", tooltip: "Créez des signatures de mail professionnelles", freelance: "1", pme: "10", entreprise: "25" },
+      { name: "Champs personnalisés", tooltip: "Ajoutez des champs sur mesure à vos clients et produits", freelance: "3", pme: "10", entreprise: "Illimité" },
+      { name: "Calendrier connecté", tooltip: "Synchronisez Google, Outlook ou Apple Calendar", freelance: "1", pme: "3", entreprise: "Illimité" },
+    ],
+  },
+  {
+    title: "Automatisations",
+    features: [
+      { name: "Automatisations documents", tooltip: "Automatisez le classement de vos documents", freelance: false, pme: "5 règles", entreprise: "Illimité" },
+      { name: "Automatisations CRM", tooltip: "Automatisez la gestion de vos listes clients", freelance: false, pme: "Listes auto", entreprise: "Listes + Emails" },
+      { name: "Segments clients", tooltip: "Créez des segments dynamiques avec des filtres avancés", freelance: false, pme: true, entreprise: true },
+    ],
+  },
+  {
+    title: "Analytics & Prévisions",
+    features: [
+      { name: "Analytics & rapports", tooltip: "Analysez la performance de votre activité", freelance: "Tableau de bord", pme: "28 KPIs", entreprise: "28 KPIs + alertes" },
+      { name: "Prévisions de trésorerie", tooltip: "Anticipez votre trésorerie avec des prévisions IA", freelance: false, pme: "6 mois", entreprise: "24 mois" },
+    ],
+  },
+  {
+    title: "Intégrations & Support",
+    features: [
+      { name: "API access", tooltip: "Accédez à notre API pour vos intégrations", freelance: false, pme: true, entreprise: true },
+      { name: "Support prioritaire", tooltip: "Assistance prioritaire par email et chat", freelance: false, pme: true, entreprise: true },
+    ],
+  },
+];
+
+function FeatureValue({ value }) {
+  if (value === true) return <CheckIcon />;
+  if (value === false) return <XIcon />;
+  return <span className="text-[13px] text-gray-700 dark:text-gray-300">{value}</span>;
+}
+
+function InfoTooltip({ text }) {
+  return (
+    <span className="group relative inline-flex ml-1.5 cursor-help">
+      <Info className="w-3.5 h-3.5 text-gray-400" />
+      <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-52 rounded-md bg-gray-900 px-3 py-2 text-[11px] leading-relaxed text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 z-50">
+        {text}
+      </span>
+    </span>
+  );
+}
+
+// Mobile accordion section
+function MobileSection({ section }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="border-b border-gray-200 dark:border-gray-800">
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex w-full items-center justify-between px-4 py-3.5 text-left"
+      >
+        <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{section.title}</span>
+        <ChevronDown
+          className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+      {open && (
+        <div className="px-4 pb-4 space-y-4">
+          {section.features.map((feature, i) => (
+            <div key={i} className="space-y-2">
+              <p className="text-[13px] font-medium text-gray-700 dark:text-gray-300 flex items-center">
+                {feature.name}
+                {feature.tooltip && <InfoTooltip text={feature.tooltip} />}
+              </p>
+              <div className="grid grid-cols-3 gap-2">
+                {plans.map((plan) => (
+                  <div key={plan.id} className="flex flex-col items-center gap-1">
+                    <span className="text-[10px] font-medium text-gray-400 uppercase tracking-wider">
+                      {plan.name}
+                    </span>
+                    <FeatureValue value={feature[plan.id]} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function PricingSection() {
   const [isAnnual, setIsAnnual] = useState(false);
+  const headerRef = useRef(null);
+  const [headerHeight, setHeaderHeight] = useState(0);
 
-  // Prix mensuels et annuels
-  const pricing = {
-    freelance: {
-      monthly: "17,99€",
-      annual: "16,19€",
-      annualTotal: "157,56€",
-    },
-    pme: {
-      monthly: "48,99€",
-      annual: "44,09€",
-      annualTotal: "529,08€",
-    },
-    entreprise: {
-      monthly: "94,99€",
-      annual: "85,49€",
-      annualTotal: "1 025,88€",
-    },
-  };
-
-  // Fonctionnalités à afficher dans le tableau
-  const features = [
-    {
-      name: "Utilisateurs",
-      description: "Nombre d'utilisateurs inclus",
-      freelance: "1 utilisateur",
-      pme: "Jusqu'à 10 utilisateurs",
-      entreprise: "Jusqu'à 25 utilisateurs",
-      type: "text",
-    },
-    {
-      name: "Création d'organisation",
-      description: "Créez et gérez votre organisation",
-      freelance: "Illimité",
-      pme: "Illimité",
-      entreprise: "Illimité",
-      type: "text",
-    },
-    {
-      name: "Utilisateur comptable gratuit",
-      description: "Ajoutez un comptable sans frais supplémentaires",
-      freelance: "1 comptable",
-      pme: "3 comptables",
-      entreprise: "5 comptables",
-      type: "text",
-    },
-    {
-      name: "Utilisateurs supplémentaires",
-      description: "Au-delà de votre limite d'utilisateurs",
-      freelance: "-",
-      pme: "7,49€ TTC/utilisateur supplémentaire",
-      entreprise: "7,49€ TTC/utilisateur supplémentaire",
-      type: "text",
-    },
-    {
-      name: "Facturation & Devis",
-      description: "Créez et gérez vos factures et devis",
-      freelance: true,
-      pme: true,
-      entreprise: true,
-      type: "check",
-    },
-    {
-      name: "Relance automatique impayés",
-      description: "Automatisez vos relances de factures impayées",
-      freelance: "-",
-      pme: true,
-      entreprise: true,
-      type: "mixed",
-    },
-    {
-      name: "OCR des reçus",
-      description: "Numérisez automatiquement vos dépenses",
-      freelance: "20 reçus par mois",
-      pme: true,
-      entreprise: true,
-      type: "mixed",
-    },
-    {
-      name: "Connexion bancaire (à venir)",
-      description: "Synchronisez vos comptes bancaires",
-      freelance: "Synchroniser un compte bancaire",
-      pme: "Synchroniser jusqu'à 3 comptes bancaires",
-      entreprise: "Synchroniser jusqu'à 5 comptes bancaires",
-      type: "text",
-    },
-    {
-      name: "Gestion de trésorerie",
-      description: "Suivez votre trésorerie en temps réel",
-      freelance: true,
-      pme: true,
-      entreprise: true,
-      type: "check",
-    },
-    {
-      name: "Gestion des projets",
-      description: "Organisez vos projets avec des tableaux Kanban",
-      freelance: true,
-      pme: true,
-      entreprise: true,
-      type: "check",
-    },
-    {
-      name: "Signature de mail",
-      description: "Créez des signatures de mail professionnelles",
-      freelance: "Une signature",
-      pme: "Jusqu'à 10 signatures",
-      entreprise: "Jusqu'à 25 signatures",
-      type: "text",
-    },
-    {
-      name: "Transfert de fichier",
-      description: "Partagez vos fichiers en toute sécurité",
-      freelance: "Envoyé jusqu'à 5Go",
-      pme: "Envoyé jusqu'à 15Go",
-      entreprise: "Envoyé jusqu'à 15Go",
-      type: "text",
-    },
-    {
-      name: "CRM client",
-      description: "Gérez vos relations clients efficacement",
-      freelance: true,
-      pme: true,
-      entreprise: true,
-      type: "check",
-    },
-    {
-      name: "Catalogue",
-      description: "Créez votre catalogue de produits",
-      freelance: true,
-      pme: true,
-      entreprise: true,
-      type: "check",
-    },
-    {
-      name: "Support prioritaire",
-      description: "Assistance prioritaire par email",
-      freelance: "-",
-      pme: true,
-      entreprise: true,
-      type: "mixed",
-    },
-    {
-      name: "API access (à venir)",
-      description: "Accédez à notre API pour vos intégrations",
-      freelance: "-",
-      pme: true,
-      entreprise: true,
-      type: "mixed",
-    },
-  ];
-
-  // Features principales à afficher dans les cartes mobiles
-  const mainFeatures = [
-    "Facturation & Devis",
-    "OCR des reçus",
-    "Connexion bancaire",
-    "Gestion de trésorerie",
-    "CRM client",
-  ];
+  useEffect(() => {
+    if (!headerRef.current) return;
+    const observer = new ResizeObserver(() => {
+      setHeaderHeight(headerRef.current.offsetHeight);
+    });
+    observer.observe(headerRef.current);
+    return () => observer.disconnect();
+  }, []);
 
   return (
-    <div id="pricing" className="w-full pt-20 lg:pt-20 pb-20 overflow-visible">
-      <div className="container mx-auto overflow-visible">
-        <div className="flex text-center justify-center items-center gap-2 flex-col">
-          {/* <Badge>Pricing</Badge> */}
-          {/* <span className="inline-block text-xs font-semibold uppercase tracking-wider text-[#5A50FF] mb-3"></span> */}
-          <div className="flex flex-col">
-            <h2 className="text-3xl md:text-4xl font-normal tracking-[-0.015em] text-balance text-gray-950 dark:text-gray-50 mb-4">
-              Profitez de 30 jours offerts
-            </h2>
-            <p className="text-md font-normal tracking-tight text-gray-600 dark:text-gray-300 mx-auto mb-8 max-w-2xl">
-              Sans engagement et résiliable à tout moment !
-            </p>
-          </div>
+    <div id="pricing" className="w-full pt-20 lg:pt-24 pb-10">
+      <div className="container mx-auto max-w-6xl">
+        {/* Titre centré */}
+        <div className="text-center mb-14">
+          <h2 className="text-3xl md:text-4xl font-normal tracking-[-0.02em] text-gray-950 dark:text-gray-50 mb-3">
+            Profitez de 30 jours offerts
+          </h2>
+          <p className="text-[15px] text-gray-500 dark:text-gray-400">
+            Sans engagement et résiliable à tout moment !
+          </p>
+        </div>
 
-          {/* Switch Mensuel/Annuel */}
-          <div className="inline-flex items-center gap-3 bg-muted p-1 rounded-lg mt-4">
-            <button
-              onClick={() => setIsAnnual(false)}
-              className={`px-4 py-2 rounded-md text-xs font-medium transition-colors ${
-                !isAnnual
-                  ? "bg-background shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Mensuel
-            </button>
-            <button
-              onClick={() => setIsAnnual(true)}
-              className={`px-4 py-2 rounded-md text-xs font-medium transition-colors ${
-                isAnnual
-                  ? "bg-background shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Annuel
-              <span className="ml-2 text-xs text-[#5b50fe]">-10%</span>
-            </button>
-          </div>
-
-          {/* VERSION MOBILE - Cartes empilées */}
-          <div className="w-full pt-10 lg:hidden flex flex-col gap-6 px-4">
-            {/* Carte Freelance */}
-            <div className="border rounded-lg p-6 bg-background shadow-sm">
-              <div className="flex flex-col gap-4">
-                <div>
-                  <h3 className="text-2xl font-semibold">Freelance</h3>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Parfait pour les indépendants et freelances qui démarrent
-                    leur activité
-                  </p>
+        {/* ===================== DESKTOP ===================== */}
+        <div className="hidden lg:block">
+          {/* Header sticky — même grille que le tableau */}
+          <div ref={headerRef} className="sticky top-0 z-20 bg-[#FDFDFD] dark:bg-background pt-[88px]">
+            <div className="grid grid-cols-[220px_1fr_1fr_1fr] items-end">
+              {/* Colonne gauche : billing toggle */}
+              <div className="pb-2">
+                <p className="text-[13px] text-gray-500 mb-3 leading-snug">
+                  Choisissez votre<br />cycle de facturation
+                </p>
+                <div className="inline-flex items-center bg-gray-100 dark:bg-gray-900 rounded-lg p-0.5">
+                  <button
+                    onClick={() => setIsAnnual(false)}
+                    className={`px-4 py-1.5 rounded-md text-[13px] font-medium transition-all ${
+                      !isAnnual
+                        ? "bg-white dark:bg-gray-800 shadow-sm text-gray-900 dark:text-gray-100"
+                        : "text-gray-500 hover:text-gray-700"
+                    }`}
+                  >
+                    Mensuel
+                  </button>
+                  <button
+                    onClick={() => setIsAnnual(true)}
+                    className={`px-4 py-1.5 rounded-md text-[13px] font-medium transition-all ${
+                      isAnnual
+                        ? "bg-white dark:bg-gray-800 shadow-sm text-gray-900 dark:text-gray-100"
+                        : "text-gray-500 hover:text-gray-700"
+                    }`}
+                  >
+                    Annuel
+                  </button>
                 </div>
-
-                <div className="flex items-baseline gap-2">
-                  <span className="text-4xl font-bold">
-                    {isAnnual
-                      ? pricing.freelance.annual
-                      : pricing.freelance.monthly}
-                  </span>
-                  <span className="text-sm text-muted-foreground">
-                    TTC / mois
-                  </span>
-                </div>
-
-                {isAnnual && (
-                  <p className="text-xs text-muted-foreground">
-                    {pricing.freelance.annualTotal} facturé annuellement
-                  </p>
-                )}
-
-                <div className="flex flex-col gap-2 py-4 border-t border-b">
-                  <p className="text-sm font-medium text-muted-foreground">
-                    1 utilisateur
-                  </p>
-                  {mainFeatures.map((feature, idx) => (
-                    <div key={idx} className="flex items-center gap-2">
-                      <Check className="w-4 h-4 text-primary flex-shrink-0" />
-                      <span className="text-sm">{feature}</span>
-                    </div>
-                  ))}
-                </div>
-
-                <Button asChild variant="outline" className="gap-4 w-full">
-                  <Link href="/auth/signup">
-                    Essayer 30 jours gratuits <MoveRight className="w-4 h-4" />
-                  </Link>
-                </Button>
               </div>
+
+              {/* Colonnes plans */}
+              {plans.map((plan) => (
+                <div key={plan.id} className="text-center pb-2">
+                  {/* Nom + badge */}
+                  <div className="flex items-center justify-center gap-2 mb-1">
+                    <h3 className="text-[22px] font-normal text-gray-900 dark:text-gray-50">
+                      {plan.name}
+                    </h3>
+                    {plan.badge && (
+                      <span className="text-[11px] font-medium text-[#5A50FF] bg-[#5A50FF]/8 border border-[#5A50FF]/15 rounded-md px-2.5 py-0.5">
+                        {plan.badge}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Prix */}
+                  <p className="text-[13px] text-gray-500 mb-4">
+                    {isAnnual ? plan.annual : plan.monthly} {plan.priceSuffix}
+                    {isAnnual && (
+                      <span className="block text-[12px] text-gray-400">
+                        facturé {plan.annualTotal}
+                      </span>
+                    )}
+                  </p>
+
+                  {/* CTA */}
+                  <Link
+                    href="/auth/signup"
+                    className={`inline-flex items-center justify-center px-6 py-2 rounded-lg text-[13px] font-medium transition-colors ${
+                      plan.highlighted
+                        ? "bg-gray-900 text-white border border-gray-900 hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:border-white dark:hover:bg-gray-100"
+                        : "border border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-900"
+                    }`}
+                  >
+                    {plan.cta}
+                  </Link>
+                </div>
+              ))}
             </div>
 
-            {/* Carte TPE */}
-            <div className="border-2 border-primary rounded-lg p-6 bg-background shadow-md relative">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                <Badge className="bg-primary text-primary-foreground">
-                  Populaire
-                </Badge>
+            {/* Séparateur sous le header */}
+            <div className="h-px bg-gray-200 dark:bg-gray-800 mt-6" />
+          </div>
+
+          {/* Tableau des features */}
+          {featureSections.map((section, sIdx) => (
+            <div key={sIdx}>
+              {/* Titre de section */}
+              <div
+                className="sticky z-10 bg-[#FDFDFD] dark:bg-background pt-10"
+                style={{ top: headerHeight ? `${headerHeight}px` : '200px' }}
+              >
+                <h4 className="text-[17px] font-medium text-gray-900 dark:text-gray-100">
+                  {section.title}
+                </h4>
+                <div className="h-px bg-gray-200 dark:bg-gray-800 mt-3" />
               </div>
-              <div className="flex flex-col gap-4">
-                <div>
-                  <h3 className="text-2xl font-semibold">TPE</h3>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Idéal pour les petites et moyennes entreprises en croissance
-                  </p>
-                </div>
 
-                <div className="flex items-baseline gap-2">
-                  <span className="text-4xl font-bold">
-                    {isAnnual ? pricing.pme.annual : pricing.pme.monthly}
-                  </span>
-                  <span className="text-sm text-muted-foreground">
-                    TTC / mois
-                  </span>
-                </div>
-
-                {isAnnual && (
-                  <p className="text-xs text-muted-foreground">
-                    {pricing.pme.annualTotal} facturé annuellement
-                  </p>
-                )}
-
-                <div className="flex flex-col gap-2 py-4 border-t border-b">
-                  <p className="text-sm font-medium text-muted-foreground">
-                    10 utilisateurs
-                  </p>
-                  {mainFeatures.map((feature, idx) => (
-                    <div key={idx} className="flex items-center gap-2">
-                      <Check className="w-4 h-4 text-primary flex-shrink-0" />
-                      <span className="text-sm">{feature}</span>
+              {/* Lignes de features */}
+              {section.features.map((feature, fIdx) => (
+                <div key={fIdx}>
+                  <div className="grid grid-cols-[220px_1fr_1fr_1fr] items-stretch">
+                    {/* Label */}
+                    <div className="flex items-center py-3">
+                      <span className="text-[13px] text-gray-700 dark:text-gray-300">
+                        {feature.name}
+                      </span>
+                      {feature.tooltip && <InfoTooltip text={feature.tooltip} />}
                     </div>
-                  ))}
-                </div>
 
-                <Button asChild className="gap-4 w-full">
-                  <Link href="/auth/signup">
-                    Essayer 30 jours gratuits <MoveRight className="w-4 h-4" />
-                  </Link>
-                </Button>
-              </div>
+                    {/* Valeurs */}
+                    {plans.map((plan) => (
+                      <div
+                        key={plan.id}
+                        className={`flex items-center justify-center py-3 ${
+                          plan.highlighted
+                            ? "bg-gray-100/70 dark:bg-gray-800/40"
+                            : ""
+                        }`}
+                      >
+                        <FeatureValue value={feature[plan.id]} />
+                      </div>
+                    ))}
+                  </div>
+                  <div className="h-px bg-gray-100 dark:bg-gray-800/60" />
+                </div>
+              ))}
             </div>
+          ))}
+        </div>
 
-            {/* Carte Entreprise */}
-            <div className="border rounded-lg p-6 bg-background shadow-sm">
-              <div className="flex flex-col gap-4">
-                <div>
-                  <h3 className="text-2xl font-semibold">Entreprise</h3>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Pour les grandes structures avec des besoins avancés
-                  </p>
-                </div>
-
-                <div className="flex items-baseline gap-2">
-                  <span className="text-4xl font-bold">
-                    {isAnnual
-                      ? pricing.entreprise.annual
-                      : pricing.entreprise.monthly}
-                  </span>
-                  <span className="text-sm text-muted-foreground">
-                    TTC / mois
-                  </span>
-                </div>
-
-                {isAnnual && (
-                  <p className="text-xs text-muted-foreground">
-                    {pricing.entreprise.annualTotal} facturé annuellement
-                  </p>
-                )}
-
-                <div className="flex flex-col gap-2 py-4 border-t border-b">
-                  <p className="text-sm font-medium text-muted-foreground">
-                    25 utilisateurs
-                  </p>
-                  {mainFeatures.map((feature, idx) => (
-                    <div key={idx} className="flex items-center gap-2">
-                      <Check className="w-4 h-4 text-primary flex-shrink-0" />
-                      <span className="text-sm">{feature}</span>
-                    </div>
-                  ))}
-                </div>
-
-                <Button asChild variant="outline" className="gap-4 w-full">
-                  <Link href="/auth/signup">
-                    Essayer 30 jours gratuits <MoveRight className="w-4 h-4" />
-                  </Link>
-                </Button>
-              </div>
+        {/* ===================== MOBILE ===================== */}
+        <div className="lg:hidden">
+          {/* Toggle mobile centré */}
+          <div className="flex justify-center mb-8">
+            <div className="inline-flex items-center bg-gray-100 dark:bg-gray-900 rounded-lg p-0.5">
+              <button
+                onClick={() => setIsAnnual(false)}
+                className={`px-4 py-1.5 rounded-md text-[13px] font-medium transition-all ${
+                  !isAnnual
+                    ? "bg-white dark:bg-gray-800 shadow-sm text-gray-900 dark:text-gray-100"
+                    : "text-gray-500"
+                }`}
+              >
+                Mensuel
+              </button>
+              <button
+                onClick={() => setIsAnnual(true)}
+                className={`px-4 py-1.5 rounded-md text-[13px] font-medium transition-all ${
+                  isAnnual
+                    ? "bg-white dark:bg-gray-800 shadow-sm text-gray-900 dark:text-gray-100"
+                    : "text-gray-500"
+                }`}
+              >
+                Annuel
+              </button>
             </div>
           </div>
 
-          {/* VERSION DESKTOP - Tableau avec sticky header */}
-          <div className="w-full hidden lg:block">
-            {/* Masque invisible pour cacher le contenu qui scroll */}
-            <div className="sticky top-0 h-20 z-10 bg-[#FDFDFD] dark:bg-background"></div>
-
-            {/* Header sticky */}
-            <div className="sticky top-20 z-10 bg-[#FDFDFD] dark:bg-background">
-              <div className="grid text-left w-full grid-cols-3 lg:grid-cols-4 divide-x border-b">
-                <div className="col-span-3 lg:col-span-1"></div>
-                <div className="px-3 py-1 md:px-6 md:py-4 gap-2 flex flex-col">
-                  <p className="text-2xl">Freelance</p>
-                  <p className="text-sm text-muted-foreground">
-                    Parfait pour les indépendants et freelances qui démarrent
-                    leur activité
-                  </p>
-                  <p className="flex flex-col lg:flex-row lg:items-center gap-2 text-xl mt-8">
-                    <span className="text-4xl">
-                      {isAnnual
-                        ? pricing.freelance.annual
-                        : pricing.freelance.monthly}
-                    </span>
-                    <span className="text-sm text-muted-foreground">
-                      TTC / mois
-                    </span>
-                  </p>
-                  {isAnnual && (
-                    <p className="text-xs text-muted-foreground">
-                      {pricing.freelance.annualTotal} facturé annuellement
+          {/* Cartes plans mobile */}
+          <div className="flex flex-col gap-3 px-4 mb-8">
+            {plans.map((plan) => (
+              <div
+                key={plan.id}
+                className={`rounded-xl px-5 py-4 ${
+                  plan.highlighted
+                    ? "border-2 border-gray-900 dark:border-gray-100 bg-gray-50 dark:bg-gray-800/40"
+                    : "border border-gray-200 dark:border-gray-800"
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-base font-semibold text-gray-900 dark:text-gray-50">
+                        {plan.name}
+                      </h3>
+                      {plan.badge && (
+                        <span className="text-[10px] font-medium text-[#5A50FF] bg-[#5A50FF]/8 border border-[#5A50FF]/15 rounded-md px-2 py-0.5">
+                          {plan.badge}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[12px] text-gray-500 mt-0.5">
+                      {isAnnual ? plan.annual : plan.monthly} {plan.priceSuffix}
                     </p>
-                  )}
-                  <Button asChild variant="outline" className="gap-4 mt-8">
-                    <Link href="/auth/signup">
-                      Essayer 30 jours gratuits{" "}
-                      <MoveRight className="w-4 h-4" />
-                    </Link>
-                  </Button>
-                </div>
-                <div className="px-3 py-1 md:px-6 md:py-4 gap-2 flex flex-col">
-                  <p className="text-2xl">TPE</p>
-                  <p className="text-sm text-muted-foreground">
-                    Idéal pour les petites et moyennes entreprises en croissance
-                  </p>
-                  <p className="flex flex-col lg:flex-row lg:items-center gap-2 text-xl mt-8">
-                    <span className="text-4xl">
-                      {isAnnual ? pricing.pme.annual : pricing.pme.monthly}
-                    </span>
-                    <span className="text-sm text-muted-foreground">
-                      TTC / mois
-                    </span>
-                  </p>
-                  {isAnnual && (
-                    <p className="text-xs text-muted-foreground">
-                      {pricing.pme.annualTotal} facturé annuellement
-                    </p>
-                  )}
-                  <Button asChild className="gap-4 mt-8">
-                    <Link href="/auth/signup">
-                      Essayer 30 jours gratuits{" "}
-                      <MoveRight className="w-4 h-4" />
-                    </Link>
-                  </Button>
-                </div>
-                <div className="px-3 py-1 md:px-6 md:py-4 gap-2 flex flex-col">
-                  <p className="text-2xl">Entreprise</p>
-                  <p className="text-sm text-muted-foreground">
-                    Pour les grandes structures avec des besoins avancés
-                  </p>
-                  <p className="flex flex-col lg:flex-row lg:items-center gap-2 text-xl mt-8">
-                    <span className="text-4xl">
-                      {isAnnual
-                        ? pricing.entreprise.annual
-                        : pricing.entreprise.monthly}
-                    </span>
-                    <span className="text-sm text-muted-foreground">
-                      TTC / mois
-                    </span>
-                  </p>
-                  {isAnnual && (
-                    <p className="text-xs text-muted-foreground">
-                      {pricing.entreprise.annualTotal} facturé annuellement
-                    </p>
-                  )}
-                  <Button asChild variant="outline" className="gap-4 mt-8">
-                    <Link href="/auth/signup">
-                      Essayer 30 jours gratuits{" "}
-                      <MoveRight className="w-4 h-4" />
-                    </Link>
-                  </Button>
+                  </div>
+                  <Link
+                    href="/auth/signup"
+                    className={`shrink-0 px-4 py-1.5 rounded-lg text-[12px] font-medium transition-colors ${
+                      plan.highlighted
+                        ? "bg-gray-900 text-white border border-gray-900 dark:bg-white dark:text-gray-900 dark:border-white"
+                        : "border border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-400"
+                    }`}
+                  >
+                    {plan.cta}
+                  </Link>
                 </div>
               </div>
-            </div>
+            ))}
+          </div>
 
-            {/* Contenu qui scroll - Tableau des fonctionnalités */}
-            <div className="grid text-left w-full grid-cols-3 lg:grid-cols-4 divide-x">
-              {/* Ligne Fonctionnalités */}
-              <div className="px-3 lg:px-6 col-span-3 lg:col-span-1 text-sm py-4 bg-muted/50">
-                <span className="font-medium">Fonctionnalités</span>
-              </div>
-              <div className="bg-muted/50"></div>
-              <div className="bg-muted/50"></div>
-              <div className="bg-muted/50"></div>
-
-              {/* Boucle sur les fonctionnalités */}
-              {features.map((feature, index) => {
-                // Fonction pour afficher la valeur selon le type
-                const renderValue = (value) => {
-                  if (value === true) {
-                    return <Check className="w-4 h-4 text-primary" />;
-                  }
-                  return (
-                    <p className="text-muted-foreground text-sm text-center">
-                      {value}
-                    </p>
-                  );
-                };
-
-                return (
-                  <React.Fragment key={index}>
-                    <div className="px-3 lg:px-6 col-span-3 lg:col-span-1 py-4">
-                      <p className="text-sm font-normal">{feature.name}</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {feature.description}
-                      </p>
-                    </div>
-                    <div className="px-3 py-1 md:px-6 md:py-4 flex justify-center items-center">
-                      {renderValue(feature.freelance)}
-                    </div>
-                    <div className="px-3 py-1 md:px-6 md:py-4 flex justify-center items-center">
-                      {renderValue(feature.pme)}
-                    </div>
-                    <div className="px-3 py-1 md:px-6 md:py-4 flex justify-center items-center">
-                      {renderValue(feature.entreprise)}
-                    </div>
-                  </React.Fragment>
-                );
-              })}
-            </div>
+          {/* Accordion features */}
+          <div className="border-t border-gray-200 dark:border-gray-800 mx-4">
+            {featureSections.map((section, i) => (
+              <MobileSection key={i} section={section} />
+            ))}
           </div>
         </div>
       </div>

@@ -340,9 +340,10 @@ export function SendDocumentModal({
         }}
       >
         <DialogContent
-          className="flex flex-col gap-0 p-0 overflow-hidden !max-w-7xl !w-[calc(100vw-4rem)] h-[calc(100vh-4rem)]"
+          className="gap-0 p-1 overflow-hidden !max-w-7xl !w-[calc(100vw-4rem)] h-[calc(100vh-4rem)] border-0 bg-[#efefef] dark:bg-[#1a1a1a] rounded-2xl"
           showCloseButton={false}
         >
+          <div className="flex flex-col h-full bg-background rounded-xl overflow-hidden ring-1 ring-black/[0.07] dark:ring-white/[0.1]">
           {/* Header */}
           <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-border/40">
             <DialogHeader>
@@ -473,6 +474,7 @@ export function SendDocumentModal({
               </div>
             </div>
           )}
+          </div>
         </DialogContent>
       </Dialog>
     </>

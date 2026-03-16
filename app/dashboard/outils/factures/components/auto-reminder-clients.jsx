@@ -4,26 +4,17 @@ import { useMemo, useState } from "react";
 import { useFormContext } from "react-hook-form";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import { Input } from "@/src/components/ui/input";
-import { Label } from "@/src/components/ui/label";
-import { Search, Users, LoaderCircle } from "lucide-react";
+import { Search, LoaderCircle } from "lucide-react";
 import { useClients } from "@/src/graphql/clientQueries";
 
 export default function AutoReminderClients() {
   const { watch, setValue } = useFormContext();
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Récupérer la liste des clients
   const { clients, loading } = useClients();
 
-  console.log(
-    "👥 [AutoReminderClients] Clients chargés:",
-    clients?.map((c) => ({ id: c.id, name: c.name }))
-  );
-
-  // Récupérer les clients exclus du formulaire
   const excludedClientIds = watch("excludedClientIds") || [];
 
-  // Filtrer les clients par recherche
   const filteredClients = useMemo(() => {
     if (!clients) return [];
 
@@ -37,7 +28,6 @@ export default function AutoReminderClients() {
     );
   }, [clients, searchQuery]);
 
-  // Sélectionner/Désélectionner tous les clients
   const allClientsSelected = excludedClientIds.length === 0;
   const someClientsSelected =
     excludedClientIds.length > 0 &&
@@ -45,64 +35,47 @@ export default function AutoReminderClients() {
 
   const toggleAllClients = () => {
     if (allClientsSelected) {
-      // Exclure tous les clients
       setValue("excludedClientIds", clients?.map((c) => c.id) || []);
     } else {
-      // Inclure tous les clients
       setValue("excludedClientIds", []);
     }
   };
 
-  // Compter les clients actifs
   const activeClientsCount = (clients?.length || 0) - excludedClientIds.length;
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-center">
-          <LoaderCircle className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-sm text-muted-foreground">
-            Chargement des clients...
-          </p>
-        </div>
+      <div className="flex items-center justify-center py-10">
+        <LoaderCircle className="h-5 w-5 animate-spin text-muted-foreground/50" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div>
-        <h3 className="text-base font-medium mb-2">Clients concernés</h3>
-        <p className="text-sm text-muted-foreground mb-3">
-          Sélectionnez les clients qui recevront les relances automatiques. Les
-          clients non cochés ne recevront pas de relance.
+    <div className="space-y-3">
+      {/* Description + compteur */}
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-muted-foreground">
+          Sélectionnez les clients qui recevront les relances.
         </p>
-      </div>
-
-      {/* Statistiques */}
-      <div className="flex items-center gap-2 p-3 bg-[#5b50ff]/10 border border-[#5b50ff]/20 rounded-lg">
-        <Users className="h-4 w-4 text-[#5b50ff]" />
-        <p className="text-sm text-[#5b50ff]">
-          <span className="font-medium">{activeClientsCount}</span> client(s)
-          sur <span className="font-medium">{clients?.length || 0}</span>{" "}
-          recevront les relances
-        </p>
+        <span className="text-xs text-muted-foreground shrink-0 ml-3">
+          <span className="font-medium text-foreground">{activeClientsCount}</span> / {clients?.length || 0}
+        </span>
       </div>
 
       {/* Recherche */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
         <Input
-          placeholder="Rechercher un client..."
+          placeholder="Rechercher..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-9"
+          className="pl-8 h-9 text-sm"
         />
       </div>
 
       {/* Sélectionner tout */}
-      <div className="flex items-center space-x-2 py-2 border-b border-gray-200 dark:border-gray-700">
+      <div className="flex items-center gap-2.5 py-2 border-b border-border/40">
         <Checkbox
           id="select-all"
           checked={
@@ -114,20 +87,20 @@ export default function AutoReminderClients() {
           }
           onCheckedChange={toggleAllClients}
         />
-        <Label
+        <label
           htmlFor="select-all"
-          className="text-sm font-medium cursor-pointer"
+          className="text-xs text-muted-foreground cursor-pointer select-none"
         >
           {allClientsSelected ? "Désélectionner tout" : "Sélectionner tout"}
-        </Label>
+        </label>
       </div>
 
       {/* Liste des clients */}
-      <div className="space-y-1 max-h-[400px] overflow-y-auto">
+      <div className="space-y-0.5 max-h-[400px] overflow-y-auto -mx-1">
         {filteredClients.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
+          <p className="text-center py-8 text-xs text-muted-foreground">
             {searchQuery ? "Aucun client trouvé" : "Aucun client disponible"}
-          </div>
+          </p>
         ) : (
           filteredClients.map((client) => {
             const isExcluded = excludedClientIds.includes(client.id);
@@ -135,7 +108,7 @@ export default function AutoReminderClients() {
               <label
                 key={client.id}
                 htmlFor={`client-${client.id}`}
-                className="flex items-center space-x-3 py-2 px-2 rounded-md hover:bg-gray-50 dark:hover:bg-[#252525] cursor-pointer"
+                className="flex items-center gap-3 py-2 px-2.5 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
               >
                 <Checkbox
                   id={`client-${client.id}`}
@@ -154,13 +127,22 @@ export default function AutoReminderClients() {
                     }
                   }}
                 />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{client.name}</p>
-                  {client.email && (
-                    <p className="text-xs text-muted-foreground truncate">
-                      {client.email}
+                <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                  <div className="flex items-center justify-center size-7 rounded-full bg-[#5b50ff]/10 shrink-0">
+                    <span className="text-[10px] font-medium text-[#5b50ff]">
+                      {(client.name || "?").charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm text-foreground truncate">
+                      {client.name}
                     </p>
-                  )}
+                    {client.email && (
+                      <p className="text-xs text-muted-foreground truncate">
+                        {client.email}
+                      </p>
+                    )}
+                  </div>
                 </div>
               </label>
             );

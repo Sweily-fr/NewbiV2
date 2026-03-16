@@ -57,6 +57,9 @@ import {
   useToggleCrmEmailAutomation,
 } from '@/src/hooks/useCrmEmailAutomations';
 import { useClientCustomFields } from '@/src/hooks/useClientCustomFields';
+import { useSubscription } from '@/src/contexts/dashboard-layout-context';
+import { getPlanLimits } from '@/src/lib/plan-limits';
+import { Lock } from 'lucide-react';
 
 const TRIGGER_TYPES = [
   {
@@ -525,6 +528,11 @@ function NewEmailAutomationRow({ dateFields, onCreate, onCancel, isCreating }) {
 
 export default function AutomationsPopover({ trigger }) {
   const { workspaceId } = useWorkspace();
+  const { subscription } = useSubscription();
+  const planLimits = getPlanLimits(subscription?.plan);
+  const canUseClientAutomations = planLimits.clientAutomations;
+  const canUseEmailAutomations = planLimits.crmEmailAutomations;
+
   const { automations, loading: automationsLoading, refetch } = useClientAutomations(workspaceId);
   const { lists, loading: listsLoading } = useClientLists(workspaceId);
   const { automations: emailAutomations, refetch: refetchEmailAutomations } = useCrmEmailAutomations(workspaceId);
@@ -635,6 +643,21 @@ export default function AutomationsPopover({ trigger }) {
           )}
         </PopoverTrigger>
         <PopoverContent align="end" className="w-[650px] p-0">
+          {!canUseClientAutomations ? (
+            /* Freelance: no automations at all */
+            <div className="p-6 text-center space-y-3">
+              <div className="flex items-center justify-center gap-2 mb-1">
+                <Lock className="w-4 h-4 text-muted-foreground" />
+                <h4 className="font-medium">Automatisations</h4>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Les automatisations clients sont disponibles à partir du plan PME.
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Passez à un plan supérieur pour automatiser la gestion de vos listes et emails clients.
+              </p>
+            </div>
+          ) : (
           <Tabs defaultValue="lists" className="w-full">
             {/* Header avec tabs */}
             <div className="p-4 border-b">
@@ -652,13 +675,16 @@ export default function AutomationsPopover({ trigger }) {
                     </Badge>
                   )}
                 </TabsTrigger>
-                <TabsTrigger value="emails" className="flex-1 gap-2">
+                <TabsTrigger value="emails" className="flex-1 gap-2" disabled={!canUseEmailAutomations}>
                   <Mail className="w-3 h-3" />
                   Emails
-                  {activeEmailCount > 0 && (
+                  {canUseEmailAutomations && activeEmailCount > 0 && (
                     <Badge variant="secondary" className="text-xs ml-1">
                       {activeEmailCount}
                     </Badge>
+                  )}
+                  {!canUseEmailAutomations && (
+                    <Lock className="w-3 h-3 text-muted-foreground" />
                   )}
                 </TabsTrigger>
               </TabsList>
@@ -726,6 +752,18 @@ export default function AutomationsPopover({ trigger }) {
 
             {/* Onglet Automatisations Email */}
             <TabsContent value="emails" className="m-0">
+              {!canUseEmailAutomations ? (
+                <div className="p-6 text-center space-y-2">
+                  <Lock className="w-5 h-5 text-muted-foreground mx-auto" />
+                  <p className="text-sm text-muted-foreground">
+                    Les automatisations email sont disponibles avec le plan Entreprise.
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Passez au plan Entreprise pour envoyer des emails automatiques basés sur vos champs personnalisés.
+                  </p>
+                </div>
+              ) : (
+              <>
               <p className="text-xs text-muted-foreground px-4 pt-3">
                 Envoyez des emails automatiques basés sur des dates
               </p>
@@ -777,8 +815,11 @@ export default function AutomationsPopover({ trigger }) {
                   </p>
                 )}
               </div>
+              </>
+              )}
             </TabsContent>
           </Tabs>
+          )}
         </PopoverContent>
       </Popover>
 

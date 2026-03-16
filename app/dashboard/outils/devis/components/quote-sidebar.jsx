@@ -39,6 +39,8 @@ import UniversalPDFDownloaderWithFacturX from "@/src/components/pdf/UniversalPDF
 
 import CreateLinkedInvoicePopover from "./create-linked-invoice-popover";
 import LinkedInvoicesList from "./linked-invoices-list";
+import { SignatureStatusBadge } from "@/src/components/esignature/signature-status-badge";
+import { useDocumentSignatureStatus } from "@/src/hooks/useESignature";
 
 export default function QuoteSidebar({
   isOpen,
@@ -56,6 +58,10 @@ export default function QuoteSidebar({
     loading: loadingFullQuote,
     error: quoteError,
   } = useQuote(initialQuote?.id);
+
+  // Statut de signature électronique
+  const { signatureRequest: signatureStatus, hasSignature } =
+    useDocumentSignatureStatus("quote", initialQuote?.id);
 
   if (!isOpen || !initialQuote) return null;
 
@@ -286,6 +292,9 @@ export default function QuoteSidebar({
                 >
                   {QUOTE_STATUS_LABELS[quote.status] || quote.status}
                 </span>
+                {hasSignature && (
+                  <SignatureStatusBadge status={signatureStatus.status} />
+                )}
                 {isValidUntilExpired() && (
                   <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100">
                     Expiré

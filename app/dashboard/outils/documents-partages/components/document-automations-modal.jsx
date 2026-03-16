@@ -45,8 +45,11 @@ import {
   User,
   Check,
   ChevronsUpDown,
+  Crown,
 } from 'lucide-react';
 import { cn } from '@/src/lib/utils';
+import { getPlanLimits } from '@/src/lib/plan-limits';
+import { useDashboardLayoutContext } from '@/src/contexts/dashboard-layout-context';
 import { useWorkspace } from '@/src/hooks/useWorkspace';
 import { useSharedFolders } from '@/src/hooks/useSharedDocuments';
 import { useClients } from '@/src/hooks/useClients';
@@ -419,6 +422,9 @@ function SettingsPopover({ config, onSave }) {
 
 export default function DocumentAutomationsModal({ open, onOpenChange, onDocumentsChanged }) {
   const { workspaceId } = useWorkspace();
+  const { subscription } = useDashboardLayoutContext();
+  const planLimits = getPlanLimits(subscription?.plan);
+  const automationLimit = planLimits.documentAutomations; // 0 = no access, -1 = unlimited, N = max
   const client = useApolloClient();
   const { automations, loading: automationsLoading, refetch } = useDocumentAutomations(workspaceId);
   const { folders, loading: foldersLoading } = useSharedFolders();
@@ -620,7 +626,19 @@ export default function DocumentAutomationsModal({ open, onOpenChange, onDocumen
           Importez automatiquement vos documents dans les dossiers partagés
         </p>
 
-        {isLoading ? (
+        {automationLimit === 0 ? (
+          <div className="flex flex-col items-center justify-center py-10 text-center space-y-3">
+            <div className="h-10 w-10 rounded-full bg-[#5b50ff]/10 flex items-center justify-center">
+              <Crown className="h-5 w-5 text-[#5b50ff]" />
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Fonctionnalité non disponible</p>
+              <p className="text-sm text-muted-foreground max-w-sm">
+                Les automatisations de documents ne sont pas incluses dans le plan Freelance. Passez au plan PME ou Entreprise pour automatiser le classement de vos documents.
+              </p>
+            </div>
+          </div>
+        ) : isLoading ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
           </div>
@@ -757,19 +775,28 @@ export default function DocumentAutomationsModal({ open, onOpenChange, onDocumen
         )}
 
         {/* Footer */}
-        {!isLoading && (
-          <div className="border-t pt-3 -mb-3">
-            <Button
-              variant="ghost"
-              className="text-muted-foreground"
-              onClick={() => setShowNewRow(true)}
-              disabled={showNewRow}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Ajouter une automatisation
-            </Button>
-          </div>
-        )}
+        {!isLoading && automationLimit !== 0 && (() => {
+          const isLimitReached = automationLimit > 0 && automations.length >= automationLimit;
+          return (
+            <div className="border-t pt-3 -mb-3">
+              {isLimitReached ? (
+                <p className="text-sm text-muted-foreground py-1">
+                  Limite atteinte ({automations.length}/{automationLimit}). Passez au plan Entreprise pour des automatisations illimitées.
+                </p>
+              ) : (
+                <Button
+                  variant="ghost"
+                  className="text-muted-foreground"
+                  onClick={() => setShowNewRow(true)}
+                  disabled={showNewRow}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Ajouter une automatisation
+                </Button>
+              )}
+            </div>
+          );
+        })()}
       </DialogContent>
     </Dialog>
   );

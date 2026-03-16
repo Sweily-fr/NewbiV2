@@ -58,15 +58,17 @@ export function InviteForm({ members, setMembers, selectedPlan, onContinue, onSk
   };
 
   // Available roles depend on plan and current counts
+  const planRoles = getPlanLimits(selectedPlan).availableRoles || ["accountant"];
   const getAvailableRoles = (currentRole) => {
     if (isFreelance) {
       return ["accountant"];
     }
     const roles = [];
-    // Always allow keeping current role
-    if (currentRole === "admin" || !isUserLimitReached) roles.push("admin");
-    if (currentRole === "member" || !isUserLimitReached) roles.push("member");
-    if (currentRole === "accountant" || !isAccountantLimitReached) roles.push("accountant");
+    // Only show roles allowed by the plan, respecting seat limits
+    if (planRoles.includes("admin") && (currentRole === "admin" || !isUserLimitReached)) roles.push("admin");
+    if (planRoles.includes("member") && (currentRole === "member" || !isUserLimitReached)) roles.push("member");
+    if (planRoles.includes("viewer") && (currentRole === "viewer" || !isUserLimitReached)) roles.push("viewer");
+    if (planRoles.includes("accountant") && (currentRole === "accountant" || !isAccountantLimitReached)) roles.push("accountant");
     // Deduplicate
     return [...new Set(roles)];
   };

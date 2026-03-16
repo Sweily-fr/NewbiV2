@@ -14,44 +14,135 @@
 export const PLAN_LIMITS = {
   freelance: {
     // Freelance: Owner seul, pas d'utilisateurs invités
-    invitableUsers: 0,      // 0 utilisateur invité (owner seul)
-    accountants: 1,         // 1 comptable gratuit
-    totalUsers: 1,          // 1 utilisateur total (owner)
-    canAddPaidUsers: false, // Pas de siège payant possible
+    invitableUsers: 0,
+    accountants: 1,
+    totalUsers: 1,
+    canAddPaidUsers: false,
     workspaces: 1,
     bankAccounts: 1,
     storage: 50,
-    projects: 50,
-    invoices: 500,
+    // Taille max par transfert de fichier (en Go)
+    fileTransferMaxGB: 5,
+    // Rôles disponibles à l'invitation
+    availableRoles: ["accountant"],
+    // Exports comptables
+    exports: ["csv", "excel"],
+    // E-signature
+    esignature: false,
+    // Automatisations
+    documentAutomations: 0,
+    clientAutomations: false,
+    crmEmailAutomations: false,
+    // Analytics
+    advancedAnalytics: false,
+    // Prévisions trésorerie
+    forecastMonths: 0,
+    // Champs personnalisés (par entité)
+    customFields: 3,
+    // Segments clients dynamiques
+    clientSegments: false,
+    // Calendriers connectés
+    calendarConnections: 1,
+    // Modèles de documents
+    documentTemplates: 3,
+    // SMTP personnalisé
+    customSmtp: false,
+    // E-invoicing (Factur-X / SuperPDP)
+    eInvoicing: true,
   },
   pme: {
     // PME: Owner + jusqu'à 10 collaborateurs
-    invitableUsers: 10,     // 10 utilisateurs invités
-    accountants: 3,         // 3 comptables gratuits
-    totalUsers: 11,         // 11 utilisateurs total (owner + 10)
-    canAddPaidUsers: true,  // Sièges payants possibles (7,49€/mois)
+    invitableUsers: 10,
+    accountants: 3,
+    totalUsers: 11,
+    canAddPaidUsers: true,
+    seatPrice: 7.49,
     workspaces: 1,
     bankAccounts: 3,
     storage: 200,
-    projects: 200,
-    invoices: 2000,
+    // Taille max par transfert de fichier (en Go)
+    fileTransferMaxGB: 15,
+    // Rôles disponibles à l'invitation
+    availableRoles: ["member", "accountant", "admin"],
+    // Exports comptables
+    exports: ["csv", "excel", "fec"],
+    // E-signature (SES uniquement)
+    esignature: "ses",
+    // Automatisations
+    documentAutomations: 5,
+    clientAutomations: true,
+    crmEmailAutomations: false,
+    // Analytics
+    advancedAnalytics: true,
+    // Prévisions trésorerie
+    forecastMonths: 6,
+    // Champs personnalisés (par entité)
+    customFields: 10,
+    // Segments clients dynamiques
+    clientSegments: true,
+    // Calendriers connectés
+    calendarConnections: 3,
+    // Modèles de documents
+    documentTemplates: 10,
+    // SMTP personnalisé
+    customSmtp: false,
+    // E-invoicing (Factur-X / SuperPDP)
+    eInvoicing: true,
   },
   entreprise: {
     // Entreprise: Owner + jusqu'à 25 collaborateurs
-    invitableUsers: 25,     // 25 utilisateurs invités
-    accountants: 5,         // 5 comptables gratuits
-    totalUsers: 26,         // 26 utilisateurs total (owner + 25)
-    canAddPaidUsers: true,  // Sièges payants possibles (7,49€/mois)
+    invitableUsers: 25,
+    accountants: 5,
+    totalUsers: 26,
+    canAddPaidUsers: true,
+    seatPrice: 5.99,
     workspaces: 1,
     bankAccounts: 5,
     storage: 500,
-    projects: 500,
-    invoices: 5000,
+    // Taille max par transfert de fichier (en Go)
+    fileTransferMaxGB: 50,
+    // Rôles disponibles à l'invitation (tous les rôles)
+    availableRoles: ["member", "accountant", "admin", "viewer"],
+    // Exports comptables (tous les formats)
+    exports: ["csv", "excel", "fec", "sage", "cegid"],
+    // E-signature (SES + QES)
+    esignature: "qes",
+    // Automatisations (illimité = -1)
+    documentAutomations: -1,
+    clientAutomations: true,
+    crmEmailAutomations: true,
+    // Analytics
+    advancedAnalytics: true,
+    // Prévisions trésorerie
+    forecastMonths: 24,
+    // Champs personnalisés (illimité = -1)
+    customFields: -1,
+    // Segments clients dynamiques
+    clientSegments: true,
+    // Calendriers connectés (illimité = -1)
+    calendarConnections: -1,
+    // Modèles de documents (illimité = -1)
+    documentTemplates: -1,
+    // SMTP personnalisé
+    customSmtp: true,
+    // E-invoicing (Factur-X / SuperPDP) + archivage légal
+    eInvoicing: true,
+    eInvoicingArchival: true,
   },
 };
 
-// Prix par siège additionnel
+// Prix par siège additionnel (fallback, préférer getSeatPrice(plan))
 export const SEAT_PRICE = 7.49;
+
+/**
+ * Récupère le prix du siège supplémentaire pour un plan
+ * @param {string} planName - Nom du plan
+ * @returns {number} Prix du siège en €/mois
+ */
+export function getSeatPrice(planName) {
+  const limits = getPlanLimits(planName);
+  return limits.seatPrice || SEAT_PRICE;
+}
 
 /**
  * Récupère les limites d'un plan

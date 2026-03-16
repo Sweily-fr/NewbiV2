@@ -9,7 +9,7 @@ import { ForecastKpiTable } from "./components/forecast-kpi-table";
 import { ForecastPaymentsCard } from "./components/forecast-payments-card";
 import { ForecastExportDialog } from "./components/forecast-export-dialog";
 import { Button } from "@/src/components/ui/button";
-import { Download, Landmark, ChevronDown, Check } from "lucide-react";
+import { Download, Landmark, ChevronDown, Check, Lock, TrendingUp } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,6 +18,9 @@ import {
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
 import { cn } from "@/src/lib/utils";
+import { useSubscription } from "@/src/contexts/dashboard-layout-context";
+import { getPlanLimits } from "@/src/lib/plan-limits";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/src/components/ui/tooltip";
 
 const PERIOD_OPTIONS = [
   { value: "6", label: "6 mois" },
@@ -47,8 +50,15 @@ const getDateRange = (periodMonths) => {
 
 export default function PrevisionPage() {
   const { workspaceId } = useRequiredWorkspace();
+  const { subscription } = useSubscription();
+  const planLimits = getPlanLimits(subscription?.plan);
+  const forecastMonths = planLimits.forecastMonths;
 
-  const [period, setPeriod] = useState("12");
+  // Determine the max allowed period and default period based on plan
+  const maxPeriod = forecastMonths;
+  const defaultPeriod = forecastMonths >= 12 ? "12" : forecastMonths > 0 ? String(forecastMonths) : "6";
+
+  const [period, setPeriod] = useState(defaultPeriod);
   const [accountFilter, setAccountFilter] = useState("all");
   const [exportOpen, setExportOpen] = useState(false);
 
@@ -59,7 +69,7 @@ export default function PrevisionPage() {
 
   const { data: bankData } = useQuery(GET_BANKING_ACCOUNTS, {
     variables: { workspaceId },
-    skip: !workspaceId,
+    skip: !workspaceId || forecastMonths === 0,
   });
   const bankAccounts = useMemo(() => {
     const accounts = bankData?.bankingAccounts || [];
@@ -87,12 +97,83 @@ export default function PrevisionPage() {
     accountFilter !== "all" ? accountFilter : undefined
   );
 
+  // If plan has no forecast access, show upgrade message
+  if (forecastMonths === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center">
+        <div className="flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-6">
+          <Lock size={28} className="text-muted-foreground" />
+        </div>
+        <h2 className="text-xl font-semibold mb-2">Prévisions de trésorerie</h2>
+        <p className="text-muted-foreground max-w-md mb-6">
+          Les prévisions de trésorerie vous permettent d&apos;anticiper vos flux financiers
+          et de planifier votre activité sereinement. Cette fonctionnalité est disponible
+          à partir du plan PME.
+        </p>
+        <Button asChild>
+          <a href="/dashboard/parametres?tab=subscription">
+            <TrendingUp size={14} className="mr-2" />
+            Passer au plan PME
+          </a>
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col min-h-full">
       {/* ─── Header: Title + actions ─── */}
       <div className="flex items-center justify-between pt-4 sm:pt-6 mb-8 px-4 sm:px-6">
         <h1 className="text-2xl font-medium">Prévision</h1>
         <div className="flex items-center gap-3">
+          {/* Period selector */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="cursor-pointer">
+                {PERIOD_OPTIONS.find((o) => o.value === period)?.label || "12 mois"}
+                <ChevronDown size={12} className="ml-0.5 opacity-70" aria-hidden="true" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+                Horizon de prévision
+              </DropdownMenuLabel>
+              {PERIOD_OPTIONS.map((opt) => {
+                const isDisabled = parseInt(opt.value) > maxPeriod;
+                if (isDisabled) {
+                  return (
+                    <Tooltip key={opt.value}>
+                      <TooltipTrigger asChild>
+                        <div className="flex items-center gap-2 px-2 py-1.5 text-sm text-muted-foreground/50 cursor-not-allowed">
+                          <span className="flex-1 text-xs">{opt.label}</span>
+                          <Lock size={12} />
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        Passez au plan Entreprise pour les prévisions à {opt.label}
+                      </TooltipContent>
+                    </Tooltip>
+                  );
+                }
+                return (
+                  <DropdownMenuItem
+                    key={opt.value}
+                    onClick={() => setPeriod(opt.value)}
+                    className="flex items-center gap-2 cursor-pointer"
+                  >
+                    <span className="flex-1 text-xs">{opt.label}</span>
+                    <Check
+                      className={cn(
+                        "h-4 w-4 text-[#5b4fff]",
+                        period === opt.value ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                  </DropdownMenuItem>
+                );
+              })}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           <Button
             variant="outline"
             size="icon"

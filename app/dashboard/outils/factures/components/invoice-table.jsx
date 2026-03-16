@@ -442,7 +442,7 @@ export default function InvoiceTable({
       </div>
 
       {/* Tabs de filtre rapide - Desktop */}
-      <div className="hidden md:block flex-shrink-0 border-b border-gray-200 dark:border-gray-800">
+      <div className="hidden md:block flex-shrink-0 border-b border-border">
         <Tabs value={activeTab} onValueChange={handleTabChange}>
           <TabsList className="h-auto rounded-none bg-transparent p-0 pb-2 w-full justify-start px-4 sm:px-6">
             <TabsTrigger
@@ -488,7 +488,7 @@ export default function InvoiceTable({
       {/* Table - Desktop style avec header fixe et body scrollable */}
       <div className="hidden md:flex md:flex-col flex-1 min-h-0 overflow-hidden">
         {/* Header fixe */}
-        <div className="flex-shrink-0 border-b border-gray-200 dark:border-gray-800">
+        <div className="flex-shrink-0 border-b border-border">
           <table className="w-full table-fixed">
             <thead>
               {table.getHeaderGroups().map((headerGroup) => (
@@ -857,7 +857,7 @@ export default function InvoiceTable({
       </div>
 
       {/* Pagination - Fixe en bas sur desktop */}
-      <div className="hidden md:flex items-center justify-between px-4 sm:px-6 py-2 border-t border-gray-200 dark:border-gray-800 bg-background flex-shrink-0">
+      <div className="hidden md:flex items-center justify-between px-4 sm:px-6 py-2 border-t border-border bg-background flex-shrink-0">
         <div className="flex-1 text-xs font-normal text-muted-foreground">
           {table.getFilteredSelectedRowModel().rows.length} sur{" "}
           {table.getFilteredRowModel().rows.length} ligne(s) sélectionnée(s).
@@ -1021,6 +1021,7 @@ export default function InvoiceTable({
           onSent={() => setSendEmailInvoice(null)}
         />
       )}
+
     </div>
   );
 }

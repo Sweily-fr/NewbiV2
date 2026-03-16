@@ -103,6 +103,9 @@ import { ImportQuoteModal } from "./import-quote-modal";
 import { ImportedQuoteSidebar } from "./imported-quote-sidebar";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
+import { SignatureDialog } from "@/src/components/esignature/signature-dialog";
+import { useSubscription } from "@/src/contexts/dashboard-layout-context";
+import { getPlanLimits } from "@/src/lib/plan-limits";
 
 export default function QuoteTable({ handleNewQuote, quoteIdToOpen, triggerImport, onImportTriggered }) {
   const inputRef = useRef(null);
@@ -110,10 +113,14 @@ export default function QuoteTable({ handleNewQuote, quoteIdToOpen, triggerImpor
   const { workspaceId } = useRequiredWorkspace();
   const { importedQuotes, refetch: refetchImported } = useImportedQuotes(workspaceId);
   const { canCreate, canExport } = usePermissions();
+  const { subscription } = useSubscription();
+  const planLimits = getPlanLimits(subscription?.plan);
+  const esignatureLevel = planLimits.esignature; // false | "ses" | "qes"
   const [canCreateQuote, setCanCreateQuote] = useState(false);
   const [canExportQuote, setCanExportQuote] = useState(false);
   const [quoteToOpen, setQuoteToOpen] = useState(null);
   const [templateQuote, setTemplateQuote] = useState(null);
+  const [signatureQuote, setSignatureQuote] = useState(null);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [selectedImportedQuote, setSelectedImportedQuote] = useState(null);
   // État pour la modal d'envoi par email - géré au niveau du tableau pour éviter les re-renders
@@ -137,6 +144,7 @@ export default function QuoteTable({ handleNewQuote, quoteIdToOpen, triggerImpor
     onRefetch: refetch,
     onSendEmail: setSendEmailQuote,
     onSaveAsTemplate: setTemplateQuote,
+    onRequestSignature: setSignatureQuote,
   });
 
   // État pour les tabs de filtre rapide
@@ -916,6 +924,22 @@ export default function QuoteTable({ handleNewQuote, quoteIdToOpen, triggerImpor
           quoteNumber={`${templateQuote.prefix || "D"}-${templateQuote.number}`}
           open={!!templateQuote}
           onOpenChange={(open) => { if (!open) setTemplateQuote(null); }}
+        />
+      )}
+
+      {/* Dialog de signature électronique */}
+      {signatureQuote && (
+        <SignatureDialog
+          open={!!signatureQuote}
+          onOpenChange={(open) => !open && setSignatureQuote(null)}
+          document={signatureQuote}
+          documentType="quote"
+          client={signatureQuote.client}
+          signatureLevel={esignatureLevel || "ses"}
+          onSuccess={() => {
+            setSignatureQuote(null);
+            refetch();
+          }}
         />
       )}
     </div>
