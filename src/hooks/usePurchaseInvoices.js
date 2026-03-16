@@ -58,7 +58,7 @@ export const usePurchaseInvoice = (id) => {
   const { data, loading, error, refetch } = useQuery(GET_PURCHASE_INVOICE, {
     variables: { id },
     skip: !id,
-    fetchPolicy: "network-only",
+    fetchPolicy: "cache-and-network",
   });
 
   return {
@@ -316,7 +316,7 @@ export const useReconciliationSuggestions = (purchaseInvoiceId) => {
   const { data, loading, refetch } = useQuery(GET_PURCHASE_INVOICE_RECONCILIATION_MATCHES, {
     variables: { purchaseInvoiceId },
     skip: !purchaseInvoiceId,
-    fetchPolicy: "network-only",
+    fetchPolicy: "cache-and-network",
   });
 
   return {

@@ -342,7 +342,7 @@ export const usePreloadClients = () => {
       await apolloClient.query({
         query: GET_CLIENTS,
         variables: { workspaceId, page: 1, limit: 20, search: '' },
-        fetchPolicy: 'network-only',
+        fetchPolicy: "cache-and-network",
         errorPolicy: 'ignore',
       });
     } catch (error) {

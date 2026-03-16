@@ -417,7 +417,7 @@ export const useRunDocumentAutomation = () => {
 
 export const useDocumentsForAutomation = () => {
   const [fetchDocuments, { loading, error }] = useLazyQuery(GET_DOCUMENTS_FOR_AUTOMATION, {
-    fetchPolicy: 'network-only',
+    fetchPolicy: "cache-and-network",
   });
 
   return {

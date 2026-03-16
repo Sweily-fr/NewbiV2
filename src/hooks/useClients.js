@@ -12,7 +12,7 @@ export const useClients = (page = 1, limit = 10, search = '') => {
   const { data, loading: queryLoading, error, refetch } = useQuery(GET_CLIENTS, {
     variables: { workspaceId, page, limit, search },
     skip: !workspaceId,
-    fetchPolicy: 'network-only',
+    fetchPolicy: "cache-and-network",
   });
 
   return {

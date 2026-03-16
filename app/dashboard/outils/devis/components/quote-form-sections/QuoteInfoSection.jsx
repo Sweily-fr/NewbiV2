@@ -119,7 +119,7 @@ export default function QuoteInfoSection({
         limit: 10,
       },
       skip: !isPurchaseOrder || !referenceSearchOpen || !workspaceId,
-      fetchPolicy: "network-only",
+      fetchPolicy: "cache-and-network",
     }
   );
 

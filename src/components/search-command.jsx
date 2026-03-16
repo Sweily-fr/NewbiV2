@@ -213,22 +213,22 @@ export function SearchCommand() {
 
   // Lazy queries
   const [searchClients, { data: clientsData, loading: clientsLoading }] =
-    useLazyQuery(GET_CLIENTS, { fetchPolicy: "network-only" });
+    useLazyQuery(GET_CLIENTS, { fetchPolicy: "cache-and-network" });
 
   const [searchInvoices, { data: invoicesData, loading: invoicesLoading }] =
-    useLazyQuery(GET_INVOICES, { fetchPolicy: "network-only" });
+    useLazyQuery(GET_INVOICES, { fetchPolicy: "cache-and-network" });
 
   const [searchQuotes, { data: quotesData, loading: quotesLoading }] =
-    useLazyQuery(GET_QUOTES, { fetchPolicy: "network-only" });
+    useLazyQuery(GET_QUOTES, { fetchPolicy: "cache-and-network" });
 
   const [searchProducts, { data: productsData, loading: productsLoading }] =
-    useLazyQuery(GET_PRODUCTS, { fetchPolicy: "network-only" });
+    useLazyQuery(GET_PRODUCTS, { fetchPolicy: "cache-and-network" });
 
   const [searchPurchaseOrders, { data: purchaseOrdersData, loading: purchaseOrdersLoading }] =
-    useLazyQuery(GET_PURCHASE_ORDERS, { fetchPolicy: "network-only" });
+    useLazyQuery(GET_PURCHASE_ORDERS, { fetchPolicy: "cache-and-network" });
 
   const [searchCreditNotes, { data: creditNotesData, loading: creditNotesLoading }] =
-    useLazyQuery(GET_CREDIT_NOTES, { fetchPolicy: "network-only" });
+    useLazyQuery(GET_CREDIT_NOTES, { fetchPolicy: "cache-and-network" });
 
   const openSettings = React.useCallback((tab = "preferences") => {
     setSettingsInitialTab(tab);

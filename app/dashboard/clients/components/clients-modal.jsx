@@ -93,7 +93,7 @@ export default function ClientsModal({
     {
       variables: { workspaceId: finalWorkspaceId, id: client?.id },
       skip: !client?.id || !open, // Ne charger que si on a un client et que le modal est ouvert
-      fetchPolicy: "network-only", // Toujours récupérer les dernières données
+      fetchPolicy: "cache-and-network", // Toujours récupérer les dernières données
     }
   );
 

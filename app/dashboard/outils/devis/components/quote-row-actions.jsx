@@ -149,7 +149,7 @@ export default function QuoteRowActions({ row, onRefetch, onSendEmail, onSaveAsT
       const { data } = await apolloClient.query({
         query: GET_QUOTE,
         variables: { workspaceId, id: quote.id },
-        fetchPolicy: "network-only",
+        fetchPolicy: "cache-and-network",
       });
       const fullQuote = data?.quote;
       if (!fullQuote) {
@@ -180,7 +180,7 @@ export default function QuoteRowActions({ row, onRefetch, onSendEmail, onSaveAsT
       const { data } = await apolloClient.query({
         query: GET_QUOTE,
         variables: { workspaceId, id: quote.id },
-        fetchPolicy: "network-only",
+        fetchPolicy: "cache-and-network",
       });
       const fullQuote = data?.quote;
       if (!fullQuote) {

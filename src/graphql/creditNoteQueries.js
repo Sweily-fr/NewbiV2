@@ -319,7 +319,7 @@ export function useCreditNotesByInvoice(invoiceId) {
   const { data, loading: queryLoading, error, refetch } = useQuery(GET_CREDIT_NOTES_BY_INVOICE, {
     variables: { invoiceId, workspaceId },
     skip: !invoiceId || !workspaceId,
-    fetchPolicy: 'network-only',
+    fetchPolicy: "cache-and-network",
     notifyOnNetworkStatusChange: true,
   });
 
