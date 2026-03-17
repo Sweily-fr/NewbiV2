@@ -4,6 +4,7 @@ import { useState, useMemo, useRef, useCallback, useEffect, forwardRef, useImper
 import { UserAvatar } from "@/src/components/ui/user-avatar";
 import { Button } from "@/src/components/ui/button";
 import { Send, Loader2 } from "lucide-react";
+import DOMPurify from "dompurify";
 
 // Get the text before the cursor in a contentEditable
 function getTextBeforeCursor() {
@@ -317,7 +318,7 @@ export function CommentContent({ content }) {
     return (
       <div
         className="text-[14px] whitespace-pre-wrap [&_[data-mention-id]]:bg-[#5a50ff]/10 [&_[data-mention-id]]:text-[#5a50ff] [&_[data-mention-id]]:rounded [&_[data-mention-id]]:px-1.5 [&_[data-mention-id]]:py-0.5 [&_[data-mention-id]]:text-xs [&_[data-mention-id]]:font-medium"
-        dangerouslySetInnerHTML={{ __html: content }}
+        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content) }}
       />
     );
   }

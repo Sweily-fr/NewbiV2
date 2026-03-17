@@ -15,7 +15,7 @@ import {
   Receipt,
   CalendarSync,
   Mail,
-  FileUp,
+  Import,
   BookTemplate,
 } from "lucide-react";
 import { ButtonGroup } from "@/src/components/ui/button-group";
@@ -38,6 +38,7 @@ import {
   useDeleteInvoice,
   INVOICE_STATUS,
 } from "@/src/graphql/invoiceQueries";
+import { useDeleteImportedInvoice } from "@/src/graphql/importedInvoiceQueries";
 import { toast } from "@/src/components/ui/sonner";
 import { usePermissions } from "@/src/hooks/usePermissions";
 // InvoiceSidebar est maintenant géré au niveau du tableau (InvoiceTable) pour éviter les re-renders
@@ -46,10 +47,12 @@ import InvoiceMobileFullscreen from "./invoice-mobile-fullscreen";
 export default function InvoiceRowActions({
   row,
   onRefetch,
+  onRefetchImported,
   showReminderIcon = false,
   isClientExcluded = false,
   onOpenReminderSettings,
   onOpenSidebar, // Callback pour ouvrir la sidebar au niveau du tableau
+  onOpenImportedSidebar, // Callback pour ouvrir la sidebar des factures importées
   onSendEmail, // Callback pour ouvrir la modal d'envoi au niveau du tableau
   onSaveAsTemplate, // Callback pour ouvrir le dialog de template au niveau du tableau
 }) {
@@ -151,14 +154,67 @@ export default function InvoiceRowActions({
 
   const isLoading = markingAsPaid || changingStatus || isDeleting;
 
-  // Afficher un badge Import pour les factures importées
+  // Menu d'actions pour les factures importées
+  const { deleteImportedInvoice, loading: isDeletingImported } = useDeleteImportedInvoice();
+
+  const handleViewImported = () => {
+    if (onOpenImportedSidebar) {
+      onOpenImportedSidebar(invoice);
+    }
+  };
+
+  const handleDeleteImported = async () => {
+    try {
+      await deleteImportedInvoice({ variables: { id: invoice.id } });
+      toast.success("Facture importée supprimée");
+      if (onRefetchImported) onRefetchImported();
+      if (onRefetch) onRefetch();
+    } catch (error) {
+      toast.error("Erreur lors de la suppression");
+    }
+  };
+
   if (isImportedInvoice) {
     return (
       <div className="flex items-center justify-end gap-1" data-actions-cell>
-        <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-[#5a50ff]/10 text-[#5a50ff] dark:bg-[#5a50ff]/20 dark:text-[#5a50ff]">
-          <FileUp className="w-3 h-3" />
-          Import
-        </span>
+        <button
+          data-view-invoice
+          onClick={handleViewImported}
+          className="hidden"
+          aria-hidden="true"
+        />
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 p-0"
+              disabled={isDeletingImported}
+            >
+              <span className="sr-only">Ouvrir le menu</span>
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={handleViewImported}>
+              <Eye className="mr-2 h-4 w-4" />
+              Voir
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={handleDeleteImported}
+              className="text-red-600 focus:text-red-600"
+              disabled={isDeletingImported}
+            >
+              <Trash2 className="mr-2 h-4 w-4 text-red-600" />
+              Supprimer
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <div className="px-2 py-1.5 text-sm text-muted-foreground">
+              Facture importée
+            </div>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     );
   }

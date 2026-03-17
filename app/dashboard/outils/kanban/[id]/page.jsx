@@ -82,7 +82,7 @@ import { ShareBoardDialog } from "./components/ShareBoardDialog";
 import { SaveTemplateDialog } from "./components/SaveTemplateDialog";
 import { ConvertToInvoiceModal } from "./components/ConvertToInvoiceModal";
 import { stripHtml } from "@/src/utils/kanbanHelpers";
-import { KanbanPageSkeleton, KanbanListSkeleton } from "./components/KanbanPageSkeleton";
+import { KanbanPageSkeleton, KanbanListSkeleton, KanbanGanttSkeleton } from "./components/KanbanPageSkeleton";
 import {
   GET_BOARD,
   CREATE_COLUMN,
@@ -498,11 +498,13 @@ function KanbanBoardPageContent({ params }) {
     }
   }, [error, workspaceId, router, id, isRedirecting]);
 
-  // Pendant le chargement, afficher le skeleton
+  // Pendant le chargement, afficher le skeleton adapté à la vue active
   // Note: workspaceLoading retiré car !board couvre déjà le cas où workspaceId n'est pas dispo
   // (la query est skip si !workspaceId → board reste undefined → !board = true)
   // Cela évite de montrer un skeleton inutile quand les données sont déjà en cache Apollo
   if (loading || !board) {
+    if (isList) return <KanbanListSkeleton />;
+    if (isGantt) return <KanbanGanttSkeleton />;
     return <KanbanPageSkeleton />;
   }
 

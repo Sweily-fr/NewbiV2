@@ -113,8 +113,7 @@ function clearCachedJWT() {
 }
 
 // DEBUG: Exposer des helpers pour tester l'expiration de session en local
-// ⚠️ À SUPPRIMER avant mise en production
-if (typeof window !== "undefined") {
+if (typeof window !== "undefined" && process.env.NODE_ENV === "development") {
   window.__debugAuth = {
     // Simule un JWT expiré → la prochaine requête GraphQL déclenchera le retry
     expireJWT: () => {
