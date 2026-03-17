@@ -24,7 +24,7 @@ function InvoiceDetailsContent() {
   const params = useParams();
   const invoiceId = params.id;
 
-  const { data: invoice, loading, error } = useInvoice(invoiceId);
+  const { invoice, loading, error } = useInvoice(invoiceId);
 
   const handleBack = () => {
     router.push("/dashboard/outils/factures");
