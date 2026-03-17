@@ -15,6 +15,7 @@ import {
   Mail,
   ShoppingCart,
   BookTemplate,
+  PenLine,
 } from "lucide-react";
 import { ButtonGroup } from "@/src/components/ui/button-group";
 import {
@@ -38,6 +39,8 @@ import {
 } from "@/src/graphql/quoteQueries";
 import { useApolloClient } from "@apollo/client";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
+import { useSubscription } from "@/src/contexts/dashboard-layout-context";
+import { getPlanLimits } from "@/src/lib/plan-limits";
 import { toast } from "@/src/components/ui/sonner";
 import QuoteSidebar from "./quote-sidebar";
 import QuoteMobileFullscreen from "./quote-mobile-fullscreen";
@@ -72,7 +75,7 @@ const formatDateForEmail = (dateValue) => {
   }
 };
 
-export default function QuoteRowActions({ row, onRefetch, onSendEmail, onSaveAsTemplate }) {
+export default function QuoteRowActions({ row, onRefetch, onSendEmail, onSaveAsTemplate, onRequestSignature }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isMobileFullscreenOpen, setIsMobileFullscreenOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -90,6 +93,9 @@ export default function QuoteRowActions({ row, onRefetch, onSendEmail, onSaveAsT
   }, []);
   const apolloClient = useApolloClient();
   const { workspaceId } = useRequiredWorkspace();
+  const { subscription } = useSubscription();
+  const planLimits = getPlanLimits(subscription?.plan);
+  const esignatureAccess = planLimits.esignature; // false | "ses" | "qes"
   const { changeStatus, loading: changingStatus } = useChangeQuoteStatus();
   const { deleteQuote, loading: isDeleting } = useDeleteQuote();
   const handleView = () => {
@@ -149,7 +155,7 @@ export default function QuoteRowActions({ row, onRefetch, onSendEmail, onSaveAsT
       const { data } = await apolloClient.query({
         query: GET_QUOTE,
         variables: { workspaceId, id: quote.id },
-        fetchPolicy: "network-only",
+        fetchPolicy: "cache-and-network",
       });
       const fullQuote = data?.quote;
       if (!fullQuote) {
@@ -180,7 +186,7 @@ export default function QuoteRowActions({ row, onRefetch, onSendEmail, onSaveAsT
       const { data } = await apolloClient.query({
         query: GET_QUOTE,
         variables: { workspaceId, id: quote.id },
-        fetchPolicy: "network-only",
+        fetchPolicy: "cache-and-network",
       });
       const fullQuote = data?.quote;
       if (!fullQuote) {
@@ -328,6 +334,41 @@ export default function QuoteRowActions({ row, onRefetch, onSendEmail, onSaveAsT
                   Convertir en bon de commande
                 </DropdownMenuItem>
               )}
+
+            {/* Faire signer - visible pour les devis non brouillon et sans signature en cours/terminée */}
+            {quote.status !== QUOTE_STATUS.DRAFT && (!quote.signatureStatus || quote.signatureStatus === "ERROR" || quote.signatureStatus === "CANCELLED") && (
+              <>
+                <DropdownMenuSeparator />
+                {esignatureAccess ? (
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onRequestSignature?.(quote);
+                    }}
+                  >
+                    <PenLine className="mr-2 h-4 w-4" />
+                    Faire signer
+                  </DropdownMenuItem>
+                ) : (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <DropdownMenuItem
+                          disabled
+                          onSelect={(e) => e.preventDefault()}
+                        >
+                          <PenLine className="mr-2 h-4 w-4" />
+                          Faire signer
+                        </DropdownMenuItem>
+                      </TooltipTrigger>
+                      <TooltipContent side="left">
+                        <p>Disponible à partir du plan PME</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+              </>
+            )}
 
             {/* Séparateur avant l'action de suppression */}
             {hasDeleteAction && hasStatusActions && <DropdownMenuSeparator />}

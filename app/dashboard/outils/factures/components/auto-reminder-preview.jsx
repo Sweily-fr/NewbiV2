@@ -3,65 +3,65 @@
 import { Paperclip } from "lucide-react";
 import { useMemo } from "react";
 
+// Données de démonstration
+const demoData = {
+  invoiceNumber: "F-112024-0042",
+  clientName: "Client Exemple SARL",
+  totalAmount: "10 800,00 €",
+  dueDate: "15/11/2024",
+  companyName: "Votre Entreprise",
+};
+
+// Fonction pour mettre en évidence les variables
+function highlightVariables(text) {
+  if (!text) return [];
+
+  const regex = /\{(\w+)\}/g;
+  const parts = [];
+  let lastIndex = 0;
+  let match;
+
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push({ type: "text", content: text.slice(lastIndex, match.index) });
+    }
+
+    const variableName = match[1];
+    const value = demoData[variableName] || match[0];
+
+    parts.push({
+      type: "variable",
+      content: value,
+      variable: match[0],
+    });
+
+    lastIndex = regex.lastIndex;
+  }
+
+  if (lastIndex < text.length) {
+    parts.push({ type: "text", content: text.slice(lastIndex) });
+  }
+
+  return parts;
+}
+
+function VariableHighlight({ parts }) {
+  return parts.map((part, index) =>
+    part.type === "variable" ? (
+      <code
+        key={index}
+        className="px-1 py-0.5 text-[11px] rounded-md bg-muted/60 text-muted-foreground border border-border/40 font-mono"
+        title={part.variable}
+      >
+        {part.content}
+      </code>
+    ) : (
+      <span key={index}>{part.content}</span>
+    )
+  );
+}
+
 export default function AutoReminderPreview({ formData }) {
-  // Données de démonstration pour la preview
-  const demoData = {
-    invoiceNumber: "F-112024-0042",
-    clientName: "Client Exemple SARL",
-    totalAmount: "10 800,00 €",
-    dueDate: "15/11/2024",
-    companyName: "Votre Entreprise",
-  };
-
-  // Remplacer les variables dans le texte
-  const replaceVariables = (text) => {
-    if (!text) return "";
-    return text
-      .replace(/\{invoiceNumber\}/g, demoData.invoiceNumber)
-      .replace(/\{clientName\}/g, demoData.clientName)
-      .replace(/\{totalAmount\}/g, demoData.totalAmount)
-      .replace(/\{dueDate\}/g, demoData.dueDate)
-      .replace(/\{companyName\}/g, demoData.companyName);
-  };
-
-  // Créer une version avec surlignage des variables pour la preview
-  const highlightVariables = (text) => {
-    if (!text) return [];
-    
-    const parts = [];
-    const regex = /(\{invoiceNumber\}|\{clientName\}|\{totalAmount\}|\{dueDate\}|\{companyName\})/g;
-    let lastIndex = 0;
-    let match;
-
-    while ((match = regex.exec(text)) !== null) {
-      if (match.index > lastIndex) {
-        parts.push({
-          type: 'text',
-          content: text.substring(lastIndex, match.index)
-        });
-      }
-      
-      const variable = match[0];
-      const value = replaceVariables(variable);
-      parts.push({
-        type: 'variable',
-        content: value,
-        variable: variable
-      });
-      
-      lastIndex = regex.lastIndex;
-    }
-    
-    if (lastIndex < text.length) {
-      parts.push({
-        type: 'text',
-        content: text.substring(lastIndex)
-      });
-    }
-    
-    return parts;
-  };
-
   const senderEmail = useMemo(() => {
     return formData?.fromEmail || "contact@entreprise.fr";
   }, [formData?.fromEmail]);
@@ -82,45 +82,40 @@ export default function AutoReminderPreview({ formData }) {
   }, [senderName, senderEmail]);
 
   return (
-    <div className="bg-white dark:bg-[#1a1a1a] rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+    <div className="bg-white dark:bg-[#1a1a1a] rounded-xl overflow-hidden border border-[#e6e7ea] dark:border-[#2E2E32]">
       {/* Email Meta Header */}
-      <div className="px-4 md:px-6 py-4 space-y-3 md:space-y-2 text-sm border-b border-gray-200 dark:border-gray-700">
-        <div className="flex flex-col sm:flex-row sm:gap-4">
-          <span className="text-muted-foreground sm:w-24 text-xs sm:text-sm mb-0.5 sm:mb-0">De</span>
-          <span className="font-medium text-foreground text-xs sm:text-sm break-all">{fullSender}</span>
+      <div className="px-5 py-4 space-y-2 text-sm border-b border-[#e6e7ea] dark:border-[#2E2E32]">
+        <div className="flex gap-4">
+          <span className="text-muted-foreground w-20 text-xs shrink-0">De</span>
+          <span className="font-medium text-foreground text-xs break-all">{fullSender}</span>
         </div>
         {replyToEmail !== senderEmail && (
-          <div className="flex flex-col sm:flex-row sm:gap-4">
-            <span className="text-muted-foreground sm:w-24 text-xs sm:text-sm mb-0.5 sm:mb-0">Répondre à</span>
-            <span className="text-foreground text-xs sm:text-sm break-all">{replyToEmail}</span>
+          <div className="flex gap-4">
+            <span className="text-muted-foreground w-20 text-xs shrink-0">Répondre à</span>
+            <span className="text-foreground text-xs break-all">{replyToEmail}</span>
           </div>
         )}
-        <div className="flex flex-col sm:flex-row sm:gap-4">
-          <span className="text-muted-foreground sm:w-24 text-xs sm:text-sm mb-0.5 sm:mb-0">À</span>
-          <span className="text-foreground text-xs sm:text-sm">client@exemple.fr</span>
+        <div className="flex gap-4">
+          <span className="text-muted-foreground w-20 text-xs shrink-0">À</span>
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="flex items-center justify-center size-5 rounded-full bg-[#5b50ff]/10 shrink-0">
+              <span className="text-[9px] font-medium text-[#5b50ff]">C</span>
+            </div>
+            <span className="text-foreground text-xs truncate">
+              client@exemple.fr
+            </span>
+          </div>
         </div>
-        <div className="flex flex-col sm:flex-row sm:gap-4">
-          <span className="text-muted-foreground sm:w-24 text-xs sm:text-sm mb-0.5 sm:mb-0">Objet</span>
-          <span className="font-medium text-foreground text-xs sm:text-sm">
-            {highlightVariables(formData?.emailSubject || "").map((part, index) => (
-              part.type === 'variable' ? (
-                <span
-                  key={index}
-                  className="bg-[#5b50ff]/10 text-[#5b50ff] px-1 py-0.5 rounded text-xs"
-                  title={part.variable}
-                >
-                  {part.content}
-                </span>
-              ) : (
-                <span key={index}>{part.content}</span>
-              )
-            ))}
+        <div className="flex gap-4">
+          <span className="text-muted-foreground w-20 text-xs shrink-0">Objet</span>
+          <span className="font-medium text-foreground text-xs">
+            <VariableHighlight parts={highlightVariables(formData?.emailSubject || "")} />
           </span>
         </div>
-        <div className="flex flex-col sm:flex-row sm:gap-4">
-          <span className="text-muted-foreground sm:w-24 text-xs sm:text-sm mb-0.5 sm:mb-0">Pièce jointe</span>
-          <span className="text-[#5b50ff] flex items-center gap-1 text-xs sm:text-sm">
-            <Paperclip className="h-3 w-3" />
+        <div className="flex gap-4">
+          <span className="text-muted-foreground w-20 text-xs shrink-0">Pièce jointe</span>
+          <span className="text-muted-foreground flex items-center gap-1.5 text-xs">
+            <Paperclip className="size-3" />
             {demoData.invoiceNumber}.pdf
           </span>
         </div>
@@ -128,80 +123,54 @@ export default function AutoReminderPreview({ formData }) {
 
       {/* Contenu principal */}
       <div className="px-6 py-6">
-        <h1 className="text-xl font-normal text-center text-gray-900 dark:text-white mb-4">
+        <h1 className="text-lg font-medium text-center text-foreground mb-5">
           Rappel de paiement
         </h1>
-        
+
         {/* Corps de l'email */}
         <div className="mb-6">
           {formData?.emailBody ? (
-            <div className="text-gray-600 dark:text-gray-300 text-sm leading-6 whitespace-pre-wrap">
-              {highlightVariables(formData.emailBody).map((part, index) => (
-                part.type === 'variable' ? (
-                  <span
-                    key={index}
-                    className="bg-[#5b50ff]/10 text-[#5b50ff] px-1 py-0.5 rounded text-xs font-medium"
-                    title={part.variable}
-                  >
-                    {part.content}
-                  </span>
-                ) : (
-                  <span key={index}>{part.content}</span>
-                )
-              ))}
+            <div className="text-muted-foreground text-sm leading-6 whitespace-pre-wrap">
+              <VariableHighlight parts={highlightVariables(formData.emailBody)} />
             </div>
           ) : (
-            <p className="text-gray-400 dark:text-gray-500 italic text-center text-sm">Aucun contenu d'email défini</p>
+            <p className="text-muted-foreground/50 text-sm italic">
+              Aperçu du contenu de l&apos;email...
+            </p>
           )}
         </div>
 
-        {/* Séparateur */}
-        <hr className="border-gray-200 dark:border-gray-700 my-4" />
-
-        {/* Détails de la facture */}
-        <div className="bg-gray-50 dark:bg-[#252525] rounded-lg p-4 mb-4">
-          <p className="text-xs font-bold text-gray-900 dark:text-white uppercase tracking-wider mb-3">
+        {/* Bloc détails facture */}
+        <div className="rounded-[9px] border border-[#e6e7ea] dark:border-[#2E2E32] p-4 mb-6">
+          <h2 className="text-[11px] font-medium text-muted-foreground mb-3 uppercase tracking-wider">
             Détails de la facture
-          </p>
-          <table className="w-full">
-            <tbody>
-              <tr>
-                <td className="text-gray-500 dark:text-gray-400 text-xs py-1">Numéro de facture</td>
-                <td className="text-gray-900 dark:text-white text-xs py-1 text-right font-medium">{demoData.invoiceNumber}</td>
-              </tr>
-              <tr>
-                <td className="text-gray-500 dark:text-gray-400 text-xs py-1">Montant total</td>
-                <td className="text-gray-900 dark:text-white text-xs py-1 text-right font-bold">{demoData.totalAmount}</td>
-              </tr>
-              <tr>
-                <td className="text-gray-500 dark:text-gray-400 text-xs py-1">Date d'échéance</td>
-                <td className="text-gray-900 dark:text-white text-xs py-1 text-right font-medium">{demoData.dueDate}</td>
-              </tr>
-            </tbody>
-          </table>
+          </h2>
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Numéro</span>
+              <span className="font-medium text-foreground">{demoData.invoiceNumber}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Montant total</span>
+              <span className="font-semibold text-foreground">{demoData.totalAmount}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Date d&apos;échéance</span>
+              <span className="font-medium text-foreground">{demoData.dueDate}</span>
+            </div>
+          </div>
         </div>
 
-        <p className="text-gray-600 dark:text-gray-300 text-sm leading-5">
-          La facture est jointe à cet email au format PDF.
-        </p>
-
-        <p className="text-gray-600 dark:text-gray-300 text-sm leading-5 mt-2">
-          Pour toute question, n'hésitez pas à nous contacter.
-        </p>
-
-        <p className="text-gray-600 dark:text-gray-300 text-sm leading-5 mt-4">
-          Cordialement,<br />
-          L'équipe {demoData.companyName}
-        </p>
+        {/* Informations complémentaires */}
+        <div className="text-sm text-muted-foreground space-y-3">
+          <p>La facture est jointe à cet email au format PDF.</p>
+        </div>
       </div>
 
       {/* Footer */}
-      <div className="px-6 py-3 border-t border-gray-200 dark:border-gray-700">
-        <p className="text-gray-400 dark:text-gray-500 text-xs text-center m-0">
-          Cet email a été envoyé automatiquement par le système de relance de {demoData.companyName}.
-        </p>
-        <p className="text-gray-400 dark:text-gray-500 text-xs text-center mt-1 m-0">
-          Merci de ne pas répondre directement à cet email.
+      <div className="px-6 py-3 text-center border-t border-[#e6e7ea] dark:border-[#2E2E32]">
+        <p className="text-[11px] text-muted-foreground/60">
+          Cet email a été envoyé automatiquement par le système de relance de {demoData.companyName} depuis la plateforme Newbi Logiciel de gestion.
         </p>
       </div>
     </div>

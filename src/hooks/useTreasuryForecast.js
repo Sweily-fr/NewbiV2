@@ -24,7 +24,7 @@ export const useTreasuryForecastData = (startDate, endDate, accountId) => {
       accountId: accountId || undefined,
     },
     skip: !workspaceId || !startDate || !endDate,
-    fetchPolicy: "network-only",
+    fetchPolicy: "cache-and-network",
   });
 
   return {
@@ -48,7 +48,7 @@ export const useTreasuryForecasts = (startMonth, endMonth) => {
       endMonth,
     },
     skip: !workspaceId || !startMonth || !endMonth,
-    fetchPolicy: "network-only",
+    fetchPolicy: "cache-and-network",
   });
 
   return {

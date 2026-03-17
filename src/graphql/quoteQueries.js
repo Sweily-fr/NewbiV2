@@ -27,6 +27,8 @@ export const QUOTE_FRAGMENT = gql`
     finalTotalVAT
     finalTotalTTC
     discountAmount
+    signatureStatus
+    signingUrl
     createdAt
     updatedAt
     client {
@@ -509,7 +511,7 @@ export const useQuote = (id) => {
   const { data, loading, error, refetch } = useQuery(GET_QUOTE, {
     variables: { workspaceId, id },
     skip: !id || !workspaceId,
-    fetchPolicy: "network-only",
+    fetchPolicy: "cache-and-network",
     errorPolicy: "all",
   });
 
@@ -532,7 +534,7 @@ export const useQuoteStats = () => {
   const { data, loading, error, refetch } = useQuery(GET_QUOTE_STATS, {
     variables: { workspaceId },
     skip: !workspaceId,
-    fetchPolicy: "network-only",
+    fetchPolicy: "cache-and-network",
     errorPolicy: "all",
   });
 
@@ -552,7 +554,7 @@ export const useLastQuotePrefix = () => {
   const { data, loading, error } = useQuery(GET_LAST_QUOTE_PREFIX, {
     variables: { workspaceId },
     skip: !workspaceId,
-    fetchPolicy: "network-only", // Toujours récupérer la dernière valeur
+    fetchPolicy: "cache-and-network", // Toujours récupérer la dernière valeur
     errorPolicy: "all",
   });
 
@@ -818,7 +820,7 @@ export const useCheckQuoteNumber = () => {
             prefix: quotePrefix || "",
             excludeId: excludeId || undefined,
           },
-          fetchPolicy: "network-only",
+          fetchPolicy: "cache-and-network",
         });
 
         return {

@@ -96,7 +96,7 @@ export const useFinancialAnalytics = (startDate, endDate, options = {}) => {
       status: options.status?.length > 0 ? options.status : undefined,
     },
     skip: !workspaceId || !startDate || !endDate,
-    fetchPolicy: "network-only",
+    fetchPolicy: "cache-and-network",
   });
 
   const analyticsData = useMemo(() => {

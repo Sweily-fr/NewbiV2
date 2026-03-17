@@ -136,7 +136,7 @@ function ProductSearchCombobox({
       search: debouncedSearchTerm && debouncedSearchTerm.trim() !== "" ? debouncedSearchTerm : undefined,
       limit: 20,
     },
-    fetchPolicy: "network-only",
+    fetchPolicy: "cache-and-network",
     skip: !open || !workspaceId, // Ne pas exécuter la requête si le dropdown n'est pas ouvert
   });
 

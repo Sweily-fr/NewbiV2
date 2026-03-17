@@ -68,7 +68,7 @@ export default function InvoiceMobileFullscreen({
   // Query pour récupérer les factures de situation précédentes
   const [fetchSituationInvoices, { data: situationData }] = useLazyQuery(
     GET_SITUATION_INVOICES_BY_QUOTE_REF,
-    { fetchPolicy: "network-only" }
+    { fetchPolicy: "cache-and-network" }
   );
 
   // Récupérer les factures de situation précédentes quand c'est une facture de situation

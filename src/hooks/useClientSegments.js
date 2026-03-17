@@ -11,7 +11,7 @@ export const useClientSegments = () => {
   const { data, loading: queryLoading, error, refetch } = useQuery(GET_CLIENT_SEGMENTS, {
     variables: { workspaceId },
     skip: !workspaceId,
-    fetchPolicy: 'network-only',
+    fetchPolicy: "cache-and-network",
   });
 
   return {
@@ -43,7 +43,7 @@ export const useClientsInSegment = (segmentId, page = 1, limit = 10, search = ''
   const { data, loading: queryLoading, error, refetch } = useQuery(GET_CLIENTS_IN_SEGMENT, {
     variables: { workspaceId, segmentId, page, limit, search },
     skip: !segmentId || !workspaceId,
-    fetchPolicy: 'network-only',
+    fetchPolicy: "cache-and-network",
   });
 
   return {

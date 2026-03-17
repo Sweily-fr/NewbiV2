@@ -1,9 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useMutation } from "@apollo/client";
+import { useMutation, useQuery } from "@apollo/client";
 import { SAVE_INVOICE_AS_TEMPLATE, GET_INVOICE_TEMPLATES } from "@/src/graphql/invoiceQueries";
+import { GET_QUOTE_TEMPLATES } from "@/src/graphql/quoteQueries";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
+import { useSubscription } from "@/src/contexts/dashboard-layout-context";
+import { getPlanLimits } from "@/src/lib/plan-limits";
 import { toast } from "@/src/components/ui/sonner";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
@@ -21,8 +24,29 @@ import { LoaderCircle } from "lucide-react";
 
 export function SaveInvoiceTemplateDialog({ invoiceId, invoiceNumber, open, onOpenChange }) {
   const { workspaceId } = useWorkspace();
+  const { subscription } = useSubscription();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+
+  const planName = subscription?.plan || "freelance";
+  const limits = getPlanLimits(planName);
+  const templateLimit = limits.documentTemplates;
+
+  const { data: invoiceTemplatesData } = useQuery(GET_INVOICE_TEMPLATES, {
+    variables: { workspaceId },
+    skip: !workspaceId || templateLimit === -1,
+  });
+  const { data: quoteTemplatesData } = useQuery(GET_QUOTE_TEMPLATES, {
+    variables: { workspaceId },
+    skip: !workspaceId || templateLimit === -1,
+  });
+
+  const currentCount =
+    (invoiceTemplatesData?.invoiceTemplates?.length || 0) +
+    (quoteTemplatesData?.quoteTemplates?.length || 0);
+  const isLimitReached = templateLimit !== -1 && currentCount >= templateLimit;
+
+  const nextPlanLabel = planName === "freelance" ? "PME" : "Entreprise";
 
   useEffect(() => {
     if (open) {
@@ -94,11 +118,16 @@ export function SaveInvoiceTemplateDialog({ invoiceId, invoiceNumber, open, onOp
               />
             </div>
           </div>
+          {isLimitReached && (
+            <p className="text-sm text-destructive mb-2">
+              Limite atteinte ({currentCount}/{templateLimit} modèles). Passez au plan {nextPlanLabel} pour plus de modèles.
+            </p>
+          )}
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Annuler
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading || isLimitReached}>
               {loading ? (
                 <>
                   <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />

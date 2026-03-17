@@ -30,7 +30,7 @@ import { useOrganizationInvitations } from "@/src/hooks/useOrganizationInvitatio
 import { Progress } from "@/src/components/ui/progress";
 import { useDashboardLayoutContext } from "@/src/contexts/dashboard-layout-context";
 import { toast } from "@/src/components/ui/sonner";
-import { getPlanLimits, SEAT_PRICE } from "@/src/lib/plan-limits";
+import { getPlanLimits, getSeatPrice } from "@/src/lib/plan-limits";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -150,7 +150,7 @@ export function InviteMemberModal({ open, onOpenChange, onSuccess, organizationI
               availableAccountants,
               canAddPaidUsers: planLimits.canAddPaidUsers,
               plan: planName,
-              seatCost: SEAT_PRICE,
+              seatCost: getSeatPrice(planName),
             });
 
             // Set default role for freelance plan
@@ -233,8 +233,7 @@ export function InviteMemberModal({ open, onOpenChange, onSuccess, organizationI
   // Get available roles based on plan
   const isFreelance = seatsInfo?.plan === "freelance";
   const getAvailableRoles = () => {
-    if (isFreelance) return ["accountant"];
-    return ["member", "admin", "viewer", "accountant"];
+    return getPlanLimits(seatsInfo?.plan).availableRoles;
   };
 
   const getRoleLabel = (r) => {
@@ -308,7 +307,7 @@ export function InviteMemberModal({ open, onOpenChange, onSuccess, organizationI
 
     // Demander confirmation si sièges payants
     if (usersOverLimit > 0 && seatsInfo?.canAddPaidUsers) {
-      const additionalCost = usersOverLimit * SEAT_PRICE;
+      const additionalCost = usersOverLimit * getSeatPrice(seatsInfo?.plan);
       setPaidSeatsInfo({
         count: usersOverLimit,
         monthlyCost: additionalCost,

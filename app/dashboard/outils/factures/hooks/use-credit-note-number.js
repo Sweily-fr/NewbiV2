@@ -17,7 +17,7 @@ export const useCreditNoteNumber = () => {
       workspaceId,
       limit: 1000
     },
-    fetchPolicy: 'network-only',
+    fetchPolicy: "cache-and-network",
     skip: !workspaceId,
   });
 

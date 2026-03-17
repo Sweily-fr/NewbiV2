@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useDebouncedValue } from "@/src/hooks/useDebouncedValue";
 import { useQuery } from "@apollo/client";
 import { GET_BOARDS } from "@/src/graphql/kanbanQueries";
@@ -186,6 +186,10 @@ export function NavMain({
     if (isCommunicationSubActive) setIsCommunicationOpen(true);
   }, [isCommunicationSubActive]);
 
+  // Track quel dropdown est ouvert pour supprimer le tooltip pendant/après interaction
+  const [activeDropdown, setActiveDropdown] = useState(null);
+  const isDropdownOpenRef = useRef(false);
+
   // Fonction pour fermer la sidebar sur mobile lors du clic
   const handleLinkClick = () => {
     if (isMobile) {
@@ -198,13 +202,13 @@ export function NavMain({
     // Sur mobile, toujours utiliser le pattern Collapsible pour rester dans le viewport
     if (isCollapsed && !isMobile) {
       return (
-        <DropdownMenu key="ventes">
-          <SidebarMenuItem>
+        <DropdownMenu key="ventes" onOpenChange={(open) => { isDropdownOpenRef.current = open; if (open) setActiveDropdown("ventes"); }}>
+          <SidebarMenuItem onMouseEnter={() => { if (!isDropdownOpenRef.current && activeDropdown) setActiveDropdown(null); }}>
             <DropdownMenuTrigger asChild>
               <SidebarMenuButton
-                tooltip="Ventes"
+                tooltip={activeDropdown === "ventes" ? undefined : "Ventes"}
                 className={cn(
-                  "bg-transparent w-full cursor-pointer",
+                  "bg-transparent w-full cursor-pointer focus-visible:ring-0",
                   isVentesSubActive &&
                     "bg-sidebar-accent text-sidebar-foreground"
                 )}
@@ -305,13 +309,15 @@ export function NavMain({
             data-tutorial="nav-ventes"
             className={cn(
               "flex items-center w-full rounded-md transition-colors overflow-hidden",
-              isVentesSubActive && "bg-sidebar-accent"
+              isVentesSubActive
+                ? "bg-sidebar-accent"
+                : !isVentesOpen && "hover:bg-sidebar-accent"
             )}
           >
             <SidebarMenuButton
               tooltip="Ventes"
               className={cn(
-                "bg-transparent w-full cursor-pointer hover:bg-transparent",
+                "bg-transparent w-full cursor-pointer hover:bg-transparent active:bg-transparent",
                 isVentesSubActive && "text-sidebar-foreground"
               )}
               onClick={() => setIsVentesOpen(!isVentesOpen)}
@@ -380,13 +386,13 @@ export function NavMain({
   const renderClientsMenu = () => {
     if (isCollapsed && !isMobile) {
       return (
-        <DropdownMenu key="clients">
-          <SidebarMenuItem>
+        <DropdownMenu key="clients" onOpenChange={(open) => { isDropdownOpenRef.current = open; if (open) setActiveDropdown("clients"); }}>
+          <SidebarMenuItem onMouseEnter={() => { if (!isDropdownOpenRef.current && activeDropdown) setActiveDropdown(null); }}>
             <DropdownMenuTrigger asChild>
               <SidebarMenuButton
-                tooltip="Clients"
+                tooltip={activeDropdown === "clients" ? undefined : "Clients"}
                 className={cn(
-                  "bg-transparent w-full cursor-pointer",
+                  "bg-transparent w-full cursor-pointer focus-visible:ring-0",
                   isClientsSubActive &&
                     "bg-sidebar-accent text-sidebar-foreground"
                 )}
@@ -466,13 +472,15 @@ export function NavMain({
           <div
             className={cn(
               "flex items-center w-full rounded-md transition-colors overflow-hidden",
-              isClientsSubActive && "bg-sidebar-accent"
+              isClientsSubActive
+                ? "bg-sidebar-accent"
+                : !isClientsOpen && "hover:bg-sidebar-accent"
             )}
           >
             <SidebarMenuButton
               tooltip="Clients"
               className={cn(
-                "bg-transparent w-full cursor-pointer hover:bg-transparent",
+                "bg-transparent w-full cursor-pointer hover:bg-transparent active:bg-transparent",
                 isClientsSubActive && "text-sidebar-foreground"
               )}
               onClick={() => setIsClientsOpen(!isClientsOpen)}
@@ -543,13 +551,13 @@ export function NavMain({
 
     if (isCollapsed) {
       return (
-        <DropdownMenu key="projets">
-          <SidebarMenuItem>
+        <DropdownMenu key="projets" onOpenChange={(open) => { isDropdownOpenRef.current = open; if (open) setActiveDropdown("projets"); }}>
+          <SidebarMenuItem onMouseEnter={() => { if (!isDropdownOpenRef.current && activeDropdown) setActiveDropdown(null); }}>
             <DropdownMenuTrigger asChild>
               <SidebarMenuButton
-                tooltip="Tâches"
+                tooltip={activeDropdown === "projets" ? undefined : "Tâches"}
                 className={cn(
-                  "bg-transparent w-full cursor-pointer",
+                  "bg-transparent w-full cursor-pointer focus-visible:ring-0",
                   isKanbanActive &&
                     "bg-sidebar-accent text-sidebar-foreground"
                 )}
@@ -642,13 +650,13 @@ export function NavMain({
     }
 
     return (
-      <DropdownMenu key="projets-expanded">
-        <SidebarMenuItem>
+      <DropdownMenu key="projets-expanded" onOpenChange={(open) => { isDropdownOpenRef.current = open; if (open) setActiveDropdown("projets-expanded"); }}>
+        <SidebarMenuItem onMouseEnter={() => { if (!isDropdownOpenRef.current && activeDropdown) setActiveDropdown(null); }}>
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
-              tooltip="Tâches"
+              tooltip={activeDropdown === "projets-expanded" ? undefined : "Tâches"}
               className={cn(
-                "bg-transparent w-full cursor-pointer",
+                "bg-transparent w-full cursor-pointer focus-visible:ring-0",
                 isKanbanActive &&
                   "bg-sidebar-accent text-sidebar-foreground"
               )}
@@ -782,13 +790,13 @@ export function NavMain({
     // Sur mobile, toujours utiliser le pattern Collapsible pour rester dans le viewport
     if (isCollapsed && !isMobile) {
       return (
-        <DropdownMenu key={title}>
-          <SidebarMenuItem>
+        <DropdownMenu key={title} onOpenChange={(open) => { isDropdownOpenRef.current = open; if (open) setActiveDropdown(title); }}>
+          <SidebarMenuItem onMouseEnter={() => { if (!isDropdownOpenRef.current && activeDropdown) setActiveDropdown(null); }}>
             <DropdownMenuTrigger asChild>
               <SidebarMenuButton
-                tooltip={title}
+                tooltip={activeDropdown === title ? undefined : title}
                 className={cn(
-                  "bg-transparent w-full cursor-pointer",
+                  "bg-transparent w-full cursor-pointer focus-visible:ring-0",
                   isSubActive &&
                     "bg-sidebar-accent text-sidebar-foreground"
                 )}
@@ -896,13 +904,15 @@ export function NavMain({
           <div
             className={cn(
               "flex items-center w-full rounded-md transition-colors overflow-hidden",
-              isSubActive && "bg-sidebar-accent"
+              isSubActive
+                ? "bg-sidebar-accent"
+                : !isOpen && "hover:bg-sidebar-accent"
             )}
           >
             <SidebarMenuButton
               tooltip={title}
               className={cn(
-                "bg-transparent w-full cursor-pointer hover:bg-transparent",
+                "bg-transparent w-full cursor-pointer hover:bg-transparent active:bg-transparent",
                 isSubActive && "text-sidebar-foreground"
               )}
               onClick={() => setIsOpen(!isOpen)}

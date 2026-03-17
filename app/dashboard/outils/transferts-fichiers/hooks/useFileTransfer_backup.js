@@ -44,7 +44,7 @@ export const useFileTransfer = () => {
     refetch: refetchTransfers,
   } = useQuery(GET_MY_TRANSFERS, {
     variables: { page: 1, limit: 10 },
-    fetchPolicy: "network-only",
+    fetchPolicy: "cache-and-network",
   });
 
   // Fonction pour ajouter des fichiers

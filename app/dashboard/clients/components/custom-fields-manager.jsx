@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useWorkspace } from "@/src/hooks/useWorkspace";
+import { useSubscription } from "@/src/contexts/dashboard-layout-context";
+import { getPlanLimits } from "@/src/lib/plan-limits";
 import {
   useClientCustomFields,
   useCreateClientCustomField,
@@ -347,6 +349,8 @@ function FieldRow({ field, onEdit, onDelete, onToggle }) {
 
 export default function CustomFieldsManager({ open, onOpenChange }) {
   const { workspaceId } = useWorkspace();
+  const { subscription } = useSubscription();
+  const planLimits = getPlanLimits(subscription?.plan);
   const { fields, loading, refetch } = useClientCustomFields(workspaceId);
   const { createField, loading: createLoading } = useCreateClientCustomField();
   const { updateField, loading: updateLoading } = useUpdateClientCustomField();
@@ -355,6 +359,10 @@ export default function CustomFieldsManager({ open, onOpenChange }) {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingField, setEditingField] = useState(null);
   const [deletingField, setDeletingField] = useState(null);
+
+  const customFieldsLimit = planLimits.customFields;
+  const isLimitReached = customFieldsLimit !== -1 && fields.length >= customFieldsLimit;
+  const nextPlanName = customFieldsLimit <= 3 ? "PME" : "Entreprise";
 
   const handleCreate = async (data) => {
     try {
@@ -421,22 +429,33 @@ export default function CustomFieldsManager({ open, onOpenChange }) {
                 Créez des champs personnalisés pour enrichir vos fiches clients avec
                 des informations spécifiques à votre activité.
               </p>
-              <Button className="mt-4" onClick={() => setIsFormOpen(true)}>
+              <Button className="mt-4" onClick={() => setIsFormOpen(true)} disabled={isLimitReached}>
                 <Plus className="mr-2 h-4 w-4" />
                 Créer un champ
               </Button>
+              {isLimitReached && (
+                <p className="mt-2 text-sm text-amber-600">
+                  Limite atteinte ({fields.length}/{customFieldsLimit} champs). Passez au plan {nextPlanName} pour plus de champs personnalisés.
+                </p>
+              )}
             </div>
           ) : (
             <>
               <div className="flex items-center justify-between">
                 <p className="text-sm text-muted-foreground">
                   {fields.length} champ{fields.length > 1 ? "s" : ""}
+                  {customFieldsLimit !== -1 && ` / ${customFieldsLimit}`}
                 </p>
-                <Button size="sm" onClick={() => setIsFormOpen(true)}>
+                <Button size="sm" onClick={() => setIsFormOpen(true)} disabled={isLimitReached}>
                   <Plus className="mr-2 h-4 w-4" />
                   Nouveau champ
                 </Button>
               </div>
+              {isLimitReached && (
+                <p className="text-sm text-amber-600">
+                  Limite atteinte ({fields.length}/{customFieldsLimit} champs). Passez au plan {nextPlanName} pour plus de champs personnalisés.
+                </p>
+              )}
               <div className="space-y-2">
                 {fields.map((field) => (
                   <FieldRow

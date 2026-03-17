@@ -1,54 +1,35 @@
 import { useMemo } from 'react';
 import { useQuery } from '@apollo/client';
-import { GET_INVOICE_NUMBERS, INVOICE_STATUS } from "@/src/graphql/invoiceQueries";
+import { GET_NEXT_INVOICE_NUMBER } from "@/src/graphql/invoiceQueries";
 import { useRequiredWorkspace } from '@/src/hooks/useWorkspace';
 
 export const useInvoiceNumber = (prefix) => {
   const { workspaceId, loading: workspaceLoading } = useRequiredWorkspace();
 
-  const { data, loading, error } = useQuery(GET_INVOICE_NUMBERS, {
-    variables: { workspaceId },
+  const { data, loading, error } = useQuery(GET_NEXT_INVOICE_NUMBER, {
+    variables: { workspaceId, prefix },
     fetchPolicy: 'cache-and-network',
-    skip: !workspaceId,
+    skip: !workspaceId || !prefix,
   });
 
-  // Tout calculer en une seule passe, sans useState ni useEffect
   const computed = useMemo(() => {
-    const invoices = data?.invoices?.invoices;
-    if (!invoices) {
+    const nextNumberStr = data?.nextInvoiceNumber;
+    if (!nextNumberStr) {
       return { lastNumber: 0, anyDocumentsExist: false, hasDocumentsForPrefix: false };
     }
 
-    // Factures finalisées uniquement (non-brouillon, avec numéro)
-    const finalizedInvoices = invoices.filter(invoice => {
-      return invoice.status !== INVOICE_STATUS.DRAFT
-        && invoice.number
-        && invoice.number.trim() !== '';
-    });
-
-    // Vérifier si des documents finalisés existent (tous préfixes confondus)
-    const anyDocumentsExist = finalizedInvoices.some(invoice =>
-      /^\d+$/.test(invoice.number) && parseInt(invoice.number, 10) > 0
-    );
-
-    // Filtrer par préfixe pour calculer le prochain numéro
-    if (!prefix) {
-      return { lastNumber: 0, anyDocumentsExist, hasDocumentsForPrefix: false };
-    }
-
-    const numbers = finalizedInvoices
-      .filter(invoice => invoice.prefix === prefix)
-      .map(invoice => /^\d+$/.test(invoice.number) ? parseInt(invoice.number, 10) : null)
-      .filter(num => num !== null && num > 0);
-
-    const lastNumber = numbers.length > 0 ? Math.max(...numbers) : 0;
+    // Le backend retourne le prochain numéro formaté (ex: "0005")
+    // Extraire la partie numérique
+    const numericPart = nextNumberStr.replace(/\D/g, '');
+    const nextNum = parseInt(numericPart, 10) || 1;
+    const lastNumber = nextNum - 1;
 
     return {
       lastNumber,
-      anyDocumentsExist,
-      hasDocumentsForPrefix: numbers.length > 0,
+      anyDocumentsExist: lastNumber > 0,
+      hasDocumentsForPrefix: lastNumber > 0,
     };
-  }, [data, prefix]);
+  }, [data]);
 
   const isLoading = loading || workspaceLoading;
   const nextInvoiceNumber = computed.lastNumber + 1;

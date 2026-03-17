@@ -74,6 +74,6 @@ export const useOptimizedOrganizationQuery = (query, options = {}) => {
   return useOptimizedQuery(query, {
     ...options,
     // Pas de cache - toujours récupérer les données fraîches
-    fetchPolicy: 'network-only',
+    fetchPolicy: "cache-and-network",
   }, 'organization', 'default');
 };

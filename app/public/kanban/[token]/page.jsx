@@ -67,7 +67,7 @@ function AuthModal({ isOpen, token, onSuccess, onBanned }) {
   
   // Query pour vérifier l'email
   const [checkEmail, { loading: checkingEmail }] = useLazyQuery(CHECK_INVITED_EMAIL, {
-    fetchPolicy: 'network-only',
+    fetchPolicy: "cache-and-network",
     onCompleted: (data) => {
       const result = data?.checkInvitedEmail;
       if (result) {

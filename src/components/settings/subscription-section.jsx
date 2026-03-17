@@ -97,7 +97,7 @@ const PLANS_CONFIG = [
     features: {
       users: "Jusqu'à 25",
       accountants: "5 comptables",
-      extraUsers: "7,49 €/utilisateur",
+      extraUsers: "5,99 €/utilisateur",
       invoicing: true,
       autoReminders: true,
       ocr: "Illimité",
@@ -105,7 +105,7 @@ const PLANS_CONFIG = [
       cashFlow: true,
       projects: true,
       signatures: "25 signatures",
-      fileTransfer: "15 Go",
+      fileTransfer: "50 Go",
       crm: true,
       catalog: true,
       prioritySupport: true,

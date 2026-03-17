@@ -196,7 +196,7 @@ const dateFilterFn = (row, columnId, filterValue) => {
   return true;
 };
 
-export function useQuoteTable({ data = [], onRefetch, onSendEmail, onSaveAsTemplate }) {
+export function useQuoteTable({ data = [], onRefetch, onSendEmail, onSaveAsTemplate, onRequestSignature }) {
   const [globalFilter, setGlobalFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState([]);
   const [clientFilter, setClientFilter] = useState([]);
@@ -498,12 +498,12 @@ export function useQuoteTable({ data = [], onRefetch, onSendEmail, onSaveAsTempl
       {
         id: "actions",
         header: () => <div className="text-right font-normal">Actions</div>,
-        cell: ({ row }) => <QuoteRowActions row={row} onRefetch={onRefetch} onSendEmail={onSendEmail} onSaveAsTemplate={onSaveAsTemplate} />,
+        cell: ({ row }) => <QuoteRowActions row={row} onRefetch={onRefetch} onSendEmail={onSendEmail} onSaveAsTemplate={onSaveAsTemplate} onRequestSignature={onRequestSignature} />,
         size: 60,
         enableHiding: false,
       },
     ],
-    [onRefetch, onSendEmail, onSaveAsTemplate]
+    [onRefetch, onSendEmail, onSaveAsTemplate, onRequestSignature]
   );
 
   // Log des données pour débogage

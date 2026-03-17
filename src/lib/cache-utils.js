@@ -18,7 +18,7 @@ export const CACHE_POLICIES = {
 
   // Données en temps réel (transactions, notifications) — toujours du réseau
   REALTIME: {
-    fetchPolicy: "network-only",
+    fetchPolicy: "cache-and-network",
     nextFetchPolicy: "network-only",
   },
 

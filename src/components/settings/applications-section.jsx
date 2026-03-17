@@ -5,6 +5,7 @@ import { Separator } from "@/src/components/ui/separator";
 import { Input } from "@/src/components/ui/input";
 import { Button } from "@/src/components/ui/button";
 import { Badge } from "@/src/components/ui/badge";
+import { Checkbox } from "@/src/components/ui/checkbox";
 import { useStripeConnect } from "@/src/hooks/useStripeConnect";
 import { useBankingConnection } from "@/src/hooks/useBankingConnection";
 import { usePennylane } from "@/src/hooks/usePennylane";
@@ -516,51 +517,72 @@ function PennylaneConnectionPanel({ app, isConnected, connectionDetail, actions 
 
         {/* Sync automatique */}
         {actions.account?.autoSync && (
-          <div className="space-y-2">
+          <div className="space-y-3">
             <h4 className="text-xs font-medium text-gray-500">Synchronisation automatique</h4>
-            <div className="space-y-1.5">
-              {[
-                { key: "invoices", label: "Factures envoyées / payées" },
-                { key: "expenses", label: "Dépenses approuvées" },
-                { key: "clients", label: "Nouveaux clients" },
-              ].map(({ key, label }) => (
-                <label
-                  key={key}
-                  className="flex items-center justify-between gap-2 px-3 py-2 bg-[#f8f9fa] dark:bg-[#141414] border border-[#eeeff1] dark:border-[#232323] rounded-lg cursor-pointer"
-                >
-                  <span className="text-sm text-[#505154] dark:text-gray-400">{label}</span>
-                  <input
-                    type="checkbox"
-                    checked={actions.account.autoSync[key]}
-                    onChange={(e) =>
-                      actions.onUpdateAutoSync({ [key]: e.target.checked })
-                    }
-                    disabled={!actions.canManage}
-                    className="h-4 w-4 rounded border-gray-300 text-[#5A50FF] focus:ring-[#5A50FF] cursor-pointer"
-                  />
-                </label>
-              ))}
+
+            {/* Groupe : Documents */}
+            <div className="bg-[#f8f9fa] dark:bg-[#141414] border border-[#eeeff1] dark:border-[#232323] rounded-xl overflow-hidden">
+              <div className="px-3 py-2 border-b border-[#eeeff1] dark:border-[#232323]">
+                <span className="text-[11px] font-medium text-gray-400 uppercase tracking-wider">Documents</span>
+              </div>
+              <div className="divide-y divide-[#eeeff1] dark:divide-[#232323]">
+                {[
+                  { key: "invoices", label: "Factures clients" },
+                  { key: "supplierInvoices", label: "Factures fournisseurs" },
+                  { key: "quotes", label: "Devis acceptés" },
+                ].map(({ key, label }) => (
+                  <label key={key} className="flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-[#f3f3f3] dark:hover:bg-[#1a1a1a] transition-colors">
+                    <span className="text-[13px] text-[#505154] dark:text-gray-400">{label}</span>
+                    <Checkbox
+                      checked={actions.account.autoSync[key]}
+                      onCheckedChange={(checked) => actions.onUpdateAutoSync({ [key]: !!checked })}
+                      disabled={!actions.canManage}
+                    />
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Groupe : Données */}
+            <div className="bg-[#f8f9fa] dark:bg-[#141414] border border-[#eeeff1] dark:border-[#232323] rounded-xl overflow-hidden">
+              <div className="px-3 py-2 border-b border-[#eeeff1] dark:border-[#232323]">
+                <span className="text-[11px] font-medium text-gray-400 uppercase tracking-wider">Données</span>
+              </div>
+              <div className="divide-y divide-[#eeeff1] dark:divide-[#232323]">
+                {[
+                  { key: "clients", label: "Clients" },
+                  { key: "suppliers", label: "Fournisseurs" },
+                  { key: "products", label: "Produits" },
+                  { key: "transactions", label: "Transactions bancaires" },
+                ].map(({ key, label }) => (
+                  <label key={key} className="flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-[#f3f3f3] dark:hover:bg-[#1a1a1a] transition-colors">
+                    <span className="text-[13px] text-[#505154] dark:text-gray-400">{label}</span>
+                    <Checkbox
+                      checked={actions.account.autoSync[key]}
+                      onCheckedChange={(checked) => actions.onUpdateAutoSync({ [key]: !!checked })}
+                      disabled={!actions.canManage}
+                    />
+                  </label>
+                ))}
+              </div>
             </div>
           </div>
         )}
 
         {/* Erreur de sync */}
         {actions.account?.syncError && (
-          <div className="px-3 py-2 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-lg">
-            <p className="text-xs text-red-600 dark:text-red-400">{actions.account.syncError}</p>
-          </div>
+          <p className="text-[11px] text-red-500 dark:text-red-400">{actions.account.syncError}</p>
         )}
 
         {/* Résultat sync */}
         {syncResult && (
-          <div className={`px-3 py-2 rounded-lg border ${syncResult.success ? "bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800" : "bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800"}`}>
-            <p className={`text-xs ${syncResult.success ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
-              {syncResult.message}
-              {syncResult.success && syncResult.invoicesSynced != null && (
-                <> — {syncResult.invoicesSynced} facture{syncResult.invoicesSynced > 1 ? "s" : ""}, {syncResult.expensesSynced} dépense{syncResult.expensesSynced > 1 ? "s" : ""}</>
-              )}
-            </p>
-          </div>
+          <p className={`text-[11px] ${syncResult.success ? "text-gray-500 dark:text-gray-400" : "text-red-500 dark:text-red-400"}`}>
+            {syncResult.success
+              ? syncResult.invoicesSynced != null
+                ? `${syncResult.invoicesSynced} facture${syncResult.invoicesSynced > 1 ? "s" : ""}, ${syncResult.expensesSynced} dépense${syncResult.expensesSynced > 1 ? "s" : ""} synchronisée${syncResult.expensesSynced > 1 ? "s" : ""}`
+                : "Synchronisation terminée"
+              : syncResult.message}
+          </p>
         )}
 
         {/* Actions */}
@@ -570,7 +592,7 @@ function PennylaneConnectionPanel({ app, isConnected, connectionDetail, actions 
             size="sm"
             onClick={handleSyncAll}
             disabled={isSyncing || actions.syncStatus === "IN_PROGRESS" || !actions.canManage}
-            className="bg-[#1A1A3E] hover:bg-[#2a2a5e] text-white cursor-pointer"
+            className="bg-[#222] hover:bg-[#222]/90 text-white cursor-pointer"
           >
             {isSyncing ? (
               <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
@@ -678,7 +700,7 @@ function PennylaneConnectionPanel({ app, isConnected, connectionDetail, actions 
           size="sm"
           onClick={handleConnect}
           disabled={!apiToken.trim() || actions.isLoading || !actions.canManage}
-          className="bg-[#1A1A3E] hover:bg-[#2a2a5e] text-white cursor-pointer"
+          className="bg-[#222] hover:bg-[#222]/90 text-white cursor-pointer"
         >
           {actions.isLoading ? (
             <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />

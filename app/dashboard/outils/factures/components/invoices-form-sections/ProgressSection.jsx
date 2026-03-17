@@ -38,7 +38,7 @@ export default function ProgressSection({ canEdit = true }) {
   const [fetchPreviousInvoices, { data: previousInvoicesData }] = useLazyQuery(
     GET_SITUATION_INVOICES_BY_QUOTE_REF,
     {
-      fetchPolicy: "network-only",
+      fetchPolicy: "cache-and-network",
     }
   );
 

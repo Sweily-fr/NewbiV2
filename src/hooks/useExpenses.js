@@ -58,7 +58,7 @@ export const useExpenseStats = (dateRange = {}) => {
       workspaceId,
       ...dateRange,
     },
-    fetchPolicy: "network-only",
+    fetchPolicy: "cache-and-network",
     skip: !workspaceId,
   });
 

@@ -9,6 +9,7 @@ import {
   Building,
   Building2,
   ArrowRightFromLine,
+  Lock,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import {
@@ -35,8 +36,15 @@ import {
   exportToSage,
   exportToCegid,
 } from "@/src/utils/purchase-order-export";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/src/components/ui/tooltip";
 import { toast } from "@/src/components/ui/sonner";
 import { usePermissions } from "@/src/hooks/usePermissions";
+import { useSubscription } from "@/src/contexts/dashboard-layout-context";
+import { getPlanLimits } from "@/src/lib/plan-limits";
 
 export default function PurchaseOrderExportButton({
   purchaseOrders,
@@ -53,6 +61,8 @@ export default function PurchaseOrderExportButton({
   });
   const [canExportPO, setCanExportPO] = useState(false);
   const { canExport } = usePermissions();
+  const { subscription } = useSubscription();
+  const allowedExports = getPlanLimits(subscription?.plan).exports;
 
   useEffect(() => {
     const checkPermission = async () => {
@@ -150,18 +160,63 @@ export default function PurchaseOrderExportButton({
 
           <DropdownMenuSeparator />
           <DropdownMenuLabel>Formats comptables</DropdownMenuLabel>
-          <DropdownMenuItem onClick={() => handleFormatSelect("fec")}>
-            <FileCheck className="mr-2 h-4 w-4" />
-            FEC (Format légal)
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => handleFormatSelect("sage")}>
-            <Building className="mr-2 h-4 w-4" />
-            Sage Compta
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => handleFormatSelect("cegid")}>
-            <Building2 className="mr-2 h-4 w-4" />
-            Cegid Expert
-          </DropdownMenuItem>
+          {allowedExports.includes("fec") ? (
+            <DropdownMenuItem onClick={() => handleFormatSelect("fec")}>
+              <FileCheck className="mr-2 h-4 w-4" />
+              FEC (Format légal)
+            </DropdownMenuItem>
+          ) : (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <DropdownMenuItem disabled className="opacity-50">
+                  <FileCheck className="mr-2 h-4 w-4" />
+                  FEC (Format légal)
+                  <Lock className="ml-auto h-3.5 w-3.5 text-muted-foreground" />
+                </DropdownMenuItem>
+              </TooltipTrigger>
+              <TooltipContent side="left">
+                Disponible avec le plan PME ou supérieur
+              </TooltipContent>
+            </Tooltip>
+          )}
+          {allowedExports.includes("sage") ? (
+            <DropdownMenuItem onClick={() => handleFormatSelect("sage")}>
+              <Building className="mr-2 h-4 w-4" />
+              Sage Compta
+            </DropdownMenuItem>
+          ) : (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <DropdownMenuItem disabled className="opacity-50">
+                  <Building className="mr-2 h-4 w-4" />
+                  Sage Compta
+                  <Lock className="ml-auto h-3.5 w-3.5 text-muted-foreground" />
+                </DropdownMenuItem>
+              </TooltipTrigger>
+              <TooltipContent side="left">
+                Disponible avec le plan Entreprise
+              </TooltipContent>
+            </Tooltip>
+          )}
+          {allowedExports.includes("cegid") ? (
+            <DropdownMenuItem onClick={() => handleFormatSelect("cegid")}>
+              <Building2 className="mr-2 h-4 w-4" />
+              Cegid Expert
+            </DropdownMenuItem>
+          ) : (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <DropdownMenuItem disabled className="opacity-50">
+                  <Building2 className="mr-2 h-4 w-4" />
+                  Cegid Expert
+                  <Lock className="ml-auto h-3.5 w-3.5 text-muted-foreground" />
+                </DropdownMenuItem>
+              </TooltipTrigger>
+              <TooltipContent side="left">
+                Disponible avec le plan Entreprise
+              </TooltipContent>
+            </Tooltip>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
 

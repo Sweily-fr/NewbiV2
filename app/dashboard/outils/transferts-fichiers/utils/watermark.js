@@ -3,7 +3,7 @@
  * Utilisé dans le système de transfert de fichiers
  */
 
-import { PDFDocument, rgb, degrees, StandardFonts } from "pdf-lib";
+// pdf-lib importé dynamiquement dans les fonctions qui l'utilisent
 
 /**
  * Vérifie si un fichier est une image
@@ -333,6 +333,7 @@ export async function applyWatermarkToPdf(file, options = {}) {
   } = options;
 
   try {
+    const { PDFDocument, rgb, degrees, StandardFonts } = await import("pdf-lib");
     const arrayBuffer = await file.arrayBuffer();
     const pdfDoc = await PDFDocument.load(arrayBuffer);
     const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold);

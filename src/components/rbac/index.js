@@ -15,6 +15,7 @@ export {
   AdminOnly,
   MemberOnly,
   AccountantOnly,
+  ViewerOnly,
 } from "./PermissionGate";
 
 // Composants de boutons avec permissions

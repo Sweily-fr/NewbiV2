@@ -1,5 +1,5 @@
 import Stripe from "stripe";
-import { getPlanLimits as getCentralizedPlanLimits, SEAT_PRICE } from "../lib/plan-limits.js";
+import { getPlanLimits as getCentralizedPlanLimits, getSeatPrice, SEAT_PRICE } from "../lib/plan-limits.js";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const SEAT_PRICE_ID = process.env.STRIPE_SEAT_PRICE_ID; // Prix par siège additionnel

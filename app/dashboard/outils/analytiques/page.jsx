@@ -7,6 +7,10 @@ import { AnalyticsTreasuryBalanceChart } from "./components/analytics-treasury-b
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { useFinancialAnalytics } from "@/src/hooks/useFinancialAnalytics";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
+import { useSubscription } from "@/src/contexts/dashboard-layout-context";
+import { getPlanLimits } from "@/src/lib/plan-limits";
+import { Lock } from "lucide-react";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/src/components/ui/tooltip";
 
 import {
   AnalyticsDateFilter,
@@ -105,6 +109,9 @@ const COMMERCIAL_KPI = [
 
 export default function AnalytiquesPage() {
   const { workspaceId } = useRequiredWorkspace();
+  const { subscription } = useSubscription();
+  const planLimits = getPlanLimits(subscription?.plan);
+  const hasAdvancedAnalytics = planLimits.advancedAnalytics;
 
   const [period, setPeriod] = useState("current_year");
   const [dateRange, setDateRange] = useState(() => getDateRangeForPreset("current_year"));
@@ -187,10 +194,30 @@ export default function AnalytiquesPage() {
         <Tabs defaultValue="synthese" className="flex flex-col flex-1 min-h-0 gap-3">
           <TabsList className="mx-4 sm:mx-6 shrink-0">
             <TabsTrigger value="synthese">Synthèse</TabsTrigger>
-            <TabsTrigger value="rentabilite">Rentabilité</TabsTrigger>
-            <TabsTrigger value="tresorerie">Trésorerie</TabsTrigger>
-            <TabsTrigger value="commercial">Clients</TabsTrigger>
-            <TabsTrigger value="detail">Taxes</TabsTrigger>
+            {hasAdvancedAnalytics ? (
+              <>
+                <TabsTrigger value="rentabilite">Rentabilité</TabsTrigger>
+                <TabsTrigger value="tresorerie">Trésorerie</TabsTrigger>
+                <TabsTrigger value="commercial">Clients</TabsTrigger>
+                <TabsTrigger value="detail">Taxes</TabsTrigger>
+              </>
+            ) : (
+              <>
+                {["Rentabilité", "Trésorerie", "Clients", "Taxes"].map((label) => (
+                  <Tooltip key={label}>
+                    <TooltipTrigger asChild>
+                      <span className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-muted-foreground/50 cursor-not-allowed">
+                        {label}
+                        <Lock size={12} />
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      Passez au plan PME ou Entreprise pour accéder aux analyses avancées
+                    </TooltipContent>
+                  </Tooltip>
+                ))}
+              </>
+            )}
           </TabsList>
 
           {/* ===== Tab 1 — SYNTHESE ===== */}

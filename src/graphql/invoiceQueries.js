@@ -763,7 +763,7 @@ export const useLastInvoicePrefix = () => {
   const { data, loading, error } = useQuery(GET_LAST_INVOICE_PREFIX, {
     variables: { workspaceId },
     skip: !workspaceId,
-    fetchPolicy: "network-only", // Toujours récupérer la dernière valeur
+    fetchPolicy: "cache-and-network", // Toujours récupérer la dernière valeur
     errorPolicy: "all",
   });
 
@@ -1373,7 +1373,7 @@ export const useCheckInvoiceNumber = () => {
             prefix: invoicePrefix || "",
             excludeId: excludeId || undefined,
           },
-          fetchPolicy: "network-only",
+          fetchPolicy: "cache-and-network",
         });
 
         return {
