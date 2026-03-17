@@ -17,7 +17,6 @@ import {
   BookTemplate,
   PenLine,
 } from "lucide-react";
-import { ButtonGroup } from "@/src/components/ui/button-group";
 import {
   Tooltip,
   TooltipContent,
@@ -42,7 +41,6 @@ import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { getPlanLimits } from "@/src/lib/plan-limits";
 import { toast } from "@/src/components/ui/sonner";
-import QuoteSidebar from "./quote-sidebar";
 import QuoteMobileFullscreen from "./quote-mobile-fullscreen";
 
 // Fonction utilitaire pour formater les dates
@@ -75,8 +73,7 @@ const formatDateForEmail = (dateValue) => {
   }
 };
 
-export default function QuoteRowActions({ row, onRefetch, onSendEmail, onSaveAsTemplate, onRequestSignature }) {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+export default function QuoteRowActions({ row, onRefetch, onSendEmail, onSaveAsTemplate, onRequestSignature, onOpenSidebar }) {
   const [isMobileFullscreenOpen, setIsMobileFullscreenOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const router = useRouter();
@@ -102,7 +99,9 @@ export default function QuoteRowActions({ row, onRefetch, onSendEmail, onSaveAsT
     if (isMobile) {
       setIsMobileFullscreenOpen(true);
     } else {
-      setIsSidebarOpen(true);
+      if (onOpenSidebar) {
+        onOpenSidebar(quote);
+      }
     }
   };
 
@@ -235,42 +234,18 @@ export default function QuoteRowActions({ row, onRefetch, onSendEmail, onSaveAsT
           className="hidden"
           aria-hidden="true"
         />
-        <ButtonGroup>
-          {/* Icône d'envoi par email */}
-          {quote.status !== "DRAFT" && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8 p-0 cursor-pointer"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onSendEmail?.(quote);
-                    }}
-                  >
-                    <Mail className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Envoyer par email</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-8 w-8 p-0"
-                disabled={isLoading}
-              >
-                <span className="sr-only">Ouvrir le menu</span>
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 p-0"
+              disabled={isLoading}
+            >
+              <span className="sr-only">Ouvrir le menu</span>
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={handleView}>
               <Eye className="mr-2 h-4 w-4" />
@@ -308,37 +283,49 @@ export default function QuoteRowActions({ row, onRefetch, onSendEmail, onSaveAsT
                   <CheckCircle className="mr-2 h-4 w-4" />
                   Accepter le devis
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleReject} disabled={isLoading}>
-                  <XCircle className="mr-2 h-4 w-4" />
-                  Rejeter le devis
-                </DropdownMenuItem>
               </>
             )}
 
             {canConvertToInvoice && (
-                <DropdownMenuItem
-                  onClick={handleConvertToInvoice}
-                  disabled={isLoading}
-                >
-                  <FileCheck className="mr-2 h-4 w-4" />
-                  Convertir en facture
-                </DropdownMenuItem>
-              )}
+              <DropdownMenuItem
+                onClick={handleConvertToInvoice}
+                disabled={isLoading}
+              >
+                <FileCheck className="mr-2 h-4 w-4" />
+                Convertir en facture
+              </DropdownMenuItem>
+            )}
 
             {canConvertToPO && (
+              <DropdownMenuItem
+                onClick={handleConvertToPurchaseOrder}
+                disabled={isLoading}
+              >
+                <ShoppingCart className="mr-2 h-4 w-4" />
+                Convertir en bon de commande
+              </DropdownMenuItem>
+            )}
+
+            {/* Envoyer par email - visible pour les devis non brouillon */}
+            {quote.status !== QUOTE_STATUS.DRAFT && (
+              <>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem
-                  onClick={handleConvertToPurchaseOrder}
-                  disabled={isLoading}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSendEmail?.(quote);
+                  }}
                 >
-                  <ShoppingCart className="mr-2 h-4 w-4" />
-                  Convertir en bon de commande
+                  <Mail className="mr-2 h-4 w-4" />
+                  Envoyer par email
                 </DropdownMenuItem>
-              )}
+              </>
+            )}
 
             {/* Faire signer - visible pour les devis non brouillon et sans signature en cours/terminée */}
             {quote.status !== QUOTE_STATUS.DRAFT && (!quote.signatureStatus || quote.signatureStatus === "ERROR" || quote.signatureStatus === "CANCELLED") && (
               <>
-                <DropdownMenuSeparator />
+                {quote.status === QUOTE_STATUS.DRAFT && <DropdownMenuSeparator />}
                 {esignatureAccess ? (
                   <DropdownMenuItem
                     onClick={(e) => {
@@ -370,28 +357,39 @@ export default function QuoteRowActions({ row, onRefetch, onSendEmail, onSaveAsT
               </>
             )}
 
-            {/* Séparateur avant l'action de suppression */}
-            {hasDeleteAction && hasStatusActions && <DropdownMenuSeparator />}
+            {/* Rejeter le devis - en rouge */}
+            {quote.status === QUOTE_STATUS.PENDING && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={handleReject}
+                  disabled={isLoading}
+                  className="text-red-600 focus:text-red-600"
+                >
+                  <XCircle className="mr-2 h-4 w-4 text-red-600" />
+                  Rejeter le devis
+                </DropdownMenuItem>
+              </>
+            )}
 
+            {/* Supprimer - pour les brouillons, en rouge */}
             {hasDeleteAction && (
-              <DropdownMenuItem onClick={handleDelete}>
-                <Trash2 className="mr-2 h-4 w-4" />
-                Supprimer
-              </DropdownMenuItem>
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={handleDelete}
+                  className="text-red-600 focus:text-red-600"
+                >
+                  <Trash2 className="mr-2 h-4 w-4 text-red-600" />
+                  Supprimer
+                </DropdownMenuItem>
+              </>
             )}
           </DropdownMenuContent>
-          </DropdownMenu>
-        </ButtonGroup>
+        </DropdownMenu>
       </div>
 
-      {/* Sidebar pour desktop */}
-      <QuoteSidebar
-        quote={quote}
-        isOpen={isSidebarOpen}
-        onClose={() => setIsSidebarOpen(false)}
-        onRefetch={onRefetch}
-        isViewMode={true}
-      />
+      {/* Sidebar pour desktop - gérée au niveau du tableau pour éviter les re-renders */}
 
       {/* Fullscreen pour mobile - Ne monter que si ouvert */}
       {isMobileFullscreenOpen && (

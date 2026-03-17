@@ -490,7 +490,7 @@ export default function PurchaseInvoiceTable({
           <>
             <div className="hidden md:flex md:flex-col flex-1 min-h-0 overflow-hidden">
               {/* Header fixe */}
-              <div className="flex-shrink-0 border-b border-gray-200 dark:border-gray-800">
+              <div className="flex-shrink-0 border-b border-[#eeeff1] dark:border-[#232323]">
                 <table className="w-full table-fixed">
                   <thead>
                     {table.getHeaderGroups().map((headerGroup) => (
@@ -519,7 +519,7 @@ export default function PurchaseInvoiceTable({
                 {loading ? (
                   <div className="p-0">
                     {Array.from({ length: 8 }).map((_, i) => (
-                      <div key={i} className="flex items-center border-b px-4 sm:px-6 py-3 gap-3">
+                      <div key={i} className="flex items-center border-b border-[#eeeff1] dark:border-[#232323] px-4 sm:px-6 py-3 gap-3">
                         <div className="h-4 w-4 rounded bg-muted animate-pulse" />
                         <div className="h-7 w-7 rounded-full bg-muted animate-pulse flex-shrink-0" />
                         <div className="h-4 w-[140px] rounded bg-muted animate-pulse" />
@@ -539,7 +539,7 @@ export default function PurchaseInvoiceTable({
                         <tr
                           key={row.id}
                           data-state={row.getIsSelected() && "selected"}
-                          className="border-b hover:bg-muted/50 data-[state=selected]:bg-muted cursor-pointer transition-colors"
+                          className="border-b border-[#eeeff1] dark:border-[#232323] hover:bg-muted/50 data-[state=selected]:bg-muted cursor-pointer transition-colors"
                           onClick={(e) => {
                             if (
                               e.target.closest('[role="checkbox"]') ||
@@ -584,7 +584,7 @@ export default function PurchaseInvoiceTable({
             </div>
 
             {/* Pagination */}
-            <div className="hidden md:flex items-center justify-between px-4 sm:px-6 py-2 border-t border-gray-200 dark:border-gray-800 bg-background flex-shrink-0">
+            <div className="hidden md:flex items-center justify-between px-4 sm:px-6 py-2 border-t border-[#eeeff1] dark:border-[#232323] bg-background flex-shrink-0">
               <div className="flex-1 text-xs font-normal text-muted-foreground">
                 {table.getFilteredSelectedRowModel().rows.length} sur{" "}
                 {table.getFilteredRowModel().rows.length} ligne(s) sélectionnée(s).
@@ -745,7 +745,7 @@ export default function PurchaseInvoiceTable({
             {loading ? (
               <div className="px-4">
                 {Array.from({ length: 6 }).map((_, i) => (
-                  <div key={i} className="flex items-center justify-between border-b py-3 gap-3">
+                  <div key={i} className="flex items-center justify-between border-b border-[#eeeff1] dark:border-[#232323] py-3 gap-3">
                     <div className="flex-1 min-w-0 space-y-2">
                       <div className="h-4 w-[120px] rounded bg-muted animate-pulse" />
                       <div className="h-3 w-[80px] rounded bg-muted animate-pulse" />
@@ -783,7 +783,7 @@ export default function PurchaseInvoiceTable({
                 .map((inv) => (
                   <div
                     key={inv.id}
-                    className="border-b px-4 py-3 cursor-pointer hover:bg-muted/50 active:bg-muted"
+                    className="border-b border-[#eeeff1] dark:border-[#232323] px-4 py-3 cursor-pointer hover:bg-muted/50 active:bg-muted"
                     onClick={() => handleRowClick(inv)}
                   >
                     <div className="flex items-center justify-between">
@@ -981,7 +981,7 @@ function ImportedInvoicesPanel({
       )}
 
       {/* Table header */}
-      <div className="hidden md:block flex-shrink-0 border-b border-gray-200 dark:border-gray-800">
+      <div className="hidden md:block flex-shrink-0 border-b border-[#eeeff1] dark:border-[#232323]">
         <div className="grid grid-cols-[40px_1fr_140px_100px_100px_100px] gap-2 px-4 sm:px-6 h-10 items-center">
           <div>
             <Checkbox checked={allSelected} onCheckedChange={toggleAll} />
@@ -999,7 +999,7 @@ function ImportedInvoicesPanel({
         {importedInvoices.map((inv) => (
           <div
             key={inv.id}
-            className={`border-b transition-colors ${
+            className={`border-b border-[#eeeff1] dark:border-[#232323] transition-colors ${
               importedSelection.has(inv.id) ? "bg-amber-50/50 dark:bg-amber-900/5" : "hover:bg-muted/50"
             }`}
           >

@@ -208,6 +208,7 @@ export function useInvoiceTable({
   onOpenReminderSettings,
   excludedClientIds = [],
   onOpenSidebar, // Callback pour ouvrir la sidebar au niveau du tableau
+  onOpenImportedSidebar, // Callback pour ouvrir la sidebar des factures importées
   onSendEmail, // Callback pour ouvrir la modal d'envoi au niveau du tableau
   onSaveAsTemplate, // Callback pour ouvrir le dialog de template au niveau du tableau
 }) {
@@ -670,12 +671,14 @@ export function useInvoiceTable({
             <InvoiceRowActions
               row={row}
               onRefetch={onRefetch}
+              onRefetchImported={onRefetchImported}
               showReminderIcon={
                 reminderEnabled && row.original.status === "PENDING"
               }
               isClientExcluded={isClientExcluded}
               onOpenReminderSettings={onOpenReminderSettings}
               onOpenSidebar={onOpenSidebar}
+              onOpenImportedSidebar={onOpenImportedSidebar}
               onSendEmail={onSendEmail}
               onSaveAsTemplate={onSaveAsTemplate}
             />
@@ -687,10 +690,12 @@ export function useInvoiceTable({
     ],
     [
       onRefetch,
+      onRefetchImported,
       reminderEnabled,
       onOpenReminderSettings,
       excludedClientIds,
       onOpenSidebar,
+      onOpenImportedSidebar,
       onSendEmail,
       onSaveAsTemplate,
     ] // Inclure toutes les dépendances

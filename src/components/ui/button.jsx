@@ -10,7 +10,7 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-[#1a1a1a] hover:bg-[#333] active:bg-[#111] text-white [box-shadow:inset_0_0_0_1px_rgba(255,255,255,0.1),0_2px_4px_-2px_rgba(0,0,0,0.12),0_3px_6px_-2px_rgba(0,0,0,0.08)]",
+          "bg-[#1a1a1a] hover:bg-[#333] active:bg-[#111] text-white [box-shadow:inset_0_0_0_1px_rgba(255,255,255,0.1),0_2px_4px_-2px_rgba(0,0,0,0.12),0_3px_6px_-2px_rgba(0,0,0,0.08)] dark:bg-white dark:hover:bg-[#e5e5e5] dark:active:bg-[#d4d4d4] dark:text-[#1a1a1a] dark:[box-shadow:none]",
         primary:
           "bg-[#5A50FF] hover:bg-[#4840D9] active:bg-[#3F37B3] text-white [box-shadow:inset_0_0_0_1px_rgba(0,0,0,0.1),0_2px_4px_-2px_rgba(90,80,255,0.12),0_3px_6px_-2px_rgba(90,80,255,0.08)]",
         danger:

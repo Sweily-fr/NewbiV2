@@ -28,6 +28,8 @@ const plans = [
     annualTotal: "157,56€/an",
     cta: "Essayer gratuitement",
     highlighted: false,
+    description: "Pour les indépendants",
+    highlights: ["Facturation & Devis illimités", "CRM client", "1 comptable gratuit"],
   },
   {
     id: "pme",
@@ -39,6 +41,8 @@ const plans = [
     cta: "Essayer gratuitement",
     highlighted: true,
     badge: "Populaire",
+    description: "Pour les équipes en croissance",
+    highlights: ["Jusqu'à 10 utilisateurs", "E-signature & automatisations", "Support prioritaire"],
   },
   {
     id: "entreprise",
@@ -49,6 +53,8 @@ const plans = [
     annualTotal: "1 025,88€/an",
     cta: "Essayer gratuitement",
     highlighted: false,
+    description: "Pour les structures avancées",
+    highlights: ["Jusqu'à 25 utilisateurs", "Permissions avancées", "Archivage légal & API"],
   },
 ];
 
@@ -355,53 +361,65 @@ export default function PricingSection() {
           </div>
 
           {/* Cartes plans mobile */}
-          <div className="flex flex-col gap-3 px-4 mb-8">
+          <div className="flex flex-col gap-4 px-4 mb-8">
             {plans.map((plan) => (
               <div
                 key={plan.id}
-                className={`rounded-xl px-5 py-4 ${
+                className={`rounded-3xl px-6 py-6 ${
                   plan.highlighted
-                    ? "border-2 border-gray-900 dark:border-gray-100 bg-gray-50 dark:bg-gray-800/40"
+                    ? "border-2 border-[#5A50FF]/30 shadow-sm"
                     : "border border-gray-200 dark:border-gray-800"
                 }`}
               >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-base font-semibold text-gray-900 dark:text-gray-50">
-                        {plan.name}
-                      </h3>
-                      {plan.badge && (
-                        <span className="text-[10px] font-medium text-[#5A50FF] bg-[#5A50FF]/8 border border-[#5A50FF]/15 rounded-md px-2 py-0.5">
-                          {plan.badge}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-[12px] text-gray-500 mt-0.5">
-                      {isAnnual ? plan.annual : plan.monthly} {plan.priceSuffix}
-                    </p>
-                  </div>
-                  <Link
-                    href="/auth/signup"
-                    className={`shrink-0 px-4 py-1.5 rounded-lg text-[12px] font-medium transition-colors ${
-                      plan.highlighted
-                        ? "bg-gray-900 text-white border border-gray-900 dark:bg-white dark:text-gray-900 dark:border-white"
-                        : "border border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-400"
-                    }`}
-                  >
-                    {plan.cta}
-                  </Link>
+                {/* Nom du plan */}
+                <h3 className="text-lg font-normal text-gray-900 dark:text-gray-50">
+                  {plan.name}
+                </h3>
+
+                {/* Prix */}
+                <div className="flex items-center gap-2.5 mt-3">
+                  <span className="text-3xl font-semibold text-gray-900 dark:text-gray-50">
+                    {isAnnual ? plan.annual : plan.monthly}
+                  </span>
+                  {isAnnual && (
+                    <span className="text-[11px] font-medium text-green-600 bg-green-50 dark:bg-green-900/20 dark:text-green-400 rounded-md px-2 py-0.5">
+                      -10%
+                    </span>
+                  )}
                 </div>
+                <p className="text-[13px] text-gray-400 mt-1">
+                  {plan.priceSuffix}
+                  {isAnnual && `, facturé ${plan.annualTotal}`}
+                </p>
+
+                {/* Description + highlights */}
+                <p className="text-[13px] font-medium text-gray-700 dark:text-gray-300 mt-5">
+                  {plan.description}
+                </p>
+                <div className="flex flex-col gap-2 mt-3">
+                  {plan.highlights.map((h, i) => (
+                    <div key={i} className="flex items-center gap-2.5">
+                      <CheckIcon />
+                      <span className="text-[13px] text-gray-600 dark:text-gray-400">{h}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* CTA */}
+                <Link
+                  href="/auth/signup"
+                  className={`mt-5 flex items-center justify-center w-full py-2.5 rounded-lg text-[15px] font-medium transition-colors ${
+                    plan.highlighted
+                      ? "bg-gray-900 text-white dark:bg-white dark:text-gray-900"
+                      : "border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-900"
+                  }`}
+                >
+                  {plan.cta}
+                </Link>
               </div>
             ))}
           </div>
 
-          {/* Accordion features */}
-          <div className="border-t border-gray-200 dark:border-gray-800 mx-4">
-            {featureSections.map((section, i) => (
-              <MobileSection key={i} section={section} />
-            ))}
-          </div>
         </div>
       </div>
     </div>

@@ -8,14 +8,12 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { Badge } from "@/src/components/ui/badge";
 import { Checkbox } from "@/src/components/ui/checkbox";
 import { Button } from "@/src/components/ui/button";
-import { ArrowUpDown } from "lucide-react";
+import { ArrowUpDown, FileText, Clock, CheckCircle, XCircle } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import {
   QUOTE_STATUS_LABELS,
-  QUOTE_STATUS_COLORS,
   useDeleteQuote,
 } from "@/src/graphql/quoteQueries";
 import { formatDate, isDateExpired } from "../utils/date-utils";
@@ -196,7 +194,7 @@ const dateFilterFn = (row, columnId, filterValue) => {
   return true;
 };
 
-export function useQuoteTable({ data = [], onRefetch, onSendEmail, onSaveAsTemplate, onRequestSignature }) {
+export function useQuoteTable({ data = [], onRefetch, onSendEmail, onSaveAsTemplate, onRequestSignature, onOpenSidebar }) {
   const [globalFilter, setGlobalFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState([]);
   const [clientFilter, setClientFilter] = useState([]);
@@ -437,10 +435,49 @@ export function useQuoteTable({ data = [], onRefetch, onSendEmail, onSaveAsTempl
         cell: ({ row }) => {
           const status = row.getValue("status");
           const label = QUOTE_STATUS_LABELS[status] || status;
-          const colorClass = QUOTE_STATUS_COLORS[status] || "";
+
+          const getStatusConfig = () => {
+            switch (status) {
+              case "DRAFT":
+                return {
+                  icon: <FileText className="w-3 h-3" />,
+                  className: "bg-gray-100 text-gray-700 dark:bg-gray-900/20 dark:text-gray-400",
+                };
+              case "PENDING":
+                return {
+                  icon: <Clock className="w-3 h-3" />,
+                  className: "bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400",
+                };
+              case "COMPLETED":
+                return {
+                  icon: <CheckCircle className="w-3 h-3" />,
+                  className: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400",
+                };
+              case "CANCELED":
+                return {
+                  icon: <XCircle className="w-3 h-3" />,
+                  className: "bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400",
+                };
+              default:
+                return {
+                  icon: <FileText className="w-3 h-3" />,
+                  className: "bg-gray-50 text-gray-600 dark:bg-gray-900/20 dark:text-gray-400",
+                };
+            }
+          };
+
+          const config = getStatusConfig();
 
           return (
-            <Badge className={cn("font-normal", colorClass)}>{label}</Badge>
+            <span
+              className={cn(
+                "inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium",
+                config.className
+              )}
+            >
+              {config.icon}
+              {label}
+            </span>
           );
         },
         size: 100,
@@ -498,12 +535,12 @@ export function useQuoteTable({ data = [], onRefetch, onSendEmail, onSaveAsTempl
       {
         id: "actions",
         header: () => <div className="text-right font-normal">Actions</div>,
-        cell: ({ row }) => <QuoteRowActions row={row} onRefetch={onRefetch} onSendEmail={onSendEmail} onSaveAsTemplate={onSaveAsTemplate} onRequestSignature={onRequestSignature} />,
+        cell: ({ row }) => <QuoteRowActions row={row} onRefetch={onRefetch} onSendEmail={onSendEmail} onSaveAsTemplate={onSaveAsTemplate} onRequestSignature={onRequestSignature} onOpenSidebar={onOpenSidebar} />,
         size: 60,
         enableHiding: false,
       },
     ],
-    [onRefetch, onSendEmail, onSaveAsTemplate, onRequestSignature]
+    [onRefetch, onSendEmail, onSaveAsTemplate, onRequestSignature, onOpenSidebar]
   );
 
   // Log des données pour débogage
