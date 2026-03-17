@@ -1,4 +1,4 @@
-import { gql } from '@apollo/client';
+import { gql } from "@apollo/client";
 
 export const CREATE_CLIENT = gql`
   mutation CreateClient($workspaceId: String!, $input: ClientInput!) {
@@ -40,9 +40,11 @@ export const CREATE_CLIENT = gql`
         fieldId
         value
       }
+      assignedMembers
       isBlocked
       blockedAt
       blockedReason
+      hasDocuments
       notes {
         id
         content
@@ -120,9 +122,11 @@ export const UPDATE_CLIENT = gql`
         fieldId
         value
       }
+      assignedMembers
       isBlocked
       blockedAt
       blockedReason
+      hasDocuments
       notes {
         id
         content
@@ -189,8 +193,16 @@ export const UNBLOCK_CLIENT = gql`
 `;
 
 export const ASSIGN_CLIENT_MEMBERS = gql`
-  mutation AssignClientMembers($workspaceId: String!, $id: ID!, $memberIds: [String!]!) {
-    assignClientMembers(workspaceId: $workspaceId, id: $id, memberIds: $memberIds) {
+  mutation AssignClientMembers(
+    $workspaceId: String!
+    $id: ID!
+    $memberIds: [String!]!
+  ) {
+    assignClientMembers(
+      workspaceId: $workspaceId
+      id: $id
+      memberIds: $memberIds
+    ) {
       id
       assignedMembers
     }
