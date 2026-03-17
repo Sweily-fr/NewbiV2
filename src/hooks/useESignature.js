@@ -1,9 +1,9 @@
 "use client";
 
+import React from "react";
 import { useQuery, useMutation } from "@apollo/client";
 import { toast } from "@/src/components/ui/sonner";
 import {
-  GET_SIGNATURE_REQUEST,
   GET_SIGNATURE_REQUESTS,
   GET_DOCUMENT_SIGNATURE_STATUS,
   REQUEST_DOCUMENT_SIGNATURE,
@@ -15,31 +15,41 @@ import {
  * Hook pour récupérer le statut de signature d'un document
  */
 export function useDocumentSignatureStatus(documentType, documentId) {
-  const { data, loading, error, refetch } = useQuery(
+  const { data, loading, error, refetch, startPolling, stopPolling } = useQuery(
     GET_DOCUMENT_SIGNATURE_STATUS,
     {
       variables: { documentType, documentId },
       skip: !documentType || !documentId,
       fetchPolicy: "cache-and-network",
-      pollInterval: 30000, // Rafraîchir toutes les 30s pour les signatures en cours
-    }
+    },
   );
 
   const signatureRequest = data?.getDocumentSignatureStatus || null;
 
-  // Arrêter le polling si la signature est terminée
   const isTerminal = ["DONE", "ERROR", "CANCELLED"].includes(
-    signatureRequest?.status
+    signatureRequest?.status,
   );
+
+  const isPending =
+    signatureRequest &&
+    ["PENDING", "WAIT_VALIDATION", "WAIT_SIGN", "WAIT_SIGNER"].includes(
+      signatureRequest.status,
+    );
+
+  // Activer le polling uniquement quand une signature est en cours
+  React.useEffect(() => {
+    if (isPending && !isTerminal) {
+      startPolling(30000);
+    } else {
+      stopPolling();
+    }
+    return () => stopPolling();
+  }, [isPending, isTerminal, startPolling, stopPolling]);
 
   return {
     signatureRequest,
     hasSignature: !!signatureRequest,
-    isPending:
-      signatureRequest &&
-      ["PENDING", "WAIT_VALIDATION", "WAIT_SIGN", "WAIT_SIGNER"].includes(
-        signatureRequest.status
-      ),
+    isPending,
     isDone: signatureRequest?.status === "DONE",
     isError: signatureRequest?.status === "ERROR",
     loading,
@@ -70,7 +80,7 @@ export function useSignatureRequests(filters = {}) {
  */
 export function useRequestSignature() {
   const [requestMutation, { loading }] = useMutation(
-    REQUEST_DOCUMENT_SIGNATURE
+    REQUEST_DOCUMENT_SIGNATURE,
   );
 
   const requestSignature = async (input) => {

@@ -23,10 +23,10 @@ export const useReconciliationSuggestions = () => {
     {
       variables: { workspaceId },
       fetchPolicy: "cache-and-network",
-      skip: !workspaceId || workspaceLoading, // Ne pas exécuter tant que le workspace n'est pas disponible
-      pollInterval: 30000, // Rafraîchir toutes les 30 secondes
-      errorPolicy: "all", // Ne pas lancer d'erreur, retourner les données partielles
-    }
+      skip: !workspaceId || workspaceLoading,
+      pollInterval: 60000, // Rafraîchir toutes les 60 secondes (au lieu de 30)
+      errorPolicy: "all",
+    },
   );
 
   const result = data?.reconciliationSuggestions;
@@ -52,7 +52,7 @@ export const useTransactionsForInvoice = (invoiceId) => {
       variables: { invoiceId },
       skip: !invoiceId,
       fetchPolicy: "cache-and-network",
-    }
+    },
   );
 
   const result = data?.transactionsForInvoice;
@@ -79,7 +79,7 @@ export const useLinkTransactionToInvoice = () => {
       } else {
         toast.error(
           data.linkTransactionToInvoice.message ||
-            "Erreur lors du rapprochement"
+            "Erreur lors du rapprochement",
         );
       }
     },
@@ -122,14 +122,14 @@ export const useUnlinkTransactionFromInvoice = () => {
         } else {
           toast.error(
             data.unlinkTransactionFromInvoice.message ||
-              "Erreur lors de la déliaison"
+              "Erreur lors de la déliaison",
           );
         }
       },
       onError: (error) => {
         toast.error(error.message || "Erreur lors de la déliaison");
       },
-    }
+    },
   );
 
   const unlinkTransaction = async (transactionId, invoiceId) => {
@@ -191,7 +191,6 @@ export const useIgnoreTransaction = () => {
  * Remplace useReconciliation (REST)
  */
 export const useReconciliationGraphQL = () => {
-  const { workspaceId } = useRequiredWorkspace();
   const client = useApolloClient();
 
   const {
@@ -229,12 +228,12 @@ export const useReconciliationGraphQL = () => {
       } catch (error) {
         console.error(
           "[RECONCILIATION] Erreur fetchTransactionsForInvoice:",
-          error
+          error,
         );
         return { transactions: [], invoiceAmount: 0 };
       }
     },
-    [client]
+    [client],
   );
 
   return {
@@ -291,12 +290,12 @@ export const useReconciliationForSidebar = () => {
       } catch (error) {
         console.error(
           "[RECONCILIATION] Erreur fetchTransactionsForInvoice:",
-          error
+          error,
         );
         return { transactions: [], invoiceAmount: 0 };
       }
     },
-    [client]
+    [client],
   );
 
   return {
