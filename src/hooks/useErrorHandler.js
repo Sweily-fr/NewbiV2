@@ -24,6 +24,7 @@ export function useErrorHandler() {
       logError = true,
       redirectOnCritical = true,
       customMessage = null,
+      description = null,
       duration = 5000,
       onError = null,
       preventDuplicates = true,
@@ -84,7 +85,8 @@ export function useErrorHandler() {
         });
       } else {
         toast.error(userMessage, {
-          duration: duration
+          duration: duration,
+          ...(description && { description }),
         });
       }
     }
