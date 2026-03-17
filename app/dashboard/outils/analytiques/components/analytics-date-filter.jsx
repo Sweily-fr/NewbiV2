@@ -116,7 +116,7 @@ export function AnalyticsDateFilter({ period, onPeriodChange, dateRange, onDateR
         </div>
 
         {/* Calendrier */}
-        <div className="border-t pt-3 pb-5 flex justify-center">
+        <div className="border-t pt-3 pb-5 px-5 flex justify-center">
           <Calendar
             mode="range"
             selected={calendarRange}
