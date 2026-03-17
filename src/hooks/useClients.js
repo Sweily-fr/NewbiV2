@@ -80,7 +80,11 @@ export const useCreateClient = () => {
       toast.success('Client créé avec succès');
     },
     onError: (error) => {
-      handleMutationError(error, 'create', 'client');
+      // Extraire le message d'erreur GraphQL pour l'afficher en description du toast
+      const serverMessage = error.graphQLErrors?.[0]?.message;
+      handleMutationError(error, 'create', 'client', {
+        ...(serverMessage && { description: serverMessage }),
+      });
     },
   });
 
@@ -138,7 +142,10 @@ export const useUpdateClient = () => {
       toast.success('Client modifié avec succès');
     },
     onError: (error) => {
-      handleMutationError(error, 'update', 'client');
+      const serverMessage = error.graphQLErrors?.[0]?.message;
+      handleMutationError(error, 'update', 'client', {
+        ...(serverMessage && { description: serverMessage }),
+      });
     },
   });
 
