@@ -98,12 +98,14 @@ export function NavMain({
     const boards = kanbanData?.boards || [];
     // Trier par date de création (plus récent en premier)
     const sortedBoards = [...boards].sort(
-      (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+      (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
     );
     // Filtrer par terme de recherche si présent, sinon afficher tous
     const filtered = debouncedKanbanSearch
       ? sortedBoards.filter((board) =>
-          board.title.toLowerCase().includes(debouncedKanbanSearch.toLowerCase())
+          board.title
+            .toLowerCase()
+            .includes(debouncedKanbanSearch.toLowerCase()),
         )
       : sortedBoards; // Afficher tous les dossiers
     return filtered;
@@ -115,22 +117,22 @@ export function NavMain({
 
   // Vérifier si un sous-lien est actif pour chaque menu
   const isFinancesSubActive = navFinances.some(
-    (item) => pathname === item.url || pathname?.startsWith(item.url + "/")
+    (item) => pathname === item.url || pathname?.startsWith(item.url + "/"),
   );
   const isVentesSubActive = navVentes.some(
-    (item) => pathname === item.url || pathname?.startsWith(item.url + "/")
+    (item) => pathname === item.url || pathname?.startsWith(item.url + "/"),
   );
   const isClientsSubActive = navClients.some(
-    (item) => pathname === item.url || pathname?.startsWith(item.url + "/")
+    (item) => pathname === item.url || pathname?.startsWith(item.url + "/"),
   );
   const isProjetsSubActive = navProjets.some(
-    (item) => pathname === item.url || pathname?.startsWith(item.url + "/")
+    (item) => pathname === item.url || pathname?.startsWith(item.url + "/"),
   );
   const isDocumentsSubActive = navDocuments.some(
-    (item) => pathname === item.url || pathname?.startsWith(item.url + "/")
+    (item) => pathname === item.url || pathname?.startsWith(item.url + "/"),
   );
   const isCommunicationSubActive = navCommunication.some(
-    (item) => pathname === item.url || pathname?.startsWith(item.url + "/")
+    (item) => pathname === item.url || pathname?.startsWith(item.url + "/"),
   );
 
   // États pour les menus collapsibles
@@ -140,7 +142,7 @@ export function NavMain({
   const [isProjetsOpen, setIsProjetsOpen] = useState(true); // Toujours ouvert par défaut pour voir les tableaux
   const [isDocumentsOpen, setIsDocumentsOpen] = useState(isDocumentsSubActive);
   const [isCommunicationOpen, setIsCommunicationOpen] = useState(
-    isCommunicationSubActive
+    isCommunicationSubActive,
   );
 
   // États pour les menus comptables (items avec sous-liens)
@@ -153,7 +155,7 @@ export function NavMain({
       if (item.items && item.items.length > 0) {
         const isSubActive = item.items.some(
           (subItem) =>
-            pathname === subItem.url || pathname?.startsWith(subItem.url + "/")
+            pathname === subItem.url || pathname?.startsWith(subItem.url + "/"),
         );
         initialStates[item.title] = isSubActive;
       }
@@ -202,15 +204,26 @@ export function NavMain({
     // Sur mobile, toujours utiliser le pattern Collapsible pour rester dans le viewport
     if (isCollapsed && !isMobile) {
       return (
-        <DropdownMenu key="ventes" onOpenChange={(open) => { isDropdownOpenRef.current = open; if (open) setActiveDropdown("ventes"); }}>
-          <SidebarMenuItem onMouseEnter={() => { if (!isDropdownOpenRef.current && activeDropdown) setActiveDropdown(null); }}>
+        <DropdownMenu
+          key="ventes"
+          onOpenChange={(open) => {
+            isDropdownOpenRef.current = open;
+            if (open) setActiveDropdown("ventes");
+          }}
+        >
+          <SidebarMenuItem
+            onMouseEnter={() => {
+              if (!isDropdownOpenRef.current && activeDropdown)
+                setActiveDropdown(null);
+            }}
+          >
             <DropdownMenuTrigger asChild>
               <SidebarMenuButton
                 tooltip={activeDropdown === "ventes" ? undefined : "Ventes"}
                 className={cn(
                   "bg-transparent w-full cursor-pointer focus-visible:ring-0",
                   isVentesSubActive &&
-                    "bg-sidebar-accent text-sidebar-foreground"
+                    "bg-sidebar-accent text-sidebar-foreground",
                 )}
               >
                 <ShoppingCart />
@@ -269,7 +282,7 @@ export function NavMain({
                     asChild={hasSubAccess}
                     disabled={!hasSubAccess}
                     className={cn(
-                      !hasSubAccess && "opacity-60 cursor-not-allowed"
+                      !hasSubAccess && "opacity-60 cursor-not-allowed",
                     )}
                   >
                     {hasSubAccess ? (
@@ -278,7 +291,7 @@ export function NavMain({
                         onClick={handleLinkClick}
                         className={cn(
                           "cursor-pointer",
-                          isSubItemActive && "bg-accent font-medium"
+                          isSubItemActive && "bg-accent font-medium",
                         )}
                       >
                         {subItem.title}
@@ -311,14 +324,14 @@ export function NavMain({
               "flex items-center w-full rounded-md transition-colors overflow-hidden",
               isVentesSubActive
                 ? "bg-sidebar-accent"
-                : !isVentesOpen && "hover:bg-sidebar-accent"
+                : !isVentesOpen && "hover:bg-sidebar-accent",
             )}
           >
             <SidebarMenuButton
               tooltip="Ventes"
               className={cn(
                 "bg-transparent w-full cursor-pointer hover:bg-transparent active:bg-transparent",
-                isVentesSubActive && "text-sidebar-foreground"
+                isVentesSubActive && "text-sidebar-foreground",
               )}
               onClick={() => setIsVentesOpen(!isVentesOpen)}
             >
@@ -333,7 +346,7 @@ export function NavMain({
                 <ChevronRight
                   className={cn(
                     "h-4 w-4 transition-transform duration-200",
-                    isVentesOpen && "rotate-90"
+                    isVentesOpen && "rotate-90",
                   )}
                 />
               </button>
@@ -351,7 +364,7 @@ export function NavMain({
                       asChild={hasSubAccess}
                       isActive={isSubItemActive && hasSubAccess}
                       className={cn(
-                        !hasSubAccess && "opacity-60 cursor-not-allowed"
+                        !hasSubAccess && "opacity-60 cursor-not-allowed",
                       )}
                     >
                       {hasSubAccess ? (
@@ -360,7 +373,7 @@ export function NavMain({
                           onClick={handleLinkClick}
                           className={cn(
                             isSubItemActive &&
-                              "bg-sidebar-accent text-sidebar-foreground font-medium"
+                              "bg-sidebar-accent text-sidebar-foreground font-medium",
                           )}
                         >
                           <span className="text-sm">{subItem.title}</span>
@@ -386,15 +399,26 @@ export function NavMain({
   const renderClientsMenu = () => {
     if (isCollapsed && !isMobile) {
       return (
-        <DropdownMenu key="clients" onOpenChange={(open) => { isDropdownOpenRef.current = open; if (open) setActiveDropdown("clients"); }}>
-          <SidebarMenuItem onMouseEnter={() => { if (!isDropdownOpenRef.current && activeDropdown) setActiveDropdown(null); }}>
+        <DropdownMenu
+          key="clients"
+          onOpenChange={(open) => {
+            isDropdownOpenRef.current = open;
+            if (open) setActiveDropdown("clients");
+          }}
+        >
+          <SidebarMenuItem
+            onMouseEnter={() => {
+              if (!isDropdownOpenRef.current && activeDropdown)
+                setActiveDropdown(null);
+            }}
+          >
             <DropdownMenuTrigger asChild>
               <SidebarMenuButton
                 tooltip={activeDropdown === "clients" ? undefined : "Clients"}
                 className={cn(
                   "bg-transparent w-full cursor-pointer focus-visible:ring-0",
                   isClientsSubActive &&
-                    "bg-sidebar-accent text-sidebar-foreground"
+                    "bg-sidebar-accent text-sidebar-foreground",
                 )}
               >
                 <Users />
@@ -433,7 +457,7 @@ export function NavMain({
                     asChild={hasSubAccess}
                     disabled={!hasSubAccess}
                     className={cn(
-                      !hasSubAccess && "opacity-60 cursor-not-allowed"
+                      !hasSubAccess && "opacity-60 cursor-not-allowed",
                     )}
                   >
                     {hasSubAccess ? (
@@ -442,7 +466,7 @@ export function NavMain({
                         onClick={handleLinkClick}
                         className={cn(
                           "cursor-pointer",
-                          isSubItemActive && "bg-accent font-medium"
+                          isSubItemActive && "bg-accent font-medium",
                         )}
                       >
                         {subItem.title}
@@ -474,14 +498,14 @@ export function NavMain({
               "flex items-center w-full rounded-md transition-colors overflow-hidden",
               isClientsSubActive
                 ? "bg-sidebar-accent"
-                : !isClientsOpen && "hover:bg-sidebar-accent"
+                : !isClientsOpen && "hover:bg-sidebar-accent",
             )}
           >
             <SidebarMenuButton
               tooltip="Clients"
               className={cn(
                 "bg-transparent w-full cursor-pointer hover:bg-transparent active:bg-transparent",
-                isClientsSubActive && "text-sidebar-foreground"
+                isClientsSubActive && "text-sidebar-foreground",
               )}
               onClick={() => setIsClientsOpen(!isClientsOpen)}
             >
@@ -496,7 +520,7 @@ export function NavMain({
                 <ChevronRight
                   className={cn(
                     "h-4 w-4 transition-transform duration-200",
-                    isClientsOpen && "rotate-90"
+                    isClientsOpen && "rotate-90",
                   )}
                 />
               </button>
@@ -514,7 +538,7 @@ export function NavMain({
                       asChild={hasSubAccess}
                       isActive={isSubItemActive && hasSubAccess}
                       className={cn(
-                        !hasSubAccess && "opacity-60 cursor-not-allowed"
+                        !hasSubAccess && "opacity-60 cursor-not-allowed",
                       )}
                     >
                       {hasSubAccess ? (
@@ -523,7 +547,7 @@ export function NavMain({
                           onClick={handleLinkClick}
                           className={cn(
                             isSubItemActive &&
-                              "bg-sidebar-accent text-sidebar-foreground font-medium"
+                              "bg-sidebar-accent text-sidebar-foreground font-medium",
                           )}
                         >
                           <span className="text-sm">{subItem.title}</span>
@@ -551,15 +575,25 @@ export function NavMain({
 
     if (isCollapsed) {
       return (
-        <DropdownMenu key="projets" onOpenChange={(open) => { isDropdownOpenRef.current = open; if (open) setActiveDropdown("projets"); }}>
-          <SidebarMenuItem onMouseEnter={() => { if (!isDropdownOpenRef.current && activeDropdown) setActiveDropdown(null); }}>
+        <DropdownMenu
+          key="projets"
+          onOpenChange={(open) => {
+            isDropdownOpenRef.current = open;
+            if (open) setActiveDropdown("projets");
+          }}
+        >
+          <SidebarMenuItem
+            onMouseEnter={() => {
+              if (!isDropdownOpenRef.current && activeDropdown)
+                setActiveDropdown(null);
+            }}
+          >
             <DropdownMenuTrigger asChild>
               <SidebarMenuButton
                 tooltip={activeDropdown === "projets" ? undefined : "Tâches"}
                 className={cn(
                   "bg-transparent w-full cursor-pointer focus-visible:ring-0",
-                  isKanbanActive &&
-                    "bg-sidebar-accent text-sidebar-foreground"
+                  isKanbanActive && "bg-sidebar-accent text-sidebar-foreground",
                 )}
               >
                 <FolderKanban />
@@ -650,15 +684,27 @@ export function NavMain({
     }
 
     return (
-      <DropdownMenu key="projets-expanded" onOpenChange={(open) => { isDropdownOpenRef.current = open; if (open) setActiveDropdown("projets-expanded"); }}>
-        <SidebarMenuItem onMouseEnter={() => { if (!isDropdownOpenRef.current && activeDropdown) setActiveDropdown(null); }}>
+      <DropdownMenu
+        key="projets-expanded"
+        onOpenChange={(open) => {
+          isDropdownOpenRef.current = open;
+          if (open) setActiveDropdown("projets-expanded");
+        }}
+      >
+        <SidebarMenuItem
+          onMouseEnter={() => {
+            if (!isDropdownOpenRef.current && activeDropdown)
+              setActiveDropdown(null);
+          }}
+        >
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
-              tooltip={activeDropdown === "projets-expanded" ? undefined : "Tâches"}
+              tooltip={
+                activeDropdown === "projets-expanded" ? undefined : "Tâches"
+              }
               className={cn(
                 "bg-transparent w-full cursor-pointer focus-visible:ring-0",
-                isKanbanActive &&
-                  "bg-sidebar-accent text-sidebar-foreground"
+                isKanbanActive && "bg-sidebar-accent text-sidebar-foreground",
               )}
             >
               <FolderKanban />
@@ -710,7 +756,7 @@ export function NavMain({
                         onClick={handleLinkClick}
                         className={cn(
                           "cursor-pointer flex items-center gap-2 px-2 py-2",
-                          isBoardActive && "bg-accent font-medium"
+                          isBoardActive && "bg-accent font-medium",
                         )}
                       >
                         <span className="text-xs truncate flex-1">
@@ -758,7 +804,10 @@ export function NavMain({
     if (!isPrefix) return false;
     // Vérifier qu'aucun autre URL du groupe ne matche de façon plus spécifique
     const hasMoreSpecificMatch = allUrls.some(
-      (otherUrl) => otherUrl !== itemUrl && otherUrl.startsWith(itemUrl + "/") && (pathname === otherUrl || pathname?.startsWith(otherUrl + "/"))
+      (otherUrl) =>
+        otherUrl !== itemUrl &&
+        otherUrl.startsWith(itemUrl + "/") &&
+        (pathname === otherUrl || pathname?.startsWith(otherUrl + "/")),
     );
     return !hasMoreSpecificMatch;
   };
@@ -783,22 +832,32 @@ export function NavMain({
     subItems,
     isOpen,
     setIsOpen,
-    isSubActive
+    isSubActive,
   ) => {
     const IconComponent = icon;
 
     // Sur mobile, toujours utiliser le pattern Collapsible pour rester dans le viewport
     if (isCollapsed && !isMobile) {
       return (
-        <DropdownMenu key={title} onOpenChange={(open) => { isDropdownOpenRef.current = open; if (open) setActiveDropdown(title); }}>
-          <SidebarMenuItem onMouseEnter={() => { if (!isDropdownOpenRef.current && activeDropdown) setActiveDropdown(null); }}>
+        <DropdownMenu
+          key={title}
+          onOpenChange={(open) => {
+            isDropdownOpenRef.current = open;
+            if (open) setActiveDropdown(title);
+          }}
+        >
+          <SidebarMenuItem
+            onMouseEnter={() => {
+              if (!isDropdownOpenRef.current && activeDropdown)
+                setActiveDropdown(null);
+            }}
+          >
             <DropdownMenuTrigger asChild>
               <SidebarMenuButton
                 tooltip={activeDropdown === title ? undefined : title}
                 className={cn(
                   "bg-transparent w-full cursor-pointer focus-visible:ring-0",
-                  isSubActive &&
-                    "bg-sidebar-accent text-sidebar-foreground"
+                  isSubActive && "bg-sidebar-accent text-sidebar-foreground",
                 )}
               >
                 <IconComponent />
@@ -824,7 +883,10 @@ export function NavMain({
                       {/* Items de la section */}
                       {subItem.items?.map((item) => {
                         const allUrls = getAllSubItemUrls(subItems);
-                        const isSubItemActive = isNavItemActive(item.url, allUrls);
+                        const isSubItemActive = isNavItemActive(
+                          item.url,
+                          allUrls,
+                        );
                         const hasSubAccess = !item.isPro || hasProAccess;
                         return (
                           <DropdownMenuItem
@@ -832,7 +894,7 @@ export function NavMain({
                             asChild={hasSubAccess}
                             disabled={!hasSubAccess}
                             className={cn(
-                              !hasSubAccess && "opacity-60 cursor-not-allowed"
+                              !hasSubAccess && "opacity-60 cursor-not-allowed",
                             )}
                           >
                             {hasSubAccess ? (
@@ -841,7 +903,7 @@ export function NavMain({
                                 onClick={handleLinkClick}
                                 className={cn(
                                   "cursor-pointer",
-                                  isSubItemActive && "bg-accent font-medium"
+                                  isSubItemActive && "bg-accent font-medium",
                                 )}
                               >
                                 {item.title}
@@ -869,7 +931,7 @@ export function NavMain({
                     asChild={hasSubAccess}
                     disabled={!hasSubAccess}
                     className={cn(
-                      !hasSubAccess && "opacity-60 cursor-not-allowed"
+                      !hasSubAccess && "opacity-60 cursor-not-allowed",
                     )}
                   >
                     {hasSubAccess ? (
@@ -878,7 +940,7 @@ export function NavMain({
                         onClick={handleLinkClick}
                         className={cn(
                           "cursor-pointer",
-                          isSubItemActive && "bg-accent font-medium"
+                          isSubItemActive && "bg-accent font-medium",
                         )}
                       >
                         {subItem.title}
@@ -906,14 +968,14 @@ export function NavMain({
               "flex items-center w-full rounded-md transition-colors overflow-hidden",
               isSubActive
                 ? "bg-sidebar-accent"
-                : !isOpen && "hover:bg-sidebar-accent"
+                : !isOpen && "hover:bg-sidebar-accent",
             )}
           >
             <SidebarMenuButton
               tooltip={title}
               className={cn(
                 "bg-transparent w-full cursor-pointer hover:bg-transparent active:bg-transparent",
-                isSubActive && "text-sidebar-foreground"
+                isSubActive && "text-sidebar-foreground",
               )}
               onClick={() => setIsOpen(!isOpen)}
             >
@@ -928,7 +990,7 @@ export function NavMain({
                 <ChevronRight
                   className={cn(
                     "h-4 w-4 transition-transform duration-200",
-                    isOpen && "rotate-90"
+                    isOpen && "rotate-90",
                   )}
                 />
               </button>
@@ -952,7 +1014,10 @@ export function NavMain({
                       {/* Items de la section */}
                       {subItem.items?.map((item) => {
                         const allUrls = getAllSubItemUrls(subItems);
-                        const isSubItemActive = isNavItemActive(item.url, allUrls);
+                        const isSubItemActive = isNavItemActive(
+                          item.url,
+                          allUrls,
+                        );
                         const hasSubAccess = !item.isPro || hasProAccess;
                         return (
                           <SidebarMenuSubItem key={item.title}>
@@ -960,7 +1025,8 @@ export function NavMain({
                               asChild={hasSubAccess}
                               isActive={isSubItemActive && hasSubAccess}
                               className={cn(
-                                !hasSubAccess && "opacity-60 cursor-not-allowed"
+                                !hasSubAccess &&
+                                  "opacity-60 cursor-not-allowed",
                               )}
                             >
                               {hasSubAccess ? (
@@ -969,7 +1035,7 @@ export function NavMain({
                                   onClick={handleLinkClick}
                                   className={cn(
                                     isSubItemActive &&
-                                      "bg-sidebar-accent text-sidebar-foreground font-medium"
+                                      "bg-sidebar-accent text-sidebar-foreground font-medium",
                                   )}
                                 >
                                   <span className="text-sm">{item.title}</span>
@@ -998,7 +1064,7 @@ export function NavMain({
                       asChild={hasSubAccess}
                       isActive={isSubItemActive && hasSubAccess}
                       className={cn(
-                        !hasSubAccess && "opacity-60 cursor-not-allowed"
+                        !hasSubAccess && "opacity-60 cursor-not-allowed",
                       )}
                     >
                       {hasSubAccess ? (
@@ -1007,7 +1073,7 @@ export function NavMain({
                           onClick={handleLinkClick}
                           className={cn(
                             isSubItemActive &&
-                              "bg-sidebar-accent text-sidebar-foreground font-medium"
+                              "bg-sidebar-accent text-sidebar-foreground font-medium",
                           )}
                         >
                           <span className="text-sm">{subItem.title}</span>
@@ -1033,7 +1099,7 @@ export function NavMain({
   const renderItemWithSubItems = (item) => {
     const isSubActive = item.items?.some(
       (subItem) =>
-        pathname === subItem.url || pathname?.startsWith(subItem.url + "/")
+        pathname === subItem.url || pathname?.startsWith(subItem.url + "/"),
     );
 
     const isOpen = accountingMenuStates[item.title] || false;
@@ -1050,7 +1116,7 @@ export function NavMain({
       item.items,
       isOpen,
       setIsOpen,
-      isSubActive
+      isSubActive,
     );
   };
 
@@ -1099,7 +1165,6 @@ export function NavMain({
     // Déterminer l'attribut data-tutorial selon le titre
     const getTutorialAttribute = () => {
       if (item.title === "Dashboard") return "nav-dashboard";
-      if (item.title === "Transactions") return "nav-transactions";
       return undefined;
     };
 
@@ -1115,8 +1180,7 @@ export function NavMain({
             className={cn(
               "bg-transparent w-full cursor-pointer relative",
               !hasAccess && "opacity-60 cursor-not-allowed",
-              isItemActive &&
-                "bg-sidebar-accent text-sidebar-foreground"
+              isItemActive && "bg-sidebar-accent text-sidebar-foreground",
             )}
             tooltip={
               isProTab && !hasAccess
@@ -1144,25 +1208,35 @@ export function NavMain({
           {items.map((item) => renderSimpleItem(item))}
 
           {/* Menu Finances (Transactions + Prévision) */}
-          {navFinances.length > 0 &&
-            renderCollapsibleMenu(
-              "Finances",
-              Landmark,
-              navFinances,
-              isFinancesOpen,
-              setIsFinancesOpen,
-              isFinancesSubActive
-            )}
+          {navFinances.length > 0 && (
+            <div data-tutorial="nav-finances">
+              {renderCollapsibleMenu(
+                "Finances",
+                Landmark,
+                navFinances,
+                isFinancesOpen,
+                setIsFinancesOpen,
+                isFinancesSubActive,
+              )}
+            </div>
+          )}
 
           {/* Menu Ventes avec sous-menus et actions rapides */}
-          {navVentes.length > 0 && (() => {
-            // Filtrer les items pour le comptable (pas de Catalogues)
-            const accountantAllowedVentes = ["Factures clients", "Devis"];
-            const filteredNavVentes = userRole === "accountant"
-              ? navVentes.filter(item => accountantAllowedVentes.includes(item.title))
-              : navVentes;
-            return filteredNavVentes.length > 0 && renderVentesMenu(filteredNavVentes);
-          })()}
+          {navVentes.length > 0 &&
+            (() => {
+              // Filtrer les items pour le comptable (pas de Catalogues)
+              const accountantAllowedVentes = ["Factures clients", "Devis"];
+              const filteredNavVentes =
+                userRole === "accountant"
+                  ? navVentes.filter((item) =>
+                      accountantAllowedVentes.includes(item.title),
+                    )
+                  : navVentes;
+              return (
+                filteredNavVentes.length > 0 &&
+                renderVentesMenu(filteredNavVentes)
+              );
+            })()}
 
           {/* Menu Clients (CRM) avec sous-menus et action rapide */}
           {navClients.length > 0 && renderClientsMenu()}
@@ -1179,24 +1253,30 @@ export function NavMain({
           {userRole !== "accountant" && renderProjetsMenu()}
 
           {/* Menu Documents avec sous-menus */}
-          {navDocuments.length > 0 && (() => {
-            // Filtrer les items pour le comptable (uniquement Documents partagés)
-            const filteredNavDocuments = userRole === "accountant"
-              ? navDocuments.filter(item => item.title === "Documents partagés")
-              : navDocuments;
-            return filteredNavDocuments.length > 0 && (
-              <div data-tutorial="nav-documents">
-                {renderCollapsibleMenu(
-                  "Documents",
-                  FileText,
-                  filteredNavDocuments,
-                  isDocumentsOpen,
-                  setIsDocumentsOpen,
-                  isDocumentsSubActive
-                )}
-              </div>
-            );
-          })()}
+          {navDocuments.length > 0 &&
+            (() => {
+              // Filtrer les items pour le comptable (uniquement Documents partagés)
+              const filteredNavDocuments =
+                userRole === "accountant"
+                  ? navDocuments.filter(
+                      (item) => item.title === "Documents partagés",
+                    )
+                  : navDocuments;
+              return (
+                filteredNavDocuments.length > 0 && (
+                  <div data-tutorial="nav-documents">
+                    {renderCollapsibleMenu(
+                      "Documents",
+                      FileText,
+                      filteredNavDocuments,
+                      isDocumentsOpen,
+                      setIsDocumentsOpen,
+                      isDocumentsSubActive,
+                    )}
+                  </div>
+                )
+              );
+            })()}
 
           {/* Menu Communication avec sous-menus */}
           {userRole !== "accountant" &&
@@ -1207,7 +1287,7 @@ export function NavMain({
               navCommunication,
               isCommunicationOpen,
               setIsCommunicationOpen,
-              isCommunicationSubActive
+              isCommunicationSubActive,
             )}
         </SidebarMenu>
       </SidebarGroupContent>

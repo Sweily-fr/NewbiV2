@@ -14,6 +14,7 @@ import {
 import { useInvoice } from "@/src/graphql/invoiceQueries";
 import { useUser } from "@/src/lib/auth/hooks";
 import { useCreditNoteNumber } from "./use-credit-note-number";
+import { formatLocalDate } from "@/src/utils/dateFormatter";
 
 export function useCreditNoteEditor({
   mode,
@@ -43,10 +44,7 @@ export function useCreditNoteEditor({
     loading: loadingExistingCreditNotes,
   } = useCreditNotesByInvoice(invoiceId);
 
-  const {
-    createCreditNote,
-    loading: creating,
-  } = useCreateCreditNote();
+  const { createCreditNote, loading: creating } = useCreateCreditNote();
   const { updateCreditNote, loading: updating } = useUpdateCreditNote();
 
   // Form state avec react-hook-form
@@ -57,7 +55,7 @@ export function useCreditNoteEditor({
       originalInvoice,
       session,
       organization,
-      getFormattedNextNumber()
+      getFormattedNextNumber(),
     ),
     mode: "onChange",
   });
@@ -88,7 +86,7 @@ export function useCreditNoteEditor({
         originalInvoice,
         session,
         organization,
-        nextNumber
+        nextNumber,
       );
       reset(creditNoteData);
     }
@@ -119,15 +117,20 @@ export function useCreditNoteEditor({
           const vatRate = parseFloat(item.vatRate) || 0;
           const itemDiscount = parseFloat(item.discount) || 0;
           // Prendre en compte le pourcentage d'avancement
-          const progressPercentage = item.progressPercentage !== undefined && item.progressPercentage !== null 
-            ? parseFloat(item.progressPercentage) 
-            : 100;
+          const progressPercentage =
+            item.progressPercentage !== undefined &&
+            item.progressPercentage !== null
+              ? parseFloat(item.progressPercentage)
+              : 100;
 
           let itemTotal = quantity * unitPrice * (progressPercentage / 100);
 
           // Apply item discount
           if (itemDiscount > 0) {
-            if (item.discountType === "PERCENTAGE" || item.discountType === "percentage") {
+            if (
+              item.discountType === "PERCENTAGE" ||
+              item.discountType === "percentage"
+            ) {
               // Limiter la remise à 100% maximum
               const discountPercent = Math.min(itemDiscount, 100);
               itemTotal = itemTotal * (1 - discountPercent / 100);
@@ -143,7 +146,7 @@ export function useCreditNoteEditor({
             totalVAT: acc.totalVAT + vatAmount,
           };
         },
-        { totalHT: 0, totalVAT: 0 }
+        { totalHT: 0, totalVAT: 0 },
       );
 
       let finalTotalHT = itemTotals.totalHT;
@@ -160,13 +163,14 @@ export function useCreditNoteEditor({
       }
 
       const discountAmount = itemTotals.totalHT - finalTotalHT;
-      
+
       // Recalculer la TVA proportionnellement après la remise globale
       let finalTotalVAT = 0;
       if (finalTotalHT > 0 && itemTotals.totalHT > 0) {
-        finalTotalVAT = itemTotals.totalVAT * (finalTotalHT / itemTotals.totalHT);
+        finalTotalVAT =
+          itemTotals.totalVAT * (finalTotalHT / itemTotals.totalHT);
       }
-      
+
       const finalTotalTTC = finalTotalHT + finalTotalVAT;
 
       // Credit notes have negative amounts
@@ -179,7 +183,7 @@ export function useCreditNoteEditor({
         discountAmount: -discountAmount,
       };
     },
-    []
+    [],
   );
 
   // Save function
@@ -217,13 +221,7 @@ export function useCreditNoteEditor({
         setSaving(false);
       }
     },
-    [
-      mode,
-      createCreditNote,
-      updateCreditNote,
-      creditNoteId,
-      invoiceId,
-    ]
+    [mode, createCreditNote, updateCreditNote, creditNoteId, invoiceId],
   );
 
   // Create credit note (no draft functionality)
@@ -243,20 +241,24 @@ export function useCreditNoteEditor({
       const invalidItems = [];
       data.items.forEach((item, index) => {
         const errors = [];
-        
+
         if (!item.description) errors.push("description");
         if (!item.quantity) errors.push("quantité");
         if (!item.unitPrice) errors.push("prix unitaire");
-        
+
         // Vérifier le texte d'exonération de TVA si la TVA est à 0%
         const vatRate = parseFloat(item.vatRate) || 0;
         if (vatRate === 0) {
           const vatExemptionText = item.vatExemptionText;
-          if (!vatExemptionText || vatExemptionText.trim() === "" || vatExemptionText === "none") {
+          if (
+            !vatExemptionText ||
+            vatExemptionText.trim() === "" ||
+            vatExemptionText === "none"
+          ) {
             errors.push("texte d'exonération de TVA (requis pour TVA à 0%)");
           }
         }
-        
+
         if (errors.length > 0) {
           invalidItems.push(`Article ${index + 1}: ${errors.join(", ")}`);
         }
@@ -264,7 +266,7 @@ export function useCreditNoteEditor({
 
       if (invalidItems.length > 0) {
         toast.error(
-          `Certains articles sont incomplets:\n${invalidItems.join("\n")}`
+          `Certains articles sont incomplets:\n${invalidItems.join("\n")}`,
         );
         return;
       }
@@ -274,7 +276,7 @@ export function useCreditNoteEditor({
         const totals = calculateTotals(
           data.items,
           data.discount,
-          data.discountType
+          data.discountType,
         );
         const creditNoteAmount = Math.abs(totals.finalTotalTTC);
         const invoiceAmount = originalInvoice.finalTotalTTC || 0;
@@ -284,14 +286,14 @@ export function useCreditNoteEditor({
           (sum, creditNote) => {
             return sum + Math.abs(creditNote.finalTotalTTC || 0);
           },
-          0
+          0,
         );
 
         const remainingAmount = invoiceAmount - existingCreditNotesTotal;
 
         if (creditNoteAmount > remainingAmount) {
           toast.error(
-            `Le montant de cet avoir (${creditNoteAmount.toFixed(2)}€) dépasse le montant restant disponible (${remainingAmount.toFixed(2)}€). La somme des avoirs ne peut pas dépasser le montant de la facture originale (${invoiceAmount.toFixed(2)}€).`
+            `Le montant de cet avoir (${creditNoteAmount.toFixed(2)}€) dépasse le montant restant disponible (${remainingAmount.toFixed(2)}€). La somme des avoirs ne peut pas dépasser le montant de la facture originale (${invoiceAmount.toFixed(2)}€).`,
           );
           return;
         }
@@ -299,7 +301,7 @@ export function useCreditNoteEditor({
 
       return await save(data, { redirect });
     },
-    [getValues, save, originalInvoice, calculateTotals, existingCreditNotes]
+    [getValues, save, originalInvoice, calculateTotals, existingCreditNotes],
   );
 
   // Finalize credit note (same as create since only CREATED status exists)
@@ -307,7 +309,7 @@ export function useCreditNoteEditor({
     async (redirect = true) => {
       return await createCreditNoteAction(redirect);
     },
-    [createCreditNoteAction]
+    [createCreditNoteAction],
   );
 
   // Update totals when items or discount change
@@ -363,14 +365,14 @@ function getInitialFormData(
   originalInvoice,
   session,
   organization,
-  nextNumber = ""
+  nextNumber = "",
 ) {
   if (mode === "create" && originalInvoice) {
     return transformInvoiceToCreditNoteFormData(
       originalInvoice,
       session,
       organization,
-      nextNumber
+      nextNumber,
     );
   }
 
@@ -380,7 +382,7 @@ function getInitialFormData(
     creditType: CREDIT_TYPE.CORRECTION,
     reason: "",
     status: "CREATED",
-    issueDate: new Date().toISOString().split("T")[0],
+    issueDate: formatLocalDate(),
     refundMethod: REFUND_METHOD.NEXT_INVOICE,
     headerNotes: "",
     footerNotes: "",
@@ -405,6 +407,7 @@ function getInitialFormData(
       headerBgColor: "#3b82f6",
     },
     clientPositionRight: false,
+    operationType: null,
     ...initialData,
   };
 }
@@ -413,7 +416,7 @@ function transformInvoiceToCreditNoteFormData(
   invoice,
   session,
   organization,
-  nextNumber = ""
+  nextNumber = "",
 ) {
   return {
     prefix: "AV",
@@ -421,7 +424,7 @@ function transformInvoiceToCreditNoteFormData(
     creditType: CREDIT_TYPE.CORRECTION,
     reason: "",
     status: "CREATED",
-    issueDate: new Date().toISOString().split("T")[0],
+    issueDate: formatLocalDate(),
     refundMethod: REFUND_METHOD.NEXT_INVOICE,
     headerNotes: invoice.headerNotes || "",
     footerNotes: invoice.footerNotes || "",
@@ -441,7 +444,8 @@ function transformInvoiceToCreditNoteFormData(
         vatRate: item.vatRate,
         discount: item.discount || 0,
         discountType: item.discountType || "PERCENTAGE",
-        progressPercentage: item.progressPercentage !== undefined ? item.progressPercentage : 100, // Conserver le % d'avancement
+        progressPercentage:
+          item.progressPercentage !== undefined ? item.progressPercentage : 100, // Conserver le % d'avancement
       })) || [],
     customFields: invoice.customFields || [],
     bankDetails: invoice.bankDetails || {
@@ -455,6 +459,7 @@ function transformInvoiceToCreditNoteFormData(
       headerBgColor: "#3b82f6",
     },
     clientPositionRight: invoice.clientPositionRight || false,
+    operationType: invoice.operationType || null,
   };
 }
 
@@ -466,11 +471,9 @@ function transformCreditNoteToFormData(creditNote) {
     reason: creditNote.reason || "",
     status: creditNote.status || "CREATED",
     issueDate: (() => {
-      if (!creditNote.issueDate) return new Date().toISOString().split("T")[0];
+      if (!creditNote.issueDate) return formatLocalDate();
       const date = new Date(creditNote.issueDate);
-      return isNaN(date.getTime())
-        ? new Date().toISOString().split("T")[0]
-        : date.toISOString().split("T")[0];
+      return isNaN(date.getTime()) ? formatLocalDate() : formatLocalDate(date);
     })(),
     refundMethod: creditNote.refundMethod || REFUND_METHOD.NEXT_INVOICE,
     headerNotes: creditNote.headerNotes || "",
@@ -496,6 +499,7 @@ function transformCreditNoteToFormData(creditNote) {
       headerBgColor: "#3b82f6",
     },
     clientPositionRight: creditNote.clientPositionRight || false,
+    operationType: creditNote.operationType || null,
   };
 }
 
@@ -542,7 +546,7 @@ function transformFormDataToInput(formData, originalInvoiceId) {
     const unitPrice = parseFloat(cleanedItem.unitPrice);
     if (isNaN(unitPrice) || unitPrice === 0) {
       throw new Error(
-        "Le prix unitaire doit être un nombre valide différent de zéro"
+        "Le prix unitaire doit être un nombre valide différent de zéro",
       );
     }
     cleanedItem.unitPrice = unitPrice;
@@ -551,7 +555,7 @@ function transformFormDataToInput(formData, originalInvoiceId) {
     const vatRate = parseFloat(cleanedItem.vatRate);
     if (isNaN(vatRate) || vatRate < 0 || vatRate > 100) {
       throw new Error(
-        "Le taux de TVA doit être un pourcentage valide (entre 0 et 100)"
+        "Le taux de TVA doit être un pourcentage valide (entre 0 et 100)",
       );
     }
     cleanedItem.vatRate = vatRate;
@@ -605,6 +609,9 @@ function transformFormDataToInput(formData, originalInvoiceId) {
     bankDetails: cleanedData.bankDetails,
     appearance: cleanedData.appearance,
     clientPositionRight: cleanedData.clientPositionRight || false,
+    ...(cleanedData.operationType && {
+      operationType: cleanedData.operationType,
+    }),
     // Exclude calculated fields - these are computed on the backend
     // totalHT, totalVAT, finalTotalHT, finalTotalTTC, discountAmount
   };

@@ -16,19 +16,27 @@ import {
   usePurchaseOrder,
 } from "@/src/graphql/purchaseOrderQueries";
 import { usePurchaseOrderNumber } from "./use-purchase-order-number";
+import { formatLocalDate } from "@/src/utils/dateFormatter";
 
 // const AUTOSAVE_DELAY = 30000; // 30 seconds - DISABLED
 
-export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, organization: organizationProp }) {
+export function usePurchaseOrderEditor({
+  mode,
+  purchaseOrderId,
+  initialData,
+  organization: organizationProp,
+}) {
   const router = useRouter();
 
   // Charger l'organisation en interne si la prop n'est pas encore disponible
   const [internalOrganization, setInternalOrganization] = useState(null);
   useEffect(() => {
     if (!organizationProp) {
-      getActiveOrganization().then(org => {
-        if (org) setInternalOrganization(org);
-      }).catch(() => {});
+      getActiveOrganization()
+        .then((org) => {
+          if (org) setInternalOrganization(org);
+        })
+        .catch(() => {});
     }
   }, [organizationProp]);
   const organization = organizationProp || internalOrganization;
@@ -41,10 +49,15 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
   const [validationErrors, setValidationErrors] = useState({});
 
   // GraphQL hooks
-  const { purchaseOrder: existingPurchaseOrder, loading: loadingPurchaseOrder } = usePurchaseOrder(purchaseOrderId);
+  const {
+    purchaseOrder: existingPurchaseOrder,
+    loading: loadingPurchaseOrder,
+  } = usePurchaseOrder(purchaseOrderId);
 
   // Prefix state pour le filtrage du numéro par préfixe
-  const [currentPrefix, setCurrentPrefix] = useState(organization?.purchaseOrderPrefix || "");
+  const [currentPrefix, setCurrentPrefix] = useState(
+    organization?.purchaseOrderPrefix || "",
+  );
 
   // Use the purchase order numbering hook
   const {
@@ -124,16 +137,32 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
   const watchedItems = useWatch({ control: form.control, name: "items" });
   const watchedShipping = useWatch({ control: form.control, name: "shipping" });
   const watchedDiscount = useWatch({ control: form.control, name: "discount" });
-  const watchedDiscountType = useWatch({ control: form.control, name: "discountType" });
-  const watchedCustomFields = useWatch({ control: form.control, name: "customFields" });
+  const watchedDiscountType = useWatch({
+    control: form.control,
+    name: "discountType",
+  });
+  const watchedCustomFields = useWatch({
+    control: form.control,
+    name: "customFields",
+  });
   const watchedClient = useWatch({ control: form.control, name: "client" });
   const watchedPrefix = useWatch({ control: form.control, name: "prefix" });
   const watchedNumber = useWatch({ control: form.control, name: "number" });
-  const watchedIssueDate = useWatch({ control: form.control, name: "issueDate" });
-  const watchedDeliveryDate = useWatch({ control: form.control, name: "deliveryDate" });
+  const watchedIssueDate = useWatch({
+    control: form.control,
+    name: "issueDate",
+  });
+  const watchedDeliveryDate = useWatch({
+    control: form.control,
+    name: "deliveryDate",
+  });
 
   // Créer une valeur stable pour détecter les changements dans les items
-  const itemsData = useMemo(() => JSON.stringify(watchedItems || []), [watchedItems]);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const itemsData = useMemo(
+    () => JSON.stringify(watchedItems || []),
+    [watchedItems],
+  );
 
   // Re-valider quand le client change (avec debounce)
   useEffect(() => {
@@ -173,16 +202,23 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
             // Vérifier le format de l'email
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailRegex.test(client.email.trim())) {
-              clientErrors.push("email invalide (format attendu: nom@exemple.com)");
+              clientErrors.push(
+                "email invalide (format attendu: nom@exemple.com)",
+              );
             }
           }
 
           // Validation de l'adresse
-          if (!client.address?.street || client.address.street.trim() === "") clientErrors.push("adresse (rue) manquante");
-          if (!client.address?.city || client.address.city.trim() === "") clientErrors.push("ville manquante");
+          if (!client.address?.street || client.address.street.trim() === "")
+            clientErrors.push("adresse (rue) manquante");
+          if (!client.address?.city || client.address.city.trim() === "")
+            clientErrors.push("ville manquante");
 
           // Validation du code postal
-          if (!client.address?.postalCode || client.address.postalCode.trim() === "") {
+          if (
+            !client.address?.postalCode ||
+            client.address.postalCode.trim() === ""
+          ) {
             clientErrors.push("code postal manquant");
           } else {
             // Vérifier le format du code postal (5 chiffres pour la France)
@@ -192,28 +228,33 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
             }
           }
 
-          if (!client.address?.country || client.address.country.trim() === "") clientErrors.push("pays manquant");
+          if (!client.address?.country || client.address.country.trim() === "")
+            clientErrors.push("pays manquant");
 
           // Validations spécifiques aux entreprises
           if (client.type === "COMPANY") {
             // Validation du SIREN/SIRET
             if (!client.siret || client.siret.trim() === "") {
-              clientErrors.push("numéro de SIREN/SIRET manquant (obligatoire pour les entreprises)");
+              clientErrors.push(
+                "numéro de SIREN/SIRET manquant (obligatoire pour les entreprises)",
+              );
             } else {
               // Vérifier le format du SIREN (9 chiffres) ou SIRET (14 chiffres)
               const siretRegex = /^\d{9}$|^\d{14}$/;
               if (!siretRegex.test(client.siret.trim())) {
-                clientErrors.push("numéro de SIREN/SIRET invalide (9 ou 14 chiffres attendus)");
+                clientErrors.push(
+                  "numéro de SIREN/SIRET invalide (9 ou 14 chiffres attendus)",
+                );
               }
             }
-
           }
 
           // Construire le nom d'affichage du client
-          const displayName = client.name ||
+          const displayName =
+            client.name ||
             (client.firstName || client.lastName
-              ? `${client.firstName || ''} ${client.lastName || ''}`.trim()
-              : 'Sans nom');
+              ? `${client.firstName || ""} ${client.lastName || ""}`.trim()
+              : "Sans nom");
 
           // Si le client est valide, supprimer l'erreur
           if (clientErrors.length === 0) {
@@ -228,8 +269,8 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
               ...prevErrors,
               client: {
                 message: `Le client "${displayName}" a des informations incomplètes:\n${clientErrors.join(", ")}`,
-                canEdit: true
-              }
+                canEdit: true,
+              },
             };
           }
         } else {
@@ -393,7 +434,8 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
 
           if (issueDate < today) {
             hasError = true;
-            errorMessage = "La date d'émission ne peut pas être antérieure à aujourd'hui";
+            errorMessage =
+              "La date d'émission ne peut pas être antérieure à aujourd'hui";
           }
         }
 
@@ -402,8 +444,8 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
             ...prevErrors,
             issueDate: {
               message: errorMessage,
-              canEdit: true
-            }
+              canEdit: true,
+            },
           };
         } else {
           if (prevErrors.issueDate) {
@@ -436,9 +478,10 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
             return {
               ...prevErrors,
               deliveryDate: {
-                message: "La date de livraison ne peut pas être antérieure à la date d'émission",
-                canEdit: true
-              }
+                message:
+                  "La date de livraison ne peut pas être antérieure à la date d'émission",
+                canEdit: true,
+              },
             };
           }
         }
@@ -465,72 +508,82 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
     // Debounce de 500ms - la validation se déclenche 500ms après avoir arrêté de taper
     const timeoutId = setTimeout(() => {
       setValidationErrors((prevErrors) => {
-      // Valider les articles si on a des articles
-      if (watchedItems && watchedItems.length > 0) {
-        const invalidItems = [];
-        const itemsWithErrors = [];
+        // Valider les articles si on a des articles
+        if (watchedItems && watchedItems.length > 0) {
+          const invalidItems = [];
+          const itemsWithErrors = [];
 
-        watchedItems.forEach((item, index) => {
-          const itemErrors = [];
-          const fields = [];
+          watchedItems.forEach((item, index) => {
+            const itemErrors = [];
+            const fields = [];
 
-          if (!item.description || item.description.trim() === "") {
-            itemErrors.push("description");
-            fields.push("description");
-          }
-          if (!item.quantity || item.quantity <= 0) {
-            itemErrors.push("quantity");
-            fields.push("quantity");
-          }
-          if (item.unitPrice === undefined || item.unitPrice === null || item.unitPrice <= 0) {
-            itemErrors.push("unitPrice");
-            fields.push("unitPrice");
-          }
-
-          // Vérifier le texte d'exonération de TVA si la TVA est à 0% (sauf en auto-liquidation)
-          const vatRate = parseFloat(item.vatRate) || 0;
-          if (vatRate === 0 && !formData.isReverseCharge) {
-            const vatExemptionText = item.vatExemptionText;
-            if (!vatExemptionText || vatExemptionText.trim() === "" || vatExemptionText === "none") {
-              itemErrors.push("texte d'exonération de TVA requis (TVA à 0%)");
-              fields.push("vatExemptionText");
+            if (!item.description || item.description.trim() === "") {
+              itemErrors.push("description");
+              fields.push("description");
             }
-          }
+            if (!item.quantity || item.quantity <= 0) {
+              itemErrors.push("quantity");
+              fields.push("quantity");
+            }
+            if (
+              item.unitPrice === undefined ||
+              item.unitPrice === null ||
+              item.unitPrice <= 0
+            ) {
+              itemErrors.push("unitPrice");
+              fields.push("unitPrice");
+            }
 
-          if (itemErrors.length > 0) {
-            invalidItems.push(`Article ${index + 1}: ${itemErrors.join(", ")}`);
-            itemsWithErrors.push({ index, fields });
-          }
-        });
+            // Vérifier le texte d'exonération de TVA si la TVA est à 0% (sauf en auto-liquidation)
+            const vatRate = parseFloat(item.vatRate) || 0;
+            if (vatRate === 0 && !formData.isReverseCharge) {
+              const vatExemptionText = item.vatExemptionText;
+              if (
+                !vatExemptionText ||
+                vatExemptionText.trim() === "" ||
+                vatExemptionText === "none"
+              ) {
+                itemErrors.push("texte d'exonération de TVA requis (TVA à 0%)");
+                fields.push("vatExemptionText");
+              }
+            }
 
-        // Si tous les articles sont valides, supprimer l'erreur
-        if (invalidItems.length === 0) {
+            if (itemErrors.length > 0) {
+              invalidItems.push(
+                `Article ${index + 1}: ${itemErrors.join(", ")}`,
+              );
+              itemsWithErrors.push({ index, fields });
+            }
+          });
+
+          // Si tous les articles sont valides, supprimer l'erreur
+          if (invalidItems.length === 0) {
+            if (prevErrors.items) {
+              const newErrors = { ...prevErrors };
+              delete newErrors.items;
+              return newErrors;
+            }
+          } else {
+            // Il y a des erreurs, les afficher
+            return {
+              ...prevErrors,
+              items: {
+                message: `Certains articles sont incomplets:\n${invalidItems.join("\n")}`,
+                canEdit: false,
+                details: itemsWithErrors,
+              },
+            };
+          }
+        } else {
+          // Pas d'articles, supprimer l'erreur si elle existe
           if (prevErrors.items) {
             const newErrors = { ...prevErrors };
             delete newErrors.items;
             return newErrors;
           }
-        } else {
-          // Il y a des erreurs, les afficher
-          return {
-            ...prevErrors,
-            items: {
-              message: `Certains articles sont incomplets:\n${invalidItems.join("\n")}`,
-              canEdit: false,
-              details: itemsWithErrors
-            }
-          };
         }
-      } else {
-        // Pas d'articles, supprimer l'erreur si elle existe
-        if (prevErrors.items) {
-          const newErrors = { ...prevErrors };
-          delete newErrors.items;
-          return newErrors;
-        }
-      }
 
-      return prevErrors;
+        return prevErrors;
       });
     }, 500); // Attendre 500ms après avoir arrêté de taper
 
@@ -550,16 +603,16 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
               ...prevErrors,
               discount: {
                 message: "La remise ne peut pas dépasser 100%",
-                canEdit: true
-              }
+                canEdit: true,
+              },
             };
           } else if (watchedDiscount < 0) {
             return {
               ...prevErrors,
               discount: {
                 message: "La remise ne peut pas être négative",
-                canEdit: true
-              }
+                canEdit: true,
+              },
             };
           }
         }
@@ -592,7 +645,9 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
 
           if (!shippingAddr.fullName || shippingAddr.fullName.trim() === "") {
             shippingErrors.push("nom complet manquant");
-          } else if (!/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shippingAddr.fullName.trim())) {
+          } else if (
+            !/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shippingAddr.fullName.trim())
+          ) {
             shippingErrors.push("nom complet invalide");
           }
 
@@ -602,7 +657,10 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
             shippingErrors.push("adresse trop courte");
           }
 
-          if (!shippingAddr.postalCode || shippingAddr.postalCode.trim() === "") {
+          if (
+            !shippingAddr.postalCode ||
+            shippingAddr.postalCode.trim() === ""
+          ) {
             shippingErrors.push("code postal manquant");
           } else if (!/^\d{5}$/.test(shippingAddr.postalCode.trim())) {
             shippingErrors.push("code postal invalide");
@@ -610,7 +668,9 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
 
           if (!shippingAddr.city || shippingAddr.city.trim() === "") {
             shippingErrors.push("ville manquante");
-          } else if (!/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shippingAddr.city.trim())) {
+          } else if (
+            !/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shippingAddr.city.trim())
+          ) {
             shippingErrors.push("ville invalide");
           }
 
@@ -619,7 +679,13 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
           }
 
           const shippingCost = watchedShipping?.shippingAmountHT;
-          if (shippingCost === undefined || shippingCost === null || shippingCost === "" || isNaN(parseFloat(shippingCost)) || parseFloat(shippingCost) < 0) {
+          if (
+            shippingCost === undefined ||
+            shippingCost === null ||
+            shippingCost === "" ||
+            isNaN(parseFloat(shippingCost)) ||
+            parseFloat(shippingCost) < 0
+          ) {
             shippingErrors.push("coût de livraison invalide");
           }
 
@@ -634,8 +700,8 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
               ...prevErrors,
               shipping: {
                 message: `Informations de livraison incomplètes:\n${shippingErrors.join(", ")}`,
-                canEdit: true
-              }
+                canEdit: true,
+              },
             };
           }
         } else {
@@ -677,7 +743,9 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
             }
 
             if (fieldErrors.length > 0) {
-              invalidCustomFields.push(`Champ personnalisé ${index + 1}: ${fieldErrors.join(", ")}`);
+              invalidCustomFields.push(
+                `Champ personnalisé ${index + 1}: ${fieldErrors.join(", ")}`,
+              );
               customFieldsWithErrors.push({ index, errors: fieldErrors });
             }
           });
@@ -694,8 +762,8 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
               customFields: {
                 message: `Certains champs personnalisés sont incomplets:\n${invalidCustomFields.join("\n")}`,
                 canEdit: false,
-                details: customFieldsWithErrors
-              }
+                details: customFieldsWithErrors,
+              },
             };
           }
         } else {
@@ -736,25 +804,44 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
         setIsFormInitialized(true);
       }, 100);
     }
-  }, [existingPurchaseOrder, mode, reset]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [existingPurchaseOrder, mode, reset]);
 
   // Set next purchase order number for new orders and draft editing
   useEffect(() => {
     if (!isFormInitialized || numberLoading || !nextPurchaseOrderNumber) return;
 
-    const isDraftEdit = mode === "edit" && existingPurchaseOrder?.status === "DRAFT";
+    const isDraftEdit =
+      mode === "edit" && existingPurchaseOrder?.status === "DRAFT";
     if (mode !== "create" && !isDraftEdit) return;
 
-    const formattedNumber = String(nextPurchaseOrderNumber).padStart(4, '0');
+    const formattedNumber = String(nextPurchaseOrderNumber).padStart(4, "0");
     const currentNumber = getValues("number");
 
     if (hasDocumentsForPrefix) {
-      setValue("number", formattedNumber, { shouldValidate: false, shouldDirty: false });
-    } else if (!currentNumber || currentNumber.startsWith("DRAFT-") || currentNumber === "0001") {
-      const startNumber = organization?.purchaseOrderStartNumber || formattedNumber;
-      setValue("number", startNumber, { shouldValidate: false, shouldDirty: false });
+      setValue("number", formattedNumber, {
+        shouldValidate: false,
+        shouldDirty: false,
+      });
+    } else if (
+      !currentNumber ||
+      currentNumber.startsWith("DRAFT-") ||
+      currentNumber === "0001"
+    ) {
+      const startNumber =
+        organization?.purchaseOrderStartNumber || formattedNumber;
+      setValue("number", startNumber, {
+        shouldValidate: false,
+        shouldDirty: false,
+      });
     }
-  }, [mode, isFormInitialized, nextPurchaseOrderNumber, numberLoading, hasDocumentsForPrefix, existingPurchaseOrder?.status]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [
+    mode,
+    isFormInitialized,
+    nextPurchaseOrderNumber,
+    numberLoading,
+    hasDocumentsForPrefix,
+    existingPurchaseOrder?.status,
+  ]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Mettre à jour companyInfo quand organization est chargée
   useEffect(() => {
@@ -788,11 +875,24 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
       setValue("companyInfo", updatedCompanyInfo, { shouldDirty: false });
 
       // Mettre à jour les paramètres d'apparence (couleurs spécifiques aux bons de commande avec fallback)
-      setValue("appearance", {
-        textColor: organization.purchaseOrderTextColor || organization.documentTextColor || "#000000",
-        headerTextColor: organization.purchaseOrderHeaderTextColor || organization.documentHeaderTextColor || "#ffffff",
-        headerBgColor: organization.purchaseOrderHeaderBgColor || organization.documentHeaderBgColor || "#5b50FF",
-      }, { shouldDirty: false });
+      setValue(
+        "appearance",
+        {
+          textColor:
+            organization.purchaseOrderTextColor ||
+            organization.documentTextColor ||
+            "#000000",
+          headerTextColor:
+            organization.purchaseOrderHeaderTextColor ||
+            organization.documentHeaderTextColor ||
+            "#ffffff",
+          headerBgColor:
+            organization.purchaseOrderHeaderBgColor ||
+            organization.documentHeaderBgColor ||
+            "#5b50FF",
+        },
+        { shouldDirty: false },
+      );
 
       // Mettre à jour les notes et conditions
       setValue(
@@ -800,54 +900,86 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
         organization.purchaseOrderHeaderNotes ||
           organization.documentHeaderNotes ||
           "",
-        { shouldDirty: false }
+        { shouldDirty: false },
       );
       setValue(
         "footerNotes",
         organization.purchaseOrderFooterNotes ||
           organization.documentFooterNotes ||
           "",
-        { shouldDirty: false }
+        { shouldDirty: false },
       );
       setValue(
         "termsAndConditions",
         organization.purchaseOrderTermsAndConditions ||
           organization.documentTermsAndConditions ||
           "",
-        { shouldDirty: false }
+        { shouldDirty: false },
       );
 
       // Charger showBankDetails depuis l'organisation
-      setValue("showBankDetails", organization.showBankDetails || false, { shouldDirty: false });
+      setValue("showBankDetails", organization.showBankDetails || false, {
+        shouldDirty: false,
+      });
       // Synchroniser les bankDetails au niveau top-level (utilisé par la preview)
-      if (organization.bankIban || organization.bankBic || organization.bankName) {
-        setValue("bankDetails", {
-          iban: organization.bankIban || "",
-          bic: organization.bankBic || "",
-          bankName: organization.bankName || "",
-        }, { shouldDirty: false });
+      if (
+        organization.bankIban ||
+        organization.bankBic ||
+        organization.bankName
+      ) {
+        setValue(
+          "bankDetails",
+          {
+            iban: organization.bankIban || "",
+            bic: organization.bankBic || "",
+            bankName: organization.bankName || "",
+          },
+          { shouldDirty: false },
+        );
       }
 
       // Charger la position du client depuis l'organisation
-      setValue("clientPositionRight", organization.purchaseOrderClientPositionRight || false, { shouldDirty: false });
+      setValue(
+        "clientPositionRight",
+        organization.purchaseOrderClientPositionRight || false,
+        { shouldDirty: false },
+      );
 
       // Charger le préfixe depuis l'organisation
       if (organization.purchaseOrderPrefix) {
-        setValue("prefix", organization.purchaseOrderPrefix, { shouldDirty: false });
+        setValue("prefix", organization.purchaseOrderPrefix, {
+          shouldDirty: false,
+        });
       }
 
       // Le numéro est géré par le useEffect nextPurchaseOrderNumber (plus haut)
       // qui prend en compte hasDocumentsForPrefix et purchaseOrderStartNumber
 
       // Synchroniser les champs plats pour CompanyInfoSettingsSection dans la vue paramètres
-      setValue("companyName", organization.companyName || organization.name || "", { shouldDirty: false });
-      setValue("companyEmail", organization.companyEmail || "", { shouldDirty: false });
-      setValue("companyPhone", organization.companyPhone || "", { shouldDirty: false });
+      setValue(
+        "companyName",
+        organization.companyName || organization.name || "",
+        { shouldDirty: false },
+      );
+      setValue("companyEmail", organization.companyEmail || "", {
+        shouldDirty: false,
+      });
+      setValue("companyPhone", organization.companyPhone || "", {
+        shouldDirty: false,
+      });
       setValue("website", organization.website || "", { shouldDirty: false });
-      setValue("addressStreet", organization.addressStreet || "", { shouldDirty: false });
-      setValue("addressCity", organization.addressCity || "", { shouldDirty: false });
-      setValue("addressZipCode", organization.addressZipCode || "", { shouldDirty: false });
-      setValue("addressCountry", organization.addressCountry || "France", { shouldDirty: false });
+      setValue("addressStreet", organization.addressStreet || "", {
+        shouldDirty: false,
+      });
+      setValue("addressCity", organization.addressCity || "", {
+        shouldDirty: false,
+      });
+      setValue("addressZipCode", organization.addressZipCode || "", {
+        shouldDirty: false,
+      });
+      setValue("addressCountry", organization.addressCountry || "France", {
+        shouldDirty: false,
+      });
 
       // Marquer le formulaire comme initialisé
       setTimeout(() => {
@@ -865,14 +997,26 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
       const companyInfo = formData.companyInfo;
       if (companyInfo) {
         setValue("companyName", companyInfo.name || "", { shouldDirty: false });
-        setValue("companyEmail", companyInfo.email || "", { shouldDirty: false });
-        setValue("companyPhone", companyInfo.phone || "", { shouldDirty: false });
+        setValue("companyEmail", companyInfo.email || "", {
+          shouldDirty: false,
+        });
+        setValue("companyPhone", companyInfo.phone || "", {
+          shouldDirty: false,
+        });
         setValue("website", companyInfo.website || "", { shouldDirty: false });
         if (typeof companyInfo.address === "object" && companyInfo.address) {
-          setValue("addressStreet", companyInfo.address.street || "", { shouldDirty: false });
-          setValue("addressCity", companyInfo.address.city || "", { shouldDirty: false });
-          setValue("addressZipCode", companyInfo.address.postalCode || "", { shouldDirty: false });
-          setValue("addressCountry", companyInfo.address.country || "France", { shouldDirty: false });
+          setValue("addressStreet", companyInfo.address.street || "", {
+            shouldDirty: false,
+          });
+          setValue("addressCity", companyInfo.address.city || "", {
+            shouldDirty: false,
+          });
+          setValue("addressZipCode", companyInfo.address.postalCode || "", {
+            shouldDirty: false,
+          });
+          setValue("addressCountry", companyInfo.address.country || "France", {
+            shouldDirty: false,
+          });
         }
       }
     }
@@ -880,43 +1024,54 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
 
   // Pre-fill from Quote conversion (via sessionStorage)
   useEffect(() => {
-    if (mode === 'create' && isFormInitialized) {
-      const quoteData = sessionStorage.getItem('quotePurchaseOrderData');
+    if (mode === "create" && isFormInitialized) {
+      const quoteData = sessionStorage.getItem("quotePurchaseOrderData");
       if (quoteData) {
         try {
           const q = JSON.parse(quoteData);
-          sessionStorage.removeItem('quotePurchaseOrderData');
+          sessionStorage.removeItem("quotePurchaseOrderData");
           sourceQuoteIdRef.current = q.sourceQuoteId;
 
-          if (q.client) setValue('client', q.client);
+          if (q.client) setValue("client", q.client);
           if (q.items?.length > 0) {
-            setValue('items', q.items.map(item => ({
-              description: item.description || '',
-              quantity: item.quantity || 1,
-              unitPrice: item.unitPrice || 0,
-              vatRate: item.vatRate ?? item.taxRate ?? 20,
-              unit: item.unit ?? '',
-              discount: item.discount || 0,
-              discountType: item.discountType || 'PERCENTAGE',
-              details: item.details || '',
-              vatExemptionText: item.vatExemptionText || '',
-            })));
+            setValue(
+              "items",
+              q.items.map((item) => ({
+                description: item.description || "",
+                quantity: item.quantity || 1,
+                unitPrice: item.unitPrice || 0,
+                vatRate: item.vatRate ?? item.taxRate ?? 20,
+                unit: item.unit ?? "",
+                discount: item.discount || 0,
+                discountType: item.discountType || "PERCENTAGE",
+                details: item.details || "",
+                vatExemptionText: item.vatExemptionText || "",
+              })),
+            );
           }
-          if (q.discount != null) setValue('discount', q.discount);
-          if (q.discountType) setValue('discountType', q.discountType);
+          if (q.discount != null) setValue("discount", q.discount);
+          if (q.discountType) setValue("discountType", q.discountType);
           if (q.customFields?.length > 0) {
-            setValue('customFields', q.customFields.map(f => ({
-              name: f.key || f.name || '',
-              value: f.value || '',
-            })));
+            setValue(
+              "customFields",
+              q.customFields.map((f) => ({
+                name: f.key || f.name || "",
+                value: f.value || "",
+              })),
+            );
           }
-          if (q.shipping) setValue('shipping', q.shipping);
-          if (q.purchaseOrderNumber) setValue('purchaseOrderNumber', q.purchaseOrderNumber);
-          if (q.isReverseCharge != null) setValue('isReverseCharge', q.isReverseCharge);
-          if (q.retenueGarantie != null) setValue('retenueGarantie', q.retenueGarantie);
-          if (q.escompte != null) setValue('escompte', q.escompte);
-        } catch (e) {
-          sessionStorage.removeItem('quotePurchaseOrderData');
+          if (q.shipping) setValue("shipping", q.shipping);
+          if (q.purchaseOrderNumber)
+            setValue("purchaseOrderNumber", q.purchaseOrderNumber);
+          if (q.isReverseCharge != null)
+            setValue("isReverseCharge", q.isReverseCharge);
+          if (q.operationType != null)
+            setValue("operationType", q.operationType);
+          if (q.retenueGarantie != null)
+            setValue("retenueGarantie", q.retenueGarantie);
+          if (q.escompte != null) setValue("escompte", q.escompte);
+        } catch {
+          sessionStorage.removeItem("quotePurchaseOrderData");
         }
       }
     }
@@ -944,7 +1099,7 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
 
     if (issueDate < today) {
       toast.error(
-        "La date d'émission ne peut pas être antérieure à la date actuelle"
+        "La date d'émission ne peut pas être antérieure à la date actuelle",
       );
       return false;
     }
@@ -956,7 +1111,7 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
       // Vérifier que la date de livraison n'est pas antérieure à la date d'émission
       if (deliveryDate < issueDate) {
         toast.error(
-          "La date de livraison ne peut pas être antérieure à la date d'émission"
+          "La date de livraison ne peut pas être antérieure à la date d'émission",
         );
         return false;
       }
@@ -998,15 +1153,18 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
         if (!currentFormData.client || !currentFormData.client.id) {
           errors.client = {
             message: "Veuillez sélectionner un client",
-            canEdit: false
+            canEdit: false,
           };
         }
 
         // Validation des informations entreprise
-        if (!currentFormData.companyInfo?.name || !currentFormData.companyInfo?.email) {
+        if (
+          !currentFormData.companyInfo?.name ||
+          !currentFormData.companyInfo?.email
+        ) {
           errors.companyInfo = {
             message: "Les informations de l'entreprise sont incomplètes",
-            canEdit: false
+            canEdit: false,
           };
         }
 
@@ -1022,7 +1180,9 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
           today.setHours(0, 0, 0, 0);
 
           if (issueDate < today) {
-            orderInfoErrors.push("la date d'émission ne peut pas être antérieure à aujourd'hui");
+            orderInfoErrors.push(
+              "la date d'émission ne peut pas être antérieure à aujourd'hui",
+            );
           }
 
           // Vérifier la date de livraison (optionnelle)
@@ -1030,7 +1190,9 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
             const deliveryDate = new Date(currentFormData.deliveryDate);
 
             if (deliveryDate < issueDate) {
-              orderInfoErrors.push("la date de livraison ne peut pas être antérieure à la date d'émission");
+              orderInfoErrors.push(
+                "la date de livraison ne peut pas être antérieure à la date d'émission",
+              );
             }
           }
         }
@@ -1038,7 +1200,7 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
         if (orderInfoErrors.length > 0) {
           errors.orderInfo = {
             message: `Informations du bon de commande invalides:\n${orderInfoErrors.join(", ")}`,
-            canEdit: false
+            canEdit: false,
           };
         }
 
@@ -1046,7 +1208,7 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
         if (!currentFormData.items || currentFormData.items.length === 0) {
           errors.items = {
             message: "Veuillez ajouter au moins un article au bon de commande",
-            canEdit: false
+            canEdit: false,
           };
         } else {
           // Vérifier que chaque article a les champs requis
@@ -1066,11 +1228,12 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
               fields.push("quantity");
             }
             const priceValue = item.unitPrice;
-            const isInvalid = priceValue === undefined ||
-                             priceValue === null ||
-                             priceValue === "" ||
-                             isNaN(parseFloat(priceValue)) ||
-                             parseFloat(priceValue) <= 0;
+            const isInvalid =
+              priceValue === undefined ||
+              priceValue === null ||
+              priceValue === "" ||
+              isNaN(parseFloat(priceValue)) ||
+              parseFloat(priceValue) <= 0;
 
             if (isInvalid) {
               itemErrors.push("prix unitaire doit être > 0€");
@@ -1081,14 +1244,20 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
             const vatRate = parseFloat(item.vatRate) || 0;
             if (vatRate === 0 && !formData.isReverseCharge) {
               const vatExemptionText = item.vatExemptionText;
-              if (!vatExemptionText || vatExemptionText.trim() === "" || vatExemptionText === "none") {
+              if (
+                !vatExemptionText ||
+                vatExemptionText.trim() === "" ||
+                vatExemptionText === "none"
+              ) {
                 itemErrors.push("texte d'exonération de TVA requis (TVA à 0%)");
                 fields.push("vatExemptionText");
               }
             }
 
             if (itemErrors.length > 0) {
-              invalidItems.push(`Article ${index + 1}: ${itemErrors.join(", ")}`);
+              invalidItems.push(
+                `Article ${index + 1}: ${itemErrors.join(", ")}`,
+              );
               itemsWithErrors.push({ index, fields });
             }
           });
@@ -1097,16 +1266,19 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
             errors.items = {
               message: `Certains articles sont incomplets:\n${invalidItems.join("\n")}`,
               canEdit: false,
-              details: itemsWithErrors
+              details: itemsWithErrors,
             };
           }
         }
 
         // Validation de la remise globale
-        if (currentFormData.discountType === "PERCENTAGE" && currentFormData.discount > 100) {
+        if (
+          currentFormData.discountType === "PERCENTAGE" &&
+          currentFormData.discount > 100
+        ) {
           errors.discount = {
             message: "La remise ne peut pas dépasser 100%",
-            canEdit: false
+            canEdit: false,
           };
         }
 
@@ -1118,7 +1290,9 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
           // Validation du nom complet
           if (!shippingAddr.fullName || shippingAddr.fullName.trim() === "") {
             shippingErrors.push("nom complet manquant");
-          } else if (!/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shippingAddr.fullName.trim())) {
+          } else if (
+            !/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shippingAddr.fullName.trim())
+          ) {
             shippingErrors.push("nom complet invalide");
           }
 
@@ -1130,7 +1304,10 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
           }
 
           // Validation du code postal
-          if (!shippingAddr.postalCode || shippingAddr.postalCode.trim() === "") {
+          if (
+            !shippingAddr.postalCode ||
+            shippingAddr.postalCode.trim() === ""
+          ) {
             shippingErrors.push("code postal manquant");
           } else if (!/^\d{5}$/.test(shippingAddr.postalCode.trim())) {
             shippingErrors.push("code postal invalide (5 chiffres requis)");
@@ -1139,7 +1316,9 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
           // Validation de la ville
           if (!shippingAddr.city || shippingAddr.city.trim() === "") {
             shippingErrors.push("ville manquante");
-          } else if (!/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shippingAddr.city.trim())) {
+          } else if (
+            !/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shippingAddr.city.trim())
+          ) {
             shippingErrors.push("ville invalide");
           }
 
@@ -1150,20 +1329,29 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
 
           // Validation du coût de livraison
           const shippingCost = currentFormData.shipping?.shippingAmountHT;
-          if (shippingCost === undefined || shippingCost === null || shippingCost === "" || isNaN(parseFloat(shippingCost)) || parseFloat(shippingCost) < 0) {
+          if (
+            shippingCost === undefined ||
+            shippingCost === null ||
+            shippingCost === "" ||
+            isNaN(parseFloat(shippingCost)) ||
+            parseFloat(shippingCost) < 0
+          ) {
             shippingErrors.push("coût de livraison invalide (doit être >= 0€)");
           }
 
           if (shippingErrors.length > 0) {
             errors.shipping = {
               message: `Les informations de livraison sont incomplètes ou invalides:\n${shippingErrors.join(", ")}`,
-              canEdit: false
+              canEdit: false,
             };
           }
         }
 
         // Validation des champs personnalisés
-        if (currentFormData.customFields && currentFormData.customFields.length > 0) {
+        if (
+          currentFormData.customFields &&
+          currentFormData.customFields.length > 0
+        ) {
           const invalidCustomFields = [];
           const customFieldsWithErrors = [];
 
@@ -1178,7 +1366,9 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
             }
 
             if (fieldErrors.length > 0) {
-              invalidCustomFields.push(`Champ personnalisé ${index + 1}: ${fieldErrors.join(", ")}`);
+              invalidCustomFields.push(
+                `Champ personnalisé ${index + 1}: ${fieldErrors.join(", ")}`,
+              );
               customFieldsWithErrors.push({ index, errors: fieldErrors });
             }
           });
@@ -1187,7 +1377,7 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
             errors.customFields = {
               message: `Certains champs personnalisés sont incomplets:\n${invalidCustomFields.join("\n")}`,
               canEdit: false,
-              details: customFieldsWithErrors
+              details: customFieldsWithErrors,
             };
           }
         }
@@ -1205,7 +1395,7 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
           currentFormData,
           existingPurchaseOrder?.status,
           session,
-          existingPurchaseOrder
+          existingPurchaseOrder,
         );
         input.status = "DRAFT";
 
@@ -1239,7 +1429,7 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
         }
       } catch (error) {
         if (!isAutoSave) {
-          handleError(error, 'purchaseOrder');
+          handleError(error, "purchaseOrder");
         }
         return false;
       } finally {
@@ -1259,7 +1449,7 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
       router,
       session,
       handleError,
-    ]
+    ],
   );
 
   // Submit function (for final purchase order creation)
@@ -1276,15 +1466,18 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
         if (!currentFormData.client || !currentFormData.client.id) {
           errors.client = {
             message: "Veuillez sélectionner un client",
-            canEdit: false
+            canEdit: false,
           };
         }
 
         // Validation des informations entreprise
-        if (!currentFormData.companyInfo?.name || !currentFormData.companyInfo?.email) {
+        if (
+          !currentFormData.companyInfo?.name ||
+          !currentFormData.companyInfo?.email
+        ) {
           errors.companyInfo = {
             message: "Les informations de l'entreprise sont incomplètes",
-            canEdit: false
+            canEdit: false,
           };
         }
 
@@ -1300,7 +1493,9 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
           today.setHours(0, 0, 0, 0);
 
           if (issueDate < today) {
-            orderInfoErrors.push("la date d'émission ne peut pas être antérieure à aujourd'hui");
+            orderInfoErrors.push(
+              "la date d'émission ne peut pas être antérieure à aujourd'hui",
+            );
           }
 
           // Vérifier la date de livraison (optionnelle)
@@ -1308,7 +1503,9 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
             const deliveryDate = new Date(currentFormData.deliveryDate);
 
             if (deliveryDate < issueDate) {
-              orderInfoErrors.push("la date de livraison ne peut pas être antérieure à la date d'émission");
+              orderInfoErrors.push(
+                "la date de livraison ne peut pas être antérieure à la date d'émission",
+              );
             }
           }
         }
@@ -1316,7 +1513,7 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
         if (orderInfoErrors.length > 0) {
           errors.orderInfo = {
             message: `Informations du bon de commande invalides:\n${orderInfoErrors.join(", ")}`,
-            canEdit: false
+            canEdit: false,
           };
         }
 
@@ -1324,7 +1521,7 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
         if (!currentFormData.items || currentFormData.items.length === 0) {
           errors.items = {
             message: "Veuillez ajouter au moins un article au bon de commande",
-            canEdit: false
+            canEdit: false,
           };
         } else {
           // Vérifier que chaque article a les champs requis
@@ -1344,11 +1541,12 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
               fields.push("quantity");
             }
             const priceValue = item.unitPrice;
-            const isInvalid = priceValue === undefined ||
-                             priceValue === null ||
-                             priceValue === "" ||
-                             isNaN(parseFloat(priceValue)) ||
-                             parseFloat(priceValue) <= 0;
+            const isInvalid =
+              priceValue === undefined ||
+              priceValue === null ||
+              priceValue === "" ||
+              isNaN(parseFloat(priceValue)) ||
+              parseFloat(priceValue) <= 0;
 
             if (isInvalid) {
               itemErrors.push("prix unitaire doit être > 0€");
@@ -1359,14 +1557,20 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
             const vatRate = parseFloat(item.vatRate) || 0;
             if (vatRate === 0 && !formData.isReverseCharge) {
               const vatExemptionText = item.vatExemptionText;
-              if (!vatExemptionText || vatExemptionText.trim() === "" || vatExemptionText === "none") {
+              if (
+                !vatExemptionText ||
+                vatExemptionText.trim() === "" ||
+                vatExemptionText === "none"
+              ) {
                 itemErrors.push("texte d'exonération de TVA requis (TVA à 0%)");
                 fields.push("vatExemptionText");
               }
             }
 
             if (itemErrors.length > 0) {
-              invalidItems.push(`Article ${index + 1}: ${itemErrors.join(", ")}`);
+              invalidItems.push(
+                `Article ${index + 1}: ${itemErrors.join(", ")}`,
+              );
               itemsWithErrors.push({ index, fields });
             }
           });
@@ -1375,16 +1579,19 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
             errors.items = {
               message: `Certains articles sont incomplets:\n${invalidItems.join("\n")}`,
               canEdit: false,
-              details: itemsWithErrors
+              details: itemsWithErrors,
             };
           }
         }
 
         // Validation de la remise globale
-        if (currentFormData.discountType === "PERCENTAGE" && currentFormData.discount > 100) {
+        if (
+          currentFormData.discountType === "PERCENTAGE" &&
+          currentFormData.discount > 100
+        ) {
           errors.discount = {
             message: "La remise ne peut pas dépasser 100%",
-            canEdit: false
+            canEdit: false,
           };
         }
 
@@ -1396,7 +1603,9 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
           // Validation du nom complet
           if (!shippingAddr.fullName || shippingAddr.fullName.trim() === "") {
             shippingErrors.push("nom complet manquant");
-          } else if (!/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shippingAddr.fullName.trim())) {
+          } else if (
+            !/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shippingAddr.fullName.trim())
+          ) {
             shippingErrors.push("nom complet invalide");
           }
 
@@ -1408,7 +1617,10 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
           }
 
           // Validation du code postal
-          if (!shippingAddr.postalCode || shippingAddr.postalCode.trim() === "") {
+          if (
+            !shippingAddr.postalCode ||
+            shippingAddr.postalCode.trim() === ""
+          ) {
             shippingErrors.push("code postal manquant");
           } else if (!/^\d{5}$/.test(shippingAddr.postalCode.trim())) {
             shippingErrors.push("code postal invalide (5 chiffres requis)");
@@ -1417,7 +1629,9 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
           // Validation de la ville
           if (!shippingAddr.city || shippingAddr.city.trim() === "") {
             shippingErrors.push("ville manquante");
-          } else if (!/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shippingAddr.city.trim())) {
+          } else if (
+            !/^[a-zA-ZÀ-ÿ\s'-]{2,100}$/.test(shippingAddr.city.trim())
+          ) {
             shippingErrors.push("ville invalide");
           }
 
@@ -1428,20 +1642,29 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
 
           // Validation du coût de livraison
           const shippingCost = currentFormData.shipping?.shippingAmountHT;
-          if (shippingCost === undefined || shippingCost === null || shippingCost === "" || isNaN(parseFloat(shippingCost)) || parseFloat(shippingCost) < 0) {
+          if (
+            shippingCost === undefined ||
+            shippingCost === null ||
+            shippingCost === "" ||
+            isNaN(parseFloat(shippingCost)) ||
+            parseFloat(shippingCost) < 0
+          ) {
             shippingErrors.push("coût de livraison invalide (doit être >= 0€)");
           }
 
           if (shippingErrors.length > 0) {
             errors.shipping = {
               message: `Les informations de livraison sont incomplètes ou invalides:\n${shippingErrors.join(", ")}`,
-              canEdit: false
+              canEdit: false,
             };
           }
         }
 
         // Validation des champs personnalisés
-        if (currentFormData.customFields && currentFormData.customFields.length > 0) {
+        if (
+          currentFormData.customFields &&
+          currentFormData.customFields.length > 0
+        ) {
           const invalidCustomFields = [];
           const customFieldsWithErrors = [];
 
@@ -1456,7 +1679,9 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
             }
 
             if (fieldErrors.length > 0) {
-              invalidCustomFields.push(`Champ personnalisé ${index + 1}: ${fieldErrors.join(", ")}`);
+              invalidCustomFields.push(
+                `Champ personnalisé ${index + 1}: ${fieldErrors.join(", ")}`,
+              );
               customFieldsWithErrors.push({ index, errors: fieldErrors });
             }
           });
@@ -1465,14 +1690,16 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
             errors.customFields = {
               message: `Certains champs personnalisés sont incomplets:\n${invalidCustomFields.join("\n")}`,
               canEdit: false,
-              details: customFieldsWithErrors
+              details: customFieldsWithErrors,
             };
           }
         }
 
         if (Object.keys(errors).length > 0) {
           setValidationErrors(errors);
-          toast.error("Veuillez corriger les erreurs avant de créer le bon de commande");
+          toast.error(
+            "Veuillez corriger les erreurs avant de créer le bon de commande",
+          );
           setSaving(false);
           return;
         }
@@ -1484,7 +1711,7 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
           currentFormData,
           existingPurchaseOrder?.status,
           session,
-          existingPurchaseOrder
+          existingPurchaseOrder,
         );
         input.status = "CONFIRMED";
 
@@ -1509,7 +1736,7 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
           toast.success(
             existingPurchaseOrder?.id
               ? "Bon de commande mis à jour avec succès"
-              : "Bon de commande créé avec succès"
+              : "Bon de commande créé avec succès",
           );
 
           // Retourner les données du bon de commande pour permettre l'envoi par email
@@ -1522,7 +1749,7 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
           };
         }
       } catch (error) {
-        handleError(error, 'purchaseOrder');
+        handleError(error, "purchaseOrder");
         return { success: false };
       } finally {
         setSaving(false);
@@ -1537,7 +1764,7 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
       router,
       session,
       handleError,
-    ]
+    ],
   );
 
   // Cleanup on unmount - DISABLED (auto-save removed)
@@ -1564,7 +1791,7 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
         });
       }
     },
-    [setValue, getValues]
+    [setValue, getValues],
   );
 
   // Fonction pour sauvegarder les paramètres dans l'organisation
@@ -1574,20 +1801,32 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
       const activeOrganization = await getActiveOrganization();
 
       const organizationData = {
-        purchaseOrderTextColor: currentFormData.appearance?.textColor || "#000000",
+        purchaseOrderTextColor:
+          currentFormData.appearance?.textColor || "#000000",
         purchaseOrderHeaderTextColor:
           currentFormData.appearance?.headerTextColor || "#ffffff",
         purchaseOrderHeaderBgColor:
           currentFormData.appearance?.headerBgColor || "#5b50FF",
         purchaseOrderHeaderNotes: currentFormData.headerNotes || "",
         purchaseOrderFooterNotes: currentFormData.footerNotes || "",
-        purchaseOrderTermsAndConditions: currentFormData.termsAndConditions || "",
+        purchaseOrderTermsAndConditions:
+          currentFormData.termsAndConditions || "",
         showBankDetails: currentFormData.showBankDetails || false,
         // Coordonnées bancaires
-        bankIban: currentFormData.bankDetails?.iban || currentFormData.companyInfo?.bankDetails?.iban || "",
-        bankBic: currentFormData.bankDetails?.bic || currentFormData.companyInfo?.bankDetails?.bic || "",
-        bankName: currentFormData.bankDetails?.bankName || currentFormData.companyInfo?.bankDetails?.bankName || "",
-        purchaseOrderClientPositionRight: currentFormData.clientPositionRight || false,
+        bankIban:
+          currentFormData.bankDetails?.iban ||
+          currentFormData.companyInfo?.bankDetails?.iban ||
+          "",
+        bankBic:
+          currentFormData.bankDetails?.bic ||
+          currentFormData.companyInfo?.bankDetails?.bic ||
+          "",
+        bankName:
+          currentFormData.bankDetails?.bankName ||
+          currentFormData.companyInfo?.bankDetails?.bankName ||
+          "",
+        purchaseOrderClientPositionRight:
+          currentFormData.clientPositionRight || false,
         // Informations de l'entreprise
         companyName: currentFormData.companyName || "",
         companyEmail: currentFormData.companyEmail || "",
@@ -1623,7 +1862,8 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
     formData,
 
     // Loading states
-    loading: loadingPurchaseOrder || creating || updating || saving || numberLoading,
+    loading:
+      loadingPurchaseOrder || creating || updating || saving || numberLoading,
     saving,
 
     // Validation
@@ -1650,21 +1890,27 @@ export function usePurchaseOrderEditor({ mode, purchaseOrderId, initialData, org
     validatePurchaseOrderNumber,
     hasExistingOrders,
     canEdit:
-      !loadingPurchaseOrder && (mode === "create" || !["DELIVERED", "CANCELED"].includes(existingPurchaseOrder?.status)),
+      !loadingPurchaseOrder &&
+      (mode === "create" ||
+        !["DELIVERED", "CANCELED"].includes(existingPurchaseOrder?.status)),
 
     // Organization settings
     saveSettingsToOrganization,
 
     // Resource existence
     purchaseOrder: existingPurchaseOrder,
-    error: loadingPurchaseOrder ? null : (!existingPurchaseOrder && mode !== "create"),
+    error: loadingPurchaseOrder
+      ? null
+      : !existingPurchaseOrder && mode !== "create",
   };
 }
 
 // Helper functions
 function getInitialFormData(mode, initialData, session, organization) {
-  const today = new Date().toISOString().split("T")[0];
-  const defaultValidUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+  const today = formatLocalDate();
+  const defaultValidUntil = formatLocalDate(
+    new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+  );
 
   // Auto-remplissage du companyInfo avec les données d'organisation
   const addressString = organization
@@ -1720,10 +1966,19 @@ function getInitialFormData(mode, initialData, session, organization) {
     discountType: "PERCENTAGE",
 
     // Notes et conditions
-    headerNotes: organization?.purchaseOrderHeaderNotes || organization?.documentHeaderNotes || "",
-    footerNotes: organization?.purchaseOrderFooterNotes || organization?.documentFooterNotes || "",
+    headerNotes:
+      organization?.purchaseOrderHeaderNotes ||
+      organization?.documentHeaderNotes ||
+      "",
+    footerNotes:
+      organization?.purchaseOrderFooterNotes ||
+      organization?.documentFooterNotes ||
+      "",
     terms: "",
-    termsAndConditions: organization?.purchaseOrderTermsAndConditions || organization?.documentTermsAndConditions || "",
+    termsAndConditions:
+      organization?.purchaseOrderTermsAndConditions ||
+      organization?.documentTermsAndConditions ||
+      "",
 
     // Champs personnalisés
     customFields: [],
@@ -1735,11 +1990,13 @@ function getInitialFormData(mode, initialData, session, organization) {
       bic: "",
       bankName: "",
     },
-    userBankDetails: organization ? {
-      iban: organization.bankIban || "",
-      bic: organization.bankBic || "",
-      bankName: organization.bankName || "",
-    } : null,
+    userBankDetails: organization
+      ? {
+          iban: organization.bankIban || "",
+          bic: organization.bankBic || "",
+          bankName: organization.bankName || "",
+        }
+      : null,
 
     // Paramètres d'apparence
     appearance: {
@@ -1749,7 +2006,11 @@ function getInitialFormData(mode, initialData, session, organization) {
     },
 
     // Position du client dans le PDF
-    clientPositionRight: organization?.purchaseOrderClientPositionRight || false,
+    clientPositionRight:
+      organization?.purchaseOrderClientPositionRight || false,
+
+    // Nature de l'opération
+    operationType: null,
 
     // Livraison
     shipping: {
@@ -1767,7 +2028,7 @@ function getInitialFormData(mode, initialData, session, organization) {
 }
 
 function transformPurchaseOrderToFormData(purchaseOrder) {
-  const transformDate = (dateValue, fieldName) => {
+  const transformDate = (dateValue) => {
     if (dateValue === null || dateValue === undefined) {
       return "";
     }
@@ -1831,7 +2092,7 @@ function transformPurchaseOrderToFormData(purchaseOrder) {
           dateObj = new Date(
             dateValue.year,
             dateValue.month - 1,
-            dateValue.day
+            dateValue.day,
           );
         }
         // Format avec getTime()
@@ -1860,12 +2121,12 @@ function transformPurchaseOrderToFormData(purchaseOrder) {
       const result = `${year}-${month}-${day}`;
 
       return result;
-    } catch (error) {
+    } catch {
       return "";
     }
   };
 
-  const issueDate = transformDate(purchaseOrder.issueDate, "issueDate");
+  const issueDate = transformDate(purchaseOrder.issueDate);
 
   // Pour la date de livraison, on la récupère directement depuis la base de données
   let deliveryDate = "";
@@ -1875,27 +2136,27 @@ function transformPurchaseOrderToFormData(purchaseOrder) {
     purchaseOrder.deliveryDate !== null &&
     purchaseOrder.deliveryDate !== ""
   ) {
-    deliveryDate = transformDate(purchaseOrder.deliveryDate, "deliveryDate");
+    deliveryDate = transformDate(purchaseOrder.deliveryDate);
   }
 
   return {
     prefix: purchaseOrder.prefix || "",
     number: purchaseOrder.number || "",
-    purchaseOrderNumber: purchaseOrder.purchaseOrderNumber || (
-      purchaseOrder.sourceQuote
-        ? (purchaseOrder.sourceQuote.prefix
+    purchaseOrderNumber:
+      purchaseOrder.purchaseOrderNumber ||
+      (purchaseOrder.sourceQuote
+        ? purchaseOrder.sourceQuote.prefix
           ? `${purchaseOrder.sourceQuote.prefix}-${purchaseOrder.sourceQuote.number}`
-          : purchaseOrder.sourceQuote.number)
-        : ""
-    ),
+          : purchaseOrder.sourceQuote.number
+        : ""),
     issueDate: issueDate,
     validUntil: purchaseOrder.validUntil
-      ? transformDate(purchaseOrder.validUntil, "validUntil")
+      ? transformDate(purchaseOrder.validUntil)
       : (() => {
           // Fallback : issueDate + 30 jours si validUntil n'existe pas
           const base = issueDate ? new Date(issueDate) : new Date();
           base.setDate(base.getDate() + 30);
-          return base.toISOString().split("T")[0];
+          return formatLocalDate(base);
         })(),
     deliveryDate: deliveryDate,
     status: purchaseOrder.status || "DRAFT",
@@ -1903,12 +2164,16 @@ function transformPurchaseOrderToFormData(purchaseOrder) {
     client: purchaseOrder.client
       ? {
           id: purchaseOrder.client.id,
-          name: purchaseOrder.client.name || purchaseOrder.client.companyName || `${purchaseOrder.client.firstName || ""} ${purchaseOrder.client.lastName || ""}`.trim(),
+          name:
+            purchaseOrder.client.name ||
+            purchaseOrder.client.companyName ||
+            `${purchaseOrder.client.firstName || ""} ${purchaseOrder.client.lastName || ""}`.trim(),
           type: purchaseOrder.client.type,
           email: purchaseOrder.client.email,
           phone: purchaseOrder.client.phone,
           address: purchaseOrder.client.address,
-          hasDifferentShippingAddress: purchaseOrder.client.hasDifferentShippingAddress || false,
+          hasDifferentShippingAddress:
+            purchaseOrder.client.hasDifferentShippingAddress || false,
           shippingAddress: purchaseOrder.client.shippingAddress || null,
           ...(purchaseOrder.client.type === "COMPANY"
             ? {
@@ -1940,15 +2205,20 @@ function transformPurchaseOrderToFormData(purchaseOrder) {
       transactionCategory: purchaseOrder.companyInfo?.transactionCategory || "",
       // Conserver l'adresse sous forme d'objet pour la synchronisation avec les champs plats
       address: (() => {
-        if (!purchaseOrder.companyInfo?.address) return { street: "", city: "", postalCode: "", country: "France" };
+        if (!purchaseOrder.companyInfo?.address)
+          return { street: "", city: "", postalCode: "", country: "France" };
 
         if (typeof purchaseOrder.companyInfo.address === "string") {
           // Parser la chaîne pour reconstituer l'objet
-          const parts = purchaseOrder.companyInfo.address.split("\n").map(p => p.trim());
+          const parts = purchaseOrder.companyInfo.address
+            .split("\n")
+            .map((p) => p.trim());
           return {
             street: parts[0] || "",
-            city: parts.length >= 2 ? (parts[1].replace(/^\d{5}\s*/, "") || "") : "",
-            postalCode: parts.length >= 2 ? (parts[1].match(/^(\d{5})/)?.[1] || "") : "",
+            city:
+              parts.length >= 2 ? parts[1].replace(/^\d{5}\s*/, "") || "" : "",
+            postalCode:
+              parts.length >= 2 ? parts[1].match(/^(\d{5})/)?.[1] || "" : "",
             country: parts[2] || "France",
           };
         }
@@ -2028,7 +2298,8 @@ function transformPurchaseOrderToFormData(purchaseOrder) {
     appearance: purchaseOrder.appearance
       ? {
           textColor: purchaseOrder.appearance.textColor || "#000000",
-          headerTextColor: purchaseOrder.appearance.headerTextColor || "#ffffff",
+          headerTextColor:
+            purchaseOrder.appearance.headerTextColor || "#ffffff",
           headerBgColor: purchaseOrder.appearance.headerBgColor || "#5b50FF",
         }
       : {
@@ -2061,7 +2332,6 @@ function transformFormDataToInput(
   formData,
   previousStatus = null,
   session = null,
-  existingPurchaseOrder = null
 ) {
   const cleanClient = formData.client
     ? {
@@ -2083,7 +2353,12 @@ function transformFormDataToInput(
           formData.client.hasDifferentShippingAddress,
         address: formData.client.address
           ? typeof formData.client.address === "string"
-            ? parseAddressString(formData.client.address) || { street: "", city: "", postalCode: "", country: "France" }
+            ? parseAddressString(formData.client.address) || {
+                street: "",
+                city: "",
+                postalCode: "",
+                country: "France",
+              }
             : (() => {
                 const addr = formData.client.address;
                 // Supprimer __typename si présent (pollution GraphQL)
@@ -2112,6 +2387,7 @@ function transformFormDataToInput(
   const companyInfo = formData.companyInfo || sessionCompany;
 
   // Si aucune information d'entreprise n'est disponible, utiliser des valeurs par défaut temporaires
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const cleanCompanyInfo = {
     name: companyInfo?.name || "Mon Entreprise",
     email: companyInfo?.email || session?.user?.email || "",
@@ -2154,24 +2430,24 @@ function transformFormDataToInput(
 
   let issueDate = formData.issueDate;
   if (previousStatus === "DRAFT" && formData.status === "CONFIRMED") {
-    issueDate = new Date().toISOString().split("T")[0];
+    issueDate = formatLocalDate();
   }
 
   // S'assurer qu'on a toujours une date d'émission valide
   if (!issueDate) {
-    issueDate = new Date().toISOString().split("T")[0];
+    issueDate = formatLocalDate();
   } else {
     // S'assurer que la date est au bon format
     try {
       const d = new Date(issueDate);
       if (isNaN(d.getTime())) {
-        issueDate = new Date().toISOString().split("T")[0];
+        issueDate = formatLocalDate();
       } else {
         // Reformater pour s'assurer du format YYYY-MM-DD
-        issueDate = d.toISOString().split("T")[0];
+        issueDate = formatLocalDate(d);
       }
-    } catch (e) {
-      issueDate = new Date().toISOString().split("T")[0];
+    } catch {
+      issueDate = formatLocalDate();
     }
   }
 
@@ -2180,15 +2456,18 @@ function transformFormDataToInput(
   if (formData.deliveryDate) {
     try {
       // Si c'est déjà une chaîne au format YYYY-MM-DD
-      if (typeof formData.deliveryDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(formData.deliveryDate)) {
+      if (
+        typeof formData.deliveryDate === "string" &&
+        /^\d{4}-\d{2}-\d{2}$/.test(formData.deliveryDate)
+      ) {
         deliveryDate = formData.deliveryDate;
       } else {
         const d = new Date(formData.deliveryDate);
         if (!isNaN(d.getTime())) {
-          deliveryDate = d.toISOString().split("T")[0];
+          deliveryDate = formatLocalDate(d);
         }
       }
-    } catch (e) {
+    } catch {
       deliveryDate = null;
     }
   }
@@ -2213,7 +2492,7 @@ function transformFormDataToInput(
       const day = String(d.getDate()).padStart(2, "0");
 
       return `${year}-${month}-${day}`;
-    } catch (e) {
+    } catch {
       return null;
     }
   };
@@ -2249,7 +2528,9 @@ function transformFormDataToInput(
     purchaseOrderNumber: formData.purchaseOrderNumber || "",
     // Utiliser les dates formatées avec des valeurs par défaut sécurisées
     issueDate: finalIssueDate,
-    ...(formData.validUntil && { validUntil: formatFinalDate(formData.validUntil) }),
+    ...(formData.validUntil && {
+      validUntil: formatFinalDate(formData.validUntil),
+    }),
     ...(finalDeliveryDate && { deliveryDate: finalDeliveryDate }),
     status: formData.status || "DRAFT",
     client: cleanClient,
@@ -2276,7 +2557,7 @@ function transformFormDataToInput(
           // Auto-liquidation : si isReverseCharge = true, utiliser "Auto-liquidation" comme texte d'exonération
           itemData.vatExemptionText = formData.isReverseCharge
             ? "Auto-liquidation"
-            : (item.vatExemptionText || "");
+            : item.vatExemptionText || "";
         }
 
         return itemData;
@@ -2319,6 +2600,7 @@ function transformFormDataToInput(
       : null,
     isReverseCharge: formData.isReverseCharge || false,
     clientPositionRight: formData.clientPositionRight || false,
+    ...(formData.operationType && { operationType: formData.operationType }),
   };
 }
 

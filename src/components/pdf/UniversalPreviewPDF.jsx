@@ -12,7 +12,7 @@ const calculateItemTotal = (
   unitPrice,
   discount,
   discountType,
-  progressPercentage = 100
+  progressPercentage = 100,
 ) => {
   let subtotal = (quantity || 1) * (unitPrice || 0);
 
@@ -39,7 +39,7 @@ const applyOpacityToColor = (color, opacity) => {
   // Si c'est une couleur HSL
   if (color.startsWith("hsl")) {
     const match = color.match(
-      /hsl\((\d+(?:\.\d+)?),\s*(\d+(?:\.\d+)?)%,\s*(\d+(?:\.\d+)?)%\)/
+      /hsl\((\d+(?:\.\d+)?),\s*(\d+(?:\.\d+)?)%,\s*(\d+(?:\.\d+)?)%\)/,
     );
     if (match) {
       const [, h, s, l] = match;
@@ -59,7 +59,7 @@ const applyOpacityToColor = (color, opacity) => {
   // Si c'est déjà une couleur rgba/rgb
   if (color.startsWith("rgb")) {
     const match = color.match(
-      /rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*[\d.]+)?\)/
+      /rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*[\d.]+)?\)/,
     );
     if (match) {
       const [, r, g, b] = match;
@@ -117,6 +117,23 @@ const UniversalPreviewPDF = ({
   const documentRef = useRef(null);
   const [scale, setScale] = useState(1);
   const [containerHeight, setContainerHeight] = useState("auto");
+
+  // Résoudre le nom du bénéficiaire selon le paramètre de l'organisation
+  const resolvedBeneficiaryName = (() => {
+    // Déterminer le type depuis les données ou l'organisation
+    const nameType =
+      data.beneficiaryNameType ||
+      organization?.beneficiaryNameType ||
+      (organization?.legalForm === "Auto-entrepreneur"
+        ? "fullName"
+        : "companyName");
+    // Déterminer le nom complet de l'utilisateur
+    const fullName = data.userName || session?.user?.name || "";
+    if (nameType === "fullName" && fullName) {
+      return fullName;
+    }
+    return data.companyInfo?.name || "";
+  })();
 
   // Déterminer si c'est un avoir (credit note)
   const isCreditNote = type === "creditNote";
@@ -231,7 +248,7 @@ const UniversalPreviewPDF = ({
         // Remise fixe, limitée au montant HT après remises sur les articles
         globalDiscountAmount = Math.min(
           data.discount,
-          subtotalAfterItemDiscounts
+          subtotalAfterItemDiscounts,
         );
       }
       totalAfterDiscount = subtotalAfterItemDiscounts - globalDiscountAmount;
@@ -279,7 +296,7 @@ const UniversalPreviewPDF = ({
         const itemRatio = itemSubtotal / (subtotalAfterItemDiscounts || 1); // Éviter la division par zéro
         itemSubtotal = Math.max(
           0,
-          itemSubtotal - globalDiscountAmount * itemRatio
+          itemSubtotal - globalDiscountAmount * itemRatio,
         );
       }
 
@@ -345,28 +362,28 @@ const UniversalPreviewPDF = ({
 
     return {
       subtotal: Number(
-        (isCreditNote ? -Math.abs(subtotal) : subtotal).toFixed(2)
+        (isCreditNote ? -Math.abs(subtotal) : subtotal).toFixed(2),
       ),
       subtotalAfterItemDiscounts: Number(
         (isCreditNote
           ? -Math.abs(subtotalAfterItemDiscounts)
           : subtotalAfterItemDiscounts
-        ).toFixed(2)
+        ).toFixed(2),
       ),
       discount: Number(
         (isCreditNote
           ? -Math.abs(globalDiscountAmount)
           : globalDiscountAmount
-        ).toFixed(2)
+        ).toFixed(2),
       ),
       totalAfterDiscount: Number(
         (isCreditNote
           ? -Math.abs(totalAfterDiscount)
           : totalAfterDiscount
-        ).toFixed(2)
+        ).toFixed(2),
       ),
       totalTax: Number(
-        (isCreditNote ? -Math.abs(totalTax) : totalTax).toFixed(2)
+        (isCreditNote ? -Math.abs(totalTax) : totalTax).toFixed(2),
       ),
       total: Number((isCreditNote ? -Math.abs(total) : total).toFixed(2)),
       taxDetails: taxDetails.map((tax) => ({
@@ -625,7 +642,9 @@ const UniversalPreviewPDF = ({
                         } else if (prefix) {
                           return prefix;
                         }
-                        return isPurchaseOrder ? "BC-202507-001" : "D-202507-001";
+                        return isPurchaseOrder
+                          ? "BC-202507-001"
+                          : "D-202507-001";
                       }
 
                       // Pour les factures et avoirs
@@ -663,10 +682,12 @@ const UniversalPreviewPDF = ({
                     </span>
                     <span className="dark:text-[#0A0A0A]">
                       {formatDate(
-                        (type === "quote" || isPurchaseOrder) ? data.validUntil : data.dueDate
+                        type === "quote" || isPurchaseOrder
+                          ? data.validUntil
+                          : data.dueDate,
                       ) ||
                         formatDate(
-                          new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+                          new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
                         )}
                     </span>
                   </div>
@@ -757,6 +778,26 @@ const UniversalPreviewPDF = ({
                       </span>
                     </div>
                   </>
+                )}
+                {data.operationType && (
+                  <div
+                    className="flex justify-end"
+                    style={{ fontSize: "10px" }}
+                  >
+                    <span className="font-medium w-38 dark:text-[#0A0A0A] mr-2">
+                      Nature de l'opération:
+                    </span>
+                    <span className="dark:text-[#0A0A0A]">
+                      {(() => {
+                        const labels = {
+                          LB: "Livraison de biens",
+                          PS: "Prestation de services",
+                          LBPS: "Mixte - Biens et services",
+                        };
+                        return labels[data.operationType] || data.operationType;
+                      })()}
+                    </span>
+                  </div>
                 )}
               </div>
             </div>
@@ -976,7 +1017,7 @@ const UniversalPreviewPDF = ({
                   </div>
                 ) : (
                   <div key={index} style={{ height: "0.5em" }} />
-                )
+                ),
               )}
             </div>
           )}
@@ -1009,7 +1050,7 @@ const UniversalPreviewPDF = ({
                 previousSituationInvoices.forEach((invoice) => {
                   if (invoice.items && invoice.items[itemIndex]) {
                     cumulativeProgress += parseFloat(
-                      invoice.items[itemIndex].progressPercentage || 0
+                      invoice.items[itemIndex].progressPercentage || 0,
                     );
                   }
                 });
@@ -1192,12 +1233,21 @@ const UniversalPreviewPDF = ({
                               whiteSpace: "nowrap",
                             }}
                           >
-                            {item.unit === "heure" ? (() => {
-                              const qty = parseFloat(item.quantity) || 0;
-                              const hrs = Math.floor(qty);
-                              const mins = Math.round((qty - hrs) * 60);
-                              return mins > 0 ? `${hrs}h${String(mins).padStart(2, "0")}min` : `${hrs}h`;
-                            })() : <>{parseFloat(Number(item.quantity).toFixed(4))}{item.unit ? ` ${item.unit}` : ""}</>}
+                            {item.unit === "heure" ? (
+                              (() => {
+                                const qty = parseFloat(item.quantity) || 0;
+                                const hrs = Math.floor(qty);
+                                const mins = Math.round((qty - hrs) * 60);
+                                return mins > 0
+                                  ? `${hrs}h${String(mins).padStart(2, "0")}min`
+                                  : `${hrs}h`;
+                              })()
+                            ) : (
+                              <>
+                                {parseFloat(Number(item.quantity).toFixed(4))}
+                                {item.unit ? ` ${item.unit}` : ""}
+                              </>
+                            )}
                           </td>
                           <td
                             className="pt-3 pb-3 px-2 text-right dark:text-[#0A0A0A] align-top"
@@ -1219,7 +1269,7 @@ const UniversalPreviewPDF = ({
                                 style={{ width: "12%" }}
                               >
                                 {parseFloat(
-                                  item.progressPercentage || 0
+                                  item.progressPercentage || 0,
                                 ).toFixed(0)}
                                 %
                               </td>
@@ -1252,7 +1302,7 @@ const UniversalPreviewPDF = ({
                                     }}
                                   >
                                     {parseFloat(
-                                      item.progressPercentage
+                                      item.progressPercentage,
                                     ).toFixed(0)}
                                     %
                                   </span>
@@ -1294,11 +1344,11 @@ const UniversalPreviewPDF = ({
                                           ? -Math.abs(
                                               (item.quantity || 0) *
                                                 (item.unitPrice || 0) *
-                                                (progress / 100)
+                                                (progress / 100),
                                             )
                                           : (item.quantity || 0) *
                                               (item.unitPrice || 0) *
-                                              (progress / 100)
+                                              (progress / 100),
                                       )}
                                     </span>
                                     <span>
@@ -1311,16 +1361,16 @@ const UniversalPreviewPDF = ({
                                                 item.discount || 0,
                                                 item.discountType ||
                                                   "percentage",
-                                                progress
-                                              )
+                                                progress,
+                                              ),
                                             )
                                           : calculateItemTotal(
                                               item.quantity || 0,
                                               item.unitPrice || 0,
                                               item.discount || 0,
                                               item.discountType || "percentage",
-                                              progress
-                                            )
+                                              progress,
+                                            ),
                                       )}
                                     </span>
                                   </div>
@@ -1331,11 +1381,11 @@ const UniversalPreviewPDF = ({
                                   ? -Math.abs(
                                       (item.quantity || 0) *
                                         (item.unitPrice || 0) *
-                                        (progress / 100)
+                                        (progress / 100),
                                     )
                                   : (item.quantity || 0) *
                                       (item.unitPrice || 0) *
-                                      (progress / 100)
+                                      (progress / 100),
                               );
                             })()}
                           </td>
@@ -1439,7 +1489,7 @@ const UniversalPreviewPDF = ({
                             {formatCurrency(
                               isCreditNote
                                 ? -Math.abs(shippingData.shippingAmountHT)
-                                : shippingData.shippingAmountHT
+                                : shippingData.shippingAmountHT,
                             )}
                           </td>
                           {showProgressColumn && (
@@ -1465,7 +1515,7 @@ const UniversalPreviewPDF = ({
                             {formatCurrency(
                               isCreditNote
                                 ? -Math.abs(shippingData.shippingAmountHT)
-                                : shippingData.shippingAmountHT
+                                : shippingData.shippingAmountHT,
                             )}
                           </td>
                         </tr>
@@ -1586,7 +1636,7 @@ const UniversalPreviewPDF = ({
                       return formatCurrency(
                         isCreditNote
                           ? -Math.abs(shippingData.shippingAmountHT)
-                          : shippingData.shippingAmountHT
+                          : shippingData.shippingAmountHT,
                       );
                     })()}
                   </span>
@@ -1710,7 +1760,7 @@ const UniversalPreviewPDF = ({
                       style={{
                         backgroundColor: applyOpacityToColor(
                           data.appearance?.headerBgColor || "#1d1d1b",
-                          0.1
+                          0.1,
                         ),
                       }}
                     >
@@ -1730,7 +1780,7 @@ const UniversalPreviewPDF = ({
                       style={{
                         backgroundColor: applyOpacityToColor(
                           data.appearance?.headerBgColor || "#1d1d1b",
-                          0.1
+                          0.1,
                         ),
                       }}
                     >
@@ -1809,7 +1859,7 @@ const UniversalPreviewPDF = ({
                     style={{
                       backgroundColor: applyOpacityToColor(
                         data.appearance?.headerBgColor || "#1d1d1b",
-                        0.15
+                        0.15,
                       ),
                     }}
                   >
@@ -1861,7 +1911,7 @@ const UniversalPreviewPDF = ({
             data.items.some(
               (item) =>
                 (item.vatRate === 0 || item.vatRate === "0") &&
-                item.vatExemptionText
+                item.vatExemptionText,
             ) && (
               <div
                 className="mb-4 text-[10px] pt-4"
@@ -1870,7 +1920,7 @@ const UniversalPreviewPDF = ({
                   data.items.filter(
                     (item) =>
                       (item.vatRate === 0 || item.vatRate === "0") &&
-                      item.vatExemptionText
+                      item.vatExemptionText,
                   ).length <= 2
                 }
               >
@@ -1879,7 +1929,7 @@ const UniversalPreviewPDF = ({
                     .filter(
                       (item) =>
                         (item.vatRate === 0 || item.vatRate === "0") &&
-                        item.vatExemptionText
+                        item.vatExemptionText,
                     )
                     .map((item, index) => (
                       <div key={`vat-exemption-${index}`} className="mb-2">
@@ -1893,20 +1943,22 @@ const UniversalPreviewPDF = ({
           {/* CONDITIONS GÉNÉRALES - masquées pour les avoirs */}
           {(data.termsAndConditions || data.terms) && !isCreditNote && (
             <div className="mb-4 text-[10px] pt-4" data-pdf-section="terms">
-              {(data.termsAndConditions || data.terms).split("\n").map((line, index) =>
-                line.trim() ? (
-                  <div
-                    key={index}
-                    className="dark:text-[#0A0A0A] text-[10px] whitespace-pre-wrap"
-                    data-no-break="true"
-                    style={{ pageBreakInside: "avoid", breakInside: "avoid" }}
-                  >
-                    {line}
-                  </div>
-                ) : (
-                  <div key={index} style={{ height: "0.5em" }} />
-                )
-              )}
+              {(data.termsAndConditions || data.terms)
+                .split("\n")
+                .map((line, index) =>
+                  line.trim() ? (
+                    <div
+                      key={index}
+                      className="dark:text-[#0A0A0A] text-[10px] whitespace-pre-wrap"
+                      data-no-break="true"
+                      style={{ pageBreakInside: "avoid", breakInside: "avoid" }}
+                    >
+                      {line}
+                    </div>
+                  ) : (
+                    <div key={index} style={{ height: "0.5em" }} />
+                  ),
+                )}
             </div>
           )}
         </div>
@@ -2203,7 +2255,9 @@ const UniversalPreviewPDF = ({
                             const quantity = parseFloat(item.quantity) || 0;
                             const unitPrice = parseFloat(item.unitPrice) || 0;
                             const progress =
-                              item.progressPercentage != null ? parseFloat(item.progressPercentage) : 100;
+                              item.progressPercentage != null
+                                ? parseFloat(item.progressPercentage)
+                                : 100;
                             const vatRate = parseFloat(item.vatRate) || 0;
                             const discount = parseFloat(item.discount) || 0;
 
@@ -2267,7 +2321,7 @@ const UniversalPreviewPDF = ({
                           let totalTTC = totalHT + totalTVA;
 
                           return totalTTC;
-                        })()
+                        })(),
                       )}
                     </td>
                   </tr>
@@ -2427,14 +2481,14 @@ const UniversalPreviewPDF = ({
             background: `linear-gradient(${applyOpacityToColor(data.appearance?.headerBgColor || "#1d1d1b", 0.1)}, ${applyOpacityToColor(data.appearance?.headerBgColor || "#1d1d1b", 0.1)}), white`,
             backgroundColor: applyOpacityToColor(
               data.appearance?.headerBgColor || "#1d1d1b",
-              0.1
+              0.1,
             ),
             ...(forPDF ? { marginTop: "auto" } : {}),
           }}
           data-pdf-section="footer"
           data-footer-color={applyOpacityToColor(
             data.appearance?.headerBgColor || "#1d1d1b",
-            0.1
+            0.1,
           )}
           data-repeat-on-page
           data-no-break
@@ -2454,7 +2508,7 @@ const UniversalPreviewPDF = ({
                       Nom du bénéficiaire
                     </span>
                     <span className="font-normal">
-                      {data.companyInfo?.name || "Sweily"}
+                      {resolvedBeneficiaryName || "Sweily"}
                     </span>
                   </div>
                   <div className="flex">
@@ -2482,7 +2536,7 @@ const UniversalPreviewPDF = ({
                         data.bankDetails?.iban ||
                           data.userBankDetails?.iban ||
                           data.companyInfo?.bankDetails?.iban ||
-                          ""
+                          "",
                       )}
                     </span>
                   </div>
@@ -2508,7 +2562,7 @@ const UniversalPreviewPDF = ({
                   </div>
                 ) : (
                   <div key={index} style={{ height: "0.5em" }} />
-                )
+                ),
               )}
             </div>
           )}

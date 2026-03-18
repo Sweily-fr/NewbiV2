@@ -27,7 +27,7 @@ function TabsNewList({ className, children, ...props }) {
         data-slot="tabs-new-list"
         className={cn(
           "h-auto rounded-none bg-transparent p-0 pb-2 w-full inline-flex items-center justify-start gap-0.5 px-4 sm:px-6",
-          className
+          className,
         )}
         {...props}
       >
@@ -44,13 +44,28 @@ function TabsNewList({ className, children, ...props }) {
 // - faux-bold via text-shadow on active state
 
 const tabTriggerBase =
-  "relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground hover:shadow-[inset_0_0_0_1px_#EEEFF1] dark:hover:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:[text-shadow:0.015em_0_currentColor,-0.015em_0_currentColor] inline-flex items-center justify-center whitespace-nowrap border border-transparent transition-[color,box-shadow] outline-none disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0";
+  "relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:[text-shadow:0.015em_0_currentColor,-0.015em_0_currentColor] inline-flex items-center justify-center whitespace-nowrap border border-transparent transition-[color,box-shadow] outline-none disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0";
+
+const hoverShadow =
+  "shadow-[inset_0_0_0_1px_#EEEFF1] dark:shadow-[inset_0_0_0_1px_#232323]";
 
 function TabsNewTrigger({ className, ...props }) {
+  const [isHovered, setIsHovered] = React.useState(false);
+  const clicked = React.useRef(false);
+
   return (
     <TabsPrimitive.Trigger
       data-slot="tabs-new-trigger"
-      className={cn(tabTriggerBase, className)}
+      onPointerEnter={() => {
+        if (!clicked.current) setIsHovered(true);
+        clicked.current = false;
+      }}
+      onPointerLeave={() => setIsHovered(false)}
+      onPointerDown={() => {
+        clicked.current = true;
+        setIsHovered(false);
+      }}
+      className={cn(tabTriggerBase, isHovered && hoverShadow, className)}
       {...props}
     />
   );
@@ -65,7 +80,7 @@ function TabsNewSeparator({ className, ...props }) {
       data-slot="tabs-new-separator"
       className={cn(
         "w-px h-5 bg-[#EEEFF1] dark:bg-[#232323] mx-1 self-center flex-shrink-0",
-        className
+        className,
       )}
       {...props}
     />
@@ -81,7 +96,7 @@ function TabsNewContent({ className, ...props }) {
       className={cn(
         "flex-1 outline-none",
         "data-[state=inactive]:hidden",
-        className
+        className,
       )}
       {...props}
     />

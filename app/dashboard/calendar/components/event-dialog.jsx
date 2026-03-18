@@ -101,7 +101,8 @@ const providerLabels = {
 };
 
 export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
-  const { labels, getLabelForColor, updateLabels, updateLoading } = useCalendarColorLabels();
+  const { labels, getLabelForColor, updateLabels, updateLoading } =
+    useCalendarColorLabels();
   const isReadOnly = event?.isReadOnly || false;
 
   // State pour la modal d'édition/ajout d'étiquette
@@ -139,7 +140,7 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
     return (
       justSyncedIds.includes(connectionId) ||
       event?.externalCalendarLinks?.some(
-        (link) => link.calendarConnectionId === connectionId
+        (link) => link.calendarConnectionId === connectionId,
       )
     );
   };
@@ -172,7 +173,7 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
       setLocation(event.location || "");
       setColor(event.color || "#3B82F6");
       setEmailReminder(
-        event.emailReminder || { enabled: false, anticipation: null }
+        event.emailReminder || { enabled: false, anticipation: null },
       );
       setError(null);
       setJustSyncedIds([]);
@@ -270,7 +271,7 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
         endHours > EndHour
       ) {
         setError(
-          `L'heure sélectionnée doit être entre ${StartHour}:00 et ${EndHour}:00`
+          `L'heure sélectionnée doit être entre ${StartHour}:00 et ${EndHour}:00`,
         );
         return;
       }
@@ -283,9 +284,7 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
     }
 
     if (isBefore(end, start)) {
-      setError(
-        "La date de fin ne peut pas être antérieure à la date de début"
-      );
+      setError("La date de fin ne peut pas être antérieure à la date de début");
       return;
     }
 
@@ -333,559 +332,589 @@ export function EventDialog({ event, isOpen, onClose, onSave, onDelete }) {
 
   return (
     <>
-    <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent className="w-full sm:w-[460px] sm:max-w-[460px] flex flex-col p-0">
-        {/* Header */}
-        <SheetHeader className="px-6 pt-6 pb-0">
-          <div className="flex items-center gap-3">
-            <CalendarDays
-              className="h-5 w-5 shrink-0"
-              style={{ color }}
-            />
-            <div>
-              <SheetTitle className="text-base">
-                {isReadOnly
-                  ? "Détails de l'événement"
-                  : event?.id
-                    ? "Modifier l'événement"
-                    : "Nouvel événement"}
-              </SheetTitle>
-              <SheetDescription className="text-xs">
-                {isReadOnly
-                  ? `Synchronisé depuis ${eventSource === "google" ? "Google Calendar" : eventSource === "microsoft" ? "Microsoft Outlook" : eventSource === "apple" ? "Apple Calendar" : "un calendrier externe"}`
-                  : event?.id
-                    ? "Modifiez les détails ci-dessous"
-                    : "Remplissez les informations de votre événement"}
-              </SheetDescription>
+      <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
+        <SheetContent className="w-full sm:w-[460px] sm:max-w-[460px] flex flex-col p-0">
+          {/* Header */}
+          <SheetHeader className="px-6 pt-6 pb-0">
+            <div className="flex items-center gap-3">
+              <CalendarDays className="h-5 w-5 shrink-0" style={{ color }} />
+              <div>
+                <SheetTitle className="text-base">
+                  {isReadOnly
+                    ? "Détails de l'événement"
+                    : event?.id
+                      ? "Modifier l'événement"
+                      : "Nouvel événement"}
+                </SheetTitle>
+                <SheetDescription className="text-xs">
+                  {isReadOnly
+                    ? `Synchronisé depuis ${eventSource === "google" ? "Google Calendar" : eventSource === "microsoft" ? "Microsoft Outlook" : eventSource === "apple" ? "Apple Calendar" : "un calendrier externe"}`
+                    : event?.id
+                      ? "Modifiez les détails ci-dessous"
+                      : "Remplissez les informations de votre événement"}
+                </SheetDescription>
+              </div>
             </div>
-          </div>
-        </SheetHeader>
+          </SheetHeader>
 
-        <Separator className="mt-4" />
+          <Separator className="mt-4" />
 
-        {/* Error banner */}
-        {error && (
-          <div className="mx-6 mt-4 rounded-lg bg-destructive/10 border border-destructive/20 px-4 py-3 text-sm text-destructive">
-            {error}
-          </div>
-        )}
-
-        {/* Form content - scrollable */}
-        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
-          {/* Title */}
-          <div className="space-y-2">
-            <Input
-              id="title"
-              value={title}
-              disabled={isReadOnly}
-              onChange={(e) => {
-                setTitle(e.target.value);
-                if (fieldErrors.title) {
-                  setFieldErrors((prev) => ({ ...prev, title: null }));
-                }
-              }}
-              placeholder="Titre de l'événement"
-              className={cn(
-                "h-11 text-base font-medium border-0 border-b rounded-none px-0 shadow-none focus-visible:ring-0 focus-visible:border-primary",
-                fieldErrors.title && "border-red-500"
-              )}
-            />
-            {fieldErrors.title && (
-              <p className="text-xs text-red-500">{fieldErrors.title}</p>
-            )}
-          </div>
-
-          {/* Date & Time section */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Clock className="h-4 w-4" />
-              <span className="text-sm font-medium">Date et heure</span>
+          {/* Error banner */}
+          {error && (
+            <div className="mx-6 mt-4 rounded-lg bg-destructive/10 border border-destructive/20 px-4 py-3 text-sm text-destructive">
+              {error}
             </div>
+          )}
 
-            <div className="rounded-xl border bg-muted/30 p-4 space-y-3">
-              {/* Start */}
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground w-10 shrink-0">
-                  Début
-                </span>
-                <Popover
-                  open={!isReadOnly && startDateOpen}
-                  onOpenChange={setStartDateOpen}
-                >
-                  <PopoverTrigger asChild>
-                    <Button
-                      id="start-date"
-                      variant="outline"
-                      size="sm"
-                      className={cn(
-                        "h-8 flex-1 justify-start gap-2 font-normal text-xs",
-                        !startDate && "text-muted-foreground"
-                      )}
-                    >
-                      <RiCalendarLine size={14} className="text-muted-foreground" />
-                      {startDate
-                        ? format(startDate, "EEE d MMM yyyy", { locale: fr })
-                        : "Choisir"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-2" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={startDate}
-                      defaultMonth={startDate}
-                      locale={fr}
-                      onSelect={(date) => {
-                        if (date) {
-                          setStartDate(date);
-                          if (isBefore(endDate, date)) {
-                            setEndDate(date);
-                          }
-                          setError(null);
-                          setStartDateOpen(false);
-                        }
-                      }}
-                    />
-                  </PopoverContent>
-                </Popover>
-
-                {!allDay && (
-                  <Select
-                    value={startTime}
-                    onValueChange={setStartTime}
-                    disabled={isReadOnly}
-                  >
-                    <SelectTrigger className="h-8 w-24 text-xs">
-                      <SelectValue placeholder="Heure" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {timeOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+          {/* Form content - scrollable */}
+          <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+            {/* Title */}
+            <div className="space-y-2">
+              <Input
+                id="title"
+                value={title}
+                disabled={isReadOnly}
+                onChange={(e) => {
+                  setTitle(e.target.value);
+                  if (fieldErrors.title) {
+                    setFieldErrors((prev) => ({ ...prev, title: null }));
+                  }
+                }}
+                placeholder="Titre de l'événement"
+                className={cn(
+                  "h-11 text-base font-medium border-0 border-b rounded-none px-0 shadow-none focus-visible:ring-0 focus-visible:border-primary",
+                  fieldErrors.title && "border-red-500",
                 )}
-              </div>
-
-              {/* End */}
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground w-10 shrink-0">
-                  Fin
-                </span>
-                <Popover
-                  open={!isReadOnly && endDateOpen}
-                  onOpenChange={setEndDateOpen}
-                >
-                  <PopoverTrigger asChild>
-                    <Button
-                      id="end-date"
-                      variant="outline"
-                      size="sm"
-                      className={cn(
-                        "h-8 flex-1 justify-start gap-2 font-normal text-xs",
-                        !endDate && "text-muted-foreground"
-                      )}
-                    >
-                      <RiCalendarLine size={14} className="text-muted-foreground" />
-                      {endDate
-                        ? format(endDate, "EEE d MMM yyyy", { locale: fr })
-                        : "Choisir"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-2" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={endDate}
-                      defaultMonth={endDate}
-                      locale={fr}
-                      disabled={{ before: startDate }}
-                      onSelect={(date) => {
-                        if (date) {
-                          setEndDate(date);
-                          setError(null);
-                          setEndDateOpen(false);
-                        }
-                      }}
-                    />
-                  </PopoverContent>
-                </Popover>
-
-                {!allDay && (
-                  <Select
-                    value={endTime}
-                    onValueChange={setEndTime}
-                    disabled={isReadOnly}
-                  >
-                    <SelectTrigger className="h-8 w-24 text-xs">
-                      <SelectValue placeholder="Heure" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {timeOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-              </div>
-
-              {/* All day toggle */}
-              <div className="flex items-center gap-2 pt-1">
-                <Checkbox
-                  id="all-day"
-                  checked={allDay}
-                  disabled={isReadOnly}
-                  onCheckedChange={(checked) => setAllDay(checked === true)}
-                  className="h-3.5 w-3.5"
-                />
-                <Label htmlFor="all-day" className="text-xs text-muted-foreground cursor-pointer">
-                  Toute la journée
-                </Label>
-              </div>
-            </div>
-          </div>
-
-          {/* Location */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <MapPin className="h-4 w-4" />
-              <span className="text-sm font-medium">Lieu</span>
-            </div>
-            <Input
-              id="location"
-              value={location}
-              disabled={isReadOnly}
-              onChange={(e) => {
-                setLocation(e.target.value);
-                if (fieldErrors.location) {
-                  setFieldErrors((prev) => ({ ...prev, location: null }));
-                }
-              }}
-              placeholder="Ajouter un lieu"
-              className={cn(
-                "h-9 text-sm",
-                fieldErrors.location && "border-red-500"
+              />
+              {fieldErrors.title && (
+                <p className="text-xs text-red-500">{fieldErrors.title}</p>
               )}
-            />
-            {fieldErrors.location && (
-              <p className="text-xs text-red-500">{fieldErrors.location}</p>
-            )}
-          </div>
-
-          {/* Description */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <AlignLeft className="h-4 w-4" />
-              <span className="text-sm font-medium">Description</span>
             </div>
-            <Textarea
-              id="description"
-              value={description}
-              disabled={isReadOnly}
-              onChange={(e) => {
-                setDescription(e.target.value);
-                if (fieldErrors.description) {
-                  setFieldErrors((prev) => ({
-                    ...prev,
-                    description: null,
-                  }));
-                }
-              }}
-              placeholder="Ajouter une description"
-              rows={3}
-              className={cn(
-                "text-sm resize-none",
-                fieldErrors.description && "border-red-500"
-              )}
-            />
-            {fieldErrors.description && (
-              <p className="text-xs text-red-500">
-                {fieldErrors.description}
-              </p>
-            )}
-          </div>
 
-          {/* Color label */}
-          {!isReadOnly && (
+            {/* Date & Time section */}
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-muted-foreground">
-                <Tag className="h-4 w-4" />
-                <span className="text-sm font-medium">Etiquette</span>
+                <Clock className="h-4 w-4" />
+                <span className="text-sm font-medium">Date et heure</span>
               </div>
-              <div className="flex flex-wrap items-start gap-2">
-                {labels.map((entry, index) => (
-                  <div key={index} className="flex flex-col items-center gap-1">
-                    <button
-                      type="button"
-                      onClick={() => setColor(entry.color)}
-                      className={cn(
-                        "flex flex-col items-center gap-1 rounded-lg px-1.5 py-1.5 transition-all",
-                        color === entry.color ? "bg-muted" : "hover:bg-muted/50"
-                      )}
-                    >
-                      <span
+
+              <div className="rounded-xl border bg-muted/30 p-4 space-y-3">
+                {/* Start */}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground w-10 shrink-0">
+                    Début
+                  </span>
+                  <Popover
+                    open={!isReadOnly && startDateOpen}
+                    onOpenChange={setStartDateOpen}
+                  >
+                    <PopoverTrigger asChild>
+                      <Button
+                        id="start-date"
+                        variant="outline"
+                        size="sm"
                         className={cn(
-                          "h-7 w-7 rounded-full transition-all",
-                          color === entry.color
-                            ? "ring-2 ring-offset-2 ring-offset-background"
-                            : "hover:scale-110"
+                          "h-8 flex-1 justify-start gap-2 font-normal text-xs",
+                          !startDate && "text-muted-foreground",
                         )}
-                        style={{
-                          backgroundColor: entry.color,
-                          ...(color === entry.color ? { '--tw-ring-color': entry.color + '4D' } : {}),
+                      >
+                        <RiCalendarLine
+                          size={14}
+                          className="text-muted-foreground"
+                        />
+                        {startDate
+                          ? format(startDate, "EEE d MMM yyyy", { locale: fr })
+                          : "Choisir"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-2" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={startDate}
+                        defaultMonth={startDate}
+                        locale={fr}
+                        onSelect={(date) => {
+                          if (date) {
+                            setStartDate(date);
+                            if (isBefore(endDate, date)) {
+                              setEndDate(date);
+                            }
+                            setError(null);
+                            setStartDateOpen(false);
+                          }
                         }}
                       />
-                      <span className={cn(
-                        "text-[10px] leading-tight max-w-[4.5rem] truncate",
-                        color === entry.color ? "text-foreground font-medium" : "text-muted-foreground"
-                      )}>
-                        {entry.label}
-                      </span>
-                    </button>
+                    </PopoverContent>
+                  </Popover>
+
+                  {!allDay && (
+                    <Select
+                      value={startTime}
+                      onValueChange={setStartTime}
+                      disabled={isReadOnly}
+                    >
+                      <SelectTrigger className="h-8 w-24 text-xs">
+                        <SelectValue placeholder="Heure" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {timeOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
+
+                {/* End */}
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground w-10 shrink-0">
+                    Fin
+                  </span>
+                  <Popover
+                    open={!isReadOnly && endDateOpen}
+                    onOpenChange={setEndDateOpen}
+                  >
+                    <PopoverTrigger asChild>
+                      <Button
+                        id="end-date"
+                        variant="outline"
+                        size="sm"
+                        className={cn(
+                          "h-8 flex-1 justify-start gap-2 font-normal text-xs",
+                          !endDate && "text-muted-foreground",
+                        )}
+                      >
+                        <RiCalendarLine
+                          size={14}
+                          className="text-muted-foreground"
+                        />
+                        {endDate
+                          ? format(endDate, "EEE d MMM yyyy", { locale: fr })
+                          : "Choisir"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-2" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={endDate}
+                        defaultMonth={endDate}
+                        locale={fr}
+                        disabled={{ before: startDate }}
+                        onSelect={(date) => {
+                          if (date) {
+                            setEndDate(date);
+                            setError(null);
+                            setEndDateOpen(false);
+                          }
+                        }}
+                      />
+                    </PopoverContent>
+                  </Popover>
+
+                  {!allDay && (
+                    <Select
+                      value={endTime}
+                      onValueChange={setEndTime}
+                      disabled={isReadOnly}
+                    >
+                      <SelectTrigger className="h-8 w-24 text-xs">
+                        <SelectValue placeholder="Heure" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {timeOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
+
+                {/* All day toggle */}
+                <div className="flex items-center gap-2 pt-1">
+                  <Checkbox
+                    id="all-day"
+                    checked={allDay}
+                    disabled={isReadOnly}
+                    onCheckedChange={(checked) => setAllDay(checked === true)}
+                    className="h-3.5 w-3.5"
+                  />
+                  <Label
+                    htmlFor="all-day"
+                    className="text-xs text-muted-foreground cursor-pointer"
+                  >
+                    Toute la journée
+                  </Label>
+                </div>
+              </div>
+            </div>
+
+            {/* Location */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <MapPin className="h-4 w-4" />
+                <span className="text-sm font-medium">Lieu</span>
+              </div>
+              <Input
+                id="location"
+                value={location}
+                disabled={isReadOnly}
+                onChange={(e) => {
+                  setLocation(e.target.value);
+                  if (fieldErrors.location) {
+                    setFieldErrors((prev) => ({ ...prev, location: null }));
+                  }
+                }}
+                placeholder="Ajouter un lieu"
+                className={cn(
+                  "h-9 text-sm",
+                  fieldErrors.location && "border-red-500",
+                )}
+              />
+              {fieldErrors.location && (
+                <p className="text-xs text-red-500">{fieldErrors.location}</p>
+              )}
+            </div>
+
+            {/* Description */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <AlignLeft className="h-4 w-4" />
+                <span className="text-sm font-medium">Description</span>
+              </div>
+              <Textarea
+                id="description"
+                value={description}
+                disabled={isReadOnly}
+                onChange={(e) => {
+                  setDescription(e.target.value);
+                  if (fieldErrors.description) {
+                    setFieldErrors((prev) => ({
+                      ...prev,
+                      description: null,
+                    }));
+                  }
+                }}
+                placeholder="Ajouter une description"
+                rows={3}
+                className={cn(
+                  "text-sm resize-none",
+                  fieldErrors.description && "border-red-500",
+                )}
+              />
+              {fieldErrors.description && (
+                <p className="text-xs text-red-500">
+                  {fieldErrors.description}
+                </p>
+              )}
+            </div>
+
+            {/* Color label */}
+            {!isReadOnly && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Tag className="h-4 w-4" />
+                  <span className="text-sm font-medium">Etiquette</span>
+                </div>
+                <div className="flex flex-wrap items-start gap-2">
+                  {labels.map((entry, index) => (
+                    <div
+                      key={index}
+                      className="flex flex-col items-center gap-1"
+                    >
+                      <button
+                        type="button"
+                        onClick={() => setColor(entry.color)}
+                        className={cn(
+                          "flex flex-col items-center gap-1 rounded-lg px-1.5 py-1.5 transition-all",
+                          color === entry.color
+                            ? "bg-muted"
+                            : "hover:bg-muted/50",
+                        )}
+                      >
+                        <span
+                          className={cn(
+                            "h-7 w-7 rounded-full transition-all",
+                            color === entry.color
+                              ? "ring-2 ring-offset-2 ring-offset-background"
+                              : "hover:scale-110",
+                          )}
+                          style={{
+                            backgroundColor: entry.color,
+                            ...(color === entry.color
+                              ? { "--tw-ring-color": entry.color + "4D" }
+                              : {}),
+                          }}
+                        />
+                        <span
+                          className={cn(
+                            "text-[10px] leading-tight max-w-[4.5rem] truncate",
+                            color === entry.color
+                              ? "text-foreground font-medium"
+                              : "text-muted-foreground",
+                          )}
+                        >
+                          {entry.label}
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setLabelEditIndex(index);
+                          setLabelDialogColor(entry.color);
+                          setLabelDialogText(entry.label);
+                          setLabelDialogOpen(true);
+                        }}
+                        className="p-0.5 rounded hover:bg-muted text-muted-foreground/40 hover:text-foreground transition-colors"
+                      >
+                        <Pencil className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                  {/* Bouton ajouter */}
+                  {labels.length < 20 && (
                     <button
                       type="button"
                       onClick={() => {
-                        setLabelEditIndex(index);
-                        setLabelDialogColor(entry.color);
-                        setLabelDialogText(entry.label);
+                        setLabelEditIndex(null);
+                        setLabelDialogColor("#3B82F6");
+                        setLabelDialogText("");
                         setLabelDialogOpen(true);
                       }}
-                      className="p-0.5 rounded hover:bg-muted text-muted-foreground/40 hover:text-foreground transition-colors"
+                      className="flex flex-col items-center gap-1 rounded-lg px-1.5 py-1.5 hover:bg-muted/50 transition-all"
                     >
-                      <Pencil className="h-3 w-3" />
+                      <span className="h-7 w-7 rounded-full border-2 border-dashed border-muted-foreground/30 flex items-center justify-center">
+                        <Plus className="h-4 w-4 text-muted-foreground/50" />
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">
+                        Ajouter
+                      </span>
                     </button>
-                  </div>
-                ))}
-                {/* Bouton ajouter */}
-                {labels.length < 20 && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setLabelEditIndex(null);
-                      setLabelDialogColor("#3B82F6");
-                      setLabelDialogText("");
-                      setLabelDialogOpen(true);
-                    }}
-                    className="flex flex-col items-center gap-1 rounded-lg px-1.5 py-1.5 hover:bg-muted/50 transition-all"
-                  >
-                    <span className="h-7 w-7 rounded-full border-2 border-dashed border-muted-foreground/30 flex items-center justify-center">
-                      <Plus className="h-4 w-4 text-muted-foreground/50" />
-                    </span>
-                    <span className="text-[10px] text-muted-foreground">Ajouter</span>
-                  </button>
-                )}
+                  )}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Email reminder */}
-          {!isReadOnly && (
-            <EmailReminderToggle
-              value={emailReminder}
-              onChange={setEmailReminder}
-            />
-          )}
+            {/* Email reminder */}
+            {!isReadOnly && (
+              <EmailReminderToggle
+                value={emailReminder}
+                onChange={setEmailReminder}
+                allDay={allDay}
+              />
+            )}
 
-          {/* Calendar sync section */}
-          {showSyncSection && (
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Send className="h-4 w-4" />
-                <span className="text-sm font-medium">
-                  Synchroniser avec un calendrier
-                </span>
-              </div>
-              <div className="space-y-2">
-                {activeConnections.map((connection) => {
-                  const synced = isAlreadySynced(connection.id);
-                  const isPushing = pushingConnectionId === connection.id;
+            {/* Calendar sync section */}
+            {showSyncSection && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Send className="h-4 w-4" />
+                  <span className="text-sm font-medium">
+                    Synchroniser avec un calendrier
+                  </span>
+                </div>
+                <div className="space-y-2">
+                  {activeConnections.map((connection) => {
+                    const synced = isAlreadySynced(connection.id);
+                    const isPushing = pushingConnectionId === connection.id;
 
-                  return (
-                    <div
-                      key={connection.id}
-                      className="flex items-center justify-between rounded-xl border bg-muted/30 px-4 py-3"
-                    >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <span className="text-muted-foreground shrink-0">
-                          {providerIcons[connection.provider]}
-                        </span>
-                        <span className="text-sm truncate">
-                          {connection.accountEmail ||
-                            connection.accountName ||
-                            providerLabels[connection.provider]}
-                        </span>
+                    return (
+                      <div
+                        key={connection.id}
+                        className="flex items-center justify-between rounded-xl border bg-muted/30 px-4 py-3"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <span className="text-muted-foreground shrink-0">
+                            {providerIcons[connection.provider]}
+                          </span>
+                          <span className="text-sm truncate">
+                            {connection.accountEmail ||
+                              connection.accountName ||
+                              providerLabels[connection.provider]}
+                          </span>
+                        </div>
+                        {synced ? (
+                          <span className="inline-flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400 shrink-0">
+                            <RiCheckLine size={14} />
+                            Synchronisé
+                          </span>
+                        ) : connection.autoSync ? (
+                          <span className="inline-flex items-center gap-1 text-xs text-muted-foreground shrink-0">
+                            <RiCheckLine size={14} />
+                            Sync. auto
+                          </span>
+                        ) : (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={pushLoading}
+                            onClick={() => handlePushEvent(connection.id)}
+                            className="shrink-0 h-7 text-xs"
+                          >
+                            {isPushing ? (
+                              <RiLoader4Line
+                                size={14}
+                                className="animate-spin"
+                              />
+                            ) : (
+                              "Envoyer"
+                            )}
+                          </Button>
+                        )}
                       </div>
-                      {synced ? (
-                        <span className="inline-flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400 shrink-0">
-                          <RiCheckLine size={14} />
-                          Synchronisé
-                        </span>
-                      ) : connection.autoSync ? (
-                        <span className="inline-flex items-center gap-1 text-xs text-muted-foreground shrink-0">
-                          <RiCheckLine size={14} />
-                          Sync. auto
-                        </span>
-                      ) : (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          disabled={pushLoading}
-                          onClick={() => handlePushEvent(connection.id)}
-                          className="shrink-0 h-7 text-xs"
-                        >
-                          {isPushing ? (
-                            <RiLoader4Line
-                              size={14}
-                              className="animate-spin"
-                            />
-                          ) : (
-                            "Envoyer"
-                          )}
-                        </Button>
-                      )}
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
 
-        {/* Footer */}
-        <SheetFooter className="mt-0 px-6 py-0">
-          <Separator className="mb-4" />
-          <div className="pb-4">
-          {isReadOnly ? (
-            <div className="flex w-full justify-end">
-              <Button variant="outline" onClick={onClose}>
-                Fermer
+          {/* Footer */}
+          <SheetFooter className="mt-0 px-6 py-0">
+            <Separator className="mb-4" />
+            <div className="pb-4">
+              {isReadOnly ? (
+                <div className="flex w-full justify-end">
+                  <Button variant="outline" onClick={onClose}>
+                    Fermer
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex w-full items-center justify-between">
+                  {event?.id ? (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleDelete}
+                      className="text-destructive hover:text-destructive hover:bg-destructive/10 gap-1.5"
+                    >
+                      <RiDeleteBinLine size={16} />
+                      Supprimer
+                    </Button>
+                  ) : (
+                    <div />
+                  )}
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" onClick={onClose}>
+                      Annuler
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="bg-[#5a50ff] hover:bg-[#5a50ff]/90"
+                      onClick={handleSave}
+                    >
+                      {event?.id ? "Enregistrer" : "Créer"}
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
+
+      {/* Modal d'ajout / édition d'étiquette */}
+      <Dialog open={labelDialogOpen} onOpenChange={setLabelDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {labelEditIndex !== null
+                ? "Modifier l'étiquette"
+                : "Nouvelle étiquette"}
+            </DialogTitle>
+            <DialogDescription>
+              {labelEditIndex !== null
+                ? "Modifiez le nom ou la couleur de cette étiquette."
+                : "Choisissez une couleur et donnez un nom à cette étiquette."}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">
+                Couleur
+              </label>
+              <ColorPicker
+                color={labelDialogColor}
+                onChange={setLabelDialogColor}
+                inline
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Nom</label>
+              <Input
+                value={labelDialogText}
+                onChange={(e) => setLabelDialogText(e.target.value)}
+                placeholder="Ex: Rendez-vous, Deadline, Personnel..."
+                maxLength={30}
+                autoFocus
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="flex-row justify-between sm:justify-between">
+            {labelEditIndex !== null && labels.length > 1 ? (
+              <Button
+                variant="ghost"
+                onClick={async () => {
+                  const newLabels = labels
+                    .filter((_, i) => i !== labelEditIndex)
+                    .map(({ color, label }) => ({ color, label }));
+                  await updateLabels(newLabels);
+                  setLabelDialogOpen(false);
+                }}
+                disabled={updateLoading}
+                className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20"
+              >
+                <Trash2 className="h-4 w-4 mr-1" />
+                Supprimer
+              </Button>
+            ) : (
+              <div />
+            )}
+            <div className="flex gap-2">
+              <Button
+                variant="ghost"
+                onClick={() => setLabelDialogOpen(false)}
+                disabled={updateLoading}
+              >
+                Annuler
+              </Button>
+              <Button
+                disabled={updateLoading || !labelDialogText.trim()}
+                onClick={async () => {
+                  const trimmed = labelDialogText.trim();
+                  if (!trimmed) return;
+                  let newLabels;
+                  if (labelEditIndex !== null) {
+                    newLabels = labels.map((entry, i) =>
+                      i === labelEditIndex
+                        ? { color: labelDialogColor, label: trimmed }
+                        : { color: entry.color, label: entry.label },
+                    );
+                  } else {
+                    newLabels = [
+                      ...labels.map(({ color, label }) => ({ color, label })),
+                      { color: labelDialogColor, label: trimmed },
+                    ];
+                  }
+                  await updateLabels(newLabels);
+                  setLabelDialogOpen(false);
+                }}
+              >
+                {updateLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : null}
+                {labelEditIndex !== null ? "Enregistrer" : "Ajouter"}
               </Button>
             </div>
-          ) : (
-            <div className="flex w-full items-center justify-between">
-              {event?.id ? (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleDelete}
-                  className="text-destructive hover:text-destructive hover:bg-destructive/10 gap-1.5"
-                >
-                  <RiDeleteBinLine size={16} />
-                  Supprimer
-                </Button>
-              ) : (
-                <div />
-              )}
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={onClose}>
-                  Annuler
-                </Button>
-                <Button
-                  size="sm"
-                  className="bg-[#5a50ff] hover:bg-[#5a50ff]/90"
-                  onClick={handleSave}
-                >
-                  {event?.id ? "Enregistrer" : "Créer"}
-                </Button>
-              </div>
-            </div>
-          )}
-          </div>
-        </SheetFooter>
-      </SheetContent>
-    </Sheet>
-
-    {/* Modal d'ajout / édition d'étiquette */}
-    <Dialog open={labelDialogOpen} onOpenChange={setLabelDialogOpen}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>
-            {labelEditIndex !== null ? "Modifier l'étiquette" : "Nouvelle étiquette"}
-          </DialogTitle>
-          <DialogDescription>
-            {labelEditIndex !== null
-              ? "Modifiez le nom ou la couleur de cette étiquette."
-              : "Choisissez une couleur et donnez un nom à cette étiquette."}
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-4 py-2">
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">Couleur</label>
-            <ColorPicker
-              color={labelDialogColor}
-              onChange={setLabelDialogColor}
-              inline
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">Nom</label>
-            <Input
-              value={labelDialogText}
-              onChange={(e) => setLabelDialogText(e.target.value)}
-              placeholder="Ex: Rendez-vous, Deadline, Personnel..."
-              maxLength={30}
-              autoFocus
-            />
-          </div>
-        </div>
-
-        <DialogFooter className="flex-row justify-between sm:justify-between">
-          {labelEditIndex !== null && labels.length > 1 ? (
-            <Button
-              variant="ghost"
-              onClick={async () => {
-                const newLabels = labels
-                  .filter((_, i) => i !== labelEditIndex)
-                  .map(({ color, label }) => ({ color, label }));
-                await updateLabels(newLabels);
-                setLabelDialogOpen(false);
-              }}
-              disabled={updateLoading}
-              className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20"
-            >
-              <Trash2 className="h-4 w-4 mr-1" />
-              Supprimer
-            </Button>
-          ) : (
-            <div />
-          )}
-          <div className="flex gap-2">
-            <Button variant="ghost" onClick={() => setLabelDialogOpen(false)} disabled={updateLoading}>
-              Annuler
-            </Button>
-            <Button
-              disabled={updateLoading || !labelDialogText.trim()}
-              onClick={async () => {
-                const trimmed = labelDialogText.trim();
-                if (!trimmed) return;
-                let newLabels;
-                if (labelEditIndex !== null) {
-                  newLabels = labels.map((entry, i) =>
-                    i === labelEditIndex
-                      ? { color: labelDialogColor, label: trimmed }
-                      : { color: entry.color, label: entry.label }
-                  );
-                } else {
-                  newLabels = [
-                    ...labels.map(({ color, label }) => ({ color, label })),
-                    { color: labelDialogColor, label: trimmed },
-                  ];
-                }
-                await updateLabels(newLabels);
-                setLabelDialogOpen(false);
-              }}
-            >
-              {updateLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-              {labelEditIndex !== null ? "Enregistrer" : "Ajouter"}
-            </Button>
-          </div>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

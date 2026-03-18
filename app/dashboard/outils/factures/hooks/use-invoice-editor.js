@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useCallback, useState, useMemo, useRef } from "react";
-import { useForm, FormProvider, useWatch } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { toast } from "@/src/components/ui/sonner";
 import { useErrorHandler } from "@/src/hooks/useErrorHandler";
@@ -13,6 +13,7 @@ import {
 } from "@/src/graphql/invoiceQueries";
 import { useInvoiceNumber } from "./use-invoice-number";
 import { useUser } from "@/src/lib/auth/hooks";
+import { formatLocalDate } from "@/src/utils/dateFormatter";
 import {
   updateOrganization,
   getActiveOrganization,
@@ -32,9 +33,11 @@ export function useInvoiceEditor({
   const [internalOrganization, setInternalOrganization] = useState(null);
   useEffect(() => {
     if (!organizationProp) {
-      getActiveOrganization().then(org => {
-        if (org) setInternalOrganization(org);
-      }).catch(() => {});
+      getActiveOrganization()
+        .then((org) => {
+          if (org) setInternalOrganization(org);
+        })
+        .catch(() => {});
     }
   }, [organizationProp]);
   const organization = organizationProp || internalOrganization;
@@ -55,7 +58,9 @@ export function useInvoiceEditor({
     useInvoice(invoiceId);
 
   // Prefix state pour le filtrage du numéro par préfixe
-  const [currentPrefix, setCurrentPrefix] = useState(organization?.invoicePrefix || "");
+  const [currentPrefix, setCurrentPrefix] = useState(
+    organization?.invoicePrefix || "",
+  );
 
   // Use the invoice numbering hook with prefix filtering
   const {
@@ -116,7 +121,7 @@ export function useInvoiceEditor({
     },
   });
 
-  const { watch, setValue, getValues, formState, reset, trigger } = form;
+  const { watch, setValue, getValues, formState, reset } = form;
   const { isDirty, errors } = formState;
 
   // Synchroniser le préfixe du formulaire avec le state pour le filtrage du numéro
@@ -154,11 +159,11 @@ export function useInvoiceEditor({
   // Créer des valeurs stables pour éviter les boucles infinies
   const shippingData = useMemo(
     () => JSON.stringify(watchedShipping || {}),
-    [watchedShipping]
+    [watchedShipping],
   );
   const itemsDataString = useMemo(
     () => JSON.stringify(watchedItems || []),
-    [watchedItems]
+    [watchedItems],
   );
 
   // Fonction pour marquer un champ comme en cours d'édition
@@ -496,7 +501,7 @@ export function useInvoiceEditor({
 
             if (fieldErrors.length > 0) {
               invalidCustomFields.push(
-                `Champ personnalisé ${index + 1}: ${fieldErrors.join(", ")}`
+                `Champ personnalisé ${index + 1}: ${fieldErrors.join(", ")}`,
               );
               customFieldsWithErrors.push({ index, errors: fieldErrors });
             }
@@ -568,7 +573,7 @@ export function useInvoiceEditor({
 
             // Vérifier si l'utilisateur a interagi avec cet article (blur sur un champ)
             const hasFieldBeenBlurred = Array.from(activeTouchedFields).some(
-              (field) => field.startsWith(`${index}-`)
+              (field) => field.startsWith(`${index}-`),
             );
 
             // Vérifier si l'article contient des données saisies (pas juste les valeurs par défaut)
@@ -590,23 +595,29 @@ export function useInvoiceEditor({
 
             // Valider les champs — uniquement ceux avec lesquels l'utilisateur a interagi
             const isFieldTouched = (fieldName) =>
-              activeTouchedFields.has(`${index}-${fieldName}`) || hasUserContent;
+              activeTouchedFields.has(`${index}-${fieldName}`) ||
+              hasUserContent;
 
             // Valider la description (obligatoire) — seulement si le champ a été touché
-            if (isFieldTouched("description") && (!item.description || item.description.trim() === "")) {
+            if (
+              isFieldTouched("description") &&
+              (!item.description || item.description.trim() === "")
+            ) {
               itemErrors.push("description manquante");
               fields.push("description");
             } else if (item.description && item.description.trim() !== "") {
               if (item.description.length > 2000) {
-                itemErrors.push("description trop longue (max 2000 caractères)");
+                itemErrors.push(
+                  "description trop longue (max 2000 caractères)",
+                );
                 fields.push("description");
               } else if (
                 !/^[A-Za-zÀ-ÖØ-öø-ÿ0-9\s\.,;:!?@#$%&*()\[\]\-_+='"/\\]+$/.test(
-                  item.description
+                  item.description,
                 )
               ) {
                 itemErrors.push(
-                  "description contient des caractères non autorisés"
+                  "description contient des caractères non autorisés",
                 );
                 fields.push("description");
               }
@@ -677,7 +688,7 @@ export function useInvoiceEditor({
 
             if (itemErrors.length > 0) {
               invalidItems.push(
-                `Article ${index + 1}: ${itemErrors.join(", ")}`
+                `Article ${index + 1}: ${itemErrors.join(", ")}`,
               );
               itemsWithErrors.push({ index, fields });
             }
@@ -760,7 +771,6 @@ export function useInvoiceEditor({
 
       return prevErrors;
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [watchedDiscount, watchedDiscountType, isFormInitialized]);
 
   // Re-valider quand la livraison change (avec debounce)
@@ -881,7 +891,7 @@ export function useInvoiceEditor({
         setIsFormInitialized(true);
       }, 100);
     }
-  }, [existingInvoice, mode, reset]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [existingInvoice, mode, reset]);
 
   // Set next invoice number for new invoices and draft editing
   // Source unique de vérité pour le numéro de facture
@@ -891,18 +901,35 @@ export function useInvoiceEditor({
     const isDraftEdit = mode === "edit" && existingInvoice?.status === "DRAFT";
     if (mode !== "create" && !isDraftEdit) return;
 
-    const formattedNumber = String(nextInvoiceNumber).padStart(4, '0');
+    const formattedNumber = String(nextInvoiceNumber).padStart(4, "0");
     const currentNumber = getValues("number");
 
     if (hasDocumentsForPrefix) {
       // Préfixe existant → toujours forcer le numéro séquentiel
-      setValue("number", formattedNumber, { shouldValidate: false, shouldDirty: false });
-    } else if (!currentNumber || currentNumber.startsWith("DRAFT-") || currentNumber === "0001") {
+      setValue("number", formattedNumber, {
+        shouldValidate: false,
+        shouldDirty: false,
+      });
+    } else if (
+      !currentNumber ||
+      currentNumber.startsWith("DRAFT-") ||
+      currentNumber === "0001"
+    ) {
       // Nouveau préfixe → utiliser invoiceStartNumber de l'org si disponible, sinon "0001"
       const startNumber = organization?.invoiceStartNumber || formattedNumber;
-      setValue("number", startNumber, { shouldValidate: false, shouldDirty: false });
+      setValue("number", startNumber, {
+        shouldValidate: false,
+        shouldDirty: false,
+      });
     }
-  }, [mode, isFormInitialized, nextInvoiceNumber, numberLoading, hasDocumentsForPrefix, existingInvoice?.status]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [
+    mode,
+    isFormInitialized,
+    nextInvoiceNumber,
+    numberLoading,
+    hasDocumentsForPrefix,
+    existingInvoice?.status,
+  ]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-remplir companyInfo avec les données de l'organisation
   useEffect(() => {
@@ -943,15 +970,21 @@ export function useInvoiceEditor({
       // Utiliser les couleurs spécifiques aux factures avec fallback vers les couleurs globales
       setValue(
         "appearance.textColor",
-        organization.invoiceTextColor || organization.documentTextColor || "#000000"
+        organization.invoiceTextColor ||
+          organization.documentTextColor ||
+          "#000000",
       );
       setValue(
         "appearance.headerTextColor",
-        organization.invoiceHeaderTextColor || organization.documentHeaderTextColor || "#ffffff"
+        organization.invoiceHeaderTextColor ||
+          organization.documentHeaderTextColor ||
+          "#ffffff",
       );
       setValue(
         "appearance.headerBgColor",
-        organization.invoiceHeaderBgColor || organization.documentHeaderBgColor || "#5b50FF"
+        organization.invoiceHeaderBgColor ||
+          organization.documentHeaderBgColor ||
+          "#5b50FF",
       );
 
       // Utiliser les notes et conditions spécifiques aux factures
@@ -959,23 +992,36 @@ export function useInvoiceEditor({
         "headerNotes",
         organization.invoiceHeaderNotes ||
           organization.documentHeaderNotes ||
-          ""
+          "",
       );
       setValue(
         "footerNotes",
         organization.invoiceFooterNotes ||
           organization.documentFooterNotes ||
-          ""
+          "",
       );
       setValue(
         "termsAndConditions",
         organization.invoiceTermsAndConditions ||
           organization.documentTermsAndConditions ||
-          ""
+          "",
       );
       setValue("showBankDetails", organization.showBankDetails || false);
+      // Nom du bénéficiaire (pour auto-entrepreneurs)
+      setValue(
+        "beneficiaryNameType",
+        organization.beneficiaryNameType ||
+          (organization.legalForm === "Auto-entrepreneur"
+            ? "fullName"
+            : "companyName"),
+      );
+      setValue("userName", session?.user?.name || "");
       // Synchroniser les bankDetails au niveau top-level (utilisé par la preview)
-      if (organization.bankIban || organization.bankBic || organization.bankName) {
+      if (
+        organization.bankIban ||
+        organization.bankBic ||
+        organization.bankName
+      ) {
         setValue("bankDetails", {
           iban: organization.bankIban || "",
           bic: organization.bankBic || "",
@@ -984,7 +1030,7 @@ export function useInvoiceEditor({
       }
       setValue(
         "clientPositionRight",
-        organization.invoiceClientPositionRight || false
+        organization.invoiceClientPositionRight || false,
       );
 
       // Charger le préfixe depuis l'organisation
@@ -1025,7 +1071,7 @@ export function useInvoiceEditor({
       if (currentValue === undefined || currentValue === null) {
         setValue(
           "clientPositionRight",
-          organization.invoiceClientPositionRight || false
+          organization.invoiceClientPositionRight || false,
         );
       }
     }
@@ -1037,14 +1083,26 @@ export function useInvoiceEditor({
       const companyInfo = formData.companyInfo;
       if (companyInfo) {
         setValue("companyName", companyInfo.name || "", { shouldDirty: false });
-        setValue("companyEmail", companyInfo.email || "", { shouldDirty: false });
-        setValue("companyPhone", companyInfo.phone || "", { shouldDirty: false });
+        setValue("companyEmail", companyInfo.email || "", {
+          shouldDirty: false,
+        });
+        setValue("companyPhone", companyInfo.phone || "", {
+          shouldDirty: false,
+        });
         setValue("website", companyInfo.website || "", { shouldDirty: false });
         if (typeof companyInfo.address === "object" && companyInfo.address) {
-          setValue("addressStreet", companyInfo.address.street || "", { shouldDirty: false });
-          setValue("addressCity", companyInfo.address.city || "", { shouldDirty: false });
-          setValue("addressZipCode", companyInfo.address.postalCode || "", { shouldDirty: false });
-          setValue("addressCountry", companyInfo.address.country || "France", { shouldDirty: false });
+          setValue("addressStreet", companyInfo.address.street || "", {
+            shouldDirty: false,
+          });
+          setValue("addressCity", companyInfo.address.city || "", {
+            shouldDirty: false,
+          });
+          setValue("addressZipCode", companyInfo.address.postalCode || "", {
+            shouldDirty: false,
+          });
+          setValue("addressCountry", companyInfo.address.country || "France", {
+            shouldDirty: false,
+          });
         }
       }
     }
@@ -1052,15 +1110,15 @@ export function useInvoiceEditor({
 
   // Pre-fill items from Kanban conversion (via sessionStorage)
   useEffect(() => {
-    if (mode === 'create' && isFormInitialized) {
-      const kanbanItems = sessionStorage.getItem('kanbanInvoiceItems');
+    if (mode === "create" && isFormInitialized) {
+      const kanbanItems = sessionStorage.getItem("kanbanInvoiceItems");
       if (kanbanItems) {
         try {
           const items = JSON.parse(kanbanItems);
-          setValue('items', items);
-          sessionStorage.removeItem('kanbanInvoiceItems');
-        } catch (e) {
-          sessionStorage.removeItem('kanbanInvoiceItems');
+          setValue("items", items);
+          sessionStorage.removeItem("kanbanInvoiceItems");
+        } catch {
+          sessionStorage.removeItem("kanbanInvoiceItems");
         }
       }
     }
@@ -1068,43 +1126,53 @@ export function useInvoiceEditor({
 
   // Pre-fill from Purchase Order conversion (via sessionStorage)
   useEffect(() => {
-    if (mode === 'create' && isFormInitialized) {
-      const poData = sessionStorage.getItem('purchaseOrderInvoiceData');
+    if (mode === "create" && isFormInitialized) {
+      const poData = sessionStorage.getItem("purchaseOrderInvoiceData");
       if (poData) {
         try {
           const po = JSON.parse(poData);
-          sessionStorage.removeItem('purchaseOrderInvoiceData');
+          sessionStorage.removeItem("purchaseOrderInvoiceData");
           sourcePurchaseOrderIdRef.current = po.sourcePurchaseOrderId;
 
-          if (po.client) setValue('client', po.client);
+          if (po.client) setValue("client", po.client);
           if (po.items?.length > 0) {
-            setValue('items', po.items.map(item => ({
-              description: item.description || '',
-              quantity: item.quantity || 1,
-              unitPrice: item.unitPrice || 0,
-              vatRate: item.vatRate ?? 0,
-              unit: item.unit || '',
-              discount: item.discount || 0,
-              discountType: item.discountType || 'PERCENTAGE',
-              details: item.details || '',
-              vatExemptionText: item.vatExemptionText || '',
-              progressPercentage: item.progressPercentage ?? 100,
-            })));
+            setValue(
+              "items",
+              po.items.map((item) => ({
+                description: item.description || "",
+                quantity: item.quantity || 1,
+                unitPrice: item.unitPrice || 0,
+                vatRate: item.vatRate ?? 0,
+                unit: item.unit || "",
+                discount: item.discount || 0,
+                discountType: item.discountType || "PERCENTAGE",
+                details: item.details || "",
+                vatExemptionText: item.vatExemptionText || "",
+                progressPercentage: item.progressPercentage ?? 100,
+              })),
+            );
           }
-          if (po.discount != null) setValue('discount', po.discount);
-          if (po.discountType) setValue('discountType', po.discountType);
+          if (po.discount != null) setValue("discount", po.discount);
+          if (po.discountType) setValue("discountType", po.discountType);
           if (po.customFields?.length > 0) {
-            setValue('customFields', po.customFields.map(cf => ({
-              name: cf.key || cf.name || '', value: cf.value || '',
-            })));
+            setValue(
+              "customFields",
+              po.customFields.map((cf) => ({
+                name: cf.key || cf.name || "",
+                value: cf.value || "",
+              })),
+            );
           }
-          if (po.shipping) setValue('shipping', po.shipping);
-          if (po.purchaseOrderNumber) setValue('purchaseOrderNumber', po.purchaseOrderNumber);
-          if (po.isReverseCharge != null) setValue('isReverseCharge', po.isReverseCharge);
-          if (po.retenueGarantie != null) setValue('retenueGarantie', po.retenueGarantie);
-          if (po.escompte != null) setValue('escompte', po.escompte);
-        } catch (e) {
-          sessionStorage.removeItem('purchaseOrderInvoiceData');
+          if (po.shipping) setValue("shipping", po.shipping);
+          if (po.purchaseOrderNumber)
+            setValue("purchaseOrderNumber", po.purchaseOrderNumber);
+          if (po.isReverseCharge != null)
+            setValue("isReverseCharge", po.isReverseCharge);
+          if (po.retenueGarantie != null)
+            setValue("retenueGarantie", po.retenueGarantie);
+          if (po.escompte != null) setValue("escompte", po.escompte);
+        } catch {
+          sessionStorage.removeItem("purchaseOrderInvoiceData");
         }
       }
     }
@@ -1112,43 +1180,53 @@ export function useInvoiceEditor({
 
   // Pre-fill from Quote conversion (via sessionStorage)
   useEffect(() => {
-    if (mode === 'create' && isFormInitialized) {
-      const quoteData = sessionStorage.getItem('quoteInvoiceData');
+    if (mode === "create" && isFormInitialized) {
+      const quoteData = sessionStorage.getItem("quoteInvoiceData");
       if (quoteData) {
         try {
           const q = JSON.parse(quoteData);
-          sessionStorage.removeItem('quoteInvoiceData');
+          sessionStorage.removeItem("quoteInvoiceData");
           sourceQuoteIdRef.current = q.sourceQuoteId;
 
-          if (q.client) setValue('client', q.client);
+          if (q.client) setValue("client", q.client);
           if (q.items?.length > 0) {
-            setValue('items', q.items.map(item => ({
-              description: item.description || '',
-              quantity: item.quantity || 1,
-              unitPrice: item.unitPrice || 0,
-              vatRate: item.vatRate ?? 0,
-              unit: item.unit || '',
-              discount: item.discount || 0,
-              discountType: item.discountType || 'PERCENTAGE',
-              details: item.details || '',
-              vatExemptionText: item.vatExemptionText || '',
-              progressPercentage: item.progressPercentage ?? 100,
-            })));
+            setValue(
+              "items",
+              q.items.map((item) => ({
+                description: item.description || "",
+                quantity: item.quantity || 1,
+                unitPrice: item.unitPrice || 0,
+                vatRate: item.vatRate ?? 0,
+                unit: item.unit || "",
+                discount: item.discount || 0,
+                discountType: item.discountType || "PERCENTAGE",
+                details: item.details || "",
+                vatExemptionText: item.vatExemptionText || "",
+                progressPercentage: item.progressPercentage ?? 100,
+              })),
+            );
           }
-          if (q.discount != null) setValue('discount', q.discount);
-          if (q.discountType) setValue('discountType', q.discountType);
+          if (q.discount != null) setValue("discount", q.discount);
+          if (q.discountType) setValue("discountType", q.discountType);
           if (q.customFields?.length > 0) {
-            setValue('customFields', q.customFields.map(cf => ({
-              name: cf.key || cf.name || '', value: cf.value || '',
-            })));
+            setValue(
+              "customFields",
+              q.customFields.map((cf) => ({
+                name: cf.key || cf.name || "",
+                value: cf.value || "",
+              })),
+            );
           }
-          if (q.shipping) setValue('shipping', q.shipping);
-          if (q.purchaseOrderNumber) setValue('purchaseOrderNumber', q.purchaseOrderNumber);
-          if (q.isReverseCharge != null) setValue('isReverseCharge', q.isReverseCharge);
-          if (q.retenueGarantie != null) setValue('retenueGarantie', q.retenueGarantie);
-          if (q.escompte != null) setValue('escompte', q.escompte);
-        } catch (e) {
-          sessionStorage.removeItem('quoteInvoiceData');
+          if (q.shipping) setValue("shipping", q.shipping);
+          if (q.purchaseOrderNumber)
+            setValue("purchaseOrderNumber", q.purchaseOrderNumber);
+          if (q.isReverseCharge != null)
+            setValue("isReverseCharge", q.isReverseCharge);
+          if (q.retenueGarantie != null)
+            setValue("retenueGarantie", q.retenueGarantie);
+          if (q.escompte != null) setValue("escompte", q.escompte);
+        } catch {
+          sessionStorage.removeItem("quoteInvoiceData");
         }
       }
     }
@@ -1156,35 +1234,39 @@ export function useInvoiceEditor({
 
   // Pre-fill from Quote linked invoice (via sessionStorage)
   useEffect(() => {
-    if (mode === 'create' && isFormInitialized) {
-      const linkedData = sessionStorage.getItem('quoteLinkedInvoiceData');
+    if (mode === "create" && isFormInitialized) {
+      const linkedData = sessionStorage.getItem("quoteLinkedInvoiceData");
       if (linkedData) {
         try {
           const data = JSON.parse(linkedData);
-          sessionStorage.removeItem('quoteLinkedInvoiceData');
+          sessionStorage.removeItem("quoteLinkedInvoiceData");
           sourceQuoteIdRef.current = data.sourceQuoteId;
 
-          if (data.client) setValue('client', data.client);
+          if (data.client) setValue("client", data.client);
           if (data.items?.length > 0) {
-            setValue('items', data.items.map(item => ({
-              description: item.description || '',
-              quantity: item.quantity || 1,
-              unitPrice: item.unitPrice || 0,
-              vatRate: item.vatRate ?? 0,
-              unit: item.unit || '',
-              discount: item.discount || 0,
-              discountType: item.discountType || 'PERCENTAGE',
-              details: item.details || '',
-              vatExemptionText: item.vatExemptionText || '',
-            })));
+            setValue(
+              "items",
+              data.items.map((item) => ({
+                description: item.description || "",
+                quantity: item.quantity || 1,
+                unitPrice: item.unitPrice || 0,
+                vatRate: item.vatRate ?? 0,
+                unit: item.unit || "",
+                discount: item.discount || 0,
+                discountType: item.discountType || "PERCENTAGE",
+                details: item.details || "",
+                vatExemptionText: item.vatExemptionText || "",
+              })),
+            );
           }
-          if (data.purchaseOrderNumber) setValue('purchaseOrderNumber', data.purchaseOrderNumber);
+          if (data.purchaseOrderNumber)
+            setValue("purchaseOrderNumber", data.purchaseOrderNumber);
           if (data.isDeposit) {
-            setValue('isDepositInvoice', true);
-            setValue('invoiceType', 'deposit');
+            setValue("isDepositInvoice", true);
+            setValue("invoiceType", "deposit");
           }
-        } catch (e) {
-          sessionStorage.removeItem('quoteLinkedInvoiceData');
+        } catch {
+          sessionStorage.removeItem("quoteLinkedInvoiceData");
         }
       }
     }
@@ -1238,7 +1320,6 @@ export function useInvoiceEditor({
   // Manual save handler
   const handleSave = useCallback(async () => {
     const currentFormData = getValues();
-
 
     // Validation manuelle pour le brouillon (moins stricte)
     const errors = {};
@@ -1388,7 +1469,7 @@ export function useInvoiceEditor({
 
         if (fieldErrors.length > 0) {
           invalidCustomFields.push(
-            `Champ personnalisé ${index + 1}: ${fieldErrors.join(", ")}`
+            `Champ personnalisé ${index + 1}: ${fieldErrors.join(", ")}`,
           );
           customFieldsWithErrors.push({ index, errors: fieldErrors });
         }
@@ -1487,7 +1568,10 @@ export function useInvoiceEditor({
 
       if (mode === "create") {
         if (sourcePurchaseOrderIdRef.current) {
-          input = { ...input, sourcePurchaseOrderId: sourcePurchaseOrderIdRef.current };
+          input = {
+            ...input,
+            sourcePurchaseOrderId: sourcePurchaseOrderIdRef.current,
+          };
         }
         if (sourceQuoteIdRef.current) {
           input = { ...input, sourceQuoteId: sourceQuoteIdRef.current };
@@ -1514,7 +1598,10 @@ export function useInvoiceEditor({
         errorMessage.includes("duplicate")
       ) {
         // Construire le numéro complet depuis le formulaire
-        const fullNumber = [currentFormData.prefix, currentFormData.number].filter(Boolean).join("-") || "inconnu";
+        const fullNumber =
+          [currentFormData.prefix, currentFormData.number]
+            .filter(Boolean)
+            .join("-") || "inconnu";
 
         setValidationErrors({
           invoiceNumber: {
@@ -1537,19 +1624,21 @@ export function useInvoiceEditor({
         });
 
         toast.error(
-          "Le montant total des factures de situation dépasserait le montant du contrat"
+          "Le montant total des factures de situation dépasserait le montant du contrat",
         );
-      } else if (
-        errorMessage.includes("erreurs de validation")
-      ) {
+      } else if (errorMessage.includes("erreurs de validation")) {
         // Erreur de validation Mongoose - afficher les détails
-        const details = error.validationDetails || error.graphQLErrors?.[0]?.extensions?.details;
+        const details =
+          error.validationDetails ||
+          error.graphQLErrors?.[0]?.extensions?.details;
         if (details) {
           console.error("Détails de validation Mongoose (brouillon):", details);
           const fieldErrors = Object.entries(details)
             .map(([field, msg]) => `${field}: ${msg}`)
             .join("\n");
-          toast.error(`Erreur de validation:\n${fieldErrors}`, { duration: 10000 });
+          toast.error(`Erreur de validation:\n${fieldErrors}`, {
+            duration: 10000,
+          });
         } else {
           toast.error(errorMessage);
         }
@@ -1718,7 +1807,7 @@ export function useInvoiceEditor({
 
         if (fieldErrors.length > 0) {
           invalidCustomFields.push(
-            `Champ personnalisé ${index + 1}: ${fieldErrors.join(", ")}`
+            `Champ personnalisé ${index + 1}: ${fieldErrors.join(", ")}`,
           );
           customFieldsWithErrors.push({ index, errors: fieldErrors });
         }
@@ -1843,7 +1932,10 @@ export function useInvoiceEditor({
 
       if (mode === "create") {
         if (sourcePurchaseOrderIdRef.current) {
-          input = { ...input, sourcePurchaseOrderId: sourcePurchaseOrderIdRef.current };
+          input = {
+            ...input,
+            sourcePurchaseOrderId: sourcePurchaseOrderIdRef.current,
+          };
         }
         if (sourceQuoteIdRef.current) {
           input = { ...input, sourceQuoteId: sourceQuoteIdRef.current };
@@ -1864,7 +1956,7 @@ export function useInvoiceEditor({
         toast.success(
           wasDraft
             ? "Facture créée avec succès"
-            : "Facture mise à jour avec succès"
+            : "Facture mise à jour avec succès",
         );
         // Retourner les données de la facture pour permettre l'envoi par email
         return {
@@ -1886,7 +1978,10 @@ export function useInvoiceEditor({
         errorMessage.includes("duplicate")
       ) {
         // Construire le numéro complet depuis le formulaire
-        const fullNumber = [currentFormData.prefix, currentFormData.number].filter(Boolean).join("-") || "inconnu";
+        const fullNumber =
+          [currentFormData.prefix, currentFormData.number]
+            .filter(Boolean)
+            .join("-") || "inconnu";
 
         setValidationErrors({
           invoiceNumber: {
@@ -1909,19 +2004,21 @@ export function useInvoiceEditor({
         });
 
         toast.error(
-          "Le montant total des factures de situation dépasserait le montant du contrat"
+          "Le montant total des factures de situation dépasserait le montant du contrat",
         );
-      } else if (
-        errorMessage.includes("erreurs de validation")
-      ) {
+      } else if (errorMessage.includes("erreurs de validation")) {
         // Erreur de validation Mongoose - afficher les détails des champs qui ont échoué
-        const details = error.validationDetails || error.graphQLErrors?.[0]?.extensions?.details;
+        const details =
+          error.validationDetails ||
+          error.graphQLErrors?.[0]?.extensions?.details;
         if (details) {
           const fieldErrors = Object.entries(details)
             .map(([field, msg]) => `${field}: ${msg}`)
             .join("\n");
           console.error("Détails de validation Mongoose:", details);
-          toast.error(`Erreur de validation:\n${fieldErrors}`, { duration: 10000 });
+          toast.error(`Erreur de validation:\n${fieldErrors}`, {
+            duration: 10000,
+          });
         } else {
           toast.error(errorMessage);
         }
@@ -1934,7 +2031,7 @@ export function useInvoiceEditor({
             Object.keys(error).length > 0)
             ? error
             : new Error(
-                "Une erreur inconnue est survenue lors de la sauvegarde de la facture"
+                "Une erreur inconnue est survenue lors de la sauvegarde de la facture",
               );
 
         handleError(errorToHandle, "invoice", {
@@ -1974,9 +2071,18 @@ export function useInvoiceEditor({
         invoiceTermsAndConditions: currentFormData.termsAndConditions || "",
         showBankDetails: currentFormData.showBankDetails || false,
         // Coordonnées bancaires
-        bankIban: currentFormData.bankDetails?.iban || currentFormData.companyInfo?.bankIban || "",
-        bankBic: currentFormData.bankDetails?.bic || currentFormData.companyInfo?.bankBic || "",
-        bankName: currentFormData.bankDetails?.bankName || currentFormData.companyInfo?.bankName || "",
+        bankIban:
+          currentFormData.bankDetails?.iban ||
+          currentFormData.companyInfo?.bankIban ||
+          "",
+        bankBic:
+          currentFormData.bankDetails?.bic ||
+          currentFormData.companyInfo?.bankBic ||
+          "",
+        bankName:
+          currentFormData.bankDetails?.bankName ||
+          currentFormData.companyInfo?.bankName ||
+          "",
         invoiceClientPositionRight:
           currentFormData.clientPositionRight || false,
         // Informations de l'entreprise
@@ -2031,7 +2137,7 @@ export function useInvoiceEditor({
         const { exists } = await checkInvoiceNumber(
           invoiceNumber,
           prefix,
-          invoiceId
+          invoiceId,
         );
 
         if (exists) {
@@ -2055,11 +2161,11 @@ export function useInvoiceEditor({
       } catch (error) {
         console.error(
           "Erreur lors de la validation du numéro de facture:",
-          error
+          error,
         );
       }
     },
-    [checkInvoiceNumber, invoiceId, getValues]
+    [checkInvoiceNumber, invoiceId, getValues],
   );
 
   return {
@@ -2128,7 +2234,7 @@ function getInitialFormData(mode, initialData, session, organization) {
   const defaultData = {
     prefix: organization?.invoicePrefix || "",
     number: "",
-    issueDate: new Date().toISOString().split("T")[0],
+    issueDate: formatLocalDate(),
     dueDate: null,
     status: "DRAFT",
     client: null,
@@ -2149,6 +2255,13 @@ function getInitialFormData(mode, initialData, session, organization) {
     globalProgressPercentage: 100, // Pourcentage global pour le mode uniforme
     // Récupérer les données bancaires si elles existent dans la facture
     showBankDetails: organization?.showBankDetails || false,
+    // Nom du bénéficiaire
+    beneficiaryNameType:
+      organization?.beneficiaryNameType ||
+      (organization?.legalForm === "Auto-entrepreneur"
+        ? "fullName"
+        : "companyName"),
+    userName: session?.user?.name || "",
     bankDetails: {
       iban: "",
       bic: "",
@@ -2177,9 +2290,13 @@ function getInitialFormData(mode, initialData, session, organization) {
   // Utiliser les paramètres par défaut de FACTURE de l'organisation si disponibles
   if (mode === "create" && organization) {
     // Paramètres d'apparence par défaut (invoice* puis document* puis hardcoded)
-    const orgTextColor = organization.invoiceTextColor || organization.documentTextColor;
-    const orgHeaderTextColor = organization.invoiceHeaderTextColor || organization.documentHeaderTextColor;
-    const orgHeaderBgColor = organization.invoiceHeaderBgColor || organization.documentHeaderBgColor;
+    const orgTextColor =
+      organization.invoiceTextColor || organization.documentTextColor;
+    const orgHeaderTextColor =
+      organization.invoiceHeaderTextColor ||
+      organization.documentHeaderTextColor;
+    const orgHeaderBgColor =
+      organization.invoiceHeaderBgColor || organization.documentHeaderBgColor;
     if (orgTextColor || orgHeaderTextColor || orgHeaderBgColor) {
       defaultData.appearance = {
         textColor: orgTextColor || "#000000",
@@ -2189,9 +2306,13 @@ function getInitialFormData(mode, initialData, session, organization) {
     }
 
     // Paramètres de contenu par défaut (invoice* puis document*)
-    const orgHeaderNotes = organization.invoiceHeaderNotes || organization.documentHeaderNotes;
-    const orgFooterNotes = organization.invoiceFooterNotes || organization.documentFooterNotes;
-    const orgTermsAndConditions = organization.invoiceTermsAndConditions || organization.documentTermsAndConditions;
+    const orgHeaderNotes =
+      organization.invoiceHeaderNotes || organization.documentHeaderNotes;
+    const orgFooterNotes =
+      organization.invoiceFooterNotes || organization.documentFooterNotes;
+    const orgTermsAndConditions =
+      organization.invoiceTermsAndConditions ||
+      organization.documentTermsAndConditions;
     if (orgHeaderNotes) {
       defaultData.headerNotes = orgHeaderNotes;
     }
@@ -2212,6 +2333,7 @@ function getInitialFormData(mode, initialData, session, organization) {
 
 function transformInvoiceToFormData(invoice) {
   // Fonction helper pour transformer les dates
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const transformDate = (dateValue, fieldName) => {
     if (!dateValue) return null;
 
@@ -2229,7 +2351,7 @@ function transformInvoiceToFormData(invoice) {
         const timestamp = parseInt(dateValue, 10);
         const date = new Date(timestamp);
         if (!isNaN(date.getTime())) {
-          const formatted = date.toISOString().split("T")[0];
+          const formatted = formatLocalDate(date);
 
           return formatted;
         }
@@ -2241,9 +2363,9 @@ function transformInvoiceToFormData(invoice) {
         return null;
       }
 
-      const formatted = date.toISOString().split("T")[0];
+      const formatted = formatLocalDate(date);
       return formatted;
-    } catch (error) {
+    } catch {
       return null;
     }
   };
@@ -2252,8 +2374,7 @@ function transformInvoiceToFormData(invoice) {
     prefix: invoice.prefix || "",
     number: invoice.number || "",
     issueDate:
-      transformDate(invoice.issueDate, "issueDate") ||
-      new Date().toISOString().split("T")[0],
+      transformDate(invoice.issueDate, "issueDate") || formatLocalDate(),
     dueDate: transformDate(invoice.dueDate, "dueDate"),
     status: invoice.status || "DRAFT",
     client: invoice.client || null,
@@ -2429,6 +2550,7 @@ function transformFormDataToInput(formData, previousStatus = null) {
     : null;
 
   // Nettoyer companyInfo et gérer l'adresse
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const cleanCompanyInfo = formData.companyInfo
     ? {
         name: formData.companyInfo.name,
@@ -2474,7 +2596,7 @@ function transformFormDataToInput(formData, previousStatus = null) {
   let issueDate = formData.issueDate;
   if (previousStatus === "DRAFT" && formData.status === "PENDING") {
     // Mettre à jour la date d'émission à la date actuelle
-    issueDate = new Date().toISOString().split("T")[0];
+    issueDate = formatLocalDate();
   }
 
   // Helper pour s'assurer qu'on n'envoie jamais null pour les dates obligatoires
@@ -2530,9 +2652,9 @@ function transformFormDataToInput(formData, previousStatus = null) {
         // IMPORTANT: Si vatRate > 0, vatExemptionText DOIT être vide (validation Mongoose)
         const vatExemptionText =
           vatRate === 0
-            ? (formData.isReverseCharge
-                ? "Auto-liquidation"
-                : item.vatExemptionText || "")
+            ? formData.isReverseCharge
+              ? "Auto-liquidation"
+              : item.vatExemptionText || ""
             : "";
 
         return {
@@ -2545,9 +2667,12 @@ function transformFormDataToInput(formData, previousStatus = null) {
           discountType: (item.discountType || "PERCENTAGE").toUpperCase(),
           details: item.details || "",
           vatExemptionText: vatExemptionText,
-          progressPercentage: item.progressPercentage !== undefined && item.progressPercentage !== null && item.progressPercentage !== ''
-            ? parseFloat(item.progressPercentage)
-            : 100,
+          progressPercentage:
+            item.progressPercentage !== undefined &&
+            item.progressPercentage !== null &&
+            item.progressPercentage !== ""
+              ? parseFloat(item.progressPercentage)
+              : 100,
         };
       }) || [],
     discount: parseFloat(formData.discount) || 0,

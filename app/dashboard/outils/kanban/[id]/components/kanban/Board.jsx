@@ -34,6 +34,7 @@ import {
 } from "@/src/graphql/kanbanQueries";
 import Column from "./Column";
 import AddColumnDialog from "./AddColumnDialog";
+import { formatLocalDate } from "@/src/utils/dateFormatter";
 
 const Board = () => {
   const { id } = useParams();
@@ -134,12 +135,12 @@ const Board = () => {
       } catch (error) {
         console.error("Erreur création colonne:", error);
         toast.error(
-          error.message || "Erreur lors de la création de la colonne"
+          error.message || "Erreur lors de la création de la colonne",
         );
         return false;
       }
     },
-    [id, createColumn, refetch]
+    [id, createColumn, refetch],
   );
 
   // Gestion des erreurs GraphQL
@@ -183,10 +184,10 @@ const Board = () => {
 
             // Afficher une notification de succès
             const sourceCol = columnsWithTasks.find(
-              (col) => col.id === source.droppableId
+              (col) => col.id === source.droppableId,
             );
             const destCol = columnsWithTasks.find(
-              (col) => col.id === destination.droppableId
+              (col) => col.id === destination.droppableId,
             );
             const sourceColName = sourceCol?.title || "colonne source";
             const destColName = destCol?.title || "colonne destination";
@@ -195,7 +196,7 @@ const Board = () => {
               toast.success(`Tâche déplacée avec succès dans "${destColName}"`);
             } else {
               toast.success(
-                `Tâche déplacée de "${sourceColName}" vers "${destColName}"`
+                `Tâche déplacée de "${sourceColName}" vers "${destColName}"`,
               );
             }
           } else {
@@ -207,7 +208,7 @@ const Board = () => {
         }
       }
     },
-    [moveTask, refetch, columnsWithTasks]
+    [moveTask, refetch, columnsWithTasks],
   );
 
   if (isLoading) {
@@ -426,196 +427,198 @@ const Board = () => {
                 }
               `}</style>
 
-              {filteredColumnsWithTasks.map((column) => {
-                // Fonction pour normaliser les dates pour la comparaison
-                const normalizeDate = (dateString) => {
-                  if (!dateString) return "";
-                  try {
-                    const date = new Date(dateString);
-                    // Formater en YYYY-MM-DD pour une comparaison précise
-                    return date.toISOString().split("T")[0];
-                  } catch (e) {
-                    return "";
-                  }
-                };
-
-                // Fonction pour essayer de parser la requête comme une date
-                const parseQueryAsDate = (query) => {
-                  // Essayer différents formats de date
-                  const dateFormats = [
-                    "d MMMM yyyy", // 27 juin 2025
-                    "d MMM yyyy", // 27 juin 2025 (abrégé)
-                    "d/M/yyyy", // 27/6/2025
-                    "d-M-yyyy", // 27-6-2025
-                    "d.M.yyyy", // 27.6.2025
-                    "yyyy-MM-dd", // 2025-06-27 (format ISO)
-                  ];
-
-                  for (const format of dateFormats) {
+              {filteredColumnsWithTasks
+                .map((column) => {
+                  // Fonction pour normaliser les dates pour la comparaison
+                  const normalizeDate = (dateString) => {
+                    if (!dateString) return "";
                     try {
-                      // Essayer avec le format complet
-                      const parsed = parse(query, format, new Date(), {
-                        locale: fr,
-                      });
-                      if (isValid(parsed)) {
-                        return parsed;
-                      }
-
-                      // Essayer avec le format court (sans l'année)
-                      if (format.includes("yyyy")) {
-                        const shortFormat = format
-                          .replace(" yyyy", "")
-                          .replace("-yyyy", "")
-                          .replace(".yyyy", "");
-                        const currentYear = new Date().getFullYear();
-                        const dateWithCurrentYear = `${query} ${currentYear}`;
-                        const parsedShort = parse(
-                          dateWithCurrentYear,
-                          `${shortFormat} yyyy`,
-                          new Date(),
-                          { locale: fr }
-                        );
-                        if (isValid(parsedShort)) {
-                          return parsedShort;
-                        }
-                      }
+                      const date = new Date(dateString);
+                      // Formater en YYYY-MM-DD pour une comparaison précise
+                      return formatLocalDate(date);
                     } catch (e) {
-                      // Continuer avec le format suivant
+                      return "";
                     }
-                  }
-                  return null;
-                };
+                  };
 
-                const filteredTasks =
-                  column.tasks?.flatMap((task) => {
-                    const taskDueDate = task.dueDate
-                      ? new Date(task.dueDate)
-                      : null;
+                  // Fonction pour essayer de parser la requête comme une date
+                  const parseQueryAsDate = (query) => {
+                    // Essayer différents formats de date
+                    const dateFormats = [
+                      "d MMMM yyyy", // 27 juin 2025
+                      "d MMM yyyy", // 27 juin 2025 (abrégé)
+                      "d/M/yyyy", // 27/6/2025
+                      "d-M-yyyy", // 27-6-2025
+                      "d.M.yyyy", // 27.6.2025
+                      "yyyy-MM-dd", // 2025-06-27 (format ISO)
+                    ];
 
-                    // Vérifier si la tâche correspond aux filtres avancés
-                    const matchesFilters = () => {
-                      // Filtre par titre
-                      if (
-                        filters.title &&
-                        !task.title
-                          ?.toLowerCase()
-                          .includes(filters.title.toLowerCase())
-                      ) {
-                        return false;
+                    for (const format of dateFormats) {
+                      try {
+                        // Essayer avec le format complet
+                        const parsed = parse(query, format, new Date(), {
+                          locale: fr,
+                        });
+                        if (isValid(parsed)) {
+                          return parsed;
+                        }
+
+                        // Essayer avec le format court (sans l'année)
+                        if (format.includes("yyyy")) {
+                          const shortFormat = format
+                            .replace(" yyyy", "")
+                            .replace("-yyyy", "")
+                            .replace(".yyyy", "");
+                          const currentYear = new Date().getFullYear();
+                          const dateWithCurrentYear = `${query} ${currentYear}`;
+                          const parsedShort = parse(
+                            dateWithCurrentYear,
+                            `${shortFormat} yyyy`,
+                            new Date(),
+                            { locale: fr },
+                          );
+                          if (isValid(parsedShort)) {
+                            return parsedShort;
+                          }
+                        }
+                      } catch (e) {
+                        // Continuer avec le format suivant
                       }
+                    }
+                    return null;
+                  };
 
-                      // Filtre par priorité
-                      if (
-                        filters.priority &&
-                        filters.priority !== "all" &&
-                        task.priority !== filters.priority
-                      ) {
-                        return false;
-                      }
+                  const filteredTasks =
+                    column.tasks?.flatMap((task) => {
+                      const taskDueDate = task.dueDate
+                        ? new Date(task.dueDate)
+                        : null;
 
-                      // Filtre par date d'échéance
-                      if (filters.dueDate) {
-                        const filterDate = new Date(filters.dueDate);
+                      // Vérifier si la tâche correspond aux filtres avancés
+                      const matchesFilters = () => {
+                        // Filtre par titre
                         if (
-                          !taskDueDate ||
-                          taskDueDate.getDate() !== filterDate.getDate() ||
-                          taskDueDate.getMonth() !== filterDate.getMonth() ||
-                          taskDueDate.getFullYear() !== filterDate.getFullYear()
+                          filters.title &&
+                          !task.title
+                            ?.toLowerCase()
+                            .includes(filters.title.toLowerCase())
                         ) {
                           return false;
                         }
-                      }
 
-                      // Filtre par tags
-                      if (filters.tags.length > 0) {
-                        const taskTags = (task.tags || []).map((tag) =>
-                          typeof tag === "string"
-                            ? tag.toLowerCase()
-                            : (tag.name || "").toLowerCase()
-                        );
-                        const hasMatchingTag = filters.tags.some((tag) =>
-                          taskTags.includes(tag.toLowerCase())
-                        );
-                        if (!hasMatchingTag) return false;
-                      }
-
-                      return true;
-                    };
-
-                    // Vérifier les filtres avancés
-                    if (!matchesFilters()) {
-                      return [];
-                    }
-
-                    // Si recherche textuelle, vérifier la correspondance
-                    if (searchQuery) {
-                      const query = searchQuery.trim().toLowerCase();
-                      const queryAsDate = parseQueryAsDate(query);
-
-                      // Vérifier la date
-                      if (queryAsDate && taskDueDate) {
-                        const queryDateStr = queryAsDate
-                          .toISOString()
-                          .split("T")[0];
-                        const taskDateStr = taskDueDate
-                          .toISOString()
-                          .split("T")[0];
-                        if (queryDateStr === taskDateStr) {
-                          return [task];
+                        // Filtre par priorité
+                        if (
+                          filters.priority &&
+                          filters.priority !== "all" &&
+                          task.priority !== filters.priority
+                        ) {
+                          return false;
                         }
+
+                        // Filtre par date d'échéance
+                        if (filters.dueDate) {
+                          const filterDate = new Date(filters.dueDate);
+                          if (
+                            !taskDueDate ||
+                            taskDueDate.getDate() !== filterDate.getDate() ||
+                            taskDueDate.getMonth() !== filterDate.getMonth() ||
+                            taskDueDate.getFullYear() !==
+                              filterDate.getFullYear()
+                          ) {
+                            return false;
+                          }
+                        }
+
+                        // Filtre par tags
+                        if (filters.tags.length > 0) {
+                          const taskTags = (task.tags || []).map((tag) =>
+                            typeof tag === "string"
+                              ? tag.toLowerCase()
+                              : (tag.name || "").toLowerCase(),
+                          );
+                          const hasMatchingTag = filters.tags.some((tag) =>
+                            taskTags.includes(tag.toLowerCase()),
+                          );
+                          if (!hasMatchingTag) return false;
+                        }
+
+                        return true;
+                      };
+
+                      // Vérifier les filtres avancés
+                      if (!matchesFilters()) {
+                        return [];
                       }
 
-                      // Vérifier les autres champs
-                      const matchesSearch = [
-                        task.title,
-                        task.description,
-                        task.priority,
-                        taskDueDate
-                          ? format(taskDueDate, "d MMMM yyyy", { locale: fr })
-                          : "",
-                        taskDueDate
-                          ? format(taskDueDate, "d MMM yyyy", { locale: fr })
-                          : "",
-                        taskDueDate ? format(taskDueDate, "d/M/yyyy") : "",
-                        ...(task.tags || []).map((tag) =>
-                          typeof tag === "string" ? tag : tag.name
-                        ),
-                        ...(task.comments || []).map((c) => c.content || ""),
-                      ].some(
-                        (field) =>
-                          field &&
-                          field.toString().toLowerCase().includes(query)
-                      );
+                      // Si recherche textuelle, vérifier la correspondance
+                      if (searchQuery) {
+                        const query = searchQuery.trim().toLowerCase();
+                        const queryAsDate = parseQueryAsDate(query);
 
-                      return matchesSearch ? [task] : [];
-                    }
+                        // Vérifier la date
+                        if (queryAsDate && taskDueDate) {
+                          const queryDateStr = queryAsDate
+                            .toISOString()
+                            .split("T")[0];
+                          const taskDateStr = taskDueDate
+                            .toISOString()
+                            .split("T")[0];
+                          if (queryDateStr === taskDateStr) {
+                            return [task];
+                          }
+                        }
 
-                    return [task];
-                  }) || [];
+                        // Vérifier les autres champs
+                        const matchesSearch = [
+                          task.title,
+                          task.description,
+                          task.priority,
+                          taskDueDate
+                            ? format(taskDueDate, "d MMMM yyyy", { locale: fr })
+                            : "",
+                          taskDueDate
+                            ? format(taskDueDate, "d MMM yyyy", { locale: fr })
+                            : "",
+                          taskDueDate ? format(taskDueDate, "d/M/yyyy") : "",
+                          ...(task.tags || []).map((tag) =>
+                            typeof tag === "string" ? tag : tag.name,
+                          ),
+                          ...(task.comments || []).map((c) => c.content || ""),
+                        ].some(
+                          (field) =>
+                            field &&
+                            field.toString().toLowerCase().includes(query),
+                        );
 
-                if (
-                  (searchQuery || isFilterActive) &&
-                  filteredTasks.length === 0
-                ) {
-                  return null;
-                }
+                        return matchesSearch ? [task] : [];
+                      }
 
-                return (
-                  <Column
-                    key={column.id}
-                    column={{
-                      ...column,
-                      tasks: searchQuery ? filteredTasks : column.tasks,
-                      // Ajouter un indicateur visuel pour les colonnes filtrées
-                      isSearching: !!searchQuery,
-                    }}
-                    onUpdate={refetch}
-                    isDragging={isDragging}
-                    columns={filteredColumnsWithTasks}
-                  />
-                );
-              })
-              .filter(Boolean)}
+                      return [task];
+                    }) || [];
+
+                  if (
+                    (searchQuery || isFilterActive) &&
+                    filteredTasks.length === 0
+                  ) {
+                    return null;
+                  }
+
+                  return (
+                    <Column
+                      key={column.id}
+                      column={{
+                        ...column,
+                        tasks: searchQuery ? filteredTasks : column.tasks,
+                        // Ajouter un indicateur visuel pour les colonnes filtrées
+                        isSearching: !!searchQuery,
+                      }}
+                      onUpdate={refetch}
+                      isDragging={isDragging}
+                      columns={filteredColumnsWithTasks}
+                    />
+                  );
+                })
+                .filter(Boolean)}
               {/* Bouton pour ajouter une colonne à droite */}
               <div className="flex-shrink-0 w-80 h-27 mt-0">
                 <button

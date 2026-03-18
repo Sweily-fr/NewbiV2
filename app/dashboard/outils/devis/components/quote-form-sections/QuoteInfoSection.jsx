@@ -9,7 +9,13 @@ import React, {
 } from "react";
 import { useFormContext } from "react-hook-form";
 import { useQuery } from "@apollo/client";
-import { Calendar as CalendarIcon, Info, Search, FileText, ChevronDown } from "lucide-react";
+import {
+  Calendar as CalendarIcon,
+  Info,
+  Search,
+  FileText,
+  ChevronDown,
+} from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Calendar } from "@/src/components/ui/calendar";
@@ -49,9 +55,13 @@ import {
   TooltipTrigger,
 } from "@/src/components/ui/tooltip";
 import { cn } from "@/src/lib/utils";
-import { useLastQuotePrefix, SEARCH_QUOTES_FOR_REFERENCE } from "@/src/graphql/quoteQueries";
+import {
+  useLastQuotePrefix,
+  SEARCH_QUOTES_FOR_REFERENCE,
+} from "@/src/graphql/quoteQueries";
 import { useLastPurchaseOrderPrefix } from "@/src/graphql/purchaseOrderQueries";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
+import { formatLocalDate } from "@/src/utils/dateFormatter";
 
 // Fonction utilitaire pour formater les montants
 const formatCurrency = (amount) => {
@@ -120,7 +130,7 @@ export default function QuoteInfoSection({
       },
       skip: !isPurchaseOrder || !referenceSearchOpen || !workspaceId,
       fetchPolicy: "cache-and-network",
-    }
+    },
   );
 
   // Simple state for selected period without complex calculations
@@ -132,8 +142,12 @@ export default function QuoteInfoSection({
   const { prefix: lastPurchaseOrderPrefix, loading: loadingLastPOPrefix } =
     useLastPurchaseOrderPrefix();
 
-  const lastPrefix = isPurchaseOrder ? lastPurchaseOrderPrefix : lastQuotePrefix;
-  const loadingLastPrefix = isPurchaseOrder ? loadingLastPOPrefix : loadingLastQuotePrefix;
+  const lastPrefix = isPurchaseOrder
+    ? lastPurchaseOrderPrefix
+    : lastQuotePrefix;
+  const loadingLastPrefix = isPurchaseOrder
+    ? loadingLastPOPrefix
+    : loadingLastQuotePrefix;
 
   // Flag pour savoir si le préfixe a déjà été initialisé
   const prefixInitialized = useRef(false);
@@ -151,7 +165,7 @@ export default function QuoteInfoSection({
 
     if (!currentData.issueDate) {
       const today = new Date();
-      setValue("issueDate", today.toISOString().split("T")[0], {
+      setValue("issueDate", formatLocalDate(today), {
         shouldValidate: false,
         shouldDirty: false,
       });
@@ -271,9 +285,9 @@ export default function QuoteInfoSection({
                     className="max-w-[280px] sm:max-w-xs"
                   >
                     <p>
-                      Date à laquelle le {documentLabel} est créé et envoyé au client. Par
-                      défaut, c'est la date du jour. Cette date sert de
-                      référence pour calculer la validité du {documentLabel}.
+                      Date à laquelle le {documentLabel} est créé et envoyé au
+                      client. Par défaut, c'est la date du jour. Cette date sert
+                      de référence pour calculer la validité du {documentLabel}.
                     </p>
                   </TooltipContent>
                 </Tooltip>
@@ -293,7 +307,7 @@ export default function QuoteInfoSection({
                       "w-full justify-start text-left font-normal",
                       !data.issueDate && "text-muted-foreground",
                       hasQuoteInfoError &&
-                        "border-destructive focus-visible:ring-destructive"
+                        "border-destructive focus-visible:ring-destructive",
                     )}
                     type="button"
                   >
@@ -354,10 +368,10 @@ export default function QuoteInfoSection({
                     className="max-w-[280px] sm:max-w-xs"
                   >
                     <p>
-                      Date limite de validité du {documentLabel}. Après cette date, les
-                      conditions et tarifs proposés ne seront plus garantis.
-                      Utilisez le sélecteur pour ajouter automatiquement 15, 30,
-                      45, 60 ou 90 jours.
+                      Date limite de validité du {documentLabel}. Après cette
+                      date, les conditions et tarifs proposés ne seront plus
+                      garantis. Utilisez le sélecteur pour ajouter
+                      automatiquement 15, 30, 45, 60 ou 90 jours.
                     </p>
                   </TooltipContent>
                 </Tooltip>
@@ -379,7 +393,7 @@ export default function QuoteInfoSection({
                         "w-full justify-start text-left font-normal",
                         !data.validUntil && "text-muted-foreground",
                         hasQuoteInfoError &&
-                          "border-destructive focus-visible:ring-destructive"
+                          "border-destructive focus-visible:ring-destructive",
                       )}
                       type="button"
                     >
@@ -412,7 +426,7 @@ export default function QuoteInfoSection({
                             date = new Date(
                               timestamp.toString().length === 10
                                 ? timestamp * 1000
-                                : timestamp
+                                : timestamp,
                             );
                           }
                           // 3. Vérifier si c'est une chaîne ISO (2024-09-25T00:00:00.000Z)
@@ -467,7 +481,7 @@ export default function QuoteInfoSection({
                             date = new Date(
                               timestamp.toString().length === 10
                                 ? timestamp * 1000
-                                : timestamp
+                                : timestamp,
                             );
                           }
                           // Si c'est une chaîne de date ISO (2024-09-25T00:00:00.000Z)
@@ -515,11 +529,10 @@ export default function QuoteInfoSection({
                     const validUntil = new Date(issueDate);
                     validUntil.setDate(validUntil.getDate() + days);
 
-                    setValue(
-                      "validUntil",
-                      validUntil.toISOString().split("T")[0],
-                      { shouldDirty: true, shouldValidate: false }
-                    );
+                    setValue("validUntil", formatLocalDate(validUntil), {
+                      shouldDirty: true,
+                      shouldValidate: false,
+                    });
                     setSelectedPeriod(value);
                   }}
                   disabled={!canEdit}
@@ -552,11 +565,54 @@ export default function QuoteInfoSection({
             </div>
           </div>
 
+          {/* Nature de l'opération (obligatoire 2026) */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
+                Nature de l'opération
+              </Label>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent
+                  side="top"
+                  className="max-w-[280px] sm:max-w-xs"
+                >
+                  <p>
+                    Mention obligatoire pour la facturation électronique
+                    (réforme 2026). Indique si le document concerne une
+                    livraison de biens, une prestation de services, ou les deux.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+            <Select
+              value={data.operationType || ""}
+              onValueChange={(value) => {
+                setValue("operationType", value, { shouldDirty: true });
+              }}
+              disabled={!canEdit}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Sélectionner la nature" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="LB">Livraison de biens</SelectItem>
+                <SelectItem value="PS">Prestation de services</SelectItem>
+                <SelectItem value="LBPS">Mixte - Biens et services</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           {/* Référence - masqué pour les bons de commande (utilise "Référence devis" à la place) */}
           {!isPurchaseOrder && (
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <Label htmlFor="project-reference" className="text-sm font-light">
+                <Label
+                  htmlFor="project-reference"
+                  className="text-sm font-light"
+                >
                   Référence
                 </Label>
                 <Tooltip>
@@ -687,7 +743,7 @@ export default function QuoteInfoSection({
                                           fullRef,
                                           {
                                             shouldDirty: true,
-                                          }
+                                          },
                                         );
                                         setReferenceSearchOpen(false);
                                         setReferenceSearchTerm("");
@@ -722,7 +778,7 @@ export default function QuoteInfoSection({
                                 setValue(
                                   "purchaseOrderNumber",
                                   referenceSearchTerm,
-                                  { shouldDirty: true }
+                                  { shouldDirty: true },
                                 );
                                 setReferenceSearchOpen(false);
                                 setReferenceSearchTerm("");
@@ -779,9 +835,9 @@ export default function QuoteInfoSection({
                     className="max-w-[280px] sm:max-w-xs"
                   >
                     <p>
-                      Mention obligatoire pour la facturation électronique (réforme
-                      2026). Indique si le devis concerne une livraison de biens,
-                      une prestation de services, ou les deux.
+                      Mention obligatoire pour la facturation électronique
+                      (réforme 2026). Indique si le devis concerne une livraison
+                      de biens, une prestation de services, ou les deux.
                     </p>
                   </TooltipContent>
                 </Tooltip>
@@ -799,7 +855,9 @@ export default function QuoteInfoSection({
                 <SelectContent>
                   <SelectItem value="LB">Livraison de biens</SelectItem>
                   <SelectItem value="PS">Prestation de services</SelectItem>
-                  <SelectItem value="LBPS">Mixte - Biens et services</SelectItem>
+                  <SelectItem value="LBPS">
+                    Mixte - Biens et services
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>

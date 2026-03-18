@@ -12,6 +12,7 @@ import {
   Check,
   Pencil,
   Globe,
+  AlertCircle,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/src/components/ui/card";
@@ -92,6 +93,7 @@ export default function ClientSelector({
 
   // État pour suivre les erreurs de validation
   const [formErrors, setFormErrors] = useState({});
+  const [createError, setCreateError] = useState(null);
 
   const [newClientForm, setNewClientForm] = useState(() => ({
     type: "INDIVIDUAL",
@@ -108,7 +110,6 @@ export default function ClientSelector({
     shippingAddress: { fullName: "", ...defaultAddress },
     notes: "",
   }));
-
 
   // Synchroniser selectedValue avec selectedClient prop
   useEffect(() => {
@@ -197,9 +198,14 @@ export default function ClientSelector({
 
     // S'assurer que isInternational est défini
     // Détecter automatiquement si le pays n'est pas la France
-    if (completedClient.isInternational === undefined || completedClient.isInternational === null) {
-      const country = completedClient.address?.country?.toLowerCase() || "france";
-      completedClient.isInternational = country !== "france" && country !== "fr";
+    if (
+      completedClient.isInternational === undefined ||
+      completedClient.isInternational === null
+    ) {
+      const country =
+        completedClient.address?.country?.toLowerCase() || "france";
+      completedClient.isInternational =
+        country !== "france" && country !== "fr";
     }
 
     // Pour les clients INDIVIDUAL, s'assurer que firstName et lastName existent
@@ -230,34 +236,9 @@ export default function ClientSelector({
     return type === "COMPANY" ? Building : User;
   };
 
-  // Validation automatique avec debounce quand le formulaire change
-  useEffect(() => {
-    // Ne valider que si le formulaire manuel est affiché
-    if (!createDialogOpen) return;
-
-    // Ne pas valider si le formulaire est vide (état initial)
-    const isFormEmpty =
-      !newClientForm.name &&
-      !newClientForm.email &&
-      !newClientForm.firstName &&
-      !newClientForm.lastName &&
-      !newClientForm.address.street &&
-      !newClientForm.address.city;
-    if (isFormEmpty) return;
-
-    // Debounce de 500ms
-    const timeoutId = setTimeout(() => {
-      validateForm();
-    }, 500);
-
-    return () => clearTimeout(timeoutId);
-  }, [newClientForm, createDialogOpen]); // eslint-disable-line react-hooks/exhaustive-deps
-
   // Nettoyer les erreurs quand on quitte le formulaire de nouveau client
   useEffect(() => {
-    // Si on n'est pas sur l'onglet "new" ou si le formulaire manuel n'est pas affiché
     if (activeTab !== "new" || !createDialogOpen) {
-      // Supprimer les erreurs de validation globales
       if (setValidationErrors) {
         setValidationErrors((prev) => {
           const newErrors = { ...prev };
@@ -265,8 +246,8 @@ export default function ClientSelector({
           return newErrors;
         });
       }
-      // Nettoyer aussi les erreurs locales
       setFormErrors({});
+      setCreateError(null);
     }
   }, [activeTab, createDialogOpen, setValidationErrors]);
 
@@ -453,16 +434,18 @@ export default function ClientSelector({
 
   // Création du client (applyToInvoice = true pour "Créer et appliquer")
   const handleCreateClient = async (applyToInvoice = true) => {
+    setCreateError(null);
+
     const isValid = validateForm();
     if (!isValid) {
-      toast.error("Veuillez corriger les erreurs dans le formulaire");
+      setCreateError("Veuillez corriger les erreurs dans le formulaire.");
       return;
     }
 
     const clientsList = Array.isArray(clients) ? clients : clients?.items || [];
     const emailExists = clientsList.some(
       (client) =>
-        client.email.toLowerCase() === newClientForm.email.toLowerCase()
+        client.email?.toLowerCase() === newClientForm.email.toLowerCase(),
     );
 
     if (emailExists) {
@@ -470,7 +453,7 @@ export default function ClientSelector({
         ...prev,
         email: "Cet email est déjà utilisé par un autre client",
       }));
-      toast.error("Un client avec cet email existe déjà");
+      setCreateError("Un client avec cet email existe déjà.");
       return;
     }
 
@@ -485,7 +468,7 @@ export default function ClientSelector({
         vatNumber: newClientForm.vatNumber || undefined,
         isInternational: newClientForm.isInternational || false,
         hasDifferentShippingAddress: Boolean(
-          newClientForm.hasDifferentShippingAddress
+          newClientForm.hasDifferentShippingAddress,
         ),
         address: {
           street: newClientForm.address.street,
@@ -523,54 +506,49 @@ export default function ClientSelector({
         toast.success(
           applyToInvoice
             ? `Client "${createdClient.name}" créé et appliqué`
-            : `Client "${createdClient.name}" créé`
+            : `Client "${createdClient.name}" créé`,
         );
       }
     } catch (error) {
-      let errorMessage =
-        "Une erreur est survenue lors de la création du client";
+      const msg = error?.message || "";
 
-      if (error.message.includes("Network Error")) {
-        errorMessage =
-          "Erreur de connexion au serveur. Vérifiez votre connexion Internet.";
-      } else if (
-        error.message.includes("400") ||
-        error.message.includes("Validation Error") ||
-        error.message.includes("ClientInput")
+      if (
+        error?.extensions?.code === "ALREADY_EXISTS" ||
+        error?.code === "ALREADY_EXISTS" ||
+        msg.toLowerCase().includes("existe déjà") ||
+        msg.toLowerCase().includes("email existe") ||
+        msg.includes("409")
       ) {
-        errorMessage =
-          "Erreur de validation. Vérifiez que tous les champs sont correctement remplis.";
-      } else if (
-        error.message.includes("409") ||
-        error.message.toLowerCase().includes("existe déjà") ||
-        error.message.toLowerCase().includes("email existe") ||
-        error.extensions?.code === "ALREADY_EXISTS" ||
-        error.code === "ALREADY_EXISTS"
-      ) {
-        errorMessage =
-          "Un client avec cet email existe déjà. Veuillez utiliser un email différent ou sélectionner ce client dans la liste.";
+        setCreateError(
+          "Un client avec cet email existe déjà. Veuillez utiliser un email différent ou sélectionner ce client dans la liste.",
+        );
         setFormErrors((prev) => ({
           ...prev,
           email: "Cet email est déjà utilisé par un autre client",
         }));
+      } else if (msg.includes("Network Error")) {
+        setCreateError(
+          "Erreur de connexion au serveur. Vérifiez votre connexion Internet.",
+        );
       } else if (
-        error.message.includes("401") ||
-        error.message.includes("403")
+        msg.includes("400") ||
+        msg.includes("Validation Error") ||
+        msg.includes("ClientInput")
       ) {
-        errorMessage =
-          "Vous n'avez pas les droits nécessaires pour effectuer cette action.";
-      } else if (error.message.includes("500")) {
-        errorMessage = "Erreur serveur. Veuillez réessayer plus tard.";
+        setCreateError(
+          "Erreur de validation. Vérifiez que tous les champs sont correctement remplis.",
+        );
+      } else if (msg.includes("401") || msg.includes("403")) {
+        setCreateError(
+          "Vous n'avez pas les droits nécessaires pour effectuer cette action.",
+        );
+      } else if (msg.includes("500")) {
+        setCreateError("Erreur serveur. Veuillez réessayer plus tard.");
+      } else {
+        setCreateError(
+          "Une erreur est survenue lors de la création du client.",
+        );
       }
-
-      toast.error(errorMessage, {
-        duration: 5000,
-        position: "top-center",
-        action: {
-          label: "Fermer",
-          onClick: () => {},
-        },
-      });
     }
   };
 
@@ -591,6 +569,7 @@ export default function ClientSelector({
       notes: "",
     });
     setFormErrors({});
+    setCreateError(null);
   };
 
   const handleSwitchToNewClient = () => {
@@ -664,7 +643,11 @@ export default function ClientSelector({
   return (
     <div className={cn("w-full", className)}>
       <Card className="shadow-none border-none bg-transparent">
-        <TabsNew value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsNew
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="w-full"
+        >
           <CardHeader className="p-0 pb-4">
             <TabsNewList className="px-0 sm:px-0">
               <TabsNewTrigger value="existing">
@@ -697,7 +680,12 @@ export default function ClientSelector({
                           error && "border-destructive",
                         )}
                       >
-                        <span className={cn("truncate", !selectedClient && "text-muted-foreground")}>
+                        <span
+                          className={cn(
+                            "truncate",
+                            !selectedClient && "text-muted-foreground",
+                          )}
+                        >
                           {selectedClient?.name || placeholder}
                         </span>
                         <ChevronDown className="size-3.5 text-muted-foreground shrink-0" />
@@ -728,7 +716,9 @@ export default function ClientSelector({
                         {loading ? (
                           <div className="flex items-center justify-center gap-2 p-4">
                             <LoaderCircle className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
-                            <span className="text-sm text-muted-foreground">Recherche...</span>
+                            <span className="text-sm text-muted-foreground">
+                              Recherche...
+                            </span>
                           </div>
                         ) : !clients?.length ? (
                           <div className="p-4 text-center">
@@ -763,7 +753,7 @@ export default function ClientSelector({
                                 className={cn(
                                   "flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm outline-none cursor-pointer transition-colors",
                                   "hover:bg-accent",
-                                  isSelected && "bg-accent/50"
+                                  isSelected && "bg-accent/50",
                                 )}
                               >
                                 <IconComponent className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
@@ -773,7 +763,7 @@ export default function ClientSelector({
                                 <Check
                                   className={cn(
                                     "h-3.5 w-3.5 shrink-0 text-foreground",
-                                    isSelected ? "opacity-100" : "opacity-0"
+                                    isSelected ? "opacity-100" : "opacity-0",
                                   )}
                                 />
                               </button>
@@ -805,7 +795,7 @@ export default function ClientSelector({
                               getClientIcon(selectedClient.type),
                               {
                                 className: "size-4 text-[#5a50ff]",
-                              }
+                              },
                             )}
                           </div>
                           <div className="min-w-0">
@@ -839,9 +829,9 @@ export default function ClientSelector({
                       {/* Mention pour la position du client dans le PDF */}
                       <div className="flex items-start gap-2 px-1">
                         <p className="text-xs leading-4 text-black/40 dark:text-white/40">
-                          La position des informations client dans le PDF
-                          peut être modifiée dans les paramètres de la facture
-                          (icône ⚙️ en haut à droite).
+                          La position des informations client dans le PDF peut
+                          être modifiée dans les paramètres de la facture (icône
+                          ⚙️ en haut à droite).
                         </p>
                       </div>
                     </div>
@@ -852,575 +842,865 @@ export default function ClientSelector({
 
             <TabsNewContent value="new" className="m-0">
               <div className="space-y-6">
-                  {/* Side-by-side: Location select + Company search */}
-                  <div className="flex items-start gap-3">
-                    {/* Location Select */}
-                    <Select
-                      value={
-                        newClientForm.isInternational
-                          ? "international"
-                          : "france"
+                {/* Side-by-side: Location select + Company search */}
+                <div className="flex items-start gap-3">
+                  {/* Location Select */}
+                  <Select
+                    value={
+                      newClientForm.isInternational ? "international" : "france"
+                    }
+                    onValueChange={(value) => {
+                      setNewClientForm((prev) => ({
+                        ...prev,
+                        isInternational: value === "international",
+                        siret: value === "international" ? "" : prev.siret,
+                        vatNumber:
+                          value === "international" ? "" : prev.vatNumber,
+                      }));
+                      // Si international, afficher directement le formulaire manuel
+                      if (value === "international") {
+                        setCreateDialogOpen(true);
                       }
-                      onValueChange={(value) => {
-                        setNewClientForm((prev) => ({
-                          ...prev,
-                          isInternational: value === "international",
-                          siret: value === "international" ? "" : prev.siret,
-                          vatNumber:
-                            value === "international" ? "" : prev.vatNumber,
-                        }));
-                        // Si international, afficher directement le formulaire manuel
-                        if (value === "international") {
-                          setCreateDialogOpen(true);
-                        }
-                      }}
+                    }}
+                  >
+                    <SelectTrigger className="w-[160px] shrink-0">
+                      <SelectValue placeholder="Localisation" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="france">
+                        <span className="flex items-center gap-2">
+                          <span>🇫🇷</span>
+                          <span>France</span>
+                        </span>
+                      </SelectItem>
+                      <SelectItem value="international">
+                        <span className="flex items-center gap-2">
+                          <Globe className="h-3.5 w-3.5" />
+                          <span>Hors France</span>
+                        </span>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  {/* Company search with dropdown */}
+                  <div className="flex-1 relative">
+                    <div
+                      className={cn(
+                        "flex items-center gap-2.5 px-2.5 h-8 rounded-lg transition-[border] duration-[80ms] ease-in-out",
+                        "border border-[#e6e7ea] bg-transparent hover:border-[#D1D3D8] dark:border-[#2E2E32] dark:hover:border-[#44444A]",
+                      )}
                     >
-                      <SelectTrigger className="w-[160px] shrink-0">
-                        <SelectValue placeholder="Localisation" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="france">
-                          <span className="flex items-center gap-2">
-                            <span>🇫🇷</span>
-                            <span>France</span>
-                          </span>
-                        </SelectItem>
-                        <SelectItem value="international">
-                          <span className="flex items-center gap-2">
-                            <Globe className="h-3.5 w-3.5" />
-                            <span>Hors France</span>
-                          </span>
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-
-                    {/* Company search with dropdown */}
-                    <div className="flex-1 relative">
-                      <div
-                        className={cn(
-                          "flex items-center gap-2.5 px-2.5 h-8 rounded-lg transition-[border] duration-[80ms] ease-in-out",
-                          "border border-[#e6e7ea] bg-transparent hover:border-[#D1D3D8] dark:border-[#2E2E32] dark:hover:border-[#44444A]"
-                        )}
-                      >
-                        <Search className="size-3.5 text-muted-foreground shrink-0" />
-                        <Input
-                          variant="ghost"
-                          id="company-search"
-                          value={companyQuery}
-                          onChange={(e) => setCompanyQuery(e.target.value)}
-                          placeholder="Nom d'entreprise, SIRET, SIREN..."
-                          disabled={disabled}
-                        />
-                        {companyQuery && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setCompanyQuery("");
-                              setCompanies([]);
-                            }}
-                            className="shrink-0"
-                          >
-                            <X className="size-3 text-muted-foreground hover:text-foreground transition-colors" />
-                          </button>
-                        )}
-                      </div>
-
-                      {/* Dropdown results */}
-                      {companyQuery.length >= 2 && (
-                        <div className="absolute top-full left-0 right-0 z-50 mt-1 rounded-xl border border-[#e6e7ea] dark:border-[#232323] bg-popover shadow-md overflow-hidden">
-                          <div className="max-h-[320px] overflow-y-auto p-1">
-                            {loadingCompanies ? (
-                              <div className="flex items-center justify-center gap-2 p-4">
-                                <LoaderCircle className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
-                                <span className="text-sm text-muted-foreground">
-                                  Recherche...
-                                </span>
-                              </div>
-                            ) : companies.length > 0 ? (
-                              companies.map((company) => (
-                                <button
-                                  key={company.id}
-                                  type="button"
-                                  onClick={() => handleCompanySelect(company)}
-                                  className="flex w-full items-start gap-2.5 rounded-lg px-2.5 py-2 text-left outline-none cursor-pointer transition-colors hover:bg-accent"
-                                >
-                                  <Building className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-sm font-medium -tracking-[0.01em] truncate">
-                                        {company.name}
-                                      </span>
-                                      {company.status === "A" && (
-                                        <span className="text-[10px] text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 px-1.5 py-0.5 rounded-full shrink-0">
-                                          Active
-                                        </span>
-                                      )}
-                                    </div>
-                                    <p className="text-xs text-muted-foreground truncate">
-                                      SIRET: {company.siret}
-                                      {company.city &&
-                                        ` · ${company.postalCode} ${company.city}`}
-                                    </p>
-                                    {company.activityLabel && (
-                                      <p className="text-xs text-muted-foreground truncate">
-                                        {company.activityLabel}
-                                      </p>
-                                    )}
-                                  </div>
-                                </button>
-                              ))
-                            ) : (
-                              <div className="p-4 text-center">
-                                <p className="text-sm text-muted-foreground">
-                                  Aucune entreprise trouvée pour &quot;{companyQuery}&quot;
-                                </p>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                  Essayez avec un nom d&apos;entreprise ou un SIRET
-                                </p>
-                              </div>
-                            )}
-                          </div>
-                        </div>
+                      <Search className="size-3.5 text-muted-foreground shrink-0" />
+                      <Input
+                        variant="ghost"
+                        id="company-search"
+                        value={companyQuery}
+                        onChange={(e) => setCompanyQuery(e.target.value)}
+                        placeholder="Nom d'entreprise, SIRET, SIREN..."
+                        disabled={disabled}
+                      />
+                      {companyQuery && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCompanyQuery("");
+                            setCompanies([]);
+                          }}
+                          className="shrink-0"
+                        >
+                          <X className="size-3 text-muted-foreground hover:text-foreground transition-colors" />
+                        </button>
                       )}
                     </div>
-                  </div>
 
-                  {/* Bouton pour créer manuellement */}
-                  <div className="pt-4 border-t border-[#e6e7ea] dark:border-[#232323]">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={handleShowManualForm}
-                      className="w-full"
-                      disabled={disabled}
-                    >
-                      <Plus className="h-3.5 w-3.5" />
-                      Créer un client manuellement
-                    </Button>
+                    {/* Dropdown results */}
+                    {companyQuery.length >= 2 && (
+                      <div className="absolute top-full left-0 right-0 z-50 mt-1 rounded-xl border border-[#e6e7ea] dark:border-[#232323] bg-popover shadow-md overflow-hidden">
+                        <div className="max-h-[320px] overflow-y-auto p-1">
+                          {loadingCompanies ? (
+                            <div className="flex items-center justify-center gap-2 p-4">
+                              <LoaderCircle className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                              <span className="text-sm text-muted-foreground">
+                                Recherche...
+                              </span>
+                            </div>
+                          ) : companies.length > 0 ? (
+                            companies.map((company) => (
+                              <button
+                                key={company.id}
+                                type="button"
+                                onClick={() => handleCompanySelect(company)}
+                                className="flex w-full items-start gap-2.5 rounded-lg px-2.5 py-2 text-left outline-none cursor-pointer transition-colors hover:bg-accent"
+                              >
+                                <Building className="h-3.5 w-3.5 text-muted-foreground shrink-0 mt-0.5" />
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm font-medium -tracking-[0.01em] truncate">
+                                      {company.name}
+                                    </span>
+                                    {company.status === "A" && (
+                                      <span className="text-[10px] text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 px-1.5 py-0.5 rounded-full shrink-0">
+                                        Active
+                                      </span>
+                                    )}
+                                  </div>
+                                  <p className="text-xs text-muted-foreground truncate">
+                                    SIRET: {company.siret}
+                                    {company.city &&
+                                      ` · ${company.postalCode} ${company.city}`}
+                                  </p>
+                                  {company.activityLabel && (
+                                    <p className="text-xs text-muted-foreground truncate">
+                                      {company.activityLabel}
+                                    </p>
+                                  )}
+                                </div>
+                              </button>
+                            ))
+                          ) : (
+                            <div className="p-4 text-center">
+                              <p className="text-sm text-muted-foreground">
+                                Aucune entreprise trouvée pour &quot;
+                                {companyQuery}&quot;
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Essayez avec un nom d&apos;entreprise ou un
+                                SIRET
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
+
+                {/* Bouton pour créer manuellement */}
+                <div className="pt-4 border-t border-[#e6e7ea] dark:border-[#232323]">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleShowManualForm}
+                    className="w-full"
+                    disabled={disabled}
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    Créer un client manuellement
+                  </Button>
+                </div>
+              </div>
             </TabsNewContent>
           </CardContent>
         </TabsNew>
       </Card>
 
       {/* ─── Dialog de création de client ─── */}
-      <Dialog open={createDialogOpen} onOpenChange={(open) => { if (!open) handleCloseDialog(); }}>
+      <Dialog
+        open={createDialogOpen}
+        onOpenChange={(open) => {
+          if (!open) handleCloseDialog();
+        }}
+      >
         <DialogContent className="sm:max-w-[640px] max-h-[85vh] flex flex-col overflow-hidden p-0">
           <DialogHeader className="px-6 pt-6 pb-0 shrink-0">
-            <DialogTitle className="text-base font-medium -tracking-[0.01em]">Nouveau client</DialogTitle>
+            <DialogTitle className="text-base font-medium -tracking-[0.01em]">
+              Nouveau client
+            </DialogTitle>
             <DialogDescription className="text-sm text-muted-foreground">
               Remplissez les informations pour créer un nouveau client.
             </DialogDescription>
           </DialogHeader>
 
           <div className="flex-1 overflow-y-auto px-6 py-5">
-          <div className="space-y-5">
-            {/* Type de client */}
-            <div className="space-y-2">
-              <Label htmlFor="client-type" className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
-                Type de client
-              </Label>
-              <Select
-                value={newClientForm.type}
-                onValueChange={(value) =>
-                  setNewClientForm((prev) => ({ ...prev, type: value }))
-                }
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Sélectionner le type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="INDIVIDUAL">Particulier</SelectItem>
-                  <SelectItem value="COMPANY">Entreprise</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Localisation - entreprises uniquement */}
-            {newClientForm.type === "COMPANY" && (
+            {createError && (
+              <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 dark:border-red-900/50 dark:bg-red-950/50 p-3 mb-5">
+                <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400 mt-0.5 shrink-0" />
+                <p className="text-sm text-red-700 dark:text-red-300">
+                  {createError}
+                </p>
+              </div>
+            )}
+            <div className="space-y-5">
+              {/* Type de client */}
               <div className="space-y-2">
-                <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
-                  Localisation de l&apos;entreprise
+                <Label
+                  htmlFor="client-type"
+                  className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
+                >
+                  Type de client
                 </Label>
                 <Select
-                  value={newClientForm.isInternational ? "international" : "france"}
-                  onValueChange={(value) => {
-                    setNewClientForm((prev) => ({
-                      ...prev,
-                      isInternational: value === "international",
-                      siret: value === "international" ? "" : prev.siret,
-                      vatNumber: value === "international" ? "" : prev.vatNumber,
-                    }));
-                  }}
+                  value={newClientForm.type}
+                  onValueChange={(value) =>
+                    setNewClientForm((prev) => ({ ...prev, type: value }))
+                  }
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Localisation" />
+                    <SelectValue placeholder="Sélectionner le type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="france">
-                      <span className="flex items-center gap-2">
-                        <span>🇫🇷</span>
-                        <span>France</span>
-                      </span>
-                    </SelectItem>
-                    <SelectItem value="international">
-                      <span className="flex items-center gap-2">
-                        <Globe className="h-3.5 w-3.5" />
-                        <span>Hors France</span>
-                      </span>
-                    </SelectItem>
+                    <SelectItem value="INDIVIDUAL">Particulier</SelectItem>
+                    <SelectItem value="COMPANY">Entreprise</SelectItem>
                   </SelectContent>
                 </Select>
-                {newClientForm.isInternational && (
-                  <p className="text-xs text-muted-foreground">
-                    Pour les entreprises hors France, les champs SIRET et TVA sont optionnels.
-                  </p>
-                )}
               </div>
-            )}
 
-            {/* Nom (entreprise) ou Prénom/Nom (particulier) */}
-            {newClientForm.type === "COMPANY" ? (
-              <div className="space-y-2">
-                <Label htmlFor="client-name" className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
-                  Nom de l&apos;entreprise <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="client-name"
-                  value={newClientForm.name}
-                  onChange={(e) => {
-                    setNewClientForm((prev) => ({ ...prev, name: e.target.value }));
-                    if (formErrors.name) setFormErrors((prev) => ({ ...prev, name: null }));
-                  }}
-                  placeholder="Nom de l'entreprise"
-                  className={cn(formErrors.name && "border-red-500 hover:border-red-500")}
-                />
-                {formErrors.name && <p className="text-xs text-red-500 mt-1">{formErrors.name}</p>}
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-4">
+              {/* Localisation - entreprises uniquement */}
+              {newClientForm.type === "COMPANY" && (
                 <div className="space-y-2">
-                  <Label htmlFor="client-firstname" className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">Prénom</Label>
+                  <Label className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
+                    Localisation de l&apos;entreprise
+                  </Label>
+                  <Select
+                    value={
+                      newClientForm.isInternational ? "international" : "france"
+                    }
+                    onValueChange={(value) => {
+                      setNewClientForm((prev) => ({
+                        ...prev,
+                        isInternational: value === "international",
+                        siret: value === "international" ? "" : prev.siret,
+                        vatNumber:
+                          value === "international" ? "" : prev.vatNumber,
+                      }));
+                    }}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Localisation" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="france">
+                        <span className="flex items-center gap-2">
+                          <span>🇫🇷</span>
+                          <span>France</span>
+                        </span>
+                      </SelectItem>
+                      <SelectItem value="international">
+                        <span className="flex items-center gap-2">
+                          <Globe className="h-3.5 w-3.5" />
+                          <span>Hors France</span>
+                        </span>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {newClientForm.isInternational && (
+                    <p className="text-xs text-muted-foreground">
+                      Pour les entreprises hors France, les champs SIRET et TVA
+                      sont optionnels.
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Nom (entreprise) ou Prénom/Nom (particulier) */}
+              {newClientForm.type === "COMPANY" ? (
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="client-name"
+                    className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
+                  >
+                    Nom de l&apos;entreprise{" "}
+                    <span className="text-red-500">*</span>
+                  </Label>
                   <Input
-                    id="client-firstname"
-                    value={newClientForm.firstName}
+                    id="client-name"
+                    value={newClientForm.name}
                     onChange={(e) => {
                       setNewClientForm((prev) => ({
                         ...prev,
-                        firstName: e.target.value,
-                        name: `${e.target.value} ${prev.lastName || ""}`.trim(),
+                        name: e.target.value,
                       }));
-                      if (formErrors.name) setFormErrors((prev) => ({ ...prev, name: null }));
+                      if (formErrors.name)
+                        setFormErrors((prev) => ({ ...prev, name: null }));
                     }}
-                    placeholder="Prénom"
+                    placeholder="Nom de l'entreprise"
+                    className={cn(
+                      formErrors.name && "border-red-500 hover:border-red-500",
+                    )}
                   />
+                  {formErrors.name && (
+                    <p className="text-xs text-red-500 mt-1">
+                      {formErrors.name}
+                    </p>
+                  )}
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="client-lastname" className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">Nom</Label>
-                  <Input
-                    id="client-lastname"
-                    value={newClientForm.lastName}
-                    onChange={(e) => {
-                      setNewClientForm((prev) => ({
-                        ...prev,
-                        lastName: e.target.value,
-                        name: `${prev.firstName || ""} ${e.target.value}`.trim(),
-                      }));
-                      if (formErrors.name) setFormErrors((prev) => ({ ...prev, name: null }));
-                    }}
-                    placeholder="Nom"
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Email + Téléphone */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="client-email" className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
-                  Email <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="client-email"
-                  type="email"
-                  value={newClientForm.email}
-                  onChange={(e) => {
-                    setNewClientForm((prev) => ({ ...prev, email: e.target.value }));
-                    if (formErrors.email) setFormErrors((prev) => ({ ...prev, email: null }));
-                  }}
-                  placeholder="contact@exemple.com"
-                  className={cn(formErrors.email && "border-red-500 hover:border-red-500")}
-                />
-                {formErrors.email && <p className="text-xs text-red-500 mt-1">{formErrors.email}</p>}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="client-phone" className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">Téléphone</Label>
-                <Input
-                  id="client-phone"
-                  value={newClientForm.phone}
-                  onChange={(e) => {
-                    setNewClientForm((prev) => ({ ...prev, phone: e.target.value }));
-                    if (formErrors.phone) {
-                      setFormErrors((prev) => { const n = { ...prev }; delete n.phone; return n; });
-                    }
-                  }}
-                  placeholder="01 23 45 67 89"
-                  className={cn(formErrors.phone && "border-red-500 hover:border-red-500")}
-                />
-                {formErrors.phone && <p className="text-xs text-red-500 mt-1">{formErrors.phone}</p>}
-              </div>
-            </div>
-
-            {/* SIRET / TVA - entreprises uniquement */}
-            {newClientForm.type === "COMPANY" && (
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="client-siret" className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
-                    {newClientForm.isInternational ? "N° d'identification" : "SIREN/SIRET"}
-                    <span className="text-red-500"> *</span>
-                  </Label>
-                  <Input
-                    id="client-siret"
-                    value={newClientForm.siret || ""}
-                    onChange={(e) => setNewClientForm((prev) => ({ ...prev, siret: e.target.value }))}
-                    placeholder={newClientForm.isInternational ? "N° d'identification" : "123456789 ou 12345678901234"}
-                    disabled={disabled}
-                    className={cn(formErrors.siret && "border-red-500 hover:border-red-500")}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    {newClientForm.isInternational
-                      ? "N° d'identification fiscale ou équivalent local"
-                      : "SIREN (9 chiffres) ou SIRET (14 chiffres)"}
-                  </p>
-                  {formErrors.siret && <p className="text-xs text-red-500 mt-1">{formErrors.siret}</p>}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="client-vat" className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">N° TVA</Label>
-                  <Input
-                    id="client-vat"
-                    value={newClientForm.vatNumber || ""}
-                    onChange={(e) => setNewClientForm((prev) => ({ ...prev, vatNumber: e.target.value }))}
-                    placeholder={newClientForm.isInternational ? "TVA intracommunautaire" : "FR12345678901"}
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* ─── Adresse de facturation ─── */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <div className="h-px bg-border flex-1" />
-                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  Adresse de facturation
-                </span>
-                <div className="h-px bg-border flex-1" />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="client-street" className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
-                  Adresse <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="client-street"
-                  value={newClientForm.address?.street || ""}
-                  onChange={(e) => {
-                    setNewClientForm((prev) => ({ ...prev, address: { ...prev.address, street: e.target.value } }));
-                    if (formErrors["address.street"]) {
-                      setFormErrors((prev) => { const n = { ...prev }; delete n["address.street"]; return n; });
-                    }
-                  }}
-                  placeholder="1 rue de l'exemple"
-                  className={cn(formErrors["address.street"] && "border-red-500 hover:border-red-500")}
-                />
-                {formErrors["address.street"] && <p className="text-xs text-red-500 mt-1">{formErrors["address.street"]}</p>}
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="client-postal-code" className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
-                    Code postal <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id="client-postal-code"
-                    value={newClientForm.address?.postalCode || ""}
-                    onChange={(e) => {
-                      setNewClientForm((prev) => ({ ...prev, address: { ...prev.address, postalCode: e.target.value } }));
-                      if (formErrors["address.postalCode"]) {
-                        setFormErrors((prev) => { const n = { ...prev }; delete n["address.postalCode"]; return n; });
-                      }
-                    }}
-                    placeholder={newClientForm.isInternational ? "Ex: SW1A 1AA" : "75000"}
-                    className={cn(formErrors["address.postalCode"] && "border-red-500 hover:border-red-500")}
-                  />
-                  {formErrors["address.postalCode"] && <p className="text-xs text-red-500 mt-1">{formErrors["address.postalCode"]}</p>}
-                </div>
-                <div className="space-y-2 col-span-2">
-                  <Label htmlFor="client-city" className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
-                    Ville <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id="client-city"
-                    value={newClientForm.address?.city || ""}
-                    onChange={(e) => {
-                      setNewClientForm((prev) => ({ ...prev, address: { ...prev.address, city: e.target.value } }));
-                      if (formErrors["address.city"]) {
-                        setFormErrors((prev) => { const n = { ...prev }; delete n["address.city"]; return n; });
-                      }
-                    }}
-                    placeholder="Paris"
-                    className={cn(formErrors["address.city"] && "border-red-500 hover:border-red-500")}
-                  />
-                  {formErrors["address.city"] && <p className="text-xs text-red-500 mt-1">{formErrors["address.city"]}</p>}
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="client-country" className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">Pays</Label>
-                <Input
-                  id="client-country"
-                  value={newClientForm.address?.country || "France"}
-                  onChange={(e) =>
-                    setNewClientForm((prev) => ({ ...prev, address: { ...prev.address, country: e.target.value } }))
-                  }
-                  placeholder="France"
-                />
-              </div>
-            </div>
-
-            {/* Hidden textarea for address sync */}
-            <div className="hidden">
-              <Textarea
-                id="client-address"
-                value={`${newClientForm.address.street}\n${newClientForm.address.postalCode} ${newClientForm.address.city}\n${newClientForm.address.country}`}
-                onChange={(e) => {
-                  const lines = e.target.value.split("\n");
-                  setNewClientForm((prev) => ({
-                    ...prev,
-                    address: {
-                      ...defaultAddress,
-                      ...prev.address,
-                      street: lines[0] || "",
-                      postalCode: lines[1]?.split(" ")[0] || "",
-                      city: lines[1]?.split(" ").slice(1).join(" ").trim() || "",
-                      country: (lines[2] || "France").trim(),
-                    },
-                  }));
-                }}
-                rows={1}
-              />
-            </div>
-
-            {/* Adresse de livraison */}
-            <div className="space-y-2">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="different-shipping-address"
-                  checked={newClientForm.hasDifferentShippingAddress || false}
-                  onCheckedChange={(checked) => {
-                    setNewClientForm((prev) => ({
-                      ...prev,
-                      hasDifferentShippingAddress: Boolean(checked),
-                    }));
-                  }}
-                />
-                <Label htmlFor="different-shipping-address" className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55 cursor-pointer">
-                  Utiliser une adresse de livraison différente
-                </Label>
-              </div>
-
-              {newClientForm.hasDifferentShippingAddress && (
-                <div className="space-y-4 pl-6 pt-2 border-l-2 border-border">
+              ) : (
+                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="shipping-fullname" className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">Nom complet</Label>
-                    <Input
-                      id="shipping-fullname"
-                      value={newClientForm.shippingAddress?.fullName || ""}
-                      onChange={(e) => setNewClientForm((prev) => ({ ...prev, shippingAddress: { ...prev.shippingAddress, fullName: e.target.value } }))}
-                      placeholder="Nom complet du destinataire"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="shipping-street" className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
-                      Rue <span className="text-red-500">*</span>
+                    <Label
+                      htmlFor="client-firstname"
+                      className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
+                    >
+                      Prénom
                     </Label>
                     <Input
-                      id="shipping-street"
-                      value={newClientForm.shippingAddress?.street || ""}
+                      id="client-firstname"
+                      value={newClientForm.firstName}
                       onChange={(e) => {
-                        setNewClientForm((prev) => ({ ...prev, shippingAddress: { ...prev.shippingAddress, street: e.target.value } }));
-                        if (formErrors["shippingAddress.street"]) {
-                          setFormErrors((prev) => { const n = { ...prev }; delete n["shippingAddress.street"]; return n; });
-                        }
+                        setNewClientForm((prev) => ({
+                          ...prev,
+                          firstName: e.target.value,
+                          name: `${e.target.value} ${prev.lastName || ""}`.trim(),
+                        }));
+                        if (formErrors.name)
+                          setFormErrors((prev) => ({ ...prev, name: null }));
                       }}
-                      placeholder="123 Rue de la Paix"
-                      className={cn(formErrors["shippingAddress.street"] && "border-red-500 hover:border-red-500")}
+                      placeholder="Prénom"
                     />
-                    {formErrors["shippingAddress.street"] && <p className="text-xs text-red-500 mt-1">{formErrors["shippingAddress.street"]}</p>}
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="shipping-postal-code" className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">Code postal</Label>
-                      <Input
-                        id="shipping-postal-code"
-                        value={newClientForm.shippingAddress?.postalCode || ""}
-                        onChange={(e) => {
-                          setNewClientForm((prev) => ({ ...prev, shippingAddress: { ...prev.shippingAddress, postalCode: e.target.value } }));
-                          if (formErrors["shippingAddress.postalCode"]) {
-                            setFormErrors((prev) => { const n = { ...prev }; delete n["shippingAddress.postalCode"]; return n; });
-                          }
-                        }}
-                        placeholder={newClientForm.isInternational ? "Ex: SW1A 1AA" : "75001"}
-                        className={cn(formErrors["shippingAddress.postalCode"] && "border-red-500 hover:border-red-500")}
-                      />
-                      {formErrors["shippingAddress.postalCode"] && <p className="text-xs text-red-500 mt-1">{formErrors["shippingAddress.postalCode"]}</p>}
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="shipping-city" className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">
-                        Ville <span className="text-red-500">*</span>
-                      </Label>
-                      <Input
-                        id="shipping-city"
-                        value={newClientForm.shippingAddress?.city || ""}
-                        onChange={(e) => {
-                          setNewClientForm((prev) => ({ ...prev, shippingAddress: { ...prev.shippingAddress, city: e.target.value } }));
-                          if (formErrors["shippingAddress.city"]) {
-                            setFormErrors((prev) => { const n = { ...prev }; delete n["shippingAddress.city"]; return n; });
-                          }
-                        }}
-                        placeholder="Paris"
-                        className={cn(formErrors["shippingAddress.city"] && "border-red-500 hover:border-red-500")}
-                      />
-                      {formErrors["shippingAddress.city"] && <p className="text-xs text-red-500 mt-1">{formErrors["shippingAddress.city"]}</p>}
-                    </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="shipping-country" className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">Pays</Label>
+                    <Label
+                      htmlFor="client-lastname"
+                      className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
+                    >
+                      Nom
+                    </Label>
                     <Input
-                      id="shipping-country"
-                      value={newClientForm.shippingAddress?.country || "France"}
-                      onChange={(e) => setNewClientForm((prev) => ({ ...prev, shippingAddress: { ...prev.shippingAddress, country: e.target.value } }))}
-                      placeholder="France"
+                      id="client-lastname"
+                      value={newClientForm.lastName}
+                      onChange={(e) => {
+                        setNewClientForm((prev) => ({
+                          ...prev,
+                          lastName: e.target.value,
+                          name: `${prev.firstName || ""} ${e.target.value}`.trim(),
+                        }));
+                        if (formErrors.name)
+                          setFormErrors((prev) => ({ ...prev, name: null }));
+                      }}
+                      placeholder="Nom"
                     />
                   </div>
                 </div>
               )}
-            </div>
 
-            {/* Notes */}
-            <div className="space-y-2">
-              <Label htmlFor="client-notes" className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55">Notes (optionnel)</Label>
-              <Textarea
-                id="client-notes"
-                value={newClientForm.notes}
-                onChange={(e) => setNewClientForm((prev) => ({ ...prev, notes: e.target.value }))}
-                placeholder="Notes internes sur ce client..."
-                rows={2}
-                className="rounded-lg px-2.5 py-2 text-sm font-medium leading-5 -tracking-[0.01em] resize-none border border-[#e6e7ea] hover:border-[#D1D3D8] dark:border-[#2E2E32] dark:hover:border-[#44444A] bg-transparent transition-[border] duration-[80ms] ease-in-out focus-visible:outline-none focus-visible:ring-0"
-              />
-              <p className="text-xs text-muted-foreground">Ces notes ne seront visibles que par vous</p>
+              {/* Email + Téléphone */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="client-email"
+                    className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
+                  >
+                    Email <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="client-email"
+                    type="email"
+                    value={newClientForm.email}
+                    onChange={(e) => {
+                      setNewClientForm((prev) => ({
+                        ...prev,
+                        email: e.target.value,
+                      }));
+                      if (formErrors.email)
+                        setFormErrors((prev) => ({ ...prev, email: null }));
+                    }}
+                    placeholder="contact@exemple.com"
+                    className={cn(
+                      formErrors.email && "border-red-500 hover:border-red-500",
+                    )}
+                  />
+                  {formErrors.email && (
+                    <p className="text-xs text-red-500 mt-1">
+                      {formErrors.email}
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="client-phone"
+                    className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
+                  >
+                    Téléphone
+                  </Label>
+                  <Input
+                    id="client-phone"
+                    value={newClientForm.phone}
+                    onChange={(e) => {
+                      setNewClientForm((prev) => ({
+                        ...prev,
+                        phone: e.target.value,
+                      }));
+                      if (formErrors.phone) {
+                        setFormErrors((prev) => {
+                          const n = { ...prev };
+                          delete n.phone;
+                          return n;
+                        });
+                      }
+                    }}
+                    placeholder="01 23 45 67 89"
+                    className={cn(
+                      formErrors.phone && "border-red-500 hover:border-red-500",
+                    )}
+                  />
+                  {formErrors.phone && (
+                    <p className="text-xs text-red-500 mt-1">
+                      {formErrors.phone}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* SIRET / TVA - entreprises uniquement */}
+              {newClientForm.type === "COMPANY" && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label
+                      htmlFor="client-siret"
+                      className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
+                    >
+                      {newClientForm.isInternational
+                        ? "N° d'identification"
+                        : "SIREN/SIRET"}
+                      <span className="text-red-500"> *</span>
+                    </Label>
+                    <Input
+                      id="client-siret"
+                      value={newClientForm.siret || ""}
+                      onChange={(e) =>
+                        setNewClientForm((prev) => ({
+                          ...prev,
+                          siret: e.target.value,
+                        }))
+                      }
+                      placeholder={
+                        newClientForm.isInternational
+                          ? "N° d'identification"
+                          : "123456789 ou 12345678901234"
+                      }
+                      disabled={disabled}
+                      className={cn(
+                        formErrors.siret &&
+                          "border-red-500 hover:border-red-500",
+                      )}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      {newClientForm.isInternational
+                        ? "N° d'identification fiscale ou équivalent local"
+                        : "SIREN (9 chiffres) ou SIRET (14 chiffres)"}
+                    </p>
+                    {formErrors.siret && (
+                      <p className="text-xs text-red-500 mt-1">
+                        {formErrors.siret}
+                      </p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label
+                      htmlFor="client-vat"
+                      className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
+                    >
+                      N° TVA
+                    </Label>
+                    <Input
+                      id="client-vat"
+                      value={newClientForm.vatNumber || ""}
+                      onChange={(e) =>
+                        setNewClientForm((prev) => ({
+                          ...prev,
+                          vatNumber: e.target.value,
+                        }))
+                      }
+                      placeholder={
+                        newClientForm.isInternational
+                          ? "TVA intracommunautaire"
+                          : "FR12345678901"
+                      }
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* ─── Adresse de facturation ─── */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <div className="h-px bg-border flex-1" />
+                  <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                    Adresse de facturation
+                  </span>
+                  <div className="h-px bg-border flex-1" />
+                </div>
+
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="client-street"
+                    className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
+                  >
+                    Adresse <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="client-street"
+                    value={newClientForm.address?.street || ""}
+                    onChange={(e) => {
+                      setNewClientForm((prev) => ({
+                        ...prev,
+                        address: { ...prev.address, street: e.target.value },
+                      }));
+                      if (formErrors["address.street"]) {
+                        setFormErrors((prev) => {
+                          const n = { ...prev };
+                          delete n["address.street"];
+                          return n;
+                        });
+                      }
+                    }}
+                    placeholder="1 rue de l'exemple"
+                    className={cn(
+                      formErrors["address.street"] &&
+                        "border-red-500 hover:border-red-500",
+                    )}
+                  />
+                  {formErrors["address.street"] && (
+                    <p className="text-xs text-red-500 mt-1">
+                      {formErrors["address.street"]}
+                    </p>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label
+                      htmlFor="client-postal-code"
+                      className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
+                    >
+                      Code postal <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      id="client-postal-code"
+                      value={newClientForm.address?.postalCode || ""}
+                      onChange={(e) => {
+                        setNewClientForm((prev) => ({
+                          ...prev,
+                          address: {
+                            ...prev.address,
+                            postalCode: e.target.value,
+                          },
+                        }));
+                        if (formErrors["address.postalCode"]) {
+                          setFormErrors((prev) => {
+                            const n = { ...prev };
+                            delete n["address.postalCode"];
+                            return n;
+                          });
+                        }
+                      }}
+                      placeholder={
+                        newClientForm.isInternational ? "Ex: SW1A 1AA" : "75000"
+                      }
+                      className={cn(
+                        formErrors["address.postalCode"] &&
+                          "border-red-500 hover:border-red-500",
+                      )}
+                    />
+                    {formErrors["address.postalCode"] && (
+                      <p className="text-xs text-red-500 mt-1">
+                        {formErrors["address.postalCode"]}
+                      </p>
+                    )}
+                  </div>
+                  <div className="space-y-2 col-span-2">
+                    <Label
+                      htmlFor="client-city"
+                      className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
+                    >
+                      Ville <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      id="client-city"
+                      value={newClientForm.address?.city || ""}
+                      onChange={(e) => {
+                        setNewClientForm((prev) => ({
+                          ...prev,
+                          address: { ...prev.address, city: e.target.value },
+                        }));
+                        if (formErrors["address.city"]) {
+                          setFormErrors((prev) => {
+                            const n = { ...prev };
+                            delete n["address.city"];
+                            return n;
+                          });
+                        }
+                      }}
+                      placeholder="Paris"
+                      className={cn(
+                        formErrors["address.city"] &&
+                          "border-red-500 hover:border-red-500",
+                      )}
+                    />
+                    {formErrors["address.city"] && (
+                      <p className="text-xs text-red-500 mt-1">
+                        {formErrors["address.city"]}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="client-country"
+                    className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
+                  >
+                    Pays
+                  </Label>
+                  <Input
+                    id="client-country"
+                    value={newClientForm.address?.country || "France"}
+                    onChange={(e) =>
+                      setNewClientForm((prev) => ({
+                        ...prev,
+                        address: { ...prev.address, country: e.target.value },
+                      }))
+                    }
+                    placeholder="France"
+                  />
+                </div>
+              </div>
+
+              {/* Hidden textarea for address sync */}
+              <div className="hidden">
+                <Textarea
+                  id="client-address"
+                  value={`${newClientForm.address.street}\n${newClientForm.address.postalCode} ${newClientForm.address.city}\n${newClientForm.address.country}`}
+                  onChange={(e) => {
+                    const lines = e.target.value.split("\n");
+                    setNewClientForm((prev) => ({
+                      ...prev,
+                      address: {
+                        ...defaultAddress,
+                        ...prev.address,
+                        street: lines[0] || "",
+                        postalCode: lines[1]?.split(" ")[0] || "",
+                        city:
+                          lines[1]?.split(" ").slice(1).join(" ").trim() || "",
+                        country: (lines[2] || "France").trim(),
+                      },
+                    }));
+                  }}
+                  rows={1}
+                />
+              </div>
+
+              {/* Adresse de livraison */}
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="different-shipping-address"
+                    checked={newClientForm.hasDifferentShippingAddress || false}
+                    onCheckedChange={(checked) => {
+                      setNewClientForm((prev) => ({
+                        ...prev,
+                        hasDifferentShippingAddress: Boolean(checked),
+                      }));
+                    }}
+                  />
+                  <Label
+                    htmlFor="different-shipping-address"
+                    className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55 cursor-pointer"
+                  >
+                    Utiliser une adresse de livraison différente
+                  </Label>
+                </div>
+
+                {newClientForm.hasDifferentShippingAddress && (
+                  <div className="space-y-4 pl-6 pt-2 border-l-2 border-border">
+                    <div className="space-y-2">
+                      <Label
+                        htmlFor="shipping-fullname"
+                        className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
+                      >
+                        Nom complet
+                      </Label>
+                      <Input
+                        id="shipping-fullname"
+                        value={newClientForm.shippingAddress?.fullName || ""}
+                        onChange={(e) =>
+                          setNewClientForm((prev) => ({
+                            ...prev,
+                            shippingAddress: {
+                              ...prev.shippingAddress,
+                              fullName: e.target.value,
+                            },
+                          }))
+                        }
+                        placeholder="Nom complet du destinataire"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label
+                        htmlFor="shipping-street"
+                        className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
+                      >
+                        Rue <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        id="shipping-street"
+                        value={newClientForm.shippingAddress?.street || ""}
+                        onChange={(e) => {
+                          setNewClientForm((prev) => ({
+                            ...prev,
+                            shippingAddress: {
+                              ...prev.shippingAddress,
+                              street: e.target.value,
+                            },
+                          }));
+                          if (formErrors["shippingAddress.street"]) {
+                            setFormErrors((prev) => {
+                              const n = { ...prev };
+                              delete n["shippingAddress.street"];
+                              return n;
+                            });
+                          }
+                        }}
+                        placeholder="123 Rue de la Paix"
+                        className={cn(
+                          formErrors["shippingAddress.street"] &&
+                            "border-red-500 hover:border-red-500",
+                        )}
+                      />
+                      {formErrors["shippingAddress.street"] && (
+                        <p className="text-xs text-red-500 mt-1">
+                          {formErrors["shippingAddress.street"]}
+                        </p>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor="shipping-postal-code"
+                          className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
+                        >
+                          Code postal
+                        </Label>
+                        <Input
+                          id="shipping-postal-code"
+                          value={
+                            newClientForm.shippingAddress?.postalCode || ""
+                          }
+                          onChange={(e) => {
+                            setNewClientForm((prev) => ({
+                              ...prev,
+                              shippingAddress: {
+                                ...prev.shippingAddress,
+                                postalCode: e.target.value,
+                              },
+                            }));
+                            if (formErrors["shippingAddress.postalCode"]) {
+                              setFormErrors((prev) => {
+                                const n = { ...prev };
+                                delete n["shippingAddress.postalCode"];
+                                return n;
+                              });
+                            }
+                          }}
+                          placeholder={
+                            newClientForm.isInternational
+                              ? "Ex: SW1A 1AA"
+                              : "75001"
+                          }
+                          className={cn(
+                            formErrors["shippingAddress.postalCode"] &&
+                              "border-red-500 hover:border-red-500",
+                          )}
+                        />
+                        {formErrors["shippingAddress.postalCode"] && (
+                          <p className="text-xs text-red-500 mt-1">
+                            {formErrors["shippingAddress.postalCode"]}
+                          </p>
+                        )}
+                      </div>
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor="shipping-city"
+                          className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
+                        >
+                          Ville <span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                          id="shipping-city"
+                          value={newClientForm.shippingAddress?.city || ""}
+                          onChange={(e) => {
+                            setNewClientForm((prev) => ({
+                              ...prev,
+                              shippingAddress: {
+                                ...prev.shippingAddress,
+                                city: e.target.value,
+                              },
+                            }));
+                            if (formErrors["shippingAddress.city"]) {
+                              setFormErrors((prev) => {
+                                const n = { ...prev };
+                                delete n["shippingAddress.city"];
+                                return n;
+                              });
+                            }
+                          }}
+                          placeholder="Paris"
+                          className={cn(
+                            formErrors["shippingAddress.city"] &&
+                              "border-red-500 hover:border-red-500",
+                          )}
+                        />
+                        {formErrors["shippingAddress.city"] && (
+                          <p className="text-xs text-red-500 mt-1">
+                            {formErrors["shippingAddress.city"]}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label
+                        htmlFor="shipping-country"
+                        className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
+                      >
+                        Pays
+                      </Label>
+                      <Input
+                        id="shipping-country"
+                        value={
+                          newClientForm.shippingAddress?.country || "France"
+                        }
+                        onChange={(e) =>
+                          setNewClientForm((prev) => ({
+                            ...prev,
+                            shippingAddress: {
+                              ...prev.shippingAddress,
+                              country: e.target.value,
+                            },
+                          }))
+                        }
+                        placeholder="France"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Notes */}
+              <div className="space-y-2">
+                <Label
+                  htmlFor="client-notes"
+                  className="text-xs font-medium leading-4 -tracking-[0.01em] text-black/55 dark:text-white/55"
+                >
+                  Notes (optionnel)
+                </Label>
+                <Textarea
+                  id="client-notes"
+                  value={newClientForm.notes}
+                  onChange={(e) =>
+                    setNewClientForm((prev) => ({
+                      ...prev,
+                      notes: e.target.value,
+                    }))
+                  }
+                  placeholder="Notes internes sur ce client..."
+                  rows={2}
+                  className="rounded-lg px-2.5 py-2 text-sm font-medium leading-5 -tracking-[0.01em] resize-none border border-[#e6e7ea] hover:border-[#D1D3D8] dark:border-[#2E2E32] dark:hover:border-[#44444A] bg-transparent transition-[border] duration-[80ms] ease-in-out focus-visible:outline-none focus-visible:ring-0"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Ces notes ne seront visibles que par vous
+                </p>
+              </div>
             </div>
-          </div>
           </div>
 
           <DialogFooter className="gap-2 sm:gap-2 px-6 py-4 shrink-0 border-t border-[#e6e7ea] dark:border-[#232323]">
@@ -1436,7 +1716,12 @@ export default function ClientSelector({
               type="button"
               variant="outline"
               onClick={() => handleCreateClient(false)}
-              disabled={createLoading || !newClientForm.name || !newClientForm.email || disabled}
+              disabled={
+                createLoading ||
+                !newClientForm.name ||
+                !newClientForm.email ||
+                disabled
+              }
             >
               {createLoading ? (
                 <>
@@ -1450,7 +1735,12 @@ export default function ClientSelector({
             <Button
               type="button"
               onClick={() => handleCreateClient(true)}
-              disabled={createLoading || !newClientForm.name || !newClientForm.email || disabled}
+              disabled={
+                createLoading ||
+                !newClientForm.name ||
+                !newClientForm.email ||
+                disabled
+              }
             >
               {createLoading ? (
                 <>

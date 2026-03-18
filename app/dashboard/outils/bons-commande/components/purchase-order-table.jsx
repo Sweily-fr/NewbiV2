@@ -80,7 +80,12 @@ import { ImportPurchaseOrderModal } from "./import-purchase-order-modal";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
 
-export default function PurchaseOrderTable({ handleNewPurchaseOrder, poIdToOpen, triggerImport, onImportTriggered }) {
+export default function PurchaseOrderTable({
+  handleNewPurchaseOrder,
+  poIdToOpen,
+  triggerImport,
+  onImportTriggered,
+}) {
   const inputRef = useRef(null);
   const { purchaseOrders, loading, error, refetch } = usePurchaseOrders();
   const { workspaceId } = useRequiredWorkspace();
@@ -197,7 +202,11 @@ export default function PurchaseOrderTable({ handleNewPurchaseOrder, poIdToOpen,
         {/* Search + Filtres à gauche */}
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-2 h-8 w-full sm:w-[400px] rounded-[9px] border border-[#E6E7EA] hover:border-[#D1D3D8] dark:border-[#2E2E32] dark:hover:border-[#44444A] bg-transparent px-3 transition-[color,box-shadow] focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]">
-            <Search size={16} className="text-muted-foreground/80 shrink-0" aria-hidden="true" />
+            <Search
+              size={16}
+              className="text-muted-foreground/80 shrink-0"
+              aria-hidden="true"
+            />
             <Input
               variant="ghost"
               ref={inputRef}
@@ -239,12 +248,12 @@ export default function PurchaseOrderTable({ handleNewPurchaseOrder, poIdToOpen,
                   <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
                   <AlertDialogDescription>
                     Êtes-vous sûr de vouloir supprimer {selectedRows.length}{" "}
-                    bon(s) de commande sélectionné(s) ? Cette action ne peut pas être
-                    annulée.
+                    bon(s) de commande sélectionné(s) ? Cette action ne peut pas
+                    être annulée.
                     <br />
                     <br />
-                    <strong>Note :</strong> Seuls les brouillons peuvent
-                    être supprimés.
+                    <strong>Note :</strong> Seuls les brouillons peuvent être
+                    supprimés.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -268,7 +277,7 @@ export default function PurchaseOrderTable({ handleNewPurchaseOrder, poIdToOpen,
           <TabsList className="h-auto rounded-none bg-transparent p-0 pb-2 w-full justify-start px-4 sm:px-6">
             <TabsTrigger
               value="all"
-              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground hover:shadow-[inset_0_0_0_1px_#EEEFF1] dark:hover:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
+              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
             >
               <span>Tous</span>
               <span className="text-xs text-muted-foreground">
@@ -277,7 +286,7 @@ export default function PurchaseOrderTable({ handleNewPurchaseOrder, poIdToOpen,
             </TabsTrigger>
             <TabsTrigger
               value="draft"
-              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground hover:shadow-[inset_0_0_0_1px_#EEEFF1] dark:hover:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
+              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
             >
               <span>Brouillons</span>
               <span className="text-xs text-muted-foreground">
@@ -286,7 +295,7 @@ export default function PurchaseOrderTable({ handleNewPurchaseOrder, poIdToOpen,
             </TabsTrigger>
             <TabsTrigger
               value="confirmed"
-              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground hover:shadow-[inset_0_0_0_1px_#EEEFF1] dark:hover:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
+              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
             >
               <span>Confirmés</span>
               <span className="text-xs text-muted-foreground">
@@ -295,7 +304,7 @@ export default function PurchaseOrderTable({ handleNewPurchaseOrder, poIdToOpen,
             </TabsTrigger>
             <TabsTrigger
               value="inProgress"
-              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground hover:shadow-[inset_0_0_0_1px_#EEEFF1] dark:hover:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
+              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
             >
               <span>En cours</span>
               <span className="text-xs text-muted-foreground">
@@ -304,7 +313,7 @@ export default function PurchaseOrderTable({ handleNewPurchaseOrder, poIdToOpen,
             </TabsTrigger>
             <TabsTrigger
               value="delivered"
-              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground hover:shadow-[inset_0_0_0_1px_#EEEFF1] dark:hover:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
+              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
             >
               <span>Livrés</span>
               <span className="text-xs text-muted-foreground">
@@ -354,7 +363,7 @@ export default function PurchaseOrderTable({ handleNewPurchaseOrder, poIdToOpen,
                               setStatusFilter([...statusFilter, status]);
                             } else {
                               setStatusFilter(
-                                statusFilter.filter((s) => s !== status)
+                                statusFilter.filter((s) => s !== status),
                               );
                             }
                           }}
@@ -366,7 +375,7 @@ export default function PurchaseOrderTable({ handleNewPurchaseOrder, poIdToOpen,
                           {label}
                         </Label>
                       </div>
-                    )
+                    ),
                   )}
                 </div>
                 {statusFilter.length > 0 && (
@@ -389,7 +398,7 @@ export default function PurchaseOrderTable({ handleNewPurchaseOrder, poIdToOpen,
               className="h-9 px-3"
               onClick={() => {
                 const deleteButton = document.querySelector(
-                  "[data-mobile-delete-trigger-po]"
+                  "[data-mobile-delete-trigger-po]",
                 );
                 if (deleteButton) deleteButton.click();
               }}
@@ -417,7 +426,7 @@ export default function PurchaseOrderTable({ handleNewPurchaseOrder, poIdToOpen,
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
-                            header.getContext()
+                            header.getContext(),
                           )}
                     </th>
                   ))}
@@ -432,18 +441,30 @@ export default function PurchaseOrderTable({ handleNewPurchaseOrder, poIdToOpen,
               {loading ? (
                 Array.from({ length: 8 }).map((_, i) => (
                   <tr key={`skeleton-${i}`} className="border-b">
-                    <td className="p-2 pl-4 sm:pl-6"><div className="h-4 w-4 rounded bg-muted animate-pulse" /></td>
+                    <td className="p-2 pl-4 sm:pl-6">
+                      <div className="h-4 w-4 rounded bg-muted animate-pulse" />
+                    </td>
                     <td className="p-2">
                       <div className="flex items-center gap-3">
                         <div className="h-8 w-8 rounded-full bg-muted animate-pulse flex-shrink-0" />
                         <div className="h-4 w-[140px] rounded bg-muted animate-pulse" />
                       </div>
                     </td>
-                    <td className="p-2"><div className="h-4 w-[70px] rounded bg-muted animate-pulse" /></td>
-                    <td className="p-2"><div className="h-4 w-[70px] rounded bg-muted animate-pulse" /></td>
-                    <td className="p-2"><div className="h-5 w-[70px] rounded-full bg-muted animate-pulse" /></td>
-                    <td className="p-2"><div className="h-4 w-[80px] rounded bg-muted animate-pulse" /></td>
-                    <td className="p-2 pr-4 sm:pr-6"><div className="h-7 w-7 rounded bg-muted animate-pulse" /></td>
+                    <td className="p-2">
+                      <div className="h-4 w-[70px] rounded bg-muted animate-pulse" />
+                    </td>
+                    <td className="p-2">
+                      <div className="h-4 w-[70px] rounded bg-muted animate-pulse" />
+                    </td>
+                    <td className="p-2">
+                      <div className="h-5 w-[70px] rounded-full bg-muted animate-pulse" />
+                    </td>
+                    <td className="p-2">
+                      <div className="h-4 w-[80px] rounded bg-muted animate-pulse" />
+                    </td>
+                    <td className="p-2 pr-4 sm:pr-6">
+                      <div className="h-7 w-7 rounded bg-muted animate-pulse" />
+                    </td>
                   </tr>
                 ))
               ) : table.getRowModel().rows?.length ? (
@@ -464,8 +485,9 @@ export default function PurchaseOrderTable({ handleNewPurchaseOrder, poIdToOpen,
                       ) {
                         return;
                       }
-                      const actionsButton =
-                        e.currentTarget.querySelector("[data-view-purchase-order]");
+                      const actionsButton = e.currentTarget.querySelector(
+                        "[data-view-purchase-order]",
+                      );
                       if (actionsButton) {
                         actionsButton.click();
                       }
@@ -479,7 +501,7 @@ export default function PurchaseOrderTable({ handleNewPurchaseOrder, poIdToOpen,
                       >
                         {flexRender(
                           cell.column.columnDef.cell,
-                          cell.getContext()
+                          cell.getContext(),
                         )}
                       </td>
                     ))}
@@ -515,7 +537,7 @@ export default function PurchaseOrderTable({ handleNewPurchaseOrder, poIdToOpen,
                       header.column.id === "select" ||
                       header.column.id === "client" ||
                       header.column.id === "finalTotalTTC" ||
-                      header.column.id === "actions"
+                      header.column.id === "actions",
                   )
                   .map((header) => (
                     <TableHead
@@ -527,7 +549,7 @@ export default function PurchaseOrderTable({ handleNewPurchaseOrder, poIdToOpen,
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
-                            header.getContext()
+                            header.getContext(),
                           )}
                     </TableHead>
                   ))}
@@ -537,16 +559,25 @@ export default function PurchaseOrderTable({ handleNewPurchaseOrder, poIdToOpen,
           <TableBody>
             {loading ? (
               Array.from({ length: 6 }).map((_, i) => (
-                <TableRow key={`skeleton-${i}`} className="border-b border-gray-50 dark:border-gray-800">
-                  <TableCell className="py-3 px-4"><div className="h-4 w-4 rounded bg-muted animate-pulse" /></TableCell>
+                <TableRow
+                  key={`skeleton-${i}`}
+                  className="border-b border-gray-50 dark:border-gray-800"
+                >
+                  <TableCell className="py-3 px-4">
+                    <div className="h-4 w-4 rounded bg-muted animate-pulse" />
+                  </TableCell>
                   <TableCell className="py-3 px-4">
                     <div className="flex items-center gap-3">
                       <div className="h-8 w-8 rounded-full bg-muted animate-pulse flex-shrink-0" />
                       <div className="h-4 w-[100px] rounded bg-muted animate-pulse" />
                     </div>
                   </TableCell>
-                  <TableCell className="py-3 px-4"><div className="h-4 w-[60px] rounded bg-muted animate-pulse" /></TableCell>
-                  <TableCell className="py-3 px-4"><div className="h-7 w-7 rounded bg-muted animate-pulse" /></TableCell>
+                  <TableCell className="py-3 px-4">
+                    <div className="h-4 w-[60px] rounded bg-muted animate-pulse" />
+                  </TableCell>
+                  <TableCell className="py-3 px-4">
+                    <div className="h-7 w-7 rounded bg-muted animate-pulse" />
+                  </TableCell>
                 </TableRow>
               ))
             ) : table.getRowModel().rows?.length ? (
@@ -563,13 +594,13 @@ export default function PurchaseOrderTable({ handleNewPurchaseOrder, poIdToOpen,
                         cell.column.id === "select" ||
                         cell.column.id === "client" ||
                         cell.column.id === "finalTotalTTC" ||
-                        cell.column.id === "actions"
+                        cell.column.id === "actions",
                     )
                     .map((cell) => (
                       <TableCell key={cell.id} className="py-3 px-4 text-sm">
                         {flexRender(
                           cell.column.columnDef.cell,
-                          cell.getContext()
+                          cell.getContext(),
                         )}
                       </TableCell>
                     ))}
@@ -705,16 +736,29 @@ export default function PurchaseOrderTable({ handleNewPurchaseOrder, poIdToOpen,
           documentNumber={`${sendEmailPO.prefix || "BC"}-${sendEmailPO.number}`}
           clientName={sendEmailPO.client?.name}
           clientEmail={sendEmailPO.client?.email}
-          totalAmount={new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(sendEmailPO.finalTotalTTC || sendEmailPO.totalTTC || 0)}
+          totalAmount={new Intl.NumberFormat("fr-FR", {
+            style: "currency",
+            currency: "EUR",
+          }).format(sendEmailPO.finalTotalTTC || sendEmailPO.totalTTC || 0)}
           companyName={sendEmailPO.companyInfo?.name}
-          issueDate={sendEmailPO.issueDate ? (() => {
-            try {
-              const d = typeof sendEmailPO.issueDate === "string" && /^\d+$/.test(sendEmailPO.issueDate)
-                ? new Date(parseInt(sendEmailPO.issueDate, 10))
-                : new Date(sendEmailPO.issueDate);
-              return isNaN(d.getTime()) ? null : d.toLocaleDateString("fr-FR");
-            } catch { return null; }
-          })() : null}
+          issueDate={
+            sendEmailPO.issueDate
+              ? (() => {
+                  try {
+                    const d =
+                      typeof sendEmailPO.issueDate === "string" &&
+                      /^\d+$/.test(sendEmailPO.issueDate)
+                        ? new Date(parseInt(sendEmailPO.issueDate, 10))
+                        : new Date(sendEmailPO.issueDate);
+                    return isNaN(d.getTime())
+                      ? null
+                      : d.toLocaleDateString("fr-FR");
+                  } catch {
+                    return null;
+                  }
+                })()
+              : null
+          }
           onSent={() => setSendEmailPO(null)}
         />
       )}
@@ -725,7 +769,9 @@ export default function PurchaseOrderTable({ handleNewPurchaseOrder, poIdToOpen,
           purchaseOrderId={templatePurchaseOrder.id}
           purchaseOrderNumber={`${templatePurchaseOrder.prefix || "BC"}-${templatePurchaseOrder.number}`}
           open={!!templatePurchaseOrder}
-          onOpenChange={(open) => { if (!open) setTemplatePurchaseOrder(null); }}
+          onOpenChange={(open) => {
+            if (!open) setTemplatePurchaseOrder(null);
+          }}
         />
       )}
     </div>

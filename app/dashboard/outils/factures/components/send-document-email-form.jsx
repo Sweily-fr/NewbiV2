@@ -62,7 +62,10 @@ export default function SendDocumentEmailForm({
   const removeEmail = (type, email) => {
     const field = type === "cc" ? "ccEmails" : "bccEmails";
     const current = type === "cc" ? ccEmails : bccEmails;
-    setValue(field, current.filter((e) => e !== email));
+    setValue(
+      field,
+      current.filter((e) => e !== email),
+    );
   };
 
   const handleEmailKeyDown = (e, type, input, setInput, setError) => {
@@ -75,6 +78,13 @@ export default function SendDocumentEmailForm({
       if (current.length > 0) {
         removeEmail(type, current[current.length - 1]);
       }
+    }
+  };
+
+  const handleEmailBlur = (type, input, setInput, setError) => {
+    const email = input.trim();
+    if (email) {
+      addEmail(type, email, setInput, setError);
     }
   };
 
@@ -151,7 +161,9 @@ export default function SendDocumentEmailForm({
               ))}
             </div>
           )}
-          <div className={`flex items-center gap-1.5 min-h-[36px] rounded-[9px] border ${ccError ? "border-red-400 dark:border-red-500" : "border-[#e6e7ea] hover:border-[#D1D3D8] dark:border-[#2E2E32] dark:hover:border-[#44444A]"} px-2 py-1.5 transition-[border] duration-[80ms] focus-within:border-[#5b50ff] dark:focus-within:border-[#5b50ff]`}>
+          <div
+            className={`flex items-center gap-1.5 min-h-[36px] rounded-[9px] border ${ccError ? "border-red-400 dark:border-red-500" : "border-[#e6e7ea] hover:border-[#D1D3D8] dark:border-[#2E2E32] dark:hover:border-[#44444A]"} px-2 py-1.5 transition-[border] duration-[80ms] focus-within:border-[#5b50ff] dark:focus-within:border-[#5b50ff]`}
+          >
             <input
               type="email"
               value={ccInput}
@@ -159,12 +171,18 @@ export default function SendDocumentEmailForm({
                 setCcInput(e.target.value);
                 if (ccError) setCcError("");
               }}
-              onKeyDown={(e) => handleEmailKeyDown(e, "cc", ccInput, setCcInput, setCcError)}
+              onKeyDown={(e) =>
+                handleEmailKeyDown(e, "cc", ccInput, setCcInput, setCcError)
+              }
+              onBlur={() =>
+                handleEmailBlur("cc", ccInput, setCcInput, setCcError)
+              }
               placeholder="email@exemple.com"
               className="flex-1 min-w-[120px] bg-transparent text-sm outline-none placeholder:text-[rgba(0,0,0,0.35)] dark:placeholder:text-[rgba(255,255,255,0.35)]"
             />
             <button
               type="button"
+              onMouseDown={(e) => e.preventDefault()}
               onClick={() => addEmail("cc", ccInput, setCcInput, setCcError)}
               disabled={!ccInput.trim()}
               className="shrink-0 flex items-center justify-center size-6 rounded-md bg-[#5b50ff] text-white hover:bg-[#4a41e0] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
@@ -173,12 +191,11 @@ export default function SendDocumentEmailForm({
               <Plus className="size-3.5" />
             </button>
           </div>
-          {ccError && (
-            <p className="text-[11px] text-red-500">{ccError}</p>
-          )}
+          {ccError && <p className="text-[11px] text-red-500">{ccError}</p>}
           {!ccError && ccEmails.length === 0 && (
             <p className="text-[11px] text-muted-foreground">
-              Tapez un email puis appuyez sur Entrée ou cliquez sur +
+              Tapez un email puis appuyez sur Entrée, cliquez sur + ou quittez
+              le champ
             </p>
           )}
         </div>
@@ -188,7 +205,9 @@ export default function SendDocumentEmailForm({
       {showBcc && (
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
-            <label className="text-sm text-muted-foreground">Cci (copie cachée)</label>
+            <label className="text-sm text-muted-foreground">
+              Cci (copie cachée)
+            </label>
             {!showCc && (
               <button
                 type="button"
@@ -218,7 +237,9 @@ export default function SendDocumentEmailForm({
               ))}
             </div>
           )}
-          <div className={`flex items-center gap-1.5 min-h-[36px] rounded-[9px] border ${bccError ? "border-red-400 dark:border-red-500" : "border-[#e6e7ea] hover:border-[#D1D3D8] dark:border-[#2E2E32] dark:hover:border-[#44444A]"} px-2 py-1.5 transition-[border] duration-[80ms] focus-within:border-[#5b50ff] dark:focus-within:border-[#5b50ff]`}>
+          <div
+            className={`flex items-center gap-1.5 min-h-[36px] rounded-[9px] border ${bccError ? "border-red-400 dark:border-red-500" : "border-[#e6e7ea] hover:border-[#D1D3D8] dark:border-[#2E2E32] dark:hover:border-[#44444A]"} px-2 py-1.5 transition-[border] duration-[80ms] focus-within:border-[#5b50ff] dark:focus-within:border-[#5b50ff]`}
+          >
             <input
               type="email"
               value={bccInput}
@@ -226,13 +247,21 @@ export default function SendDocumentEmailForm({
                 setBccInput(e.target.value);
                 if (bccError) setBccError("");
               }}
-              onKeyDown={(e) => handleEmailKeyDown(e, "bcc", bccInput, setBccInput, setBccError)}
+              onKeyDown={(e) =>
+                handleEmailKeyDown(e, "bcc", bccInput, setBccInput, setBccError)
+              }
+              onBlur={() =>
+                handleEmailBlur("bcc", bccInput, setBccInput, setBccError)
+              }
               placeholder="email@exemple.com"
               className="flex-1 min-w-[120px] bg-transparent text-sm outline-none placeholder:text-[rgba(0,0,0,0.35)] dark:placeholder:text-[rgba(255,255,255,0.35)]"
             />
             <button
               type="button"
-              onClick={() => addEmail("bcc", bccInput, setBccInput, setBccError)}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() =>
+                addEmail("bcc", bccInput, setBccInput, setBccError)
+              }
               disabled={!bccInput.trim()}
               className="shrink-0 flex items-center justify-center size-6 rounded-md bg-[#5b50ff] text-white hover:bg-[#4a41e0] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
               title="Ajouter"
@@ -240,12 +269,11 @@ export default function SendDocumentEmailForm({
               <Plus className="size-3.5" />
             </button>
           </div>
-          {bccError && (
-            <p className="text-[11px] text-red-500">{bccError}</p>
-          )}
+          {bccError && <p className="text-[11px] text-red-500">{bccError}</p>}
           {!bccError && bccEmails.length === 0 && (
             <p className="text-[11px] text-muted-foreground">
-              Tapez un email puis appuyez sur Entrée ou cliquez sur +
+              Tapez un email puis appuyez sur Entrée, cliquez sur + ou quittez
+              le champ
             </p>
           )}
         </div>
@@ -275,7 +303,10 @@ export default function SendDocumentEmailForm({
         </div>
 
         <div className="space-y-2">
-          <label htmlFor="emailSubject" className="text-sm text-muted-foreground">
+          <label
+            htmlFor="emailSubject"
+            className="text-sm text-muted-foreground"
+          >
             Objet de l&apos;email
           </label>
           <Input
@@ -329,7 +360,10 @@ export default function SendDocumentEmailForm({
 
         {useCustomFooter && (
           <div className="space-y-2">
-            <label htmlFor="customEmailFooter" className="text-sm text-muted-foreground">
+            <label
+              htmlFor="customEmailFooter"
+              className="text-sm text-muted-foreground"
+            >
               Message personnalisé
             </label>
             <textarea
@@ -340,7 +374,8 @@ export default function SendDocumentEmailForm({
               className="flex w-full rounded-[9px] border border-[#e6e7ea] hover:border-[#D1D3D8] dark:border-[#2E2E32] dark:hover:border-[#44444A] bg-transparent px-2.5 py-2 text-sm font-medium text-[#242529] dark:text-white placeholder:text-[rgba(0,0,0,0.35)] dark:placeholder:text-[rgba(255,255,255,0.35)] transition-[border] duration-[80ms] ease-in-out outline-none resize-none disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
             />
             <p className="text-xs text-muted-foreground">
-              Variables disponibles : {"{companyName}"}, {"{clientName}"}, {"{documentNumber}"}
+              Variables disponibles : {"{companyName}"}, {"{clientName}"},{" "}
+              {"{documentNumber}"}
             </p>
           </div>
         )}

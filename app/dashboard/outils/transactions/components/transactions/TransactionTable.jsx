@@ -28,7 +28,11 @@ import {
   useDeleteMultipleExpenses,
   useAddExpenseFile,
 } from "@/src/hooks/useExpenses";
-import { useCreateTransaction, useUpdateTransaction, useDeleteTransaction } from "@/src/hooks/useTransactions";
+import {
+  useCreateTransaction,
+  useUpdateTransaction,
+  useDeleteTransaction,
+} from "@/src/hooks/useTransactions";
 import { useMutation } from "@apollo/client";
 import { UPLOAD_TRANSACTION_RECEIPT } from "@/src/graphql/queries/banking";
 import { useOrganizationInvitations } from "@/src/hooks/useOrganizationInvitations";
@@ -42,6 +46,7 @@ import { multiColumnFilterFn } from "./filters/multiColumnFilterFn";
 import { mapCategoryToEnum, mapPaymentMethodToEnum } from "./utils/mappers";
 import { MobileToolbar } from "./components/MobileToolbar";
 import { MobileTable } from "./components/MobileTable";
+import { formatLocalDate } from "@/src/utils/dateFormatter";
 
 // UI Components
 import { Button } from "@/src/components/ui/button";
@@ -108,7 +113,6 @@ import { Label } from "@/src/components/ui/label";
 import { Calendar } from "@/src/components/ui/calendar";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-
 
 export default function TransactionTable({
   expenses: expensesProp = [],
@@ -214,7 +218,7 @@ export default function TransactionTable({
           updated.value = "";
         }
         return updated;
-      })
+      }),
     );
   };
 
@@ -279,7 +283,7 @@ export default function TransactionTable({
 
           const currentUserInList = formattedMembers.some(
             (m) =>
-              m.userId === currentUser?.id || m.email === currentUser?.email
+              m.userId === currentUser?.id || m.email === currentUser?.email,
           );
 
           if (currentUser && !currentUserInList) {
@@ -314,7 +318,7 @@ export default function TransactionTable({
   useEffect(() => {
     if (initialTransactionId && expensesProp.length > 0) {
       const transaction = expensesProp.find(
-        (exp) => exp.id === initialTransactionId
+        (exp) => exp.id === initialTransactionId,
       );
       if (transaction) {
         if (openOcr) {
@@ -337,9 +341,12 @@ export default function TransactionTable({
   const refetchExpenses = refetchExpensesProp;
 
   const { createExpense, loading: createExpenseLoading } = useCreateExpense();
-  const { createTransaction, loading: createTransactionLoading } = useCreateTransaction();
-  const { updateTransaction, loading: updateTransactionLoading } = useUpdateTransaction();
-  const { deleteTransaction, loading: deleteTransactionLoading } = useDeleteTransaction();
+  const { createTransaction, loading: createTransactionLoading } =
+    useCreateTransaction();
+  const { updateTransaction, loading: updateTransactionLoading } =
+    useUpdateTransaction();
+  const { deleteTransaction, loading: deleteTransactionLoading } =
+    useDeleteTransaction();
   const { updateExpense, loading: updateExpenseLoading } = useUpdateExpense();
   const { deleteExpense, loading: deleteExpenseLoading } = useDeleteExpense();
   const { deleteMultipleExpenses, loading: deleteMultipleExpensesLoading } =
@@ -374,7 +381,7 @@ export default function TransactionTable({
 
   // Fonction utilitaire pour formater les dates de manière sécurisée
   const safeFormatDate = (dateValue) => {
-    if (!dateValue) return new Date().toISOString().split("T")[0];
+    if (!dateValue) return formatLocalDate();
 
     // Si c'est déjà une string au format YYYY-MM-DD
     if (typeof dateValue === "string" && /^\d{4}-\d{2}-\d{2}/.test(dateValue)) {
@@ -386,12 +393,12 @@ export default function TransactionTable({
       const date = new Date(dateValue);
       if (isNaN(date.getTime())) {
         console.warn("Date invalide:", dateValue);
-        return new Date().toISOString().split("T")[0];
+        return formatLocalDate();
       }
-      return date.toISOString().split("T")[0];
+      return formatLocalDate(date);
     } catch (error) {
       console.warn("Erreur de parsing de date:", dateValue, error);
-      return new Date().toISOString().split("T")[0];
+      return formatLocalDate();
     }
   };
 
@@ -438,8 +445,11 @@ export default function TransactionTable({
         source: expense.source || expense.type || "MANUAL",
         // Indicateurs pour la vue unifiée
         hasReceipt:
-          expense.hasReceipt || (expense.files && expense.files.length > 0) || !!expense.linkedInvoice?.id,
-        receiptRequired: expense.receiptRequired !== false && !expense.linkedInvoice?.id,
+          expense.hasReceipt ||
+          (expense.files && expense.files.length > 0) ||
+          !!expense.linkedInvoice?.id,
+        receiptRequired:
+          expense.receiptRequired !== false && !expense.linkedInvoice?.id,
         expenseType: expense.expenseType || "ORGANIZATION",
         assignedMember: expense.assignedMember || null,
         // Données originales de la transaction bancaire si disponibles
@@ -485,7 +495,11 @@ export default function TransactionTable({
   // Tab counts (computed from base transactions, before tab filter)
   const mobileTabCounts = useMemo(() => {
     const now = new Date();
-    const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+    const oneMonthAgo = new Date(
+      now.getFullYear(),
+      now.getMonth() - 1,
+      now.getDate(),
+    );
     return {
       all: transactions.length,
       last_month: transactions.filter((tx) => {
@@ -493,7 +507,7 @@ export default function TransactionTable({
         return txDate >= oneMonthAgo && tx.amount < 0;
       }).length,
       missing_receipt: transactions.filter(
-        (tx) => tx.amount < 0 && !tx.hasReceipt
+        (tx) => tx.amount < 0 && !tx.hasReceipt,
       ).length,
     };
   }, [transactions]);
@@ -502,16 +516,18 @@ export default function TransactionTable({
   const tabFilteredTransactions = useMemo(() => {
     if (mobileTab === "last_month") {
       const now = new Date();
-      const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+      const oneMonthAgo = new Date(
+        now.getFullYear(),
+        now.getMonth() - 1,
+        now.getDate(),
+      );
       return transactions.filter((tx) => {
         const txDate = new Date(tx.date);
         return txDate >= oneMonthAgo && tx.amount < 0;
       });
     }
     if (mobileTab === "missing_receipt") {
-      return transactions.filter(
-        (tx) => tx.amount < 0 && !tx.hasReceipt
-      );
+      return transactions.filter((tx) => tx.amount < 0 && !tx.hasReceipt);
     }
     return transactions;
   }, [transactions, mobileTab]);
@@ -544,20 +560,24 @@ export default function TransactionTable({
 
     // Filtrer les transactions manuelles (supprimables)
     const manualRows = selectedRows.filter(
-      (row) => row.original.source === "MANUAL" || row.original.provider === "manual"
+      (row) =>
+        row.original.source === "MANUAL" || row.original.provider === "manual",
     );
     const bankRows = selectedRows.filter(
-      (row) => row.original.source === "BANK" && row.original.provider !== "manual"
+      (row) =>
+        row.original.source === "BANK" && row.original.provider !== "manual",
     );
 
     if (bankRows.length > 0) {
       toast.warning(
-        `${bankRows.length} transaction(s) bancaire(s) ignorée(s) (non supprimables)`
+        `${bankRows.length} transaction(s) bancaire(s) ignorée(s) (non supprimables)`,
       );
     }
 
     if (manualRows.length === 0) {
-      toast.error("Aucune transaction manuelle sélectionnée pour la suppression");
+      toast.error(
+        "Aucune transaction manuelle sélectionnée pour la suppression",
+      );
       return;
     }
 
@@ -624,16 +644,14 @@ export default function TransactionTable({
 
     if (transaction.source === "invoice") {
       toast.error(
-        "Les factures ne peuvent pas être supprimées depuis cette interface"
+        "Les factures ne peuvent pas être supprimées depuis cette interface",
       );
       return;
     }
 
     // Seules les transactions manuelles peuvent être supprimées
     if (transaction.source !== "MANUAL" && transaction.provider !== "manual") {
-      toast.error(
-        "Seules les transactions manuelles peuvent être supprimées"
-      );
+      toast.error("Seules les transactions manuelles peuvent être supprimées");
       return;
     }
 
@@ -695,7 +713,9 @@ export default function TransactionTable({
         workspaceId,
         amount: amount,
         currency: "EUR",
-        description: transaction.description || (isIncome ? "Revenu manuel" : "Dépense manuelle"),
+        description:
+          transaction.description ||
+          (isIncome ? "Revenu manuel" : "Dépense manuelle"),
         type: transactionType,
         date: transaction.date,
         category: category,
@@ -719,7 +739,9 @@ export default function TransactionTable({
             });
           } catch (uploadError) {
             console.error("Erreur upload justificatif:", uploadError);
-            toast.error("Transaction créée mais erreur lors de l'upload du justificatif");
+            toast.error(
+              "Transaction créée mais erreur lors de l'upload du justificatif",
+            );
           }
         }
 
@@ -737,7 +759,11 @@ export default function TransactionTable({
     // Toujours rafraîchir les données après un upload de reçu réussi
     refetch();
 
-    if (receiptData.action === "created" || receiptData.action === "auto-matched" || receiptData.action === "linked") {
+    if (
+      receiptData.action === "created" ||
+      receiptData.action === "auto-matched" ||
+      receiptData.action === "linked"
+    ) {
       toast.success(`Dépense traitée avec succès`);
     } else {
       toast.success(`Reçu "${receiptData.fileName}" traité avec succès`);
@@ -762,7 +788,7 @@ export default function TransactionTable({
 
       if (!data?.uploadTransactionReceipt?.success) {
         throw new Error(
-          data?.uploadTransactionReceipt?.message || "Erreur lors de l'upload"
+          data?.uploadTransactionReceipt?.message || "Erreur lors de l'upload",
         );
       }
 
@@ -786,7 +812,10 @@ export default function TransactionTable({
 
   const handleSaveTransaction = async (updatedTransaction) => {
     // Support pour l'édition depuis le detail drawer (selectedTransaction) ou le edit drawer (editingTransaction)
-    const transactionId = updatedTransaction.id || editingTransaction?.id || selectedTransaction?.id;
+    const transactionId =
+      updatedTransaction.id ||
+      editingTransaction?.id ||
+      selectedTransaction?.id;
     if (!transactionId) return;
 
     try {
@@ -803,7 +832,9 @@ export default function TransactionTable({
       const category = updatedTransaction.category || "OTHER";
 
       // Mapper le moyen de paiement
-      const paymentMethod = mapPaymentMethodToEnum(updatedTransaction.paymentMethod);
+      const paymentMethod = mapPaymentMethodToEnum(
+        updatedTransaction.paymentMethod,
+      );
 
       const updateInput = {
         description: updatedTransaction.description || "Transaction modifiée",
@@ -832,18 +863,22 @@ export default function TransactionTable({
   const handleDownloadAttachment = async (transaction) => {
     try {
       // Chercher l'URL du justificatif dans les différents champs possibles
-      const receiptUrl = transaction.receiptFile?.url
-        || transaction.attachment
-        || (transaction.files && transaction.files.length > 0 ? transaction.files[0].url : null);
+      const receiptUrl =
+        transaction.receiptFile?.url ||
+        transaction.attachment ||
+        (transaction.files && transaction.files.length > 0
+          ? transaction.files[0].url
+          : null);
 
       if (!receiptUrl) {
         toast.error("Aucun justificatif disponible");
         return;
       }
 
-      const filename = transaction.receiptFile?.filename
-        || (transaction.files?.[0]?.filename)
-        || `justificatif-${transaction.id}`;
+      const filename =
+        transaction.receiptFile?.filename ||
+        transaction.files?.[0]?.filename ||
+        `justificatif-${transaction.id}`;
 
       const link = document.createElement("a");
       link.href = receiptUrl;
@@ -907,7 +942,7 @@ export default function TransactionTable({
     const oneMonthAgo = new Date(
       now.getFullYear(),
       now.getMonth() - 1,
-      now.getDate()
+      now.getDate(),
     );
 
     const counts = {
@@ -942,7 +977,7 @@ export default function TransactionTable({
     const oneMonthAgo = new Date(
       now.getFullYear(),
       now.getMonth() - 1,
-      now.getDate()
+      now.getDate(),
     );
 
     // Filtrer par tab
@@ -1053,7 +1088,11 @@ export default function TransactionTable({
         {/* Search + Colonnes + Filtres — côté gauche */}
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-2 h-8 w-full sm:w-[300px] rounded-[9px] border border-[#E6E7EA] hover:border-[#D1D3D8] dark:border-[#2E2E32] dark:hover:border-[#44444A] bg-transparent px-3 transition-[color,box-shadow] focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]">
-            <Search size={16} className="text-muted-foreground/80 shrink-0" aria-hidden="true" />
+            <Search
+              size={16}
+              className="text-muted-foreground/80 shrink-0"
+              aria-hidden="true"
+            />
             <Input
               variant="ghost"
               ref={inputRef}
@@ -1207,26 +1246,50 @@ export default function TransactionTable({
                                 className="flex-1 justify-start text-left font-normal h-9"
                               >
                                 <CalendarIcon className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
-                                <span className={filter.startDate ? "text-foreground" : "text-muted-foreground"}>
+                                <span
+                                  className={
+                                    filter.startDate
+                                      ? "text-foreground"
+                                      : "text-muted-foreground"
+                                  }
+                                >
                                   {filter.startDate
-                                    ? format(new Date(filter.startDate), "dd MMM yyyy", { locale: fr })
+                                    ? format(
+                                        new Date(filter.startDate),
+                                        "dd MMM yyyy",
+                                        { locale: fr },
+                                      )
                                     : "Date début"}
                                 </span>
                               </Button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" style={{ zIndex: 9999 }} align="start">
+                            <PopoverContent
+                              className="w-auto p-0"
+                              style={{ zIndex: 9999 }}
+                              align="start"
+                            >
                               <Calendar
                                 mode="single"
-                                selected={filter.startDate ? new Date(filter.startDate) : undefined}
+                                selected={
+                                  filter.startDate
+                                    ? new Date(filter.startDate)
+                                    : undefined
+                                }
                                 onSelect={(date) =>
-                                  updateFilter(filter.id, "startDate", date ? date.toISOString() : "")
+                                  updateFilter(
+                                    filter.id,
+                                    "startDate",
+                                    date ? date.toISOString() : "",
+                                  )
                                 }
                                 locale={fr}
                               />
                             </PopoverContent>
                           </Popover>
 
-                          <span className="text-muted-foreground text-xs">→</span>
+                          <span className="text-muted-foreground text-xs">
+                            →
+                          </span>
 
                           <Popover>
                             <PopoverTrigger asChild>
@@ -1236,19 +1299,41 @@ export default function TransactionTable({
                                 className="flex-1 justify-start text-left font-normal h-9"
                               >
                                 <CalendarIcon className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
-                                <span className={filter.endDate ? "text-foreground" : "text-muted-foreground"}>
+                                <span
+                                  className={
+                                    filter.endDate
+                                      ? "text-foreground"
+                                      : "text-muted-foreground"
+                                  }
+                                >
                                   {filter.endDate
-                                    ? format(new Date(filter.endDate), "dd MMM yyyy", { locale: fr })
+                                    ? format(
+                                        new Date(filter.endDate),
+                                        "dd MMM yyyy",
+                                        { locale: fr },
+                                      )
                                     : "Date fin"}
                                 </span>
                               </Button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" style={{ zIndex: 9999 }} align="start">
+                            <PopoverContent
+                              className="w-auto p-0"
+                              style={{ zIndex: 9999 }}
+                              align="start"
+                            >
                               <Calendar
                                 mode="single"
-                                selected={filter.endDate ? new Date(filter.endDate) : undefined}
+                                selected={
+                                  filter.endDate
+                                    ? new Date(filter.endDate)
+                                    : undefined
+                                }
                                 onSelect={(date) =>
-                                  updateFilter(filter.id, "endDate", date ? date.toISOString() : "")
+                                  updateFilter(
+                                    filter.id,
+                                    "endDate",
+                                    date ? date.toISOString() : "",
+                                  )
                                 }
                                 locale={fr}
                               />
@@ -1352,8 +1437,8 @@ export default function TransactionTable({
                 <AlertDialogDescription>
                   Êtes-vous sûr de vouloir supprimer{" "}
                   {tableWithFilteredData.getSelectedRowModel().rows.length}{" "}
-                  transaction(s) sélectionnée(s) ? Cette action ne peut pas
-                  être annulée.
+                  transaction(s) sélectionnée(s) ? Cette action ne peut pas être
+                  annulée.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -1381,7 +1466,7 @@ export default function TransactionTable({
           <TabsList className="h-auto rounded-none bg-transparent p-0 w-full justify-start px-4 sm:px-6 gap-1.5">
             <TabsTrigger
               value="all"
-              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground hover:shadow-[inset_0_0_0_1px_#EEEFF1] dark:hover:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
+              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
             >
               Toutes
               <span className="text-[10px] leading-none bg-gray-100 dark:bg-gray-800 text-muted-foreground rounded px-1 py-0.5">
@@ -1390,7 +1475,7 @@ export default function TransactionTable({
             </TabsTrigger>
             <TabsTrigger
               value="lastMonth"
-              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground hover:shadow-[inset_0_0_0_1px_#EEEFF1] dark:hover:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
+              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
             >
               Régler le dernier mois
               <span className="text-[10px] leading-none bg-gray-100 dark:bg-gray-800 text-muted-foreground rounded px-1 py-0.5">
@@ -1399,7 +1484,7 @@ export default function TransactionTable({
             </TabsTrigger>
             <TabsTrigger
               value="missingReceipt"
-              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground hover:shadow-[inset_0_0_0_1px_#EEEFF1] dark:hover:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
+              className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
             >
               Justificatif manquant
               <span className="text-[10px] leading-none bg-gray-100 dark:bg-gray-800 text-muted-foreground rounded px-1 py-0.5">
@@ -1428,7 +1513,7 @@ export default function TransactionTable({
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
-                            header.getContext()
+                            header.getContext(),
                           )}
                     </th>
                   ))}
@@ -1444,25 +1529,39 @@ export default function TransactionTable({
               {loading ? (
                 Array.from({ length: 8 }).map((_, i) => (
                   <tr key={`skeleton-${i}`} className="border-b">
-                    <td className="p-2 pl-4 sm:pl-6"><div className="h-4 w-4 rounded bg-muted animate-pulse" /></td>
+                    <td className="p-2 pl-4 sm:pl-6">
+                      <div className="h-4 w-4 rounded bg-muted animate-pulse" />
+                    </td>
                     <td className="p-2">
                       <div className="flex items-center gap-3">
                         <div className="h-8 w-8 rounded-full bg-muted animate-pulse flex-shrink-0" />
                         <div className="h-4 w-[140px] rounded bg-muted animate-pulse" />
                       </div>
                     </td>
-                    <td className="p-2"><div className="h-4 w-[70px] rounded bg-muted animate-pulse" /></td>
-                    <td className="p-2"><div className="h-4 w-[70px] rounded bg-muted animate-pulse" /></td>
+                    <td className="p-2">
+                      <div className="h-4 w-[70px] rounded bg-muted animate-pulse" />
+                    </td>
+                    <td className="p-2">
+                      <div className="h-4 w-[70px] rounded bg-muted animate-pulse" />
+                    </td>
                     <td className="p-2">
                       <div className="flex items-center gap-2">
                         <div className="h-7 w-7 rounded-full bg-muted animate-pulse flex-shrink-0" />
                         <div className="h-4 w-[60px] rounded bg-muted animate-pulse" />
                       </div>
                     </td>
-                    <td className="p-2"><div className="h-4 w-[60px] rounded bg-muted animate-pulse" /></td>
-                    <td className="p-2"><div className="h-4 w-[50px] rounded bg-muted animate-pulse" /></td>
-                    <td className="p-2"><div className="h-4 w-4 rounded bg-muted animate-pulse" /></td>
-                    <td className="p-2 pr-4 sm:pr-6"><div className="h-7 w-7 rounded bg-muted animate-pulse" /></td>
+                    <td className="p-2">
+                      <div className="h-4 w-[60px] rounded bg-muted animate-pulse" />
+                    </td>
+                    <td className="p-2">
+                      <div className="h-4 w-[50px] rounded bg-muted animate-pulse" />
+                    </td>
+                    <td className="p-2">
+                      <div className="h-4 w-4 rounded bg-muted animate-pulse" />
+                    </td>
+                    <td className="p-2 pr-4 sm:pr-6">
+                      <div className="h-7 w-7 rounded bg-muted animate-pulse" />
+                    </td>
                   </tr>
                 ))
               ) : tableWithFilteredData.getRowModel().rows?.length ? (
@@ -1491,7 +1590,7 @@ export default function TransactionTable({
                       >
                         {flexRender(
                           cell.column.columnDef.cell,
-                          cell.getContext()
+                          cell.getContext(),
                         )}
                       </td>
                     ))}
@@ -1518,7 +1617,9 @@ export default function TransactionTable({
         globalFilter={globalFilter}
         setGlobalFilter={setGlobalFilter}
         onFilterPress={() => setIsFiltersOpen(!isFiltersOpen)}
-        activeFilterCount={(expenseTypeFilter ? 1 : 0) + (assignedMemberFilter ? 1 : 0)}
+        activeFilterCount={
+          (expenseTypeFilter ? 1 : 0) + (assignedMemberFilter ? 1 : 0)
+        }
         activeTab={mobileTab}
         onTabChange={setMobileTab}
         isScrolled={isMobileScrolled}

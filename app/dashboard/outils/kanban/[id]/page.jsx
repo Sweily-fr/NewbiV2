@@ -3,7 +3,21 @@
 import { use, useState, useEffect, useMemo, Suspense } from "react";
 import * as React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, Plus, LoaderCircle, Search, Trash2, AlignLeft, Filter, Users, ZoomIn, ZoomOut, FileText, Euro, CircleXIcon } from "lucide-react";
+import {
+  ArrowLeft,
+  Plus,
+  LoaderCircle,
+  Search,
+  Trash2,
+  AlignLeft,
+  Filter,
+  Users,
+  ZoomIn,
+  ZoomOut,
+  FileText,
+  Euro,
+  CircleXIcon,
+} from "lucide-react";
 import { toast } from "@/src/components/ui/sonner";
 
 // UI Components
@@ -54,7 +68,12 @@ import {
 } from "@/src/components/ui/popover";
 import { LayoutGrid, List, GanttChart } from "lucide-react";
 import { ToggleGroup, ToggleGroupItem } from "@/src/components/ui/toggle-group";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/components/ui/tabs";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/src/components/ui/tabs";
 
 // Hooks
 import { useKanbanBoard } from "./hooks/useKanbanBoard";
@@ -82,7 +101,11 @@ import { ShareBoardDialog } from "./components/ShareBoardDialog";
 import { SaveTemplateDialog } from "./components/SaveTemplateDialog";
 import { ConvertToInvoiceModal } from "./components/ConvertToInvoiceModal";
 import { stripHtml } from "@/src/utils/kanbanHelpers";
-import { KanbanPageSkeleton, KanbanListSkeleton, KanbanGanttSkeleton } from "./components/KanbanPageSkeleton";
+import {
+  KanbanPageSkeleton,
+  KanbanListSkeleton,
+  KanbanGanttSkeleton,
+} from "./components/KanbanPageSkeleton";
 import {
   GET_BOARD,
   CREATE_COLUMN,
@@ -96,7 +119,7 @@ import {
 } from "@/src/graphql/kanbanQueries";
 
 // @hello-pangea/dnd
-import { DragDropContext } from '@hello-pangea/dnd';
+import { DragDropContext } from "@hello-pangea/dnd";
 
 import { useMutation } from "@apollo/client";
 
@@ -108,11 +131,25 @@ function KanbanBoardPageContent({ params }) {
   const taskIdFromUrl = searchParams.get("task");
 
   // Hook viewMode en premier pour avoir le bon skeleton dès le début
-  const { viewMode, setViewMode, isBoard, isList, isGantt, isReady: isViewModeReady } = useViewMode(id);
+  const {
+    viewMode,
+    setViewMode,
+    isBoard,
+    isList,
+    isGantt,
+    isReady: isViewModeReady,
+  } = useViewMode(id);
 
   // Hooks
-  const { board, loading, error, refetch, getTasksByColumn, workspaceId, markReorderAction } =
-    useKanbanBoard(id, isRedirecting);
+  const {
+    board,
+    loading,
+    error,
+    refetch,
+    getTasksByColumn,
+    workspaceId,
+    markReorderAction,
+  } = useKanbanBoard(id, isRedirecting);
   useWorkspace(); // Nécessaire pour initialiser le workspace, mais loading n'est plus bloquant ici
 
   const {
@@ -182,11 +219,11 @@ function KanbanBoardPageContent({ params }) {
   // Colonnes dérivées du board (synchrone, pas de délai useEffect)
   const boardColumns = React.useMemo(() => {
     if (!board?.columns || !board?.tasks) return [];
-    return board.columns.map(column => ({
+    return board.columns.map((column) => ({
       ...column,
       tasks: (board.tasks || [])
-        .filter(task => task.columnId === column.id)
-        .sort((a, b) => (a.position || 0) - (b.position || 0))
+        .filter((task) => task.columnId === column.id)
+        .sort((a, b) => (a.position || 0) - (b.position || 0)),
     }));
   }, [board?.columns, board?.tasks]);
 
@@ -211,18 +248,19 @@ function KanbanBoardPageContent({ params }) {
   const setLocalColumns = React.useCallback((newColumns) => {
     setLocalColumnsOverride(newColumns);
   }, []);
-  
+
   // State pour tracker si on drag une colonne
   const [isDraggingColumn, setIsDraggingColumn] = React.useState(false);
-  
+
   // State pour tracker si on drag (tâche ou colonne) - pour désactiver le scale pendant le drag
   const [isDragging, setIsDragging] = React.useState(false);
-  
+
   // État pour les tâches sélectionnées
   const [selectedTaskIds, setSelectedTaskIds] = React.useState(new Set());
 
   // État pour le popover de description du tableau
-  const [showBoardDescriptionPopover, setShowBoardDescriptionPopover] = React.useState(false);
+  const [showBoardDescriptionPopover, setShowBoardDescriptionPopover] =
+    React.useState(false);
 
   // État pour le niveau de zoom du Kanban (0.7 = 70%, 1 = 100%, 1.3 = 130%)
   const [zoomLevel, setZoomLevel] = React.useState(1);
@@ -249,64 +287,86 @@ function KanbanBoardPageContent({ params }) {
     setLocalColumns,
     reorderColumnsMutation,
     markReorderAction,
-    selectedMemberId // Passer le filtre pour recalculer les positions correctement
+    selectedMemberId, // Passer le filtre pour recalculer les positions correctement
   );
-  
+
   // Wrapper handleDragEnd — shared by both board (custom DnD) and list (@hello-pangea/dnd)
-  const handleDragEnd = React.useCallback(async (result) => {
-    lastDragTimeRef.current = Date.now();
-    setIsDragging(false);
-    if (result.type === 'column') {
-      setIsDraggingColumn(false);
-    }
-    try {
-      await dndHandleDragEnd(result);
-    } catch (error) {
-      console.error('❌ Erreur mutation:', error);
-    }
-  }, [dndHandleDragEnd]);
+  const handleDragEnd = React.useCallback(
+    async (result) => {
+      lastDragTimeRef.current = Date.now();
+      setIsDragging(false);
+      if (result.type === "column") {
+        setIsDraggingColumn(false);
+      }
+      try {
+        await dndHandleDragEnd(result);
+      } catch (error) {
+        console.error("❌ Erreur mutation:", error);
+      }
+    },
+    [dndHandleDragEnd],
+  );
 
   // Wrapper handleDragStart — shared by both board and list
   const handleDragStart = React.useCallback((info) => {
     setIsDragging(true);
-    if (info.type === 'column') {
+    if (info.type === "column") {
       setIsDraggingColumn(true);
     }
   }, []);
 
   // Helper pour récupérer les tâches d'une colonne
-  const getLocalTasksByColumn = React.useCallback((columnId) => {
-    const column = localColumns.find(col => col.id === columnId);
-    return column?.tasks || [];
-  }, [localColumns]);
+  const getLocalTasksByColumn = React.useCallback(
+    (columnId) => {
+      const column = localColumns.find((col) => col.id === columnId);
+      return column?.tasks || [];
+    },
+    [localColumns],
+  );
 
-
-  const { searchQuery, setSearchQuery, filterTasks: filterTasksBySearch } = useKanbanSearch();
+  const {
+    searchQuery,
+    setSearchQuery,
+    filterTasks: filterTasksBySearch,
+  } = useKanbanSearch();
 
   // Ouvrir automatiquement une tâche si le paramètre ?task= est présent dans l'URL
   React.useEffect(() => {
     if (taskIdFromUrl && board?.tasks && !loading) {
-      const taskToOpen = board.tasks.find(t => t.id === taskIdFromUrl);
+      const taskToOpen = board.tasks.find((t) => t.id === taskIdFromUrl);
       if (taskToOpen && !isEditTaskOpen) {
         openEditTaskModal(taskToOpen);
         // Supprimer le paramètre de l'URL après ouverture pour éviter de réouvrir
         router.replace(`/dashboard/outils/kanban/${id}`, { scroll: false });
       }
     }
-  }, [taskIdFromUrl, board?.tasks, loading, isEditTaskOpen, openEditTaskModal, router, id]);
+  }, [
+    taskIdFromUrl,
+    board?.tasks,
+    loading,
+    isEditTaskOpen,
+    openEditTaskModal,
+    router,
+    id,
+  ]);
 
   // Fonction de filtrage combinée (recherche + membre)
-  const filterTasks = React.useCallback((tasks) => {
-    let filtered = filterTasksBySearch(tasks);
-    filtered = filterTasksByMember(filtered);
-    return filtered;
-  }, [filterTasksBySearch, filterTasksByMember]);
+  const filterTasks = React.useCallback(
+    (tasks) => {
+      let filtered = filterTasksBySearch(tasks);
+      filtered = filterTasksByMember(filtered);
+      return filtered;
+    },
+    [filterTasksBySearch, filterTasksByMember],
+  );
 
   // Calcule le temps effectif en secondes (inclut le timer actif, comme TimerDisplay)
   const getEffectiveSeconds = React.useCallback((tt) => {
     let total = tt.totalSeconds || 0;
     if (tt.isRunning && tt.currentStartTime) {
-      const elapsed = Math.floor((Date.now() - new Date(tt.currentStartTime).getTime()) / 1000);
+      const elapsed = Math.floor(
+        (Date.now() - new Date(tt.currentStartTime).getTime()) / 1000,
+      );
       if (elapsed > 0) total += elapsed;
     }
     return Math.max(0, total);
@@ -315,8 +375,9 @@ function KanbanBoardPageContent({ params }) {
   // Tâches facturables = temps effectif > 0 ET tarif horaire défini
   const billableTasks = useMemo(() => {
     if (!board?.tasks) return [];
-    return board.tasks.filter(task => {
-      if (!task.timeTracking?.hourlyRate || task.timeTracking.hourlyRate <= 0) return false;
+    return board.tasks.filter((task) => {
+      if (!task.timeTracking?.hourlyRate || task.timeTracking.hourlyRate <= 0)
+        return false;
       return getEffectiveSeconds(task.timeTracking) > 0;
     });
   }, [board?.tasks, getEffectiveSeconds]);
@@ -329,45 +390,56 @@ function KanbanBoardPageContent({ params }) {
       const h = Math.floor(totalSec / 3600);
       const m = Math.floor((totalSec % 3600) / 60);
       let billableHours = h + m / 60;
-      if (tt.roundingOption === 'up') billableHours = Math.ceil(billableHours);
-      else if (tt.roundingOption === 'down') billableHours = Math.floor(billableHours);
-      return sum + (billableHours * tt.hourlyRate);
+      if (tt.roundingOption === "up") billableHours = Math.ceil(billableHours);
+      else if (tt.roundingOption === "down")
+        billableHours = Math.floor(billableHours);
+      return sum + billableHours * tt.hourlyRate;
     }, 0);
   }, [billableTasks, getEffectiveSeconds]);
 
   // Formatage monétaire
-  const formatCurrency = React.useCallback((amount) =>
-    new Intl.NumberFormat("fr-FR", {
-      style: "currency", currency: "EUR",
-      minimumFractionDigits: 2, maximumFractionDigits: 2,
-    }).format(amount), []);
+  const formatCurrency = React.useCallback(
+    (amount) =>
+      new Intl.NumberFormat("fr-FR", {
+        style: "currency",
+        currency: "EUR",
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(amount),
+    [],
+  );
 
   // Conversion tâches Kanban → facture
-  const handleConvertToInvoice = React.useCallback((selectedTasks) => {
-    const items = selectedTasks.map(task => {
-      const tt = task.timeTracking;
-      const totalSec = getEffectiveSeconds(tt);
-      const h = Math.floor(totalSec / 3600);
-      const m = Math.floor((totalSec % 3600) / 60);
-      let billableHours = h + m / 60;
-      if (tt.roundingOption === 'up') billableHours = Math.ceil(billableHours);
-      else if (tt.roundingOption === 'down') billableHours = Math.floor(billableHours);
-      return {
-        description: task.title,
-        details: stripHtml(task.description),
-        quantity: billableHours,
-        unitPrice: tt.hourlyRate,
-        vatRate: 20,
-        unit: "heure",
-        discount: 0,
-        discountType: "PERCENTAGE",
-        progressPercentage: 100,
-      };
-    });
-    sessionStorage.setItem('kanbanInvoiceItems', JSON.stringify(items));
-    setShowConvertModal(false);
-    router.push('/dashboard/outils/factures/new');
-  }, [router, getEffectiveSeconds]);
+  const handleConvertToInvoice = React.useCallback(
+    (selectedTasks) => {
+      const items = selectedTasks.map((task) => {
+        const tt = task.timeTracking;
+        const totalSec = getEffectiveSeconds(tt);
+        const h = Math.floor(totalSec / 3600);
+        const m = Math.floor((totalSec % 3600) / 60);
+        let billableHours = h + m / 60;
+        if (tt.roundingOption === "up")
+          billableHours = Math.ceil(billableHours);
+        else if (tt.roundingOption === "down")
+          billableHours = Math.floor(billableHours);
+        return {
+          description: task.title,
+          details: stripHtml(task.description),
+          quantity: billableHours,
+          unitPrice: tt.hourlyRate,
+          vatRate: 20,
+          unit: "heure",
+          discount: 0,
+          discountType: "PERCENTAGE",
+          progressPercentage: 100,
+        };
+      });
+      sessionStorage.setItem("kanbanInvoiceItems", JSON.stringify(items));
+      setShowConvertModal(false);
+      router.push("/dashboard/outils/factures/new");
+    },
+    [router, getEffectiveSeconds],
+  );
 
   const {
     isColumnCollapsed,
@@ -377,29 +449,47 @@ function KanbanBoardPageContent({ params }) {
   } = useColumnCollapse(id);
 
   // Callbacks stables pour les colonnes
-  const handleColumnAddTask = React.useCallback((columnId) => {
-    openAddTaskModal(columnId);
-  }, [openAddTaskModal]);
+  const handleColumnAddTask = React.useCallback(
+    (columnId) => {
+      openAddTaskModal(columnId);
+    },
+    [openAddTaskModal],
+  );
 
-  const handleColumnEditTask = React.useCallback((task) => {
-    openEditTaskModal(task);
-  }, [openEditTaskModal]);
+  const handleColumnEditTask = React.useCallback(
+    (task) => {
+      openEditTaskModal(task);
+    },
+    [openEditTaskModal],
+  );
 
-  const handleColumnDeleteTask = React.useCallback((task) => {
-    handleDeleteTask(task);
-  }, [handleDeleteTask]);
+  const handleColumnDeleteTask = React.useCallback(
+    (task) => {
+      handleDeleteTask(task);
+    },
+    [handleDeleteTask],
+  );
 
-  const handleColumnEditColumn = React.useCallback((column) => {
-    openEditModal(column);
-  }, [openEditModal]);
+  const handleColumnEditColumn = React.useCallback(
+    (column) => {
+      openEditModal(column);
+    },
+    [openEditModal],
+  );
 
-  const handleColumnDeleteColumn = React.useCallback((column) => {
-    handleDeleteColumn(column);
-  }, [handleDeleteColumn]);
+  const handleColumnDeleteColumn = React.useCallback(
+    (column) => {
+      handleDeleteColumn(column);
+    },
+    [handleDeleteColumn],
+  );
 
-  const handleColumnToggleCollapse = React.useCallback((columnId) => {
-    toggleColumnCollapse(columnId);
-  }, [toggleColumnCollapse]);
+  const handleColumnToggleCollapse = React.useCallback(
+    (columnId) => {
+      toggleColumnCollapse(columnId);
+    },
+    [toggleColumnCollapse],
+  );
 
   // Rendu des colonnes (custom DnD via data-attributes)
   const columnsContent = React.useMemo(() => {
@@ -410,9 +500,7 @@ function KanbanBoardPageContent({ params }) {
     return (
       <>
         {localColumns.map((column, index) => {
-          const columnTasks = filterTasks(
-            getLocalTasksByColumn(column.id)
-          );
+          const columnTasks = filterTasks(getLocalTasksByColumn(column.id));
           const isCollapsed = isColumnCollapsed(column.id);
 
           return (
@@ -443,23 +531,41 @@ function KanbanBoardPageContent({ params }) {
               onClick={openAddModal}
             >
               <Plus className="h-5 w-5" />
-              <span className="text-sm font-medium">
-                Ajouter une colonne
-              </span>
+              <span className="text-sm font-medium">Ajouter une colonne</span>
             </Button>
           </CardContent>
         </Card>
       </>
     );
-  }, [localColumns, filterTasks, getLocalTasksByColumn, isColumnCollapsed, handleColumnAddTask, handleColumnEditTask, handleColumnDeleteTask, handleColumnEditColumn, handleColumnDeleteColumn, handleColumnToggleCollapse, loading, openAddModal, zoomLevel]);
+  }, [
+    localColumns,
+    filterTasks,
+    getLocalTasksByColumn,
+    isColumnCollapsed,
+    handleColumnAddTask,
+    handleColumnEditTask,
+    handleColumnDeleteTask,
+    handleColumnEditColumn,
+    handleColumnDeleteColumn,
+    handleColumnToggleCollapse,
+    loading,
+    openAddModal,
+    zoomLevel,
+  ]);
 
   // Hook pour le drag-to-scroll horizontal (espace vide, hors DnD)
   const scrollElementRef = React.useRef(null);
-  const dragToScrollRef = useDragToScroll({ enabled: isBoard && !isDragging, scrollSpeed: 1.5 });
-  const scrollRef = React.useCallback((node) => {
-    scrollElementRef.current = node;
-    dragToScrollRef(node);
-  }, [dragToScrollRef]);
+  const dragToScrollRef = useDragToScroll({
+    enabled: isBoard && !isDragging,
+    scrollSpeed: 1.5,
+  });
+  const scrollRef = React.useCallback(
+    (node) => {
+      scrollElementRef.current = node;
+      dragToScrollRef(node);
+    },
+    [dragToScrollRef],
+  );
 
   // Custom DnD pour le board (auto-scroll intégré, gère le zoom)
   useKanbanDnD({
@@ -480,11 +586,18 @@ function KanbanBoardPageContent({ params }) {
   // Solution de secours : Rediriger si le workspaceId change
   const previousWorkspaceIdRef = React.useRef(workspaceId);
   useEffect(() => {
-    if (previousWorkspaceIdRef.current && workspaceId && previousWorkspaceIdRef.current !== workspaceId) {
-      console.log("[Kanban] 🔄 Changement de workspace détecté, redirection...", {
-        from: previousWorkspaceIdRef.current,
-        to: workspaceId,
-      });
+    if (
+      previousWorkspaceIdRef.current &&
+      workspaceId &&
+      previousWorkspaceIdRef.current !== workspaceId
+    ) {
+      console.log(
+        "[Kanban] 🔄 Changement de workspace détecté, redirection...",
+        {
+          from: previousWorkspaceIdRef.current,
+          to: workspaceId,
+        },
+      );
       router.push("/dashboard/outils/kanban");
     }
     previousWorkspaceIdRef.current = workspaceId;
@@ -517,23 +630,28 @@ function KanbanBoardPageContent({ params }) {
   }
 
   return (
-    <div 
-      key={`kanban-board-${id}-${isBoard ? 'board' : 'list'}`}
+    <div
+      key={`kanban-board-${id}-${isBoard ? "board" : "list"}`}
       className="h-[calc(100vh-64px)] flex flex-col overflow-hidden"
-      style={{ pointerEvents: isBoard ? 'auto' : 'auto' }}
+      style={{ pointerEvents: isBoard ? "auto" : "auto" }}
     >
       {/* Header - Fixe en haut */}
       <div className="flex-shrink-0 bg-background z-10">
         <div className="flex items-center gap-2 pt-2 pb-2 border-b px-4 sm:px-6">
           <h1 className="text-base font-semibold">{board.title}</h1>
           {board.description && (
-            <Popover open={showBoardDescriptionPopover} onOpenChange={setShowBoardDescriptionPopover}>
+            <Popover
+              open={showBoardDescriptionPopover}
+              onOpenChange={setShowBoardDescriptionPopover}
+            >
               <PopoverTrigger asChild>
                 <div
                   className="cursor-pointer text-muted-foreground/70 hover:text-foreground transition-colors"
                   onClick={(e) => {
                     e.stopPropagation();
-                    setShowBoardDescriptionPopover(!showBoardDescriptionPopover);
+                    setShowBoardDescriptionPopover(
+                      !showBoardDescriptionPopover,
+                    );
                   }}
                 >
                   <AlignLeft className="h-4 w-4" />
@@ -550,39 +668,43 @@ function KanbanBoardPageContent({ params }) {
             </Popover>
           )}
         </div>
-        
+
         <div className="flex items-center justify-between gap-3 border-b border-[#eeeff1] dark:border-[#232323] pt-2 pb-[9px] px-4 sm:px-6 kanban-tabs">
           <style>{`
             .kanban-tabs [data-slot="tabs-trigger"][data-state="active"] {
               text-shadow: 0.015em 0 currentColor, -0.015em 0 currentColor;
             }
           `}</style>
-          <Tabs value={viewMode} onValueChange={setViewMode} className="w-auto items-center">
+          <Tabs
+            value={viewMode}
+            onValueChange={setViewMode}
+            className="w-auto items-center"
+          >
             <TabsList className="h-auto rounded-none bg-transparent p-0 gap-1.5">
               <TabsTrigger
                 value="board"
-                className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground hover:shadow-[inset_0_0_0_1px_#EEEFF1] dark:hover:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323] hidden md:inline-flex"
+                className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323] hidden md:inline-flex"
               >
                 <LayoutGrid className="h-4 w-4" />
                 Board
               </TabsTrigger>
               <TabsTrigger
                 value="list"
-                className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground hover:shadow-[inset_0_0_0_1px_#EEEFF1] dark:hover:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
+                className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]"
               >
                 <List className="h-4 w-4 md:inline hidden" />
                 List
               </TabsTrigger>
               <TabsTrigger
                 value="gantt"
-                className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground hover:shadow-[inset_0_0_0_1px_#EEEFF1] dark:hover:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323] hidden md:inline-flex"
+                className="relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323] hidden md:inline-flex"
               >
                 <GanttChart className="h-4 w-4" />
                 Gantt
               </TabsTrigger>
             </TabsList>
           </Tabs>
-          
+
           <div className="flex items-center gap-2">
             {/* Bouton Supprimer si des tâches sont sélectionnées */}
             {selectedTaskIds.size > 0 && (
@@ -595,12 +717,14 @@ function KanbanBoardPageContent({ params }) {
                     try {
                       await handleDeleteTask(taskId);
                     } catch (error) {
-                      console.error('Erreur suppression tâche:', error);
+                      console.error("Erreur suppression tâche:", error);
                     }
                   }
                   // Réinitialiser la sélection
                   setSelectedTaskIds(new Set());
-                  toast.success(`${selectedTaskIds.size} tâche(s) supprimée(s)`);
+                  toast.success(
+                    `${selectedTaskIds.size} tâche(s) supprimée(s)`,
+                  );
                 }}
                 className="gap-2"
               >
@@ -608,18 +732,15 @@ function KanbanBoardPageContent({ params }) {
                 Supprimer ({selectedTaskIds.size})
               </Button>
             )}
-            
+
             {/* Bouton sauvegarder modèle + partage */}
-            <SaveTemplateDialog
-              boardId={id}
-              boardTitle={board.title}
-            />
+            <SaveTemplateDialog boardId={id} boardTitle={board.title} />
             <ShareBoardDialog
               boardId={id}
               boardTitle={board.title}
               workspaceId={workspaceId}
             />
-            
+
             <Button
               variant="primary"
               className="cursor-pointer"
@@ -649,7 +770,11 @@ function KanbanBoardPageContent({ params }) {
           <div className="flex items-center gap-2">
             {/* Barre de recherche */}
             <div className="flex items-center gap-2 h-8 w-full sm:w-[300px] rounded-[9px] border border-[#E6E7EA] hover:border-[#D1D3D8] dark:border-[#2E2E32] dark:hover:border-[#44444A] bg-transparent px-3 transition-[color,box-shadow] focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]">
-              <Search size={16} className="text-muted-foreground/80 shrink-0" aria-hidden="true" />
+              <Search
+                size={16}
+                className="text-muted-foreground/80 shrink-0"
+                aria-hidden="true"
+              />
               <Input
                 variant="ghost"
                 value={searchQuery}
@@ -669,11 +794,13 @@ function KanbanBoardPageContent({ params }) {
             </div>
 
             {/* Bouton Filtres avec dropdown utilisateur */}
-            <DropdownMenu onOpenChange={(open) => { if (open) fetchMembers(); }}>
+            <DropdownMenu
+              onOpenChange={(open) => {
+                if (open) fetchMembers();
+              }}
+            >
               <DropdownMenuTrigger asChild>
-                <Button
-                  variant={selectedMemberId ? "primary" : "filter"}
-                >
+                <Button variant={selectedMemberId ? "primary" : "filter"}>
                   <Filter size={14} aria-hidden="true" />
                   Filtres
                   {selectedMemberId && (
@@ -715,7 +842,13 @@ function KanbanBoardPageContent({ params }) {
                         {members.map((member) => (
                           <DropdownMenuItem
                             key={member.id}
-                            onClick={() => setSelectedMemberId(selectedMemberId === member.id ? null : member.id)}
+                            onClick={() =>
+                              setSelectedMemberId(
+                                selectedMemberId === member.id
+                                  ? null
+                                  : member.id,
+                              )
+                            }
                             className="flex items-center px-2 py-1.5 cursor-pointer text-sm"
                           >
                             {/* Avatar */}
@@ -727,17 +860,21 @@ function KanbanBoardPageContent({ params }) {
                               />
                             ) : (
                               <div className="w-6 h-6 rounded-full mr-2 bg-primary/20 flex items-center justify-center text-xs font-medium">
-                                {(member.name || member.email).charAt(0).toUpperCase()}
+                                {(member.name || member.email)
+                                  .charAt(0)
+                                  .toUpperCase()}
                               </div>
                             )}
 
                             {/* Nom et checkbox */}
-                            <span className="flex-1">{member.name || member.email}</span>
+                            <span className="flex-1">
+                              {member.name || member.email}
+                            </span>
                             <div
                               className={`w-4 h-4 rounded border flex items-center justify-center ${
                                 selectedMemberId === member.id
-                                  ? 'bg-primary border-primary'
-                                  : 'border-muted-foreground/50'
+                                  ? "bg-primary border-primary"
+                                  : "border-muted-foreground/50"
                               }`}
                             >
                               {selectedMemberId === member.id && (
@@ -774,7 +911,10 @@ function KanbanBoardPageContent({ params }) {
           {/* Prix total */}
           {billableTasks.length > 0 && (
             <span className="text-sm font-medium whitespace-nowrap">
-              Dossier à <span className="bg-[#5b50ff]/10 text-[#5b50ff] px-2.5 py-1 rounded-md text-sm font-semibold ml-1.5">{formatCurrency(projectTotalPrice)}</span>
+              Dossier à{" "}
+              <span className="bg-[#5b50ff]/10 text-[#5b50ff] px-2.5 py-1 rounded-md text-sm font-semibold ml-1.5">
+                {formatCurrency(projectTotalPrice)}
+              </span>
             </span>
           )}
 
@@ -785,7 +925,9 @@ function KanbanBoardPageContent({ params }) {
                 variant="outline"
                 size="icon"
                 className="h-9 w-9"
-                onClick={() => setZoomLevel(prev => Math.max(0.5, prev - 0.1))}
+                onClick={() =>
+                  setZoomLevel((prev) => Math.max(0.5, prev - 0.1))
+                }
                 disabled={zoomLevel <= 0.5}
               >
                 <ZoomOut className="h-4 w-4" />
@@ -797,7 +939,9 @@ function KanbanBoardPageContent({ params }) {
                 variant="outline"
                 size="icon"
                 className="h-9 w-9"
-                onClick={() => setZoomLevel(prev => Math.min(1.5, prev + 0.1))}
+                onClick={() =>
+                  setZoomLevel((prev) => Math.min(1.5, prev + 0.1))
+                }
                 disabled={zoomLevel >= 1.5}
               >
                 <ZoomIn className="h-4 w-4" />
@@ -824,7 +968,11 @@ function KanbanBoardPageContent({ params }) {
           <div className="flex items-center gap-2">
             {/* Barre de recherche */}
             <div className="flex items-center gap-2 h-8 w-full sm:w-[300px] rounded-[9px] border border-[#E6E7EA] hover:border-[#D1D3D8] dark:border-[#2E2E32] dark:hover:border-[#44444A] bg-transparent px-3 transition-[color,box-shadow] focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]">
-              <Search size={16} className="text-muted-foreground/80 shrink-0" aria-hidden="true" />
+              <Search
+                size={16}
+                className="text-muted-foreground/80 shrink-0"
+                aria-hidden="true"
+              />
               <Input
                 variant="ghost"
                 value={searchQuery}
@@ -844,11 +992,13 @@ function KanbanBoardPageContent({ params }) {
             </div>
 
             {/* Bouton Filtres avec dropdown utilisateur */}
-            <DropdownMenu onOpenChange={(open) => { if (open) fetchMembers(); }}>
+            <DropdownMenu
+              onOpenChange={(open) => {
+                if (open) fetchMembers();
+              }}
+            >
               <DropdownMenuTrigger asChild>
-                <Button
-                  variant={selectedMemberId ? "primary" : "filter"}
-                >
+                <Button variant={selectedMemberId ? "primary" : "filter"}>
                   <Filter size={14} aria-hidden="true" />
                   Filtres
                   {selectedMemberId && (
@@ -890,7 +1040,13 @@ function KanbanBoardPageContent({ params }) {
                         {members.map((member) => (
                           <DropdownMenuItem
                             key={member.id}
-                            onClick={() => setSelectedMemberId(selectedMemberId === member.id ? null : member.id)}
+                            onClick={() =>
+                              setSelectedMemberId(
+                                selectedMemberId === member.id
+                                  ? null
+                                  : member.id,
+                              )
+                            }
                             className="flex items-center px-2 py-1.5 cursor-pointer text-sm"
                           >
                             {/* Avatar */}
@@ -902,17 +1058,21 @@ function KanbanBoardPageContent({ params }) {
                               />
                             ) : (
                               <div className="w-6 h-6 rounded-full mr-2 bg-primary/20 flex items-center justify-center text-xs font-medium">
-                                {(member.name || member.email).charAt(0).toUpperCase()}
+                                {(member.name || member.email)
+                                  .charAt(0)
+                                  .toUpperCase()}
                               </div>
                             )}
 
                             {/* Nom et checkbox */}
-                            <span className="flex-1">{member.name || member.email}</span>
+                            <span className="flex-1">
+                              {member.name || member.email}
+                            </span>
                             <div
                               className={`w-4 h-4 rounded border flex items-center justify-center ${
                                 selectedMemberId === member.id
-                                  ? 'bg-primary border-primary'
-                                  : 'border-muted-foreground/50'
+                                  ? "bg-primary border-primary"
+                                  : "border-muted-foreground/50"
                               }`}
                             >
                               {selectedMemberId === member.id && (
@@ -949,7 +1109,10 @@ function KanbanBoardPageContent({ params }) {
           {/* Prix total */}
           {billableTasks.length > 0 && (
             <span className="text-sm font-medium whitespace-nowrap">
-              Dossier à <span className="bg-[#5b50ff]/10 text-[#5b50ff] px-2.5 py-1 rounded-md text-sm font-semibold ml-1.5">{formatCurrency(projectTotalPrice)}</span>
+              Dossier à{" "}
+              <span className="bg-[#5b50ff]/10 text-[#5b50ff] px-2.5 py-1 rounded-md text-sm font-semibold ml-1.5">
+                {formatCurrency(projectTotalPrice)}
+              </span>
             </span>
           )}
         </div>
@@ -975,7 +1138,10 @@ function KanbanBoardPageContent({ params }) {
       <div className="flex-1 overflow-hidden px-4 sm:px-6 mt-4">
         {isList && (
           <div className="h-full overflow-auto">
-            <DragDropContext onDragEnd={handleDragEnd} onDragStart={handleDragStart}>
+            <DragDropContext
+              onDragEnd={handleDragEnd}
+              onDragStart={handleDragStart}
+            >
               <KanbanListView
                 columns={localColumns}
                 getTasksByColumn={getLocalTasksByColumn}
@@ -1005,7 +1171,7 @@ function KanbanBoardPageContent({ params }) {
               className="h-full w-max min-w-full origin-top-left flex flex-nowrap items-start"
               style={{
                 zoom: zoomLevel,
-                gap: '16px'
+                gap: "16px",
               }}
             >
               {columnsContent ? (

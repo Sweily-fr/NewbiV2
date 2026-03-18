@@ -51,6 +51,7 @@ import UniversalPDFDownloaderWithFacturX from "@/src/components/pdf/UniversalPDF
 import CreditNoteMobileFullscreen from "./credit-note-mobile-fullscreen";
 import { useReconciliationForSidebar } from "@/src/hooks/useReconciliation";
 import { ScrollArea } from "@/src/components/ui/scroll-area";
+import { formatLocalDate } from "@/src/utils/dateFormatter";
 
 export default function InvoiceSidebar({
   isOpen,
@@ -66,7 +67,7 @@ export default function InvoiceSidebar({
   const [showMobileDetails, setShowMobileDetails] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [previousSituationInvoices, setPreviousSituationInvoices] = useState(
-    []
+    [],
   );
 
   const router = useRouter();
@@ -88,11 +89,10 @@ export default function InvoiceSidebar({
     error: invoiceError,
   } = useInvoice(initialInvoice?.id);
 
-
   // Query pour récupérer les factures de situation précédentes
   const [fetchSituationInvoices, { data: situationData }] = useLazyQuery(
     GET_SITUATION_INVOICES_BY_QUOTE_REF,
-    { fetchPolicy: "cache-and-network" }
+    { fetchPolicy: "cache-and-network" },
   );
 
   // Récupérer les factures de situation précédentes quand c'est une facture de situation
@@ -136,7 +136,7 @@ export default function InvoiceSidebar({
         .filter(
           (inv) =>
             inv.id !== invoice.id &&
-            (inv.situationNumber || 0) < currentSituationNumber
+            (inv.situationNumber || 0) < currentSituationNumber,
         )
         .sort((a, b) => (a.situationNumber || 0) - (b.situationNumber || 0));
 
@@ -178,7 +178,7 @@ export default function InvoiceSidebar({
     setLoadingTransactions(true);
     try {
       const { transactions } = await fetchTransactionsForInvoice(
-        initialInvoice.id
+        initialInvoice.id,
       );
       // Vérifier si le composant est toujours monté et si cette requête est toujours valide
       if (isMountedRef.current && fetchAbortRef.current) {
@@ -211,7 +211,7 @@ export default function InvoiceSidebar({
   // Filtrer les transactions avec un bon score de correspondance
   const suggestedTransactions = useMemo(
     () => availableTransactions.filter((tx) => tx.score >= 80),
-    [availableTransactions]
+    [availableTransactions],
   );
 
   // Lier une transaction à cette facture
@@ -239,7 +239,7 @@ export default function InvoiceSidebar({
         }
       }
     },
-    [initialInvoice?.id, linkTransaction, onRefetch]
+    [initialInvoice?.id, linkTransaction, onRefetch],
   );
 
   // Délier la transaction de cette facture
@@ -329,7 +329,10 @@ export default function InvoiceSidebar({
     items.forEach((item) => {
       const quantity = parseFloat(item.quantity) || 0;
       const unitPrice = parseFloat(item.unitPrice) || 0;
-      const progressPercentage = item.progressPercentage != null ? parseFloat(item.progressPercentage) : 100;
+      const progressPercentage =
+        item.progressPercentage != null
+          ? parseFloat(item.progressPercentage)
+          : 100;
 
       let itemTotal = quantity * unitPrice;
 
@@ -365,7 +368,7 @@ export default function InvoiceSidebar({
       } else {
         globalDiscountAmount = Math.min(
           invoiceData.discount,
-          subtotalAfterItemDiscounts
+          subtotalAfterItemDiscounts,
         );
       }
       totalAfterDiscount = subtotalAfterItemDiscounts - globalDiscountAmount;
@@ -375,7 +378,10 @@ export default function InvoiceSidebar({
     items.forEach((item) => {
       const quantity = parseFloat(item.quantity) || 0;
       const unitPrice = parseFloat(item.unitPrice) || 0;
-      const progressPercentage = item.progressPercentage != null ? parseFloat(item.progressPercentage) : 100;
+      const progressPercentage =
+        item.progressPercentage != null
+          ? parseFloat(item.progressPercentage)
+          : 100;
       const vatRate =
         item.vatRate !== undefined ? parseFloat(item.vatRate) : 20;
 
@@ -404,7 +410,7 @@ export default function InvoiceSidebar({
         const itemRatio = itemSubtotal / (subtotalAfterItemDiscounts || 1);
         itemSubtotal = Math.max(
           0,
-          itemSubtotal - globalDiscountAmount * itemRatio
+          itemSubtotal - globalDiscountAmount * itemRatio,
         );
       }
 
@@ -470,7 +476,7 @@ export default function InvoiceSidebar({
 
   const handleMarkAsPaid = async () => {
     try {
-      const today = new Date().toISOString().split("T")[0];
+      const today = formatLocalDate();
       await markAsPaid(invoice.id, today);
       toast.success("Facture marquée comme payée");
       if (onRefetch) onRefetch();
@@ -506,7 +512,7 @@ export default function InvoiceSidebar({
   // Vérifier si la facture a atteint sa limite d'avoirs
   const creditNoteLimitReached = hasReachedCreditNoteLimit(
     invoice,
-    creditNotes
+    creditNotes,
   );
 
   const isLoading = markingAsPaid || changingStatus;
@@ -561,7 +567,10 @@ export default function InvoiceSidebar({
         <div className="flex items-center justify-between px-6 py-4 border-b">
           <div className="flex items-center gap-2">
             <h2 className="text-base font-medium">
-              Facture {invoice.prefix && invoice.number ? `${invoice.prefix}-${invoice.number}` : invoice.number || "Brouillon"}
+              Facture{" "}
+              {invoice.prefix && invoice.number
+                ? `${invoice.prefix}-${invoice.number}`
+                : invoice.number || "Brouillon"}
             </h2>
             <span
               className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium ${
@@ -569,7 +578,8 @@ export default function InvoiceSidebar({
                   ? "bg-gray-50 text-gray-600 dark:bg-gray-900/20 dark:text-gray-400"
                   : invoice.status === "PENDING"
                     ? "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400"
-                    : invoice.status === "COMPLETED" || invoice.status === "PAID"
+                    : invoice.status === "COMPLETED" ||
+                        invoice.status === "PAID"
                       ? "bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400"
                       : invoice.status === "OVERDUE"
                         ? "bg-orange-50 text-orange-600 dark:bg-orange-900/20 dark:text-orange-400"
@@ -626,7 +636,8 @@ export default function InvoiceSidebar({
                       </p>
                     </div>
                     <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400">
-                      {suggestedTransactions.length} correspondance{suggestedTransactions.length > 1 ? "s" : ""}
+                      {suggestedTransactions.length} correspondance
+                      {suggestedTransactions.length > 1 ? "s" : ""}
                     </span>
                   </div>
 
@@ -715,7 +726,9 @@ export default function InvoiceSidebar({
                 )}
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground">Aucun client sélectionné</p>
+              <p className="text-sm text-muted-foreground">
+                Aucun client sélectionné
+              </p>
             )}
           </div>
 
@@ -728,19 +741,29 @@ export default function InvoiceSidebar({
             </p>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-normal text-muted-foreground">Date d'émission</span>
-                <span className="text-sm font-normal">{formatDate(invoice.issueDate)}</span>
+                <span className="text-sm font-normal text-muted-foreground">
+                  Date d'émission
+                </span>
+                <span className="text-sm font-normal">
+                  {formatDate(invoice.issueDate)}
+                </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm font-normal text-muted-foreground">Date d'échéance</span>
-                <span className="text-sm font-normal">{formatDate(invoice.dueDate)}</span>
+                <span className="text-sm font-normal text-muted-foreground">
+                  Date d'échéance
+                </span>
+                <span className="text-sm font-normal">
+                  {formatDate(invoice.dueDate)}
+                </span>
               </div>
               {invoice.paymentDate && (
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-normal text-muted-foreground">
                     Date de paiement
                   </span>
-                  <span className="text-sm font-normal">{formatDate(invoice.paymentDate)}</span>
+                  <span className="text-sm font-normal">
+                    {formatDate(invoice.paymentDate)}
+                  </span>
                 </div>
               )}
             </div>
@@ -757,14 +780,17 @@ export default function InvoiceSidebar({
               {invoice.items && invoice.items.length > 0 ? (
                 invoice.items.map((item, index) => {
                   const progressPercentage =
-                    item.progressPercentage != null ? parseFloat(item.progressPercentage) : 100;
+                    item.progressPercentage != null
+                      ? parseFloat(item.progressPercentage)
+                      : 100;
                   return (
                     <div key={index} className="text-sm">
                       <p className="font-normal">
                         {item.description || "Article sans description"}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {item.quantity || 0} × {formatCurrency(item.unitPrice || 0)}
+                        {item.quantity || 0} ×{" "}
+                        {formatCurrency(item.unitPrice || 0)}
                         {progressPercentage < 100 && (
                           <span className="text-[#5b50ff] ml-2">
                             ({progressPercentage}% avancement)
@@ -789,23 +815,35 @@ export default function InvoiceSidebar({
             </p>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-normal text-muted-foreground">Sous-total HT</span>
-                <span className="text-sm font-normal">{formatCurrency(calculatedTotals.subtotalHT)}</span>
+                <span className="text-sm font-normal text-muted-foreground">
+                  Sous-total HT
+                </span>
+                <span className="text-sm font-normal">
+                  {formatCurrency(calculatedTotals.subtotalHT)}
+                </span>
               </div>
               {calculatedTotals.discountAmount > 0 && (
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-normal text-muted-foreground">Remise</span>
+                  <span className="text-sm font-normal text-muted-foreground">
+                    Remise
+                  </span>
                   <span className="text-sm font-normal">
                     -{formatCurrency(calculatedTotals.discountAmount)}
                   </span>
                 </div>
               )}
               <div className="flex items-center justify-between">
-                <span className="text-sm font-normal text-muted-foreground">Total HT</span>
-                <span className="text-sm font-normal">{formatCurrency(calculatedTotals.totalHT)}</span>
+                <span className="text-sm font-normal text-muted-foreground">
+                  Total HT
+                </span>
+                <span className="text-sm font-normal">
+                  {formatCurrency(calculatedTotals.totalHT)}
+                </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm font-normal text-muted-foreground">TVA</span>
+                <span className="text-sm font-normal text-muted-foreground">
+                  TVA
+                </span>
                 <span className="text-sm font-normal">
                   {invoice.isReverseCharge ? (
                     <span className="text-xs italic text-muted-foreground">
@@ -830,7 +868,9 @@ export default function InvoiceSidebar({
                     <span className="text-sm font-normal text-muted-foreground">
                       Escompte sur HT ({escompteValue}%)
                     </span>
-                    <span className="text-sm font-normal">-{formatCurrency(escompteAmount)}</span>
+                    <span className="text-sm font-normal">
+                      -{formatCurrency(escompteAmount)}
+                    </span>
                   </div>
                 );
               })()}
@@ -855,7 +895,9 @@ export default function InvoiceSidebar({
                     <span className="text-sm font-normal text-muted-foreground">
                       TVA après escompte
                     </span>
-                    <span className="text-sm font-normal">{formatCurrency(tvaAfterEscompte)}</span>
+                    <span className="text-sm font-normal">
+                      {formatCurrency(tvaAfterEscompte)}
+                    </span>
                   </div>
                 );
               })()}
@@ -916,7 +958,9 @@ export default function InvoiceSidebar({
                     <span className="text-sm font-normal text-muted-foreground">
                       Retenue de garantie ({retenueValue}%)
                     </span>
-                    <span className="text-sm font-normal">-{formatCurrency(retenueAmount)}</span>
+                    <span className="text-sm font-normal">
+                      -{formatCurrency(retenueAmount)}
+                    </span>
                   </div>
                 );
               })()}
@@ -955,7 +999,9 @@ export default function InvoiceSidebar({
                 return (
                   <div className="flex items-center justify-between pt-2 border-t">
                     <span className="text-sm font-medium">Net à payer</span>
-                    <span className="text-sm font-medium">{formatCurrency(finalAmount)}</span>
+                    <span className="text-sm font-medium">
+                      {formatCurrency(finalAmount)}
+                    </span>
                   </div>
                 );
               })()}
@@ -1294,7 +1340,10 @@ export default function InvoiceSidebar({
         <DialogContent className="w-full max-w-6xl h-[90vh] p-0 flex flex-col">
           <DialogHeader className="px-6 pt-6 pb-4 border-b">
             <DialogTitle className="text-xl font-semibold">
-              Aperçu de la facture {invoice.prefix && invoice.number ? `${invoice.prefix}-${invoice.number}` : invoice.number || "Brouillon"}
+              Aperçu de la facture{" "}
+              {invoice.prefix && invoice.number
+                ? `${invoice.prefix}-${invoice.number}`
+                : invoice.number || "Brouillon"}
             </DialogTitle>
           </DialogHeader>
           <div className="flex-1 overflow-y-auto bg-[#F9F9F9] dark:bg-[#1a1a1a] p-8">

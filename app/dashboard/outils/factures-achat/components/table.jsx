@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  useId,
-  useMemo,
-  useState,
-} from "react";
+import { useId, useMemo, useState } from "react";
 import {
   flexRender,
   getCoreRowModel,
@@ -138,11 +134,28 @@ const multiColumnFilterFn = (row, columnId, filterValue) => {
 // Google "G" logo in original colors (inline SVG)
 function GoogleIcon({ className }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
-      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"
+        fill="#4285F4"
+      />
+      <path
+        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+        fill="#34A853"
+      />
+      <path
+        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+        fill="#FBBC05"
+      />
+      <path
+        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+        fill="#EA4335"
+      />
     </svg>
   );
 }
@@ -174,9 +187,12 @@ export default function PurchaseInvoiceTable({
   const { bulkCategorize } = useBulkCategorize();
 
   // Imported invoices conversion
-  const { convertImportedInvoice, loading: convertingOne } = useConvertImportedInvoice();
-  const { convertImportedInvoices, loading: convertingBulk } = useConvertImportedInvoices();
-  const { rejectImportedInvoice, loading: rejecting } = useRejectImportedInvoice();
+  const { convertImportedInvoice, loading: convertingOne } =
+    useConvertImportedInvoice();
+  const { convertImportedInvoices, loading: convertingBulk } =
+    useConvertImportedInvoices();
+  const { rejectImportedInvoice, loading: rejecting } =
+    useRejectImportedInvoice();
   const [importedSelection, setImportedSelection] = useState(new Set());
 
   // Count by status for tabs
@@ -195,13 +211,17 @@ export default function PurchaseInvoiceTable({
 
   const toggleStatusFilter = (status) => {
     setStatusFilters((prev) =>
-      prev.includes(status) ? prev.filter((s) => s !== status) : [...prev, status]
+      prev.includes(status)
+        ? prev.filter((s) => s !== status)
+        : [...prev, status],
     );
   };
 
   const toggleCategoryFilter = (category) => {
     setCategoryFilters((prev) =>
-      prev.includes(category) ? prev.filter((c) => c !== category) : [...prev, category]
+      prev.includes(category)
+        ? prev.filter((c) => c !== category)
+        : [...prev, category],
     );
   };
 
@@ -286,7 +306,11 @@ export default function PurchaseInvoiceTable({
         <div className="flex items-center justify-between gap-3 hidden md:flex px-4 sm:px-6 py-4 flex-shrink-0">
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-2 h-8 w-full sm:w-[400px] rounded-[9px] border border-[#E6E7EA] hover:border-[#D1D3D8] dark:border-[#2E2E32] dark:hover:border-[#44444A] focus-within:ring-ring/50 focus-within:ring-[3px] transition-[border,box-shadow] duration-200 px-2.5">
-              <Search size={16} className="text-muted-foreground/80 shrink-0" aria-hidden="true" />
+              <Search
+                size={16}
+                className="text-muted-foreground/80 shrink-0"
+                aria-hidden="true"
+              />
               <Input
                 variant="ghost"
                 placeholder="Recherchez par fournisseur, n° facture ou montant..."
@@ -332,10 +356,15 @@ export default function PurchaseInvoiceTable({
                 </div>
                 {/* Status filters */}
                 <div className="px-3 py-2 border-b">
-                  <p className="text-xs text-muted-foreground font-medium mb-2">Statut</p>
+                  <p className="text-xs text-muted-foreground font-medium mb-2">
+                    Statut
+                  </p>
                   <div className="space-y-1.5">
                     {Object.entries(STATUS_LABELS).map(([key, label]) => (
-                      <label key={key} className="flex items-center gap-2 cursor-pointer">
+                      <label
+                        key={key}
+                        className="flex items-center gap-2 cursor-pointer"
+                      >
                         <Checkbox
                           checked={statusFilters.includes(key)}
                           onCheckedChange={() => toggleStatusFilter(key)}
@@ -347,10 +376,15 @@ export default function PurchaseInvoiceTable({
                 </div>
                 {/* Category filters */}
                 <div className="px-3 py-2 max-h-[200px] overflow-y-auto">
-                  <p className="text-xs text-muted-foreground font-medium mb-2">Catégorie</p>
+                  <p className="text-xs text-muted-foreground font-medium mb-2">
+                    Catégorie
+                  </p>
                   <div className="space-y-1.5">
                     {Object.entries(CATEGORY_LABELS).map(([key, label]) => (
-                      <label key={key} className="flex items-center gap-2 cursor-pointer">
+                      <label
+                        key={key}
+                        className="flex items-center gap-2 cursor-pointer"
+                      >
                         <Checkbox
                           checked={categoryFilters.includes(key)}
                           onCheckedChange={() => toggleCategoryFilter(key)}
@@ -374,14 +408,18 @@ export default function PurchaseInvoiceTable({
               >
                 <GoogleIcon className="size-3.5" />
                 <span className="text-sm">Gmail connecté</span>
-                <Check className="size-3 text-muted-foreground/60" strokeWidth={2.5} />
+                <Check
+                  className="size-3 text-muted-foreground/60"
+                  strokeWidth={2.5}
+                />
               </Button>
             )}
             {/* Bulk actions */}
             {hasSelection && (
               <>
                 <span className="text-xs text-muted-foreground">
-                  {selectedRows.length} sélectionnée{selectedRows.length > 1 ? "s" : ""}
+                  {selectedRows.length} sélectionnée
+                  {selectedRows.length > 1 ? "s" : ""}
                 </span>
                 <Button
                   variant="outline"
@@ -424,9 +462,14 @@ export default function PurchaseInvoiceTable({
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+                      <AlertDialogTitle>
+                        Confirmer la suppression
+                      </AlertDialogTitle>
                       <AlertDialogDescription>
-                        Êtes-vous sûr de vouloir supprimer {selectedRows.length} facture{selectedRows.length > 1 ? "s" : ""} sélectionnée{selectedRows.length > 1 ? "s" : ""} ? Cette action ne peut pas être annulée.
+                        Êtes-vous sûr de vouloir supprimer {selectedRows.length}{" "}
+                        facture{selectedRows.length > 1 ? "s" : ""} sélectionnée
+                        {selectedRows.length > 1 ? "s" : ""} ? Cette action ne
+                        peut pas être annulée.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -463,20 +506,33 @@ export default function PurchaseInvoiceTable({
               {[
                 { key: "all", label: "Toutes", count: statusCounts.all },
                 { key: "TO_PAY", label: "À payer", count: statusCounts.TO_PAY },
-                { key: "OVERDUE", label: "En retard", count: statusCounts.OVERDUE },
+                {
+                  key: "OVERDUE",
+                  label: "En retard",
+                  count: statusCounts.OVERDUE,
+                },
                 { key: "PAID", label: "Payées", count: statusCounts.PAID },
                 ...(importedInvoices.length > 0
-                  ? [{ key: "imported", label: "Importées Gmail", count: importedInvoices.length, highlight: true }]
+                  ? [
+                      {
+                        key: "imported",
+                        label: "Importées Gmail",
+                        count: importedInvoices.length,
+                        highlight: true,
+                      },
+                    ]
                   : []),
               ].map((tab) => (
                 <TabsTrigger
                   key={tab.key}
                   value={tab.key}
-                  className={`relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground hover:shadow-[inset_0_0_0_1px_#EEEFF1] dark:hover:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]`}
+                  className={`relative rounded-md py-1.5 px-3 text-sm font-normal cursor-pointer gap-1.5 bg-transparent shadow-none text-[#606164] dark:text-muted-foreground data-[hovered]:shadow-[inset_0_0_0_1px_#EEEFF1] dark:data-[hovered]:shadow-[inset_0_0_0_1px_#232323] data-[state=active]:text-[#242529] dark:data-[state=active]:text-foreground after:absolute after:inset-x-1 after:-bottom-[9px] after:h-px after:rounded-full data-[state=active]:after:bg-[#242529] dark:data-[state=active]:after:bg-foreground data-[state=active]:bg-[#fbfbfb] dark:data-[state=active]:bg-[#1a1a1a] data-[state=active]:shadow-[inset_0_0_0_1px_rgb(238,239,241)] dark:data-[state=active]:shadow-[inset_0_0_0_1px_#232323]`}
                 >
                   {tab.highlight && <GoogleIcon className="size-3.5" />}
                   {tab.label}
-                  <span className={`text-[10px] leading-none rounded px-1 py-0.5 ${tab.highlight ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" : "bg-gray-100 dark:bg-gray-800 text-muted-foreground"}`}>
+                  <span
+                    className={`text-[10px] leading-none rounded px-1 py-0.5 ${tab.highlight ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" : "bg-gray-100 dark:bg-gray-800 text-muted-foreground"}`}
+                  >
                     {tab.count}
                   </span>
                 </TabsTrigger>
@@ -505,7 +561,7 @@ export default function PurchaseInvoiceTable({
                               ? null
                               : flexRender(
                                   header.column.columnDef.header,
-                                  header.getContext()
+                                  header.getContext(),
                                 )}
                           </th>
                         ))}
@@ -519,7 +575,10 @@ export default function PurchaseInvoiceTable({
                 {loading ? (
                   <div className="p-0">
                     {Array.from({ length: 8 }).map((_, i) => (
-                      <div key={i} className="flex items-center border-b border-[#eeeff1] dark:border-[#232323] px-4 sm:px-6 py-3 gap-3">
+                      <div
+                        key={i}
+                        className="flex items-center border-b border-[#eeeff1] dark:border-[#232323] px-4 sm:px-6 py-3 gap-3"
+                      >
                         <div className="h-4 w-4 rounded bg-muted animate-pulse" />
                         <div className="h-7 w-7 rounded-full bg-muted animate-pulse flex-shrink-0" />
                         <div className="h-4 w-[140px] rounded bg-muted animate-pulse" />
@@ -559,7 +618,7 @@ export default function PurchaseInvoiceTable({
                             >
                               {flexRender(
                                 cell.column.columnDef.cell,
-                                cell.getContext()
+                                cell.getContext(),
                               )}
                             </td>
                           ))}
@@ -575,7 +634,8 @@ export default function PurchaseInvoiceTable({
                       </EmptyMedia>
                       <EmptyTitle>Aucune facture d&apos;achat</EmptyTitle>
                       <EmptyDescription>
-                        Importez vos factures fournisseurs ou créez-en une manuellement pour commencer.
+                        Importez vos factures fournisseurs ou créez-en une
+                        manuellement pour commencer.
                       </EmptyDescription>
                     </EmptyHeader>
                   </Empty>
@@ -587,11 +647,14 @@ export default function PurchaseInvoiceTable({
             <div className="hidden md:flex items-center justify-between px-4 sm:px-6 py-2 border-t border-[#eeeff1] dark:border-[#232323] bg-background flex-shrink-0">
               <div className="flex-1 text-xs font-normal text-muted-foreground">
                 {table.getFilteredSelectedRowModel().rows.length} sur{" "}
-                {table.getFilteredRowModel().rows.length} ligne(s) sélectionnée(s).
+                {table.getFilteredRowModel().rows.length} ligne(s)
+                sélectionnée(s).
               </div>
               <div className="flex items-center space-x-4 lg:space-x-6">
                 <div className="flex items-center gap-1.5">
-                  <p className="whitespace-nowrap text-xs font-normal">Lignes par page</p>
+                  <p className="whitespace-nowrap text-xs font-normal">
+                    Lignes par page
+                  </p>
                   <Select
                     value={String(pagination.pageSize)}
                     onValueChange={(value) =>
@@ -657,7 +720,9 @@ export default function PurchaseInvoiceTable({
                         size="icon"
                         variant="ghost"
                         className="h-7 w-7 disabled:pointer-events-none disabled:opacity-50"
-                        onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+                        onClick={() =>
+                          table.setPageIndex(table.getPageCount() - 1)
+                        }
                         disabled={!table.getCanNextPage()}
                         aria-label="Dernière page"
                       >
@@ -694,7 +759,11 @@ export default function PurchaseInvoiceTable({
         {/* Mobile Search */}
         <div className="px-4 pb-2 flex-shrink-0">
           <div className="flex items-center gap-2 h-9 rounded-[9px] border border-[#E6E7EA] dark:border-[#2E2E32] px-2.5">
-            <Search size={16} className="text-muted-foreground/80 shrink-0" aria-hidden="true" />
+            <Search
+              size={16}
+              className="text-muted-foreground/80 shrink-0"
+              aria-hidden="true"
+            />
             <Input
               variant="ghost"
               placeholder="Rechercher..."
@@ -720,7 +789,13 @@ export default function PurchaseInvoiceTable({
             { key: "OVERDUE", label: "En retard", count: statusCounts.OVERDUE },
             { key: "PAID", label: "Payées", count: statusCounts.PAID },
             ...(importedInvoices.length > 0
-              ? [{ key: "imported", label: "Gmail", count: importedInvoices.length }]
+              ? [
+                  {
+                    key: "imported",
+                    label: "Gmail",
+                    count: importedInvoices.length,
+                  },
+                ]
               : []),
           ].map((tab) => (
             <button
@@ -745,7 +820,10 @@ export default function PurchaseInvoiceTable({
             {loading ? (
               <div className="px-4">
                 {Array.from({ length: 6 }).map((_, i) => (
-                  <div key={i} className="flex items-center justify-between border-b border-[#eeeff1] dark:border-[#232323] py-3 gap-3">
+                  <div
+                    key={i}
+                    className="flex items-center justify-between border-b border-[#eeeff1] dark:border-[#232323] py-3 gap-3"
+                  >
                     <div className="flex-1 min-w-0 space-y-2">
                       <div className="h-4 w-[120px] rounded bg-muted animate-pulse" />
                       <div className="h-3 w-[80px] rounded bg-muted animate-pulse" />
@@ -796,8 +874,12 @@ export default function PurchaseInvoiceTable({
                           {(() => {
                             try {
                               const d = new Date(inv.issueDate);
-                              return isNaN(d.getTime()) ? "—" : d.toLocaleDateString("fr-FR");
-                            } catch { return "—"; }
+                              return isNaN(d.getTime())
+                                ? "—"
+                                : d.toLocaleDateString("fr-FR");
+                            } catch {
+                              return "—";
+                            }
                           })()}
                         </div>
                       </div>
@@ -831,7 +913,6 @@ export default function PurchaseInvoiceTable({
           />
         )}
       </div>
-
     </>
   );
 }
@@ -850,7 +931,8 @@ function ImportedInvoicesPanel({
   onImportedConverted,
 }) {
   const allSelected =
-    importedInvoices.length > 0 && importedSelection.size === importedInvoices.length;
+    importedInvoices.length > 0 &&
+    importedSelection.size === importedInvoices.length;
 
   const toggleAll = () => {
     if (allSelected) {
@@ -961,7 +1043,8 @@ function ImportedInvoicesPanel({
       {importedSelection.size > 0 && (
         <div className="flex items-center gap-2 px-4 sm:px-6 py-2 border-b bg-amber-50 dark:bg-amber-900/10 flex-shrink-0">
           <span className="text-xs text-amber-700 dark:text-amber-400">
-            {importedSelection.size} sélectionnée{importedSelection.size > 1 ? "s" : ""}
+            {importedSelection.size} sélectionnée
+            {importedSelection.size > 1 ? "s" : ""}
           </span>
           <Button
             size="sm"
@@ -986,11 +1069,19 @@ function ImportedInvoicesPanel({
           <div>
             <Checkbox checked={allSelected} onCheckedChange={toggleAll} />
           </div>
-          <div className="text-xs text-muted-foreground font-normal">Fournisseur</div>
-          <div className="text-xs text-muted-foreground font-normal">N° facture</div>
-          <div className="text-xs text-muted-foreground font-normal text-right">Montant TTC</div>
+          <div className="text-xs text-muted-foreground font-normal">
+            Fournisseur
+          </div>
+          <div className="text-xs text-muted-foreground font-normal">
+            N° facture
+          </div>
+          <div className="text-xs text-muted-foreground font-normal text-right">
+            Montant TTC
+          </div>
           <div className="text-xs text-muted-foreground font-normal">Date</div>
-          <div className="text-xs text-muted-foreground font-normal text-right">Actions</div>
+          <div className="text-xs text-muted-foreground font-normal text-right">
+            Actions
+          </div>
         </div>
       </div>
 
@@ -1000,7 +1091,9 @@ function ImportedInvoicesPanel({
           <div
             key={inv.id}
             className={`border-b border-[#eeeff1] dark:border-[#232323] transition-colors ${
-              importedSelection.has(inv.id) ? "bg-amber-50/50 dark:bg-amber-900/5" : "hover:bg-muted/50"
+              importedSelection.has(inv.id)
+                ? "bg-amber-50/50 dark:bg-amber-900/5"
+                : "hover:bg-muted/50"
             }`}
           >
             {/* Desktop row */}
@@ -1065,12 +1158,15 @@ function ImportedInvoicesPanel({
                     </span>
                   </div>
                   <div className="text-xs text-muted-foreground mt-0.5">
-                    {inv.originalInvoiceNumber && `${inv.originalInvoiceNumber} · `}
+                    {inv.originalInvoiceNumber &&
+                      `${inv.originalInvoiceNumber} · `}
                     {formatDate(inv.invoiceDate)}
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-sm font-medium">{formatAmount(inv.totalTTC)} €</div>
+                  <div className="text-sm font-medium">
+                    {formatAmount(inv.totalTTC)} €
+                  </div>
                   <div className="flex gap-1 mt-1 justify-end">
                     <button
                       className="p-1 text-green-600 hover:bg-green-50 rounded"
@@ -1099,12 +1195,34 @@ function ImportedInvoicesPanel({
 
 function StatusBadge({ status, small }) {
   const config = {
-    TO_PROCESS: { label: "À traiter", className: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300" },
-    TO_PAY: { label: "À payer", className: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400" },
-    PENDING: { label: "En attente", className: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" },
-    PAID: { label: "Payée", className: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" },
-    OVERDUE: { label: "En retard", className: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" },
-    ARCHIVED: { label: "Archivée", className: "bg-gray-50 text-gray-500 dark:bg-gray-900 dark:text-gray-500" },
+    TO_PROCESS: {
+      label: "À traiter",
+      className:
+        "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300",
+    },
+    TO_PAY: {
+      label: "À payer",
+      className:
+        "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400",
+    },
+    PENDING: {
+      label: "En attente",
+      className:
+        "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+    },
+    PAID: {
+      label: "Payée",
+      className:
+        "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+    },
+    OVERDUE: {
+      label: "En retard",
+      className: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+    },
+    ARCHIVED: {
+      label: "Archivée",
+      className: "bg-gray-50 text-gray-500 dark:bg-gray-900 dark:text-gray-500",
+    },
   };
   const c = config[status] || config.TO_PROCESS;
   return (
