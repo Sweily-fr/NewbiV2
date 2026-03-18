@@ -544,6 +544,18 @@ export function useInvoiceEditor({
 
     // Debounce de 500ms - la validation se déclenche 500ms après avoir arrêté de taper
     const timeoutId = setTimeout(() => {
+      // Nettoyer les touchedFields pour les articles supprimés (index périmés)
+      const itemCount = watchedItems ? watchedItems.length : 0;
+      const activeTouchedFields = new Set();
+      for (const field of touchedFields) {
+        const idx = parseInt(field.split("-")[0], 10);
+        if (idx < itemCount) activeTouchedFields.add(field);
+      }
+      // Mettre à jour le state si des entrées ont été nettoyées
+      if (activeTouchedFields.size !== touchedFields.size) {
+        setTouchedFields(activeTouchedFields);
+      }
+
       setValidationErrors((prevErrors) => {
         // Valider les articles si on a des articles
         if (watchedItems && watchedItems.length > 0) {
@@ -554,41 +566,50 @@ export function useInvoiceEditor({
             const itemErrors = [];
             const fields = [];
 
-            // Vérifier si l'article a été "touché" (l'utilisateur a commencé à le remplir)
-            // Un article est considéré comme touché s'il a une description, un prix ou une quantité modifiée
-            const hasBeenTouched =
+            // Vérifier si l'utilisateur a interagi avec cet article (blur sur un champ)
+            const hasFieldBeenBlurred = Array.from(activeTouchedFields).some(
+              (field) => field.startsWith(`${index}-`)
+            );
+
+            // Vérifier si l'article contient des données saisies (pas juste les valeurs par défaut)
+            const hasUserContent =
               (item.description && item.description.trim() !== "") ||
               (item.unitPrice !== undefined &&
                 item.unitPrice !== null &&
-                item.unitPrice !== "") ||
+                item.unitPrice !== "" &&
+                item.unitPrice !== 0) ||
               (item.quantity !== undefined &&
                 item.quantity !== null &&
                 item.quantity !== "" &&
                 item.quantity !== 1);
 
-            // Ne pas valider les articles qui n'ont pas été touchés
-            if (!hasBeenTouched) {
+            // Ne valider que si l'utilisateur a interagi (blur) ou saisi du contenu
+            if (!hasFieldBeenBlurred && !hasUserContent) {
               return; // Skip cet article
             }
 
-            // Valider les champs (validation automatique après 500ms d'inactivité)
+            // Valider les champs — uniquement ceux avec lesquels l'utilisateur a interagi
+            const isFieldTouched = (fieldName) =>
+              activeTouchedFields.has(`${index}-${fieldName}`) || hasUserContent;
 
-            // Valider la description (obligatoire)
-            if (!item.description || item.description.trim() === "") {
+            // Valider la description (obligatoire) — seulement si le champ a été touché
+            if (isFieldTouched("description") && (!item.description || item.description.trim() === "")) {
               itemErrors.push("description manquante");
               fields.push("description");
-            } else if (item.description.length > 2000) {
-              itemErrors.push("description trop longue (max 2000 caractères)");
-              fields.push("description");
-            } else if (
-              !/^[A-Za-zÀ-ÖØ-öø-ÿ0-9\s\.,;:!?@#$%&*()\[\]\-_+='"/\\]+$/.test(
-                item.description
-              )
-            ) {
-              itemErrors.push(
-                "description contient des caractères non autorisés"
-              );
-              fields.push("description");
+            } else if (item.description && item.description.trim() !== "") {
+              if (item.description.length > 2000) {
+                itemErrors.push("description trop longue (max 2000 caractères)");
+                fields.push("description");
+              } else if (
+                !/^[A-Za-zÀ-ÖØ-öø-ÿ0-9\s\.,;:!?@#$%&*()\[\]\-_+='"/\\]+$/.test(
+                  item.description
+                )
+              ) {
+                itemErrors.push(
+                  "description contient des caractères non autorisés"
+                );
+                fields.push("description");
+              }
             }
 
             // Valider les détails si présents (optionnel mais limité à 500 caractères)
@@ -681,6 +702,12 @@ export function useInvoiceEditor({
               },
             };
           }
+        }
+        // Pas d'articles ou liste vide → supprimer les erreurs items si présentes
+        if (prevErrors.items) {
+          const newErrors = { ...prevErrors };
+          delete newErrors.items;
+          return newErrors;
         }
         return prevErrors;
       });
@@ -1007,7 +1034,7 @@ export function useInvoiceEditor({
   // Synchroniser les champs plats pour CompanyInfoSettingsSection dans la vue paramètres
   useEffect(() => {
     if (isFormInitialized) {
-      const companyInfo = getValues("companyInfo");
+      const companyInfo = formData.companyInfo;
       if (companyInfo) {
         setValue("companyName", companyInfo.name || "", { shouldDirty: false });
         setValue("companyEmail", companyInfo.email || "", { shouldDirty: false });
@@ -1021,7 +1048,7 @@ export function useInvoiceEditor({
         }
       }
     }
-  }, [isFormInitialized, setValue, getValues]);
+  }, [isFormInitialized, formData.companyInfo, setValue]);
 
   // Pre-fill items from Kanban conversion (via sessionStorage)
   useEffect(() => {

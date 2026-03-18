@@ -6,12 +6,10 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from "@/src/components/ui/dialog";
 import { Button } from "@/src/components/ui/button";
-import { Progress } from "@/src/components/ui/progress";
 import { ScrollArea } from "@/src/components/ui/scroll-area";
-import { Upload, FileText, X, Check, AlertCircle, Loader2 } from "lucide-react";
+import { Upload, FileText, X, LoaderCircle } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
 import { useMutation, useApolloClient } from "@apollo/client";
@@ -24,42 +22,17 @@ import { toast } from "sonner";
 const MAX_FILES = 100;
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
-// Phases d'import simplifiées pour UX instantanée
-const PHASE = {
-  SELECT: "select",
-  UPLOADING: "uploading",
-};
-
 export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
   const [files, setFiles] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
-  const [uploadStatus, setUploadStatus] = useState({});
-  const [phase, setPhase] = useState(PHASE.SELECT);
-  const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef(null);
-
-  const isImporting = phase === PHASE.UPLOADING;
 
   const { workspaceId } = useRequiredWorkspace();
   const client = useApolloClient();
   const [importInvoiceDirect] = useMutation(IMPORT_INVOICE_DIRECT);
 
   const handleClose = () => {
-    if (!isImporting) {
-      setFiles([]);
-      setUploadStatus({});
-      setPhase(PHASE.SELECT);
-      setUploadProgress(0);
-      onOpenChange(false);
-    }
-  };
-
-  // Ferme le modal et reset l'état
-  const closeAndReset = () => {
     setFiles([]);
-    setUploadStatus({});
-    setPhase(PHASE.SELECT);
-    setUploadProgress(0);
     onOpenChange(false);
   };
 
@@ -103,59 +76,47 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
     setFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
-  /**
-   * Import parallélisé : Upload + OCR lancés simultanément
-   *
-   * Architecture:
-   * - PARALLEL_UPLOADS: Nombre d'uploads simultanés vers Cloudflare
-   * - PARALLEL_OCR: Nombre de traitements OCR simultanés
-   * - Dès qu'un upload termine, son OCR démarre immédiatement
-   */
+  const formatFileSize = (bytes) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
   const handleImport = async () => {
     if (files.length === 0 || !workspaceId) return;
 
-    setPhase(PHASE.UPLOADING);
-    setUploadProgress(0);
-
-    // Fermer le modal immédiatement pour UX instantanée
     const totalFiles = files.length;
     const filesToProcess = [...files];
-    closeAndReset();
 
-    // Compteurs de progression
+    // Fermer le modal immédiatement
+    setFiles([]);
+    onOpenChange(false);
+
     let processedCount = 0;
     let successCount = 0;
     let quotaExceeded = false;
     let quotaErrorMessage = "";
 
-    // Configuration parallélisation - Claude Vision n'a pas les mêmes limites que Mistral
-    const PARALLEL_STREAMS = 5; // 5 streams parallèles (Claude Vision supporte bien la concurrence)
-    const DELAY_BETWEEN_STARTS = 300; // 300ms entre chaque nouveau stream (juste pour éviter burst)
-
-    // Estimation du temps (~8s par facture avec 5 streams parallèles)
+    const PARALLEL_STREAMS = 5;
+    const DELAY_BETWEEN_STARTS = 300;
     const estimatedSecondsPerFile = 8;
     const estimatedTotalSeconds = Math.ceil(
       (totalFiles / PARALLEL_STREAMS) * estimatedSecondsPerFile
     );
     const startTime = Date.now();
 
-    // Formater l'estimation initiale
     const formatInitialEstimate = () => {
-      if (estimatedTotalSeconds < 60) {
-        return `~${estimatedTotalSeconds}s`;
-      }
+      if (estimatedTotalSeconds < 60) return `~${estimatedTotalSeconds}s`;
       const mins = Math.floor(estimatedTotalSeconds / 60);
       const secs = estimatedTotalSeconds % 60;
       return `~${mins}min ${secs}s`;
     };
 
-    // Toast de progression global avec estimation initiale
     const toastId = toast.loading(
       `Import de ${totalFiles} facture(s) • Durée estimée: ${formatInitialEstimate()}`,
       { duration: Infinity }
     );
 
-    // Fonction pour formater le temps restant
     const formatTimeRemaining = () => {
       const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
       const avgSecondsPerFile =
@@ -167,37 +128,29 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
         (remainingFiles * avgSecondsPerFile) / PARALLEL_STREAMS
       );
 
-      if (remainingSeconds < 60) {
-        return `~${remainingSeconds}s restantes`;
-      }
+      if (remainingSeconds < 60) return `~${remainingSeconds}s restantes`;
       const mins = Math.floor(remainingSeconds / 60);
       const secs = remainingSeconds % 60;
       return `~${mins}min ${secs}s restantes`;
     };
 
-    // Fonction pour mettre à jour le toast
     const updateToast = () => {
-      const timeRemaining = formatTimeRemaining();
       toast.loading(
-        `Import: ${processedCount}/${totalFiles} traité(s) • ${timeRemaining}`,
+        `Import: ${processedCount}/${totalFiles} traité(s) • ${formatTimeRemaining()}`,
         { id: toastId, duration: Infinity }
       );
     };
 
-    // Fonction pour traiter un fichier — un seul appel (OCR direct + upload Cloudflare côté serveur)
     const processFile = async (file) => {
       if (quotaExceeded) return;
 
       try {
         const { data: importData, errors } = await importInvoiceDirect({
-          variables: {
-            file,
-            workspaceId,
-          },
+          variables: { file, workspaceId },
         });
 
         if (errors?.length) {
-          console.error(`❌ Erreur GraphQL pour ${file.name}:`, errors[0].message);
+          console.error(`Erreur GraphQL pour ${file.name}:`, errors[0].message);
         }
 
         if (importData?.importInvoiceDirect?.success) {
@@ -206,29 +159,25 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
           quotaExceeded = true;
           quotaErrorMessage = importData.importInvoiceDirect.error;
         } else if (importData?.importInvoiceDirect?.error) {
-          console.error(`❌ Import échoué pour ${file.name}:`, importData.importInvoiceDirect.error);
+          console.error(`Import échoué pour ${file.name}:`, importData.importInvoiceDirect.error);
         }
       } catch (error) {
-        console.error(`❌ Erreur réseau pour ${file.name}:`, error.message);
+        console.error(`Erreur réseau pour ${file.name}:`, error.message);
       } finally {
         processedCount++;
         updateToast();
       }
     };
 
-    // Helper pour délai
     const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-    // Traiter tous les fichiers en parallèle avec limite de concurrence et délai
     const processAllFiles = async () => {
       const queue = [...filesToProcess];
       const activePromises = new Set();
       let lastStartTime = 0;
 
       while ((queue.length > 0 && !quotaExceeded) || activePromises.size > 0) {
-        // Lancer de nouveaux streams tant qu'on n'a pas atteint la limite
         while (queue.length > 0 && activePromises.size < PARALLEL_STREAMS && !quotaExceeded) {
-          // Respecter le délai minimum entre les démarrages
           const now = Date.now();
           const timeSinceLastStart = now - lastStartTime;
           if (timeSinceLastStart < DELAY_BETWEEN_STARTS && lastStartTime > 0) {
@@ -244,7 +193,6 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
           activePromises.add(promise);
         }
 
-        // Attendre qu'au moins un stream se termine
         if (activePromises.size > 0) {
           await Promise.race(activePromises);
         }
@@ -254,7 +202,6 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
     try {
       await processAllFiles();
 
-      // Toast final
       toast.dismiss(toastId);
 
       if (quotaExceeded) {
@@ -284,49 +231,34 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
       toast.dismiss(toastId);
       toast.error("Erreur lors de l'import des factures");
     } finally {
-      // Toujours rafraîchir la liste, même en cas d'erreur
       try {
         await client.refetchQueries({ include: [GET_IMPORTED_INVOICES] });
       } catch (e) {
-        console.warn("⚠️ refetchQueries échoué:", e.message);
+        console.warn("refetchQueries échoué:", e.message);
       }
       onImportSuccess?.();
     }
   };
 
-  const formatFileSize = (bytes) => {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  };
-
-  // Calcul du nombre de fichiers uploadés
-  const uploadedCount = Object.values(uploadStatus).filter(
-    (s) => s === "uploaded"
-  ).length;
-
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[425px] overflow-hidden">
-        <DialogHeader>
-          <DialogTitle className="font-medium">
-            Importer des factures
-          </DialogTitle>
-          <DialogDescription>
-            Importez vos factures PDF pour extraction automatique des données
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="sm:max-w-[520px] p-1 gap-0 top-[40%] border-0 bg-[#efefef] dark:bg-[#1a1a1a] overflow-hidden rounded-2xl">
+        <div className="bg-background rounded-xl overflow-hidden ring-1 ring-black/[0.07] dark:ring-white/[0.1]">
+          <DialogHeader className="px-5 pt-4 pb-3 border-b border-border/40">
+            <DialogTitle className="text-sm font-medium flex items-center gap-2">
+              <Upload className="size-4" />
+              Importer des factures
+            </DialogTitle>
+          </DialogHeader>
 
-        {/* Phase: Sélection des fichiers */}
-        {phase === PHASE.SELECT && (
-          <div className="space-y-4 overflow-hidden">
+          <div className="space-y-3 px-5 pt-4 pb-0">
             {/* Drop zone */}
             <div
               className={cn(
-                "border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer",
+                "border border-dashed rounded-lg p-5 text-center transition-colors cursor-pointer",
                 isDragging
-                  ? "border-primary bg-primary/5"
-                  : "border-muted-foreground/25 hover:border-muted-foreground/50"
+                  ? "border-[#5b4fff] bg-[#5b4fff]/5"
+                  : "border-border hover:border-muted-foreground/50"
               )}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
@@ -341,64 +273,61 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
                 className="hidden"
                 onChange={(e) => addFiles(Array.from(e.target.files || []))}
               />
-              <Upload
-                className="h-6 w-6 mx-auto mb-3"
-                style={{ color: "#5b50FF" }}
-              />
-              <p className="text-sm font-medium">
-                Glissez vos PDF ici ou cliquez pour sélectionner
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Maximum {MAX_FILES} fichiers, 10MB par fichier
-              </p>
+              <div className="flex flex-col items-center gap-2">
+                <div className="size-9 rounded-lg bg-muted/60 flex items-center justify-center">
+                  <Upload className="size-4 text-muted-foreground" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">
+                    Glissez vos PDF ici
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    ou cliquez pour sélectionner • max {MAX_FILES} fichiers, 10MB
+                  </p>
+                </div>
+              </div>
             </div>
 
             {/* File list */}
             {files.length > 0 && (
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium">
-                    {files.length} fichier(s) sélectionné(s)
+                  <p className="text-sm text-muted-foreground">
+                    {files.length} fichier{files.length > 1 ? "s" : ""} sélectionné{files.length > 1 ? "s" : ""}
                   </p>
-                  <Button
-                    variant="ghost"
-                    size="sm"
+                  <button
                     onClick={() => setFiles([])}
-                    className="text-xs text-muted-foreground hover:text-destructive"
+                    className="text-xs text-muted-foreground hover:text-foreground transition-colors"
                   >
-                    Tout supprimer
-                  </Button>
+                    Tout retirer
+                  </button>
                 </div>
-                <ScrollArea className="h-[200px] rounded-md border overflow-hidden">
-                  <div className="p-2 space-y-1 overflow-hidden">
+                <ScrollArea className="max-h-[180px] rounded-lg border border-border/50 overflow-hidden">
+                  <div className="p-1.5 space-y-0.5">
                     {files.map((file, index) => (
                       <div
                         key={`${file.name}-${index}`}
-                        className="flex items-center gap-2 p-2 rounded hover:bg-muted/50 group overflow-hidden"
+                        className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md hover:bg-muted/50 group"
                       >
-                        <FileText className="h-4 w-4 text-red-500 flex-shrink-0" />
-                        <div
-                          className="flex-1 min-w-0 overflow-hidden cursor-default"
+                        <FileText className="size-3.5 text-red-500 shrink-0" />
+                        <span
+                          className="flex-1 min-w-0 text-sm truncate"
                           title={file.name}
                         >
-                          <p className="text-sm truncate max-w-full">
-                            {file.name}
-                          </p>
-                        </div>
-                        <span className="text-xs text-muted-foreground flex-shrink-0">
+                          {file.name}
+                        </span>
+                        <span className="text-xs text-muted-foreground shrink-0">
                           {formatFileSize(file.size)}
                         </span>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                        <button
                           onClick={(e) => {
                             e.stopPropagation();
                             removeFile(index);
                           }}
+                          className="shrink-0 rounded-sm p-0.5 opacity-0 group-hover:opacity-100 hover:bg-muted-foreground/20 transition-opacity"
                         >
-                          <X className="h-3 w-3" />
-                        </Button>
+                          <X className="size-3" />
+                        </button>
                       </div>
                     ))}
                   </div>
@@ -406,94 +335,25 @@ export function ImportInvoiceModal({ open, onOpenChange, onImportSuccess }) {
               </div>
             )}
 
-            {/* Actions */}
-            <div className="flex justify-end gap-2 pt-2">
-              <Button variant="outline" onClick={handleClose}>
-                Annuler
-              </Button>
-              <Button onClick={handleImport} disabled={files.length === 0}>
-                Importer {files.length > 0 && `${files.length} facture(s)`}
+            {/* Footer */}
+            <div className="flex justify-end border-t border-border/40 mt-3 px-5 py-3 -mx-5">
+              <Button
+                variant="primary"
+                onClick={handleImport}
+                disabled={files.length === 0}
+                className="gap-2"
+              >
+                {files.length === 0 ? (
+                  "Importer"
+                ) : (
+                  <>
+                    Importer {files.length} facture{files.length > 1 ? "s" : ""}
+                  </>
+                )}
               </Button>
             </div>
           </div>
-        )}
-
-        {/* Phase: Upload en cours (rapide, puis fermeture automatique) */}
-        {phase === PHASE.UPLOADING && (
-          <div className="py-8 space-y-6">
-            <div className="flex flex-col items-center gap-4">
-              <div className="relative">
-                <div className="h-16 w-16 rounded-full border-4 border-muted flex items-center justify-center">
-                  <Upload
-                    className="h-7 w-7 animate-pulse"
-                    style={{ color: "#5b50FF" }}
-                  />
-                </div>
-                <div
-                  className="absolute inset-0 rounded-full border-t-transparent animate-spin"
-                  style={{
-                    animationDuration: "1s",
-                    borderWidth: "4px",
-                    borderStyle: "solid",
-                    borderColor: "#5b50FF",
-                    borderTopColor: "transparent",
-                  }}
-                />
-              </div>
-              <div className="text-center">
-                <p className="font-medium">Upload en cours...</p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {uploadedCount} / {files.length} fichiers
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Progress value={uploadProgress} className="h-2" />
-              <p className="text-xs text-center text-muted-foreground">
-                {uploadProgress}%
-              </p>
-            </div>
-
-            {/* Liste compacte des fichiers en cours */}
-            <ScrollArea className="h-[120px] rounded-md border overflow-hidden">
-              <div className="p-2 space-y-1 overflow-hidden">
-                {files.map((file, index) => (
-                  <div
-                    key={`${file.name}-${index}`}
-                    className="flex items-center gap-2 px-2 py-1 text-sm overflow-hidden"
-                  >
-                    {uploadStatus[index] === "uploading" && (
-                      <Loader2
-                        className="h-3 w-3 animate-spin flex-shrink-0"
-                        style={{ color: "#5b50FF" }}
-                      />
-                    )}
-                    {uploadStatus[index] === "uploaded" && (
-                      <Check className="h-3 w-3 text-green-500 flex-shrink-0" />
-                    )}
-                    {uploadStatus[index] === "error" && (
-                      <AlertCircle className="h-3 w-3 text-red-500 flex-shrink-0" />
-                    )}
-                    {!uploadStatus[index] && (
-                      <div className="h-3 w-3 rounded-full border border-muted-foreground/30 flex-shrink-0" />
-                    )}
-                    <span
-                      className="truncate text-muted-foreground flex-1 min-w-0"
-                      title={file.name}
-                    >
-                      {file.name}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
-
-            <p className="text-xs text-center text-muted-foreground">
-              Le modal se fermera automatiquement après l'upload
-            </p>
-          </div>
-        )}
+        </div>
       </DialogContent>
     </Dialog>
   );

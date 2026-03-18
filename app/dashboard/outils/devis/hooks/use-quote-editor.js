@@ -874,10 +874,10 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
     }
   }, [mode, setValue]);
 
-  // Synchroniser les champs plats pour CompanyInfoSettingsSection en mode édition
+  // Synchroniser les champs plats pour CompanyInfoSettingsSection
   useEffect(() => {
-    if (isFormInitialized && mode !== "create") {
-      const companyInfo = getValues("companyInfo");
+    if (isFormInitialized) {
+      const companyInfo = formData.companyInfo;
       if (companyInfo) {
         setValue("companyName", companyInfo.name || "", { shouldDirty: false });
         setValue("companyEmail", companyInfo.email || "", { shouldDirty: false });
@@ -908,7 +908,7 @@ export function useQuoteEditor({ mode, quoteId, initialData }) {
         }
       }
     }
-  }, [isFormInitialized, mode, setValue, getValues]);
+  }, [isFormInitialized, formData.companyInfo, setValue]);
 
   // Ne plus utiliser les données de la session utilisateur pour les informations de l'entreprise
   // car elles sont maintenant gérées par la récupération des données de l'organisation active
@@ -1713,6 +1713,9 @@ function getInitialFormData(mode, initialData, session) {
     // Position du client dans le PDF
     clientPositionRight: false,
 
+    // Nature de l'opération
+    operationType: null,
+
     // Livraison
     shipping: {
       billShipping: false,
@@ -2035,6 +2038,9 @@ function transformQuoteToFormData(quote) {
 
     // Position du client dans le PDF
     clientPositionRight: quote.clientPositionRight || false,
+
+    // Nature de l'opération
+    operationType: quote.operationType || null,
 
     // Livraison
     shipping: quote.shipping
@@ -2447,6 +2453,7 @@ function transformFormDataToInput(
       : null,
     isReverseCharge: formData.isReverseCharge || false,
     clientPositionRight: formData.clientPositionRight || false,
+    ...(formData.operationType && { operationType: formData.operationType }),
   };
 }
 

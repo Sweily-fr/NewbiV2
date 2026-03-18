@@ -89,7 +89,6 @@ import {
 import { useQuotes } from "@/src/graphql/quoteQueries";
 import {
   QUOTE_STATUS_LABELS,
-  QUOTE_STATUS_COLORS,
 } from "@/src/graphql/quoteQueries";
 import { useImportedQuotes } from "@/src/graphql/importedQuoteQueries";
 import { useRequiredWorkspace } from "@/src/hooks/useWorkspace";
@@ -125,6 +124,8 @@ export default function QuoteTable({ handleNewQuote, quoteIdToOpen, triggerImpor
   const [selectedImportedQuote, setSelectedImportedQuote] = useState(null);
   // État pour la modal d'envoi par email - géré au niveau du tableau pour éviter les re-renders
   const [sendEmailQuote, setSendEmailQuote] = useState(null);
+  // État pour la sidebar - gérée au niveau du tableau pour éviter les conflits z-index avec les modals
+  const [sidebarQuote, setSidebarQuote] = useState(null);
 
   const {
     table,
@@ -142,9 +143,15 @@ export default function QuoteTable({ handleNewQuote, quoteIdToOpen, triggerImpor
   } = useQuoteTable({
     data: quotes || [],
     onRefetch: refetch,
-    onSendEmail: setSendEmailQuote,
+    onSendEmail: (quote) => {
+      // Fermer la sidebar avant d'ouvrir le modal d'envoi pour éviter les conflits z-index
+      setSidebarQuote(null);
+      setQuoteToOpen(null);
+      setSendEmailQuote(quote);
+    },
     onSaveAsTemplate: setTemplateQuote,
     onRequestSignature: setSignatureQuote,
+    onOpenSidebar: setSidebarQuote,
   });
 
   // État pour les tabs de filtre rapide
@@ -375,7 +382,7 @@ export default function QuoteTable({ handleNewQuote, quoteIdToOpen, triggerImpor
       </div>
 
       {/* Tabs de filtre rapide - Desktop */}
-      <div className="hidden md:block flex-shrink-0 border-b border-gray-200 dark:border-gray-800">
+      <div className="hidden md:block flex-shrink-0 border-b border-border">
         <Tabs value={activeTab} onValueChange={handleTabChange}>
           <TabsList className="h-auto rounded-none bg-transparent p-0 pb-2 w-full justify-start px-4 sm:px-6">
             <TabsTrigger
@@ -546,7 +553,7 @@ export default function QuoteTable({ handleNewQuote, quoteIdToOpen, triggerImpor
       {/* Table - Desktop style avec header fixe et body scrollable */}
       <div className="hidden md:flex md:flex-col flex-1 min-h-0 overflow-hidden">
         {/* Header fixe */}
-        <div className="flex-shrink-0 border-b border-gray-200 dark:border-gray-800">
+        <div className="flex-shrink-0 border-b border-border">
           <table className="w-full table-fixed">
             <thead>
               {table.getHeaderGroups().map((headerGroup) => (
@@ -659,7 +666,7 @@ export default function QuoteTable({ handleNewQuote, quoteIdToOpen, triggerImpor
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow
                   key={headerGroup.id}
-                  className="border-b border-gray-100 dark:border-gray-400"
+                  className="border-b border-border"
                 >
                   {headerGroup.headers
                     .filter(
@@ -693,7 +700,7 @@ export default function QuoteTable({ handleNewQuote, quoteIdToOpen, triggerImpor
                     <TableRow
                       key={row.id}
                       data-state={row.getIsSelected() && "selected"}
-                      className="border-b border-gray-50 dark:border-gray-800 hover:bg-gray-25 dark:hover:bg-gray-900 cursor-pointer"
+                      className="border-b border-border hover:bg-gray-25 dark:hover:bg-gray-900 cursor-pointer"
                       onClick={(e) => {
                         // Ignorer les clics provenant de portals React (modals, dropdowns)
                         if (!e.currentTarget.contains(e.target)) return;
@@ -726,7 +733,7 @@ export default function QuoteTable({ handleNewQuote, quoteIdToOpen, triggerImpor
                   ))}
                   {isLoadingMoreMobile && (
                     Array.from({ length: 3 }).map((_, i) => (
-                      <TableRow key={`mobile-skeleton-${i}`} className="border-b border-gray-50 dark:border-gray-800">
+                      <TableRow key={`mobile-skeleton-${i}`} className="border-b border-border">
                         <TableCell className="py-3 px-4"><Skeleton className="h-4 w-4" /></TableCell>
                         <TableCell className="py-3 px-4">
                           <div className="flex items-center gap-3">
@@ -749,7 +756,7 @@ export default function QuoteTable({ handleNewQuote, quoteIdToOpen, triggerImpor
                 </>
               ) : loading ? (
                 Array.from({ length: 6 }).map((_, i) => (
-                  <TableRow key={`skeleton-${i}`} className="border-b border-gray-50 dark:border-gray-800">
+                  <TableRow key={`skeleton-${i}`} className="border-b border-border">
                     <TableCell className="py-3 px-4"><Skeleton className="h-4 w-4" /></TableCell>
                     <TableCell className="py-3 px-4">
                       <div className="flex items-center gap-3">
@@ -778,7 +785,7 @@ export default function QuoteTable({ handleNewQuote, quoteIdToOpen, triggerImpor
       </div>
 
       {/* Pagination - Fixe en bas sur desktop */}
-      <div className="hidden md:flex items-center justify-between px-4 sm:px-6 py-2 border-t border-gray-200 dark:border-gray-800 bg-background flex-shrink-0">
+      <div className="hidden md:flex items-center justify-between px-4 sm:px-6 py-2 border-t border-border bg-background flex-shrink-0">
         <div className="flex-1 text-xs font-normal text-muted-foreground">
           {table.getFilteredSelectedRowModel().rows.length} sur{" "}
           {table.getFilteredRowModel().rows.length} ligne(s) sélectionnée(s).
@@ -874,6 +881,17 @@ export default function QuoteTable({ handleNewQuote, quoteIdToOpen, triggerImpor
           isOpen={!!quoteToOpen}
           onClose={() => setQuoteToOpen(null)}
           onRefetch={refetch}
+        />
+      )}
+
+      {/* Sidebar pour ouverture via row actions */}
+      {sidebarQuote && (
+        <QuoteSidebar
+          quote={sidebarQuote}
+          isOpen={!!sidebarQuote}
+          onClose={() => setSidebarQuote(null)}
+          onRefetch={refetch}
+          isViewMode={true}
         />
       )}
 

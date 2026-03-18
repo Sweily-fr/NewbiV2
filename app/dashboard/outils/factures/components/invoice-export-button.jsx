@@ -3,15 +3,14 @@
 import { useState, useEffect } from "react";
 import {
   Download,
-  FileSpreadsheet,
   FileText,
-  FileCheck,
   Building,
   Building2,
   ArrowRightFromLine,
   Info,
   Lock,
 } from "lucide-react";
+import { BsFiletypeCsv, BsFiletypeXlsx } from "react-icons/bs";
 import { Button } from "@/src/components/ui/button";
 import {
   DropdownMenu,
@@ -24,8 +23,6 @@ import {
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/src/components/ui/dialog";
@@ -47,6 +44,34 @@ import { usePermissions } from "@/src/hooks/usePermissions";
 import { useSubscription } from "@/src/contexts/dashboard-layout-context";
 import { getPlanLimits } from "@/src/lib/plan-limits";
 
+const FORMAT_CONFIG = {
+  csv: {
+    label: "CSV",
+    icon: ({ className }) => <BsFiletypeCsv className={className} style={{ color: "#22C55E" }} />,
+    description: "Sélectionnez une plage de dates pour filtrer les factures à exporter.",
+  },
+  excel: {
+    label: "Excel",
+    icon: ({ className }) => <BsFiletypeXlsx className={className} style={{ color: "#16A34A" }} />,
+    description: "Sélectionnez une plage de dates pour filtrer les factures à exporter.",
+  },
+  fec: {
+    label: "FEC (Format légal)",
+    icon: ({ className }) => <FileText className={className} style={{ color: "#3B82F6" }} />,
+    description: "Format légal obligatoire pour l'administration fiscale française.",
+  },
+  sage: {
+    label: "Sage Compta",
+    icon: Building,
+    description: "Format compatible avec Sage 100 et Sage 1000.",
+  },
+  cegid: {
+    label: "Cegid Expert",
+    icon: Building2,
+    description: "Format compatible avec Cegid Expert.",
+  },
+};
+
 export default function InvoiceExportButton({
   invoices,
   selectedRows = [],
@@ -65,7 +90,6 @@ export default function InvoiceExportButton({
   const { subscription } = useSubscription();
   const allowedExports = getPlanLimits(subscription?.plan).exports;
 
-  // Vérifier les permissions d'export
   useEffect(() => {
     const checkPermission = async () => {
       const allowed = await canExport("invoices");
@@ -74,15 +98,11 @@ export default function InvoiceExportButton({
     checkPermission();
   }, [canExport]);
 
-  // Déterminer si on exporte les factures sélectionnées ou toutes les factures
   const hasSelection = selectedRows && selectedRows.length > 0;
 
   const invoicesToExport = hasSelection
     ? selectedRows
-        .map((row) => {
-          // TanStack Table peut utiliser row.original OU directement row
-          return row.original || row;
-        })
+        .map((row) => row.original || row)
         .filter(Boolean)
     : invoices || [];
 
@@ -95,10 +115,7 @@ export default function InvoiceExportButton({
     if (!selectedFormat) return;
 
     try {
-      // Utiliser les factures sélectionnées ou toutes les factures
       const finalInvoices = invoicesToExport;
-
-      // Si des factures sont sélectionnées, ne pas appliquer le filtre de date
       const finalDateRange = hasSelection ? null : dateRange;
 
       if (selectedFormat === "csv") {
@@ -118,7 +135,6 @@ export default function InvoiceExportButton({
         toast.success(`${finalInvoices.length} facture(s) exportée(s) pour Cegid`);
       }
 
-      // Réinitialiser et fermer
       setIsDialogOpen(false);
       setDateRange({ from: undefined, to: undefined });
       setSelectedFormat(null);
@@ -133,10 +149,12 @@ export default function InvoiceExportButton({
     setSelectedFormat(null);
   };
 
-  // Ne pas afficher le bouton si pas de permission
   if (!canExportInvoices) {
     return null;
   }
+
+  const formatConfig = selectedFormat ? FORMAT_CONFIG[selectedFormat] : null;
+  const FormatIcon = formatConfig?.icon;
 
   return (
     <>
@@ -161,11 +179,11 @@ export default function InvoiceExportButton({
         <DropdownMenuContent align="end" className="w-[220px]">
           <DropdownMenuLabel>Formats standards</DropdownMenuLabel>
           <DropdownMenuItem onClick={() => handleFormatSelect("csv")}>
-            <FileText className="mr-2 h-4 w-4" />
+            <BsFiletypeCsv className="mr-2 h-4 w-4" style={{ color: "#22C55E" }} />
             CSV
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => handleFormatSelect("excel")}>
-            <FileSpreadsheet className="mr-2 h-4 w-4" />
+            <BsFiletypeXlsx className="mr-2 h-4 w-4" style={{ color: "#16A34A" }} />
             Excel
           </DropdownMenuItem>
 
@@ -173,14 +191,14 @@ export default function InvoiceExportButton({
           <DropdownMenuLabel>Formats comptables</DropdownMenuLabel>
           {allowedExports.includes("fec") ? (
             <DropdownMenuItem onClick={() => handleFormatSelect("fec")}>
-              <FileCheck className="mr-2 h-4 w-4" />
+              <FileText className="mr-2 h-4 w-4 text-blue-500" />
               FEC (Format légal)
             </DropdownMenuItem>
           ) : (
             <Tooltip>
               <TooltipTrigger asChild>
                 <DropdownMenuItem disabled className="opacity-50">
-                  <FileCheck className="mr-2 h-4 w-4" />
+                  <FileText className="mr-2 h-4 w-4 text-blue-500" />
                   FEC (Format légal)
                   <Lock className="ml-auto h-3.5 w-3.5 text-muted-foreground" />
                 </DropdownMenuItem>
@@ -232,100 +250,96 @@ export default function InvoiceExportButton({
       </DropdownMenu>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>
-              Exporter en{" "}
-              {selectedFormat === "csv"
-                ? "CSV"
-                : selectedFormat === "excel"
-                  ? "Excel"
-                  : selectedFormat === "fec"
-                    ? "FEC"
-                    : selectedFormat === "sage"
-                      ? "Sage Compta"
-                      : selectedFormat === "cegid"
-                        ? "Cegid Expert"
-                        : selectedFormat}
-            </DialogTitle>
-            <DialogDescription>
-              {hasSelection ? (
-                <span className="font-medium text-primary">
-                  {invoicesToExport.length} facture(s) sélectionnée(s) sera(ont)
-                  exportée(s).
-                </span>
-              ) : selectedFormat === "fec" ? (
-                "Format légal obligatoire pour l'administration fiscale française. Génère les écritures comptables au format normalisé."
-              ) : selectedFormat === "sage" ? (
-                "Format compatible avec Sage 100 et Sage 1000. Import direct dans votre logiciel comptable."
-              ) : selectedFormat === "cegid" ? (
-                "Format compatible avec Cegid Expert. Import direct dans votre logiciel comptable."
-              ) : (
-                "Sélectionnez une plage de dates pour filtrer les factures à exporter. Laissez vide pour exporter toutes les factures."
-              )}
-            </DialogDescription>
-          </DialogHeader>
+        <DialogContent className="sm:max-w-[520px] p-1 gap-0 top-[40%] border-0 bg-[#efefef] dark:bg-[#1a1a1a] overflow-hidden rounded-2xl">
+          <div className="bg-background rounded-xl overflow-hidden ring-1 ring-black/[0.07] dark:ring-white/[0.1]">
+            <DialogHeader className="px-5 pt-4 pb-3 border-b border-border/40">
+              <DialogTitle className="text-sm font-medium flex items-center gap-2">
+                {FormatIcon && <FormatIcon className="size-4" />}
+                Exporter en {formatConfig?.label}
+              </DialogTitle>
+            </DialogHeader>
 
-          {!hasSelection && (
-            <div className="py-4">
-              <DateRangePicker date={dateRange} setDate={setDateRange} />
+            <div className="space-y-3 px-5 pt-4 pb-0">
+              {/* Description */}
+              <p className="text-sm text-muted-foreground">
+                {hasSelection ? (
+                  <>
+                    <span className="font-medium text-foreground">
+                      {invoicesToExport.length} facture{invoicesToExport.length > 1 ? "s" : ""}
+                    </span>{" "}
+                    sélectionnée{invoicesToExport.length > 1 ? "s" : ""} sera{invoicesToExport.length > 1 ? "ont" : ""} exportée{invoicesToExport.length > 1 ? "s" : ""}.
+                  </>
+                ) : (
+                  formatConfig?.description
+                )}
+              </p>
 
-              {dateRange?.from && dateRange?.to && (
-                <p className="mt-3 text-sm text-muted-foreground">
-                  Les factures entre ces dates seront exportées.
-                </p>
+              {/* Date range picker - uniquement si pas de sélection */}
+              {!hasSelection && (
+                <div className="space-y-2">
+                  <label className="text-sm text-muted-foreground">
+                    Période
+                  </label>
+                  <DateRangePicker date={dateRange} setDate={setDateRange} popoverClassName="z-[101]" />
+                  <p className="text-xs text-muted-foreground">
+                    {dateRange?.from && dateRange?.to
+                      ? "Les factures entre ces dates seront exportées."
+                      : "Laissez vide pour exporter toutes les factures."}
+                  </p>
+                </div>
               )}
 
-              {!dateRange?.from && !dateRange?.to && (
-                <p className="mt-3 text-sm text-muted-foreground">
-                  Toutes les factures seront exportées.
-                </p>
+              {/* Factures sélectionnées */}
+              {hasSelection && invoicesToExport.length > 0 && (
+                <div className="rounded-lg bg-muted/40 border border-border/50 p-3">
+                  <div className="space-y-1">
+                    {invoicesToExport.slice(0, 5).map(
+                      (inv) =>
+                        inv && (
+                          <div key={inv.id} className="flex items-center gap-2 text-sm">
+                            <FileText className="size-3.5 text-muted-foreground shrink-0" />
+                            <span className="truncate">
+                              {inv.prefix || ""}{inv.number}
+                            </span>
+                            <span className="text-muted-foreground truncate">
+                              — {inv.client?.name || "Client inconnu"}
+                            </span>
+                          </div>
+                        )
+                    )}
+                    {invoicesToExport.length > 5 && (
+                      <p className="text-xs text-muted-foreground pl-5.5">
+                        et {invoicesToExport.length - 5} autre{invoicesToExport.length - 5 > 1 ? "s" : ""}
+                      </p>
+                    )}
+                  </div>
+                </div>
               )}
-            </div>
-          )}
 
-          {hasSelection && invoicesToExport.length > 0 && (
-            <div className="py-4">
-              <div className="rounded-lg border bg-muted/50 p-4">
-                <p className="text-sm font-medium mb-2">
-                  Factures sélectionnées :
+              {/* Info banner */}
+              <div className="flex items-center gap-2 px-3 py-2 bg-muted/50 rounded-lg border border-border/50">
+                <Info className="size-3.5 text-muted-foreground shrink-0" />
+                <p className="text-xs text-muted-foreground">
+                  Les factures importées ne sont pas incluses dans l&apos;export.
                 </p>
-                <ul className="text-sm text-muted-foreground space-y-1">
-                  {invoicesToExport.slice(0, 5).map(
-                    (inv) =>
-                      inv && (
-                        <li key={inv.id}>
-                          • Facture {inv.prefix || ""}
-                          {inv.number} - {inv.client?.name || "Client inconnu"}
-                        </li>
-                      )
-                  )}
-                  {invoicesToExport.length > 5 && (
-                    <li className="text-xs italic">
-                      ... et {invoicesToExport.length - 5} autre(s)
-                    </li>
-                  )}
-                </ul>
+              </div>
+
+              {/* Footer */}
+              <div className="flex justify-end gap-2 border-t border-border/40 mt-3 px-5 py-3 -mx-5">
+                <Button variant="ghost" onClick={handleCancel} className="text-sm">
+                  Annuler
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={handleExport}
+                  className="gap-2"
+                >
+                  <Download className="size-3.5" />
+                  Exporter
+                </Button>
               </div>
             </div>
-          )}
-
-          <div className="flex items-start gap-2 rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-900 dark:bg-blue-950/50">
-            <Info className="h-4 w-4 mt-0.5 shrink-0 text-blue-600 dark:text-blue-400" />
-            <p className="text-sm text-blue-700 dark:text-blue-300">
-              Les factures importées ne sont pas incluses dans l&apos;export.
-            </p>
           </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={handleCancel}>
-              Annuler
-            </Button>
-            <Button onClick={handleExport}>
-              <Download className="mr-2 h-4 w-4" />
-              Exporter
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>

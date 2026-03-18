@@ -204,6 +204,7 @@ export default function InvoiceTable({
     onOpenReminderSettings,
     excludedClientIds,
     onOpenSidebar: setInvoiceToOpen, // Passer la fonction pour ouvrir la sidebar au niveau du tableau
+    onOpenImportedSidebar: setSelectedImportedInvoice, // Passer la fonction pour ouvrir la sidebar des factures importées
     onSendEmail: setSendEmailInvoice, // Passer la fonction pour ouvrir la modal d'envoi au niveau du tableau
     onSaveAsTemplate: setTemplateInvoice, // Passer la fonction pour ouvrir le dialog de template
   });

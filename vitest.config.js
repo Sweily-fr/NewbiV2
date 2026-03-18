@@ -15,10 +15,10 @@ export default defineConfig({
       reporter: ['text', 'lcov', 'html'],
       exclude: ['node_modules', '.next', '__tests__', 'e2e', 'public'],
       thresholds: {
-        statements: 20,
-        branches: 15,
-        functions: 20,
-        lines: 20,
+        statements: 30,
+        branches: 20,
+        functions: 25,
+        lines: 30,
       }
     }
   },
